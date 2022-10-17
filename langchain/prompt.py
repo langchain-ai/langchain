@@ -13,10 +13,13 @@ class Prompt(BaseModel):
     template: str
 
     class Config:
+        """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
+        """Check that template and input variables are consistent."""
         input_variables = values["input_variables"]
         template = values["template"]
         dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
