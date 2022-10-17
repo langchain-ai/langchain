@@ -1,4 +1,4 @@
-.PHONY: format lint tests
+.PHONY: format lint tests integration_tests
 
 format:
 	black .
@@ -11,4 +11,7 @@ lint:
 	mypy .
 
 tests:
-	pytest tests
+	pytest tests/unit_tests
+
+integration_tests:
+	pytest tests/integration_tests
