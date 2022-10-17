@@ -3,9 +3,9 @@
 Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
 
@@ -13,9 +13,14 @@ from langchain.chains.base import Chain
 class SerpAPIChain(Chain, BaseModel):
     """Chain that calls SerpAPI."""
 
-    search: Callable
+    search_engine: Any
     input_key: str = "search_query"
     output_key: str = "search_result"
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     @property
     def input_keys(self) -> List[str]:
@@ -38,7 +43,7 @@ class SerpAPIChain(Chain, BaseModel):
         try:
             from serpapi import GoogleSearch
 
-            values["search"] = GoogleSearch
+            values["search_engine"] = GoogleSearch
         except ImportError:
             raise ValueError(
                 "Could not import serpapi python package. "
@@ -56,7 +61,7 @@ class SerpAPIChain(Chain, BaseModel):
             "hl": "en",
         }
 
-        search = self.search(params)
+        search = self.search_engine(params)
         res = search.get_dict()
 
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
@@ -72,7 +77,6 @@ class SerpAPIChain(Chain, BaseModel):
             toret = res["organic_results"][0]["snippet"]
         else:
             toret = None
-
         return {self.output_key: toret}
 
     def search(self, search_question: str) -> str:
