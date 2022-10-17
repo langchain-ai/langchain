@@ -19,12 +19,12 @@ class PythonChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input in `code` key."""
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Return output in `output` key."""
+        """Return output key."""
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
