@@ -1,3 +1,4 @@
+"""Utilities for formatting strings."""
 from string import Formatter
 
 
@@ -5,11 +6,13 @@ class StrictFormatter(Formatter):
     """A subclass of formatter that checks for extra keys."""
 
     def check_unused_args(self, used_args, args, kwargs):
+        """Check to see if extra parameters are passed."""
         extra = set(kwargs).difference(used_args)
         if extra:
             raise KeyError(extra)
 
     def vformat(self, format_string, args, kwargs):
+        """Check that no arguments are provided."""
         if len(args) > 0:
             raise ValueError(
                 "No arguments should be provided, "

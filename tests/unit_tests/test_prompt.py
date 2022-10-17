@@ -1,9 +1,11 @@
+"""Test functionality related to prompts."""
 import pytest
 
 from langchain.prompt import Prompt
 
 
 def test_prompt_valid():
+    """Test prompts can be constructed."""
     template = "This is a {foo} test."
     input_variables = ["foo"]
     prompt = Prompt(input_variables=input_variables, template=template)
@@ -12,6 +14,7 @@ def test_prompt_valid():
 
 
 def test_prompt_missing_input_variables():
+    """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
     input_variables = []
     with pytest.raises(ValueError):
@@ -19,6 +22,7 @@ def test_prompt_missing_input_variables():
 
 
 def test_prompt_extra_input_variables():
+    """Test error is raised when there are too many input variables."""
     template = "This is a {foo} test."
     input_variables = ["foo", "bar"]
     with pytest.raises(ValueError):
@@ -26,6 +30,7 @@ def test_prompt_extra_input_variables():
 
 
 def test_prompt_wrong_input_variables():
+    """Test error is raised when name of input variable is wrong."""
     template = "This is a {foo} test."
     input_variables = ["bar"]
     with pytest.raises(ValueError):
