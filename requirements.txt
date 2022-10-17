@@ -8,3 +8,4 @@ flake8
 flake8-docstrings
 cohere
 openai
+google-search-results

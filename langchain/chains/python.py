@@ -1,4 +1,7 @@
-"""Chain that runs python code."""
+"""Chain that runs python code.
+
+Heavily borrowed from https://replit.com/@amasad/gptpy?v=1#main.py
+"""
 import sys
 from io import StringIO
 from typing import Dict, List

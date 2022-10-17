@@ -27,7 +27,7 @@ class OpenAI(BaseModel, LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key python package exists in environment."""
+        """Validate that api key and python package exists in environment."""
         if "OPENAI_API_KEY" not in os.environ:
             raise ValueError(
                 "Did not find OpenAI API key, please add an environment variable"
