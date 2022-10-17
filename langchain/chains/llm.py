@@ -13,7 +13,7 @@ class LLMChain(Chain, BaseModel):
 
     prompt: Prompt
     llm: LLM
-    return_key: str = "text"
+    output_key: str = "text"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -29,7 +29,7 @@ class LLMChain(Chain, BaseModel):
     @property
     def output_keys(self) -> List[str]:
         """Will always return text key."""
-        return [self.return_key]
+        return [self.output_key]
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
@@ -39,8 +39,8 @@ class LLMChain(Chain, BaseModel):
         if "stop" in inputs:
             kwargs["stop"] = inputs["stop"]
         response = self.llm(prompt, **kwargs)
-        return {self.return_key: response}
+        return {self.output_key: response}
 
     def predict(self, **kwargs: Any) -> str:
         """More user-friendly interface for interacting with LLMs."""
-        return self(kwargs)[self.return_key]
+        return self(kwargs)[self.output_key]
