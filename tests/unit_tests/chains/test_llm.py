@@ -10,7 +10,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 def fake_llm_chain() -> LLMChain:
     """Fake LLM chain for testing purposes."""
     prompt = Prompt(input_variables=["bar"], template="This is a {bar}:")
-    return LLMChain(prompt=prompt, llm=FakeLLM(), return_key="text1")
+    return LLMChain(prompt=prompt, llm=FakeLLM(), output_key="text1")
 
 
 def test_missing_inputs(fake_llm_chain: LLMChain) -> None:
