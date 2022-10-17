@@ -4,7 +4,7 @@ import pytest
 from langchain.formatting import formatter
 
 
-def test_valid_formatting():
+def test_valid_formatting() -> None:
     """Test formatting works as expected."""
     template = "This is a {foo} test."
     output = formatter.format(template, foo="good")
@@ -12,14 +12,14 @@ def test_valid_formatting():
     assert output == expected_output
 
 
-def test_does_not_allow_args():
+def test_does_not_allow_args() -> None:
     """Test formatting raises error when args are provided."""
     template = "This is a {} test."
     with pytest.raises(ValueError):
         formatter.format(template, "good")
 
 
-def test_does_not_allow_extra_kwargs():
+def test_does_not_allow_extra_kwargs() -> None:
     """Test formatting does not allow extra key word arguments."""
     template = "This is a {foo} test."
     with pytest.raises(KeyError):
