@@ -34,7 +34,7 @@ class Cohere(BaseModel, LLM):
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
-        """Validate that api key python package exists in environment."""
+        """Validate that api key and python package exists in environment."""
         if "COHERE_API_KEY" not in os.environ:
             raise ValueError(
                 "Did not find Cohere API key, please add an environment variable"
