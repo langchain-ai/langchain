@@ -1,0 +1,6 @@
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = "True"
+exclude = ["notebooks"]
