@@ -1,6 +1,4 @@
--e .
-pytest
-pytest-dotenv
+-r test_requirements.txt
 black
 isort
 mypy
