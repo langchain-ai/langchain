@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        pip install -r requirements.txt
     - name: Analysing the code with our lint
       run: |
         make lint
