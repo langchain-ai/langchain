@@ -15,22 +15,6 @@ help:
 
 .PHONY: help Makefile
 
-.PHONY: livehtml
-livehtml:
-	@$(SPHINXAUTOBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" \
-		-z ../langchain/ -p 9999 -H 0.0.0.0 \
-		--ignore "*.swp" \
-        --ignore "*.pdf" \
-        --ignore "*.log" \
-        --ignore "*.out" \
-        --ignore "*.toc" \
-        --ignore "*.aux" \
-        --ignore "*.idx" \
-        --ignore "*.ind" \
-        --ignore "*.ilg" \
-        --ignore "*.tex" \
-		$(SPHINXOPTS) $(O)
-
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
