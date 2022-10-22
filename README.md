@@ -30,7 +30,7 @@ This project was largely inspired by a few projects seen on Twitter for which we
 
 **[Self-ask-with-search](https://ofir.io/self-ask.pdf)**
 
-To recreate this paper, use the following code snippet or checkout the [example notebook](examples/self_ask_with_search.ipynb).
+To recreate this paper, use the following code snippet or checkout the [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/self_ask_with_search.ipynb).
 
 ```
 from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
@@ -45,7 +45,7 @@ self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open c
 
 **[LLM Math](https://twitter.com/amasad/status/1568824744367259648?s=20&t=-7wxpXBJinPgDuyHLouP1w)**
 
-To recreate this example, use the following code snippet or check out the [example notebook](examples/llm_math.ipynb).
+To recreate this example, use the following code snippet or check out the [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/llm_math.ipynb).
 
 ```
 from langchain import OpenAI, LLMMathChain
