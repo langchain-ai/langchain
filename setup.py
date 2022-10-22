@@ -18,4 +18,6 @@ setup(
     long_description=long_description,
     license="MIT",
     url="https://github.com/hwchase17/langchain",
+    include_package_data=True,
+    long_description_content_type="text/markdown",
 )
