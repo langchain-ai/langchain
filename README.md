@@ -22,4 +22,31 @@ It aims to create:
 
 ## What can I do with this
 
-This project was largely inspired by a few projects seen on Twitter for which we thought it would make 
+This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:
+
+**[Self-ask-with-search](https://ofir.io/self-ask.pdf)**
+
+To recreate this paper, use the following code snippet or checkout the example notebook.
+
+```
+from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
+
+llm = OpenAI(temperature=0)
+search = SerpAPIChain()
+
+self_ask_with_search = SelfAskWithSearchChain(llm=llm, search_chain=search)
+
+self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
+```
+
+**[LLM Math](https://twitter.com/amasad/status/1568824744367259648?s=20&t=-7wxpXBJinPgDuyHLouP1w)**
+To recreate this example, use the following code snippet or check out the example notebook.
+
+```
+from langchain import OpenAI, LLMMathChain
+
+llm = OpenAI(temperature=0)
+llm_math = LLMMathChain(llm=llm)
+
+llm_math.run("How many of the integers between 0 and 99 inclusive are divisible by 8?")
+```
