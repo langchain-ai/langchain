@@ -55,3 +55,21 @@ llm_math = LLMMathChain(llm=llm)
 
 llm_math.run("How many of the integers between 0 and 99 inclusive are divisible by 8?")
 ```
+
+**Generic Prompting**
+
+You can also use this for simple prompting pipelines, as in the below example and this [example notebook](examples/simple_prompts.ipynb).
+
+```
+from langchain import Prompt, OpenAI, LLMChain
+
+template = """Question: {question}
+
+Answer: Let's think step by step."""
+prompt = Prompt(template=template, input_variables=["question"])
+llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0))
+
+question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
+
+llm_chain.predict(question=question)
+```
