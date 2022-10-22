@@ -73,3 +73,8 @@ question = "What NFL team won the Super Bowl in the year Justin Beiber was born?
 
 llm_chain.predict(question=question)
 ```
+
+## 📖 Documentation
+
+The above examples are probably the most user friendly documentation that exists,
+but full API docs can be found [here](https://langchain.readthedocs.io/en/latest/?).
