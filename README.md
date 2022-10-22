@@ -20,7 +20,7 @@ It aims to create:
 2. a flexible interface for combining pieces into a single comprehensive "chain"
 3. a schema for easily saving and sharing those chains
 
-## What can I do with this
+## 🚀 What can I do with this
 
 This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:
 
