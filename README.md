@@ -44,6 +44,7 @@ self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open c
 ```
 
 **[LLM Math](https://twitter.com/amasad/status/1568824744367259648?s=20&t=-7wxpXBJinPgDuyHLouP1w)**
+
 To recreate this example, use the following code snippet or check out the [example notebook](examples/llm_math.ipynb).
 
 ```
