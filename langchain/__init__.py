@@ -5,6 +5,7 @@ from langchain.chains import (
     PythonChain,
     SelfAskWithSearchChain,
     SerpAPIChain,
+    ReActChain,
 )
 from langchain.llms import Cohere, OpenAI
 from langchain.prompt import Prompt
@@ -18,4 +19,5 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "Prompt",
+    "ReActChain",
 ]
