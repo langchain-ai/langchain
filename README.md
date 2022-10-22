@@ -2,6 +2,8 @@
 
 ⚡ Building applications with LLMs through composability ⚡
 
+[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml) [![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml)
+
 ## Quick Install
 
 `pip install langchain`
