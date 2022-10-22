@@ -3,11 +3,26 @@
 Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
+import sys
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
+
+
+class HiddenPrints:
+    """Context manager to hide prints."""
+
+    def __enter__(self) -> None:
+        """Open file to pipe stdout to."""
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+
+    def __exit__(self, *_: Any) -> None:
+        """Close file that stdout was piped to."""
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
 
 
 class SerpAPIChain(Chain, BaseModel):
@@ -60,9 +75,9 @@ class SerpAPIChain(Chain, BaseModel):
             "gl": "us",
             "hl": "en",
         }
-
-        search = self.search_engine(params)
-        res = search.get_dict()
+        with HiddenPrints():
+            search = self.search_engine(params)
+            res = search.get_dict()
 
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
