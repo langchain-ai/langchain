@@ -13,7 +13,7 @@ setup(
     name="langchain",
     version=__version__,
     packages=find_packages(),
-    description="Building LLM empowered applications",
+    description="Building applications with LLMs through composability",
     install_requires=["pydantic"],
     long_description=long_description,
     license="MIT",
