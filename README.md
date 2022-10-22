@@ -58,7 +58,7 @@ llm_math.run("How many of the integers between 0 and 99 inclusive are divisible 
 
 **Generic Prompting**
 
-You can also use this for simple prompting pipelines, as in the below example and this [example notebook](examples/simple_prompts.ipynb).
+You can also use this for simple prompting pipelines, as in the below example and this [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/simple_prompts.ipynb).
 
 ```
 from langchain import Prompt, OpenAI, LLMChain
