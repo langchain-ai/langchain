@@ -33,7 +33,7 @@ class LLMChain(Chain, BaseModel):
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-        prompt = self.prompt.template.format(**selected_inputs)
+        prompt = self.prompt.format(**selected_inputs)
 
         kwargs = {}
         if "stop" in inputs:
