@@ -32,7 +32,7 @@ def test_variable_key_naming() -> None:
         llm=FakeLLM(),
         objective="testing",
         input_url_key="u",
-        input_browser_key="b",
+        input_browser_content_key="b",
         output_key="c",
     )
     output = nat_bot_chain.run("foo", "foo")

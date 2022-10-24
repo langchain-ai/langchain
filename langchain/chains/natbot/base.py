@@ -15,10 +15,10 @@ class NatBotChain(Chain, BaseModel):
 
     llm: LLM
     objective: str
-    input_url_key = "url"
-    input_browser_content_key = "browser_content"
+    input_url_key: str = "url"
+    input_browser_content_key: str = "browser_content"
     previous_command: str = ""
-    output_key = "command"
+    output_key: str = "command"
 
     class Config:
         """Configuration for this pydantic object."""
