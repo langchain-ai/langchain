@@ -9,6 +9,7 @@ from langchain.chains import (
     LLMChain,
     LLMMathChain,
     PythonChain,
+    ReActChain,
     SelfAskWithSearchChain,
     SerpAPIChain,
 )
@@ -24,4 +25,5 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "Prompt",
+    "ReActChain",
 ]
