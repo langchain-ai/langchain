@@ -35,3 +35,13 @@ def test_prompt_wrong_input_variables() -> None:
     input_variables = ["bar"]
     with pytest.raises(ValueError):
         Prompt(input_variables=input_variables, template=template)
+
+
+def test_prompt_invalid_template_format() -> None:
+    """Test initializing a prompt with invalid template format."""
+    template = "This is a {foo} test."
+    input_variables = ["foo"]
+    with pytest.raises(ValueError):
+        Prompt(
+            input_variables=input_variables, template=template, template_format="bar"
+        )
