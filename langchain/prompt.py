@@ -14,7 +14,6 @@ class Prompt(BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:
-
         .. code-block:: python
 
             from langchain import Prompt

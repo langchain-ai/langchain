@@ -12,7 +12,14 @@ from langchain.chains.base import Chain
 
 
 class PythonChain(Chain, BaseModel):
-    """Chain to run python code."""
+    """Chain to run python code.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import PythonChain
+            python_chain = PythonChain()
+    """
 
     input_key: str = "code"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -42,5 +49,18 @@ class PythonChain(Chain, BaseModel):
         return {self.output_key: output}
 
     def run(self, code: str) -> str:
-        """More user-friendly interface for interfacing with python."""
+        """Run code in python interpreter.
+
+        Args:
+            code: Code snippet to execute, should print out the answer.
+
+        Returns:
+            Answer from running the code and printing out the answer.
+
+        Example:
+
+            .. code-block:: python
+
+                answer = python_chain.run("print(1+1)")
+        """
         return self({self.input_key: code})[self.output_key]

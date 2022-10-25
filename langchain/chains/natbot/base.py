@@ -1,4 +1,4 @@
-"""Implement a GPT-3 driven browser."""
+"""Implement an LLM driven browser."""
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -11,14 +11,23 @@ from langchain.llms.openai import OpenAI
 
 
 class NatBotChain(Chain, BaseModel):
-    """Implement a GPT-3 driven browser."""
+    """Implement an LLM driven browser.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import NatBotChain, OpenAI
+            natbot = NatBotChain(llm=OpenAI(), objective="Buy me a new hat.")
+    """
 
     llm: LLM
+    """LLM wrapper to use."""
     objective: str
-    input_url_key: str = "url"
-    input_browser_content_key: str = "browser_content"
-    previous_command: str = ""
-    output_key: str = "command"
+    """Objective that NatBot is tasked with completing."""
+    input_url_key: str = "url"  #: :meta private:
+    input_browser_content_key: str = "browser_content"  #: :meta private:
+    previous_command: str = ""  #: :meta private:
+    output_key: str = "command"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -34,12 +43,18 @@ class NatBotChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect url and browser content."""
+        """Expect url and browser content.
+
+        :meta private:
+        """
         return [self.input_url_key, self.input_browser_content_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Return command."""
+        """Return command.
+
+        :meta private:
+        """
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
@@ -57,7 +72,21 @@ class NatBotChain(Chain, BaseModel):
         return {self.output_key: llm_cmd}
 
     def run(self, url: str, browser_content: str) -> str:
-        """More user-friendly interface for interfacing with natbot."""
+        """Figure out next browser command to run.
+
+        Args:
+            url: URL of the site currently on.
+            browser_content: Content of the page as currently displayed by the browser.
+
+        Returns:
+            Next browser command to run.
+
+        Example:
+            .. code-block:: python
+
+                browser_content = "...."
+                llm_command = natbot.run("www.google.com", browser_content)
+        """
         _inputs = {
             self.input_url_key: url,
             self.input_browser_content_key: browser_content,

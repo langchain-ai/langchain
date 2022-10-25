@@ -74,7 +74,15 @@ def yellowfy(_input: str) -> str:
 
 
 class SelfAskWithSearchChain(Chain, BaseModel):
-    """Chain that does self ask with search."""
+    """Chain that does self ask with search.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
+            search_chain = SerpAPIChain()
+            self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
+    """
 
     llm: LLM
     """LLM wrapper to use."""
@@ -146,5 +154,17 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         return {self.output_key: cur_prompt + ret_text}
 
     def run(self, question: str) -> str:
-        """More user-friendly interface for interfacing with self ask with search."""
+        """Run self ask with search chain.
+
+        Args:
+            question: Question to run self-ask-with-search with.
+
+        Returns:
+            The final answer
+
+        Example:
+            .. code-block:: python
+
+                answer = selfask.run("What is the capital of Idaho?")
+        """
         return self({self.input_key: question})[self.output_key]

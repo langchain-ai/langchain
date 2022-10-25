@@ -11,7 +11,14 @@ from langchain.llms.base import LLM
 
 
 class LLMMathChain(Chain, BaseModel):
-    """Chain that interprets a prompt and executes python code to do math."""
+    """Chain that interprets a prompt and executes python code to do math.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import LLMMathChain, OpenAI
+            llm_math = LLMMathChain(llm=OpenAI())
+    """
 
     llm: LLM
     """LLM wrapper to use."""
@@ -61,5 +68,17 @@ class LLMMathChain(Chain, BaseModel):
         return {self.output_key: answer}
 
     def run(self, question: str) -> str:
-        """More user-friendly interface for interfacing with LLM math."""
+        """Understand user question and execute math in Python if necessary.
+
+        Args:
+            question: User question that contains a math question to parse and answer.
+
+        Returns:
+            The answer to the question.
+
+        Example:
+            .. code-block:: python
+
+                answer = llm_math.run("What is one plus one?")
+        """
         return self({self.input_key: question})[self.output_key]

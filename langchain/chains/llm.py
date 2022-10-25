@@ -9,7 +9,16 @@ from langchain.prompt import Prompt
 
 
 class LLMChain(Chain, BaseModel):
-    """Chain to run queries against LLMs."""
+    """Chain to run queries against LLMs.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import LLMChain, OpenAI, Prompt
+            prompt_template = "Tell me a {adjective} joke"
+            prompt = Prompt(input_variables=["adjective"], template=prompt_template)
+            llm = LLMChain(llm=OpenAI(), prompt=prompt)
+    """
 
     prompt: Prompt
     """Prompt object to use."""
@@ -50,5 +59,17 @@ class LLMChain(Chain, BaseModel):
         return {self.output_key: response}
 
     def predict(self, **kwargs: Any) -> str:
-        """More user-friendly interface for interacting with LLMs."""
+        """Format prompt with kwargs and pass to LLM.
+
+        Args:
+            **kwargs: Keys to pass to prompt template.
+
+        Returns:
+            Completion from LLM.
+
+        Example:
+            .. code-block:: python
+
+                completion = llm.predict(adjective="funny")
+        """
         return self(kwargs)[self.output_key]

@@ -32,11 +32,10 @@ class SerpAPIChain(Chain, BaseModel):
     and the environment variable ``SERPAPI_API_KEY`` set with your API key.
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        from langchain import SerpAPIChain
-        serpapi = SerpAPIChain()
+            from langchain import SerpAPIChain
+            serpapi = SerpAPIChain()
     """
 
     search_engine: Any  #: :meta private:
@@ -112,5 +111,17 @@ class SerpAPIChain(Chain, BaseModel):
         return {self.output_key: toret}
 
     def search(self, search_question: str) -> str:
-        """More user-friendly interface for interfacing with search."""
+        """Run search query against SerpAPI.
+
+        Args:
+            search_question: Question to run against the SerpAPI.
+
+        Returns:
+            Answer from the search engine.
+
+        Example:
+            .. code-block:: python
+
+                answer = serpapi.search("What is the capital of Idaho?")
+        """
         return self({self.input_key: search_question})[self.output_key]
