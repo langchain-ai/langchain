@@ -3,6 +3,8 @@
 import time
 from sys import platform
 
+from playwright.sync_api import sync_playwright
+
 black_listed_elements = {
     "html",
     "head",
@@ -21,13 +23,6 @@ black_listed_elements = {
 
 class Crawler:
     def __init__(self):
-        try:
-            from playwright.sync_api import sync_playwright
-        except ImportError:
-            raise ValueError(
-                "Could not import playwright python package. "
-                "Please it install it with `pip install playwright`."
-            )
         self.browser = (
             sync_playwright()
             .start()

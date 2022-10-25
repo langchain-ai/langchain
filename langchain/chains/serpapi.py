@@ -7,6 +7,7 @@ import sys
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
+from serpapi import GoogleSearch
 
 from langchain.chains.base import Chain
 
@@ -38,7 +39,6 @@ class SerpAPIChain(Chain, BaseModel):
             serpapi = SerpAPIChain()
     """
 
-    search_engine: Any  #: :meta private:
     input_key: str = "search_query"  #: :meta private:
     output_key: str = "search_result"  #: :meta private:
 
@@ -71,15 +71,6 @@ class SerpAPIChain(Chain, BaseModel):
                 "Did not find SerpAPI API key, please add an environment variable"
                 " `SERPAPI_API_KEY` which contains it."
             )
-        try:
-            from serpapi import GoogleSearch
-
-            values["search_engine"] = GoogleSearch
-        except ImportError:
-            raise ValueError(
-                "Could not import serpapi python package. "
-                "Please it install it with `pip install google-search-results`."
-            )
         return values
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
@@ -92,7 +83,7 @@ class SerpAPIChain(Chain, BaseModel):
             "hl": "en",
         }
         with HiddenPrints():
-            search = self.search_engine(params)
+            search = GoogleSearch(params)
             res = search.get_dict()
 
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():

@@ -2,6 +2,7 @@
 import os
 from typing import Any, Dict, List, Mapping, Optional
 
+import openai
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
@@ -51,15 +52,6 @@ class OpenAI(BaseModel, LLM):
                 "Did not find OpenAI API key, please add an environment variable"
                 " `OPENAI_API_KEY` which contains it."
             )
-        try:
-            import openai
-
-            values["client"] = openai.Completion
-        except ImportError:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
-            )
         return values
 
     @property
@@ -90,7 +82,7 @@ class OpenAI(BaseModel, LLM):
 
                 response = openai("Tell me a joke.")
         """
-        response = self.client.create(
+        response = openai.Completion.create(
             model=self.model_name, prompt=prompt, stop=stop, **self._default_params
         )
         return response["choices"][0]["text"]
