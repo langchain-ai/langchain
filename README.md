@@ -26,10 +26,23 @@ It aims to create:
 
 ## 🔧 Setting up your environment
 
-Besides the installation of this python package, you will also need to set environment variables for the services that call out to authenticated APIs. You do not need to set an environment variable unless you plan on using that API. Please see below for a comprehensive list of the APIs that require an API key, and the associated environment variable that you should set.
-- OpenAI: `OPENAI_API_KEY`
-- Cohere: `COHERE_API_KEY`
-- SerpAPI (Google Search): `SERPAPI_API_KEY`
+Besides the installation of this python package, you will also need to install packages and set environment variables depending on which chains you want to use.
+
+Note: the reason these packages are not included in the dependencies by default is that as we imagine scaling this package, we do not want to force dependencies that are not needed.
+
+The following use cases require specific installs and environment variables:
+
+- *OpenAI*:
+  - Install requirements with `pip install openai`
+  - Set the following environment variable: `OPENAI_API_KEY`
+- *Cohere*:
+  - Install requirements with `pip install cohere`
+  - Set the following environment variable: `COHERE_API_KEY`
+- *SerpAPI*:
+  - Install requirements with `pip install google-search-results`
+  - Set the following environment variable: `SERPAPI_API_KEY`
+- *NatBot*:
+  - Install requirements with `pip install playwright`
 
 ## 🚀 What can I do with this
 

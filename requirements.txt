@@ -7,3 +7,4 @@ flake8-docstrings
 cohere
 openai
 google-search-results
+playwright
