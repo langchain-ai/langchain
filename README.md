@@ -24,6 +24,13 @@ It aims to create:
 2. a flexible interface for combining pieces into a single comprehensive "chain"
 3. a schema for easily saving and sharing those chains
 
+## Setting up your environment
+
+Besides the installation of this python package, you will also need to set environment variables for the services that call out to authenticated APIs. You do not need to set an environment variable unless you plan on using that API. Please see below for a comprehensive list of the APIs that require an API key, and the associated environment variable that you should set.
+- OpenAI: `OPENAI_API_KEY`
+- Cohere: `COHERE_API_KEY`
+- SerpAPI (Google Search): `SERPAPI_API_KEY`
+
 ## 🚀 What can I do with this
 
 This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:
