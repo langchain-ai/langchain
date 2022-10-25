@@ -24,6 +24,26 @@ It aims to create:
 2. a flexible interface for combining pieces into a single comprehensive "chain"
 3. a schema for easily saving and sharing those chains
 
+## 🔧 Setting up your environment
+
+Besides the installation of this python package, you will also need to install packages and set environment variables depending on which chains you want to use.
+
+Note: the reason these packages are not included in the dependencies by default is that as we imagine scaling this package, we do not want to force dependencies that are not needed.
+
+The following use cases require specific installs and environment variables:
+
+- *OpenAI*:
+  - Install requirements with `pip install openai`
+  - Set the following environment variable: `OPENAI_API_KEY`
+- *Cohere*:
+  - Install requirements with `pip install cohere`
+  - Set the following environment variable: `COHERE_API_KEY`
+- *SerpAPI*:
+  - Install requirements with `pip install google-search-results`
+  - Set the following environment variable: `SERPAPI_API_KEY`
+- *NatBot*:
+  - Install requirements with `pip install playwright`
+
 ## 🚀 What can I do with this
 
 This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:

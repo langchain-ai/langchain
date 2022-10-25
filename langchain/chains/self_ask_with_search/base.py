@@ -74,12 +74,22 @@ def yellowfy(_input: str) -> str:
 
 
 class SelfAskWithSearchChain(Chain, BaseModel):
-    """Chain that does self ask with search."""
+    """Chain that does self ask with search.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
+            search_chain = SerpAPIChain()
+            self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
+    """
 
     llm: LLM
+    """LLM wrapper to use."""
     search_chain: SerpAPIChain
-    input_key: str = "question"
-    output_key: str = "answer"
+    """Search chain to use."""
+    input_key: str = "question"  #: :meta private:
+    output_key: str = "answer"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -89,12 +99,18 @@ class SelfAskWithSearchChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input key."""
+        """Expect input key.
+
+        :meta private:
+        """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Expect output key."""
+        """Expect output key.
+
+        :meta private:
+        """
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
@@ -138,5 +154,17 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         return {self.output_key: cur_prompt + ret_text}
 
     def run(self, question: str) -> str:
-        """More user-friendly interface for interfacing with self ask with search."""
+        """Run self ask with search chain.
+
+        Args:
+            question: Question to run self-ask-with-search with.
+
+        Returns:
+            The final answer
+
+        Example:
+            .. code-block:: python
+
+                answer = selfask.run("What is the capital of Idaho?")
+        """
         return self({self.input_key: question})[self.output_key]
