@@ -12,7 +12,7 @@ from langchain.chains import (
     SelfAskWithSearchChain,
     SerpAPIChain,
 )
-from langchain.llms import Cohere, OpenAI
+from langchain.llms import Cohere, HuggingFace, OpenAI
 from langchain.prompt import Prompt
 
 __all__ = [
@@ -24,4 +24,5 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "Prompt",
+    "HuggingFace",
 ]

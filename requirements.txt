@@ -1,10 +1,15 @@
 -r test_requirements.txt
+# For linting
 black
 isort
 mypy
 flake8
 flake8-docstrings
+# For integrations
 cohere
 openai
 google-search-results
 playwright
+huggingface_hub
+# For development
+jupyter
