@@ -3,4 +3,3 @@
 
 .. automodule:: langchain.prompt
    :members:
-   :undoc-members:

@@ -37,10 +37,19 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_field_list_validators = False
+autodoc_pydantic_config_members = False
+autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_members = False
+autodoc_pydantic_model_undoc_members = False
 # autodoc_typehints = "signature"
-autodoc_typehints = "description"
+# autodoc_typehints = "description"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -62,4 +71,4 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []

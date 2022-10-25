@@ -11,11 +11,24 @@ _FORMATTER_MAPPING = {
 
 
 class Prompt(BaseModel):
-    """Schema to represent a prompt for an LLM."""
+    """Schema to represent a prompt for an LLM.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain import Prompt
+            prompt = Prompt(input_variables=["foo"], template="Say {foo}")
+    """
 
     input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
     template: str
+    """The prompt template."""
+
     template_format: str = "f-string"
+    """The format of the prompt template. Options are: 'f-string'."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -23,7 +36,20 @@ class Prompt(BaseModel):
         extra = Extra.forbid
 
     def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs."""
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            prompt.format(variable1="foo")
+        """
         return _FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
     @root_validator()

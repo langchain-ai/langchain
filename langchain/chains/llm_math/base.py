@@ -14,9 +14,11 @@ class LLMMathChain(Chain, BaseModel):
     """Chain that interprets a prompt and executes python code to do math."""
 
     llm: LLM
+    """LLM wrapper to use."""
     verbose: bool = False
-    input_key: str = "question"
-    output_key: str = "answer"
+    """Whether to print out the code that was executed."""
+    input_key: str = "question"  #: :meta private:
+    output_key: str = "answer"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -26,12 +28,18 @@ class LLMMathChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input key."""
+        """Expect input key.
+
+        :meta private:
+        """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Expect output key."""
+        """Expect output key.
+
+        :meta private:
+        """
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:

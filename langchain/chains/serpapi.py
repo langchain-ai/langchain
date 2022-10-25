@@ -26,11 +26,22 @@ class HiddenPrints:
 
 
 class SerpAPIChain(Chain, BaseModel):
-    """Chain that calls SerpAPI."""
+    """Chain that calls SerpAPI.
 
-    search_engine: Any
-    input_key: str = "search_query"
-    output_key: str = "search_result"
+    To use, you should have the ``google-search-results`` python package installed,
+    and the environment variable ``SERPAPI_API_KEY`` set with your API key.
+
+    Example:
+
+    .. code-block:: python
+
+        from langchain import SerpAPIChain
+        serpapi = SerpAPIChain()
+    """
+
+    search_engine: Any  #: :meta private:
+    input_key: str = "search_query"  #: :meta private:
+    output_key: str = "search_result"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -39,12 +50,18 @@ class SerpAPIChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the singular input key."""
+        """Return the singular input key.
+
+        :meta private:
+        """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the singular output key."""
+        """Return the singular output key.
+
+        :meta private:
+        """
         return [self.output_key]
 
     @root_validator()

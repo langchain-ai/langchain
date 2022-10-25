@@ -3,4 +3,4 @@
 
 .. automodule:: langchain.llms
    :members:
-   :undoc-members:
+   :special-members: __call__

@@ -14,17 +14,23 @@ from langchain.chains.base import Chain
 class PythonChain(Chain, BaseModel):
     """Chain to run python code."""
 
-    input_key: str = "code"
-    output_key: str = "output"
+    input_key: str = "code"  #: :meta private:
+    output_key: str = "output"  #: :meta private:
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input key."""
+        """Expect input key.
+
+        :meta private:
+        """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Return output key."""
+        """Return output key.
+
+        :meta private:
+        """
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
