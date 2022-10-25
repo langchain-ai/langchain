@@ -10,30 +10,42 @@ from langchain.chains.react.prompt import PROMPT
 from langchain.llms.base import LLM
 
 
-def wikipedia_search(search):
-    try:
-        lookup = wikipedia.summary(search).split("\n")[0]
-    except wikipedia.PageError:
-        lookup = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
+class PageWithLookups(BaseModel):
 
-    except wikipedia.DisambiguationError:
-        lookup = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
-    return lookup
+    page_content: str
+    lookup_str: str = ""
+    lookup_index = 0
 
+    @property
+    def paragraphs(self):
+        return self.page_content.split("\n\n")
 
-def wikipedia_lookup(search, lookup):
-    page_content = wikipedia.page(search).content
-    lookups = [p for p in page_content.split("\n") if lookup.lower() in p.lower()]
-    if len(lookups) == 0:
-        return "No Results"
-    return f"(Result {1}/{len(lookups)}) {lookups[0]}"
+    @property
+    def summary(self):
+        return self.paragraphs[0]
+
+    def lookup(self, string):
+        if string != self.lookup_str:
+            self.lookup_str = string.lower()
+            self.lookup_index = 0
+        else:
+            self.lookup_index += 1
+        lookups = [p for p in self.paragraphs if self.lookup_str in p.lower()]
+        if len(lookups) == 0:
+            return "No Results"
+        elif self.lookup_index >= len(lookups):
+            return "No Results"
+        else:
+            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+            return f"{result_prefix} {lookups[self.lookup_index]}"
+
 
 
 import re
 
 
 class ActionError(Exception):
-    pass
+    """An error to raise when there is no action suggested."""
 
 
 def extract_action(text, i):
@@ -74,7 +86,7 @@ class ReActChain(Chain, BaseModel):
         i = 1
         stop_seq = f"\nObservation {i}:"
         prefix = ""
-        search_term = None
+        wiki_page = None
         while True:
             ret_text = llm_chain.predict(input=prompt, stop=[stop_seq])
             prompt += ret_text
@@ -82,13 +94,21 @@ class ReActChain(Chain, BaseModel):
                 action, _input = extract_action(prefix + ret_text, i)
                 print(action, _input)
                 if action == "Search":
-                    observation = wikipedia_search(_input)
+                    try:
+                        page_content = wikipedia.page(_input).content
+                        wiki_page = PageWithLookups(page_content=page_content)
+                        observation = wiki_page.summary
+                    except wikipedia.PageError:
+                        wiki_page = None
+                        observation = f"Could not find [{_input}]. Similar: {wikipedia.search(_input)}"
+                    except wikipedia.DisambiguationError:
+                        wiki_page = None
+                        observation = f"Could not find [{_input}]. Similar: {wikipedia.search(_input)}"
                     print(observation)
-                    search_term = _input
                 elif action == "Lookup":
-                    if search_term is None:
-                        raise ValueError
-                    observation = wikipedia_lookup(search_term, _input)
+                    if wiki_page is None:
+                        raise ValueError("Cannot lookup without a successful search first")
+                    observation = wiki_page.lookup(_input)
                 elif action == "Finish":
                     return {"full_logic": prompt, self.output_key: _input}
                 else:
@@ -101,6 +121,7 @@ class ReActChain(Chain, BaseModel):
                 )
                 i += 1
                 stop_seq = f"\nObservation {i}:"
+                prefix = ""
             except ActionError:
                 prompt = prompt + f"\nAction {i}:"
                 stop_seq = f"\nObservation {i}:"

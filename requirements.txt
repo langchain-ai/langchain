@@ -8,3 +8,4 @@ cohere
 openai
 google-search-results
 playwright
+wikipedia
