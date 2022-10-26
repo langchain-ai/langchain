@@ -10,11 +10,11 @@ from langchain.llms.utils import enforce_stop_tokens
 DEFAULT_REPO_ID = "gpt2"
 
 
-class HuggingFace(BaseModel, LLM):
-    """Wrapper around HuggingFace large language models.
+class HuggingFaceHub(BaseModel, LLM):
+    """Wrapper around HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACE_API_TOKEN`` set with your API token.
+    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token.
 
     Only supports task `text-generation` for now.
 
@@ -45,10 +45,10 @@ class HuggingFace(BaseModel, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if "HUGGINGFACE_API_TOKEN" not in os.environ:
+        if "HUGGINGFACEHUB_API_TOKEN" not in os.environ:
             raise ValueError(
                 "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACE_API_TOKEN` which contains it."
+                " `HUGGINGFACEHUB_API_TOKEN` which contains it."
             )
         try:
             from huggingface_hub.inference_api import InferenceApi
@@ -56,7 +56,7 @@ class HuggingFace(BaseModel, LLM):
             repo_id = values.get("repo_id", DEFAULT_REPO_ID)
             values["client"] = InferenceApi(
                 repo_id=repo_id,
-                token=os.environ["HUGGINGFACE_API_TOKEN"],
+                token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
                 task="text-generation",
             )
         except ImportError:
@@ -96,5 +96,7 @@ class HuggingFace(BaseModel, LLM):
             raise ValueError(f"Error raised by inference API: {response['error']}")
         text = response[0]["generated_text"][len(prompt) :]
         if stop is not None:
+            # This is a bit hacky, but I can't figure out a better way to enforce
+            # stop tokens when making calls to huggingface_hub.
             text = enforce_stop_tokens(text, stop)
         return text
