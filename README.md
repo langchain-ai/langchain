@@ -38,9 +38,9 @@ The following use cases require specific installs and environment variables:
 - *Cohere*:
   - Install requirements with `pip install cohere`
   - Set the following environment variable: `COHERE_API_KEY`
-- *HuggingFace*
+- *HuggingFace Hub*
   - Install requirements with `pip install huggingface_hub`
-  - Set the following environment variable: `HUGGINGFACE_API_TOKEN`
+  - Set the following environment variable: `HUGGINGFACEHUB_API_TOKEN`
 - *SerpAPI*:
   - Install requirements with `pip install google-search-results`
   - Set the following environment variable: `SERPAPI_API_KEY`
