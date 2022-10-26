@@ -1,77 +1,14 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.react.prompt import PROMPT
+from langchain.docstore.base import Docstore
 from langchain.llms.base import LLM
-
-
-class PageWithLookups(BaseModel):
-    """Class to hold a text page that one can lookup terms in."""
-
-    page_content: str
-    lookup_str: str = ""
-    lookup_index = 0
-
-    @property
-    def paragraphs(self) -> List[str]:
-        """Paragraphs of the page."""
-        return self.page_content.split("\n\n")
-
-    @property
-    def summary(self) -> str:
-        """Summary of the page (the first paragraph)."""
-        return self.paragraphs[0]
-
-    def lookup(self, string: str) -> str:
-        """Lookup a term in the page, imitating cmd-F functionality."""
-        if string.lower() != self.lookup_str:
-            self.lookup_str = string.lower()
-            self.lookup_index = 0
-        else:
-            self.lookup_index += 1
-        lookups = [p for p in self.paragraphs if self.lookup_str in p.lower()]
-        if len(lookups) == 0:
-            return "No Results"
-        elif self.lookup_index >= len(lookups):
-            return "No More Results"
-        else:
-            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
-            return f"{result_prefix} {lookups[self.lookup_index]}"
-
-
-def search_wiki_page(search: str) -> Tuple[str, Optional[PageWithLookups]]:
-    """Try to search for wiki page.
-
-    If page exists, return the page summary, and a PageWithLookups object.
-    If page does not exist, return similar entries.
-    """
-    try:
-        import wikipedia
-    except ImportError:
-        raise ValueError(
-            "Could not import wikipedia python package. "
-            "Please it install it with `pip install wikipedia`."
-        )
-    try:
-        page_content = wikipedia.page(search).content
-        wiki_page = PageWithLookups(page_content=page_content)
-        observation = wiki_page.summary
-    except wikipedia.PageError:
-        wiki_page = None
-        observation = (
-            f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
-        )
-    except wikipedia.DisambiguationError:
-        wiki_page = None
-        observation = (
-            f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
-        )
-    return observation, wiki_page
 
 
 class ActionError(Exception):
@@ -109,6 +46,8 @@ class ReActChain(Chain, BaseModel):
 
     llm: LLM
     """LLM wrapper to use."""
+    docstore: Docstore
+    """Docstore to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -145,7 +84,7 @@ class ReActChain(Chain, BaseModel):
             prompt += ret_text
             print(action, _input)
             if action == "Search":
-                observation, wiki_page = search_wiki_page(_input)
+                observation, wiki_page = self.docstore.search(_input)
                 print(observation)
             elif action == "Lookup":
                 if wiki_page is None:

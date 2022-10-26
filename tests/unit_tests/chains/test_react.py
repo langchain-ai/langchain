@@ -1,16 +1,13 @@
 """Unit tests for ReAct."""
 
-from typing import List, Optional
-from unittest.mock import Mock, patch
+from typing import List, Optional, Tuple
 
 import pytest
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.react.base import (
-    PageWithLookups,
-    ReActChain,
-    predict_until_observation,
-)
+from langchain.chains.react.base import ReActChain, predict_until_observation
+from langchain.docstore.base import Docstore
+from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompt import Prompt
 
@@ -39,15 +36,24 @@ class FakeListLLM(LLM):
         return self.responses[self.i]
 
 
+class FakeDocstore(Docstore):
+    """Fake docstore for testing purposes."""
+
+    def search(self, search: str) -> Tuple[str, Optional[Document]]:
+        """Return the fake document."""
+        document = Document(page_content=_PAGE_CONTENT)
+        return document.summary, document
+
+
 def test_page_with_lookups_summary() -> None:
     """Test that we extract the summary okay."""
-    page = PageWithLookups(page_content=_PAGE_CONTENT)
+    page = Document(page_content=_PAGE_CONTENT)
     assert page.summary == "This is a page about LangChain."
 
 
 def test_page_with_lookups_lookup() -> None:
     """Test that can lookup things okay."""
-    page = PageWithLookups(page_content=_PAGE_CONTENT)
+    page = Document(page_content=_PAGE_CONTENT)
 
     # Start with lookup on "LangChain".
     output = page.lookup("LangChain")
@@ -68,7 +74,7 @@ def test_page_with_lookups_lookup() -> None:
 
 def test_page_with_lookups_dont_exist() -> None:
     """Test lookup on term that doesn't exist in the page."""
-    page = PageWithLookups(page_content=_PAGE_CONTENT)
+    page = Document(page_content=_PAGE_CONTENT)
 
     # Start with lookup on "harrison".
     output = page.lookup("harrison")
@@ -77,7 +83,7 @@ def test_page_with_lookups_dont_exist() -> None:
 
 def test_page_with_lookups_too_many() -> None:
     """Test lookup on term too many times."""
-    page = PageWithLookups(page_content=_PAGE_CONTENT)
+    page = Document(page_content=_PAGE_CONTENT)
 
     # Start with lookup on "framework".
     output = page.lookup("framework")
@@ -127,12 +133,9 @@ def test_react_chain() -> None:
         "Ah okay now I know the answer\nAction 3: Finish[2022]",
     ]
     fake_llm = FakeListLLM(responses)
-    react_chain = ReActChain(llm=fake_llm)
+    react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     inputs = {"question": "when was langchain made"}
-    fake_return = Mock()
-    fake_return.content = _PAGE_CONTENT
-    with patch("wikipedia.page", return_value=fake_return):
-        output = react_chain(inputs)
+    output = react_chain(inputs)
     assert output["answer"] == "2022"
     expected_full_output = (
         "when was langchain made\n"
@@ -154,6 +157,6 @@ def test_react_chain_bad_action() -> None:
         "I should probably search\nAction 1: BadAction[langchain]",
     ]
     fake_llm = FakeListLLM(responses)
-    react_chain = ReActChain(llm=fake_llm)
+    react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     with pytest.raises(ValueError):
         react_chain.run("when was langchain made")

@@ -13,6 +13,7 @@ from langchain.chains import (
     SelfAskWithSearchChain,
     SerpAPIChain,
 )
+from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, OpenAI
 from langchain.prompt import Prompt
 
@@ -26,4 +27,5 @@ __all__ = [
     "OpenAI",
     "Prompt",
     "ReActChain",
+    "Wikipedia",
 ]
