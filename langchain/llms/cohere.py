@@ -56,7 +56,7 @@ class Cohere(BaseModel, LLM):
         extra = Extra.forbid
 
     @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if "COHERE_API_KEY" not in os.environ:
             raise ValueError(
