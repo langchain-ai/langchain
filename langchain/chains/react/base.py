@@ -1,6 +1,6 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import wikipedia
 from pydantic import BaseModel, Extra
@@ -39,10 +39,33 @@ class PageWithLookups(BaseModel):
         if len(lookups) == 0:
             return "No Results"
         elif self.lookup_index >= len(lookups):
-            return "No Results"
+            return "No More Results"
         else:
             result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
             return f"{result_prefix} {lookups[self.lookup_index]}"
+
+
+def search_wiki_page(search: str) -> Tuple[str, Optional[PageWithLookups]]:
+    """Try to search for wiki page.
+
+    If page exists, return the page summary, and a PageWithLookups object.
+    If page does not exist, return similar entries.
+    """
+    try:
+        page_content = wikipedia.page(search).content
+        wiki_page = PageWithLookups(page_content=page_content)
+        observation = wiki_page.summary
+    except wikipedia.PageError:
+        wiki_page = None
+        observation = (
+            f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
+        )
+    except wikipedia.DisambiguationError:
+        wiki_page = None
+        observation = (
+            f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
+        )
+    return observation, wiki_page
 
 
 class ActionError(Exception):
@@ -116,22 +139,7 @@ class ReActChain(Chain, BaseModel):
             prompt += ret_text
             print(action, _input)
             if action == "Search":
-                try:
-                    page_content = wikipedia.page(_input).content
-                    wiki_page = PageWithLookups(page_content=page_content)
-                    observation = wiki_page.summary
-                except wikipedia.PageError:
-                    wiki_page = None
-                    observation = (
-                        f"Could not find [{_input}]. "
-                        f"Similar: {wikipedia.search(_input)}"
-                    )
-                except wikipedia.DisambiguationError:
-                    wiki_page = None
-                    observation = (
-                        f"Could not find [{_input}]. "
-                        f"Similar: {wikipedia.search(_input)}"
-                    )
+                observation, wiki_page = search_wiki_page(_input)
                 print(observation)
             elif action == "Lookup":
                 if wiki_page is None:

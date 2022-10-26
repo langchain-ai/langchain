@@ -3,6 +3,7 @@
 from langchain.chains.react.base import ReActChain
 from langchain.llms.openai import OpenAI
 
+
 def test_react() -> None:
     """Test functionality on a prompt."""
     llm = OpenAI(temperature=0)
