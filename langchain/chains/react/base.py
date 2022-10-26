@@ -2,7 +2,6 @@
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-import wikipedia
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
@@ -51,6 +50,13 @@ def search_wiki_page(search: str) -> Tuple[str, Optional[PageWithLookups]]:
     If page exists, return the page summary, and a PageWithLookups object.
     If page does not exist, return similar entries.
     """
+    try:
+        import wikipedia
+    except ImportError:
+        raise ValueError(
+            "Could not import wikipedia python package. "
+            "Please it install it with `pip install wikipedia`."
+        )
     try:
         page_content = wikipedia.page(search).content
         wiki_page = PageWithLookups(page_content=page_content)
