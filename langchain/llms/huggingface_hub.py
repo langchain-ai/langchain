@@ -68,7 +68,7 @@ class HuggingFaceHub(BaseModel, LLM):
 
     @property
     def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling HuggingFace Hub API."""
         return {
             "temperature": self.temperature,
             "max_new_tokens": self.max_new_tokens,
