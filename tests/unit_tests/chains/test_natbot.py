@@ -3,18 +3,18 @@
 from typing import List, Optional
 
 from langchain.chains.natbot.base import NatBotChain
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 
 
 class FakeLLM(LLM):
     """Fake LLM wrapper for testing purposes."""
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
-            return "foo"
+            return [CompletionOutput("foo")]
         else:
-            return "bar"
+            return [CompletionOutput("bar")]
 
 
 def test_proper_inputs() -> None:

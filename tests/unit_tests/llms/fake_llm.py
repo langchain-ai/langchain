@@ -1,7 +1,7 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import List, Mapping, Optional
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 
 
 class FakeLLM(LLM):
@@ -11,11 +11,11 @@ class FakeLLM(LLM):
         """Initialize with optional lookup of queries."""
         self._queries = queries
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
         if self._queries is not None:
             return self._queries[prompt]
         if stop is None:
-            return "foo"
+            return [CompletionOutput("foo")]
         else:
-            return "bar"
+            return [CompletionOutput("bar")]

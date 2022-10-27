@@ -8,7 +8,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.react.base import ReActChain, predict_until_observation
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 from langchain.prompt import Prompt
 
 _PAGE_CONTENT = """This is a page about LangChain.
@@ -30,10 +30,10 @@ class FakeListLLM(LLM):
         self.responses = responses
         self.i = -1
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Increment counter, and then return response in that index."""
         self.i += 1
-        return self.responses[self.i]
+        return [CompletionOutput(self.responses[self.i])]
 
 
 class FakeDocstore(Docstore):
