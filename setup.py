@@ -14,7 +14,7 @@ setup(
     version=__version__,
     packages=find_packages(),
     description="Building applications with LLMs through composability",
-    install_requires=["pydantic"],
+    install_requires=["pydantic", "sqlalchemy"],
     long_description=long_description,
     license="MIT",
     url="https://github.com/hwchase17/langchain",
