@@ -2,6 +2,7 @@
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.python import PythonChain
+from langchain.chains.react.base import ReActChain
 from langchain.chains.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.chains.serpapi import SerpAPIChain
 
@@ -11,4 +12,5 @@ __all__ = [
     "PythonChain",
     "SelfAskWithSearchChain",
     "SerpAPIChain",
+    "ReActChain",
 ]

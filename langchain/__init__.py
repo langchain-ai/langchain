@@ -9,9 +9,11 @@ from langchain.chains import (
     LLMChain,
     LLMMathChain,
     PythonChain,
+    ReActChain,
     SelfAskWithSearchChain,
     SerpAPIChain,
 )
+from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompt import Prompt
 
@@ -24,5 +26,7 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "Prompt",
+    "ReActChain",
+    "Wikipedia",
     "HuggingFaceHub",
 ]
