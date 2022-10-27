@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 from langchain.llms.utils import enforce_stop_tokens
 
 
@@ -18,11 +18,11 @@ class Cohere(BaseModel, LLM):
         .. code-block:: python
 
             from langchain import Cohere
-            cohere = Cohere(model="gptd-instruct-tft")
+            cohere = Cohere(model="small")
     """
 
     client: Any  #: :meta private:
-    model: str = "gptd-instruct-tft"
+    model: str = "small"
     """Model name to use."""
 
     max_tokens: int = 256
@@ -42,6 +42,12 @@ class Cohere(BaseModel, LLM):
 
     presence_penalty: int = 0
     """Penalizes repeated tokens."""
+
+    num_generations: int = 1
+    """Number of generations to return."""
+
+    return_likelihoods: bool = True
+    """Whether to return the likelihoods of the generated tokens."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -67,7 +73,7 @@ class Cohere(BaseModel, LLM):
             )
         return values
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Call out to Cohere's generate endpoint.
 
         Args:
@@ -92,10 +98,22 @@ class Cohere(BaseModel, LLM):
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty,
             stop_sequences=stop,
+            num_generations=self.num_generations,
+            return_likelihoods="GENERATION" if self.return_likelihoods else None,
         )
-        text = response.generations[0].text
-        # If stop tokens are provided, Cohere's endpoint returns them.
-        # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
-        return text
+        results = []
+        for generation in response.generations:
+            txt = generation.text
+            if stop is not None:
+                # If stop tokens are provided, Cohere's endpoint returns them.
+                # In order to make this consistent with other endpoints, we strip them.
+                txt = enforce_stop_tokens(txt, stop)
+            N = len(generation.token_likelihoods)
+            logprobs = [token.likelihood / N for token in generation.token_likelihoods]
+            results.append(
+                CompletionOutput(
+                    text=txt,
+                    logprobs=logprobs,
+                )
+            )
+        return results

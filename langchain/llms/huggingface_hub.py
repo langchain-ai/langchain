@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_REPO_ID = "gpt2"
@@ -69,14 +69,22 @@ class HuggingFaceHub(BaseModel, LLM):
     @property
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling HuggingFace Hub API."""
+        # Convert temperature from [0, 1] to [1, 100] so 0 maps to 1 and 1 maps to 100.
+        temperature = self.temperature
+        if 0.0 <= temperature <= 1.0:
+            temperature = 1.0 + (temperature * 99.0)
+        # TODO: Add support for returning logprobs once added to the API.
         return {
-            "temperature": self.temperature,
+            "temperature": temperature,
             "max_new_tokens": self.max_new_tokens,
             "top_p": self.top_p,
             "num_return_sequences": self.num_return_sequences,
+            "return_full_text": False,
         }
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(
+        self, prompt: str, stop: Optional[List[str]] = None
+    ) -> List[CompletionOutput]:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:
@@ -94,9 +102,14 @@ class HuggingFaceHub(BaseModel, LLM):
         response = self.client(inputs=prompt, params=self._default_params)
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
-        text = response[0]["generated_text"][len(prompt) :]
         if stop is not None:
-            # This is a bit hacky, but I can't figure out a better way to enforce
-            # stop tokens when making calls to huggingface_hub.
-            text = enforce_stop_tokens(text, stop)
-        return text
+            return []
+        results = []
+        for result in response:
+            text = result["generated_text"]
+            if stop is not None:
+                # This is a bit hacky, but I can't figure out a better way to enforce
+                # stop tokens when making calls to huggingface_hub.
+                text = enforce_stop_tokens(text, stop)
+            results.append(CompletionOutput(text=text))
+        return results

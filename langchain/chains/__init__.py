@@ -5,12 +5,13 @@ from langchain.chains.python import PythonChain
 from langchain.chains.react.base import ReActChain
 from langchain.chains.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.chains.serpapi import SerpAPIChain
-
+from langchain.chains.self_consistency.base import SelfConsistencyChain
 __all__ = [
     "LLMChain",
     "LLMMathChain",
     "PythonChain",
     "SelfAskWithSearchChain",
+    "SelfConsistencyChain",
     "SerpAPIChain",
     "ReActChain",
 ]

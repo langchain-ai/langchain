@@ -4,8 +4,20 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, CompletionOutput
 
+
+def _get_completion_logprobs(txt: str, tokens : List[str], token_logprobs: List[float]) -> List[float]:
+    """Get the log probabilities corresponding to the tokens generated."""
+    N = len(txt)
+    _total = 0
+    results = []
+    for i in range(len(tokens)):
+        if _total >= N:
+            break
+        _total += len(tokens[i])
+        results.append(token_logprobs[i])
+    return results
 
 class OpenAI(BaseModel, LLM):
     """Wrapper around OpenAI large language models.
@@ -37,6 +49,9 @@ class OpenAI(BaseModel, LLM):
     """How many completions to generate for each prompt."""
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
+    logprobs: Optional[int] = 0
+    """Returns the log probabilities of the generated tokens."""
+
 
     class Config:
         """Configuration for this pydantic object."""
@@ -73,9 +88,10 @@ class OpenAI(BaseModel, LLM):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "best_of": self.best_of,
+            "logprobs": self.logprobs,
         }
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Call out to OpenAI's create endpoint.
 
         Args:
@@ -93,4 +109,14 @@ class OpenAI(BaseModel, LLM):
         response = self.client.create(
             model=self.model_name, prompt=prompt, stop=stop, **self._default_params
         )
-        return response["choices"][0]["text"]
+
+        results = []
+        for choice in response["choices"]:
+            text = choice["text"]
+            truncated_logprobs = None
+            if choice["logprobs"] is not None:
+                tokens = choice["logprobs"]["tokens"]
+                token_logprobs = choice["logprobs"]["token_logprobs"]
+                truncated_logprobs = _get_completion_logprobs(choice["text"], tokens, token_logprobs)
+            results.append(CompletionOutput(text=text, logprobs=truncated_logprobs))
+        return results

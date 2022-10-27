@@ -12,6 +12,7 @@ from langchain.chains import (
     ReActChain,
     SelfAskWithSearchChain,
     SerpAPIChain,
+    SelfConsistencyChain,
 )
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
@@ -22,6 +23,7 @@ __all__ = [
     "LLMMathChain",
     "PythonChain",
     "SelfAskWithSearchChain",
+    "SelfConsistencyChain",
     "SerpAPIChain",
     "Cohere",
     "OpenAI",
