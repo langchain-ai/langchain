@@ -46,6 +46,8 @@ The following use cases require specific installs and environment variables:
   - Set the following environment variable: `SERPAPI_API_KEY`
 - *NatBot*:
   - Install requirements with `pip install playwright`
+- *Wikipedia*:
+  - Install requirements with `pip install wikipedia`
 
 ## 🚀 What can I do with this
 
