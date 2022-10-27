@@ -10,6 +10,7 @@ cohere
 openai
 google-search-results
 playwright
+wikipedia
 huggingface_hub
 # For development
 jupyter
