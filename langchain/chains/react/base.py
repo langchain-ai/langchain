@@ -11,10 +11,6 @@ from langchain.docstore.base import Docstore
 from langchain.llms.base import LLM
 
 
-class ActionError(Exception):
-    """An error to raise when there is no action suggested."""
-
-
 def predict_until_observation(
     llm_chain: LLMChain, prompt: str, i: int
 ) -> Tuple[str, str, str]:
@@ -22,12 +18,15 @@ def predict_until_observation(
     action_prefix = f"Action {i}: "
     stop_seq = f"\nObservation {i}:"
     ret_text = llm_chain.predict(input=prompt, stop=[stop_seq])
+    # Sometimes the LLM forgets to take an action, so we prompt it to.
     while not ret_text.split("\n")[-1].startswith(action_prefix):
         ret_text += f"\nAction {i}:"
         new_text = llm_chain.predict(input=prompt + ret_text, stop=[stop_seq])
         ret_text += new_text
+    # The action block should be the last line.
     action_block = ret_text.split("\n")[-1]
     action_str = action_block[len(action_prefix) :]
+    # Parse out the action and the directive.
     re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
     if re_matches is None:
         raise ValueError(f"Could not parse action directive: {action_str}")
@@ -78,20 +77,22 @@ class ReActChain(Chain, BaseModel):
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         prompt = f"{question}\nThought 1:"
         i = 1
-        wiki_page = None
+        document = None
         while True:
-            ret_text, action, _input = predict_until_observation(llm_chain, prompt, i)
+            ret_text, action, directive = predict_until_observation(
+                llm_chain, prompt, i
+            )
             prompt += ret_text
-            print(action, _input)
+            print(action, directive)
             if action == "Search":
-                observation, wiki_page = self.docstore.search(_input)
+                observation, document = self.docstore.search(directive)
                 print(observation)
             elif action == "Lookup":
-                if wiki_page is None:
+                if document is None:
                     raise ValueError("Cannot lookup without a successful search first")
-                observation = wiki_page.lookup(_input)
+                observation = document.lookup(directive)
             elif action == "Finish":
-                return {"full_logic": prompt, self.output_key: _input}
+                return {"full_logic": prompt, self.output_key: directive}
             else:
                 raise ValueError(f"Got unknown action directive: {action}")
             prompt += f"\nObservation {i}: " + observation + f"\nThought {i + 1}:"

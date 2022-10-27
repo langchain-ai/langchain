@@ -14,7 +14,7 @@ from langchain.chains import (
     SerpAPIChain,
 )
 from langchain.docstore import Wikipedia
-from langchain.llms import Cohere, OpenAI
+from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompt import Prompt
 
 __all__ = [
@@ -28,4 +28,5 @@ __all__ = [
     "Prompt",
     "ReActChain",
     "Wikipedia",
+    "HuggingFaceHub",
 ]

@@ -5,14 +5,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-
-
-def remove_stop_tokens(text: str, stop: List[str]) -> str:
-    """Remove stop tokens, should they occur at end."""
-    for s in stop:
-        if text.endswith(s):
-            return text[: -len(s)]
-    return text
+from langchain.llms.utils import enforce_stop_tokens
 
 
 class Cohere(BaseModel, LLM):
@@ -56,7 +49,7 @@ class Cohere(BaseModel, LLM):
         extra = Extra.forbid
 
     @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if "COHERE_API_KEY" not in os.environ:
             raise ValueError(
@@ -104,5 +97,5 @@ class Cohere(BaseModel, LLM):
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
         if stop is not None:
-            text = remove_stop_tokens(text, stop)
+            text = enforce_stop_tokens(text, stop)
         return text
