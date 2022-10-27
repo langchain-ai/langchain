@@ -14,8 +14,8 @@ class FakeLLM(LLM):
     def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
         if self._queries is not None:
-            return self._queries[prompt]
+            return [CompletionOutput(text=self._queries[prompt])]
         if stop is None:
-            return [CompletionOutput("foo")]
+            return [CompletionOutput(text="foo")]
         else:
-            return [CompletionOutput("bar")]
+            return [CompletionOutput(text="bar")]

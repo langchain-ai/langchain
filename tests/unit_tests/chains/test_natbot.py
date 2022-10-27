@@ -12,9 +12,9 @@ class FakeLLM(LLM):
     def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
-            return [CompletionOutput("foo")]
+            return [CompletionOutput(text="foo")]
         else:
-            return [CompletionOutput("bar")]
+            return [CompletionOutput(text="bar")]
 
 
 def test_proper_inputs() -> None:

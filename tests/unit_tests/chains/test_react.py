@@ -33,7 +33,7 @@ class FakeListLLM(LLM):
     def generate(self, prompt: str, stop: Optional[List[str]] = None) -> List[CompletionOutput]:
         """Increment counter, and then return response in that index."""
         self.i += 1
-        return [CompletionOutput(self.responses[self.i])]
+        return [CompletionOutput(text=self.responses[self.i])]
 
 
 class FakeDocstore(Docstore):
