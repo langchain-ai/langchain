@@ -74,15 +74,12 @@ class Prompt(BaseModel):
     @classmethod
     def from_examples(
         cls,
-        examples: List[Dict],
+        examples: List[str],
         suffix: str,
         input_variables: List[str],
-        example_prompt: "Prompt",
         example_separator: str = "\n",
         prefix="",
     ):
-        example_str = example_separator.join(
-            [example_prompt.format(**example) for example in examples]
-        )
+        example_str = example_separator.join(examples)
         template = prefix + example_str + suffix
         return cls(input_variables=input_variables, template=template)
