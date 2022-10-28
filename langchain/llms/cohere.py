@@ -22,7 +22,7 @@ class Cohere(BaseModel, LLM):
     """
 
     client: Any  #: :meta private:
-    model: str = None
+    model: Optional[str] = None
     """Model name to use."""
 
     max_tokens: int = 256
