@@ -12,10 +12,12 @@ from langchain.chains import (
     ReActChain,
     SelfAskWithSearchChain,
     SerpAPIChain,
+    SQLDatabaseChain,
 )
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompt import Prompt
+from langchain.sql_database import SQLDatabase
 
 __all__ = [
     "LLMChain",
@@ -29,4 +31,6 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
+    "SQLDatabase",
+    "SQLDatabaseChain",
 ]

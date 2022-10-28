@@ -5,6 +5,7 @@ from langchain.chains.python import PythonChain
 from langchain.chains.react.base import ReActChain
 from langchain.chains.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.chains.serpapi import SerpAPIChain
+from langchain.chains.sql_database.base import SQLDatabaseChain
 
 __all__ = [
     "LLMChain",
@@ -13,4 +14,5 @@ __all__ = [
     "SelfAskWithSearchChain",
     "SerpAPIChain",
     "ReActChain",
+    "SQLDatabaseChain",
 ]
