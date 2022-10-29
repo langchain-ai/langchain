@@ -12,6 +12,7 @@ _FORMATTER_MAPPING = {
 # necessary for type-hinting on clsmethod Prompt.from_examples
 TPrompt = TypeVar('TPrompt', bound='Prompt')
 
+
 class Prompt(BaseModel):
     """Schema to represent a prompt for an LLM.
 
@@ -82,6 +83,7 @@ class Prompt(BaseModel):
         example_separator: str = "\n",
         prefix: str = "",
     ) -> TPrompt:
+        """Take examples in list format with prefix and suffix to create a prompt."""
         example_str = example_separator.join(examples)
         template = prefix + example_str + suffix
         return cls(input_variables=input_variables, template=template)

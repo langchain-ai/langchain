@@ -38,8 +38,8 @@ def test_prompt_wrong_input_variables() -> None:
 
 
 def test_prompt_from_examples_valid() -> None:
-    """Test error is raised if prompt cannot be successfully constructed from examples"""
-    template ="""Test Prompt:
+    """Test prompt can be successfully constructed from examples."""
+    template = """Test Prompt:
 
 Question: who are you?
 Answer: foo
@@ -57,10 +57,17 @@ Answer:"""
         """Question: who are you?\nAnswer: foo""",
         """Question: what are you?\nAnswer: bar"""
     ]
-    prompt_from_examples = Prompt.from_examples(examples, suffix, input_variables, example_separator, prefix)
+    prompt_from_examples = Prompt.from_examples(
+        examples,
+        suffix,
+        input_variables,
+        example_separator,
+        prefix
+    )
     prompt_from_template = Prompt(input_variables=input_variables, template=template)
     assert prompt_from_examples.template == prompt_from_template.template
     assert prompt_from_examples.input_variables == prompt_from_template.input_variables
+
 
 def test_prompt_invalid_template_format() -> None:
     """Test initializing a prompt with invalid template format."""
