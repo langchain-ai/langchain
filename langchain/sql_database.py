@@ -5,6 +5,7 @@ from sqlalchemy.engine import Engine
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
+    n = 10
 
     def __init__(self, engine: Engine):
         """Create engine from database URI."""
@@ -26,7 +27,7 @@ class SQLDatabase:
         template = "The '{table_name}' table has columns: {columns}."
         tables = []
         inspector = inspect(self._engine)
-        for table_name in inspector.get_table_names():
+        for table_name in inspector.get_table_names()[:self.n]:
             columns = []
             for column in inspector.get_columns(table_name):
                 columns.append(f"{column['name']} ({str(column['type'])})")
