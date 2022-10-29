@@ -1,5 +1,5 @@
 """Prompt schema definition."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TypeVar
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -8,6 +8,9 @@ from langchain.formatting import formatter
 _FORMATTER_MAPPING = {
     "f-string": formatter.format,
 }
+
+# necessary to correctly type the from_examples clsmethod
+TPrompt = TypeVar("TPrompt", bound="Prompt")
 
 
 class Prompt(BaseModel):
@@ -79,7 +82,7 @@ class Prompt(BaseModel):
         input_variables: List[str],
         example_separator: str = "\n",
         prefix: str = "",
-    ) -> Prompt:
+    ) -> TPrompt:
         example_str = example_separator.join(examples)
         template = prefix + example_str + suffix
         return cls(input_variables=input_variables, template=template)

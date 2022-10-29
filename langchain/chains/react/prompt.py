@@ -107,8 +107,7 @@ and Leonid Levin have the same type of work.
 Action 3: Finish[yes]"""]
 PREFIX=""
 EXAMPLE_SEPARATOR = """\n\n"""
-SUFFIX = """
-Question: {input}"""
+SUFFIX = """\n\nQuestion: {input}"""
 _DEFAULT_TEMPLATE = PREFIX + EXAMPLE_SEPARATOR.join(EXAMPLES) + SUFFIX
 
 PROMPT = Prompt(
