@@ -78,8 +78,8 @@ class Prompt(BaseModel):
         suffix: str,
         input_variables: List[str],
         example_separator: str = "\n",
-        prefix="",
-    ):
+        prefix: str = "",
+    ) -> Prompt:
         example_str = example_separator.join(examples)
         template = prefix + example_str + suffix
         return cls(input_variables=input_variables, template=template)
