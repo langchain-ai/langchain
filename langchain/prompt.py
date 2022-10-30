@@ -70,3 +70,17 @@ class Prompt(BaseModel):
         except KeyError:
             raise ValueError("Invalid prompt schema.")
         return values
+
+    @classmethod
+    def from_examples(
+        cls,
+        examples: List[str],
+        suffix: str,
+        input_variables: List[str],
+        example_separator: str = "\n\n",
+        prefix: str = "",
+    ) -> "Prompt":
+        """Take examples in list format with prefix and suffix to create a prompt."""
+        example_str = example_separator.join(examples)
+        template = prefix + example_str + suffix
+        return cls(input_variables=input_variables, template=template)
