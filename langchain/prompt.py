@@ -77,7 +77,7 @@ class Prompt(BaseModel):
         examples: List[str],
         suffix: str,
         input_variables: List[str],
-        example_separator: str = "\n",
+        example_separator: str = "\n\n",
         prefix: str = "",
     ) -> "Prompt":
         """Take examples in list format with prefix and suffix to create a prompt."""

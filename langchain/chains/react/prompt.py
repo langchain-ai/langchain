@@ -107,12 +107,10 @@ Thought 3: Leonid Levin is a mathematician and computer scientist. So Pavel Urys
 and Leonid Levin have the same type of work.
 Action 3: Finish[yes]""",
 ]
-PREFIX = ""
-EXAMPLE_SEPARATOR = """\n\n"""
 SUFFIX = """\n\nQuestion: {input}"""
-_DEFAULT_TEMPLATE = PREFIX + EXAMPLE_SEPARATOR.join(EXAMPLES) + SUFFIX
 
-PROMPT = Prompt(
-    input_variables=["input"],
-    template=_DEFAULT_TEMPLATE,
+PROMPT = Prompt.from_examples(
+    EXAMPLES,
+    SUFFIX,
+    ["input"],
 )

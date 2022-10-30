@@ -58,7 +58,11 @@ Answer:"""
         """Question: what are you?\nAnswer: bar""",
     ]
     prompt_from_examples = Prompt.from_examples(
-        examples, suffix, input_variables, example_separator, prefix
+        examples,
+        suffix,
+        input_variables,
+        example_separator=example_separator,
+        prefix=prefix,
     )
     prompt_from_template = Prompt(input_variables=input_variables, template=template)
     assert prompt_from_examples.template == prompt_from_template.template
