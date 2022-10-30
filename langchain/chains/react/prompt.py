@@ -1,7 +1,8 @@
 # flake8: noqa
 from langchain.prompt import Prompt
 
-_DEFAULT_TEMPLATE = """Question: What is the elevation range for the area that the eastern sector of the
+EXAMPLES = [
+    """Question: What is the elevation range for the area that the eastern sector of the
 Colorado orogeny extends into?
 Thought 1: I need to search Colorado orogeny, find the area that the eastern sector
 of the Colorado orogeny extends into, then find the elevation range of the
@@ -25,9 +26,8 @@ High Plains rise in elevation from around 1,800 to 7,000 ft (550 to 2,130
 m).[3]
 Thought 5: High Plains rise in elevation from around 1,800 to 7,000 ft, so the answer
 is 1,800 to 7,000 ft.
-Action 5: Finish[1,800 to 7,000 ft]
-
-Question: Musician and satirist Allie Goertz wrote a song about the "The Simpsons"
+Action 5: Finish[1,800 to 7,000 ft]""",
+    """Question: Musician and satirist Allie Goertz wrote a song about the "The Simpsons"
 character Milhouse, who Matt Groening named after who?
 Thought 1: The question simplifies to "The Simpsons" character Milhouse is named after
 who. I only need to search Milhouse and find who it is named after.
@@ -42,9 +42,8 @@ Observation 2: (Result 1 / 1) Milhouse was named after U.S. president Richard Ni
 middle name was Milhous.
 Thought 3: Milhouse was named after U.S. president Richard Nixon, so the answer is
 Richard Nixon.
-Action 3: Finish[Richard Nixon]
-
-Question: Which documentary is about Finnish rock groups, Adam Clayton Powell or The
+Action 3: Finish[Richard Nixon]""",
+    """Question: Which documentary is about Finnish rock groups, Adam Clayton Powell or The
 Saimaa Gesture?
 Thought 1: I need to search Adam Clayton Powell and The Saimaa Gesture, and find which
 documentary is about Finnish rock groups.
@@ -62,9 +61,8 @@ as part of the PBS series The American Experience.
 Thought 3: Adam Clayton Powell (film) is a documentary about an African-American
 politician, not Finnish rock groups. So the documentary about Finnish rock
 groups must instead be The Saimaa Gesture.
-Action 3: Finish[The Saimaa Gesture]
-
-Question: What profession does Nicholas Ray and Elia Kazan have in common?
+Action 3: Finish[The Saimaa Gesture]""",
+    """Question: What profession does Nicholas Ray and Elia Kazan have in common?
 Thought 1: I need to search Nicholas Ray and Elia Kazan, find their professions, then
 find the profession they have in common.
 Action 1: Search[Nicholas Ray]
@@ -79,9 +77,8 @@ and actor.
 Thought 3: Professions of Elia Kazan are director, producer, screenwriter, and actor.
 So profession Nicholas Ray and Elia Kazan have in common is director,
 screenwriter, and actor.
-Action 3: Finish[director, screenwriter, actor]
-
-Question: Which magazine was started first Arthur’s Magazine or First for Women?
+Action 3: Finish[director, screenwriter, actor]""",
+    """Question: Which magazine was started first Arthur’s Magazine or First for Women?
 Thought 1: I need to search Arthur’s Magazine and First for Women, and find which was
 started first.
 Action 1: Search[Arthur’s Magazine]
@@ -94,9 +91,8 @@ Observation 2: First for Women is a woman’s magazine published by Bauer Media 
 USA.[1] The magazine was started in 1989.
 Thought 3: First for Women was started in 1989. 1844 (Arthur’s Magazine) < 1989 (First
 for Women), so Arthur’s Magazine was started first.
-Action 3: Finish[Arthur’s Magazine]
-
-Question: Were Pavel Urysohn and Leonid Levin known for the same type of work?
+Action 3: Finish[Arthur’s Magazine]""",
+    """Question: Were Pavel Urysohn and Leonid Levin known for the same type of work?
 Thought 1: I need to search Pavel Urysohn and Leonid Levin, find their types of work,
 then find if they are the same.
 Action 1: Search[Pavel Urysohn]
@@ -109,10 +105,12 @@ Observation 2: Leonid Anatolievich Levin is a Soviet-American mathematician and 
 scientist.
 Thought 3: Leonid Levin is a mathematician and computer scientist. So Pavel Urysohn
 and Leonid Levin have the same type of work.
-Action 3: Finish[yes]
+Action 3: Finish[yes]""",
+]
+SUFFIX = """\n\nQuestion: {input}"""
 
-Question: {input}"""
-PROMPT = Prompt(
-    input_variables=["input"],
-    template=_DEFAULT_TEMPLATE,
+PROMPT = Prompt.from_examples(
+    EXAMPLES,
+    SUFFIX,
+    ["input"],
 )
