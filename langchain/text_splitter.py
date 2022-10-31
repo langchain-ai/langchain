@@ -1,3 +1,4 @@
+"""Functionality for splitting text."""
 from abc import abstractmethod
 from typing import List
 
@@ -21,10 +22,8 @@ class CharacterTextSplitter(TextSplitter):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
 
-    def split_text(
-        self,
-        text: str,
-    ) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
         # We now want to combine these smaller pieces into medium size

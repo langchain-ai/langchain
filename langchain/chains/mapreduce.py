@@ -25,7 +25,9 @@ class MapReduceChain(Chain, BaseModel):
     output_key: str = "output_text"  #: :meta private:
 
     @classmethod
-    def from_params(cls, llm: LLM, prompt: Prompt, text_splitter: TextSplitter):
+    def from_params(
+        cls, llm: LLM, prompt: Prompt, text_splitter: TextSplitter
+    ) -> "MapReduceChain":
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(map_llm=llm_chain, reduce_llm=llm_chain, text_splitter=text_splitter)
