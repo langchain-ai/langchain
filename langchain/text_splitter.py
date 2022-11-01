@@ -18,6 +18,11 @@ class CharacterTextSplitter(TextSplitter):
         self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
     ):
         """Initialize with parameters."""
+        if chunk_overlap > chunk_size:
+            raise ValueError(
+                f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
+                f"({chunk_size}), should be smaller."
+            )
         self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap

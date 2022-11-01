@@ -19,8 +19,11 @@ class MapReduceChain(Chain, BaseModel):
     """Map-reduce chain."""
 
     map_llm: LLMChain
+    """LLM wrapper to use for the map step."""
     reduce_llm: LLMChain
+    """LLM wrapper to use for the reduce step."""
     text_splitter: TextSplitter
+    """Text splitter to use."""
     input_key: str = "input_text"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
 
