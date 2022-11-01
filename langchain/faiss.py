@@ -1,14 +1,18 @@
-from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
-from typing import Tuple, Optional, List, Callable
+from typing import Callable, List, Optional, Tuple
+
 import faiss
 import numpy as np
-from langchain.embeddings.base import Embeddings
+
+from langchain.docstore.base import Docstore
+from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
+from langchain.embeddings.base import Embeddings
 
-class FAISS(Docstore):
 
-    def __init__(self, embedding_function: Callable, index: faiss.IndexFlatL2, docstore: Docstore):
+class FAISS:
+    def __init__(
+        self, embedding_function: Callable, index: faiss.IndexFlatL2, docstore: Docstore
+    ):
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
@@ -24,7 +28,5 @@ class FAISS(Docstore):
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
         documents = [Document(page_content=text) for text in texts]
-        docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)} )
+        docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)})
         return cls(embedding.embed_query, index, docstore)
-
-

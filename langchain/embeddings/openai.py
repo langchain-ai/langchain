@@ -1,11 +1,15 @@
-from pydantic import BaseModel, root_validator, Extra
-from typing import Dict, List, Callable
 import os
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Extra, root_validator
+
 from langchain.embeddings.base import Embeddings
+
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """Wrapper around OpenAI embedding models."""
-    embedding_func: Callable  #: :meta private:
+
+    embedding_func: Any  #: :meta private:
     model_name: str = "babbage"
     """Model name to use."""
 
@@ -33,18 +37,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs."""
-        responses = [self.embedding_func(
-            text, engine=f"text-search-{self.model_name}-doc-001"
-        ) for text in texts]
+        responses = [
+            self.embedding_func(text, engine=f"text-search-{self.model_name}-doc-001")
+            for text in texts
+        ]
         return responses
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text."""
-        embedding = self.embedding_func(
-            text,
-            engine="text-search-babbage-query-001"
-        )
+        embedding = self.embedding_func(text, engine="text-search-babbage-query-001")
         return embedding
