@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.self_ask_with_search.prompt import PROMPT
 from langchain.chains.serpapi import SerpAPIChain
+from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 
 
@@ -88,6 +89,7 @@ class SelfAskWithSearchChain(Chain, BaseModel):
     """LLM wrapper to use."""
     search_chain: SerpAPIChain
     """Search chain to use."""
+    verbose: bool = False
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -114,44 +116,38 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        question = inputs[self.input_key]
+        chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
+        chained_input.add("\nAre follow up questions needed here:")
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         intermediate = "\nIntermediate answer:"
         followup = "Follow up:"
         finalans = "\nSo the final answer is:"
-        cur_prompt = f"{question}\nAre follow up questions needed here:"
-        print(cur_prompt, end="")
-        ret_text = llm_chain.predict(input=cur_prompt, stop=[intermediate])
-        print(greenify(ret_text), end="")
+        ret_text = llm_chain.predict(input=chained_input.input, stop=[intermediate])
+        chained_input.add(ret_text, color="green")
         while followup in get_last_line(ret_text):
-            cur_prompt += ret_text
             question = extract_question(ret_text, followup)
             external_answer = self.search_chain.search(question)
             if external_answer is not None:
-                cur_prompt += intermediate + " " + external_answer + "."
-                print(
-                    intermediate + " " + yellowfy(external_answer) + ".",
-                    end="",
-                )
+                chained_input.add(intermediate + " ")
+                chained_input.add(external_answer + ".", color="yellow")
                 ret_text = llm_chain.predict(
-                    input=cur_prompt, stop=["\nIntermediate answer:"]
+                    input=chained_input.input, stop=["\nIntermediate answer:"]
                 )
-                print(greenify(ret_text), end="")
+                chained_input.add(ret_text, color="green")
             else:
                 # We only get here in the very rare case that Google returns no answer.
-                cur_prompt += intermediate
-                print(intermediate + " ")
-                cur_prompt += llm_chain.predict(
-                    input=cur_prompt, stop=["\n" + followup, finalans]
+                chained_input.add(intermediate + " ")
+                preds = llm_chain.predict(
+                    input=chained_input.input, stop=["\n" + followup, finalans]
                 )
+                chained_input.add(preds, color="green")
 
         if finalans not in ret_text:
-            cur_prompt += finalans
-            print(finalans, end="")
-            ret_text = llm_chain.predict(input=cur_prompt, stop=["\n"])
-            print(greenify(ret_text), end="")
+            chained_input.add(finalans)
+            ret_text = llm_chain.predict(input=chained_input.input, stop=["\n"])
+            chained_input.add(ret_text, color="green")
 
-        return {self.output_key: cur_prompt + ret_text}
+        return {self.output_key: ret_text}
 
     def run(self, question: str) -> str:
         """Run self ask with search chain.
