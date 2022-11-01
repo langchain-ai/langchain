@@ -26,7 +26,10 @@ class FAISS:
         embedding = self.embedding_function(query)
         _, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
         docs = []
-        for i in indices:
+        for i in indices[0]:
+            if i == -1:
+                # This happens when not enough docs are returned.
+                continue
             doc = self.docstore.search(str(i))
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {i}, got {doc}")
