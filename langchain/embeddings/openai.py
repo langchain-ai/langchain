@@ -48,5 +48,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text."""
-        embedding = self.embedding_func(text, engine="text-search-babbage-query-001")
+        embedding = self.embedding_func(
+            text, engine=f"text-search-{self.model_name}-query-001"
+        )
         return embedding
