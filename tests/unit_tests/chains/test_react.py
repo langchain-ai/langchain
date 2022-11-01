@@ -1,6 +1,6 @@
 """Unit tests for ReAct."""
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Union
 
 import pytest
 
@@ -39,10 +39,10 @@ class FakeListLLM(LLM):
 class FakeDocstore(Docstore):
     """Fake docstore for testing purposes."""
 
-    def search(self, search: str) -> Tuple[str, Optional[Document]]:
+    def search(self, search: str) -> Union[str, Document]:
         """Return the fake document."""
         document = Document(page_content=_PAGE_CONTENT)
-        return document.summary, document
+        return document
 
 
 def test_predict_until_observation_normal() -> None:
