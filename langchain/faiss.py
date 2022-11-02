@@ -1,7 +1,6 @@
 """Wrapper around FAISS vector database."""
-from typing import Callable, List
+from typing import Any, Callable, List
 
-import faiss
 import numpy as np
 
 from langchain.docstore.base import Docstore
@@ -23,9 +22,7 @@ class FAISS:
 
     """
 
-    def __init__(
-        self, embedding_function: Callable, index: faiss.IndexFlatL2, docstore: Docstore
-    ):
+    def __init__(self, embedding_function: Callable, index: Any, docstore: Docstore):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
@@ -73,6 +70,14 @@ class FAISS:
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
+        try:
+            import faiss
+        except ImportError:
+            raise ValueError(
+                "Could not import faiss python package. "
+                "Please it install it with `pip install faiss` "
+                "or `pip install faiss-cpu` (depending on Python version)."
+            )
         embeddings = embedding.embed_documents(texts)
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
