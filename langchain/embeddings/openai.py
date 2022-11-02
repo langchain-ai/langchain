@@ -48,7 +48,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def embedding_func(self, text: str, *, engine: str) -> List[float]:
+    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # replace newlines, which can negatively affect performance.
         text = text.replace("\n", " ")
@@ -64,7 +64,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         responses = [
-            self.embedding_func(text, engine=f"text-search-{self.model_name}-doc-001")
+            self._embedding_func(text, engine=f"text-search-{self.model_name}-doc-001")
             for text in texts
         ]
         return responses
@@ -78,7 +78,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.embedding_func(
+        embedding = self._embedding_func(
             text, engine=f"text-search-{self.model_name}-query-001"
         )
         return embedding
