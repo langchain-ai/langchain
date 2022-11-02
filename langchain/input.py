@@ -1,7 +1,15 @@
 """Handle chained inputs."""
-from typing import Optional
+from typing import List, Optional
 
 _COLOR_MAPPING = {"blue": 104, "yellow": 103, "red": 101, "green": 102}
+
+
+def get_color_mapping(items: List[str], excluded_colors: Optional[List] = None):
+    colors = list(_COLOR_MAPPING.keys())
+    if excluded_colors is not None:
+        colors = [c for c in colors if c not in excluded_colors]
+    color_mapping = {item: colors[i % len(colors)] for i, item in enumerate(items)}
+    return color_mapping
 
 
 def print_text(text: str, color: Optional[str] = None) -> None:

@@ -8,6 +8,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 from langchain.chains import (
     LLMChain,
     LLMMathChain,
+    MRKLChain,
     PythonChain,
     ReActChain,
     SelfAskWithSearchChain,
@@ -35,4 +36,5 @@ __all__ = [
     "SQLDatabase",
     "SQLDatabaseChain",
     "FAISS",
+    "MRKLChain",
 ]

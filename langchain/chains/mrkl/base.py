@@ -5,6 +5,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
+from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompt import Prompt
 
@@ -149,17 +150,25 @@ class MRKLChain(Chain, BaseModel):
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        _input = f"{inputs[self.input_key]}\nThought:"
+        chained_input = ChainedInput(
+            f"{inputs[self.input_key]}\nThought:", verbose=self.verbose
+        )
+        color_mapping = get_color_mapping(
+            list(self.action_to_chain_map.keys()), excluded_colors=["green"]
+        )
         while True:
-            observation = llm_chain.predict(input=_input, stop=["\nObservation"])
-            print(observation)
-            action, action_input = get_action_and_input(observation)
+            thought = llm_chain.predict(
+                input=chained_input.input, stop=["\nObservation"]
+            )
+            chained_input.add(thought, color="green")
+            action, action_input = get_action_and_input(thought)
             if action == FINAL_ANSWER_ACTION:
                 return {self.output_key: action_input}
             chain = self.action_to_chain_map[action]
             ca = chain(action_input)
-            print(ca)
-            _input = _input + observation + f"\nObservation: {ca}\nThought:"
+            chained_input.add("\nObservation: ")
+            chained_input.add(ca, color=color_mapping[action])
+            chained_input.add("\nThought:")
 
     def run(self, _input: str) -> str:
         """Run input through the MRKL system."""
