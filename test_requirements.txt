@@ -1,6 +1,4 @@
 -e .
-# Local integrations
-faiss
 # For testing
 pytest
 pytest-dotenv
