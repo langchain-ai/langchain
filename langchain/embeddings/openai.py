@@ -8,7 +8,17 @@ from langchain.embeddings.base import Embeddings
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
-    """Wrapper around OpenAI embedding models."""
+    """Wrapper around OpenAI embedding models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.embeddings import OpenAIEmbeddings
+            openai = OpenAIEmbeddings(model_name="davinci")
+    """
 
     client: Any  #: :meta private:
     model_name: str = "babbage"
@@ -39,13 +49,20 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return values
 
     def embedding_func(self, text: str, *, engine: str) -> List[float]:
-        """"""
+        """Call out to OpenAI's embedding endpoint."""
         # replace newlines, which can negatively affect performance.
         text = text.replace("\n", " ")
         return self.client.create(input=[text], engine=engine)["data"][0]["embedding"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Call out to OpenAI's embedding endpoint for embedding search docs."""
+        """Call out to OpenAI's embedding endpoint for embedding search docs.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
         responses = [
             self.embedding_func(text, engine=f"text-search-{self.model_name}-doc-001")
             for text in texts
@@ -53,7 +70,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return responses
 
     def embed_query(self, text: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint for embedding query text."""
+        """Call out to OpenAI's embedding endpoint for embedding query text.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
         embedding = self.embedding_func(
             text, engine=f"text-search-{self.model_name}-query-001"
         )
