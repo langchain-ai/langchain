@@ -1,3 +1,4 @@
 -e .
+# For testing
 pytest
 pytest-dotenv
