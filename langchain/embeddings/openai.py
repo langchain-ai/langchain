@@ -10,7 +10,7 @@ from langchain.embeddings.base import Embeddings
 class OpenAIEmbeddings(BaseModel, Embeddings):
     """Wrapper around OpenAI embedding models."""
 
-    embedding_func: Any  #: :meta private:
+    client: Any  #: :meta private:
     model_name: str = "babbage"
     """Model name to use."""
 
@@ -28,15 +28,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 " `OPENAI_API_KEY` which contains it."
             )
         try:
-            from openai.embeddings_utils import get_embedding
+            import openai
 
-            values["embedding_func"] = get_embedding
+            values["client"] = openai.Embedding
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
             )
         return values
+
+    def embedding_func(self, text: str, *, engine: str) -> List[float]:
+        """"""
+        # replace newlines, which can negatively affect performance.
+        text = text.replace("\n", " ")
+        return self.client.create(input=[text], engine=engine)["data"][0]["embedding"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs."""
