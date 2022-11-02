@@ -16,9 +16,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        sudo apt-get install libomp-dev
         python -m pip install --upgrade pip
         pip install -r test_requirements.txt
+        # For faiss
+        sudo apt-get install libopenblas-dev
+        sudo apt-get install libomp-dev
     - name: Run unit tests
       run: |
         make tests
