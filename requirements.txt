@@ -12,5 +12,6 @@ google-search-results
 playwright
 wikipedia
 huggingface_hub
+faiss
 # For development
 jupyter

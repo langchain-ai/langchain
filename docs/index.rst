@@ -7,4 +7,5 @@ Welcome to LangChain
 
    modules/prompt
    modules/llms
+   modules/embeddings
    modules/chains

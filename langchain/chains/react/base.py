@@ -8,6 +8,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.react.prompt import PROMPT
 from langchain.docstore.base import Docstore
+from langchain.docstore.document import Document
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 
@@ -86,7 +87,13 @@ class ReActChain(Chain, BaseModel):
             )
             chained_input.add(ret_text, color="green")
             if action == "Search":
-                observation, document = self.docstore.search(directive)
+                result = self.docstore.search(directive)
+                if isinstance(result, Document):
+                    document = result
+                    observation = document.summary
+                else:
+                    document = None
+                    observation = result
             elif action == "Lookup":
                 if document is None:
                     raise ValueError("Cannot lookup without a successful search first")
@@ -110,8 +117,8 @@ class ReActChain(Chain, BaseModel):
             Final answer from thinking through the ReAct framework.
 
         Example:
-
             .. code-block:: python
+
                 question = "Were Scott Derrickson and Ed Wood of the same nationality?"
                 answer = react.run(question)
         """
