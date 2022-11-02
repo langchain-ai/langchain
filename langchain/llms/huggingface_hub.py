@@ -21,8 +21,8 @@ class HuggingFaceHub(BaseModel, LLM):
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFace
-            hf = HuggingFace(model="text-davinci-002")
+            from langchain import HuggingFaceHub
+            hf = HuggingFaceHub(repo_id="gpt2")
     """
 
     client: Any  #: :meta private:

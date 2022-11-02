@@ -115,8 +115,8 @@ class ReActChain(Chain, BaseModel):
             Final answer from thinking through the ReAct framework.
 
         Example:
-
             .. code-block:: python
+
                 question = "Were Scott Derrickson and Ed Wood of the same nationality?"
                 answer = react.run(question)
         """
