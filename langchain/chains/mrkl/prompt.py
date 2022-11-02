@@ -1,3 +1,4 @@
+# flake8: noqa
 BASE_TEMPLATE = """Answer the following questions as best you can. You have access to the following tools:
 
 {tools}
