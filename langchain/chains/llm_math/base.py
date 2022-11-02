@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 from langchain.chains.python import PythonChain
+from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 
 
@@ -52,14 +53,16 @@ class LLMMathChain(Chain, BaseModel):
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         python_executor = PythonChain()
-        question = inputs[self.input_key]
-        t = llm_executor.predict(question=question, stop=["```output"]).strip()
+        chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
+        t = llm_executor.predict(
+            question=chained_input.input, stop=["```output"]
+        ).strip()
+        chained_input.add(t, color="green")
         if t.startswith("```python"):
             code = t[9:-4]
-            if self.verbose:
-                print("[DEBUG] evaluating code")
-                print(code)
             output = python_executor.run(code)
+            chained_input.add("\nAnswer: ")
+            chained_input.add(output, color="yellow")
             answer = "Answer: " + output
         elif t.startswith("Answer:"):
             answer = t
