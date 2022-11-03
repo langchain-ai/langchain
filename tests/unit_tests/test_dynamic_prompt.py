@@ -69,7 +69,7 @@ Answer:"""
         input_variables=input_variables,
         example_separator=example_separator,
         prefix=prefix,
-        max_words=30,
+        max_length=30,
     )
     test_long_question = """I am writing a really long question,
 this probably is going to affect the example right?"""

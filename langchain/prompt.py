@@ -1,6 +1,6 @@
 """Prompt schema definition."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -9,6 +9,16 @@ from langchain.formatting import formatter
 _FORMATTER_MAPPING = {
     "f-string": formatter.format,
 }
+
+
+def count_words(template: str) -> int:
+    """Count words in a template."""
+    all_lines = template.split("\n")
+    all_words = []
+    for line in all_lines:
+        if line:
+            all_words.extend(line.strip().split(" "))
+    return len(all_words)
 
 
 class BasePrompt(ABC):
@@ -137,7 +147,9 @@ class DynamicPrompt(BaseModel, BasePrompt):
                 example_separator="\n\n",
                 prefix="",
                 suffix="\n\nSay {foo}"
-                input_variables=["foo"]
+                input_variables=["foo"],
+                max_length=200,
+                get_text_length=word_count
             )
     """
 
@@ -159,9 +171,11 @@ class DynamicPrompt(BaseModel, BasePrompt):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string'."""
 
-    # TODO should this be max tokens? Tokens are different across LLMs
-    max_words: int = 2048
-    """The max number of words for the prompt, beyond which examples are cut."""
+    get_text_length: Callable = count_words
+    """Function to measure prompt length. Defaults to word count."""
+
+    max_length: int = 2048
+    """Max length for the prompt, beyond which examples are cut."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -184,15 +198,6 @@ class DynamicPrompt(BaseModel, BasePrompt):
             prompt.format(variable1="foo")
         """
 
-        def count_words(template: str) -> int:
-            """Count words in a template."""
-            all_lines = template.split("\n")
-            all_words = []
-            for line in all_lines:
-                if line:
-                    all_words.extend(line.strip().split(" "))
-            return len(all_words)
-
         def return_template(example_list: List[str]) -> str:
             """Return template given example list."""
             example_str = self.example_separator.join(example_list)
@@ -201,7 +206,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
 
         curr_examples = self.examples
         template = return_template(curr_examples)
-        while count_words(template) > self.max_words and curr_examples:
+        while self.get_text_length(template) > self.max_length and curr_examples:
             curr_examples = curr_examples[:-1]
             template = return_template(curr_examples)
         return template
@@ -218,6 +223,13 @@ class DynamicPrompt(BaseModel, BasePrompt):
             raise ValueError(
                 f"Invalid template format. Got `{template_format}`;"
                 f" should be one of {valid_formats}"
+            )
+        try:
+            result = values["get_text_length"]("foo")
+            assert isinstance(result, int)
+        except:
+            raise ValueError(
+                f"Invalid text length callable, must take string & return int;"
             )
         dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
         try:
