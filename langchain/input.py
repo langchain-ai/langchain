@@ -7,10 +7,10 @@ _COLOR_MAPPING = {"blue": 104, "yellow": 103, "red": 101, "green": 102}
 def print_text(text: str, color: Optional[str] = None) -> None:
     """Print text with highlighting and no end characters."""
     if color is None:
-        color_str = 49
+        print(text, end="")
     else:
         color_str = _COLOR_MAPPING[color]
-    print(f"\x1b[{color_str}m{text}\x1b[0m", end="")
+        print(f"\x1b[{color_str}m{text}\x1b[0m", end="")
 
 
 class ChainedInput:
@@ -19,6 +19,8 @@ class ChainedInput:
     def __init__(self, text: str, verbose: bool = False):
         """Initialize with verbose flag and initial text."""
         self.verbose = verbose
+        if self.verbose:
+            print_text(text, None)
         self._input = text
 
     def add(self, text: str, color: Optional[str] = None) -> None:
