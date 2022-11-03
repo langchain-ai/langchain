@@ -1,4 +1,5 @@
 """Prompt schema definition."""
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -10,7 +11,28 @@ _FORMATTER_MAPPING = {
 }
 
 
-class Prompt(BaseModel):
+class BasePrompt(ABC):
+    """Base prompt should expose the format method, returning a prompt."""
+
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            prompt.format(variable1="foo")
+        """
+
+
+class Prompt(BaseModel, BasePrompt):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -103,7 +125,7 @@ class Prompt(BaseModel):
         return cls(input_variables=input_variables, template=template)
 
 
-class DynamicPrompt(BaseModel):
+class DynamicPrompt(BaseModel, BasePrompt):
     r"""Schema to represent a dynamic prompt for an LLM.
 
     Example:
@@ -137,6 +159,10 @@ class DynamicPrompt(BaseModel):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string'."""
 
+    # TODO should this be max tokens? Tokens are different across LLMs
+    max_words: int = 2048
+    """The max number of words for the prompt, beyond which examples are cut."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -157,16 +183,34 @@ class DynamicPrompt(BaseModel):
 
             prompt.format(variable1="foo")
         """
-        # TODO segment self.examples based on example length &
-        # input_variables length here
-        example_str = self.example_separator.join(self.examples)
-        template = self.prefix + example_str + self.suffix
-        return _FORMATTER_MAPPING[self.template_format](template, **kwargs)
+
+        def count_words(template: str) -> int:
+            """Count words in a template."""
+            all_lines = template.split("\n")
+            all_words = []
+            for line in all_lines:
+                if line:
+                    all_words.extend(line.strip().split(" "))
+            return len(all_words)
+
+        def return_template(example_list: List[str]) -> str:
+            """Return template given example list."""
+            example_str = self.example_separator.join(example_list)
+            template = self.prefix + example_str + self.suffix
+            return _FORMATTER_MAPPING[self.template_format](template, **kwargs)
+
+        curr_examples = self.examples
+        template = return_template(curr_examples)
+        while count_words(template) > self.max_words and curr_examples:
+            curr_examples = curr_examples[:-1]
+            template = return_template(curr_examples)
+        return template
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that suffix and input variables are consistent."""
+        """Check that prefix, suffix and input variables are consistent."""
         input_variables = values["input_variables"]
+        # prefix = values["prefix"]
         suffix = values["suffix"]
         template_format = values["template_format"]
         if template_format not in _FORMATTER_MAPPING:
@@ -178,25 +222,8 @@ class DynamicPrompt(BaseModel):
         dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
         try:
             formatter_func = _FORMATTER_MAPPING[template_format]
+            # formatter_func(prefix, **dummy_inputs)
             formatter_func(suffix, **dummy_inputs)
         except KeyError:
             raise ValueError("Invalid prompt schema.")
         return values
-
-    @classmethod
-    def from_examples(
-        cls,
-        examples: List[str],
-        suffix: str,
-        input_variables: List[str],
-        example_separator: str = "\n\n",
-        prefix: str = "",
-    ) -> "DynamicPrompt":
-        """Initialize DynamicPrompt with prefix, suffix, examples, etc."""
-        return cls(
-            examples=examples,
-            example_separator=example_separator,
-            input_variables=input_variables,
-            prefix=prefix,
-            suffix=suffix,
-        )
