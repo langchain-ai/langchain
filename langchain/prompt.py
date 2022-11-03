@@ -14,6 +14,9 @@ _FORMATTER_MAPPING = {
 class BasePrompt(ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
