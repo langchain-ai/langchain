@@ -9,6 +9,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.react.prompt import PROMPT
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
+from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 
 
@@ -48,6 +49,7 @@ class ReActChain(Chain, BaseModel):
     """LLM wrapper to use."""
     docstore: Docstore
     """Docstore to use."""
+    verbose: bool = False
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -76,15 +78,14 @@ class ReActChain(Chain, BaseModel):
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
-        prompt = f"{question}\nThought 1:"
+        chained_input = ChainedInput(f"{question}\nThought 1:", verbose=self.verbose)
         i = 1
         document = None
         while True:
             ret_text, action, directive = predict_until_observation(
-                llm_chain, prompt, i
+                llm_chain, chained_input.input, i
             )
-            prompt += ret_text
-            print(action, directive)
+            chained_input.add(ret_text, color="green")
             if action == "Search":
                 result = self.docstore.search(directive)
                 if isinstance(result, Document):
@@ -93,16 +94,17 @@ class ReActChain(Chain, BaseModel):
                 else:
                     document = None
                     observation = result
-                print(observation)
             elif action == "Lookup":
                 if document is None:
                     raise ValueError("Cannot lookup without a successful search first")
                 observation = document.lookup(directive)
             elif action == "Finish":
-                return {"full_logic": prompt, self.output_key: directive}
+                return {"full_logic": chained_input.input, self.output_key: directive}
             else:
                 raise ValueError(f"Got unknown action directive: {action}")
-            prompt += f"\nObservation {i}: " + observation + f"\nThought {i + 1}:"
+            chained_input.add(f"\nObservation {i}: ")
+            chained_input.add(observation, color="yellow")
+            chained_input.add(f"\nThought {i + 1}:")
             i += 1
 
     def run(self, question: str) -> str:
