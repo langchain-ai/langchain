@@ -50,7 +50,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        texts = map(lambda x: x.replace("\n", " "), texts)
+        texts = list(map(lambda x: x.replace("\n", " "), texts))
         embeddings = self.client(self.model_name).encode(texts)
         return embeddings
 
