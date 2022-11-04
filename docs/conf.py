@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinxcontrib.autodoc_pydantic",
+    "myst_parser"
 ]
 
 autodoc_pydantic_model_show_json = False
