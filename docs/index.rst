@@ -9,3 +9,10 @@ Welcome to LangChain
    modules/llms
    modules/embeddings
    modules/chains
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Resources
+
+   glossary.md
+   Discord <https://discord.gg/6adMQxSpJS>
