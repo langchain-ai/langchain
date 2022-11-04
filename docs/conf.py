@@ -38,7 +38,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_parser"
+    "myst_parser",
 ]
 
 autodoc_pydantic_model_show_json = False
@@ -70,7 +70,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme = "sphinx_typlog_theme"
 
 html_context = {
-    "display_github": True, # Integrate GitHub
+    "display_github": True,  # Integrate GitHub
     "github_user": "hwchase17",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
