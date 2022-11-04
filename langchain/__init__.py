@@ -17,7 +17,7 @@ from langchain.chains import (
 from langchain.docstore import Wikipedia
 from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
-from langchain.prompt import DynamicPrompt, Prompt
+from langchain.prompt import BasePrompt, DynamicPrompt, Prompt
 from langchain.sql_database import SQLDatabase
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "SerpAPIChain",
     "Cohere",
     "OpenAI",
+    "BasePrompt",
     "DynamicPrompt",
     "Prompt",
     "ReActChain",

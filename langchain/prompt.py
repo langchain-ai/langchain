@@ -10,7 +10,6 @@ _FORMATTER_MAPPING = {
     "f-string": formatter.format,
 }
 
-
 def count_words(template: str) -> int:
     """Count words in a template."""
     all_lines = template.split("\n")
@@ -23,6 +22,9 @@ def count_words(template: str) -> int:
 
 class BasePrompt(ABC):
     """Base prompt should expose the format method, returning a prompt."""
+
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
