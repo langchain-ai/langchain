@@ -200,8 +200,9 @@ class DynamicPrompt(BaseModel, BasePrompt):
 
         def return_template(example_list: List[str]) -> str:
             """Return template given example list."""
-            example_str = self.example_separator.join(example_list)
-            template = self.prefix + example_str + self.suffix
+            template = self.example_separator.join(
+                [self.prefix, *example_list, self.suffix]
+            )
             return _FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
         curr_examples = self.examples
@@ -209,13 +210,13 @@ class DynamicPrompt(BaseModel, BasePrompt):
         while self.get_text_length(template) > self.max_length and curr_examples:
             curr_examples = curr_examples[:-1]
             template = return_template(curr_examples)
+        print(template)
         return template
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
         input_variables = values["input_variables"]
-        # prefix = values["prefix"]
         suffix = values["suffix"]
         template_format = values["template_format"]
         if template_format not in _FORMATTER_MAPPING:
@@ -227,14 +228,14 @@ class DynamicPrompt(BaseModel, BasePrompt):
         try:
             result = values["get_text_length"]("foo")
             assert isinstance(result, int)
-        except:
+        except AssertionError:
             raise ValueError(
-                f"Invalid text length callable, must take string & return int;"
+                "Invalid text length callable, must take string & return int;"
             )
         dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
+        # TODO variables could be in prefix or suffix
         try:
             formatter_func = _FORMATTER_MAPPING[template_format]
-            # formatter_func(prefix, **dummy_inputs)
             formatter_func(suffix, **dummy_inputs)
         except KeyError:
             raise ValueError("Invalid prompt schema.")

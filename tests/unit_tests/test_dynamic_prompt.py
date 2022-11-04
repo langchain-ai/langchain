@@ -16,8 +16,8 @@ Question: {question}
 Answer:"""
     input_variables = ["question"]
     example_separator = "\n\n"
-    prefix = """Test Prompt:\n\n"""
-    suffix = """\n\nQuestion: {question}\nAnswer:"""
+    prefix = """Test Prompt:"""
+    suffix = """Question: {question}\nAnswer:"""
     examples = [
         """Question: who are you?\nAnswer: foo""",
         """Question: what are you?\nAnswer: bar""",
@@ -55,10 +55,14 @@ Answer: foo
 
 Question: {question}
 Answer:"""
+    shortest_template = """Test Prompt:
+
+Question: {question}
+Answer:"""
     input_variables = ["question"]
     example_separator = "\n\n"
-    prefix = """Test Prompt:\n\n"""
-    suffix = """\n\nQuestion: {question}\nAnswer:"""
+    prefix = """Test Prompt:"""
+    suffix = """Question: {question}\nAnswer:"""
     examples = [
         """Question: who are you?\nAnswer: foo""",
         """Question: what are you?\nAnswer: bar""",
@@ -73,6 +77,9 @@ Answer:"""
     )
     test_long_question = """I am writing a really long question,
 this probably is going to affect the example right?"""
+    test_longest_question = """This question is super super super,
+super super super super super super super super super super super,
+super super super super long, this will affect the example right?"""
     test_short_question = "Short question?"
 
     assert dynamic_prompt.format(
@@ -81,3 +88,6 @@ this probably is going to affect the example right?"""
     assert dynamic_prompt.format(
         question=test_short_question
     ) == longer_template.format(question=test_short_question)
+    assert dynamic_prompt.format(
+        question=test_longest_question
+    ) == shortest_template.format(question=test_longest_question)
