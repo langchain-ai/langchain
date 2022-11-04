@@ -1,6 +1,6 @@
 """Prompt schema definition."""
-from abc import ABC, abstractmethod
 import re
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -130,7 +130,7 @@ class Prompt(BaseModel, BasePrompt):
 
 
 class DynamicPrompt(BaseModel, BasePrompt):
-    """Schema to represent a dynamic prompt for an LLM.
+    r"""Schema to represent a dynamic prompt for an LLM.
 
     Example:
         .. code-block:: python

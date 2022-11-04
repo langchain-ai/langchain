@@ -1,7 +1,7 @@
 """Test functionality related to dynamic prompts."""
 from langchain.prompt import DynamicPrompt, Prompt
 
-## FULL TEMPLATES
+# FULL TEMPLATES
 LONGER_TEMPLATE = """Test Prompt:
 
 Question: who are you?
@@ -24,7 +24,7 @@ SHORTEST_TEMPLATE = """Test Prompt:
 Question: {question}
 Answer:"""
 
-## DYNAMIC PROMPT COMPONENTS
+# DYNAMIC PROMPT COMPONENTS
 PREFIX = """Test Prompt:"""
 SUFFIX = """Question: {question}\nAnswer:"""
 EXAMPLES = [
@@ -32,7 +32,7 @@ EXAMPLES = [
     """Question: what are you?\nAnswer: bar""",
 ]
 
-## INPUTS
+# INPUTS
 TEST_LONG_QUESTION = """I am writing a really long question,
 this probably is going to affect the example right?"""
 TEST_LONGEST_QUESTION = """This question is super super super,
