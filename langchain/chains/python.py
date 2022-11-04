@@ -9,6 +9,7 @@ from typing import Dict, List
 from pydantic import BaseModel
 
 from langchain.chains.base import Chain
+from langchain.python import PythonREPL
 
 
 class PythonChain(Chain, BaseModel):
@@ -41,9 +42,10 @@ class PythonChain(Chain, BaseModel):
         return [self.output_key]
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        python_repl = PythonREPL()
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
-        exec(inputs[self.input_key])
+        python_repl.run(inputs[self.input_key])
         sys.stdout = old_stdout
         output = mystdout.getvalue()
         return {self.output_key: output}
