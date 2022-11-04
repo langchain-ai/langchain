@@ -1,4 +1,4 @@
-"""Wrapper around OpenAI embedding models."""
+"""Wrapper around HuggingFace embedding models."""
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
