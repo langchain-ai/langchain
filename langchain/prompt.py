@@ -10,6 +10,7 @@ _FORMATTER_MAPPING = {
     "f-string": formatter.format,
 }
 
+
 def count_words(template: str) -> int:
     """Count words in a template."""
     all_lines = template.split("\n")
