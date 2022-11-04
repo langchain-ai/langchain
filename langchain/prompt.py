@@ -1,5 +1,6 @@
 """Prompt schema definition."""
 from abc import ABC, abstractmethod
+import re
 from typing import Any, Callable, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -9,16 +10,6 @@ from langchain.formatting import formatter
 _FORMATTER_MAPPING = {
     "f-string": formatter.format,
 }
-
-
-def count_words(template: str) -> int:
-    """Count words in a template."""
-    all_lines = template.split("\n")
-    all_words = []
-    for line in all_lines:
-        if line:
-            all_words.extend(line.strip().split(" "))
-    return len(all_words)
 
 
 class BasePrompt(ABC):
@@ -139,7 +130,7 @@ class Prompt(BaseModel, BasePrompt):
 
 
 class DynamicPrompt(BaseModel, BasePrompt):
-    r"""Schema to represent a dynamic prompt for an LLM.
+    """Schema to represent a dynamic prompt for an LLM.
 
     Example:
         .. code-block:: python
@@ -159,7 +150,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
     examples: List[str]
     """A list of the examples that the prompt template expects."""
 
-    example_separator: str
+    example_separator: str = "\n\n"
     """Example separator, e.g. \n\n, for the dynamic prompt creation."""
 
     input_variables: List[str]
@@ -174,7 +165,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string'."""
 
-    get_text_length: Callable = count_words
+    get_text_length: Callable[[str], int] = lambda x: len(re.split("\n| ", x))
     """Function to measure prompt length. Defaults to word count."""
 
     max_length: int = 2048
@@ -184,6 +175,13 @@ class DynamicPrompt(BaseModel, BasePrompt):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    def template(self, example_list: List[str], **kwargs: Any) -> str:
+        """Return template given example list."""
+        template = self.example_separator.join(
+            [self.prefix, *example_list, self.suffix]
+        )
+        return _FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
     def format(self, **kwargs: Any) -> str:
         """Dynamically format the prompt with the inputs.
@@ -200,20 +198,11 @@ class DynamicPrompt(BaseModel, BasePrompt):
 
             prompt.format(variable1="foo")
         """
-
-        def return_template(example_list: List[str]) -> str:
-            """Return template given example list."""
-            template = self.example_separator.join(
-                [self.prefix, *example_list, self.suffix]
-            )
-            return _FORMATTER_MAPPING[self.template_format](template, **kwargs)
-
         curr_examples = self.examples
-        template = return_template(curr_examples)
+        template = self.template(curr_examples, **kwargs)
         while self.get_text_length(template) > self.max_length and curr_examples:
             curr_examples = curr_examples[:-1]
-            template = return_template(curr_examples)
-        print(template)
+            template = self.template(curr_examples, **kwargs)
         return template
 
     @root_validator()
