@@ -54,10 +54,9 @@ class LLMMathChain(Chain, BaseModel):
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         python_executor = PythonChain()
         chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
-        t = llm_executor.predict(
-            question=chained_input.input, stop=["```output"]
-        ).strip()
+        t = llm_executor.predict(question=chained_input.input, stop=["```output"])
         chained_input.add(t, color="green")
+        t = t.strip()
         if t.startswith("```python"):
             code = t[9:-4]
             output = python_executor.run(code)
