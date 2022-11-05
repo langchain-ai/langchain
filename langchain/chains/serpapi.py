@@ -86,7 +86,7 @@ class SerpAPIChain(Chain, BaseModel):
         params = {
             "api_key": os.environ["SERPAPI_API_KEY"],
             "engine": "google",
-            "q": inputs[self.input_key].strip('"'),
+            "q": inputs[self.input_key],
             "google_domain": "google.com",
             "gl": "us",
             "hl": "en",

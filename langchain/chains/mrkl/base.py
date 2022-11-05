@@ -45,7 +45,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
         )
     action = ps[-2][len("Action: ") :]
     action_input = ps[-1][len("Action Input: ") :]
-    return action, action_input
+    return action, action_input.strip(" ").strip('"')
 
 
 class MRKLChain(Chain, BaseModel):

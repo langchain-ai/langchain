@@ -66,7 +66,7 @@ def test_get_color_mapping() -> None:
     assert len(output) == 20
 
 
-def test_get_color_mapping_excluded_colors():
+def test_get_color_mapping_excluded_colors() -> None:
     """Test getting of color mapping with excluded colors."""
     items = ["foo", "bar"]
     output = get_color_mapping(items, excluded_colors=["blue"])
