@@ -1,6 +1,7 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
+from langchain.chains.mrkl.base import MRKLChain
 from langchain.chains.python import PythonChain
 from langchain.chains.react.base import ReActChain
 from langchain.chains.self_ask_with_search.base import SelfAskWithSearchChain
@@ -15,4 +16,5 @@ __all__ = [
     "SerpAPIChain",
     "ReActChain",
     "SQLDatabaseChain",
+    "MRKLChain",
 ]
