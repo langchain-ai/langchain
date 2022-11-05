@@ -5,7 +5,7 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.llms.base import LLM
-from langchain.prompt import Prompt
+from langchain.prompt import BasePrompt
 
 
 class LLMChain(Chain, BaseModel):
@@ -20,7 +20,7 @@ class LLMChain(Chain, BaseModel):
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 
-    prompt: Prompt
+    prompt: BasePrompt
     """Prompt object to use."""
     llm: LLM
     """LLM wrapper to use."""

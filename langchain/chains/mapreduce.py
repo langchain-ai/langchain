@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
-from langchain.prompt import Prompt
+from langchain.prompt import BasePrompt
 from langchain.text_splitter import TextSplitter
 
 
@@ -29,7 +29,7 @@ class MapReduceChain(Chain, BaseModel):
 
     @classmethod
     def from_params(
-        cls, llm: LLM, prompt: Prompt, text_splitter: TextSplitter
+        cls, llm: LLM, prompt: BasePrompt, text_splitter: TextSplitter
     ) -> "MapReduceChain":
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)

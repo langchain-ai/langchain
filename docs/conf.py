@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinxcontrib.autodoc_pydantic",
+    "myst_parser",
 ]
 
 autodoc_pydantic_model_show_json = False
@@ -67,6 +68,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "sphinx_rtd_theme"
 # html_theme = "sphinx_typlog_theme"
+
+html_context = {
+    "display_github": True,  # Integrate GitHub
+    "github_user": "hwchase17",  # Username
+    "github_repo": "langchain",  # Repo name
+    "github_version": "master",  # Version
+    "conf_py_path": "/docs/",  # Path in the checkout to the docs root
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
