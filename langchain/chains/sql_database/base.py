@@ -26,7 +26,6 @@ class SQLDatabaseChain(Chain, BaseModel):
     """LLM wrapper to use."""
     database: SQLDatabase
     """SQL Database to connect to."""
-    verbose: bool = False
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
