@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace embedding models."""
-from typing import Any, Dict, List
+from typing import Any, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 
@@ -22,24 +22,22 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_name: str = "sentence-transformers/all-mpnet-base-v2"
     """Model name to use."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that python package exists in environment."""
+    def __init__(self, **kw):
+        super().__init__(**kw)
         try:
             import sentence_transformers
 
-            values["client"] = sentence_transformers.SentenceTransformer
+            self.client = sentence_transformers.SentenceTransformer(self.model_name)
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
                 "Please it install it with `pip install sentence_transformers`."
             )
-        return values
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Computes doc embeddings using a HuggingFace transformer model
@@ -51,7 +49,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client(self.model_name).encode(texts)
+        embeddings = self.client.encode(texts)
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -64,5 +62,5 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client(self.model_name).encode(text)
+        embedding = self.client.encode(text)
         return embedding
