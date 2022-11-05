@@ -1,10 +1,13 @@
 """Handle chained inputs."""
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 _COLOR_MAPPING = {"blue": 104, "yellow": 103, "red": 101, "green": 102}
 
 
-def get_color_mapping(items: List[str], excluded_colors: Optional[List] = None):
+def get_color_mapping(
+    items: List[str], excluded_colors: Optional[List] = None
+) -> Dict[str, str]:
+    """Get mapping for items to a support color."""
     colors = list(_COLOR_MAPPING.keys())
     if excluded_colors is not None:
         colors = [c for c in colors if c not in excluded_colors]
