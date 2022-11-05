@@ -45,9 +45,11 @@ Resources:
 Combining multiple LLM calls together, with the output of one step being the input to the next. 
 
 Resources: 
-- [Paper](https://arxiv.org/pdf/2203.06566.pdf)
+- [PromptChainer Paper](https://arxiv.org/pdf/2203.06566.pdf)
+- [Language Model Cascades](https://arxiv.org/abs/2207.10342)
+- [ICE Primer Book](https://primer.ought.org/)
 
-### Mimetic Proxy
+### Memetic Proxy
 
 Encouraging the LLM to respond in a certain way framing the discussion in a context that the model knows of and that will result in that type of response. For example, as a conversation between a student and a teacher. 
 
