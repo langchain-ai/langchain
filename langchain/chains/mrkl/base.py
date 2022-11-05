@@ -7,7 +7,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
-from langchain.prompt import Prompt
+from langchain.prompt import BasePrompt, Prompt
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -66,8 +66,8 @@ class MRKLChain(Chain, BaseModel):
     """
 
     llm: LLM
-    """LLM wrapper to use."""
-    prompt: Prompt
+    """LLM wrapper to use as router."""
+    prompt: BasePrompt
     """Prompt to use as router."""
     action_to_chain_map: Dict[str, Callable]
     """Mapping from action name to chain to execute."""
