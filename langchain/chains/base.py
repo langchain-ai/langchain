@@ -2,9 +2,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from pydantic import BaseModel
 
-class Chain(ABC):
+
+class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
+
+    verbose: bool = False
+    """Whether to print out the code that was executed."""
 
     @property
     @abstractmethod
@@ -36,6 +41,10 @@ class Chain(ABC):
     def __call__(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Run the logic of this chain and add to output."""
         self._validate_inputs(inputs)
+        if self.verbose:
+            print("\n\n\033[1m> Entering new chain...\033[0m")
         outputs = self._run(inputs)
+        if self.verbose:
+            print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
         return {**inputs, **outputs}
