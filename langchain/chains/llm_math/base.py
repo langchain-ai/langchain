@@ -23,8 +23,6 @@ class LLMMathChain(Chain, BaseModel):
 
     llm: LLM
     """LLM wrapper to use."""
-    verbose: bool = False
-    """Whether to print out the code that was executed."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 

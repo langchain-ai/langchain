@@ -72,8 +72,6 @@ class MRKLChain(Chain, BaseModel):
     """Prompt to use as router."""
     action_to_chain_map: Dict[str, Callable]
     """Mapping from action name to chain to execute."""
-    verbose: bool = False
-    """Whether to print out the code that was executed."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
