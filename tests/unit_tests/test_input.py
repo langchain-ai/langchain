@@ -3,7 +3,7 @@
 import sys
 from io import StringIO
 
-from langchain.input import ChainedInput
+from langchain.input import ChainedInput, get_color_mapping
 
 
 def test_chained_input_not_verbose() -> None:
@@ -50,3 +50,25 @@ def test_chained_input_verbose() -> None:
     output = mystdout.getvalue()
     assert output == "\x1b[104mbaz\x1b[0m"
     assert chained_input.input == "foobarbaz"
+
+
+def test_get_color_mapping() -> None:
+    """Test getting of color mapping."""
+    # Test on few inputs.
+    items = ["foo", "bar"]
+    output = get_color_mapping(items)
+    expected_output = {"foo": "blue", "bar": "yellow"}
+    assert output == expected_output
+
+    # Test on a lot of inputs.
+    items = [f"foo-{i}" for i in range(20)]
+    output = get_color_mapping(items)
+    assert len(output) == 20
+
+
+def test_get_color_mapping_excluded_colors():
+    """Test getting of color mapping with excluded colors."""
+    items = ["foo", "bar"]
+    output = get_color_mapping(items, excluded_colors=["blue"])
+    expected_output = {"foo": "yellow", "bar": "red"}
+    assert output == expected_output
