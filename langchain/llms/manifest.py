@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, root_validator
 class ManifestWrapper(BaseModel, LLM):
 
     client: Any  #: :meta private:
+    llm_kwargs: Optional[Dict] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -30,4 +31,5 @@ class ManifestWrapper(BaseModel, LLM):
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         if stop is not None:
             raise NotImplementedError("Need to check how to do this")
-        return self.client.run(prompt)
+        kwargs = self.llm_kwargs or {}
+        return self.client.run(prompt, **kwargs)
