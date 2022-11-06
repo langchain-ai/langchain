@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
-from langchain.prompt import BasePrompt
+from langchain.prompts.base import BasePrompt
 from langchain.text_splitter import TextSplitter
 
 

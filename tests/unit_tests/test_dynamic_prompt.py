@@ -1,5 +1,6 @@
 """Test functionality related to dynamic prompts."""
-from langchain.prompt import DynamicPrompt, Prompt
+from langchain.prompts.dynamic import DynamicPrompt
+from langchain.prompts.prompt import Prompt
 
 # FULL TEMPLATES
 LONGER_TEMPLATE = """Test Prompt:
