@@ -31,7 +31,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
-                "Please it install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence_transformers`."
             )
 
     class Config:
