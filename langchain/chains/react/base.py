@@ -49,7 +49,6 @@ class ReActChain(Chain, BaseModel):
     """LLM wrapper to use."""
     docstore: Docstore
     """Docstore to use."""
-    verbose: bool = False
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 

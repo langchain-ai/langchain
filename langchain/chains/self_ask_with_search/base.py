@@ -89,7 +89,6 @@ class SelfAskWithSearchChain(Chain, BaseModel):
     """LLM wrapper to use."""
     search_chain: SerpAPIChain
     """Search chain to use."""
-    verbose: bool = False
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
