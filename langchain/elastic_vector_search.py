@@ -96,8 +96,7 @@ class ElasticVectorSearch:
         cls,
         elastic_url: str,
         texts: List[str],
-        embedding: Embeddings,
-        mapping: Dict | None = None,
+        embedding: Embeddings
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
@@ -129,8 +128,7 @@ class ElasticVectorSearch:
         index_name = uuid.uuid4().hex
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
-        if not mapping:
-            mapping = _default_text_mapping(dim)
+        mapping = _default_text_mapping(dim)
         # TODO would be nice to create index before embedding,
         # just to save expensive steps for last
         es_client.indices.create(index=index_name, mappings=mapping)

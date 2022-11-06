@@ -40,5 +40,5 @@ __all__ = [
     "SQLDatabaseChain",
     "FAISS",
     "MRKLChain",
-    "ElasticVectorSearch"
+    "ElasticVectorSearch",
 ]
