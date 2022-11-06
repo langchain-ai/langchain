@@ -15,7 +15,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import HuggingFaceEmbeddings
-            huggingface = HuggingFaceEmbeddings(model_name="")
+            huggingface = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     """
 
     client: Any  #: :meta private:
