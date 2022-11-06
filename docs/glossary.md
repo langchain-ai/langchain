@@ -48,6 +48,7 @@ Resources:
 - [PromptChainer Paper](https://arxiv.org/pdf/2203.06566.pdf)
 - [Language Model Cascades](https://arxiv.org/abs/2207.10342)
 - [ICE Primer Book](https://primer.ought.org/)
+- [Socratic Models](https://socraticmodels.github.io/)
 
 ### Memetic Proxy
 
