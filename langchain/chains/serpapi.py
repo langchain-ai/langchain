@@ -94,7 +94,8 @@ class SerpAPIChain(Chain, BaseModel):
         with HiddenPrints():
             search = self.search_engine(params)
             res = search.get_dict()
-
+        if "error" in res.keys():
+            raise ValueError(f"Got error from SerpAPI: {res['error']}")
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
             toret = res["answer_box"]["answer"]
         elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
