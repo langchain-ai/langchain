@@ -22,8 +22,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_name: str = "sentence-transformers/all-mpnet-base-v2"
     """Model name to use."""
 
-    def __init__(self, **kw: Any):
-        super().__init__(**kw)
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
         try:
             import sentence_transformers
 
