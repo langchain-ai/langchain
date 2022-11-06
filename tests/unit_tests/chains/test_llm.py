@@ -2,7 +2,7 @@
 import pytest
 
 from langchain.chains.llm import LLMChain
-from langchain.prompt import Prompt
+from langchain.prompts.prompt import Prompt
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
