@@ -15,8 +15,6 @@ from langchain.chains import (
     SQLDatabaseChain,
 )
 from langchain.docstore import Wikipedia
-from langchain.example_generator import generate_example  # noqa
-from langchain.example_generator import generate_example_from_dynamic_prompt  # noqa
 from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
