@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompt import Prompt
+from langchain.prompts.prompt import Prompt
 
 EXAMPLES = [
     """Question: What is the elevation range for the area that the eastern sector of the

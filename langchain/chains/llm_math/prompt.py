@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompt import Prompt
+from langchain.prompts.prompt import Prompt
 
 _PROMPT_TEMPLATE = """You are GPT-3, and you can't do math.
 
