@@ -2,9 +2,6 @@
 import uuid
 from typing import Callable, Dict, List
 
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
-
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 
@@ -56,15 +53,22 @@ class ElasticVectorSearch:
         embedding_function: Callable,
     ):
         """Initialize with necessary components."""
+        try:
+            import elasticsearch
+        except ImportError:
+            raise ValueError(
+                "Could not import elasticsearch python packge. "
+                "Please install it with `pip install elasticearch`."
+            )
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
-            es_client = Elasticsearch(elastic_url)  # noqa
+            es_client = elasticsearch.Elasticsearch(elastic_url)  # noqa
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
             )
-        self.elastic_url = elastic_url
+        self.client = elasticsearch.Elasticsearch(elastic_url)
         self.mapping = mapping
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
@@ -79,8 +83,7 @@ class ElasticVectorSearch:
         """
         embedding = self.embedding_function(query)
         script_query = _default_script_query(embedding)
-        es_client = Elasticsearch(self.elastic_url)
-        response = es_client.search(index=self.index_name, query=script_query)
+        response = self.client.search(index=self.index_name, query=script_query)
         i = 0
         texts = []
         for hit in response["hits"]["hits"]:
@@ -93,10 +96,7 @@ class ElasticVectorSearch:
 
     @classmethod
     def from_texts(
-        cls,
-        elastic_url: str,
-        texts: List[str],
-        embedding: Embeddings
+        cls, elastic_url: str, texts: List[str], embedding: Embeddings
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
@@ -120,7 +120,15 @@ class ElasticVectorSearch:
                 )
         """
         try:
-            es_client = Elasticsearch(elastic_url)
+            import elasticsearch
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ValueError(
+                "Could not import elasticsearch python packge. "
+                "Please install it with `pip install elasticearch`."
+            )
+        try:
+            client = elasticsearch.Elasticsearch(elastic_url)
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
@@ -131,7 +139,7 @@ class ElasticVectorSearch:
         mapping = _default_text_mapping(dim)
         # TODO would be nice to create index before embedding,
         # just to save expensive steps for last
-        es_client.indices.create(index=index_name, mappings=mapping)
+        client.indices.create(index=index_name, mappings=mapping)
         requests = []
         for i, text in enumerate(texts):
             request = {
@@ -141,6 +149,6 @@ class ElasticVectorSearch:
                 "text": text,
             }
             requests.append(request)
-        bulk(es_client, requests)
-        es_client.indices.refresh(index=index_name)
+        bulk(client, requests)
+        client.indices.refresh(index=index_name)
         return cls(elastic_url, index_name, mapping, embedding.embed_query)
