@@ -5,8 +5,6 @@ from typing import Callable, Dict, List
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 
-DEFAULT_SEARCH_SIZE = 1000
-
 
 def _default_text_mapping(dim: int) -> Dict:
     return {
@@ -96,7 +94,10 @@ class ElasticVectorSearch:
 
     @classmethod
     def from_texts(
-        cls, elastic_url: str, texts: List[str], embedding: Embeddings
+        cls,
+        elastic_url: str,
+        texts: List[str],
+        embedding: Embeddings
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
