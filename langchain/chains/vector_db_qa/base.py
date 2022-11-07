@@ -1,3 +1,4 @@
+"""Chain for question-answering against a vector database."""
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -10,6 +11,18 @@ from langchain.llms.base import LLM
 
 
 class VectorDBQA(Chain, BaseModel):
+    """Chain for question-answering against a vector database.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import OpenAI, VectorDBQA
+            from langchain.faiss import FAISS
+            vectordb = FAISS(...)
+            vectordbQA = VectorDBQA(llm=OpenAI(), vector_db=vectordb)
+
+    """
+
     llm: LLM
     """LLM wrapper to use."""
     vector_db: FAISS

@@ -14,6 +14,7 @@ from langchain.chains import (
     SelfAskWithSearchChain,
     SerpAPIChain,
     SQLDatabaseChain,
+    VectorDBQA,
 )
 from langchain.docstore import Wikipedia
 from langchain.faiss import FAISS
@@ -39,4 +40,5 @@ __all__ = [
     "SQLDatabaseChain",
     "FAISS",
     "MRKLChain",
+    "VectorDBQA",
 ]
