@@ -59,9 +59,7 @@ class MapReduceChain(Chain, BaseModel):
 
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
         # Split the larger text into smaller chunks.
-        docs = self.text_splitter.split_text(
-            inputs[self.input_key],
-        )
+        docs = self.text_splitter.split_text(inputs[self.input_key],)
         # Now that we have the chunks, we send them to the LLM and track results.
         #  This is the "map" part.
         summaries = []
