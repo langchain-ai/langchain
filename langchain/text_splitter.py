@@ -1,6 +1,6 @@
 """Functionality for splitting text."""
 from abc import abstractmethod
-from typing import List, Any
+from typing import Any, List
 
 
 class TextSplitter:
@@ -11,10 +11,10 @@ class TextSplitter:
         """Split text into multiple components."""
 
 
-
 from abc import ABC, abstractmethod
-class IterativeTextSplitter(TextSplitter, ABC):
 
+
+class IterativeTextSplitter(TextSplitter, ABC):
     def __init__(
         self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
     ):
@@ -59,20 +59,28 @@ class CharacterTextSplitter(IterativeTextSplitter):
     def _get_chunk_size(self, text: str) -> int:
         return len(text)
 
+
 class HuggingFaceTokenizerSplitter(IterativeTextSplitter):
     def __init__(
-        self, tokenizer: Any, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
+        self,
+        tokenizer: Any,
+        separator: str = "\n\n",
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
     ):
         """Initialize with parameters."""
         try:
             from transformers import PreTrainedTokenizerBase
+
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
                 raise ValueError
 
             self.tokenizer = tokenizer
         except ImportError:
             raise ValueError
-        super().__init__(separator=separator, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        super().__init__(
+            separator=separator, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
 
     def _get_chunk_size(self, text: str) -> int:
         return len(self.tokenizer.encode(text))
