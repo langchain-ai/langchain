@@ -14,5 +14,6 @@ wikipedia
 huggingface_hub
 faiss
 sentence_transformers
+transformers
 # For development
 jupyter

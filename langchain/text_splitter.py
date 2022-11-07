@@ -1,9 +1,9 @@
 """Functionality for splitting text."""
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, List
 
 
-class TextSplitter:
+class TextSplitter(ABC):
     """Interface for splitting text into chunks."""
 
     @abstractmethod
@@ -11,10 +11,9 @@ class TextSplitter:
         """Split text into multiple components."""
 
 
-from abc import ABC, abstractmethod
+class BaseChunkTextSplitter(TextSplitter, ABC):
+    """Text splitter that first splits into chunks then tries to combine."""
 
-
-class IterativeTextSplitter(TextSplitter, ABC):
     def __init__(
         self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
     ):
@@ -53,14 +52,16 @@ class IterativeTextSplitter(TextSplitter, ABC):
         return docs
 
 
-class CharacterTextSplitter(IterativeTextSplitter):
-    """Implementation of splitting text that looks at characters."""
+class CharacterTextSplitter(BaseChunkTextSplitter):
+    """Implementation of TextSplitter that uses character length."""
 
     def _get_chunk_size(self, text: str) -> int:
         return len(text)
 
 
-class HuggingFaceTokenizerSplitter(IterativeTextSplitter):
+class HuggingFaceTokenizerSplitter(BaseChunkTextSplitter):
+    """Implementation of TextSplitter that uses HuggingFace tokenizers."""
+
     def __init__(
         self,
         tokenizer: Any,
@@ -73,11 +74,16 @@ class HuggingFaceTokenizerSplitter(IterativeTextSplitter):
             from transformers import PreTrainedTokenizerBase
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError
+                raise ValueError(
+                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+                )
 
             self.tokenizer = tokenizer
         except ImportError:
-            raise ValueError
+            raise ValueError(
+                "Could not import transformers python package. "
+                "Please it install it with `pip install transformers`."
+            )
         super().__init__(
             separator=separator, chunk_size=chunk_size, chunk_overlap=chunk_overlap
         )
