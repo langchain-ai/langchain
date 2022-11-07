@@ -13,5 +13,6 @@ playwright
 wikipedia
 huggingface_hub
 faiss
+sentence_transformers
 # For development
 jupyter
