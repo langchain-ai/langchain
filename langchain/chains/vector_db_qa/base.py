@@ -59,6 +59,7 @@ class VectorDBQA(Chain, BaseModel):
         contexts = []
         for j, doc in enumerate(docs):
             contexts.append(f"Context {j}:\n{doc.page_content}")
+        # TODO: handle cases where this context is too long.
         answer = llm_chain.predict(question=question, context="\n\n".join(contexts))
         return {self.output_key: answer}
 
