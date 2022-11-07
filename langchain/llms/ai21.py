@@ -66,7 +66,7 @@ class AI21(BaseModel, LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
+        """Validate that api key exists in environment."""
         if "AI21_API_KEY" not in os.environ:
             raise ValueError(
                 "Did not find AI21 API key, please add an environment variable"
@@ -115,6 +115,6 @@ class AI21(BaseModel, LLM):
                 **self._default_params,
             }
         )
-        assert response.status_code == 200, f"AI21 /complete call failed with status code {response.status_code}, {response.json()}"
+        assert response.status_code == 200, f"AI21 /complete call failed with status code {response.status_code}"
         response = response.json()
         return response["completions"][0]["data"]["text"]
