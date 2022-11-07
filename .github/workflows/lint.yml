@@ -1,6 +1,12 @@
 name: lint
 
-on: [push, pull_request_target]
+on:
+  push:
+    branches:
+      - master
+  pull_request_target:
+    branches:
+      - master
 
 jobs:
   build:
