@@ -38,6 +38,8 @@ class OpenAI(BaseModel, LLM):
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
 
+    openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -46,14 +48,18 @@ class OpenAI(BaseModel, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if "OPENAI_API_KEY" not in os.environ:
+        openai_api_key = values.get("openai_api_key")
+
+        if openai_api_key is None or openai_api_key == "":
             raise ValueError(
                 "Did not find OpenAI API key, please add an environment variable"
-                " `OPENAI_API_KEY` which contains it."
+                " `OPENAI_API_KEY` which contains it, or pass `openai_api_key`"
+                " as a named parameter."
             )
         try:
             import openai
 
+            openai.api_key = openai_api_key
             values["client"] = openai.Completion
         except ImportError:
             raise ValueError(
