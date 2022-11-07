@@ -4,7 +4,7 @@ Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -29,7 +29,8 @@ class SerpAPIChain(Chain, BaseModel):
     """Chain that calls SerpAPI.
 
     To use, you should have the ``google-search-results`` python package installed,
-    and the environment variable ``SERPAPI_API_KEY`` set with your API key.
+    and the environment variable ``SERPAPI_API_KEY`` set with your API key, or pass
+    `serpapi_api_key` as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -41,6 +42,8 @@ class SerpAPIChain(Chain, BaseModel):
     search_engine: Any  #: :meta private:
     input_key: str = "search_query"  #: :meta private:
     output_key: str = "search_result"  #: :meta private:
+
+    serpapi_api_key: Optional[str] = os.environ.get("SERPAPI_API_KEY")
 
     class Config:
         """Configuration for this pydantic object."""
@@ -66,10 +69,13 @@ class SerpAPIChain(Chain, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if "SERPAPI_API_KEY" not in os.environ:
+        serpapi_api_key = values.get("serpapi_api_key")
+
+        if serpapi_api_key is None or serpapi_api_key == "":
             raise ValueError(
                 "Did not find SerpAPI API key, please add an environment variable"
-                " `SERPAPI_API_KEY` which contains it."
+                " `SERPAPI_API_KEY` which contains it, or pass `serpapi_api_key` as a named"
+                " parameter to the constructor."
             )
         try:
             from serpapi import GoogleSearch
@@ -84,7 +90,7 @@ class SerpAPIChain(Chain, BaseModel):
 
     def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         params = {
-            "api_key": os.environ["SERPAPI_API_KEY"],
+            "api_key": self.serpapi_api_key,
             "engine": "google",
             "q": inputs[self.input_key],
             "google_domain": "google.com",
