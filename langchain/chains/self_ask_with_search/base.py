@@ -92,7 +92,6 @@ class SelfAskWithSearchChain(Chain, BaseModel):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
-
     class Config:
         """Configuration for this pydantic object."""
 
