@@ -4,7 +4,7 @@ import pytest
 
 from langchain.chains.mrkl.base import ChainConfig, MRKLChain, get_action_and_input
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.prompt import Prompt
+from langchain.prompts import Prompt
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
