@@ -9,7 +9,7 @@ from langchain.chains.react.base import ReActChain, predict_until_observation
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompt import Prompt
+from langchain.prompts.prompt import Prompt
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

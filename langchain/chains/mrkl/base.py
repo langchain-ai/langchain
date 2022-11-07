@@ -8,7 +8,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
-from langchain.prompt import BasePrompt, Prompt
+from langchain.prompts import BasePrompt, Prompt
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
