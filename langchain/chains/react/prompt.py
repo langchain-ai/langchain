@@ -109,4 +109,8 @@ Action 3: Finish[yes]""",
 ]
 SUFFIX = """\n\nQuestion: {input}"""
 
-PROMPT = Prompt.from_examples(EXAMPLES, SUFFIX, ["input"],)
+PROMPT = Prompt.from_examples(
+    EXAMPLES,
+    SUFFIX,
+    ["input"],
+)

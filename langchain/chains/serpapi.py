@@ -74,8 +74,8 @@ class SerpAPIChain(Chain, BaseModel):
         if serpapi_api_key is None or serpapi_api_key == "":
             raise ValueError(
                 "Did not find SerpAPI API key, please add an environment variable"
-                " `SERPAPI_API_KEY` which contains it, or pass `serpapi_api_key` as a named"
-                " parameter to the constructor."
+                " `SERPAPI_API_KEY` which contains it, or pass `serpapi_api_key` "
+                "as a named parameter to the constructor."
             )
         try:
             from serpapi import GoogleSearch

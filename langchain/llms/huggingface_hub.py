@@ -61,7 +61,9 @@ class HuggingFaceHub(BaseModel, LLM):
 
             repo_id = values.get("repo_id", DEFAULT_REPO_ID)
             values["client"] = InferenceApi(
-                repo_id=repo_id, token=huggingfacehub_api_token, task="text-generation",
+                repo_id=repo_id,
+                token=huggingfacehub_api_token,
+                task="text-generation",
             )
         except ImportError:
             raise ValueError(
