@@ -14,7 +14,8 @@ class HuggingFaceHub(BaseModel, LLM):
     """Wrapper around HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token.
+    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
+    it as a named parameter to the constructor.
 
     Only supports task `text-generation` for now.
 
@@ -22,7 +23,7 @@ class HuggingFaceHub(BaseModel, LLM):
         .. code-block:: python
 
             from langchain import HuggingFaceHub
-            hf = HuggingFaceHub(repo_id="gpt2")
+            hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
     client: Any  #: :meta private:
@@ -37,6 +38,8 @@ class HuggingFaceHub(BaseModel, LLM):
     num_return_sequences: int = 1
     """How many completions to generate for each prompt."""
 
+    huggingfacehub_api_token: Optional[str] = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -45,10 +48,13 @@ class HuggingFaceHub(BaseModel, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if "HUGGINGFACEHUB_API_TOKEN" not in os.environ:
+        huggingfacehub_api_token = values.get("huggingfacehub_api_token")
+
+        if huggingfacehub_api_token is None or huggingfacehub_api_token == "":
             raise ValueError(
                 "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACEHUB_API_TOKEN` which contains it."
+                " `HUGGINGFACEHUB_API_TOKEN` which contains it, or pass"
+                " `huggingfacehub_api_token` as a named parameter."
             )
         try:
             from huggingface_hub.inference_api import InferenceApi
@@ -56,7 +62,7 @@ class HuggingFaceHub(BaseModel, LLM):
             repo_id = values.get("repo_id", DEFAULT_REPO_ID)
             values["client"] = InferenceApi(
                 repo_id=repo_id,
-                token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+                token=huggingfacehub_api_token,
                 task="text-generation",
             )
         except ImportError:
