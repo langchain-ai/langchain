@@ -3,6 +3,7 @@
 cohere
 openai
 google-search-results
+nlpcloud
 playwright
 wikipedia
 huggingface_hub
