@@ -4,8 +4,6 @@
 
 [![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml) [![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai) [![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
 
-
-
 ## Quick Install
 
 `pip install langchain`
@@ -20,6 +18,7 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 It aims to create:
+
 1. a comprehensive collection of pieces you would ever want to combine
 2. a flexible interface for combining pieces into a single comprehensive "chain"
 3. a schema for easily saving and sharing those chains
@@ -30,23 +29,23 @@ Besides the installation of this python package, you will also need to install p
 
 Note: the reason these packages are not included in the dependencies by default is that as we imagine scaling this package, we do not want to force dependencies that are not needed.
 
-The following use cases require specific installs and environment variables:
+The following use cases require specific installs and api keys:
 
-- *OpenAI*:
+- _OpenAI_:
   - Install requirements with `pip install openai`
-  - Set the following environment variable: `OPENAI_API_KEY`
-- *Cohere*:
+  - Get an OpenAI api key and either set it as an environment variable (`OPENAI_API_KEY`) or pass it to the LLM constructor as `openai_api_key`.
+- _Cohere_:
   - Install requirements with `pip install cohere`
-  - Set the following environment variable: `COHERE_API_KEY`
-- *HuggingFace Hub*
+  - Get a Cohere api key and either set it as an environment variable (`COHERE_API_KEY`) or pass it to the LLM constructor as `cohere_api_key`.
+- _HuggingFace Hub_
   - Install requirements with `pip install huggingface_hub`
-  - Set the following environment variable: `HUGGINGFACEHUB_API_TOKEN`
-- *SerpAPI*:
+  - Get a HuggingFace Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
+- _SerpAPI_:
   - Install requirements with `pip install google-search-results`
-  - Set the following environment variable: `SERPAPI_API_KEY`
-- *NatBot*:
+  - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
+- _NatBot_:
   - Install requirements with `pip install playwright`
-- *Wikipedia*:
+- _Wikipedia_:
   - Install requirements with `pip install wikipedia`
 - *Elasticsearch*:
   - Install requirements with `pip install elasticsearch`

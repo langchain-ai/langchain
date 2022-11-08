@@ -1,10 +1,4 @@
 -r test_requirements.txt
-# For linting
-black
-isort
-mypy
-flake8
-flake8-docstrings
 # For integrations
 cohere
 elasticsearch
@@ -14,5 +8,6 @@ playwright
 wikipedia
 huggingface_hub
 faiss
+sentence_transformers
 # For development
 jupyter
