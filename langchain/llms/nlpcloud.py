@@ -1,6 +1,6 @@
 """Wrapper around NLPCloud APIs."""
 import os
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -33,8 +33,6 @@ class NLPCloud(BaseModel, LLM):
     """Whether min_length and max_length should include the length of the input."""
     remove_input: bool = True
     """Remove input text from API response"""
-    end_sequence: Union[str, None] = None
-    """A specific token that should cut off generation."""
     remove_end_sequence: bool = True
     """Whether or not to remove the end sequence token."""
     bad_words: List[str] = []
@@ -96,7 +94,6 @@ class NLPCloud(BaseModel, LLM):
             "max_length": self.max_length,
             "length_no_input": self.length_no_input,
             "remove_input": self.remove_input,
-            "end_sequence": self.end_sequence,
             "remove_end_sequence": self.remove_end_sequence,
             "bad_words": self.bad_words,
             "top_p": self.top_p,
@@ -124,10 +121,16 @@ class NLPCloud(BaseModel, LLM):
 
                 response = nlpcloud("Tell me a joke.")
         """
-        if stop:
+        if stop and len(stop) > 1:
             raise ValueError(
-                "NLPCloud only supports a single stop sequence per client."
-                "Pass in the stop sequence during client initialization."
+                "NLPCloud only supports a single stop sequence per generation."
+                "Pass in a list of length 1."
             )
-        response = self.client.generation(prompt, **self._default_params)
+        elif stop and len(stop) == 1:
+            end_sequence = stop[0]
+        else:
+            end_sequence = None
+        response = self.client.generation(
+            prompt, end_sequence=end_sequence, **self._default_params
+        )
         return response["generated_text"]
