@@ -16,6 +16,7 @@ from langchain.chains import (
     SQLDatabaseChain,
 )
 from langchain.docstore import Wikipedia
+from langchain.elastic_vector_search import ElasticVectorSearch
 from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
@@ -39,4 +40,5 @@ __all__ = [
     "SQLDatabaseChain",
     "FAISS",
     "MRKLChain",
+    "ElasticVectorSearch",
 ]

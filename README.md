@@ -47,6 +47,11 @@ The following use cases require specific installs and api keys:
   - Install requirements with `pip install playwright`
 - _Wikipedia_:
   - Install requirements with `pip install wikipedia`
+- _Elasticsearch_:
+  - Install requirements with `pip install elasticsearch`
+  - Set up Elasticsearch backend. If you want to do locally, [this](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/getting-started.html) is a good guide.
+- _FAISS_:
+  - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
 
 ## 🚀 What can I do with this
 
@@ -96,6 +101,28 @@ llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0))
 question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
 
 llm_chain.predict(question=question)
+```
+
+**Embed & Search Documents**
+
+We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook] (https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
+
+```
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.faiss import FAISS
+from langchain.text_splitter import CharacterTextSplitter
+
+with open('state_of_the_union.txt') as f:
+    state_of_the_union = f.read()
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+texts = text_splitter.split_text(state_of_the_union)
+
+embeddings = OpenAIEmbeddings()
+
+docsearch = FAISS.from_texts(texts, embeddings)
+
+query = "What did the president say about Ketanji Brown Jackson"
+docs = docsearch.similarity_search(query)
 ```
 
 ## 📖 Documentation
