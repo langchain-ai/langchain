@@ -76,7 +76,7 @@ class AI21(BaseModel, LLM):
 
     @property
     def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling AI21 API."""
         return {
             "temperature": self.temperature,
             "maxTokens": self.maxTokens,
