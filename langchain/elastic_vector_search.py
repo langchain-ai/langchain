@@ -66,7 +66,7 @@ class ElasticVectorSearch:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
             )
-        self.client = elasticsearch.Elasticsearch(elastic_url)
+        self.client = es_client
         self.mapping = mapping
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
@@ -82,9 +82,7 @@ class ElasticVectorSearch:
         embedding = self.embedding_function(query)
         script_query = _default_script_query(embedding)
         response = self.client.search(index=self.index_name, query=script_query)
-        texts = []
-        for hit in response["hits"]["hits"][:k]:
-            texts.append(hit["_source"]["text"])
+        texts = [hit["_source"]["text"] for hit in response["hits"]["hits"][:k]]
         documents = [Document(page_content=text) for text in texts]
         return documents
 
