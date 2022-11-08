@@ -88,10 +88,7 @@ class ElasticVectorSearch:
 
     @classmethod
     def from_texts(
-        cls,
-        elastic_url: str,
-        texts: List[str],
-        embedding: Embeddings
+        cls, elastic_url: str, texts: List[str], embedding: Embeddings
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
