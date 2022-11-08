@@ -1,6 +1,6 @@
 """Wrapper around NLPCloud APIs."""
 import os
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -33,7 +33,7 @@ class NLPCloud(BaseModel, LLM):
     """Whether min_length and max_length should include the length of the input."""
     remove_input: bool = True
     """Remove input text from API response"""
-    end_sequence: str | None = None
+    end_sequence: Union[str, None] = None
     """A specific token that should cut off generation."""
     remove_end_sequence: bool = True
     """Whether or not to remove the end sequence token."""
