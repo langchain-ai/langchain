@@ -47,9 +47,10 @@ The following use cases require specific installs and api keys:
   - Install requirements with `pip install playwright`
 - _Wikipedia_:
   - Install requirements with `pip install wikipedia`
-- *Elasticsearch*:
+- _Elasticsearch_:
   - Install requirements with `pip install elasticsearch`
-- #FAISS*:
+  - Set up Elasticsearch backend. If you want to do locally, [this](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/getting-started.html) is a good guide.
+- _FAISS_:
   - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
 
 ## 🚀 What can I do with this
