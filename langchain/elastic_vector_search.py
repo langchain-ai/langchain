@@ -1,4 +1,4 @@
-"""Wrapper around FAISS vector database."""
+"""Wrapper around Elasticsearch vector database."""
 import uuid
 from typing import Callable, Dict, List
 
@@ -88,7 +88,10 @@ class ElasticVectorSearch:
 
     @classmethod
     def from_texts(
-        cls, elastic_url: str, texts: List[str], embedding: Embeddings
+        cls,
+        elastic_url: str,
+        texts: List[str],
+        embedding: Embeddings
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
