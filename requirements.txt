@@ -7,6 +7,7 @@ flake8
 flake8-docstrings
 # For integrations
 cohere
+elasticsearch
 openai
 google-search-results
 playwright

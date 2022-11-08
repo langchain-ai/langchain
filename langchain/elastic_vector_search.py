@@ -82,13 +82,9 @@ class ElasticVectorSearch:
         embedding = self.embedding_function(query)
         script_query = _default_script_query(embedding)
         response = self.client.search(index=self.index_name, query=script_query)
-        i = 0
         texts = []
-        for hit in response["hits"]["hits"]:
-            if i > k:
-                break
+        for hit in response["hits"]["hits"][:k]:
             texts.append(hit["_source"]["text"])
-            i += 1
         documents = [Document(page_content=text) for text in texts]
         return documents
 
