@@ -18,3 +18,4 @@ class VectorStore(ABC):
         cls, texts: List[str], embedding: Embeddings, **kwargs: Any
     ) -> "VectorStore":
         """Return VectorStore initialized from texts and embeddings."""
+        raise NotImplementedError("Use subclass")
