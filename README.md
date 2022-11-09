@@ -53,7 +53,7 @@ The following use cases require specific installs and api keys:
 - _FAISS_:
   - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
 - _Manifest_:
-  - Install requirements with `pip install manifest-ml`
+  - Install requirements with `pip install manifest-ml` (Note: this is only available in Python 3.8+ currently).
 
 ## 🚀 What can I do with this
 
