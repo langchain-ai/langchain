@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.llms.base import LLM
 
 
-class OpenAI(BaseModel, LLM):
+class OpenAI(LLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -80,6 +80,11 @@ class OpenAI(BaseModel, LLM):
             "n": self.n,
             "best_of": self.best_of,
         }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model": self.model_name}, **self._default_params}
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to OpenAI's create endpoint.

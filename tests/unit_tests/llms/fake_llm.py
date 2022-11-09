@@ -1,5 +1,5 @@
 """Fake LLM wrapper for testing purposes."""
-from typing import List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 from langchain.llms.base import LLM
 
@@ -19,3 +19,7 @@ class FakeLLM(LLM):
             return "foo"
         else:
             return "bar"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {}

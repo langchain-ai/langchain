@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.llms.base import LLM
 
 
-class NLPCloud(BaseModel, LLM):
+class NLPCloud(LLM, BaseModel):
     """Wrapper around NLPCloud large language models.
 
     To use, you should have the ``nlpcloud`` python package installed, and the
@@ -105,6 +105,11 @@ class NLPCloud(BaseModel, LLM):
             "early_stopping": self.early_stopping,
             "num_return_sequences": self.num_return_sequences,
         }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to NLPCloud's create endpoint.
