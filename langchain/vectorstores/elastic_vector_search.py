@@ -88,7 +88,6 @@ class ElasticVectorSearch(VectorStore):
         documents = [Document(page_content=text) for text in texts]
         return documents
 
-    @overload
     @classmethod
     def from_texts(
         cls, texts: List[str], embedding: Embeddings, **kwargs: Any

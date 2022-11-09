@@ -1,5 +1,5 @@
 """Wrapper around FAISS vector database."""
-from typing import Any, Callable, List, overload
+from typing import Any, Callable, List
 
 import numpy as np
 
@@ -52,7 +52,6 @@ class FAISS(VectorStore):
             docs.append(doc)
         return docs
 
-    @overload
     @classmethod
     def from_texts(
         cls, texts: List[str], embedding: Embeddings, **kwargs: Any

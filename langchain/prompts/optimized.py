@@ -129,10 +129,10 @@ class OptimizedPrompt(BaseModel):
         suffix: str,
         input_variables: List[str],
         embeddings: Embeddings,
-        vectorstore_cls: str,
+        vectorstore_cls: VectorStore,
         example_separator: str = "\n\n",
         prefix: str = "",
-        vectorstore_cls_kwargs: Optional[Dict] = None
+        **vectorstore_cls_kwargs: Any,
     ) -> "OptimizedPrompt":
         """Create k-shot prompt optimizer using example list and embeddings.
 
@@ -156,9 +156,7 @@ class OptimizedPrompt(BaseModel):
             The OptimizedPrompt instantiated, backed by a vector store.
         """
         vectorstore_client = vectorstore_cls.from_texts(
-            examples,
-            embeddings,
-            **vectorstore_cls_kwargs
+            examples, embeddings, **vectorstore_cls_kwargs
         )
         return cls(
             examples=examples,
