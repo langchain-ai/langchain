@@ -7,9 +7,10 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
 
 
-class FAISS:
+class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
     To use, you should have the ``faiss`` python package installed.
