@@ -10,5 +10,6 @@ wikipedia
 huggingface_hub
 faiss
 sentence_transformers
+manifest-ml
 # For development
 jupyter

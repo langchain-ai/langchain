@@ -1,9 +1,13 @@
-from langchain.llms.base import LLM
-from typing import Any, Dict, Optional, List
+"""Wrapper around HazyResearch's Manifest library."""
+from typing import Any, Dict, List, Mapping, Optional
+
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.llms.base import LLM
 
-class ManifestWrapper(BaseModel, LLM):
+
+class ManifestWrapper(LLM, BaseModel):
+    """Wrapper around HazyResearch's Manifest library."""
 
     client: Any  #: :meta private:
     llm_kwargs: Optional[Dict] = None
@@ -28,8 +32,18 @@ class ManifestWrapper(BaseModel, LLM):
             )
         return values
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        if stop is not None:
-            raise NotImplementedError("Need to check how to do this")
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
+        return {**{"client_name": self.client.client_name}, **kwargs}
+
+    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Call out to LLM through Manifest."""
+        if stop is not None and len(stop) != 1:
+            raise NotImplementedError(
+                f"Manifest currently only supports a single stop token, got {stop}"
+            )
+        kwargs = self.llm_kwargs or {}
+        if stop is not None:
+            kwargs["stop_token"] = stop
         return self.client.run(prompt, **kwargs)
