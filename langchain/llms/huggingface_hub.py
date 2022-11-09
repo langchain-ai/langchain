@@ -1,6 +1,6 @@
 """Wrapper around HuggingFace APIs."""
 import os
-from typing import Any, Dict, List, Optional, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -75,9 +75,10 @@ class HuggingFaceHub(LLM, BaseModel):
         return values
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling Cohere API."""
-        return self.model_kwargs
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
+        return {**{"repo_id": self.repo_id}, **_model_kwargs}
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
@@ -94,7 +95,8 @@ class HuggingFaceHub(LLM, BaseModel):
 
                 response = hf("Tell me a joke.")
         """
-        response = self.client(inputs=prompt, params=self._default_params)
+        _model_kwargs = self.model_kwargs or {}
+        response = self.client(inputs=prompt, params=_model_kwargs)
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
         if self.client.task == "text-generation":

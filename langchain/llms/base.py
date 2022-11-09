@@ -1,6 +1,6 @@
 """Base interface for large language models to expose."""
 from abc import ABC, abstractmethod
-from typing import List, Optional, Mapping, Any
+from typing import Any, List, Mapping, Optional
 
 
 class LLM(ABC):
@@ -12,9 +12,10 @@ class LLM(ABC):
 
     @property
     @abstractmethod
-    def _default_params(self) -> Mapping[str, Any]:
-        """Get the default parameters for calling Cohere API."""
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Get a string representation of the object for printing."""
-        return f"{self.__class__.__name__}\nParams: {self._default_params}"
+        cls_name = f"\033[1m{self.__class__.__name__}\033[0m"
+        return f"{cls_name}\nParams: {self._identifying_params}"

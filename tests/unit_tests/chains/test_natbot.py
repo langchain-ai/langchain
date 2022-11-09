@@ -1,6 +1,6 @@
 """Test functionality related to natbot."""
 
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
@@ -15,6 +15,10 @@ class FakeLLM(LLM):
             return "foo"
         else:
             return "bar"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {}
 
 
 def test_proper_inputs() -> None:

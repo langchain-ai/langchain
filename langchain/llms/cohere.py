@@ -1,6 +1,6 @@
 """Wrapper around Cohere APIs."""
 import os
-from typing import Any, Dict, List, Optional, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -77,13 +77,18 @@ class Cohere(LLM, BaseModel):
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Cohere API."""
         return {
-             "max_tokens":self.max_tokens,
-            "temperature":self.temperature,
-            "k":self.k,
-            "p":self.p,
-            "frequency_penalty":self.frequency_penalty,
-            "presence_penalty":self.presence_penalty,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "k": self.k,
+            "p": self.p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
         }
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model": self.model}, **self._default_params}
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Cohere's generate endpoint.
@@ -101,10 +106,7 @@ class Cohere(LLM, BaseModel):
                 response = cohere("Tell me a joke.")
         """
         response = self.client.generate(
-            model=self.model,
-            prompt=prompt,
-            stop_sequences=stop,
-            **self._default_params
+            model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
         )
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.

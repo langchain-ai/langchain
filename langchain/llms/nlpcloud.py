@@ -106,6 +106,11 @@ class NLPCloud(LLM, BaseModel):
             "num_return_sequences": self.num_return_sequences,
         }
 
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to NLPCloud's create endpoint.
 
