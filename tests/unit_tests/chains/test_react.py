@@ -1,6 +1,6 @@
 """Unit tests for ReAct."""
 
-from typing import List, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 
 import pytest
 
@@ -9,7 +9,7 @@ from langchain.chains.react.base import ReActChain, predict_until_observation
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompt import Prompt
+from langchain.prompts.prompt import Prompt
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -34,6 +34,10 @@ class FakeListLLM(LLM):
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {}
 
 
 class FakeDocstore(Docstore):

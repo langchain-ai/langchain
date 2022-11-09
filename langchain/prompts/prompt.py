@@ -1,38 +1,9 @@
 """Prompt schema definition."""
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.formatting import formatter
-
-_FORMATTER_MAPPING = {
-    "f-string": formatter.format,
-}
-
-
-class BasePrompt(ABC):
-    """Base prompt should expose the format method, returning a prompt."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
-    @abstractmethod
-    def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-        """
+from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
 
 
 class Prompt(BaseModel, BasePrompt):
@@ -74,7 +45,7 @@ class Prompt(BaseModel, BasePrompt):
 
             prompt.format(variable1="foo")
         """
-        return _FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
@@ -82,15 +53,15 @@ class Prompt(BaseModel, BasePrompt):
         input_variables = values["input_variables"]
         template = values["template"]
         template_format = values["template_format"]
-        if template_format not in _FORMATTER_MAPPING:
-            valid_formats = list(_FORMATTER_MAPPING)
+        if template_format not in DEFAULT_FORMATTER_MAPPING:
+            valid_formats = list(DEFAULT_FORMATTER_MAPPING)
             raise ValueError(
                 f"Invalid template format. Got `{template_format}`;"
                 f" should be one of {valid_formats}"
             )
         dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
         try:
-            formatter_func = _FORMATTER_MAPPING[template_format]
+            formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
             formatter_func(template, **dummy_inputs)
         except KeyError:
             raise ValueError("Invalid prompt schema.")

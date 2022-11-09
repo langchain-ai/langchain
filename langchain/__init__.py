@@ -8,6 +8,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 from langchain.chains import (
     LLMChain,
     LLMMathChain,
+    MRKLChain,
     PythonChain,
     ReActChain,
     SelfAskWithSearchChain,
@@ -15,10 +16,10 @@ from langchain.chains import (
     SQLDatabaseChain,
 )
 from langchain.docstore import Wikipedia
-from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
-from langchain.prompt import BasePrompt, Prompt
+from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
 from langchain.sql_database import SQLDatabase
+from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 __all__ = [
     "LLMChain",
@@ -29,6 +30,7 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "BasePrompt",
+    "DynamicPrompt",
     "Prompt",
     "ReActChain",
     "Wikipedia",
@@ -36,4 +38,6 @@ __all__ = [
     "SQLDatabase",
     "SQLDatabaseChain",
     "FAISS",
+    "MRKLChain",
+    "ElasticVectorSearch",
 ]

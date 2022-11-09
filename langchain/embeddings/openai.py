@@ -1,6 +1,6 @@
 """Wrapper around OpenAI embedding models."""
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -11,18 +11,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Wrapper around OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    environment variable ``OPENAI_API_KEY`` set with your API key or pass it
+    as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain.embeddings import OpenAIEmbeddings
-            openai = OpenAIEmbeddings(model_name="davinci")
+            openai = OpenAIEmbeddings(model_name="davinci", openai_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
     model_name: str = "babbage"
     """Model name to use."""
+
+    openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
 
     class Config:
         """Configuration for this pydantic object."""
@@ -32,14 +35,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if "OPENAI_API_KEY" not in os.environ:
+        openai_api_key = values.get("openai_api_key")
+
+        if openai_api_key is None or openai_api_key == "":
             raise ValueError(
                 "Did not find OpenAI API key, please add an environment variable"
-                " `OPENAI_API_KEY` which contains it."
+                " `OPENAI_API_KEY` which contains it, or pass `openai_api_key` as a"
+                " named parameter."
             )
         try:
             import openai
 
+            openai.api_key = openai_api_key
             values["client"] = openai.Embedding
         except ImportError:
             raise ValueError(
