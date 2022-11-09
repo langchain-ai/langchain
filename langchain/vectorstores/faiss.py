@@ -7,9 +7,10 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
 
 
-class FAISS:
+class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
     To use, you should have the ``faiss`` python package installed.
@@ -52,7 +53,9 @@ class FAISS:
         return docs
 
     @classmethod
-    def from_texts(cls, texts: List[str], embedding: Embeddings) -> "FAISS":
+    def from_texts(
+        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+    ) -> "FAISS":
         """Construct FAISS wrapper from raw documents.
 
         This is a user friendly interface that:

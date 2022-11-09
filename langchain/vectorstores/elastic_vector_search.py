@@ -1,9 +1,11 @@
 """Wrapper around Elasticsearch vector database."""
+import os
 import uuid
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
 
 
 def _default_text_mapping(dim: int) -> Dict:
@@ -27,7 +29,7 @@ def _default_script_query(query_vector: List[int]) -> Dict:
     }
 
 
-class ElasticVectorSearch:
+class ElasticVectorSearch(VectorStore):
     """Wrapper around Elasticsearch as a vector database.
 
     Example:
@@ -45,7 +47,7 @@ class ElasticVectorSearch:
 
     def __init__(
         self,
-        elastic_url: str,
+        elasticsearch_url: str,
         index_name: str,
         mapping: Dict,
         embedding_function: Callable,
@@ -61,7 +63,7 @@ class ElasticVectorSearch:
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
-            es_client = elasticsearch.Elasticsearch(elastic_url)  # noqa
+            es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
@@ -88,7 +90,7 @@ class ElasticVectorSearch:
 
     @classmethod
     def from_texts(
-        cls, elastic_url: str, texts: List[str], embedding: Embeddings
+        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
@@ -106,11 +108,21 @@ class ElasticVectorSearch:
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
-                    "http://localhost:9200",
                     texts,
-                    embeddings
+                    embeddings,
+                    elasticsearch_url="http://localhost:9200"
                 )
         """
+        elasticsearch_url = kwargs.get("elasticsearch_url")
+        if not elasticsearch_url:
+            elasticsearch_url = os.environ.get("ELASTICSEARCH_URL")
+
+            if elasticsearch_url is None or elasticsearch_url == "":
+                raise ValueError(
+                    "Did not find Elasticsearch URL, please add an environment variable"
+                    " `ELASTICSEARCH_URL` which contains it, or pass"
+                    "  `elasticsearch_url` as a named parameter."
+                )
         try:
             import elasticsearch
             from elasticsearch.helpers import bulk
@@ -120,7 +132,7 @@ class ElasticVectorSearch:
                 "Please install it with `pip install elasticearch`."
             )
         try:
-            client = elasticsearch.Elasticsearch(elastic_url)
+            client = elasticsearch.Elasticsearch(elasticsearch_url)
         except ValueError as e:
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
@@ -143,4 +155,4 @@ class ElasticVectorSearch:
             requests.append(request)
         bulk(client, requests)
         client.indices.refresh(index=index_name)
-        return cls(elastic_url, index_name, mapping, embedding.embed_query)
+        return cls(elasticsearch_url, index_name, mapping, embedding.embed_query)

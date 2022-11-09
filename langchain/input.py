@@ -15,13 +15,13 @@ def get_color_mapping(
     return color_mapping
 
 
-def print_text(text: str, color: Optional[str] = None) -> None:
+def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     """Print text with highlighting and no end characters."""
     if color is None:
-        print(text, end="")
+        print(text, end=end)
     else:
         color_str = _COLOR_MAPPING[color]
-        print(f"\x1b[{color_str}m{text}\x1b[0m", end="")
+        print(f"\x1b[{color_str}m{text}\x1b[0m", end=end)
 
 
 class ChainedInput:

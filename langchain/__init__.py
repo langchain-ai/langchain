@@ -16,11 +16,10 @@ from langchain.chains import (
     SQLDatabaseChain,
 )
 from langchain.docstore import Wikipedia
-from langchain.elastic_vector_search import ElasticVectorSearch
-from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
 from langchain.sql_database import SQLDatabase
+from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 __all__ = [
     "LLMChain",
