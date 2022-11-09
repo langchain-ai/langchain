@@ -14,8 +14,8 @@ class VectorStore(ABC):
         """Return docs most similar to query."""
 
     @classmethod
+    @abstractmethod
     def from_texts(
         cls, texts: List[str], embedding: Embeddings, **kwargs: Any
     ) -> "VectorStore":
         """Return VectorStore initialized from texts and embeddings."""
-        raise NotImplementedError("Use subclass")
