@@ -1,17 +1,9 @@
 """Interface for vector stores."""
 from abc import ABC, abstractmethod
-<<<<<<< HEAD
-from typing import Any, Callable, List
-
-import numpy as np
-
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-=======
 from typing import List
 
 from langchain.docstore.document import Document
->>>>>>> master
+from langchain.embeddings.base import Embeddings
 
 
 class VectorStore(ABC):
@@ -20,3 +12,8 @@ class VectorStore(ABC):
     @abstractmethod
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query."""
+
+    @abstractmethod
+    @classmethod
+    def from_texts(cls, texts: List[str], embedding: Embeddings) -> "VectorStore":
+        """Construct VectorStore from texts and embedddings."""

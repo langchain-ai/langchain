@@ -87,16 +87,10 @@ class ElasticVectorSearch(VectorStore):
         documents = [Document(page_content=text) for text in texts]
         return documents
 
+    @overload
     @classmethod
     def from_texts(
-<<<<<<< HEAD
-        cls,
-        elastic_url: str,
-        texts: List[str],
-        embedding: Embeddings
-=======
-        cls, elastic_url: str, texts: List[str], embedding: Embeddings
->>>>>>> master
+        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
@@ -114,11 +108,19 @@ class ElasticVectorSearch(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
-                    "http://localhost:9200",
                     texts,
-                    embeddings
+                    embeddings,
+                    elasticsearch_url="http://localhost:9200"
                 )
         """
+        elasticsearch_url = values.get("elasticsearch_url")
+
+        if elasticsearch_url is None or elasticsearch_url == "":
+            raise ValueError(
+                "Did not find Elasticsaerch URL, please add an environment variable"
+                " `ELASTICSEARCH_URL` which contains it, or pass `elasticsearch_url`"
+                " as a named parameter."
+            )
         try:
             import elasticsearch
             from elasticsearch.helpers import bulk

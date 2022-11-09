@@ -6,10 +6,10 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING
-from langchain.prompts.dynamic import DynamicPrompt
+from langchain.vectorstores.base import VectorStore
 
 
-class OptimizedPrompt(BaseModel, DynamicPrompt):
+class OptimizedPrompt(BaseModel):
     r"""Schema to represent an optimized prompt for an LLM.
 
     Example:
@@ -24,10 +24,10 @@ class OptimizedPrompt(BaseModel, DynamicPrompt):
                 input_variables=["foo"],
                 max_length=200,
                 get_text_length=word_count,
-                embeddings_cls=OpenAIEmbeddings,
-                vectorstore_cls=FAISS
+                vectorstore_client=FAISS.from_texts(examples, OpenAIEmbeddings())
             )
     """
+
     examples: List[str]
     """A list of the examples that the prompt template expects."""
 
@@ -58,19 +58,22 @@ class OptimizedPrompt(BaseModel, DynamicPrompt):
     class Config:
         """Configuration for this pydantic object."""
 
+        arbitrary_types_allowed = True
+
         extra = Extra.forbid
 
     def template(self, example_list: List[str], **kwargs: Any) -> str:
-        """Return template given example list."""
+        """Return template given full example list."""
         template = self.example_separator.join(
             [self.prefix, *example_list, self.suffix]
         )
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
-    def format(self, **kwargs: Any) -> str:
-        """Dynamically format the prompt with the inputs.
+    def format(self, k: int = 4, **kwargs: Any) -> str:
+        """Optimize the examples in the prompt for the given inputs.
 
         Args:
+            k: Number of examples to aim for (may be trimmed by optimizer afterwards)
             kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
@@ -82,12 +85,86 @@ class OptimizedPrompt(BaseModel, DynamicPrompt):
 
             prompt.format(variable1="foo")
         """
-        curr_examples = self.examples
+        query = " ".join([v for k, v in kwargs.items()])
+        example_docs = self.vectorstore_client.similarity_search(query, k=k)
+        curr_examples = [str(e.page_content) for e in example_docs]
         template = self.template(curr_examples, **kwargs)
         while self.get_text_length(template) > self.max_length and curr_examples:
             curr_examples = curr_examples[:-1]
             template = self.template(curr_examples, **kwargs)
         return template
 
+    @root_validator()
+    def template_is_valid(cls, values: Dict) -> Dict:
+        """Check that prefix, suffix and input variables are consistent."""
+        input_variables = values["input_variables"]
+        prefix = values["prefix"]
+        suffix = values["suffix"]
+        template_format = values["template_format"]
+        if template_format not in DEFAULT_FORMATTER_MAPPING:
+            valid_formats = list(DEFAULT_FORMATTER_MAPPING)
+            raise ValueError(
+                f"Invalid template format. Got `{template_format}`;"
+                f" should be one of {valid_formats}"
+            )
+        try:
+            result = values["get_text_length"]("foo")
+            assert isinstance(result, int)
+        except AssertionError:
+            raise ValueError(
+                "Invalid text length callable, must take string & return int;"
+            )
+        dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
+        try:
+            formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
+            formatter_func(prefix + suffix, **dummy_inputs)
+        except KeyError:
+            raise ValueError("Invalid prompt schema.")
+        return values
+
     @classmethod
-    def from_embeddings()
+    def from_examples(
+        cls,
+        examples: List[str],
+        suffix: str,
+        input_variables: List[str],
+        embeddings: Embeddings,
+        vectorstore_cls: str,
+        example_separator: str = "\n\n",
+        prefix: str = "",
+        vectorstore_cls_kwargs: Optional[Dict] = None
+    ) -> "OptimizedPrompt":
+        """Create k-shot prompt optimizer using example list and embeddings.
+
+        Reshuffles examples for the prompt dynamically based on query similarity.
+
+        Args:
+            examples: List of examples to use in the prompt.
+            suffix: String to go after the list of examples. Should generally
+                set up the user's input.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+            embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
+            vectorstore_cls: A vector store DB interface class, e.g. FAISS.
+            example_separator: The seperator to use in between examples. Defaults
+                to two new line characters.
+            prefix: String that should go before any examples. Generally includes
+                examples. Default to an empty string.
+            vectorstore_cls_kwargs: optional kwargs containing url for vector store
+
+        Returns:
+            The OptimizedPrompt instantiated, backed by a vector store.
+        """
+        vectorstore_client = vectorstore_cls.from_texts(
+            examples,
+            embeddings,
+            **vectorstore_cls_kwargs
+        )
+        return cls(
+            examples=examples,
+            suffix=suffix,
+            input_variables=input_variables,
+            example_separator=example_separator,
+            prefix=prefix,
+            vectorstore_client=vectorstore_client,
+        )
