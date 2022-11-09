@@ -4,6 +4,7 @@ from typing import Callable, Dict, List
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
 
 
 def _default_text_mapping(dim: int) -> Dict:
@@ -27,7 +28,7 @@ def _default_script_query(query_vector: List[int]) -> Dict:
     }
 
 
-class ElasticVectorSearch:
+class ElasticVectorSearch(VectorStore):
     """Wrapper around Elasticsearch as a vector database.
 
     Example:
