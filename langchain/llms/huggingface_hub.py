@@ -1,6 +1,6 @@
 """Wrapper around HuggingFace APIs."""
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Mapping
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -11,7 +11,7 @@ DEFAULT_REPO_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class HuggingFaceHub(BaseModel, LLM):
+class HuggingFaceHub(LLM, BaseModel):
     """Wrapper around HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -74,6 +74,11 @@ class HuggingFaceHub(BaseModel, LLM):
             )
         return values
 
+    @property
+    def _default_params(self) -> Mapping[str, Any]:
+        """Get the default parameters for calling Cohere API."""
+        return self.model_kwargs
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
@@ -89,7 +94,7 @@ class HuggingFaceHub(BaseModel, LLM):
 
                 response = hf("Tell me a joke.")
         """
-        response = self.client(inputs=prompt, params=self.model_kwargs)
+        response = self.client(inputs=prompt, params=self._default_params)
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
         if self.client.task == "text-generation":

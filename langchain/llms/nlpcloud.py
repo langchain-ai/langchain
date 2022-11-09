@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.llms.base import LLM
 
 
-class NLPCloud(BaseModel, LLM):
+class NLPCloud(LLM, BaseModel):
     """Wrapper around NLPCloud large language models.
 
     To use, you should have the ``nlpcloud`` python package installed, and the

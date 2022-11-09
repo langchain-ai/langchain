@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.llms.base import LLM
 
 
-class OpenAI(BaseModel, LLM):
+class OpenAI(LLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the

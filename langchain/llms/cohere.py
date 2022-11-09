@@ -1,6 +1,6 @@
 """Wrapper around Cohere APIs."""
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Mapping
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -8,7 +8,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-class Cohere(BaseModel, LLM):
+class Cohere(LLM, BaseModel):
     """Wrapper around Cohere large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -73,6 +73,18 @@ class Cohere(BaseModel, LLM):
             )
         return values
 
+    @property
+    def _default_params(self) -> Mapping[str, Any]:
+        """Get the default parameters for calling Cohere API."""
+        return {
+             "max_tokens":self.max_tokens,
+            "temperature":self.temperature,
+            "k":self.k,
+            "p":self.p,
+            "frequency_penalty":self.frequency_penalty,
+            "presence_penalty":self.presence_penalty,
+        }
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Cohere's generate endpoint.
 
@@ -91,13 +103,8 @@ class Cohere(BaseModel, LLM):
         response = self.client.generate(
             model=self.model,
             prompt=prompt,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            k=self.k,
-            p=self.p,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
             stop_sequences=stop,
+            **self._default_params
         )
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
