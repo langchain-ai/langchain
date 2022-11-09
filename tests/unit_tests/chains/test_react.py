@@ -1,6 +1,6 @@
 """Unit tests for ReAct."""
 
-from typing import List, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 
 import pytest
 
@@ -34,6 +34,10 @@ class FakeListLLM(LLM):
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {}
 
 
 class FakeDocstore(Docstore):
