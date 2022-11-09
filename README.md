@@ -52,6 +52,8 @@ The following use cases require specific installs and api keys:
   - Set up Elasticsearch backend. If you want to do locally, [this](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/getting-started.html) is a good guide.
 - _FAISS_:
   - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
+- _Manifest_:
+  - Install requirements with `pip install manifest-ml`
 
 ## 🚀 What can I do with this
 
