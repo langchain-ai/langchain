@@ -115,6 +115,8 @@ class AI21(BaseModel, LLM):
                 **self._default_params,
             }
         )
-        assert response.status_code == 200, f"AI21 /complete call failed with status code {response.status_code}"
+        if response.status_code != 200:
+            optional_detail = response.json().get('error')
+            raise ValueError(f'AI21 /complete call failed with status code {response.status_code}. Details: {optional_detail}')
         response = response.json()
         return response["completions"][0]["data"]["text"]
