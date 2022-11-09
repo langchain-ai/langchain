@@ -53,7 +53,9 @@ class FAISS(VectorStore):
         return docs
 
     @classmethod
-    def from_texts(cls, texts: List[str], embedding: Embeddings) -> "FAISS":
+    def from_texts(
+        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+    ) -> "FAISS":
         """Construct FAISS wrapper from raw documents.
 
         This is a user friendly interface that:
