@@ -1,5 +1,5 @@
-:mod:`langchain.prompt`
-=======================
+:mod:`langchain.prompts`
+========================
 
-.. automodule:: langchain.prompt
+.. automodule:: langchain.prompts
    :members:
