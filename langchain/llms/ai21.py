@@ -89,6 +89,11 @@ class AI21(BaseModel, LLM):
             "logitBias": self.logitBias,
         }
 
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model": self.model}, **self._default_params}
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to AI21's complete endpoint.
 
