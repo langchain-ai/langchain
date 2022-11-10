@@ -98,16 +98,17 @@ template = """Question: {question}
 
 Answer: Let's think step by step."""
 prompt = Prompt(template=template, input_variables=["question"])
-llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0))
+llm = OpenAI(temperature=0)
+llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
+question = "What NFL team won the Super Bowl in the year Justin Bieber was born?"
 
 llm_chain.predict(question=question)
 ```
 
 **Embed & Search Documents**
 
-We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook] (https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
+We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
 
 ```
 from langchain.embeddings.openai import OpenAIEmbeddings
