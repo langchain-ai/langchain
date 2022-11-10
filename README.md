@@ -2,9 +2,7 @@
 
 ⚡ Building applications with LLMs through composability ⚡
 
-[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml) [![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai) [![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS) 
-
-
+[![lint](https://github.com/hwchase17/langchain/actions/workflows/lint.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/lint.yml) [![test](https://github.com/hwchase17/langchain/actions/workflows/test.yml/badge.svg)](https://github.com/hwchase17/langchain/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai) [![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
 
 ## Quick Install
 
@@ -20,6 +18,7 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 It aims to create:
+
 1. a comprehensive collection of pieces you would ever want to combine
 2. a flexible interface for combining pieces into a single comprehensive "chain"
 3. a schema for easily saving and sharing those chains
@@ -30,24 +29,29 @@ Besides the installation of this python package, you will also need to install p
 
 Note: the reason these packages are not included in the dependencies by default is that as we imagine scaling this package, we do not want to force dependencies that are not needed.
 
-The following use cases require specific installs and environment variables:
+The following use cases require specific installs and api keys:
 
-- *OpenAI*:
+- _OpenAI_:
   - Install requirements with `pip install openai`
-  - Set the following environment variable: `OPENAI_API_KEY`
-- *Cohere*:
+  - Get an OpenAI api key and either set it as an environment variable (`OPENAI_API_KEY`) or pass it to the LLM constructor as `openai_api_key`.
+- _Cohere_:
   - Install requirements with `pip install cohere`
-  - Set the following environment variable: `COHERE_API_KEY`
-- *HuggingFace Hub*
+  - Get a Cohere api key and either set it as an environment variable (`COHERE_API_KEY`) or pass it to the LLM constructor as `cohere_api_key`.
+- _HuggingFace Hub_
   - Install requirements with `pip install huggingface_hub`
-  - Set the following environment variable: `HUGGINGFACEHUB_API_TOKEN`
-- *SerpAPI*:
+  - Get a HuggingFace Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
+- _SerpAPI_:
   - Install requirements with `pip install google-search-results`
-  - Set the following environment variable: `SERPAPI_API_KEY`
-- *NatBot*:
+  - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
+- _NatBot_:
   - Install requirements with `pip install playwright`
-- *Wikipedia*:
+- _Wikipedia_:
   - Install requirements with `pip install wikipedia`
+- _Elasticsearch_:
+  - Install requirements with `pip install elasticsearch`
+  - Set up Elasticsearch backend. If you want to do locally, [this](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/getting-started.html) is a good guide.
+- _FAISS_:
+  - Install requirements with `pip install faiss` for Python 3.7 and `pip install faiss-cpu` for Python 3.10+.
 
 ## 🚀 What can I do with this
 
@@ -92,11 +96,34 @@ template = """Question: {question}
 
 Answer: Let's think step by step."""
 prompt = Prompt(template=template, input_variables=["question"])
-llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0))
+llm = OpenAI(temperature=0)
+llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
+question = "What NFL team won the Super Bowl in the year Justin Bieber was born?"
 
 llm_chain.predict(question=question)
+```
+
+**Embed & Search Documents**
+
+We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
+
+```
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.faiss import FAISS
+from langchain.text_splitter import CharacterTextSplitter
+
+with open('state_of_the_union.txt') as f:
+    state_of_the_union = f.read()
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+texts = text_splitter.split_text(state_of_the_union)
+
+embeddings = OpenAIEmbeddings()
+
+docsearch = FAISS.from_texts(texts, embeddings)
+
+query = "What did the president say about Ketanji Brown Jackson"
+docs = docsearch.similarity_search(query)
 ```
 
 ## 📖 Documentation

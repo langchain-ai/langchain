@@ -6,8 +6,8 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.vector_db_qa.prompt import prompt
-from langchain.faiss import FAISS
 from langchain.llms.base import LLM
+from langchain.vectorstores.base import VectorStore
 
 
 class VectorDBQA(Chain, BaseModel):
@@ -25,7 +25,7 @@ class VectorDBQA(Chain, BaseModel):
 
     llm: LLM
     """LLM wrapper to use."""
-    vector_db: FAISS
+    vectorstore: VectorStore
     """Vector Database to connect to."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
@@ -55,7 +55,7 @@ class VectorDBQA(Chain, BaseModel):
     def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
-        docs = self.vector_db.similarity_search(question)
+        docs = self.vectorstore.similarity_search(question)
         contexts = []
         for j, doc in enumerate(docs):
             contexts.append(f"Context {j}:\n{doc.page_content}")

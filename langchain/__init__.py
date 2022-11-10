@@ -17,10 +17,10 @@ from langchain.chains import (
     VectorDBQA,
 )
 from langchain.docstore import Wikipedia
-from langchain.faiss import FAISS
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
 from langchain.sql_database import SQLDatabase
+from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 __all__ = [
     "LLMChain",
@@ -41,4 +41,5 @@ __all__ = [
     "FAISS",
     "MRKLChain",
     "VectorDBQA",
+    "ElasticVectorSearch",
 ]

@@ -1,18 +1,14 @@
 -r test_requirements.txt
-# For linting
-black
-isort
-mypy
-flake8
-flake8-docstrings
 # For integrations
 cohere
+elasticsearch
 openai
 google-search-results
+nlpcloud
 playwright
 wikipedia
 huggingface_hub
-faiss
+faiss-cpu
 sentence_transformers
 # For development
 jupyter
