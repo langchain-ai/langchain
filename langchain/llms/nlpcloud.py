@@ -21,7 +21,7 @@ class NLPCloud(LLM, BaseModel):
     """
 
     client: Any  #: :meta private:
-    model_name: str = "gpt-neox-20b"
+    model_name: str = "finetuned-gpt-neox-20b"
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
