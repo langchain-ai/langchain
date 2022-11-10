@@ -39,7 +39,6 @@ class ElasticVectorSearch(VectorStore):
             elastic_vector_search = ElasticVectorSearch(
                 "http://localhost:9200",
                 "embeddings",
-                mapping,
                 embedding_function
             )
 
@@ -49,7 +48,6 @@ class ElasticVectorSearch(VectorStore):
         self,
         elasticsearch_url: str,
         index_name: str,
-        mapping: Dict,
         embedding_function: Callable,
     ):
         """Initialize with necessary components."""
@@ -69,7 +67,6 @@ class ElasticVectorSearch(VectorStore):
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
             )
         self.client = es_client
-        self.mapping = mapping
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.
@@ -155,4 +152,4 @@ class ElasticVectorSearch(VectorStore):
             requests.append(request)
         bulk(client, requests)
         client.indices.refresh(index=index_name)
-        return cls(elasticsearch_url, index_name, mapping, embedding.embed_query)
+        return cls(elasticsearch_url, index_name, embedding.embed_query)
