@@ -72,7 +72,7 @@ class NLTKTextSplitter(TextSplitter):
             self._tokenizer = sent_tokenize
         except ImportError:
             raise ImportError(
-                "NLTK is not installed, please install it with " "`pip install nltk`. "
+                "NLTK is not installed, please install it with `pip install nltk`."
             )
 
     def split_text(self, text: str) -> List[str]:
@@ -98,7 +98,7 @@ class SpacyTextSplitter(TextSplitter):
             import spacy
         except ImportError:
             raise ImportError(
-                "Spacy is not installed, please install it with " "`pip install spacy`."
+                "Spacy is not installed, please install it with `pip install spacy`."
             )
         self._tokenizer = spacy.load(pipeline)
 
