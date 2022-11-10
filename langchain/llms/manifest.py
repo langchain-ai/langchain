@@ -35,7 +35,7 @@ class ManifestWrapper(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
-        return {**{"client_name": self.client.client_name}, **kwargs}
+        return {**self.client.client.get_model_params(), **kwargs}
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to LLM through Manifest."""

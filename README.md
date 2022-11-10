@@ -55,6 +55,8 @@ The following use cases require specific installs and api keys:
 - _Manifest_:
   - Install requirements with `pip install manifest-ml` (Note: this is only available in Python 3.8+ currently).
 
+If you are using the `NLTKTextSplitter` or the `SpacyTextSplitter`, you will also need to install the appropriate models. For example, if you want to use the `SpacyTextSplitter`, you will need to install the `en_core_web_sm` model with `python -m spacy download en_core_web_sm`. Similarly, if you want to use the `NLTKTextSplitter`, you will need to install the `punkt` model with `python -m nltk.downloader punkt`.
+
 ## 🚀 What can I do with this
 
 This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:
@@ -98,16 +100,17 @@ template = """Question: {question}
 
 Answer: Let's think step by step."""
 prompt = Prompt(template=template, input_variables=["question"])
-llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0))
+llm = OpenAI(temperature=0)
+llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
+question = "What NFL team won the Super Bowl in the year Justin Bieber was born?"
 
 llm_chain.predict(question=question)
 ```
 
 **Embed & Search Documents**
 
-We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook] (https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
+We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
 
 ```
 from langchain.embeddings.openai import OpenAIEmbeddings

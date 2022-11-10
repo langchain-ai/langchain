@@ -8,8 +8,10 @@ nlpcloud
 playwright
 wikipedia
 huggingface_hub
-faiss
+faiss-cpu
 sentence_transformers
 manifest-ml
+spacy
+nltk
 # For development
 jupyter
