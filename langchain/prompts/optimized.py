@@ -18,7 +18,6 @@ class OptimizedPrompt(BaseModel):
             from langchain import DynamicPrompt
             vectorstore = FAISS.from_texts(examples, OpenAIEmbeddings()
             optimized_prompt = OptimizedPrompt(
-                examples=["Say hi. Hi", "Say ho. Ho"],
                 example_separator="\n\n",
                 prefix="",
                 suffix="\n\nSay {foo}"
@@ -28,9 +27,6 @@ class OptimizedPrompt(BaseModel):
                 vectorstore=vectorstore)
             )
     """
-
-    examples: List[str]
-    """A list of the examples that the prompt template expects."""
 
     example_separator: str = "\n\n"
     """Example separator, e.g. \n\n, for the dynamic prompt creation."""
@@ -162,7 +158,6 @@ class OptimizedPrompt(BaseModel):
             examples, embeddings, **vectorstore_cls_kwargs
         )
         return cls(
-            examples=examples,
             suffix=suffix,
             input_variables=input_variables,
             example_separator=example_separator,
