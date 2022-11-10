@@ -59,6 +59,8 @@ class AI21(BaseModel, LLM):
     logitBias: Dict[str, float] = None
     """Adjust the probability of specific tokens being generated."""
 
+    ai21_api_key: Optional[str] = os.environ.get("AI21_API_KEY")
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -67,10 +69,13 @@ class AI21(BaseModel, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        if "AI21_API_KEY" not in os.environ:
+        ai21_api_key = values.get("ai21_api_key")
+
+        if ai21_api_key is None or ai21_api_key == "":
             raise ValueError(
                 "Did not find AI21 API key, please add an environment variable"
-                " `AI21_API_KEY` which contains it."
+                " `AI21_API_KEY` which contains it, or pass `ai21_api_key`"
+                " as a named parameter."
             )
         return values
 
@@ -113,7 +118,7 @@ class AI21(BaseModel, LLM):
             stop = []
         response = requests.post(
             url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
-            headers={"Authorization": f"Bearer {os.environ['AI21_API_KEY']}"},
+            headers={"Authorization": f"Bearer {self.ai21_api_key}"},
             json={
                 "prompt": prompt,
                 "stopSequences": stop,
