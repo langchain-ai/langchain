@@ -8,7 +8,9 @@ nlpcloud
 playwright
 wikipedia
 huggingface_hub
-faiss
+faiss-cpu
 sentence_transformers
+spacy
+nltk
 # For development
 jupyter
