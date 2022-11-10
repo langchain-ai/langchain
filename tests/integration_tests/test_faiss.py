@@ -6,7 +6,7 @@ import pytest
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
-from langchain.faiss import FAISS
+from langchain.vectorstores.faiss import FAISS
 
 
 class FakeEmbeddings(Embeddings):
