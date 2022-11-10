@@ -10,6 +10,7 @@ from langchain.llms.base import LLM
 
 class AI21PenaltyData(BaseModel):
     """Parameters for AI21 penalty data."""
+
     scale: int = 0
     applyToWhitespaces: bool = True
     applyToPunctuations: bool = True
