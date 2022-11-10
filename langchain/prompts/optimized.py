@@ -16,6 +16,7 @@ class OptimizedPrompt(BaseModel):
         .. code-block:: python
 
             from langchain import DynamicPrompt
+            vectorstore = FAISS.from_texts(examples, OpenAIEmbeddings()
             optimized_prompt = OptimizedPrompt(
                 examples=["Say hi. Hi", "Say ho. Ho"],
                 example_separator="\n\n",
@@ -24,7 +25,7 @@ class OptimizedPrompt(BaseModel):
                 input_variables=["foo"],
                 max_length=200,
                 get_text_length=word_count,
-                vectorstore_client=FAISS.from_texts(examples, OpenAIEmbeddings())
+                vectorstore=vectorstore)
             )
     """
 
@@ -52,8 +53,8 @@ class OptimizedPrompt(BaseModel):
     max_length: int = 2048
     """Max length for the prompt, beyond which examples are cut."""
 
-    vectorstore_client: VectorStore
-    """Vectorstore class to use for storing the embeddings."""
+    vectorstore: VectorStore
+    """Vectorstore to use for storing the embeddings."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -86,7 +87,7 @@ class OptimizedPrompt(BaseModel):
             prompt.format(variable1="foo")
         """
         query = " ".join([v for k, v in kwargs.items()])
-        example_docs = self.vectorstore_client.similarity_search(query, k=k)
+        example_docs = self.vectorstore.similarity_search(query, k=k)
         curr_examples = [str(e.page_content) for e in example_docs]
         template = self.template(curr_examples, **kwargs)
         while self.get_text_length(template) > self.max_length and curr_examples:
@@ -98,6 +99,8 @@ class OptimizedPrompt(BaseModel):
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
         input_variables = values["input_variables"]
+        if len(input_variables) > 1:
+            raise ValueError("Only one input variable allowed for optimized prompt;")
         prefix = values["prefix"]
         suffix = values["suffix"]
         template_format = values["template_format"]
@@ -155,7 +158,7 @@ class OptimizedPrompt(BaseModel):
         Returns:
             The OptimizedPrompt instantiated, backed by a vector store.
         """
-        vectorstore_client = vectorstore_cls.from_texts(
+        vectorstore = vectorstore_cls.from_texts(
             examples, embeddings, **vectorstore_cls_kwargs
         )
         return cls(
@@ -164,5 +167,5 @@ class OptimizedPrompt(BaseModel):
             input_variables=input_variables,
             example_separator=example_separator,
             prefix=prefix,
-            vectorstore_client=vectorstore_client,
+            vectorstore=vectorstore,
         )
