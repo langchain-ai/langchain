@@ -9,6 +9,7 @@ from langchain.llms.base import LLM
 
 
 class AI21PenaltyData(BaseModel):
+    """Parameters for AI21 penalty data."""
     scale: int = 0
     applyToWhitespaces: bool = True
     applyToPunctuations: bool = True
@@ -20,7 +21,8 @@ class AI21PenaltyData(BaseModel):
 class AI21(BaseModel, LLM):
     """Wrapper around AI21 large language models.
 
-    To use, you should have the environment variable ``AI21_API_KEY`` set with your API key.
+    To use, you should have the environment variable ``AI21_API_KEY``
+    set with your API key.
 
     Example:
         .. code-block:: python
@@ -128,7 +130,8 @@ class AI21(BaseModel, LLM):
         if response.status_code != 200:
             optional_detail = response.json().get("error")
             raise ValueError(
-                f"AI21 /complete call failed with status code {response.status_code}. Details: {optional_detail}"
+                f"AI21 /complete call failed with status code {response.status_code}."
+                f" Details: {optional_detail}"
             )
         response_json = response.json()
         return response_json["completions"][0]["data"]["text"]
