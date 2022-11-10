@@ -8,3 +8,4 @@ isort
 mypy
 flake8
 flake8-docstrings
+types-requests
