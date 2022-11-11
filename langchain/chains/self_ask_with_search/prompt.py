@@ -1,13 +1,25 @@
 # flake8: noqa
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.dynamic import
+from langchain.prompts.data import BaseExample
+from pathlib import Path
+
+example_path = Path(__file__).parent / "examples.json"
+import json
+
+
+class SelfAskWithSearchExample(BaseExample):
+    question: str
+    answer: str
+
+    def formatted(self) -> str:
+        return f"Question: {self.question}\n{self.answer}"
+
+with open(example_path) as f:
+    raw_examples = json.load(f)
+    examples = [SelfAskWithSearchExample(**example) for example in raw_examples]
 
 _DEFAULT_TEMPLATE = """Question: Who lived longer, Muhammad Ali or Alan Turing?
-Are follow up questions needed here: Yes.
-Follow up: How old was Muhammad Ali when he died?
-Intermediate answer: Muhammad Ali was 74 years old when he died.
-Follow up: How old was Alan Turing when he died?
-Intermediate answer: Alan Turing was 41 years old when he died.
-So the final answer is: Muhammad Ali
+
 
 Question: When was the founder of craigslist born?
 Are follow up questions needed here: Yes.

@@ -1,0 +1,18 @@
+[
+  {
+    "question": "Who lived longer, Muhammad Ali or Alan Turing?",
+    "answer": "Are follow up questions needed here: Yes.\nFollow up: How old was Muhammad Ali when he died?\nIntermediate answer: Muhammad Ali was 74 years old when he died.\nFollow up: How old was Alan Turing when he died?\nIntermediate answer: Alan Turing was 41 years old when he died.\nSo the final answer is: Muhammad Ali"
+  },
+  {
+    "question": "When was the founder of craigslist born?",
+    "answer": "Are follow up questions needed here: Yes.\nFollow up: Who was the founder of craigslist?\nIntermediate answer: Craigslist was founded by Craig Newmark.\nFollow up: When was Craig Newmark born?\nIntermediate answer: Craig Newmark was born on December 6, 1952.\nSo the final answer is: December 6, 1952"
+  },
+  {
+    "question": "Who was the maternal grandfather of George Washington?",
+    "answer": "Are follow up questions needed here: Yes.\nFollow up: Who was the mother of George Washington?\nIntermediate answer: The mother of George Washington was Mary Ball Washington.\nFollow up: Who was the father of Mary Ball Washington?\nIntermediate answer: The father of Mary Ball Washington was Joseph Ball.\nSo the final answer is: Joseph Ball"
+  },
+  {
+    "question": "Are both the directors of Jaws and Casino Royale from the same country?",
+    "answer": "Are follow up questions needed here: Yes.\nFollow up: Who is the director of Jaws?\nIntermediate Answer: The director of Jaws is Steven Spielberg.\nFollow up: Where is Steven Spielberg from?\nIntermediate Answer: The United States.\nFollow up: Who is the director of Casino Royale?\nIntermediate Answer: The director of Casino Royale is Martin Campbell.\nFollow up: Where is Martin Campbell from?\nIntermediate Answer: New Zealand.\nSo the final answer is: No"
+  }
+]

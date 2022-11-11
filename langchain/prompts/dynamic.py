@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
-
+from langchain.prompts.data import BaseExample, SimpleExample
 
 class DynamicPrompt(BaseModel, BasePrompt):
     r"""Schema to represent a dynamic prompt for an LLM.
@@ -25,7 +25,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
             )
     """
 
-    examples: List[str]
+    examples: List[BaseExample]
     """A list of the examples that the prompt template expects."""
 
     example_separator: str = "\n\n"
@@ -76,7 +76,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
 
             prompt.format(variable1="foo")
         """
-        curr_examples = self.examples
+        curr_examples = [example.formatted for example in self.examples]
         template = self.template(curr_examples, **kwargs)
         while self.get_text_length(template) > self.max_length and curr_examples:
             curr_examples = curr_examples[:-1]
@@ -96,6 +96,16 @@ class DynamicPrompt(BaseModel, BasePrompt):
                 f"Invalid template format. Got `{template_format}`;"
                 f" should be one of {valid_formats}"
             )
+        dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
+        try:
+            formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
+            formatter_func(prefix + suffix, **dummy_inputs)
+        except KeyError:
+            raise ValueError("Invalid prompt schema.")
+        return values
+
+    @root_validator()
+    def get_text_length_is_valid(cls, values: Dict) -> Dict:
         try:
             result = values["get_text_length"]("foo")
             assert isinstance(result, int)
@@ -103,10 +113,11 @@ class DynamicPrompt(BaseModel, BasePrompt):
             raise ValueError(
                 "Invalid text length callable, must take string & return int;"
             )
-        dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
-        try:
-            formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
-            formatter_func(prefix + suffix, **dummy_inputs)
-        except KeyError:
-            raise ValueError("Invalid prompt schema.")
+        return values
+
+    @root_validator()
+    def convert_examples(cls, values: Dict) -> Dict:
+        examples = values["examples"]
+        examples = [example if isinstance(example, BaseExample) else SimpleExample(text=str(example)) for example in examples]
+        values["examples"] = examples
         return values
