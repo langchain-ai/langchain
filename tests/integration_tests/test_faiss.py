@@ -26,11 +26,11 @@ def test_faiss() -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
     expected_docstore = InMemoryDocstore(
-        {
-            "0": Document(page_content="foo"),
-            "1": Document(page_content="bar"),
-            "2": Document(page_content="baz"),
-        }
+        [
+            Document(page_content="foo"),
+            Document(page_content="bar"),
+            Document(page_content="baz"),
+        ]
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
@@ -42,6 +42,6 @@ def test_faiss_search_not_found() -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
     # Get rid of the docstore to purposefully induce errors.
-    docsearch.docstore = InMemoryDocstore({})
+    docsearch.docstore = InMemoryDocstore([])
     with pytest.raises(ValueError):
         docsearch.similarity_search("foo")

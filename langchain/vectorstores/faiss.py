@@ -29,6 +29,14 @@ class FAISS(VectorStore):
         self.index = index
         self.docstore = docstore
 
+    def add_texts(self, texts: List[str]) -> bool:
+        """Run more texts through the embeddings and add to the vectorstore."""
+        embeddings = [self.embedding_function(text) for text in texts]
+        self.index.add(np.array(embeddings, dtype=np.float32))
+        documents = [Document(page_content=text) for text in texts]
+        self.docstore.add(documents)
+        return True
+
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.
 
@@ -46,7 +54,7 @@ class FAISS(VectorStore):
             if i == -1:
                 # This happens when not enough docs are returned.
                 continue
-            doc = self.docstore.search(str(i))
+            doc = self.docstore.search(i)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {i}, got {doc}")
             docs.append(doc)
@@ -85,5 +93,5 @@ class FAISS(VectorStore):
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
         documents = [Document(page_content=text) for text in texts]
-        docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)})
+        docstore = InMemoryDocstore(documents)
         return cls(embedding.embed_query, index, docstore)
