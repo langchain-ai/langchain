@@ -1,2 +1,3 @@
 include langchain/VERSION
 include LICENSE
+include py.typed
