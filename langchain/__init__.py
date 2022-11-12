@@ -14,6 +14,7 @@ from langchain.chains import (
     SelfAskWithSearchChain,
     SerpAPIChain,
     SQLDatabaseChain,
+    VectorDBQA,
 )
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
@@ -39,5 +40,6 @@ __all__ = [
     "SQLDatabaseChain",
     "FAISS",
     "MRKLChain",
+    "VectorDBQA",
     "ElasticVectorSearch",
 ]
