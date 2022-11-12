@@ -10,5 +10,8 @@ wikipedia
 huggingface_hub
 faiss-cpu
 sentence_transformers
+manifest-ml
+spacy
+nltk
 # For development
 jupyter
