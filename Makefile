@@ -5,10 +5,10 @@ format:
 	isort .
 
 lint:
-	mypy .
 	black . --check
 	isort . --check
 	flake8 .
+	mypy .
 
 tests:
 	pytest tests/unit_tests
