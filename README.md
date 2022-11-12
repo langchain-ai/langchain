@@ -65,7 +65,7 @@ This project was largely inspired by a few projects seen on Twitter for which we
 
 To recreate this paper, use the following code snippet or checkout the [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/self_ask_with_search.ipynb).
 
-```
+```python
 from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
 
 llm = OpenAI(temperature=0)
@@ -80,7 +80,7 @@ self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open c
 
 To recreate this example, use the following code snippet or check out the [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/llm_math.ipynb).
 
-```
+```python
 from langchain import OpenAI, LLMMathChain
 
 llm = OpenAI(temperature=0)
@@ -93,7 +93,7 @@ llm_math.run("How many of the integers between 0 and 99 inclusive are divisible 
 
 You can also use this for simple prompting pipelines, as in the below example and this [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/simple_prompts.ipynb).
 
-```
+```python
 from langchain import Prompt, OpenAI, LLMChain
 
 template = """Question: {question}
@@ -110,9 +110,9 @@ llm_chain.predict(question=question)
 
 **Embed & Search Documents**
 
-We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/notebooks/examples/embeddings.ipynb).
+We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/embeddings.ipynb).
 
-```
+```python
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.faiss import FAISS
 from langchain.text_splitter import CharacterTextSplitter
