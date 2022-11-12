@@ -26,7 +26,7 @@ def test_proper_inputs() -> None:
     nat_bot_chain = NatBotChain(llm=FakeLLM(), objective="testing")
     url = "foo" * 10000
     browser_content = "foo" * 10000
-    output = nat_bot_chain.run(url, browser_content)
+    output = nat_bot_chain.execute(url, browser_content)
     assert output == "bar"
 
 
@@ -39,5 +39,5 @@ def test_variable_key_naming() -> None:
         input_browser_content_key="b",
         output_key="c",
     )
-    output = nat_bot_chain.run("foo", "foo")
+    output = nat_bot_chain.execute("foo", "foo")
     assert output == "bar"

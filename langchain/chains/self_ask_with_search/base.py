@@ -114,7 +114,7 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
         chained_input.add("\nAre follow up questions needed here:")
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
@@ -125,7 +125,7 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         chained_input.add(ret_text, color="green")
         while followup in get_last_line(ret_text):
             question = extract_question(ret_text, followup)
-            external_answer = self.search_chain.search(question)
+            external_answer = self.search_chain.run(question)
             if external_answer is not None:
                 chained_input.add(intermediate + " ")
                 chained_input.add(external_answer + ".", color="yellow")
@@ -147,19 +147,3 @@ class SelfAskWithSearchChain(Chain, BaseModel):
             chained_input.add(ret_text, color="green")
 
         return {self.output_key: ret_text}
-
-    def run(self, question: str) -> str:
-        """Run self ask with search chain.
-
-        Args:
-            question: Question to run self-ask-with-search with.
-
-        Returns:
-            The final answer
-
-        Example:
-            .. code-block:: python
-
-                answer = selfask.run("What is the capital of Idaho?")
-        """
-        return self({self.input_key: question})[self.output_key]

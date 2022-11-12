@@ -52,7 +52,7 @@ class VectorDBQA(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
         docs = self.vectorstore.similarity_search(question)
