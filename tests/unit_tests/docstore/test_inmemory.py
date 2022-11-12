@@ -6,16 +6,29 @@ from langchain.docstore.in_memory import InMemoryDocstore
 
 def test_document_found() -> None:
     """Test document found."""
-    _list = [Document(page_content="bar")]
-    docstore = InMemoryDocstore(_list)
-    output = docstore.search(0)
+    _dict = {"foo": Document(page_content="bar")}
+    docstore = InMemoryDocstore(_dict)
+    output = docstore.search("foo")
     assert isinstance(output, Document)
     assert output.page_content == "bar"
 
 
 def test_document_not_found() -> None:
     """Test when document is not found."""
-    _list = [Document(page_content="bar")]
-    docstore = InMemoryDocstore(_list)
-    output = docstore.search(0)
+    _dict = {"foo": Document(page_content="bar")}
+    docstore = InMemoryDocstore(_dict)
+    output = docstore.search("bar")
     assert output == "ID bar not found."
+
+def test_adding_document() -> None:
+    """Test that documents are added correctly."""
+    _dict = {"foo": Document(page_content="bar")}
+    docstore = InMemoryDocstore(_dict)
+    new_dict = {"bar": Document(page_content="foo")}
+    docstore.add(new_dict)
+    foo_output = docstore.search("bar")
+    assert isinstance(foo_output, Document)
+    assert foo_output.page_content == "foo"
+    bar_output = docstore.search("foo")
+    assert isinstance(bar_output, Document)
+    assert bar_output.page_content == "bar"

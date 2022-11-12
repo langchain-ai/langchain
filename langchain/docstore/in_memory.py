@@ -1,32 +1,25 @@
 """Simple in memory docstore in the form of a dict."""
-from typing import List, Union
+from typing import Dict, Union
 
-from langchain.docstore.base import Docstore
+from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 
 
-class InMemoryDocstore(Docstore):
+class InMemoryDocstore(Docstore, AddableMixin):
     """Simple in memory docstore in the form of a dict."""
 
-    def __init__(self, _docs: List[Document]):
+    def __init__(self, _dict: Dict[str, Document]):
         """Initialize with dict."""
-        self._dict = {}
-        for i, doc in enumerate(_docs):
-            self._dict[i] = doc
+        self._dict = _dict
 
-    def _get_max_idx(self) -> int:
+    def get_next_idx(self) -> int:
         """Get max index of documents."""
-        return max(self._dict.keys())
+        return len(self._dict.keys())
 
-    def add(self, docs: List[Document]) -> bool:
-        """Add more documents."""
-        idx = self._get_max_idx() + 1
-        for doc in docs:
-            self._dict[idx] = doc
-            idx += 1
-        return True
+    def add(self, texts: Dict[str, Document]):
+        self._dict = dict(self._dict, **texts)
 
-    def search(self, search: int) -> Union[str, Document]:
+    def search(self, search: str) -> Union[str, Document]:
         """Search via direct lookup."""
         if search not in self._dict:
             return f"ID {search} not found."

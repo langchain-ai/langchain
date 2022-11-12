@@ -68,6 +68,20 @@ class ElasticVectorSearch(VectorStore):
             )
         self.client = es_client
 
+    def add_texts(self, texts: List[str]) -> None:
+        """Run more texts through the embeddings and add to the vectorstore."""
+        requests = []
+        for i, text in enumerate(texts):
+            request = {
+                "_op_type": "index",
+                "_index": self.index_name,
+                "vector": self.embedding_function(text),
+                "text": text,
+            }
+            requests.append(request)
+        bulk(self.client, requests)
+        self.client.indices.refresh(index=self.index_name)
+
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.
 

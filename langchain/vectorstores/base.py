@@ -10,6 +10,10 @@ class VectorStore(ABC):
     """Interface for vector stores."""
 
     @abstractmethod
+    def add_texts(self, texts: List[str]) -> None:
+        """Run more texts through the embeddings and add to the vectorstore."""
+
+    @abstractmethod
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query."""
 
