@@ -6,8 +6,8 @@ from pydantic import BaseModel
 class BaseExample(BaseModel, ABC):
     """Base class for examples."""
 
-    @abstractmethod
     @property
+    @abstractmethod
     def formatted(self) -> str:
         """Returns a formatted example as a string."""
 
@@ -16,6 +16,7 @@ class SimpleExample(BaseExample):
 
     text: str
 
+    @property
     def formatted(self) -> str:
         return self.text
 

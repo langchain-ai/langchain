@@ -116,7 +116,8 @@ class DynamicPrompt(BaseModel, BasePrompt):
             )
         return values
 
-    @root_validator()
+    # Needs to be pre=True to convert to the right type.
+    @root_validator(pre=True)
     def convert_examples(cls, values: Dict) -> Dict:
         values["examples"] = convert_to_examples(values["examples"])
         return values

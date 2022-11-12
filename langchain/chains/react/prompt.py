@@ -12,6 +12,7 @@ class ReActExample(BaseExample):
     question: str
     answer: str
 
+    @property
     def formatted(self) -> str:
         return f"Question: {self.question}\n{self.answer}"
 

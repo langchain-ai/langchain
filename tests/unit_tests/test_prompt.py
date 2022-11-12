@@ -51,8 +51,8 @@ Question: {question}
 Answer:"""
     input_variables = ["question"]
     example_separator = "\n\n"
-    prefix = """Test Prompt:\n\n"""
-    suffix = """\n\nQuestion: {question}\nAnswer:"""
+    prefix = """Test Prompt:"""
+    suffix = """Question: {question}\nAnswer:"""
     examples = [
         """Question: who are you?\nAnswer: foo""",
         """Question: what are you?\nAnswer: bar""",

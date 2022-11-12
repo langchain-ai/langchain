@@ -35,6 +35,7 @@ class LLMMathExample(BaseExample):
     question: str
     answer: str
 
+    @property
     def formatted(self) -> str:
         return f"Question: {self.question}\n\n{self.answer}"
 
