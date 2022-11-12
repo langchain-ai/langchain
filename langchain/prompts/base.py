@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 from langchain.formatting import formatter
+from langchain.prompts.data import BaseExample
 
 DEFAULT_FORMATTER_MAPPING = {
     "f-string": formatter.format,

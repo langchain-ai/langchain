@@ -1,0 +1,6 @@
+[
+  {
+    "question": "What is 37593 * 67?",
+    "answer": "```python\nprint(37593 * 67)\n```\n```output\n2518731\n```\nAnswer: 2518731"
+  }
+]

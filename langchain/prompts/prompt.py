@@ -1,9 +1,10 @@
 """Prompt schema definition."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
+from langchain.prompts.data import BaseExample, convert_to_examples
 
 
 class Prompt(BaseModel, BasePrompt):
@@ -70,7 +71,7 @@ class Prompt(BaseModel, BasePrompt):
     @classmethod
     def from_examples(
         cls,
-        examples: List[str],
+        examples: Sequence[Union[BaseExample, str]],
         suffix: str,
         input_variables: List[str],
         example_separator: str = "\n\n",
@@ -94,6 +95,7 @@ class Prompt(BaseModel, BasePrompt):
         Returns:
             The final prompt generated.
         """
-        example_str = example_separator.join(examples)
-        template = prefix + example_str + suffix
+        full_examples = convert_to_examples(examples)
+        data = [prefix] + [example.formatted for example in full_examples] + [suffix]
+        template = example_separator.join(data)
         return cls(input_variables=input_variables, template=template)

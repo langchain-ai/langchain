@@ -5,7 +5,8 @@ from typing import Any, Callable, Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
-from langchain.prompts.data import BaseExample, SimpleExample
+from langchain.prompts.data import BaseExample, convert_to_examples
+
 
 class DynamicPrompt(BaseModel, BasePrompt):
     r"""Schema to represent a dynamic prompt for an LLM.
@@ -117,7 +118,5 @@ class DynamicPrompt(BaseModel, BasePrompt):
 
     @root_validator()
     def convert_examples(cls, values: Dict) -> Dict:
-        examples = values["examples"]
-        examples = [example if isinstance(example, BaseExample) else SimpleExample(text=str(example)) for example in examples]
-        values["examples"] = examples
+        values["examples"] = convert_to_examples(values["examples"])
         return values

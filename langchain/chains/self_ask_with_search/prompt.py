@@ -1,7 +1,8 @@
 # flake8: noqa
-from langchain.prompts.dynamic import
-from langchain.prompts.data import BaseExample
 from pathlib import Path
+
+from langchain.prompts.data import BaseExample
+from langchain.prompts.prompt import Prompt
 
 example_path = Path(__file__).parent / "examples.json"
 import json
@@ -14,43 +15,13 @@ class SelfAskWithSearchExample(BaseExample):
     def formatted(self) -> str:
         return f"Question: {self.question}\n{self.answer}"
 
+
 with open(example_path) as f:
     raw_examples = json.load(f)
     examples = [SelfAskWithSearchExample(**example) for example in raw_examples]
 
-_DEFAULT_TEMPLATE = """Question: Who lived longer, Muhammad Ali or Alan Turing?
-
-
-Question: When was the founder of craigslist born?
-Are follow up questions needed here: Yes.
-Follow up: Who was the founder of craigslist?
-Intermediate answer: Craigslist was founded by Craig Newmark.
-Follow up: When was Craig Newmark born?
-Intermediate answer: Craig Newmark was born on December 6, 1952.
-So the final answer is: December 6, 1952
-
-Question: Who was the maternal grandfather of George Washington?
-Are follow up questions needed here: Yes.
-Follow up: Who was the mother of George Washington?
-Intermediate answer: The mother of George Washington was Mary Ball Washington.
-Follow up: Who was the father of Mary Ball Washington?
-Intermediate answer: The father of Mary Ball Washington was Joseph Ball.
-So the final answer is: Joseph Ball
-
-Question: Are both the directors of Jaws and Casino Royale from the same country?
-Are follow up questions needed here: Yes.
-Follow up: Who is the director of Jaws?
-Intermediate Answer: The director of Jaws is Steven Spielberg.
-Follow up: Where is Steven Spielberg from?
-Intermediate Answer: The United States.
-Follow up: Who is the director of Casino Royale?
-Intermediate Answer: The director of Casino Royale is Martin Campbell.
-Follow up: Where is Martin Campbell from?
-Intermediate Answer: New Zealand.
-So the final answer is: No
-
-Question: {input}"""
-PROMPT = Prompt(
-    input_variables=["input"],
-    template=_DEFAULT_TEMPLATE,
+PROMPT = Prompt.from_examples(
+    examples,
+    "Question: {input}",
+    ["input"],
 )
