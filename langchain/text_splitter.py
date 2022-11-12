@@ -1,23 +1,19 @@
 """Functionality for splitting text."""
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, Callable, Iterable, List
 
 
 class TextSplitter(ABC):
     """Interface for splitting text into chunks."""
 
-    @abstractmethod
-    def split_text(self, text: str) -> List[str]:
-        """Split text into multiple components."""
-
-
-class BaseChunkTextSplitter(TextSplitter, ABC):
-    """Text splitter that first splits into chunks then tries to combine."""
-
     def __init__(
-        self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
+        self,
+        separator: str = "\n\n",
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
+        length_function: Callable[[str], int] = len,
     ):
-        """Initialize with parameters."""
+        """Create a new TextSplitter."""
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
@@ -26,50 +22,32 @@ class BaseChunkTextSplitter(TextSplitter, ABC):
         self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
+        self._length_function = length_function
 
     @abstractmethod
-    def _get_chunk_size(self, text: str) -> int:
-        """Return the size of this chunk of text."""
-
     def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        # First we naively split the large input into a bunch of smaller ones.
-        splits = text.split(self._separator)
+        """Split text into multiple components."""
+
+    def _merge_splits(self, splits: Iterable[str]) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         docs = []
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            if total > self._chunk_size:
+            if total >= self._chunk_size:
                 docs.append(self._separator.join(current_doc))
                 while total > self._chunk_overlap:
-                    total -= len(current_doc[0])
+                    total -= self._length_function(current_doc[0])
                     current_doc = current_doc[1:]
             current_doc.append(d)
-            total += len(d)
+            total += self._length_function(d)
         docs.append(self._separator.join(current_doc))
         return docs
 
-
-class CharacterTextSplitter(BaseChunkTextSplitter):
-    """Implementation of TextSplitter that uses character length."""
-
-    def _get_chunk_size(self, text: str) -> int:
-        return len(text)
-
-
-class HuggingFaceTokenizerSplitter(BaseChunkTextSplitter):
-    """Implementation of TextSplitter that uses HuggingFace tokenizers."""
-
-    def __init__(
-        self,
-        tokenizer: Any,
-        separator: str = "\n\n",
-        chunk_size: int = 4000,
-        chunk_overlap: int = 200,
-    ):
-        """Initialize with parameters."""
+    @classmethod
+    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs):
+        """Text splitter than uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
 
@@ -78,15 +56,72 @@ class HuggingFaceTokenizerSplitter(BaseChunkTextSplitter):
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
 
-            self.tokenizer = tokenizer
+            def _huggingface_tokenizer_length(text: str) -> int:
+                return len(tokenizer.encode(text))
+
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please it install it with `pip install transformers`."
             )
-        super().__init__(
-            separator=separator, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
+        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
-    def _get_chunk_size(self, text: str) -> int:
-        return len(self.tokenizer.encode(text))
+
+class CharacterTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at characters."""
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = text.split(self._separator)
+        return self._merge_splits(splits)
+
+
+class NLTKTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at sentences using NLTK."""
+
+    def __init__(
+        self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
+    ):
+        """Initialize the NLTK splitter."""
+        super(NLTKTextSplitter, self).__init__(separator, chunk_size, chunk_overlap)
+        try:
+            from nltk.tokenize import sent_tokenize
+
+            self._tokenizer = sent_tokenize
+        except ImportError:
+            raise ImportError(
+                "NLTK is not installed, please install it with `pip install nltk`."
+            )
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = self._tokenizer(text)
+        return self._merge_splits(splits)
+
+
+class SpacyTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at sentences using Spacy."""
+
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        pipeline: str = "en_core_web_sm",
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
+    ):
+        """Initialize the spacy text splitter."""
+        super(SpacyTextSplitter, self).__init__(separator, chunk_size, chunk_overlap)
+        try:
+            import spacy
+        except ImportError:
+            raise ImportError(
+                "Spacy is not installed, please install it with `pip install spacy`."
+            )
+        self._tokenizer = spacy.load(pipeline)
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = (str(s) for s in self._tokenizer(text).sents)
+        return self._merge_splits(splits)

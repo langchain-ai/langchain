@@ -2,3 +2,10 @@
 # For testing
 pytest
 pytest-dotenv
+# For linting
+black
+isort
+mypy
+flake8
+flake8-docstrings
+types-requests

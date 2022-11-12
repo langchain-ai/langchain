@@ -1,7 +1,10 @@
 """Test huggingface embeddings."""
+import unittest
+
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 
 
+@unittest.skip("This test causes a segfault.")
 def test_huggingface_embedding_documents() -> None:
     """Test huggingface embeddings."""
     documents = ["foo bar"]
@@ -11,6 +14,7 @@ def test_huggingface_embedding_documents() -> None:
     assert len(output[0]) == 768
 
 
+@unittest.skip("This test causes a segfault.")
 def test_huggingface_embedding_query() -> None:
     """Test huggingface embeddings."""
     document = "foo bar"
