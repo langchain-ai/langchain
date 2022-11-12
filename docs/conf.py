@@ -37,9 +37,12 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
     "myst_parser",
+    "nbsphinx",
 ]
+
 
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False

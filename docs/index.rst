@@ -11,6 +11,13 @@ Welcome to LangChain
    modules/chains
 
 .. toctree::
+   :maxdepth: 3
+   :caption: Examples
+   :glob:
+
+   examples/*
+
+.. toctree::
    :maxdepth: 1
    :caption: Resources
 
