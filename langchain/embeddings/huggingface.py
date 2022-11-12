@@ -5,6 +5,8 @@ from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 
+DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
+
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
@@ -15,12 +17,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import HuggingFaceEmbeddings
-            model_name = "sentence-transformers/all-mpnet-base-v2"
-            huggingface = HuggingFaceEmbeddings(model_name=model_name)
+            repo_id = "sentence-transformers/all-mpnet-base-v2"
+            hf = HuggingFaceEmbeddings(repo_id=repo_id)
     """
 
     client: Any  #: :meta private:
-    model_name: str = "sentence-transformers/all-mpnet-base-v2"
+    repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
 
     def __init__(self, **kwargs: Any):
@@ -29,7 +31,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         try:
             import sentence_transformers
 
-            self.client = sentence_transformers.SentenceTransformer(self.model_name)
+            self.client = sentence_transformers.SentenceTransformer(self.repo_id)
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
