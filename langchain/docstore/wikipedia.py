@@ -32,11 +32,7 @@ class Wikipedia(Docstore):
             page_content = wikipedia.page(search).content
             result: Union[str, Document] = Document(page_content=page_content)
         except wikipedia.PageError:
-            result = (
-                f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
-            )
+            result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
         except wikipedia.DisambiguationError:
-            result = (
-                f"Could not find [{search}]. " f"Similar: {wikipedia.search(search)}"
-            )
+            result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
         return result
