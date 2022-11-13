@@ -55,7 +55,7 @@ class ElasticVectorSearch(VectorStore):
             import elasticsearch
         except ImportError:
             raise ValueError(
-                "Could not import elasticsearch python packge. "
+                "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticearch`."
             )
         self.embedding_function = embedding_function
@@ -64,7 +64,7 @@ class ElasticVectorSearch(VectorStore):
             es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
         except ValueError as e:
             raise ValueError(
-                "Your elasticsearch client string is misformatted. " f"Got error: {e} "
+                f"Your elasticsearch client string is misformatted. Got error: {e} "
             )
         self.client = es_client
 
@@ -91,7 +91,7 @@ class ElasticVectorSearch(VectorStore):
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Embeds documents.
             2. Creates a new index for the embeddings in the Elasticsearch instance.
             3. Adds the documents to the newly created Elasticsearch index.
@@ -125,7 +125,7 @@ class ElasticVectorSearch(VectorStore):
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
-                "Could not import elasticsearch python packge. "
+                "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticearch`."
             )
         try:
