@@ -102,6 +102,10 @@ class Prompt(BaseModel, BasePrompt):
     def from_file(cls, template_file: str, input_variables: List[str]) -> "Prompt":
         """Load a prompt from a file.
 
+        Args:
+            template_file: The path to the file containing the prompt template.
+            input_variables: A list of variable names the final prompt template
+                will expect.
         Returns:
             The prompt loaded from the file.
         """
