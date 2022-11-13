@@ -10,6 +10,7 @@ wikipedia
 huggingface_hub
 faiss-cpu
 sentence_transformers
+transformers
 manifest-ml
 spacy
 nltk
