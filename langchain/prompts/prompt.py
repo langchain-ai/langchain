@@ -97,3 +97,18 @@ class Prompt(BaseModel, BasePrompt):
         example_str = example_separator.join(examples)
         template = prefix + example_str + suffix
         return cls(input_variables=input_variables, template=template)
+
+    @classmethod
+    def from_file(cls, template_file: str, input_variables: List[str]) -> "Prompt":
+        """Load a prompt from a file.
+
+        Args:
+            template_file: The path to the file containing the prompt template.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+        Returns:
+            The prompt loaded from the file.
+        """
+        with open(template_file, "r") as f:
+            template = f.read()
+        return cls(input_variables=input_variables, template=template)
