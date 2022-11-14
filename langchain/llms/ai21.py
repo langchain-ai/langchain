@@ -121,11 +121,7 @@ class AI21(BaseModel, LLM):
         response = requests.post(
             url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
-            json={
-                "prompt": prompt,
-                "stopSequences": stop,
-                **self._default_params,
-            },
+            json={"prompt": prompt, "stopSequences": stop, **self._default_params},
         )
         if response.status_code != 200:
             optional_detail = response.json().get("error")
