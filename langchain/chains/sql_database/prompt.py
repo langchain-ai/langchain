@@ -15,6 +15,5 @@ Only use the following tables:
 
 Question: {input}"""
 PROMPT = Prompt(
-    input_variables=["input", "table_info", "dialect"],
-    template=_DEFAULT_TEMPLATE,
+    input_variables=["input", "table_info", "dialect"], template=_DEFAULT_TEMPLATE,
 )

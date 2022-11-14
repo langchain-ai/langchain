@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
+from langchain.llms.utils import enforce_stop_tokens, get_from_dict_or_env
 
 
 class Cohere(LLM, BaseModel):
@@ -54,7 +54,9 @@ class Cohere(LLM, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cohere_api_key = values.get("cohere_api_key")
+        cohere_api_key = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY"
+        )
 
         if cohere_api_key is None or cohere_api_key == "":
             raise ValueError(
