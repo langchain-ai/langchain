@@ -1,10 +1,10 @@
 """Wrapper around OpenAI APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
+from langchain.llms.utils import get_from_dict_or_env
 
 
 class OpenAI(LLM, BaseModel):
@@ -38,7 +38,7 @@ class OpenAI(LLM, BaseModel):
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
 
-    openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
+    openai_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -48,7 +48,9 @@ class OpenAI(LLM, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = values.get("openai_api_key")
+        openai_api_key = get_from_dict_or_env(
+            values, "openai_api_key", "OPENAI_API_KEY"
+        )
 
         if openai_api_key is None or openai_api_key == "":
             raise ValueError(

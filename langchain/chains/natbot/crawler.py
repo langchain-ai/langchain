@@ -28,13 +28,7 @@ class Crawler:
                 "Could not import playwright python package. "
                 "Please it install it with `pip install playwright`."
             )
-        self.browser = (
-            sync_playwright()
-            .start()
-            .chromium.launch(
-                headless=False,
-            )
-        )
+        self.browser = sync_playwright().start().chromium.launch(headless=False,)
 
         self.page = self.browser.new_page()
         self.page.set_viewport_size({"width": 1280, "height": 1080})

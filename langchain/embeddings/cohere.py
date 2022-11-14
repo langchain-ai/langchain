@@ -1,10 +1,10 @@
 """Wrapper around Cohere embedding models."""
-import os
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
+from langchain.llms.utils import get_from_dict_or_env
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
@@ -25,7 +25,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     model: str = "medium"
     """Model name to use."""
 
-    cohere_api_key: Optional[str] = os.environ.get("COHERE_API_KEY")
+    cohere_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -35,7 +35,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        cohere_api_key = values.get("cohere_api_key")
+        cohere_api_key = get_from_dict_or_env(
+            values, "cohere_api_key", "COHERE_API_KEY"
+        )
 
         if cohere_api_key is None or cohere_api_key == "":
             raise ValueError(

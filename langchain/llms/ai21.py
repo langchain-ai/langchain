@@ -1,11 +1,11 @@
 """Wrapper around AI21 APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
+from langchain.llms.utils import get_from_dict_or_env
 
 
 class AI21PenaltyData(BaseModel):
@@ -62,7 +62,7 @@ class AI21(BaseModel, LLM):
     logitBias: Optional[Dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
 
-    ai21_api_key: Optional[str] = os.environ.get("AI21_API_KEY")
+    ai21_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -72,8 +72,7 @@ class AI21(BaseModel, LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        ai21_api_key = values.get("ai21_api_key")
-
+        ai21_api_key = get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
         if ai21_api_key is None or ai21_api_key == "":
             raise ValueError(
                 "Did not find AI21 API key, please add an environment variable"
@@ -122,11 +121,7 @@ class AI21(BaseModel, LLM):
         response = requests.post(
             url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
-            json={
-                "prompt": prompt,
-                "stopSequences": stop,
-                **self._default_params,
-            },
+            json={"prompt": prompt, "stopSequences": stop, **self._default_params,},
         )
         if response.status_code != 200:
             optional_detail = response.json().get("error")
