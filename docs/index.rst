@@ -16,41 +16,44 @@ It aims to create:
 
 The documentation is structured into the following sections:
 
-Getting Started: simple walk throughs and tutorials for getting started with various
-components of LangChain. Covers installation, environment set up, and simple tasks.
-Start here if you haven't used LangChain before.
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
+   :name: getting_started
 
    getting_started/installation.md
    getting_started/environment.md
    getting_started/llm.md
    getting_started/chains.md
 
-How-To Examples: more elaborate examples and walk-throughs of particular
-integrations and use cases. This is the place to look if you have questions
-about how to integrate certain pieces, or if you want to find examples of
-common tasks or cool demos.
+Goes over a simple walk through and tutorial for getting started setting up a simple chain that generates a company name based on what the company makes.
+Covers installation, environment set up, calling LLMs, and using prompts.
+Start here if you haven't used LangChain before.
+
 
 .. toctree::
    :maxdepth: 1
    :caption: How-To Examples
-   :glob:
+   :name: examples
 
    examples/demos.rst
    examples/integrations.rst
    examples/prompts.rst
    examples/model_laboratory.ipynb
 
-Reference: full documentation. This is the place to look if you want to
-see detailed information about the various classes, methods, and APIs.
+More elaborate examples and walk-throughs of particular
+integrations and use cases. This is the place to look if you have questions
+about how to integrate certain pieces, or if you want to find examples of
+common tasks or cool demos.
+
 
 .. toctree::
    :maxdepth: 1
-   :caption: User API
+   :caption: Reference
+   :name: reference
 
+   installation.md
    modules/prompt
    modules/llms
    modules/embeddings
@@ -58,15 +61,21 @@ see detailed information about the various classes, methods, and APIs.
    modules/vectorstore
    modules/chains
 
-Explanations: higher level, conceptual explanations of the LangChain components.
-This is the place to go if you want to increase your high level understanding
-of the problems LangChain is solving, and how we decided to go about do so.
+
+Full API documentation. This is the place to look if you want to
+see detailed information about the various classes, methods, and APIs.
 
 
 .. toctree::
    :maxdepth: 1
    :caption: Resources
+   :name: resources
 
    core_concepts.md
    glossary.md
    Discord <https://discord.gg/6adMQxSpJS>
+
+Higher level, conceptual explanations of the LangChain components.
+This is the place to go if you want to increase your high level understanding
+of the problems LangChain is solving, and how we decided to go about do so.
+
