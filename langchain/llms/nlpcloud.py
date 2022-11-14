@@ -1,5 +1,4 @@
 """Wrapper around NLPCloud APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -55,7 +54,7 @@ class NLPCloud(LLM, BaseModel):
     num_return_sequences: int = 1
     """How many completions to generate for each prompt."""
 
-    nlpcloud_api_key: Optional[str] = os.environ.get("NLPCLOUD_API_KEY")
+    nlpcloud_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

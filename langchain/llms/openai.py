@@ -1,5 +1,4 @@
 """Wrapper around OpenAI APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -39,7 +38,7 @@ class OpenAI(LLM, BaseModel):
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
 
-    openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
+    openai_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

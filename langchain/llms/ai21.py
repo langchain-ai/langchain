@@ -1,5 +1,4 @@
 """Wrapper around AI21 APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -63,7 +62,7 @@ class AI21(BaseModel, LLM):
     logitBias: Optional[Dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
 
-    ai21_api_key: Optional[str] = os.environ.get("AI21_API_KEY")
+    ai21_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

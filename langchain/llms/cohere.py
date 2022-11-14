@@ -1,5 +1,4 @@
 """Wrapper around Cohere APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -44,7 +43,7 @@ class Cohere(LLM, BaseModel):
     presence_penalty: int = 0
     """Penalizes repeated tokens."""
 
-    cohere_api_key: Optional[str] = os.environ.get("COHERE_API_KEY")
+    cohere_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""

@@ -1,5 +1,4 @@
 """Wrapper around HuggingFace APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -35,7 +34,7 @@ class HuggingFaceHub(LLM, BaseModel):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+    huggingfacehub_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
