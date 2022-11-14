@@ -51,7 +51,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         chained_input = ChainedInput(
             inputs[self.input_key] + "\nSQLQuery:", verbose=self.verbose
@@ -72,19 +72,3 @@ class SQLDatabaseChain(Chain, BaseModel):
         final_result = llm_chain.predict(**llm_inputs)
         chained_input.add(final_result, color="green")
         return {self.output_key: final_result}
-
-    def query(self, query: str) -> str:
-        """Run natural language query against a SQL database.
-
-        Args:
-            query: natural language query to run against the SQL database
-
-        Returns:
-            The final answer as derived from the SQL database.
-
-        Example:
-            .. code-block:: python
-
-                answer = db_chain.query("How many customers are there?")
-        """
-        return self({self.input_key: query})[self.output_key]

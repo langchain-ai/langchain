@@ -48,7 +48,7 @@ class LLMMathChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         python_executor = PythonChain()
         chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
@@ -66,19 +66,3 @@ class LLMMathChain(Chain, BaseModel):
         else:
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: answer}
-
-    def run(self, question: str) -> str:
-        """Understand user question and execute math in Python if necessary.
-
-        Args:
-            question: User question that contains a math question to parse and answer.
-
-        Returns:
-            The answer to the question.
-
-        Example:
-            .. code-block:: python
-
-                answer = llm_math.run("What is one plus one?")
-        """
-        return self({self.input_key: question})[self.output_key]
