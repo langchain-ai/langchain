@@ -38,4 +38,7 @@ Intermediate Answer: New Zealand.
 So the final answer is: No
 
 Question: {input}"""
-PROMPT = Prompt(input_variables=["input"], template=_DEFAULT_TEMPLATE,)
+PROMPT = Prompt(
+    input_variables=["input"],
+    template=_DEFAULT_TEMPLATE,
+)

@@ -45,7 +45,10 @@ class ElasticVectorSearch(VectorStore):
     """
 
     def __init__(
-        self, elasticsearch_url: str, index_name: str, embedding_function: Callable,
+        self,
+        elasticsearch_url: str,
+        index_name: str,
+        embedding_function: Callable,
     ):
         """Initialize with necessary components."""
         try:
