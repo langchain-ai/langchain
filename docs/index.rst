@@ -54,6 +54,7 @@ common tasks or cool demos.
    :name: reference
 
    installation.md
+   integrations.md
    modules/prompt
    modules/llms
    modules/embeddings
