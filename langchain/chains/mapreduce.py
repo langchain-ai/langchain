@@ -57,7 +57,7 @@ class MapReduceChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         # Split the larger text into smaller chunks.
         docs = self.text_splitter.split_text(
             inputs[self.input_key],
@@ -76,7 +76,3 @@ class MapReduceChain(Chain, BaseModel):
         inputs = {self.reduce_llm.prompt.input_variables[0]: summary_str}
         output = self.reduce_llm.predict(**inputs)
         return {self.output_key: output}
-
-    def run(self, text: str) -> str:
-        """Run the map-reduce logic on the input text."""
-        return self({self.input_key: text})[self.output_key]

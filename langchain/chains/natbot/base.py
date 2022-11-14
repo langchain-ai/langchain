@@ -57,7 +57,7 @@ class NatBotChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]
@@ -71,7 +71,7 @@ class NatBotChain(Chain, BaseModel):
         self.previous_command = llm_cmd
         return {self.output_key: llm_cmd}
 
-    def run(self, url: str, browser_content: str) -> str:
+    def execute(self, url: str, browser_content: str) -> str:
         """Figure out next browser command to run.
 
         Args:

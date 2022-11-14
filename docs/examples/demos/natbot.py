@@ -46,7 +46,7 @@ if __name__ == "__main__":
     try:
         while True:
             browser_content = "\n".join(_crawler.crawl())
-            llm_command = nat_bot_chain.run(_crawler.page.url, browser_content)
+            llm_command = nat_bot_chain.execute(_crawler.page.url, browser_content)
             if not quiet:
                 print("URL: " + _crawler.page.url)
                 print("Objective: " + objective)
