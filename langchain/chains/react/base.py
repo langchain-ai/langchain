@@ -72,9 +72,9 @@ class ReActChain(Chain, BaseModel):
 
         :meta private:
         """
-        return ["full_logic", self.output_key]
+        return [self.output_key]
 
-    def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         chained_input = ChainedInput(f"{question}\nThought 1:", verbose=self.verbose)
@@ -98,27 +98,10 @@ class ReActChain(Chain, BaseModel):
                     raise ValueError("Cannot lookup without a successful search first")
                 observation = document.lookup(directive)
             elif action == "Finish":
-                return {"full_logic": chained_input.input, self.output_key: directive}
+                return {self.output_key: directive}
             else:
                 raise ValueError(f"Got unknown action directive: {action}")
             chained_input.add(f"\nObservation {i}: ")
             chained_input.add(observation, color="yellow")
             chained_input.add(f"\nThought {i + 1}:")
             i += 1
-
-    def run(self, question: str) -> str:
-        """Run ReAct framework.
-
-        Args:
-            question: Question to be answered.
-
-        Returns:
-            Final answer from thinking through the ReAct framework.
-
-        Example:
-            .. code-block:: python
-
-                question = "Were Scott Derrickson and Ed Wood of the same nationality?"
-                answer = react.run(question)
-        """
-        return self({self.input_key: question})[self.output_key]

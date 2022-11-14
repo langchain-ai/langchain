@@ -88,7 +88,7 @@ class SerpAPIChain(Chain, BaseModel):
             )
         return values
 
-    def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         params = {
             "api_key": self.serpapi_api_key,
             "engine": "google",
@@ -116,19 +116,3 @@ class SerpAPIChain(Chain, BaseModel):
         else:
             toret = None
         return {self.output_key: toret}
-
-    def search(self, search_question: str) -> str:
-        """Run search query against SerpAPI.
-
-        Args:
-            search_question: Question to run against the SerpAPI.
-
-        Returns:
-            Answer from the search engine.
-
-        Example:
-            .. code-block:: python
-
-                answer = serpapi.search("What is the capital of Idaho?")
-        """
-        return self({self.input_key: search_question})[self.output_key]
