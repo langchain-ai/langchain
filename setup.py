@@ -9,6 +9,19 @@ with open(Path(__file__).absolute().parents[0] / "langchain" / "VERSION") as _f:
 with open("README.md", "r") as f:
     long_description = f.read()
 
+LLM_DEPENDENCIES = ["cohere", "openai", "nlpcloud", "huggingface_hub"]
+OTHER_DEPENDENCIES = [
+    "elasticsearch",
+    "google-search-results",
+    "wikipedia",
+    "faiss-cpu",
+    "sentence_transformers",
+    "transformers",
+    "spacy",
+    "nltk",
+]
+
+
 setup(
     name="langchain",
     version=__version__,
@@ -20,4 +33,8 @@ setup(
     url="https://github.com/hwchase17/langchain",
     include_package_data=True,
     long_description_content_type="text/markdown",
+    extras_require={
+        "llms": LLM_DEPENDENCIES,
+        "all": LLM_DEPENDENCIES + OTHER_DEPENDENCIES,
+    },
 )
