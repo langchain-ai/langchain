@@ -62,19 +62,3 @@ class VectorDBQA(Chain, BaseModel):
         # TODO: handle cases where this context is too long.
         answer = llm_chain.predict(question=question, context="\n\n".join(contexts))
         return {self.output_key: answer}
-
-    def run(self, question: str) -> str:
-        """Run Question-Answering on a vector database.
-
-        Args:
-            question: Question to get the answer for.
-
-        Returns:
-            The final answer
-
-        Example:
-            .. code-block:: python
-
-                answer = vectordbqa.run("What is the capital of Idaho?")
-        """
-        return self({self.input_key: question})[self.output_key]
