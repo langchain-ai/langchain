@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class OpenAI(LLM, BaseModel):
@@ -51,13 +51,6 @@ class OpenAI(LLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-
-        if openai_api_key is None or openai_api_key == "":
-            raise ValueError(
-                "Did not find OpenAI API key, please add an environment variable"
-                " `OPENAI_API_KEY` which contains it, or pass `openai_api_key`"
-                " as a named parameter."
-            )
         try:
             import openai
 

@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens, get_from_dict_or_env
+from langchain.llms.utils import enforce_stop_tokens
+from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
@@ -47,12 +48,6 @@ class HuggingFaceHub(LLM, BaseModel):
         huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
-        if huggingfacehub_api_token is None or huggingfacehub_api_token == "":
-            raise ValueError(
-                "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACEHUB_API_TOKEN` which contains it, or pass"
-                " `huggingfacehub_api_token` as a named parameter."
-            )
         try:
             from huggingface_hub.inference_api import InferenceApi
 
