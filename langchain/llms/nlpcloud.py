@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class NLPCloud(LLM, BaseModel):
@@ -67,13 +67,6 @@ class NLPCloud(LLM, BaseModel):
         nlpcloud_api_key = get_from_dict_or_env(
             values, "nlpcloud_api_key", "NLPCLOUD_API_KEY"
         )
-
-        if nlpcloud_api_key is None or nlpcloud_api_key == "":
-            raise ValueError(
-                "Did not find NLPCloud API key, please add an environment variable"
-                " `NLPCLOUD_API_KEY` which contains it, or pass `nlpcloud_api_key`"
-                " as a named parameter."
-            )
         try:
             import nlpcloud
 

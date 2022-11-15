@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class CohereEmbeddings(BaseModel, Embeddings):
@@ -38,13 +38,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-
-        if cohere_api_key is None or cohere_api_key == "":
-            raise ValueError(
-                "Did not find Cohere API key, please add an environment variable"
-                " `COHERE_API_KEY` which contains it, or pass `cohere_api_key` as a"
-                " named parameter."
-            )
         try:
             import cohere
 
