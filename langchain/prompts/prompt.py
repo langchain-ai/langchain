@@ -94,7 +94,7 @@ class Prompt(BaseModel, BasePrompt):
         Returns:
             The final prompt generated.
         """
-        template = example_separator.join([prefix] + examples + [suffix])
+        template = example_separator.join([prefix, *examples, suffix])
         return cls(input_variables=input_variables, template=template)
 
     @classmethod
