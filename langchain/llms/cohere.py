@@ -57,13 +57,6 @@ class Cohere(LLM, BaseModel):
         cohere_api_key = get_from_dict_or_env(
             values, "cohere_api_key", "COHERE_API_KEY"
         )
-
-        if cohere_api_key is None or cohere_api_key == "":
-            raise ValueError(
-                "Did not find Cohere API key, please add an environment variable"
-                " `COHERE_API_KEY` which contains it, or pass `cohere_api_key`"
-                " as a named parameter."
-            )
         try:
             import cohere
 

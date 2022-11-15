@@ -51,13 +51,6 @@ class OpenAI(LLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-
-        if openai_api_key is None or openai_api_key == "":
-            raise ValueError(
-                "Did not find OpenAI API key, please add an environment variable"
-                " `OPENAI_API_KEY` which contains it, or pass `openai_api_key`"
-                " as a named parameter."
-            )
         try:
             import openai
 

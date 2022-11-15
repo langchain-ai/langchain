@@ -73,12 +73,7 @@ class AI21(BaseModel, LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         ai21_api_key = get_from_dict_or_env(values, "ai21_api_key", "AI21_API_KEY")
-        if ai21_api_key is None or ai21_api_key == "":
-            raise ValueError(
-                "Did not find AI21 API key, please add an environment variable"
-                " `AI21_API_KEY` which contains it, or pass `ai21_api_key`"
-                " as a named parameter."
-            )
+        values["ai21_api_key"] = ai21_api_key
         return values
 
     @property

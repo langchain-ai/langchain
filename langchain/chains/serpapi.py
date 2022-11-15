@@ -44,7 +44,7 @@ class SerpAPIChain(Chain, BaseModel):
     input_key: str = "search_query"  #: :meta private:
     output_key: str = "search_result"  #: :meta private:
 
-    serpapi_api_key: Optional[str] = os.environ.get("SERPAPI_API_KEY")
+    serpapi_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -73,12 +73,7 @@ class SerpAPIChain(Chain, BaseModel):
         serpapi_api_key = get_from_dict_or_env(
             values, "serpapi_api_key", "SERPAPI_API_KEY"
         )
-        if serpapi_api_key is None or serpapi_api_key == "":
-            raise ValueError(
-                "Did not find SerpAPI API key, please add an environment variable"
-                " `SERPAPI_API_KEY` which contains it, or pass `serpapi_api_key` "
-                "as a named parameter to the constructor."
-            )
+        values["serpapi_api_key"] = serpapi_api_key
         try:
             from serpapi import GoogleSearch
 

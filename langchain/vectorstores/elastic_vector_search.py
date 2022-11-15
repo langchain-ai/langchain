@@ -110,12 +110,6 @@ class ElasticVectorSearch(VectorStore):
         elasticsearch_url = get_from_dict_or_env(
             kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
         )
-        if elasticsearch_url is None or elasticsearch_url == "":
-            raise ValueError(
-                "Did not find Elasticsearch URL, please add an environment variable"
-                " `ELASTICSEARCH_URL` which contains it, or pass"
-                "  `elasticsearch_url` as a named parameter."
-            )
         try:
             import elasticsearch
             from elasticsearch.helpers import bulk

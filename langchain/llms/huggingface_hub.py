@@ -48,12 +48,6 @@ class HuggingFaceHub(LLM, BaseModel):
         huggingfacehub_api_token = get_from_dict_or_env(
             values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
-        if huggingfacehub_api_token is None or huggingfacehub_api_token == "":
-            raise ValueError(
-                "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACEHUB_API_TOKEN` which contains it, or pass"
-                " `huggingfacehub_api_token` as a named parameter."
-            )
         try:
             from huggingface_hub.inference_api import InferenceApi
 
