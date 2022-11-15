@@ -18,6 +18,8 @@ class Docstore(ABC):
 
 
 class AddableMixin(ABC):
+    """Mixin class that supports adding texts."""
+
     @abstractmethod
     def add(self, texts: Dict[str, Document]) -> None:
         """Add more documents."""

@@ -1,6 +1,6 @@
 """Interface for vector stores."""
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, Iterable, List
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -10,7 +10,7 @@ class VectorStore(ABC):
     """Interface for vector stores."""
 
     @abstractmethod
-    def add_texts(self, texts: List[str]) -> None:
+    def add_texts(self, texts: Iterable[str]) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
 
     @abstractmethod

@@ -12,11 +12,11 @@ class InMemoryDocstore(Docstore, AddableMixin):
         """Initialize with dict."""
         self._dict = _dict
 
-    def get_next_idx(self) -> int:
-        """Get max index of documents."""
-        return len(self._dict.keys())
-
-    def add(self, texts: Dict[str, Document]):
+    def add(self, texts: Dict[str, Document]) -> None:
+        """Add texts to in memory dictionary."""
+        overlapping = set(texts).intersection(self._dict)
+        if overlapping:
+            raise ValueError(f"Tried to add ids that already exist: {overlapping}")
         self._dict = dict(self._dict, **texts)
 
     def search(self, search: str) -> Union[str, Document]:

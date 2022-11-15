@@ -1,6 +1,6 @@
 """Wrapper around Elasticsearch vector database."""
 import uuid
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -65,8 +65,15 @@ class ElasticVectorSearch(VectorStore):
             )
         self.client = es_client
 
-    def add_texts(self, texts: List[str]) -> None:
+    def add_texts(self, texts: Iterable[str]) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ValueError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticearch`."
+            )
         requests = []
         for i, text in enumerate(texts):
             request = {
@@ -77,6 +84,7 @@ class ElasticVectorSearch(VectorStore):
             }
             requests.append(request)
         bulk(self.client, requests)
+        # TODO: add option not to refresh
         self.client.indices.refresh(index=self.index_name)
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:

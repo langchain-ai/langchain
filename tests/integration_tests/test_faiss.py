@@ -5,6 +5,7 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
+from langchain.docstore.wikipedia import Wikipedia
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.faiss import FAISS
 
@@ -25,11 +26,12 @@ def test_faiss() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    index_to_id = docsearch.index_to_docstore_id
     expected_docstore = InMemoryDocstore(
         {
-            "0": Document(page_content="foo"),
-            "1": Document(page_content="bar"),
-            "2": Document(page_content="baz"),
+            index_to_id[0]: Document(page_content="foo"),
+            index_to_id[1]: Document(page_content="bar"),
+            index_to_id[2]: Document(page_content="baz"),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -45,3 +47,21 @@ def test_faiss_search_not_found() -> None:
     docsearch.docstore = InMemoryDocstore({})
     with pytest.raises(ValueError):
         docsearch.similarity_search("foo")
+
+
+def test_faiss_add_texts() -> None:
+    """Test end to end adding of texts."""
+    # Create initial doc store.
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    # Test adding a similar document as before.
+    docsearch.add_texts(["foo"])
+    output = docsearch.similarity_search("foo", k=2)
+    assert output == [Document(page_content="foo"), Document(page_content="foo")]
+
+
+def test_faiss_add_texts_not_supported() -> None:
+    """Test adding of texts to a docstore that doesn't support it."""
+    docsearch = FAISS(FakeEmbeddings().embed_query, None, Wikipedia(), {})
+    with pytest.raises(ValueError):
+        docsearch.add_texts(["foo"])
