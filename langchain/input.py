@@ -1,7 +1,7 @@
 """Handle chained inputs."""
 from typing import Dict, List, Optional
 
-_COLOR_MAPPING = {"blue": 104, "yellow": 103, "red": 101, "green": 102}
+_COLOR_MAPPING = {"blue": 51, "yellow": 229, "pink": 219, "green": 85}
 
 
 def get_color_mapping(
@@ -21,7 +21,7 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
         print(text, end=end)
     else:
         color_str = _COLOR_MAPPING[color]
-        print(f"\x1b[{color_str}m{text}\x1b[0m", end=end)
+        print(f"\u001b[48;5;{color_str}m{text}\x1b[0m", end=end)
 
 
 class ChainedInput:
