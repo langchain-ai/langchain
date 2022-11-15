@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
+from langchain.prompts.prompt import Prompt
 
 
 class DynamicPrompt(BaseModel, BasePrompt):
@@ -18,7 +19,7 @@ class DynamicPrompt(BaseModel, BasePrompt):
                 examples=["Say hi. Hi", "Say ho. Ho"],
                 example_separator="\n\n",
                 prefix="",
-                suffix="\n\nSay {foo}"
+                suffix="Say {foo}"
                 input_variables=["foo"],
                 max_length=200,
                 get_text_length=word_count
@@ -110,3 +111,20 @@ class DynamicPrompt(BaseModel, BasePrompt):
         except KeyError:
             raise ValueError("Invalid prompt schema.")
         return values
+
+    @classmethod
+    def from_structured_examples(
+        cls, examples: List[dict], example_prompt: Prompt, **kwargs: Any
+    ) -> "DynamicPrompt":
+        """Create prompt from structured examples.
+
+        Args:
+            examples: List of structured examples to use in the prompt.
+            example_prompt: Prompt used to format the examples.
+            **kwargs: Key-word arguments to passed through to init.
+
+        Returns:
+            The final prompt generated.
+        """
+        string_examples = [example_prompt.format(**example) for example in examples]
+        return cls(examples=string_examples, **kwargs)

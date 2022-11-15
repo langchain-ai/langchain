@@ -99,6 +99,34 @@ class Prompt(BaseModel, BasePrompt):
         return cls(input_variables=input_variables, template=template)
 
     @classmethod
+    def from_structured_examples(
+        cls,
+        examples: List[dict],
+        example_prompt: "Prompt",
+        suffix: str,
+        input_variables: List[str],
+        **kwargs: Any,
+    ) -> "Prompt":
+        """Take examples in list format with prefix and suffix to create a prompt.
+
+        Intended be used as a way to dynamically create a prompt from examples.
+
+        Args:
+            examples: List of structured examples to use in the prompt.
+            example_prompt: Prompt used to format each example.
+            suffix: String to go after the list of examples. Should generally
+                set up the user's input.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+            **kwargs: Key-word arguments to be passed through to init.
+
+        Returns:
+            The final prompt generated.
+        """
+        string_examples = [example_prompt.format(**example) for example in examples]
+        return cls.from_examples(string_examples, suffix, input_variables, **kwargs)
+
+    @classmethod
     def from_file(cls, template_file: str, input_variables: List[str]) -> "Prompt":
         """Load a prompt from a file.
 

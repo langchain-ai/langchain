@@ -1,11 +1,12 @@
 """Optimized prompt schema definition."""
 import re
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING
+from langchain.prompts.prompt import Prompt
 from langchain.vectorstores.base import VectorStore
 
 
@@ -28,6 +29,9 @@ class OptimizedPrompt(BaseModel):
             )
     """
 
+    vectorstore: VectorStore
+    """Vectorstore to use for storing the embeddings."""
+
     example_separator: str = "\n\n"
     """Example separator, e.g. \n\n, for the dynamic prompt creation."""
 
@@ -48,9 +52,6 @@ class OptimizedPrompt(BaseModel):
 
     max_length: int = 2048
     """Max length for the prompt, beyond which examples are cut."""
-
-    vectorstore: VectorStore
-    """Vectorstore to use for storing the embeddings."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -154,8 +155,65 @@ class OptimizedPrompt(BaseModel):
         Returns:
             The OptimizedPrompt instantiated, backed by a vector store.
         """
+        dict_examples = [{"text": example} for example in examples]
+        example_prompt = Prompt(input_variables=["text"], template="{text}")
+        return cls.from_structured_examples(
+            dict_examples,
+            example_prompt,
+            suffix,
+            input_variables,
+            embeddings,
+            vectorstore_cls=vectorstore_cls,
+            example_separator=example_separator,
+            prefix=prefix,
+            **vectorstore_cls_kwargs,
+        )
+
+    @classmethod
+    def from_structured_examples(
+        cls,
+        examples: List[dict],
+        example_prompt: Prompt,
+        suffix: str,
+        input_variables: List[str],
+        embeddings: Embeddings,
+        vectorstore_cls: VectorStore,
+        example_separator: str = "\n\n",
+        prefix: str = "",
+        example_key: Optional[str] = None,
+        **vectorstore_cls_kwargs: Any,
+    ) -> "OptimizedPrompt":
+        """Create k-shot prompt optimizer using example list and embeddings.
+
+        Reshuffles examples for the prompt dynamically based on query similarity.
+
+        Args:
+            examples: List of structured examples to use in the prompt.
+            example_prompt: Prompt used to format the examples.
+            suffix: String to go after the list of examples. Should generally
+                set up the user's input.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+            embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
+            vectorstore_cls: A vector store DB interface class, e.g. FAISS.
+            example_separator: The seperator to use in between examples. Defaults
+                to two new line characters.
+            prefix: String that should go before any examples. Generally includes
+                examples. Default to an empty string.
+            example_key: Optional string pointing to the key in the example to
+                vectorized. If None, will format the example in the example_prompt,
+                and then vectorize that whole string.
+            vectorstore_cls_kwargs: optional kwargs containing url for vector store
+
+        Returns:
+            The OptimizedPrompt instantiated, backed by a vector store.
+        """
+        if example_key is None:
+            string_examples = [example_prompt.format(**example) for example in examples]
+        else:
+            string_examples = [example[example_key] for example in examples]
         vectorstore = vectorstore_cls.from_texts(
-            examples, embeddings, **vectorstore_cls_kwargs
+            string_examples, embeddings, **vectorstore_cls_kwargs
         )
         return cls(
             suffix=suffix,
