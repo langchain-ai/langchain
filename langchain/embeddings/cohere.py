@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class CohereEmbeddings(BaseModel, Embeddings):

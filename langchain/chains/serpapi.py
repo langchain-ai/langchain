@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
+from langchain.utils import get_from_dict_or_env
 
 
 class HiddenPrints:
@@ -69,8 +70,9 @@ class SerpAPIChain(Chain, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        serpapi_api_key = values.get("serpapi_api_key")
-
+        serpapi_api_key = get_from_dict_or_env(
+            values, "serpapi_api_key", "SERPAPI_API_KEY"
+        )
         if serpapi_api_key is None or serpapi_api_key == "":
             raise ValueError(
                 "Did not find SerpAPI API key, please add an environment variable"

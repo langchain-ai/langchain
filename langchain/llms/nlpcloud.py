@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class NLPCloud(LLM, BaseModel):

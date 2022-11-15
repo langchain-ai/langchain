@@ -5,7 +5,7 @@ import requests
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env
 
 
 class AI21PenaltyData(BaseModel):
