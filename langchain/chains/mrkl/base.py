@@ -147,7 +147,7 @@ class MRKLChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         chained_input = ChainedInput(
             f"{inputs[self.input_key]}\nThought:", verbose=self.verbose
@@ -168,7 +168,3 @@ class MRKLChain(Chain, BaseModel):
             chained_input.add("\nObservation: ")
             chained_input.add(ca, color=color_mapping[action])
             chained_input.add("\nThought:")
-
-    def run(self, _input: str) -> str:
-        """Run input through the MRKL system."""
-        return self({self.input_key: _input})[self.output_key]

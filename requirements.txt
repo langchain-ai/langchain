@@ -1,17 +1,7 @@
 -r test_requirements.txt
-# For integrations
-cohere
-elasticsearch
-openai
-google-search-results
-nlpcloud
+-e '.[all]'
+# For trickier integrations
 playwright
-wikipedia
-huggingface_hub
-faiss-cpu
-sentence_transformers
 manifest-ml
-spacy
-nltk
 # For development
 jupyter

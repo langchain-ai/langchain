@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
+from langchain.utils import get_from_dict_or_env
 
 
 class HiddenPrints:
@@ -43,7 +44,7 @@ class SerpAPIChain(Chain, BaseModel):
     input_key: str = "search_query"  #: :meta private:
     output_key: str = "search_result"  #: :meta private:
 
-    serpapi_api_key: Optional[str] = os.environ.get("SERPAPI_API_KEY")
+    serpapi_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -69,14 +70,10 @@ class SerpAPIChain(Chain, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        serpapi_api_key = values.get("serpapi_api_key")
-
-        if serpapi_api_key is None or serpapi_api_key == "":
-            raise ValueError(
-                "Did not find SerpAPI API key, please add an environment variable"
-                " `SERPAPI_API_KEY` which contains it, or pass `serpapi_api_key` "
-                "as a named parameter to the constructor."
-            )
+        serpapi_api_key = get_from_dict_or_env(
+            values, "serpapi_api_key", "SERPAPI_API_KEY"
+        )
+        values["serpapi_api_key"] = serpapi_api_key
         try:
             from serpapi import GoogleSearch
 
@@ -88,7 +85,7 @@ class SerpAPIChain(Chain, BaseModel):
             )
         return values
 
-    def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         params = {
             "api_key": self.serpapi_api_key,
             "engine": "google",
@@ -116,19 +113,3 @@ class SerpAPIChain(Chain, BaseModel):
         else:
             toret = None
         return {self.output_key: toret}
-
-    def search(self, search_question: str) -> str:
-        """Run search query against SerpAPI.
-
-        Args:
-            search_question: Question to run against the SerpAPI.
-
-        Returns:
-            Answer from the search engine.
-
-        Example:
-            .. code-block:: python
-
-                answer = serpapi.search("What is the capital of Idaho?")
-        """
-        return self({self.input_key: search_question})[self.output_key]

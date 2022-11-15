@@ -48,7 +48,7 @@ class LLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
         prompt = self.prompt.format(**selected_inputs)
 

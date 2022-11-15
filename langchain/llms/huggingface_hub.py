@@ -1,11 +1,11 @@
 """Wrapper around HuggingFace APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
@@ -18,7 +18,7 @@ class HuggingFaceHub(LLM, BaseModel):
     environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
     it as a named parameter to the constructor.
 
-    Only supports task `text-generation` for now.
+    Only supports `text-generation` and `text2text-generation` for now.
 
     Example:
         .. code-block:: python
@@ -35,7 +35,7 @@ class HuggingFaceHub(LLM, BaseModel):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+    huggingfacehub_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -45,13 +45,9 @@ class HuggingFaceHub(LLM, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingfacehub_api_token = values.get("huggingfacehub_api_token")
-        if huggingfacehub_api_token is None or huggingfacehub_api_token == "":
-            raise ValueError(
-                "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACEHUB_API_TOKEN` which contains it, or pass"
-                " `huggingfacehub_api_token` as a named parameter."
-            )
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+        )
         try:
             from huggingface_hub.inference_api import InferenceApi
 

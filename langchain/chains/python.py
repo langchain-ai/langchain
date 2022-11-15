@@ -41,7 +41,7 @@ class PythonChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         python_repl = PythonREPL()
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
@@ -49,20 +49,3 @@ class PythonChain(Chain, BaseModel):
         sys.stdout = old_stdout
         output = mystdout.getvalue()
         return {self.output_key: output}
-
-    def run(self, code: str) -> str:
-        """Run code in python interpreter.
-
-        Args:
-            code: Code snippet to execute, should print out the answer.
-
-        Returns:
-            Answer from running the code and printing out the answer.
-
-        Example:
-
-            .. code-block:: python
-
-                answer = python_chain.run("print(1+1)")
-        """
-        return self({self.input_key: code})[self.output_key]

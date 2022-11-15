@@ -35,7 +35,7 @@ class Chain(BaseModel, ABC):
             )
 
     @abstractmethod
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
 
     def __call__(self, inputs: Dict[str, Any]) -> Dict[str, str]:
@@ -43,8 +43,22 @@ class Chain(BaseModel, ABC):
         self._validate_inputs(inputs)
         if self.verbose:
             print("\n\n\033[1m> Entering new chain...\033[0m")
-        outputs = self._run(inputs)
+        outputs = self._call(inputs)
         if self.verbose:
             print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
         return {**inputs, **outputs}
+
+    def run(self, text: str) -> str:
+        """Run text in, text out (if applicable)."""
+        if len(self.input_keys) != 1:
+            raise ValueError(
+                f"`run` not supported when there is not exactly "
+                f"one input key, got {self.input_keys}."
+            )
+        if len(self.output_keys) != 1:
+            raise ValueError(
+                f"`run` not supported when there is not exactly "
+                f"one output key, got {self.output_keys}."
+            )
+        return self({self.input_keys[0]: text})[self.output_keys[0]]

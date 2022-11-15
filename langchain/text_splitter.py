@@ -1,12 +1,18 @@
 """Functionality for splitting text."""
-from abc import abstractmethod
-from typing import Iterable, List
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Iterable, List
 
 
-class TextSplitter:
+class TextSplitter(ABC):
     """Interface for splitting text into chunks."""
 
-    def __init__(self, separator: str, chunk_size: int, chunk_overlap: int):
+    def __init__(
+        self,
+        separator: str = "\n\n",
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
+        length_function: Callable[[str], int] = len,
+    ):
         """Create a new TextSplitter."""
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -16,6 +22,7 @@ class TextSplitter:
         self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
+        self._length_function = length_function
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
@@ -28,28 +35,42 @@ class TextSplitter:
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            if total > self._chunk_size:
+            if total >= self._chunk_size:
                 docs.append(self._separator.join(current_doc))
                 while total > self._chunk_overlap:
-                    total -= len(current_doc[0])
+                    total -= self._length_function(current_doc[0])
                     current_doc = current_doc[1:]
             current_doc.append(d)
-            total += len(d)
+            total += self._length_function(d)
         docs.append(self._separator.join(current_doc))
         return docs
+
+    @classmethod
+    def from_huggingface_tokenizer(
+        cls, tokenizer: Any, **kwargs: Any
+    ) -> "TextSplitter":
+        """Text splitter than uses HuggingFace tokenizer to count length."""
+        try:
+            from transformers import PreTrainedTokenizerBase
+
+            if not isinstance(tokenizer, PreTrainedTokenizerBase):
+                raise ValueError(
+                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+                )
+
+            def _huggingface_tokenizer_length(text: str) -> int:
+                return len(tokenizer.encode(text))
+
+        except ImportError:
+            raise ValueError(
+                "Could not import transformers python package. "
+                "Please it install it with `pip install transformers`."
+            )
+        return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
 
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters."""
-
-    def __init__(
-        self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
-    ):
-        """Create a new CharacterTextSplitter."""
-        super(CharacterTextSplitter, self).__init__(
-            separator, chunk_size, chunk_overlap
-        )
-        self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
