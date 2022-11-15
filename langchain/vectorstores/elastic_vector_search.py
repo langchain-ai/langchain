@@ -1,10 +1,10 @@
 """Wrapper around Elasticsearch vector database."""
-import os
 import uuid
 from typing import Any, Callable, Dict, List
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 
@@ -107,16 +107,9 @@ class ElasticVectorSearch(VectorStore):
                     elasticsearch_url="http://localhost:9200"
                 )
         """
-        elasticsearch_url = kwargs.get("elasticsearch_url")
-        if not elasticsearch_url:
-            elasticsearch_url = os.environ.get("ELASTICSEARCH_URL")
-
-            if elasticsearch_url is None or elasticsearch_url == "":
-                raise ValueError(
-                    "Did not find Elasticsearch URL, please add an environment variable"
-                    " `ELASTICSEARCH_URL` which contains it, or pass"
-                    "  `elasticsearch_url` as a named parameter."
-                )
+        elasticsearch_url = get_from_dict_or_env(
+            kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
+        )
         try:
             import elasticsearch
             from elasticsearch.helpers import bulk
