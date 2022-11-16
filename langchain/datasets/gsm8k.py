@@ -3,7 +3,7 @@ import requests
 
 from dataset import Dataset
 from dataset import LANGCHAIN_STOP_SEQUENCE
-from example import Example
+from example import SimpleExample
 
 
 class GSM8KDataset(Dataset):
@@ -25,11 +25,11 @@ class GSM8KDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Example:
         item = self.data[idx]
         x = item["question"]
         y = item["answer"]
-        return Example(
+        return SimpleExample(
             x, y, x_prefix="Q:", y_prefix="A:", stop_sequence=self.stop_sequence
         )
 
