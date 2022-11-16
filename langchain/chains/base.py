@@ -49,6 +49,10 @@ class Chain(BaseModel, ABC):
         self._validate_outputs(outputs)
         return {**inputs, **outputs}
 
+    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Call the chain on all inputs in the list."""
+        return [self(inputs) for inputs in input_list]
+
     def run(self, text: str) -> str:
         """Run text in, text out (if applicable)."""
         if len(self.input_keys) != 1:

@@ -62,11 +62,8 @@ class MapReduceChain(Chain, BaseModel):
         docs = self.text_splitter.split_text(inputs[self.input_key])
         # Now that we have the chunks, we send them to the LLM and track results.
         #  This is the "map" part.
-        summaries = []
-        for d in docs:
-            inputs = {self.map_llm.prompt.input_variables[0]: d}
-            res = self.map_llm.predict(**inputs)
-            summaries.append(res)
+        input_list = [{self.map_llm.prompt.input_variables[0]: d} for d in docs]
+        summaries = self.map_llm.apply(input_list)
 
         # We then need to combine these individual parts into one.
         # This is the reduce part.
