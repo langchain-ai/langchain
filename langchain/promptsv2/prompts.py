@@ -11,21 +11,6 @@ class BasePrompt(ABC):
     pass
 
 
-class ZeroShotPrompt(BasePrompt):
-    """A prompt that is used for zero-shot learning.
-    This is not super interesting other than maintaining a consistent interface.
-    """
-
-    def __init__(self, prompt_text: str):
-        self.prompt_text = prompt_text
-
-    def __call__(self) -> str:
-        return self.prompt_text
-
-    def __str__(self) -> str:
-        return self.prompt_text
-
-
 class FewShotPrompt(BasePrompt):
     """A prompt that is used for few-shot learning."""
 
@@ -50,12 +35,16 @@ class FewShotPrompt(BasePrompt):
             self.prompt_formatter = DEFAULT_FORMATTER_MAPPING[prompt_formatter](
                 example_template
             )
+        self.header = header
+        self.footer = footer
 
     def add_example(self, example: Example):
         self.examples.append(example)
 
     def __call__(self) -> str:
-        body = "".join([self.prompt_formatter(example) for example in self.examples])
+        body = "".join(
+            [self.prompt_formatter.apply(example) for example in self.examples]
+        )
         return f"{self.header}{body}{self.footer}"
 
     def __str__(self) -> str:
@@ -63,3 +52,20 @@ class FewShotPrompt(BasePrompt):
 
     def __len__(self) -> int:
         return len(self.examples)
+
+
+class ZeroShotPrompt(FewShotPrompt):
+    """A prompt that is used for zero-shot learning.
+    """
+
+    def __init__(
+        self,
+        example_template: str,
+        prompt_formatter="f-string",
+        header: str = "",
+        footer: str = "",
+    ):
+        super().__init__(example_template, [], prompt_formatter, header, footer)
+
+    def add_example(self, example: Example):
+        raise NotImplementedError("Zero-shot prompts do not support adding examples.")
