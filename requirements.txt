@@ -3,5 +3,6 @@
 # For trickier integrations
 playwright
 manifest-ml
+requests
 # For development
 jupyter
