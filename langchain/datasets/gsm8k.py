@@ -28,7 +28,7 @@ class GSM8KDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         x = item["question"]
-        y = item["answer"].split("\n#### ")[1]
+        y = item["answer"]
         return Example(
             x, y, x_prefix="Q:", y_prefix="A:", stop_sequence=self.stop_sequence
         )
