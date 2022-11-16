@@ -58,7 +58,10 @@ class VectorDBQA(Chain, BaseModel):
         docs = self.vectorstore.similarity_search(question)
         contexts = []
         for j, doc in enumerate(docs):
-            contexts.append(f"Context {j}:\n{doc.page_content}")
+            context_str = f"Context {j}:\n{doc.page_content}"
+            if doc.metadata is not None:
+                context_str += f"\nSource: {doc.metadata['source']}"
+            contexts.append(context_str)
         # TODO: handle cases where this context is too long.
         answer = llm_chain.predict(question=question, context="\n\n".join(contexts))
         return {self.output_key: answer}

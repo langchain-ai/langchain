@@ -1,5 +1,5 @@
 """Interface for interacting with a document."""
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ class Document(BaseModel):
     page_content: str
     lookup_str: str = ""
     lookup_index = 0
+    metadata: Optional[dict] = None
 
     @property
     def paragraphs(self) -> List[str]:
