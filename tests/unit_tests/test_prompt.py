@@ -1,14 +1,14 @@
 """Test functionality related to prompts."""
 import pytest
 
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 
 def test_prompt_valid() -> None:
     """Test prompts can be constructed."""
     template = "This is a {foo} test."
     input_variables = ["foo"]
-    prompt = Prompt(input_variables=input_variables, template=template)
+    prompt = PromptTemplate(input_variables=input_variables, template=template)
     assert prompt.template == template
     assert prompt.input_variables == input_variables
 
@@ -18,7 +18,7 @@ def test_prompt_missing_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables: list = []
     with pytest.raises(ValueError):
-        Prompt(input_variables=input_variables, template=template)
+        PromptTemplate(input_variables=input_variables, template=template)
 
 
 def test_prompt_extra_input_variables() -> None:
@@ -26,7 +26,7 @@ def test_prompt_extra_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables = ["foo", "bar"]
     with pytest.raises(ValueError):
-        Prompt(input_variables=input_variables, template=template)
+        PromptTemplate(input_variables=input_variables, template=template)
 
 
 def test_prompt_wrong_input_variables() -> None:
@@ -34,7 +34,7 @@ def test_prompt_wrong_input_variables() -> None:
     template = "This is a {foo} test."
     input_variables = ["bar"]
     with pytest.raises(ValueError):
-        Prompt(input_variables=input_variables, template=template)
+        PromptTemplate(input_variables=input_variables, template=template)
 
 
 def test_prompt_from_examples_valid() -> None:
@@ -57,14 +57,14 @@ Answer:"""
         """Question: who are you?\nAnswer: foo""",
         """Question: what are you?\nAnswer: bar""",
     ]
-    prompt_from_examples = Prompt.from_examples(
+    prompt_from_examples = PromptTemplate.from_examples(
         examples,
         suffix,
         input_variables,
         example_separator=example_separator,
         prefix=prefix,
     )
-    prompt_from_template = Prompt(input_variables=input_variables, template=template)
+    prompt_from_template = PromptTemplate(input_variables=input_variables, template=template)
     assert prompt_from_examples.template == prompt_from_template.template
     assert prompt_from_examples.input_variables == prompt_from_template.input_variables
 
@@ -74,7 +74,7 @@ def test_prompt_invalid_template_format() -> None:
     template = "This is a {foo} test."
     input_variables = ["foo"]
     with pytest.raises(ValueError):
-        Prompt(
+        PromptTemplate(
             input_variables=input_variables, template=template, template_format="bar"
         )
 
@@ -83,5 +83,5 @@ def test_prompt_from_file() -> None:
     """Test prompt can be successfully constructed from a file."""
     template_file = "tests/unit_tests/data/prompt_file.txt"
     input_variables = ["question"]
-    prompt = Prompt.from_file(template_file, input_variables)
+    prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"

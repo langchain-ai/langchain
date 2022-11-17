@@ -4,13 +4,13 @@ from typing import List, Optional
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import LLM
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, llms: List[LLM], prompt: Optional[Prompt] = None):
+    def __init__(self, llms: List[LLM], prompt: Optional[PromptTemplate] = None):
         """Initialize with LLMs to experiment with and optional prompt.
 
         Args:
@@ -22,7 +22,7 @@ class ModelLaboratory:
         llm_range = [str(i) for i in range(len(self.llms))]
         self.llm_colors = get_color_mapping(llm_range)
         if prompt is None:
-            self.prompt = Prompt(input_variables=["_input"], template="{_input}")
+            self.prompt = PromptTemplate(input_variables=["_input"], template="{_input}")
         else:
             if len(prompt.input_variables) != 1:
                 raise ValueError(

@@ -1,5 +1,5 @@
 """Wrapper around FAISS vector database."""
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 import numpy as np
 
@@ -54,7 +54,7 @@ class FAISS(VectorStore):
 
     @classmethod
     def from_texts(
-        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+        cls, texts: List[str], embedding: Embeddings, metadatas: Optional[List[dict]] = None, **kwargs: Any
     ) -> "FAISS":
         """Construct FAISS wrapper from raw documents.
 

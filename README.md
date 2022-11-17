@@ -68,12 +68,12 @@ llm_math.run("How many of the integers between 0 and 99 inclusive are divisible 
 You can also use this for simple prompting pipelines, as in the below example and this [example notebook](https://github.com/hwchase17/langchain/blob/master/examples/simple_prompts.ipynb).
 
 ```python
-from langchain import Prompt, OpenAI, LLMChain
+from langchain import PromptTemplate, OpenAI, LLMChain
 
 template = """Question: {question}
 
 Answer: Let's think step by step."""
-prompt = Prompt(template=template, input_variables=["question"])
+prompt = PromptTemplate(template=template, input_variables=["question"])
 llm = OpenAI(temperature=0)
 llm_chain = LLMChain(prompt=prompt, llm=llm)
 

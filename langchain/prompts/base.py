@@ -9,7 +9,12 @@ DEFAULT_FORMATTER_MAPPING = {
 }
 
 
-class BasePrompt(ABC):
+def check_valid_template(template: str, template_format: str, input_variables: List[str]):
+    """Check that template string is valid."""
+
+
+
+class BasePromptTemplate(ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
     input_variables: List[str]

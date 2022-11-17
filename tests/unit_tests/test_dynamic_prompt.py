@@ -1,6 +1,6 @@
 """Test functionality related to dynamic prompts."""
 from langchain.prompts.dynamic import DynamicPrompt
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 # FULL TEMPLATES
 LONGER_TEMPLATE = """Test Prompt:
@@ -53,7 +53,7 @@ def test_dynamic_prompt_valid() -> None:
         example_separator=example_separator,
         prefix=PREFIX,
     )
-    prompt_cls = Prompt(input_variables=input_variables, template=LONGER_TEMPLATE)
+    prompt_cls = PromptTemplate(input_variables=input_variables, template=LONGER_TEMPLATE)
     dynamic_prompt_template = dynamic_prompt_cls.format(question="foo?")
     prompt_template = prompt_cls.format(question="foo?")
     assert dynamic_prompt_template == prompt_template

@@ -1,6 +1,6 @@
 """Wrapper around Elasticsearch vector database."""
 import uuid
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -79,12 +79,13 @@ class ElasticVectorSearch(VectorStore):
         script_query = _default_script_query(embedding)
         response = self.client.search(index=self.index_name, query=script_query)
         texts = [hit["_source"]["text"] for hit in response["hits"]["hits"][:k]]
+
         documents = [Document(page_content=text) for text in texts]
         return documents
 
     @classmethod
     def from_texts(
-        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+        cls, texts: List[str], embedding: Embeddings, metadatas: Optional[List[dict]], **kwargs: Any
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
@@ -133,11 +134,13 @@ class ElasticVectorSearch(VectorStore):
         client.indices.create(index=index_name, mappings=mapping)
         requests = []
         for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
             request = {
                 "_op_type": "index",
                 "_index": index_name,
                 "vector": embeddings[i],
                 "text": text,
+                "metadata": metadata,
             }
             requests.append(request)
         bulk(client, requests)

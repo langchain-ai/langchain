@@ -3,10 +3,10 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePrompt
+from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePromptTemplate, check_valid_template
 
 
-class Prompt(BaseModel, BasePrompt):
+class PromptTemplate(BaseModel, BasePromptTemplate):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -50,21 +50,7 @@ class Prompt(BaseModel, BasePrompt):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
-        input_variables = values["input_variables"]
-        template = values["template"]
-        template_format = values["template_format"]
-        if template_format not in DEFAULT_FORMATTER_MAPPING:
-            valid_formats = list(DEFAULT_FORMATTER_MAPPING)
-            raise ValueError(
-                f"Invalid template format. Got `{template_format}`;"
-                f" should be one of {valid_formats}"
-            )
-        dummy_inputs = {input_variable: "foo" for input_variable in input_variables}
-        try:
-            formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
-            formatter_func(template, **dummy_inputs)
-        except KeyError:
-            raise ValueError("Invalid prompt schema.")
+        check_valid_template(values["template"], values["template_format"], values["input_variables"])
         return values
 
     @classmethod
@@ -75,7 +61,7 @@ class Prompt(BaseModel, BasePrompt):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
-    ) -> "Prompt":
+    ) -> "PromptTemplate":
         """Take examples in list format with prefix and suffix to create a prompt.
 
         Intended be used as a way to dynamically create a prompt from examples.
@@ -98,7 +84,7 @@ class Prompt(BaseModel, BasePrompt):
         return cls(input_variables=input_variables, template=template)
 
     @classmethod
-    def from_file(cls, template_file: str, input_variables: List[str]) -> "Prompt":
+    def from_file(cls, template_file: str, input_variables: List[str]) -> "PromptTemplate":
         """Load a prompt from a file.
 
         Args:
@@ -111,3 +97,7 @@ class Prompt(BaseModel, BasePrompt):
         with open(template_file, "r") as f:
             template = f.read()
         return cls(input_variables=input_variables, template=template)
+
+
+# For backwards compatibility.
+Prompt = PromptTemplate
