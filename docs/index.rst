@@ -73,6 +73,7 @@ see detailed information about the various classes, methods, and APIs.
    :name: resources
 
    core_concepts.md
+   prompts.md
    glossary.md
    Discord <https://discord.gg/6adMQxSpJS>
 
