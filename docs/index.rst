@@ -72,9 +72,8 @@ see detailed information about the various classes, methods, and APIs.
    :caption: Resources
    :name: resources
 
-   core_concepts.md
-   prompts.md
-   glossary.md
+   explanation/core_concepts.md
+   explanation/glossary.md
    Discord <https://discord.gg/6adMQxSpJS>
 
 Higher level, conceptual explanations of the LangChain components.
