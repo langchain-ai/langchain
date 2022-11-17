@@ -28,11 +28,11 @@ def test_table_info() -> None:
     db = SQLDatabase(engine)
     output = db.table_info
     expected_output = (
-        "The 'company' table has columns: company_id (INTEGER), "
-        "company_location (VARCHAR).\n"
-        "The 'user' table has columns: user_id (INTEGER), user_name (VARCHAR(16))."
+        "Table 'company' has columns: company_id (INTEGER), "
+        "company_location (VARCHAR).",
+        "Table 'user' has columns: user_id (INTEGER), user_name (VARCHAR(16)).",
     )
-    assert output == expected_output
+    assert sorted(output.split("\n")) == sorted(expected_output)
 
 
 def test_sql_database_run() -> None:
