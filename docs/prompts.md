@@ -46,8 +46,10 @@ In LangChain there is a BaseExampleSelector that exposes the following interface
 ```python
 class BaseExampleSelector:
     
-    def select_examples(self, examples: List[dict], input_variables: dict):
+    def select_examples(self, input_variables: dict):
 ```
+
+Notice that it does not take in examples at runtime when it's selecting them - those are assumed to have been provided ahead of time.
 
 #### LengthExampleSelector
 The LengthExampleSelector selects examples based on the length of the input variables. 
@@ -98,9 +100,8 @@ to make a joke about that concept, I might use this specification for the Prompt
 
 #### FewShotPromptTemplate
 A FewShotPromptTemplate is a Prompt Template that includes some examples. It consists of:
-- examples: a list of examples to use
+- examples OR example selector: a list of examples to use, or an Example Selector to select which examples to use
 - example prompt template: a Prompt Template responsible for taking an individual example (a dictionary) and turning it into a string to be used in the prompt.
-- example selector: an Example Selector to select which examples to use
 - prefix: the template put in the prompt before listing any examples
 - suffix: the template put in the prompt after listing any examples
 - example separator: a string separator which is used to join the prefix, the examples, and the suffix together
