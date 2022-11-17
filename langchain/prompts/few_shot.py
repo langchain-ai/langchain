@@ -1,3 +1,4 @@
+"""Prompt template that contains few shot examples."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -15,16 +16,34 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None
-    example_prompt: PromptTemplate
-    suffix: str
-    input_variables: List[str]
-    example_separator: str = "\n\n"
-    prefix: str = ""
-    template_format: str = "f-string"
+    """Examples to format into the prompt.
+    Either this or example_selector should be provided."""
+
     example_selector: Optional[BaseExampleSelector] = None
+    """ExampleSelector to choose the examples to format into the prompt.
+    Either this or examples should be provided."""
+
+    example_prompt: PromptTemplate
+    """PromptTemplate used to format an individual example."""
+
+    suffix: str
+    """A prompt template string to put after the examples."""
+
+    input_variables: List[str]
+    """A list of the names of the variables the prompt template expects."""
+
+    example_separator: str = "\n\n"
+    """String separator used to join the prefix, the examples, and suffix."""
+
+    prefix: str = ""
+    """A prompt template string to put before the examples."""
+
+    template_format: str = "f-string"
+    """The format of the prompt template. Options are: 'f-string'."""
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
+        """Check that one and only one of examples/example_selector are provided."""
         if values["examples"] and values["example_selector"]:
             raise ValueError(
                 "Only one of 'examples' and 'example_selector' should be provided"

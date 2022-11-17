@@ -16,7 +16,9 @@ class LLMChain(Chain, BaseModel):
 
             from langchain import LLMChain, OpenAI, Prompt
             prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
+            prompt = PromptTemplate(
+                input_variables=["adjective"], template=prompt_template
+            )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 

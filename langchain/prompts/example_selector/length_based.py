@@ -1,5 +1,6 @@
+"""Select examples based on length."""
 import re
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 
 from pydantic import BaseModel, validator
 
@@ -8,6 +9,8 @@ from langchain.prompts.prompt import PromptTemplate
 
 
 class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
+    """Select examples based on length."""
+
     examples: List[dict]
     """A list of the examples that the prompt template expects."""
 
@@ -35,6 +38,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         return [get_text_length(eg) for eg in string_examples]
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select which examples to use based on the input lengths."""
         inputs = " ".join(input_variables.values())
         remaining_length = self.max_length - self.get_text_length(inputs)
         i = 0
@@ -46,4 +50,5 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             else:
                 examples.append(self.examples[0])
                 remaining_length = new_length
+            i += 1
         return examples
