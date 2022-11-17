@@ -56,6 +56,7 @@ common tasks or cool demos.
    installation.md
    integrations.md
    modules/prompt
+   modules/example_selector
    modules/llms
    modules/embeddings
    modules/text_splitter
@@ -73,6 +74,7 @@ see detailed information about the various classes, methods, and APIs.
    :name: resources
 
    explanation/core_concepts.md
+   explanation/prompts.md
    explanation/glossary.md
    Discord <https://discord.gg/6adMQxSpJS>
 

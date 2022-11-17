@@ -3,7 +3,9 @@
 Prompts and all the tooling around them are integral to working with language models, and therefor
 really important to get right, from both and interface and naming perspective. This is a "design doc"
 of sorts explaining how we think about prompts and the related concepts, and why the interfaces
-for working with are the way they are in LangChain
+for working with are the way they are in LangChain.
+
+For a more code-based walkthrough of all these concept, checkout our example [here](/examples/prompts/walkthrough)
 
 ## Prompt
 
@@ -94,9 +96,9 @@ The PromptTemplate implementation is the most simple form of a prompt template. 
 
 For example, if I was making an application that took a user inputted concept and asked a language model
 to make a joke about that concept, I might use this specification for the PromptTemplate
-- input variables = "thing"
-- template = "Tell me a joke about {thing}"
-- template format = "f-string"
+- input variables = `["thing"]`
+- template = `"Tell me a joke about {thing}"`
+- template format = `"f-string"`
 
 #### FewShotPromptTemplate
 A FewShotPromptTemplate is a Prompt Template that includes some examples. It consists of:
@@ -105,3 +107,32 @@ A FewShotPromptTemplate is a Prompt Template that includes some examples. It con
 - prefix: the template put in the prompt before listing any examples
 - suffix: the template put in the prompt after listing any examples
 - example separator: a string separator which is used to join the prefix, the examples, and the suffix together
+
+
+For example, if I wanted to turn the above example into a few shot prompt, this is what it would
+look like:
+
+First I would collect some examples, like
+```python
+examples = [
+    {"concept": "chicken", "joke": "Why did the chicken cross the road?"},
+    ...
+]
+```
+
+I would then make sure to define a prompt template for how each example should be formatted
+when inserted into the prompt:
+```python
+prompt_template = PromptTemplate(
+    input_variables=["concept", "joke"],
+    template="Tell me a joke about {concept}\n{joke}"
+)
+```
+
+Then, I would define the components as:
+- examples: The above examples
+- example_prompt: The above example prompt
+- prefix = `"You are a comedian telling jokes on demand."`
+- suffix = `"Tell me a joke about {concept}"`
+- input variables = `["concept"]`
+- template format = `"f-string"`
