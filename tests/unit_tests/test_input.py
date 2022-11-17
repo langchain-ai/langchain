@@ -48,7 +48,7 @@ def test_chained_input_verbose() -> None:
     chained_input.add("baz", color="blue")
     sys.stdout = old_stdout
     output = mystdout.getvalue()
-    assert output == "\x1b[48;5;51mbaz\x1b[0m"
+    assert output == "\x1b[36;1m\x1b[1;3mbaz\x1b[0m"
     assert chained_input.input == "foobarbaz"
 
 
