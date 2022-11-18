@@ -1,14 +1,18 @@
 """Document combining chain."""
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePrompt
+from langchain.prompts.prompt import Prompt
 from langchain.text_splitter import TextSplitter
+
+def _get_default_document_prompt():
+    return Prompt(input_variables=["page_content"], template="{page_content}")
 
 
 class CombineDocumentsChain(Chain, BaseModel):
@@ -16,7 +20,7 @@ class CombineDocumentsChain(Chain, BaseModel):
 
     llm_chain: LLMChain
     """LLM wrapper to use after formatting documents."""
-    document_prompt: BasePrompt
+    document_prompt: BasePrompt = Field(default_factory=_get_default_document_prompt)
     """Prompt to use to format each document."""
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
@@ -44,8 +48,15 @@ class CombineDocumentsChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        doc_dicts = [{k: doc.dict()[k] for k in self.document_prompt.input_variables} for doc in inputs[self.input_key]]
+        docs = inputs[self.input_key]
+        other_keys = {k:v for k,v in inputs.items() if k != self.input_key}
+        doc_dicts = []
+        for doc in docs:
+            base_info = {"page_content": doc.page_content}
+            base_info.update(doc.metadata)
+            doc_dicts.update({k: base_info[k] for k in self.document_prompt.input_variables})
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         doc_variable = self.llm_chain.prompt.input_variables[0]
-        output = self.llm_chain.predict(**{doc_variable: "\n".join(doc_strings)})
+        other_keys[doc_variable] = "\n\n".join(doc_strings)
+        output = self.llm_chain.predict(**other_keys)
         return {self.output_key: output}

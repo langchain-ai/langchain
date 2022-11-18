@@ -12,7 +12,9 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePrompt
+from langchain.docstore.document import Document
 from langchain.text_splitter import TextSplitter
+from langchain.chains.combine_documents import CombineDocumentsChain
 
 
 class MapReduceChain(Chain, BaseModel):
@@ -60,14 +62,15 @@ class MapReduceChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         # Split the larger text into smaller chunks.
         docs = self.text_splitter.split_text(inputs[self.input_key])
+
         # Now that we have the chunks, we send them to the LLM and track results.
         #  This is the "map" part.
         input_list = [{self.map_llm.prompt.input_variables[0]: d} for d in docs]
-        summaries = self.map_llm.apply(input_list)
-
+        summary_results = self.map_llm.apply(input_list)
+        summaries = [res[self.map_llm.output_key] for res in summary_results]
+        summary_docs = [Document(page_content=text) for text in summaries]
         # We then need to combine these individual parts into one.
         # This is the reduce part.
-        summary_str = "\n".join(summaries)
-        inputs = {self.reduce_llm.prompt.input_variables[0]: summary_str}
-        output = self.reduce_llm.predict(**inputs)
-        return {self.output_key: output}
+        reduce_chain = CombineDocumentsChain(llm_chain=self.reduce_llm)
+        outputs = reduce_chain({reduce_chain.input_key: summary_docs})
+        return {self.output_key: outputs[self.output_key]}

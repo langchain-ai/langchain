@@ -9,7 +9,7 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     verbose: bool = False
-    """Whether to print out the code that was executed."""
+    """Whether to print out response text."""
 
     @property
     @abstractmethod
