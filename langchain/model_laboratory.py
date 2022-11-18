@@ -5,12 +5,27 @@ from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import Prompt
+from langchain.chains.base import Chain
 
 
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, llms: List[LLM], prompt: Optional[Prompt] = None):
+    def __init__(self, chains: List[Chain]):
+        """Initialize with chains to experiment with.
+
+        Args:
+            chains: list of chains to experiment with.
+        """
+        for chain in chains:
+            if len(chain.input_keys) != 1:
+                raise ValueError
+        self.chains = chains
+        chain_range = [str(i) for i in range(len(self.chains))]
+        self.chain_colors = get_color_mapping(chain_range)
+
+    @classmethod
+    def from_llms(cls, llms: List[LLM], prompt: Optional[Prompt] = None):
         """Initialize with LLMs to experiment with and optional prompt.
 
         Args:
@@ -42,9 +57,12 @@ class ModelLaboratory:
             text: input text to run all models on.
         """
         print(f"\033[1mInput:\033[0m\n{text}\n")
-        for i, llm in enumerate(self.llms):
-            print_text(str(llm), end="\n")
-            chain = LLMChain(llm=llm, prompt=self.prompt)
-            llm_inputs = {self.prompt.input_variables[0]: text}
-            output = chain.predict(**llm_inputs)
-            print_text(output, color=self.llm_colors[str(i)], end="\n\n")
+        for i, chain in enumerate(self.chains):
+            print_text(str(chain), end="\n")
+            inputs = {self.prompt.input_variables[0]: text}
+            output = chain(inputs)
+            if len(output) == 1:
+                str_output = list(output.values())[0]
+            else:
+                str_output = str(output)
+            print_text(str_output, color=self.llm_colors[str(i)], end="\n\n")
