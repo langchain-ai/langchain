@@ -4,9 +4,9 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
+from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePrompt
-from langchain.input import print_text
 
 
 class LLMChain(Chain, BaseModel):
