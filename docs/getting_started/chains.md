@@ -36,4 +36,4 @@ chain.run("colorful socks")
 There we go! There's the first chain.
 
 That is it for the Getting Started example. 
-As a next step, we would suggest checking out the more complex chains in the [Demos section](/examples/demos.rst)
+As a next step, we would suggest checking out the more complex chains in the [Demos section](/docs/examples/demos.rst)

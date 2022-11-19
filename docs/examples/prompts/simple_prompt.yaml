@@ -1,5 +1,4 @@
-input_variables: 
-  ["adjective", "content"]
-template: |
-  Tell me a {adjective} joke about {content}.
-  Like what does it mean?
+input_variables:
+    ["adjective", "content"]
+template: 
+    Tell me a {adjective} joke about {content}.
