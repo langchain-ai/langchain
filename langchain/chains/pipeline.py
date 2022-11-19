@@ -13,6 +13,7 @@ class Pipeline(Chain, BaseModel):
     chains: List[Chain]
     input_variables: List[str]
     output_variables: List[str]  #: :meta private:
+    return_all: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -54,7 +55,11 @@ class Pipeline(Chain, BaseModel):
             known_variables |= set(chain.output_keys)
 
         if "output_variables" not in values:
-            values["output_variables"] = known_variables.difference(input_variables)
+            if values.get("return_all", False):
+                output_keys = known_variables.difference(input_variables)
+            else:
+                output_keys = chains[-1].output_keys
+            values["output_variables"] = output_keys
         else:
             missing_vars = known_variables.difference(values["output_variables"])
             if missing_vars:
@@ -65,7 +70,9 @@ class Pipeline(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         known_values = inputs.copy()
-        for chain in self.chains:
-            outputs = chain(known_values)
+        for i, chain in enumerate(self.chains):
+            outputs = chain(known_values, return_only_outputs=True)
+            if self.verbose:
+                print(f"\033[1mChain {i}\033[0m:\n{outputs}\n")
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
