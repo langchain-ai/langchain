@@ -1,8 +1,8 @@
 """Question answering with sources over documents."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents import CombineDocumentsChain
@@ -14,13 +14,7 @@ from langchain.chains.qa_with_sources.prompt import (
 )
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompts.base import BasePrompt
 from langchain.prompts.prompt import Prompt
-from langchain.text_splitter import TextSplitter
-
-
-def _get_default_document_prompt():
-    return Prompt(input_variables=["page_content"], template="{page_content}")
 
 
 class QAWithSourcesChain(Chain, BaseModel):
@@ -38,13 +32,14 @@ class QAWithSourcesChain(Chain, BaseModel):
     sources_key: str = "sources"  #: :meta private:
 
     @classmethod
-    def from_llm(cls, llm: LLM, **kwargs: Any):
+    def from_llm(cls, llm: LLM, **kwargs: Any) -> "QAWithSourcesChain":
+        """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)
         return cls(
             llm_question_chain=llm_question_chain,
             llm_combine_chain=llm_combine_chain,
-            **kwargs
+            **kwargs,
         )
 
     class Config:
@@ -68,6 +63,28 @@ class QAWithSourcesChain(Chain, BaseModel):
         :meta private:
         """
         return [self.answer_key, self.sources_key]
+
+    @root_validator(pre=True)
+    def validate_question_chain(cls, values: Dict) -> Dict:
+        """Validate question chain."""
+        llm_question_chain = values["llm_question_chain"]
+        if len(llm_question_chain.input_keys) != 2:
+            raise ValueError(
+                f"The llm_question_chain should have two inputs: a content key "
+                f"(the first one) and a question key (the second one). Got "
+                f"{llm_question_chain.input_keys}."
+            )
+        return values
+
+    @root_validator()
+    def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
+        """Validate that the combine chain can be constructed."""
+        # Try to construct the combine documents chains.
+        CombineDocumentsChain(
+            llm_chain=values["llm_combine_chain"],
+            document_prompt=values["document_prompt"],
+        )
+        return values
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_docs_key]
