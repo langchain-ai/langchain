@@ -27,6 +27,8 @@ class VectorDBQA(Chain, BaseModel):
     """LLM wrapper to use."""
     vectorstore: VectorStore
     """Vector Database to connect to."""
+    k: int = 4
+    """Number of documents to query for."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -55,7 +57,7 @@ class VectorDBQA(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
-        docs = self.vectorstore.similarity_search(question)
+        docs = self.vectorstore.similarity_search(question, k=self.k)
         contexts = []
         for j, doc in enumerate(docs):
             contexts.append(f"Context {j}:\n{doc.page_content}")
