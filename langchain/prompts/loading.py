@@ -1,13 +1,16 @@
+"""Load prompts from disk."""
+import json
 from pathlib import Path
 from typing import Union
+
 import yaml
 
-from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
-import json
+from langchain.prompts.prompt import PromptTemplate
 
 
-def load_prompt_from_config(config):
+def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     """Get the right type from the config and load it accordingly."""
     prompt_type = config.pop("_type", "prompt")
     if prompt_type == "prompt":
@@ -24,7 +27,9 @@ def _load_template(var_name: str, config: dict) -> dict:
     if f"{var_name}_path" in config:
         # If it does, make sure template variable doesn't also exist.
         if var_name in config:
-            raise ValueError(f"Both `{var_name}_path` and `{var_name}` cannot be provided.")
+            raise ValueError(
+                f"Both `{var_name}_path` and `{var_name}` cannot be provided."
+            )
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
@@ -38,7 +43,7 @@ def _load_template(var_name: str, config: dict) -> dict:
     return config
 
 
-def _load_examples(config):
+def _load_examples(config: dict) -> dict:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
@@ -51,8 +56,8 @@ def _load_examples(config):
     return config
 
 
-def _load_few_shot_prompt(config):
-    """Load the dynamic prompt from the config."""
+def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
+    """Load the few shot prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
     config = _load_template("prefix", config)
@@ -71,14 +76,14 @@ def _load_few_shot_prompt(config):
     return FewShotPromptTemplate(**config)
 
 
-def _load_prompt(config):
-    """Load the base prompt type from config."""
+def _load_prompt(config: dict) -> PromptTemplate:
+    """Load the prompt template from config."""
     # Load the template from disk if necessary.
     config = _load_template("template", config)
     return PromptTemplate(**config)
 
 
-def load_prompt(file: Union[str, Path]):
+def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to Path object.
     if isinstance(file, str):
