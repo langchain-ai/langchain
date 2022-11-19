@@ -1,9 +1,11 @@
 """Chain that generates a list and then maps each output to another chain."""
 
+from typing import Dict, List
+
+from pydantic import BaseModel, Extra, root_validator
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from pydantic import BaseModel, Extra, root_validator
-from typing import List, Dict
 
 
 class MapChain(Chain, BaseModel):
@@ -70,4 +72,3 @@ class MapChain(Chain, BaseModel):
             )
         outputs = {self.map_chain.run(text) for text in new_inputs}
         return outputs
-

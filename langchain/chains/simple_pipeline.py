@@ -1,8 +1,10 @@
 """Simple chain pipeline where the outputs of one step feed directly into next."""
 
-from langchain.chains.base import Chain
+from typing import Dict, List
+
 from pydantic import BaseModel, Extra, root_validator
-from typing import List, Dict
+
+from langchain.chains.base import Chain
 
 
 class SimplePipeline(Chain, BaseModel):
@@ -55,7 +57,5 @@ class SimplePipeline(Chain, BaseModel):
         for chain in self.chains:
             _input = chain.run(_input)
             # Clean the input
-            _input = _input.strip(' \t\n\r')
+            _input = _input.strip()
         return {self.output_key: _input}
-
-

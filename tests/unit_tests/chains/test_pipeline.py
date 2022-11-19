@@ -1,8 +1,9 @@
 from typing import Dict, List
 
-from langchain.chains.pipeline import Pipeline
-from langchain.chains.base import Chain
 from pydantic import BaseModel
+
+from langchain.chains.base import Chain
+from langchain.chains.pipeline import Pipeline
 
 
 class FakeChain(Chain, BaseModel):
