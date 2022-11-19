@@ -1,6 +1,6 @@
 """Document combining chain."""
 
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field
 
@@ -10,6 +10,7 @@ from langchain.llms.base import LLM
 from langchain.prompts.base import BasePrompt
 from langchain.prompts.prompt import Prompt
 from langchain.text_splitter import TextSplitter
+
 
 def _get_default_document_prompt():
     return Prompt(input_variables=["page_content"], template="{page_content}")
@@ -49,12 +50,14 @@ class CombineDocumentsChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_key]
-        other_keys = {k:v for k,v in inputs.items() if k != self.input_key}
+        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
         doc_dicts = []
         for doc in docs:
             base_info = {"page_content": doc.page_content}
             base_info.update(doc.metadata)
-            doc_dicts.update({k: base_info[k] for k in self.document_prompt.input_variables})
+            doc_dicts.append(
+                {k: base_info[k] for k in self.document_prompt.input_variables}
+            )
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         doc_variable = self.llm_chain.prompt.input_variables[0]
         other_keys[doc_variable] = "\n\n".join(doc_strings)

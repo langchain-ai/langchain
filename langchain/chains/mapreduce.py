@@ -9,12 +9,12 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
+from langchain.chains.combine_documents import CombineDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePrompt
-from langchain.docstore.document import Document
 from langchain.text_splitter import TextSplitter
-from langchain.chains.combine_documents import CombineDocumentsChain
 
 
 class MapReduceChain(Chain, BaseModel):
