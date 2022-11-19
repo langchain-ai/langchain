@@ -48,7 +48,7 @@ def test_chained_input_verbose() -> None:
     chained_input.add("baz", color="blue")
     sys.stdout = old_stdout
     output = mystdout.getvalue()
-    assert output == "\x1b[104mbaz\x1b[0m"
+    assert output == "\x1b[36;1m\x1b[1;3mbaz\x1b[0m"
     assert chained_input.input == "foobarbaz"
 
 
@@ -70,5 +70,5 @@ def test_get_color_mapping_excluded_colors() -> None:
     """Test getting of color mapping with excluded colors."""
     items = ["foo", "bar"]
     output = get_color_mapping(items, excluded_colors=["blue"])
-    expected_output = {"foo": "yellow", "bar": "red"}
+    expected_output = {"foo": "yellow", "bar": "pink"}
     assert output == expected_output

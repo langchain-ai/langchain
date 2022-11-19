@@ -9,7 +9,7 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     verbose: bool = False
-    """Whether to print out the code that was executed."""
+    """Whether to print out response text."""
 
     @property
     @abstractmethod
@@ -48,6 +48,10 @@ class Chain(BaseModel, ABC):
             print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
         return {**inputs, **outputs}
+
+    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Call the chain on all inputs in the list."""
+        return [self(inputs) for inputs in input_list]
 
     def run(self, text: str) -> str:
         """Run text in, text out (if applicable)."""
