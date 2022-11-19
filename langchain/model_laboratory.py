@@ -1,6 +1,7 @@
 """Experiment with different models."""
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
+from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import LLM
@@ -10,7 +11,41 @@ from langchain.prompts.prompt import PromptTemplate
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, llms: List[LLM], prompt: Optional[PromptTemplate] = None):
+    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
+        """Initialize with chains to experiment with.
+
+        Args:
+            chains: list of chains to experiment with.
+        """
+        if not isinstance(chains[0], Chain):
+            raise ValueError(
+                "ModelLaboratory should now be initialized with Chains. "
+                "If you want to initialize with LLMs, use the `from_llms` method "
+                "instead (`ModelLaboratory.from_llms(...)`)"
+            )
+        for chain in chains:
+            if len(chain.input_keys) != 1:
+                raise ValueError(
+                    "Currently only support chains with one input variable, "
+                    f"got {chain.input_keys}"
+                )
+            if len(chain.output_keys) != 1:
+                raise ValueError(
+                    "Currently only support chains with one output variable, "
+                    f"got {chain.output_keys}"
+                )
+        if names is not None:
+            if len(names) != len(chains):
+                raise ValueError("Length of chains does not match length of names.")
+        self.chains = chains
+        chain_range = [str(i) for i in range(len(self.chains))]
+        self.chain_colors = get_color_mapping(chain_range)
+        self.names = names
+
+    @classmethod
+    def from_llms(
+        cls, llms: List[LLM], prompt: Optional[PromptTemplate] = None
+    ) -> "ModelLaboratory":
         """Initialize with LLMs to experiment with and optional prompt.
 
         Args:
@@ -18,20 +53,11 @@ class ModelLaboratory:
             prompt: Optional prompt to use to prompt the LLMs. Defaults to None.
                 If a prompt was provided, it should only have one input variable.
         """
-        self.llms = llms
-        llm_range = [str(i) for i in range(len(self.llms))]
-        self.llm_colors = get_color_mapping(llm_range)
         if prompt is None:
-            self.prompt = PromptTemplate(
-                input_variables=["_input"], template="{_input}"
-            )
-        else:
-            if len(prompt.input_variables) != 1:
-                raise ValueError(
-                    "Currently only support prompts with one input variable, "
-                    f"got {prompt}"
-                )
-            self.prompt = prompt
+            prompt = PromptTemplate(input_variables=["_input"], template="{_input}")
+        chains = [LLMChain(llm=llm, prompt=prompt) for llm in llms]
+        names = [str(llm) for llm in llms]
+        return cls(chains, names=names)
 
     def compare(self, text: str) -> None:
         """Compare model outputs on an input text.
@@ -44,9 +70,11 @@ class ModelLaboratory:
             text: input text to run all models on.
         """
         print(f"\033[1mInput:\033[0m\n{text}\n")
-        for i, llm in enumerate(self.llms):
-            print_text(str(llm), end="\n")
-            chain = LLMChain(llm=llm, prompt=self.prompt)
-            llm_inputs = {self.prompt.input_variables[0]: text}
-            output = chain.predict(**llm_inputs)
-            print_text(output, color=self.llm_colors[str(i)], end="\n\n")
+        for i, chain in enumerate(self.chains):
+            if self.names is not None:
+                name = self.names[i]
+            else:
+                name = str(chain)
+            print_text(name, end="\n")
+            output = chain.run(text)
+            print_text(output, color=self.chain_colors[str(i)], end="\n\n")
