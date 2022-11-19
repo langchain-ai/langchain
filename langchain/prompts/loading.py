@@ -3,20 +3,17 @@ from typing import Union
 import yaml
 
 from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts.few_shot import FewShotPromptTemplate
 import json
 
 
 def load_prompt_from_config(config):
     """Get the right type from the config and load it accordingly."""
-    if "type" in config:
-        prompt_type = config.pop("type")
-    else:
-        # Default to base prompt type.
-        prompt_type = "prompt"
+    prompt_type = config.pop("_type", "prompt")
     if prompt_type == "prompt":
         return _load_prompt(config)
-    elif prompt_type == "dynamic_prompt":
-        return _load_dynamic_prompt(config)
+    elif prompt_type == "few_shot":
+        return _load_few_shot_prompt(config)
     else:
         raise ValueError
 
@@ -54,41 +51,29 @@ def _load_examples(config):
     return config
 
 
-def _load_dynamic_prompt(config):
+def _load_few_shot_prompt(config):
     """Load the dynamic prompt from the config."""
-    # Get the loader type (init, from_examples, etc)
-    if "loader" in config:
-        prompt_type = config.pop("loader")
+    # Load the suffix and prefix templates.
+    config = _load_template("suffix", config)
+    config = _load_template("prefix", config)
+    # Load the example prompt.
+    if "example_prompt_path" in config:
+        if "example_prompt" in config:
+            raise ValueError(
+                "Only one of example_prompt and example_prompt_path should "
+                "be specified."
+            )
+        config["example_prompt"] = load_prompt(config.pop("example_prompt_path"))
     else:
-        prompt_type = "init"
-    # Call loading logic depending on what loader to use.
-    if prompt_type == "init":
-        # Load the suffix and prefix templates.
-        config = _load_template("suffix", config)
-        config = _load_template("prefix", config)
-        return DynamicPrompt(**config)
-    elif prompt_type == "from_structured_examples":
-        # Load the suffix and prefix templates.
-        config = _load_template("suffix", config)
-        config = _load_template("prefix", config)
-        # Load the example prompt.
         config["example_prompt"] = _load_prompt(config["example_prompt"])
-        # Load the examples.
-        config = _load_examples(config)
-        return DynamicPrompt.from_structured_examples(**config)
-    else:
-        raise ValueError
+    # Load the examples.
+    config = _load_examples(config)
+    return FewShotPromptTemplate(**config)
 
 
 def _load_prompt(config):
     """Load the base prompt type from config."""
-    # Get the loader type (init, from_examples, etc)
-    if "loader" in config:
-        prompt_type = config.pop("loader")
-    else:
-        prompt_type = "init"
-    # Call loading logic depending on what loader to use.
-    # Load the template from disk.
+    # Load the template from disk if necessary.
     config = _load_template("template", config)
     return PromptTemplate(**config)
 
