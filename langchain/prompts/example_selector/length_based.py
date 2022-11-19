@@ -48,7 +48,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             if i < 0:
                 break
             else:
-                examples.append(self.examples[0])
+                examples.append(self.examples[i])
                 remaining_length = new_length
             i += 1
         return examples
