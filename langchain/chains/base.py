@@ -38,7 +38,9 @@ class Chain(BaseModel, ABC):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
 
-    def __call__(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def __call__(
+        self, inputs: Dict[str, Any], return_only_outputs: bool = False
+    ) -> Dict[str, str]:
         """Run the logic of this chain and add to output."""
         self._validate_inputs(inputs)
         if self.verbose:
@@ -47,7 +49,10 @@ class Chain(BaseModel, ABC):
         if self.verbose:
             print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
-        return {**inputs, **outputs}
+        if return_only_outputs:
+            return outputs
+        else:
+            return {**inputs, **outputs}
 
     def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Call the chain on all inputs in the list."""
