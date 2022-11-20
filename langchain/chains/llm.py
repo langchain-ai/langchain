@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.input import print_text
 from langchain.llms.base import LLM
-from langchain.prompts.base import BasePrompt
+from langchain.prompts.base import BasePromptTemplate
 
 
 class LLMChain(Chain, BaseModel):
@@ -17,11 +17,13 @@ class LLMChain(Chain, BaseModel):
 
             from langchain import LLMChain, OpenAI, Prompt
             prompt_template = "Tell me a {adjective} joke"
-            prompt = Prompt(input_variables=["adjective"], template=prompt_template)
+            prompt = PromptTemplate(
+                input_variables=["adjective"], template=prompt_template
+            )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 
-    prompt: BasePrompt
+    prompt: BasePromptTemplate
     """Prompt object to use."""
     llm: LLM
     """LLM wrapper to use."""

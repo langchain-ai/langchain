@@ -5,7 +5,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import LLM
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 
 class ModelLaboratory:
@@ -44,7 +44,7 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: List[LLM], prompt: Optional[Prompt] = None
+        cls, llms: List[LLM], prompt: Optional[PromptTemplate] = None
     ) -> "ModelLaboratory":
         """Initialize with LLMs to experiment with and optional prompt.
 
@@ -54,7 +54,7 @@ class ModelLaboratory:
                 If a prompt was provided, it should only have one input variable.
         """
         if prompt is None:
-            prompt = Prompt(input_variables=["_input"], template="{_input}")
+            prompt = PromptTemplate(input_variables=["_input"], template="{_input}")
         chains = [LLMChain(llm=llm, prompt=prompt) for llm in llms]
         names = [str(llm) for llm in llms]
         return cls(chains, names=names)
