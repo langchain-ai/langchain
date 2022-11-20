@@ -2,7 +2,11 @@
 
 import pytest
 
-from langchain.chains.mrkl.base import ChainConfig, MRKLChain, get_action_and_input
+from langchain.chains.mrkl.base import (
+    ChainConfig,
+    MRKLRouterChain,
+    get_action_and_input,
+)
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
 from langchain.prompts import Prompt
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -59,12 +63,12 @@ def test_from_chains() -> None:
             action_name="bar", action=lambda x: "bar", action_description="foobar2"
         ),
     ]
-    mrkl_chain = MRKLChain.from_chains(FakeLLM(), chain_configs)
+    router_chain = MRKLRouterChain(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
     expected_template = BASE_TEMPLATE.format(
         tools=expected_tools_prompt, tool_names=expected_tool_names
     )
-    prompt = mrkl_chain.prompt
+    prompt = router_chain.llm_chain.prompt
     assert isinstance(prompt, Prompt)
     assert prompt.template == expected_template

@@ -1,77 +1,46 @@
 """Chain that does self ask with search."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.router import LLMRouterChain
 from langchain.chains.self_ask_with_search.prompt import PROMPT
 from langchain.chains.serpapi import SerpAPIChain
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 
 
-def extract_answer(generated: str) -> str:
-    """Extract answer from text."""
-    if "\n" not in generated:
-        last_line = generated
-    else:
-        last_line = generated.split("\n")[-1]
+class SelfAskWithSearchRouter(LLMRouterChain):
+    """Router for the self-ask-with-search paper."""
 
-    if ":" not in last_line:
-        after_colon = last_line
-    else:
-        after_colon = generated.split(":")[-1]
+    def __init__(self, llm: LLM, **kwargs: Any):
+        """Initialize with an LLM."""
+        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        super().__init__(llm_chain=llm_chain, **kwargs)
 
-    if " " == after_colon[0]:
-        after_colon = after_colon[1:]
-    if "." == after_colon[-1]:
-        after_colon = after_colon[:-1]
+    def _extract_action_and_input(self, text: str) -> Tuple[str, str]:
+        followup = "Follow up:"
+        if "\n" not in text:
+            last_line = text
+        else:
+            last_line = text.split("\n")[-1]
 
-    return after_colon
+        if followup not in last_line:
+            return "Final Answer", text
 
+        if ":" not in last_line:
+            after_colon = last_line
+        else:
+            after_colon = text.split(":")[-1]
 
-def extract_question(generated: str, followup: str) -> str:
-    """Extract question from text."""
-    if "\n" not in generated:
-        last_line = generated
-    else:
-        last_line = generated.split("\n")[-1]
+        if " " == after_colon[0]:
+            after_colon = after_colon[1:]
+        if "?" != after_colon[-1]:
+            print("we probably should never get here..." + text)
 
-    if followup not in last_line:
-        print("we probably should never get here..." + generated)
-
-    if ":" not in last_line:
-        after_colon = last_line
-    else:
-        after_colon = generated.split(":")[-1]
-
-    if " " == after_colon[0]:
-        after_colon = after_colon[1:]
-    if "?" != after_colon[-1]:
-        print("we probably should never get here..." + generated)
-
-    return after_colon
-
-
-def get_last_line(generated: str) -> str:
-    """Get the last line in text."""
-    if "\n" not in generated:
-        last_line = generated
-    else:
-        last_line = generated.split("\n")[-1]
-
-    return last_line
-
-
-def greenify(_input: str) -> str:
-    """Add green highlighting to text."""
-    return "\x1b[102m" + _input + "\x1b[0m"
-
-
-def yellowfy(_input: str) -> str:
-    """Add yellow highlighting to text."""
-    return "\x1b[106m" + _input + "\x1b[0m"
+        return "Intermediate Answer", after_colon
 
 
 class SelfAskWithSearchChain(Chain, BaseModel):
@@ -117,33 +86,14 @@ class SelfAskWithSearchChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
         chained_input.add("\nAre follow up questions needed here:")
-        llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         intermediate = "\nIntermediate answer:"
-        followup = "Follow up:"
-        finalans = "\nSo the final answer is:"
-        ret_text = llm_chain.predict(input=chained_input.input, stop=[intermediate])
-        chained_input.add(ret_text, color="green")
-        while followup in get_last_line(ret_text):
-            question = extract_question(ret_text, followup)
-            external_answer = self.search_chain.run(question)
-            if external_answer is not None:
-                chained_input.add(intermediate + " ")
-                chained_input.add(external_answer + ".", color="yellow")
-                ret_text = llm_chain.predict(
-                    input=chained_input.input, stop=["\nIntermediate answer:"]
-                )
-                chained_input.add(ret_text, color="green")
-            else:
-                # We only get here in the very rare case that Google returns no answer.
-                chained_input.add(intermediate + " ")
-                preds = llm_chain.predict(
-                    input=chained_input.input, stop=["\n" + followup, finalans]
-                )
-                chained_input.add(preds, color="green")
-
-        if finalans not in ret_text:
-            chained_input.add(finalans)
-            ret_text = llm_chain.predict(input=chained_input.input, stop=["\n"])
-            chained_input.add(ret_text, color="green")
-
-        return {self.output_key: ret_text}
+        router = SelfAskWithSearchRouter(self.llm, stops=[intermediate])
+        action, action_input, log = router.get_action_and_input(chained_input.input)
+        chained_input.add(log, color="green")
+        while action != "Final Answer":
+            external_answer = self.search_chain.run(action_input)
+            chained_input.add(intermediate + " ")
+            chained_input.add(external_answer + ".", color="yellow")
+            action, action_input, log = router.get_action_and_input(chained_input.input)
+            chained_input.add(log, color="green")
+        return {self.output_key: action_input}

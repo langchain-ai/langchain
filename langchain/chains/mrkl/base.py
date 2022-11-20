@@ -1,14 +1,15 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
+from langchain.chains.router import LLMRouterChain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
-from langchain.prompts import BasePrompt, Prompt
+from langchain.prompts import Prompt
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -48,6 +49,25 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
+class MRKLRouterChain(LLMRouterChain):
+    """Router for the MRKL chain."""
+
+    def __init__(self, llm: LLM, chain_configs: List[ChainConfig], **kwargs: Any):
+        """Initialize with an LLM and the chain configs it has access to."""
+        tools = "\n".join(
+            [f"{c.action_name}: {c.action_description}" for c in chain_configs]
+        )
+        tool_names = ", ".join([chain.action_name for chain in chain_configs])
+        template = BASE_TEMPLATE.format(tools=tools, tool_names=tool_names)
+        prompt = Prompt(template=template, input_variables=["input"])
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        stops = ["\nObservation"]
+        super().__init__(llm_chain=llm_chain, stops=stops, **kwargs)
+
+    def _extract_action_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+        return get_action_and_input(text)
+
+
 class MRKLChain(Chain, BaseModel):
     """Chain that implements the MRKL system.
 
@@ -68,8 +88,8 @@ class MRKLChain(Chain, BaseModel):
 
     llm: LLM
     """LLM wrapper to use as router."""
-    prompt: BasePrompt
-    """Prompt to use as router."""
+    chain_configs: List[ChainConfig]
+    """Chain configs this chain has access to."""
     action_to_chain_map: Dict[str, Callable]
     """Mapping from action name to chain to execute."""
     input_key: str = "question"  #: :meta private:
@@ -114,15 +134,12 @@ class MRKLChain(Chain, BaseModel):
                 ]
                 mrkl = MRKLChain.from_chains(llm, chains)
         """
-        tools = "\n".join(
-            [f"{chain.action_name}: {chain.action_description}" for chain in chains]
-        )
-        tool_names = ", ".join([chain.action_name for chain in chains])
-        template = BASE_TEMPLATE.format(tools=tools, tool_names=tool_names)
-        prompt = Prompt(template=template, input_variables=["input"])
         action_to_chain_map = {chain.action_name: chain.action for chain in chains}
         return cls(
-            llm=llm, prompt=prompt, action_to_chain_map=action_to_chain_map, **kwargs
+            llm=llm,
+            chain_configs=chains,
+            action_to_chain_map=action_to_chain_map,
+            **kwargs,
         )
 
     class Config:
@@ -148,7 +165,7 @@ class MRKLChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        router_chain = MRKLRouterChain(self.llm, self.chain_configs)
         chained_input = ChainedInput(
             f"{inputs[self.input_key]}\nThought:", verbose=self.verbose
         )
@@ -156,11 +173,10 @@ class MRKLChain(Chain, BaseModel):
             list(self.action_to_chain_map.keys()), excluded_colors=["green"]
         )
         while True:
-            thought = llm_chain.predict(
-                input=chained_input.input, stop=["\nObservation"]
+            action, action_input, thought = router_chain.get_action_and_input(
+                chained_input.input
             )
             chained_input.add(thought, color="green")
-            action, action_input = get_action_and_input(thought)
             if action == FINAL_ANSWER_ACTION:
                 return {self.output_key: action_input}
             chain = self.action_to_chain_map[action]

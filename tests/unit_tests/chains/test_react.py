@@ -4,8 +4,7 @@ from typing import Any, List, Mapping, Optional, Union
 
 import pytest
 
-from langchain.chains.llm import LLMChain
-from langchain.chains.react.base import ReActChain, predict_until_observation
+from langchain.chains.react.base import ReActChain, ReActRouterChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
@@ -53,8 +52,8 @@ def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
     outputs = ["foo\nAction 1: search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    ret_text, action, directive = predict_until_observation(fake_llm_chain, "", 1)
+    router_chain = ReActRouterChain(llm=fake_llm)
+    action, directive, ret_text = router_chain.get_action_and_input("")
     assert ret_text == outputs[0]
     assert action == "search"
     assert directive == "foo"
@@ -64,20 +63,11 @@ def test_predict_until_observation_repeat() -> None:
     """Test when no action is generated initially."""
     outputs = ["foo", " search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    ret_text, action, directive = predict_until_observation(fake_llm_chain, "", 1)
+    router_chain = ReActRouterChain(llm=fake_llm)
+    action, directive, ret_text = router_chain.get_action_and_input("")
     assert ret_text == "foo\nAction 1: search[foo]"
     assert action == "search"
     assert directive == "foo"
-
-
-def test_predict_until_observation_error() -> None:
-    """Test handling of generation of text that cannot be parsed."""
-    outputs = ["foo\nAction 1: foo"]
-    fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    with pytest.raises(ValueError):
-        predict_until_observation(fake_llm_chain, "", 1)
 
 
 def test_react_chain() -> None:
