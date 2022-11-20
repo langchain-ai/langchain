@@ -9,3 +9,4 @@ mypy
 flake8
 flake8-docstrings
 types-requests
+types-PyYAML
