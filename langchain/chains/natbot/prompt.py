@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """
 You are an agent controlling a browser. You are given:
@@ -138,7 +138,7 @@ CURRENT URL: {url}
 PREVIOUS COMMAND: {previous_command}
 YOUR COMMAND:
 """
-PROMPT = Prompt(
+PROMPT = PromptTemplate(
     input_variables=["browser_content", "url", "previous_command", "objective"],
     template=_PROMPT_TEMPLATE,
 )
