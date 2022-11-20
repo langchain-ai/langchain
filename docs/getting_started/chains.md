@@ -12,28 +12,36 @@ This is easy to do with LangChain!
 First lets define the prompt:
 
 ```python
-from langchain.prompts import PromptTemplate
+from langchain import Prompt
 
-prompt = PromptTemplate(
+prompt = Prompt(
     input_variables=["product"],
     template="What is a good name for a company that makes {product}?",
 )
 ```
 
+Next, let's instantiate the LLM (we'll use OpenAI's text-davinci-002 model in this example, with a temperature setting of 0.5.
+
+```python
+from langchain import OpenAI
+
+llm = OpenAI(model_name="text-davinci-002", temperature=0.5)
+```
+
 We can now create a very simple chain that will take user input, format the prompt with it, and then send it to the LLM:
 
 ```python
-from langchain.chains import LLMChain
+from langchain import LLMChain
 chain = LLMChain(llm=llm, prompt=prompt)
 ```
 
 Now we can run that can only specifying the product!
 
 ```python
-chain.run("colorful socks")
+chain.predict("colorful socks")
 ```
 
 There we go! There's the first chain.
 
-That is it for the Getting Started example. 
+That is it for the Getting Started example.
 As a next step, we would suggest checking out the more complex chains in the [Demos section](/examples/demos)
