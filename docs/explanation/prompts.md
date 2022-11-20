@@ -5,7 +5,7 @@ really important to get right, from both and interface and naming perspective. T
 of sorts explaining how we think about prompts and the related concepts, and why the interfaces
 for working with are the way they are in LangChain.
 
-For a more code-based walkthrough of all these concept, checkout our example [here](/examples/prompts/walkthrough)
+For a more code-based walkthrough of all these concept, checkout our example [here](/examples/prompts/prompt_management)
 
 ## Prompt
 
