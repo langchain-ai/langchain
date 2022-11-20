@@ -21,7 +21,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceHubEmbeddings
             repo_id = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceHubEmbeddings(repo_id=repo_id, huggingfacehub_api_token="my-api-key")
+            hf = HuggingFaceHubEmbeddings(
+                repo_id=repo_id, huggingfacehub_api_token="my-api-key"
+            )
     """
 
     client: Any  #: :meta private:
