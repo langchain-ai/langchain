@@ -8,7 +8,7 @@ from langchain.chains.mrkl.base import (
     get_action_and_input,
 )
 from langchain.chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.prompts import Prompt
+from langchain.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -70,5 +70,5 @@ def test_from_chains() -> None:
         tools=expected_tools_prompt, tool_names=expected_tool_names
     )
     prompt = router_chain.llm_chain.prompt
-    assert isinstance(prompt, Prompt)
+    assert isinstance(prompt, PromptTemplate)
     assert prompt.template == expected_template

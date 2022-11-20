@@ -12,9 +12,10 @@ This is easy to do with LangChain!
 First lets define the prompt:
 
 ```python
-from langchain.prompts import Prompt
-prompt = Prompt(
-    input_variables=["product"], 
+from langchain.prompts import PromptTemplate
+
+prompt = PromptTemplate(
+    input_variables=["product"],
     template="What is a good name for a company that makes {product}?",
 )
 ```
@@ -35,4 +36,4 @@ chain.run("colorful socks")
 There we go! There's the first chain.
 
 That is it for the Getting Started example. 
-As a next step, we would suggest checking out the more complex chains in the [Demos section](/examples/demos.rst)
+As a next step, we would suggest checking out the more complex chains in the [Demos section](/examples/demos)

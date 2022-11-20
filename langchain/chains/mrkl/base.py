@@ -9,7 +9,7 @@ from langchain.chains.mrkl.prompt import BASE_TEMPLATE
 from langchain.chains.router import LLMRouterChain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
-from langchain.prompts import Prompt
+from langchain.prompts import BasePromptTemplate, PromptTemplate
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -59,7 +59,7 @@ class MRKLRouterChain(LLMRouterChain):
         )
         tool_names = ", ".join([chain.action_name for chain in chain_configs])
         template = BASE_TEMPLATE.format(tools=tools, tool_names=tool_names)
-        prompt = Prompt(template=template, input_variables=["input"])
+        prompt = PromptTemplate(template=template, input_variables=["input"])
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         stops = ["\nObservation"]
         super().__init__(llm_chain=llm_chain, stops=stops, **kwargs)
@@ -77,7 +77,7 @@ class MRKLChain(Chain, BaseModel):
             from langchain import OpenAI, Prompt, MRKLChain
             from langchain.chains.mrkl.base import ChainConfig
             llm = OpenAI(temperature=0)
-            prompt = Prompt(...)
+            prompt = PromptTemplate(...)
             action_to_chain_map = {...}
             mrkl = MRKLChain(
                 llm=llm,
