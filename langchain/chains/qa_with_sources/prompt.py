@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import Prompt
+from langchain.prompts import PromptTemplate
 
 question_prompt_template = """Use the following pieces of context to answer the question at the end. 
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -8,7 +8,7 @@ If you don't know the answer, just say that you don't know, don't try to make up
 
 Question: {question}
 Accurate Answer:"""
-question_prompt = Prompt(
+question_prompt = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
 
@@ -37,11 +37,11 @@ Sources:
 Question: {question}
 {summaries}
 Final Answer:"""
-combine_prompt = Prompt(
+combine_prompt = PromptTemplate(
     template=combine_prompt_template, input_variables=["summaries", "question"]
 )
 
-example_prompt = Prompt(
+example_prompt = PromptTemplate(
     template="Content: {page_content}\nSource: {source}",
     input_variables=["page_content", "source"],
 )

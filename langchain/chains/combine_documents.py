@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePrompt
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import Prompt
 
 
@@ -19,7 +19,9 @@ class CombineDocumentsChain(Chain, BaseModel):
 
     llm_chain: LLMChain
     """LLM wrapper to use after formatting documents."""
-    document_prompt: BasePrompt = Field(default_factory=_get_default_document_prompt)
+    document_prompt: BasePromptTemplate = Field(
+        default_factory=_get_default_document_prompt
+    )
     """Prompt to use to format each document."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
