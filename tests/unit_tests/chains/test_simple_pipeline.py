@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.chains.base import Chain
-from langchain.chains.simple_pipeline import SimplePipeline
+from langchain.chains.sequential import SimplePipeline
 
 
 class FakeChain(Chain, BaseModel):
@@ -31,29 +31,3 @@ class FakeChain(Chain, BaseModel):
             variables = [inputs[k] for k in self.input_variables]
             outputs[var] = " ".join(variables) + "foo"
         return outputs
-
-
-def test_pipeline_functionality() -> None:
-    """Test simple pipeline functionality."""
-    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
-    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    pipeline = SimplePipeline(chains=[chain_1, chain_2])
-    output = pipeline({"input": "123"})
-    expected_output = {"output": "123foofoo", "input": "123"}
-    assert output == expected_output
-
-
-def test_multi_input_errors() -> None:
-    """Test pipeline errors if multiple input variables are expected."""
-    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
-    chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    with pytest.raises(ValueError):
-        SimplePipeline(chains=[chain_1, chain_2])
-
-
-def test_multi_output_errors() -> None:
-    """Test pipeline errors if multiple output variables are expected."""
-    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "grok"])
-    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    with pytest.raises(ValueError):
-        SimplePipeline(chains=[chain_1, chain_2])
