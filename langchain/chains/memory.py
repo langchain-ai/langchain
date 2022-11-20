@@ -4,29 +4,38 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
+from langchain.docstore.base import Docstore
 from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class LLMChain(Chain, BaseModel):
-    """Chain to run queries against LLMs.
+class MemoryChain(Chain, BaseModel):
+    """Chain to run queries against LLMs and save intermediate reuslts in a docstore.
 
     Example:
         .. code-block:: python
 
-            from langchain import LLMChain, OpenAI, PromptTemplate
-            prompt_template = "Tell me a {adjective} joke"
+            from langchain import LLMChain, OpenAI, PromptTemplate, InMemoryDocstore
+            prompt_template = "Talk to me!\n\n{history}\nHuman: {input}\nAI:"
+            docstore = InMemoryDocstore()
             prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
+                input_variables=["input"], template=prompt_template
             )
-            llm = LLMChain(llm=OpenAI(), prompt=prompt)
+            memory_chain = MemoryChain(
+                llm=OpenAI(),
+                docstore=docstore,
+                prompt=prompt
+            )
     """
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
     llm: LLM
     """LLM wrapper to use."""
+    docstore: Docstore
+    """Docstore to use."""
+    history_key: str = "history"
     output_key: str = "text"  #: :meta private:
 
     class Config:
@@ -51,8 +60,19 @@ class LLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
+    def _fetch_history_from_docstore(self, inputs):
+        return self.docstore.list()
+
+    def _format_inputs_for_docstore(self, inputs):
+        return '\n'.join(["{k}: {v}".format(k=k, v=v) for k, v in inputs.items()])
+
+    def _format_output_for_docstore(self, output):
+        return "{output}".format(output)
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+        history = self._fetch_history_from_docstore(selected_inputs)
+        selected_inputs[self.history_key] = history
         prompt = self.prompt.format(**selected_inputs)
         if self.verbose:
             print("Prompt after formatting:")
@@ -61,6 +81,9 @@ class LLMChain(Chain, BaseModel):
         if "stop" in inputs:
             kwargs["stop"] = inputs["stop"]
         response = self.llm(prompt, **kwargs)
+        inputs = self._format_inputs_for_docstore(selected_inputs)
+        output = self._format_output_for_docstore(response)
+        self.docstore.add([inputs, output])
         return {self.output_key: response}
 
     def predict(self, **kwargs: Any) -> str:

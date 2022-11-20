@@ -42,7 +42,7 @@ class ReActChain(Chain, BaseModel):
         .. code-block:: python
 
             from langchain import ReActChain, OpenAI
-            react = ReAct(llm=OpenAI())
+            react = ReActChain(llm=OpenAI())
     """
 
     llm: LLM
