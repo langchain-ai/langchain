@@ -15,7 +15,12 @@ from langchain.chains import (
 )
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
-from langchain.prompts import BasePromptTemplate, PromptTemplate
+from langchain.prompts import (
+    BasePromptTemplate,
+    FewShotPromptTemplate,
+    Prompt,
+    PromptTemplate,
+)
 from langchain.smart_chains import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
@@ -29,7 +34,8 @@ __all__ = [
     "Cohere",
     "OpenAI",
     "BasePromptTemplate",
-    "DynamicPrompt",
+    "Prompt",
+    "FewShotPromptTemplate",
     "PromptTemplate",
     "ReActChain",
     "Wikipedia",
