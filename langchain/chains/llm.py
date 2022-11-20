@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
+from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
@@ -53,7 +54,9 @@ class LLMChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
         prompt = self.prompt.format(**selected_inputs)
-
+        if self.verbose:
+            print("Prompt after formatting:")
+            print_text(prompt, color="green", end="\n")
         kwargs = {}
         if "stop" in inputs:
             kwargs["stop"] = inputs["stop"]
