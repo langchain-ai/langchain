@@ -12,6 +12,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
+from langchain.chains.router_expert import RouterExpertChain, ExpertConfig
 
 
 class ReActRouterChain(LLMRouterChain, BaseModel):
@@ -42,6 +43,42 @@ class ReActRouterChain(LLMRouterChain, BaseModel):
         if re_matches is None:
             raise ValueError(f"Could not parse action directive: {action_str}")
         return re_matches.group(1), re_matches.group(2)
+
+    @property
+    def finish_action_name(self) -> str:
+        """The action name of when to finish the chain."""
+        return "Finish"
+
+    @property
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+        return f"Observation {self.i - 1}: "
+
+    @property
+    def router_prefix(self) -> str:
+        """Prefix to append the router call with."""
+        return f"Thought {self.i}:"
+
+
+class DocstoreExplorer:
+
+    def __init__(self, docstore: Docstore):
+        self.docstore=docstore
+        self.document = None
+
+    def search(self, term: str):
+        result = self.docstore.search(term)
+        if isinstance(result, Document):
+            self.document = result
+            return self.document.summary
+        else:
+            self.document = None
+            return result
+
+    def lookup(self, term: str):
+        if self.document is None:
+            raise ValueError("Cannot lookup without a successful search first")
+        return self.document.lookup(term)
 
 
 class ReActChain(Chain, BaseModel):
@@ -86,29 +123,15 @@ class ReActChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         question = inputs[self.input_key]
         router_chain = ReActRouterChain(self.llm)
-        chained_input = ChainedInput(f"{question}\nThought 1:", verbose=self.verbose)
-        document = None
-        while True:
-            action, directive, ret_text = router_chain.get_action_and_input(
-                chained_input.input
-            )
-            chained_input.add(ret_text, color="green")
-            if action == "Search":
-                result = self.docstore.search(directive)
-                if isinstance(result, Document):
-                    document = result
-                    observation = document.summary
-                else:
-                    document = None
-                    observation = result
-            elif action == "Lookup":
-                if document is None:
-                    raise ValueError("Cannot lookup without a successful search first")
-                observation = document.lookup(directive)
-            elif action == "Finish":
-                return {self.output_key: directive}
-            else:
-                raise ValueError(f"Got unknown action directive: {action}")
-            chained_input.add(f"\nObservation {router_chain.i - 1}: ")
-            chained_input.add(observation, color="yellow")
-            chained_input.add(f"\nThought {router_chain.i}:")
+        docstore_explorer = DocstoreExplorer(self.docstore)
+        expert_configs = [
+            ExpertConfig(expert_name="Search", expert=docstore_explorer.search),
+            ExpertConfig(expert_name="Lookup", expert=docstore_explorer.lookup)
+        ]
+        chain = RouterExpertChain(
+            router_chain=router_chain,
+            expert_configs=expert_configs,
+            verbose=self.verbose
+        )
+        output = chain.run(question)
+        return {self.output_key: output}

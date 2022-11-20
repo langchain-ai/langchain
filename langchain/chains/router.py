@@ -36,6 +36,21 @@ class RouterChain(Chain, BaseModel, ABC):
     def get_action_and_input(self, text: str) -> Tuple[str, str, str]:
         """Return action, action input, and log (in that order)."""
 
+    @property
+    @abstractmethod
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+
+    @property
+    @abstractmethod
+    def router_prefix(self) -> str:
+        """Prefix to append the router call with."""
+
+    @property
+    def finish_action_name(self) -> str:
+        """The action name of when to finish the chain."""
+        return "Final Answer"
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         action, action_input, log = self.get_action_and_input(inputs[self.input_key])
         return {

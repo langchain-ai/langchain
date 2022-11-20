@@ -10,6 +10,7 @@ from langchain.chains.self_ask_with_search.prompt import PROMPT
 from langchain.chains.serpapi import SerpAPIChain
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
+from langchain.chains.router_expert import RouterExpertChain, ExpertConfig
 
 
 class SelfAskWithSearchRouter(LLMRouterChain):
@@ -28,7 +29,10 @@ class SelfAskWithSearchRouter(LLMRouterChain):
             last_line = text.split("\n")[-1]
 
         if followup not in last_line:
-            return "Final Answer", text
+            finish_string = "So the final answer is: "
+            if finish_string not in last_line:
+                raise ValueError("We should probably never get here")
+            return "Final Answer", text[len(finish_string):]
 
         if ":" not in last_line:
             after_colon = last_line
@@ -41,6 +45,16 @@ class SelfAskWithSearchRouter(LLMRouterChain):
             print("we probably should never get here..." + text)
 
         return "Intermediate Answer", after_colon
+
+    @property
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+        return "Intermediate answer: "
+
+    @property
+    def router_prefix(self) -> str:
+        """Prefix to append the router call with."""
+        return ""
 
 
 class SelfAskWithSearchChain(Chain, BaseModel):
@@ -84,16 +98,9 @@ class SelfAskWithSearchChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
-        chained_input.add("\nAre follow up questions needed here:")
         intermediate = "\nIntermediate answer:"
         router = SelfAskWithSearchRouter(self.llm, stops=[intermediate])
-        action, action_input, log = router.get_action_and_input(chained_input.input)
-        chained_input.add(log, color="green")
-        while action != "Final Answer":
-            external_answer = self.search_chain.run(action_input)
-            chained_input.add(intermediate + " ")
-            chained_input.add(external_answer + ".", color="yellow")
-            action, action_input, log = router.get_action_and_input(chained_input.input)
-            chained_input.add(log, color="green")
-        return {self.output_key: action_input}
+        expert_configs = [ExpertConfig(expert_name="Intermediate Answer", expert=self.search_chain.run)]
+        chain = RouterExpertChain(router_chain=router, expert_configs=expert_configs, verbose=self.verbose, starter_string="\nAre follow up questions needed here:")
+        output = chain.run(inputs[self.input_key])
+        return {self.output_key: output}

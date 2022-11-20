@@ -10,6 +10,7 @@ from langchain.chains.router import LLMRouterChain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompts import BasePromptTemplate, PromptTemplate
+from langchain.chains.router_expert import RouterExpertChain, ExpertConfig
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -31,9 +32,9 @@ class ChainConfig(NamedTuple):
 def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     """Parse out the action and input from the LLM output."""
     ps = [p for p in llm_output.split("\n") if p]
-    if ps[-1].startswith(FINAL_ANSWER_ACTION):
+    if ps[-1].startswith("Final Answer"):
         directive = ps[-1][len(FINAL_ANSWER_ACTION) :]
-        return FINAL_ANSWER_ACTION, directive
+        return "Final Answer", directive
     if not ps[-1].startswith("Action Input: "):
         raise ValueError(
             "The last line does not have an action input, "
@@ -51,6 +52,16 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
 
 class MRKLRouterChain(LLMRouterChain):
     """Router for the MRKL chain."""
+
+    @property
+    def observation_prefix(self) -> str:
+        """Prefix to append the observation with."""
+        return "Observation: "
+
+    @property
+    def router_prefix(self) -> str:
+        """Prefix to append the router call with."""
+        return "Thought:"
 
     def __init__(self, llm: LLM, chain_configs: List[ChainConfig], **kwargs: Any):
         """Initialize with an LLM and the chain configs it has access to."""
@@ -166,21 +177,15 @@ class MRKLChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         router_chain = MRKLRouterChain(self.llm, self.chain_configs)
-        chained_input = ChainedInput(
-            f"{inputs[self.input_key]}\nThought:", verbose=self.verbose
+        question = inputs[self.input_key]
+        expert_configs = [
+            ExpertConfig(expert_name=c.action_name, expert=c.action)
+            for c in self.chain_configs
+        ]
+        chain = RouterExpertChain(
+            router_chain=router_chain,
+            expert_configs=expert_configs,
+            verbose=self.verbose
         )
-        color_mapping = get_color_mapping(
-            list(self.action_to_chain_map.keys()), excluded_colors=["green"]
-        )
-        while True:
-            action, action_input, thought = router_chain.get_action_and_input(
-                chained_input.input
-            )
-            chained_input.add(thought, color="green")
-            if action == FINAL_ANSWER_ACTION:
-                return {self.output_key: action_input}
-            chain = self.action_to_chain_map[action]
-            ca = chain(action_input)
-            chained_input.add("\nObservation: ")
-            chained_input.add(ca, color=color_mapping[action])
-            chained_input.add("\nThought:")
+        output = chain.run(question)
+        return {self.output_key: output}

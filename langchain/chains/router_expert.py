@@ -12,7 +12,7 @@ from langchain.llms.base import LLM
 from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.chains.router import RouterChain
 
-FINAL_ANSWER_ACTION = "Final Answer: "
+
 
 
 class ExpertConfig(NamedTuple):
@@ -28,6 +28,8 @@ class RouterExpertChain(Chain, BaseModel):
     """Router chain."""
     expert_configs: List[ExpertConfig]
     """Expert configs this chain has access to."""
+    starter_string: str = "\n"
+    """String to put after user input but before first router."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -54,22 +56,22 @@ class RouterExpertChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        router_chain = MRKLRouterChain(self.llm, self.chain_configs)
+        action_to_chain_map = {e.expert_name: e.expert for e in self.expert_configs}
         chained_input = ChainedInput(
-            f"{inputs[self.input_key]}", verbose=self.verbose
+            f"{inputs[self.input_key]}{self.starter_string}{self.router_chain.router_prefix}", verbose=self.verbose
         )
         color_mapping = get_color_mapping(
-            [c.], excluded_colors=["green"]
+            [c.expert_name for c in self.expert_configs], excluded_colors=["green"]
         )
         while True:
-            action, action_input, thought = router_chain.get_action_and_input(
+            action, action_input, log = self.router_chain.get_action_and_input(
                 chained_input.input
             )
-            chained_input.add(thought, color="green")
-            if action == FINAL_ANSWER_ACTION:
+            chained_input.add(log, color="green")
+            if action == self.router_chain.finish_action_name:
                 return {self.output_key: action_input}
-            chain = self.action_to_chain_map[action]
+            chain = action_to_chain_map[action]
             ca = chain(action_input)
-            chained_input.add("\nObservation: ")
+            chained_input.add(f"\n{self.router_chain.observation_prefix}")
             chained_input.add(ca, color=color_mapping[action])
-            chained_input.add("\nThought:")
+            chained_input.add(f"\n{self.router_chain.router_prefix}")
