@@ -1,10 +1,10 @@
 """Wrapper around NLPCloud APIs."""
-import os
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
+from langchain.utils import get_from_dict_or_env
 
 
 class NLPCloud(LLM, BaseModel):
@@ -54,7 +54,7 @@ class NLPCloud(LLM, BaseModel):
     num_return_sequences: int = 1
     """How many completions to generate for each prompt."""
 
-    nlpcloud_api_key: Optional[str] = os.environ.get("NLPCLOUD_API_KEY")
+    nlpcloud_api_key: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,14 +64,9 @@ class NLPCloud(LLM, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        nlpcloud_api_key = values.get("nlpcloud_api_key")
-
-        if nlpcloud_api_key is None or nlpcloud_api_key == "":
-            raise ValueError(
-                "Did not find NLPCloud API key, please add an environment variable"
-                " `NLPCLOUD_API_KEY` which contains it, or pass `nlpcloud_api_key`"
-                " as a named parameter."
-            )
+        nlpcloud_api_key = get_from_dict_or_env(
+            values, "nlpcloud_api_key", "NLPCLOUD_API_KEY"
+        )
         try:
             import nlpcloud
 

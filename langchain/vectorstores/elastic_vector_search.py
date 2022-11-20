@@ -1,10 +1,10 @@
 """Wrapper around Elasticsearch vector database."""
-import os
 import uuid
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 
@@ -45,17 +45,14 @@ class ElasticVectorSearch(VectorStore):
     """
 
     def __init__(
-        self,
-        elasticsearch_url: str,
-        index_name: str,
-        embedding_function: Callable,
+        self, elasticsearch_url: str, index_name: str, embedding_function: Callable
     ):
         """Initialize with necessary components."""
         try:
             import elasticsearch
         except ImportError:
             raise ValueError(
-                "Could not import elasticsearch python packge. "
+                "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticearch`."
             )
         self.embedding_function = embedding_function
@@ -64,7 +61,7 @@ class ElasticVectorSearch(VectorStore):
             es_client = elasticsearch.Elasticsearch(elasticsearch_url)  # noqa
         except ValueError as e:
             raise ValueError(
-                "Your elasticsearch client string is misformatted. " f"Got error: {e} "
+                f"Your elasticsearch client string is misformatted. Got error: {e} "
             )
         self.client = es_client
 
@@ -81,17 +78,23 @@ class ElasticVectorSearch(VectorStore):
         embedding = self.embedding_function(query)
         script_query = _default_script_query(embedding)
         response = self.client.search(index=self.index_name, query=script_query)
-        texts = [hit["_source"]["text"] for hit in response["hits"]["hits"][:k]]
-        documents = [Document(page_content=text) for text in texts]
+        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
+        documents = [
+            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
+        ]
         return documents
 
     @classmethod
     def from_texts(
-        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> "ElasticVectorSearch":
         """Construct ElasticVectorSearch wrapper from raw documents.
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Embeds documents.
             2. Creates a new index for the embeddings in the Elasticsearch instance.
             3. Adds the documents to the newly created Elasticsearch index.
@@ -110,22 +113,15 @@ class ElasticVectorSearch(VectorStore):
                     elasticsearch_url="http://localhost:9200"
                 )
         """
-        elasticsearch_url = kwargs.get("elasticsearch_url")
-        if not elasticsearch_url:
-            elasticsearch_url = os.environ.get("ELASTICSEARCH_URL")
-
-            if elasticsearch_url is None or elasticsearch_url == "":
-                raise ValueError(
-                    "Did not find Elasticsearch URL, please add an environment variable"
-                    " `ELASTICSEARCH_URL` which contains it, or pass"
-                    "  `elasticsearch_url` as a named parameter."
-                )
+        elasticsearch_url = get_from_dict_or_env(
+            kwargs, "elasticsearch_url", "ELASTICSEARCH_URL"
+        )
         try:
             import elasticsearch
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
-                "Could not import elasticsearch python packge. "
+                "Could not import elasticsearch python package. "
                 "Please install it with `pip install elasticearch`."
             )
         try:
@@ -143,11 +139,13 @@ class ElasticVectorSearch(VectorStore):
         client.indices.create(index=index_name, mappings=mapping)
         requests = []
         for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
             request = {
                 "_op_type": "index",
                 "_index": index_name,
                 "vector": embeddings[i],
                 "text": text,
+                "metadata": metadata,
             }
             requests.append(request)
         bulk(client, requests)

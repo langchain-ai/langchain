@@ -1,6 +1,13 @@
 """Prompt template classes."""
-from langchain.prompts.base import BasePrompt
-from langchain.prompts.dynamic import DynamicPrompt
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.loading import load_prompt
+from langchain.prompts.prompt import Prompt, PromptTemplate
 
-__all__ = ["BasePrompt", "Prompt", "DynamicPrompt"]
+__all__ = [
+    "BasePromptTemplate",
+    "load_prompt",
+    "PromptTemplate",
+    "FewShotPromptTemplate",
+    "Prompt",
+]

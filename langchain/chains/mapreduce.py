@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
-from langchain.prompts.base import BasePrompt
+from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
 
@@ -29,7 +29,7 @@ class MapReduceChain(Chain, BaseModel):
 
     @classmethod
     def from_params(
-        cls, llm: LLM, prompt: BasePrompt, text_splitter: TextSplitter
+        cls, llm: LLM, prompt: BasePromptTemplate, text_splitter: TextSplitter
     ) -> "MapReduceChain":
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
@@ -57,18 +57,15 @@ class MapReduceChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         # Split the larger text into smaller chunks.
-        docs = self.text_splitter.split_text(
-            inputs[self.input_key],
-        )
+        docs = self.text_splitter.split_text(inputs[self.input_key])
+
         # Now that we have the chunks, we send them to the LLM and track results.
         #  This is the "map" part.
-        summaries = []
-        for d in docs:
-            inputs = {self.map_llm.prompt.input_variables[0]: d}
-            res = self.map_llm.predict(**inputs)
-            summaries.append(res)
+        input_list = [{self.map_llm.prompt.input_variables[0]: d} for d in docs]
+        summary_results = self.map_llm.apply(input_list)
+        summaries = [res[self.map_llm.output_key] for res in summary_results]
 
         # We then need to combine these individual parts into one.
         # This is the reduce part.
@@ -76,7 +73,3 @@ class MapReduceChain(Chain, BaseModel):
         inputs = {self.reduce_llm.prompt.input_variables[0]: summary_str}
         output = self.reduce_llm.predict(**inputs)
         return {self.output_key: output}
-
-    def run(self, text: str) -> str:
-        """Run the map-reduce logic on the input text."""
-        return self({self.input_key: text})[self.output_key]

@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 _DEFAULT_TEMPLATE = """Question: Who lived longer, Muhammad Ali or Alan Turing?
 Are follow up questions needed here: Yes.
@@ -38,7 +38,4 @@ Intermediate Answer: New Zealand.
 So the final answer is: No
 
 Question: {input}"""
-PROMPT = Prompt(
-    input_variables=["input"],
-    template=_DEFAULT_TEMPLATE,
-)
+PROMPT = PromptTemplate(input_variables=["input"], template=_DEFAULT_TEMPLATE)

@@ -27,6 +27,8 @@ class VectorDBQA(Chain, BaseModel):
     """LLM wrapper to use."""
     vectorstore: VectorStore
     """Vector Database to connect to."""
+    k: int = 4
+    """Number of documents to query for."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -52,29 +54,13 @@ class VectorDBQA(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
-        docs = self.vectorstore.similarity_search(question)
+        docs = self.vectorstore.similarity_search(question, k=self.k)
         contexts = []
         for j, doc in enumerate(docs):
             contexts.append(f"Context {j}:\n{doc.page_content}")
         # TODO: handle cases where this context is too long.
         answer = llm_chain.predict(question=question, context="\n\n".join(contexts))
         return {self.output_key: answer}
-
-    def run(self, question: str) -> str:
-        """Run Question-Answering on a vector database.
-
-        Args:
-            question: Question to get the answer for.
-
-        Returns:
-            The final answer
-
-        Example:
-            .. code-block:: python
-
-                answer = vectordbqa.run("What is the capital of Idaho?")
-        """
-        return self({self.input_key: question})[self.output_key]

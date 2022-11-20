@@ -22,7 +22,7 @@ class FakeChain(Chain, BaseModel):
         """Output key of bar."""
         return ["bar"]
 
-    def _run(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:

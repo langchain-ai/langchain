@@ -25,6 +25,6 @@ def test_sql_database_run() -> None:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     db_chain = SQLDatabaseChain(llm=OpenAI(temperature=0), database=db)
-    output = db_chain.query("What company does Harrison work at?")
+    output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
     assert output == expected_output

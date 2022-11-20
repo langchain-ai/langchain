@@ -9,7 +9,7 @@ from langchain.chains.react.base import ReActChain, predict_until_observation
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -19,7 +19,7 @@ What isn't there to love about langchain?
 
 Made in 2022."""
 
-_FAKE_PROMPT = Prompt(input_variables=["input"], template="{input}")
+_FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
 class FakeListLLM(LLM):
@@ -92,18 +92,6 @@ def test_react_chain() -> None:
     inputs = {"question": "when was langchain made"}
     output = react_chain(inputs)
     assert output["answer"] == "2022"
-    expected_full_output = (
-        "when was langchain made\n"
-        "Thought 1:I should probably search\n"
-        "Action 1: Search[langchain]\n"
-        "Observation 1: This is a page about LangChain.\n"
-        "Thought 2:I should probably lookup\n"
-        "Action 2: Lookup[made]\n"
-        "Observation 2: (Result 1/1) Made in 2022.\n"
-        "Thought 3:Ah okay now I know the answer\n"
-        "Action 3: Finish[2022]"
-    )
-    assert output["full_logic"] == expected_full_output
 
 
 def test_react_chain_bad_action() -> None:
