@@ -1,21 +1,15 @@
 """Router-Expert framework."""
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Dict, List, NamedTuple
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
-from langchain.chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.chains.router import LLMRouterChain
 from langchain.input import ChainedInput, get_color_mapping
-from langchain.llms.base import LLM
-from langchain.prompts import BasePromptTemplate, PromptTemplate
-from langchain.chains.router import RouterChain
-
-
+from langchain.smart_chains.router import RouterChain
 
 
 class ExpertConfig(NamedTuple):
+    """Configuration for experts."""
 
     expert_name: str
     expert: Callable[[str], str]
@@ -57,8 +51,14 @@ class RouterExpertChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         action_to_chain_map = {e.expert_name: e.expert for e in self.expert_configs}
+        starter_string = (
+            inputs[self.input_key]
+            + self.starter_string
+            + self.router_chain.router_prefix
+        )
         chained_input = ChainedInput(
-            f"{inputs[self.input_key]}{self.starter_string}{self.router_chain.router_prefix}", verbose=self.verbose
+            starter_string,
+            verbose=self.verbose,
         )
         color_mapping = get_color_mapping(
             [c.expert_name for c in self.expert_configs], excluded_colors=["green"]

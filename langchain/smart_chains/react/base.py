@@ -1,18 +1,16 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.react.prompt import PROMPT
-from langchain.chains.router import LLMRouterChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.input import ChainedInput
 from langchain.llms.base import LLM
-from langchain.chains.router_expert import RouterExpertChain, ExpertConfig
+from langchain.smart_chains.react.prompt import PROMPT
+from langchain.smart_chains.router import LLMRouterChain
+from langchain.smart_chains.router_expert import ExpertConfig, RouterExpertChain
 
 
 class ReActRouterChain(LLMRouterChain, BaseModel):
@@ -46,7 +44,7 @@ class ReActRouterChain(LLMRouterChain, BaseModel):
 
     @property
     def finish_action_name(self) -> str:
-        """The action name of when to finish the chain."""
+        """Name of the action of when to finish the chain."""
         return "Finish"
 
     @property
@@ -61,12 +59,15 @@ class ReActRouterChain(LLMRouterChain, BaseModel):
 
 
 class DocstoreExplorer:
+    """Class to assist with exploration of a document store."""
 
     def __init__(self, docstore: Docstore):
-        self.docstore=docstore
-        self.document = None
+        """Initialize with a docstore, and set initial document to None."""
+        self.docstore = docstore
+        self.document: Optional[Document] = None
 
-    def search(self, term: str):
+    def search(self, term: str) -> str:
+        """Search for a term in the docstore, and if found save."""
         result = self.docstore.search(term)
         if isinstance(result, Document):
             self.document = result
@@ -75,13 +76,14 @@ class DocstoreExplorer:
             self.document = None
             return result
 
-    def lookup(self, term: str):
+    def lookup(self, term: str) -> str:
+        """Lookup a term in document (if saved)."""
         if self.document is None:
             raise ValueError("Cannot lookup without a successful search first")
         return self.document.lookup(term)
 
 
-class ReActChain(Chain, BaseModel):
+class ReActChain(RouterExpertChain):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -91,47 +93,14 @@ class ReActChain(Chain, BaseModel):
             react = ReAct(llm=OpenAI())
     """
 
-    llm: LLM
-    """LLM wrapper to use."""
-    docstore: Docstore
-    """Docstore to use."""
-    input_key: str = "question"  #: :meta private:
-    output_key: str = "answer"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Expect input key.
-
-        :meta private:
-        """
-        return [self.input_key]
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Expect output key.
-
-        :meta private:
-        """
-        return [self.output_key]
-
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        question = inputs[self.input_key]
-        router_chain = ReActRouterChain(self.llm)
-        docstore_explorer = DocstoreExplorer(self.docstore)
+    def __init__(self, llm: LLM, docstore: Docstore, **kwargs: Any):
+        """Initialize with the LLM and a docstore."""
+        router_chain = ReActRouterChain(llm)
+        docstore_explorer = DocstoreExplorer(docstore)
         expert_configs = [
             ExpertConfig(expert_name="Search", expert=docstore_explorer.search),
-            ExpertConfig(expert_name="Lookup", expert=docstore_explorer.lookup)
+            ExpertConfig(expert_name="Lookup", expert=docstore_explorer.lookup),
         ]
-        chain = RouterExpertChain(
-            router_chain=router_chain,
-            expert_configs=expert_configs,
-            verbose=self.verbose
+        super().__init__(
+            router_chain=router_chain, expert_configs=expert_configs, **kwargs
         )
-        output = chain.run(question)
-        return {self.output_key: output}

@@ -4,11 +4,11 @@ from typing import Any, List, Mapping, Optional, Union
 
 import pytest
 
-from langchain.chains.react.base import ReActChain, ReActRouterChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
+from langchain.smart_chains.react.base import ReActChain, ReActRouterChain
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

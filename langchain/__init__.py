@@ -8,10 +8,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 from langchain.chains import (
     LLMChain,
     LLMMathChain,
-    MRKLChain,
     PythonChain,
-    ReActChain,
-    SelfAskWithSearchChain,
     SerpAPIChain,
     SQLDatabaseChain,
     VectorDBQA,
@@ -19,6 +16,7 @@ from langchain.chains import (
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import BasePromptTemplate, PromptTemplate
+from langchain.smart_chains import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 

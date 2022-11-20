@@ -1,16 +1,12 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
-from pydantic import BaseModel, Extra
-
-from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.chains.router import LLMRouterChain
-from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
-from langchain.prompts import BasePromptTemplate, PromptTemplate
-from langchain.chains.router_expert import RouterExpertChain, ExpertConfig
+from langchain.prompts import PromptTemplate
+from langchain.smart_chains.mrkl.prompt import BASE_TEMPLATE
+from langchain.smart_chains.router import LLMRouterChain
+from langchain.smart_chains.router_expert import ExpertConfig, RouterExpertChain
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -79,32 +75,19 @@ class MRKLRouterChain(LLMRouterChain):
         return get_action_and_input(text)
 
 
-class MRKLChain(Chain, BaseModel):
+class MRKLChain(RouterExpertChain):
     """Chain that implements the MRKL system.
 
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI, Prompt, MRKLChain
+            from langchain import OpenAI, MRKLChain
             from langchain.chains.mrkl.base import ChainConfig
             llm = OpenAI(temperature=0)
             prompt = PromptTemplate(...)
-            action_to_chain_map = {...}
-            mrkl = MRKLChain(
-                llm=llm,
-                prompt=prompt,
-                action_to_chain_map=action_to_chain_map
-            )
+            chains = [...]
+            mrkl = MRKLChain.from_chains(llm=llm, prompt=prompt)
     """
-
-    llm: LLM
-    """LLM wrapper to use as router."""
-    chain_configs: List[ChainConfig]
-    """Chain configs this chain has access to."""
-    action_to_chain_map: Dict[str, Callable]
-    """Mapping from action name to chain to execute."""
-    input_key: str = "question"  #: :meta private:
-    output_key: str = "answer"  #: :meta private:
 
     @classmethod
     def from_chains(
@@ -145,47 +128,8 @@ class MRKLChain(Chain, BaseModel):
                 ]
                 mrkl = MRKLChain.from_chains(llm, chains)
         """
-        action_to_chain_map = {chain.action_name: chain.action for chain in chains}
-        return cls(
-            llm=llm,
-            chain_configs=chains,
-            action_to_chain_map=action_to_chain_map,
-            **kwargs,
-        )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Expect input key.
-
-        :meta private:
-        """
-        return [self.input_key]
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Expect output key.
-
-        :meta private:
-        """
-        return [self.output_key]
-
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        router_chain = MRKLRouterChain(self.llm, self.chain_configs)
-        question = inputs[self.input_key]
+        router_chain = MRKLRouterChain(llm, chains)
         expert_configs = [
-            ExpertConfig(expert_name=c.action_name, expert=c.action)
-            for c in self.chain_configs
+            ExpertConfig(expert_name=c.action_name, expert=c.action) for c in chains
         ]
-        chain = RouterExpertChain(
-            router_chain=router_chain,
-            expert_configs=expert_configs,
-            verbose=self.verbose
-        )
-        output = chain.run(question)
-        return {self.output_key: output}
+        return cls(router_chain=router_chain, expert_configs=expert_configs, **kwargs)

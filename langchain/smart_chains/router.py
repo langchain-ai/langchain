@@ -48,7 +48,7 @@ class RouterChain(Chain, BaseModel, ABC):
 
     @property
     def finish_action_name(self) -> str:
-        """The action name of when to finish the chain."""
+        """Name of the action of when to finish the chain."""
         return "Final Answer"
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:

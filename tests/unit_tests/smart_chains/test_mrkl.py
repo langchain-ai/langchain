@@ -2,13 +2,13 @@
 
 import pytest
 
-from langchain.chains.mrkl.base import (
+from langchain.prompts import PromptTemplate
+from langchain.smart_chains.mrkl.base import (
     ChainConfig,
     MRKLRouterChain,
     get_action_and_input,
 )
-from langchain.chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.prompts import PromptTemplate
+from langchain.smart_chains.mrkl.prompt import BASE_TEMPLATE
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
