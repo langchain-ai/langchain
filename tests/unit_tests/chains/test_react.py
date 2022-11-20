@@ -9,7 +9,7 @@ from langchain.chains.react.base import ReActChain, predict_until_observation
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -19,7 +19,7 @@ What isn't there to love about langchain?
 
 Made in 2022."""
 
-_FAKE_PROMPT = Prompt(input_variables=["input"], template="{input}")
+_FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
 class FakeListLLM(LLM):
