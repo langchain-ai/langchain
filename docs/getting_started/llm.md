@@ -21,5 +21,5 @@ We can now call it on some input!
 
 ```python
 text = "What would be a good company name a company that makes colorful socks?"
-llm(text)
+print(llm(text))
 ```
