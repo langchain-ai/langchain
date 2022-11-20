@@ -3,18 +3,21 @@ from typing import List
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
-from langchain.prompts.dynamic import DynamicPrompt
+from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 
 TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
 
 
-def generate_example(examples: List[str], llm: LLM) -> str:
+def generate_example(
+    examples: List[dict], llm: LLM, prompt_template: PromptTemplate
+) -> str:
     """Return another example given a list of examples for a prompt."""
-    prompt = DynamicPrompt(examples=examples, suffix=TEST_GEN_TEMPLATE_SUFFIX)
+    prompt = FewShotPromptTemplate(
+        examples=examples,
+        suffix=TEST_GEN_TEMPLATE_SUFFIX,
+        input_variables=[],
+        example_prompt=prompt_template,
+    )
     chain = LLMChain(llm=llm, prompt=prompt)
     return chain.predict()
-
-
-def generate_example_from_dynamic_prompt(prompt: DynamicPrompt, llm: LLM) -> str:
-    """Return another example given a DynamicPrompt object."""
-    return generate_example(prompt.examples, llm)

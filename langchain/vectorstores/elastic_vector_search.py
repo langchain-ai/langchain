@@ -139,12 +139,13 @@ class ElasticVectorSearch(VectorStore):
         client.indices.create(index=index_name, mappings=mapping)
         requests = []
         for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
             request = {
                 "_op_type": "index",
                 "_index": index_name,
                 "vector": embeddings[i],
                 "text": text,
-                "metadata": metadatas[i] if metadatas else {},
+                "metadata": metadata,
             }
             requests.append(request)
         bulk(client, requests)

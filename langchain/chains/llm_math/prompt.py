@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """You are GPT-3, and you can't do math.
 
@@ -35,4 +35,4 @@ Answer: 2518731
 
 Question: {question}"""
 
-PROMPT = Prompt(input_variables=["question"], template=_PROMPT_TEMPLATE)
+PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)
