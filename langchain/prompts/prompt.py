@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
+
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     BasePromptTemplate,
@@ -105,6 +106,27 @@ class PromptTemplate(BaseModel, BasePromptTemplate):
         with open(template_file, "r") as f:
             template = f.read()
         return cls(input_variables=input_variables, template=template)
+
+    @classmethod
+    def from_mako_template(
+        cls, template_file: str, input_variables: List[str]
+    ) -> "PromptTemplate":
+        """Load a prompt from a mako template file.
+
+        Args:
+            template_file: The path to the file containing the prompt template.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+        Returns:
+            The prompt loaded from the mako template file.
+        """
+        with open(template_file, "r") as f:
+            template = f.read()
+        return cls(
+            input_variables=input_variables,
+            template=template,
+            template_format="mako",
+        )
 
 
 # For backwards compatibility.

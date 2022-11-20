@@ -6,6 +6,7 @@ from langchain.formatting import formatter
 
 DEFAULT_FORMATTER_MAPPING = {
     "f-string": formatter.format,
+    "mako": formatter.mako_format,
 }
 
 

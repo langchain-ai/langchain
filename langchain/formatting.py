@@ -1,6 +1,7 @@
 """Utilities for formatting strings."""
 from string import Formatter
 from typing import Any, Mapping, Sequence, Union
+from mako.template import Template
 
 
 class StrictFormatter(Formatter):
@@ -27,6 +28,11 @@ class StrictFormatter(Formatter):
                 "everything should be passed as keyword arguments."
             )
         return super().vformat(format_string, args, kwargs)
+
+    def mako_format(self, format_string: str, **kwargs: Any) -> str:
+        """Format a string using mako."""
+        template = Template(format_string)
+        return template.render(**kwargs)
 
 
 formatter = StrictFormatter()

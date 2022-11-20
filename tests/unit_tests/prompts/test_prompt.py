@@ -87,3 +87,12 @@ def test_prompt_from_file() -> None:
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+
+
+def test_mako_template() -> None:
+    """Test mako template can be used."""
+    template_file = "tests/unit_tests/data/mako_prompt.txt"
+    input_variables = ["foo"]
+    prompt = PromptTemplate.from_mako_template(template_file, input_variables)
+    assert prompt.template == "This is a ${foo} test."
+    assert prompt.format(foo="bar") == "This is a bar test."
