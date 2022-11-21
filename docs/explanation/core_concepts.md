@@ -3,10 +3,12 @@
 This section goes over the core concepts of LangChain.
 Understanding these will go a long way in helping you understand the codebase and how to construct chains.
 
-## Prompts
-Prompts generically have a `format` method that takes in variables and returns a formatted string.
+## PromptTemplates
+PromptTemplates generically have a `format` method that takes in variables and returns a formatted string.
 The most simple implementation of this is to have a template string with some variables in it, and then format it with the incoming variables.
 More complex iterations dynamically construct the template string from few shot examples, etc.
+
+For a more detailed explanation of how LangChain approaches prompts and prompt templates, see [here](/examples/prompts/prompt_management).
 
 ## LLMs
 Wrappers around Large Language Models (in particular, the `generate` ability of large language models) are some of the core functionality of LangChain.

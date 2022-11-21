@@ -1,6 +1,6 @@
 """Wrapper around FAISS vector database."""
 import uuid
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 import numpy as np
 
@@ -86,7 +86,11 @@ class FAISS(VectorStore):
 
     @classmethod
     def from_texts(
-        cls, texts: List[str], embedding: Embeddings, **kwargs: Any
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> "FAISS":
         """Construct FAISS wrapper from raw documents.
 
@@ -116,7 +120,10 @@ class FAISS(VectorStore):
         embeddings = embedding.embed_documents(texts)
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
-        documents = [Document(page_content=text) for text in texts]
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            documents.append(Document(page_content=text, metadata=metadata))
         index_to_id = {i: str(uuid.uuid4()) for i in range(len(documents))}
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}

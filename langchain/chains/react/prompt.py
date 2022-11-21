@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     """Question: What is the elevation range for the area that the eastern sector of the
@@ -109,4 +109,4 @@ Action 3: Finish[yes]""",
 ]
 SUFFIX = """\n\nQuestion: {input}"""
 
-PROMPT = Prompt.from_examples(EXAMPLES, SUFFIX, ["input"])
+PROMPT = PromptTemplate.from_examples(EXAMPLES, SUFFIX, ["input"])

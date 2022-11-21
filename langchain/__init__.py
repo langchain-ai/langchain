@@ -18,7 +18,12 @@ from langchain.chains import (
 )
 from langchain.docstore import Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
-from langchain.prompts import BasePrompt, DynamicPrompt, Prompt
+from langchain.prompts import (
+    BasePromptTemplate,
+    FewShotPromptTemplate,
+    Prompt,
+    PromptTemplate,
+)
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
@@ -30,9 +35,10 @@ __all__ = [
     "SerpAPIChain",
     "Cohere",
     "OpenAI",
-    "BasePrompt",
-    "DynamicPrompt",
+    "BasePromptTemplate",
     "Prompt",
+    "FewShotPromptTemplate",
+    "PromptTemplate",
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
