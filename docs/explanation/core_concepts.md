@@ -8,7 +8,7 @@ PromptTemplates generically have a `format` method that takes in variables and r
 The most simple implementation of this is to have a template string with some variables in it, and then format it with the incoming variables.
 More complex iterations dynamically construct the template string from few shot examples, etc.
 
-For a more detailed explanation of how LangChain approaches prompts and prompt templates, see [here](prompts.md).
+For a more detailed explanation of how LangChain approaches prompts and prompt templates, see [here](/examples/prompts/prompt_management).
 
 ## LLMs
 Wrappers around Large Language Models (in particular, the `generate` ability of large language models) are some of the core functionality of LangChain.
