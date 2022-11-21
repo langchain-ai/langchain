@@ -1,6 +1,6 @@
 """Interface for vector stores."""
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -8,6 +8,10 @@ from langchain.embeddings.base import Embeddings
 
 class VectorStore(ABC):
     """Interface for vector stores."""
+
+    @abstractmethod
+    def add_texts(self, texts: Iterable[str]) -> None:
+        """Run more texts through the embeddings and add to the vectorstore."""
 
     @abstractmethod
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:

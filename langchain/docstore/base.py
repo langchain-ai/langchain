@@ -1,6 +1,6 @@
 """Interface to access to place that stores documents."""
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Dict, Union
 
 from langchain.docstore.document import Document
 
@@ -15,3 +15,11 @@ class Docstore(ABC):
         If page exists, return the page summary, and a Document object.
         If page does not exist, return similar entries.
         """
+
+
+class AddableMixin(ABC):
+    """Mixin class that supports adding texts."""
+
+    @abstractmethod
+    def add(self, texts: Dict[str, Document]) -> None:
+        """Add more documents."""
