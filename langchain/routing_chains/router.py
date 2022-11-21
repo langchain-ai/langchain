@@ -1,10 +1,12 @@
 """Chain that takes in an input and produces an action and action input."""
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
+from langchain.llms.base import LLM
+from langchain.routing_chains.tools import Tool
 
 
 class RouterOutput(NamedTuple):
@@ -63,6 +65,15 @@ class LLMRouter(Router, BaseModel, ABC):
         """Fix the text."""
         raise ValueError("fix_text not implemented for this router.")
 
+    @property
+    def _stop(self) -> List[str]:
+        return [f"\n{self.observation_prefix}"]
+
+    @classmethod
+    @abstractmethod
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "Router":
+        """Construct a router from an LLM and tools."""
+
     def route(self, text: str) -> RouterOutput:
         """Given input, decided how to route it.
 
@@ -73,12 +84,12 @@ class LLMRouter(Router, BaseModel, ABC):
             RouterOutput specifying what tool to use.
         """
         input_key = self.llm_chain.input_keys[0]
-        inputs = {input_key: text, "stop": [self.observation_prefix]}
+        inputs = {input_key: text, "stop": self._stop}
         full_output = self.llm_chain.predict(**inputs)
         parsed_output = self._extract_tool_and_input(full_output)
         while parsed_output is None:
             full_output = self._fix_text(full_output)
-            inputs = {input_key: text + full_output, "stop": [self.observation_prefix]}
+            inputs = {input_key: text + full_output, "stop": self._stop}
             output = self.llm_chain.predict(**inputs)
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)

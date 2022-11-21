@@ -3,12 +3,9 @@
 import pytest
 
 from langchain.prompts import PromptTemplate
-from langchain.routing_chains.mrkl.base import (
-    ChainConfig,
-    MRKLRouterChain,
-    get_action_and_input,
-)
+from langchain.routing_chains.mrkl.base import ZeroShotRouter, get_action_and_input
 from langchain.routing_chains.mrkl.prompt import BASE_TEMPLATE
+from langchain.routing_chains.tools import Tool
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -56,14 +53,10 @@ def test_bad_action_line() -> None:
 def test_from_chains() -> None:
     """Test initializing from chains."""
     chain_configs = [
-        ChainConfig(
-            action_name="foo", action=lambda x: "foo", action_description="foobar1"
-        ),
-        ChainConfig(
-            action_name="bar", action=lambda x: "bar", action_description="foobar2"
-        ),
+        Tool(name="foo", func=lambda x: "foo", description="foobar1"),
+        Tool(name="bar", func=lambda x: "bar", description="foobar2"),
     ]
-    router_chain = MRKLRouterChain(FakeLLM(), chain_configs)
+    router_chain = ZeroShotRouter.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
     expected_template = BASE_TEMPLATE.format(

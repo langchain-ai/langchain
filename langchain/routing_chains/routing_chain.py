@@ -1,18 +1,12 @@
 """Router-Expert framework."""
-from typing import Callable, Dict, List, NamedTuple
+from typing import Dict, List
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.routing_chains.router import Router
-
-
-class ToolConfig(NamedTuple):
-    """Configuration for tools."""
-
-    tool_name: str
-    tool: Callable[[str], str]
+from langchain.routing_chains.tools import Tool
 
 
 class RoutingChain(Chain, BaseModel):
@@ -20,8 +14,8 @@ class RoutingChain(Chain, BaseModel):
 
     router: Router
     """Router to use."""
-    tool_configs: List[ToolConfig]
-    """Tool configs this chain has access to."""
+    tools: List[Tool]
+    """Tools this chain has access to."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -49,7 +43,7 @@ class RoutingChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tc.tool_name: tc.tool for tc in self.tool_configs}
+        name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # Construct the initial string to pass into the router. This is made up
         # of the user input, the special starter string, and then the router prefix.
         # The starter string is a special string that may be used by a router to
@@ -64,7 +58,7 @@ class RoutingChain(Chain, BaseModel):
         chained_input = ChainedInput(starter_string, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [c.tool_name for c in self.tool_configs], excluded_colors=["green"]
+            [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         # We now enter the router loop (until it returns something).
         while True:

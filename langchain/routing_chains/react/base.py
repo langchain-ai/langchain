@@ -1,6 +1,6 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -10,19 +10,28 @@ from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.routing_chains.react.prompt import PROMPT
 from langchain.routing_chains.router import LLMRouter
-from langchain.routing_chains.routing_chain import RoutingChain, ToolConfig
+from langchain.routing_chains.routing_chain import RoutingChain
+from langchain.routing_chains.tools import Tool
 
 
-class ReActRouterChain(LLMRouter, BaseModel):
+class ReActDocstoreRouter(LLMRouter, BaseModel):
     """Router for the ReAct chin."""
 
     i: int = 1
 
-    def __init__(self, llm: LLM, **kwargs: Any):
-        """Initialize with the language model."""
+    @classmethod
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "ReActDocstoreRouter":
+        """Construct a router from an LLM and tools."""
+        if len(tools) != 2:
+            raise ValueError(f"Exactly two tools must be specified, but got {tools}")
+        tool_names = {tool.name for tool in tools}
+        if tool_names != {"Lookup", "Search"}:
+            raise ValueError(
+                f"Tool names should be Lookup and Search, got {tool_names}"
+            )
+
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        stops = ["\nObservation 1:"]
-        super().__init__(llm_chain=llm_chain, stops=stops, **kwargs)
+        return cls(llm_chain=llm_chain)
 
     def _fix_text(self, text: str) -> str:
         return text + f"\nAction {self.i}:"
@@ -32,7 +41,6 @@ class ReActRouterChain(LLMRouter, BaseModel):
         if not text.split("\n")[-1].startswith(action_prefix):
             return None
         self.i += 1
-        self.stops = [f"\nObservation {self.i}:"]
         action_block = text.split("\n")[-1]
 
         action_str = action_block[len(action_prefix) :]
@@ -43,14 +51,18 @@ class ReActRouterChain(LLMRouter, BaseModel):
         return re_matches.group(1), re_matches.group(2)
 
     @property
-    def finish_action_name(self) -> str:
-        """Name of the action of when to finish the chain."""
+    def finish_tool_name(self) -> str:
+        """Name of the tool of when to finish the chain."""
         return "Finish"
 
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
         return f"Observation {self.i - 1}: "
+
+    @property
+    def _stop(self) -> List[str]:
+        return [f"\nObservation {self.i}: "]
 
     @property
     def router_prefix(self) -> str:
@@ -95,10 +107,10 @@ class ReActChain(RoutingChain):
 
     def __init__(self, llm: LLM, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""
-        router = ReActRouterChain(llm)
         docstore_explorer = DocstoreExplorer(docstore)
-        tool_configs = [
-            ToolConfig(tool_name="Search", tool=docstore_explorer.search),
-            ToolConfig(tool_name="Lookup", tool=docstore_explorer.lookup),
+        tools = [
+            Tool(name="Search", func=docstore_explorer.search),
+            Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        super().__init__(router=router, expert_configs=tool_configs, **kwargs)
+        router = ReActDocstoreRouter.from_llm_and_tools(llm, tools)
+        super().__init__(router=router, tools=tools, **kwargs)

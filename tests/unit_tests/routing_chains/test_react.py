@@ -8,7 +8,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain.routing_chains.react.base import ReActChain, ReActRouterChain
+from langchain.routing_chains.react.base import ReActChain, ReActDocstoreRouter
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -52,7 +52,7 @@ def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
     outputs = ["foo\nAction 1: search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    router_chain = ReActRouterChain(llm=fake_llm)
+    router_chain = ReActDocstoreRouter(llm=fake_llm)
     output = router_chain.route("")
     assert output.log == outputs[0]
     assert output.tool == "search"
@@ -63,7 +63,7 @@ def test_predict_until_observation_repeat() -> None:
     """Test when no action is generated initially."""
     outputs = ["foo", " search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    router_chain = ReActRouterChain(llm=fake_llm)
+    router_chain = ReActDocstoreRouter(llm=fake_llm)
     output = router_chain.route("")
     assert output.log == "foo\nAction 1: search[foo]"
     assert output.tool == "search"
