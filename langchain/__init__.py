@@ -18,7 +18,7 @@ from langchain.chains import (
     SQLDatabaseChain,
     VectorDBQA,
 )
-from langchain.docstore import Wikipedia
+from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import (
     BasePromptTemplate,
@@ -50,6 +50,7 @@ __all__ = [
     "MRKLChain",
     "VectorDBQA",
     "ElasticVectorSearch",
+    "InMemoryDocstore",
     "MemoryChain",
     "ConversationChain",
 ]

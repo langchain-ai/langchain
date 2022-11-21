@@ -7,4 +7,4 @@ Current conversation:
 {history}
 Human: {input}
 AI:"""
-PROMPT = PromptTemplate(input_variables=["input"], template=_DEFAULT_TEMPLATE)
+PROMPT = PromptTemplate(input_variables=["history", "input"], template=_DEFAULT_TEMPLATE)

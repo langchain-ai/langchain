@@ -83,7 +83,10 @@ class MemoryChain(Chain, BaseModel):
                 "If trying to add texts, the underlying docstore should support "
                 f"adding items, which {self.docstore} does not"
             )
-        selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+        selected_inputs = {}
+        for k in self.prompt.input_variables:
+            if k != self.history_key:
+                selected_inputs[k] = inputs[k]
         history = self._fetch_history_from_docstore(selected_inputs)
         selected_inputs[self.history_key] = history
         prompt = self.prompt.format(**selected_inputs)
@@ -98,7 +101,10 @@ class MemoryChain(Chain, BaseModel):
         input_uuid = str(uuid.uuid4())
         output_str = self._format_output_for_docstore(response)
         output_uuid = str(uuid.uuid4())
-        max_int = max(self.index_to_docstore_id.keys())
+        if len(self.index_to_docstore_id):
+            max_int = max(self.index_to_docstore_id.keys())
+        else:
+            max_int = 0
         self.index_to_docstore_id[max_int + 1] = input_uuid
         self.index_to_docstore_id[max_int + 2] = output_uuid
         self.docstore.add(
