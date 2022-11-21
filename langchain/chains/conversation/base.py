@@ -1,13 +1,11 @@
-"""Chain that just formats a prompt and calls an LLM."""
+"""Chain that carries on a conversation and calls an LLM."""
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.memory import MemoryChain
-from langchain.docstore.in_memory import InMemoryDocstore
-from langchain.input import print_text
+from langchain.docstore.in_memory import Docstore
 from langchain.llms.base import LLM
-from langchain.prompts.base import BasePromptTemplate
 
 
 class ConversationChain(MemoryChain, BaseModel):
@@ -16,8 +14,8 @@ class ConversationChain(MemoryChain, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import ConversationChain, OpenAI
-            react = ConversationChain(llm=OpenAI())
+            from langchain import ConversationChain, InMemoryDocstore, OpenAI
+            conversation = ConversationChain(llm=OpenAI(), docstore=InMemoryDocstore())
     """
 
     llm: LLM
@@ -49,8 +47,8 @@ class ConversationChain(MemoryChain, BaseModel):
         """
         return [self.output_key]
 
-    def _fetch_history_from_docstore(self, inputs):
-        return '\n'.join(self.docstore.all())
-
-    def _format_inputs_for_docstore(self, inputs):
+    def _format_inputs_for_docstore(self, inputs: Dict[str, Any]) -> str:
         return "Human: " + inputs[self.input_key]
+
+    def _format_output_for_docstore(self, output: str) -> str:
+        return "AI: {output}".format(output=output)

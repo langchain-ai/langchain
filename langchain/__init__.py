@@ -6,8 +6,10 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 from langchain.chains import (
+    ConversationChain,
     LLMChain,
     LLMMathChain,
+    MemoryChain,
     MRKLChain,
     PythonChain,
     ReActChain,
@@ -48,4 +50,6 @@ __all__ = [
     "MRKLChain",
     "VectorDBQA",
     "ElasticVectorSearch",
+    "MemoryChain",
+    "ConversationChain",
 ]
