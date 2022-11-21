@@ -30,7 +30,7 @@ def test_get_final_answer() -> None:
         "Final Answer: 1994"
     )
     action, action_input = get_action_and_input(llm_output)
-    assert action == "Final Answer: "
+    assert action == "Final Answer"
     assert action_input == "1994"
 
 
