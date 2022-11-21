@@ -78,7 +78,7 @@ class SequentialChain(Chain, BaseModel):
         return {k: known_values[k] for k in self.output_variables}
 
 
-class SimpleSequentialPipeline(Chain, BaseModel):
+class SimpleSequentialChain(Chain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
 
     chains: List[Chain]

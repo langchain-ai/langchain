@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.chains.base import Chain
-from langchain.chains.sequential import SequentialChain, SimpleSequentialPipeline
+from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 
 
 class FakeChain(Chain, BaseModel):
@@ -106,7 +106,7 @@ def test_simple_sequential_functionality() -> None:
     """Test simple sequential functionality."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    pipeline = SimpleSequentialPipeline(chains=[chain_1, chain_2])
+    pipeline = SimpleSequentialChain(chains=[chain_1, chain_2])
     output = pipeline({"input": "123"})
     expected_output = {"output": "123foofoo", "input": "123"}
     assert output == expected_output
@@ -117,7 +117,7 @@ def test_multi_input_errors() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
     with pytest.raises(ValueError):
-        SimpleSequentialPipeline(chains=[chain_1, chain_2])
+        SimpleSequentialChain(chains=[chain_1, chain_2])
 
 
 def test_multi_output_errors() -> None:
@@ -125,4 +125,4 @@ def test_multi_output_errors() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "grok"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(ValueError):
-        SimpleSequentialPipeline(chains=[chain_1, chain_2])
+        SimpleSequentialChain(chains=[chain_1, chain_2])
