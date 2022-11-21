@@ -4,9 +4,9 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
-from langchain.smart_chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.smart_chains.router import LLMRouterChain
-from langchain.smart_chains.router_expert import ExpertConfig, RouterExpertChain
+from langchain.routing_chains.mrkl.prompt import BASE_TEMPLATE
+from langchain.routing_chains.router import LLMRouter
+from langchain.routing_chains.routing_chain import RoutingChain, ToolConfig
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -46,7 +46,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
-class MRKLRouterChain(LLMRouterChain):
+class MRKLRouterChain(LLMRouter):
     """Router for the MRKL chain."""
 
     @property
@@ -71,11 +71,11 @@ class MRKLRouterChain(LLMRouterChain):
         stops = ["\nObservation"]
         super().__init__(llm_chain=llm_chain, stops=stops, **kwargs)
 
-    def _extract_action_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
 
 
-class MRKLChain(RouterExpertChain):
+class MRKLChain(RoutingChain):
     """Chain that implements the MRKL system.
 
     Example:
@@ -130,6 +130,6 @@ class MRKLChain(RouterExpertChain):
         """
         router_chain = MRKLRouterChain(llm, chains)
         expert_configs = [
-            ExpertConfig(expert_name=c.action_name, expert=c.action) for c in chains
+            ToolConfig(tool_name=c.action_name, tool=c.action) for c in chains
         ]
         return cls(router_chain=router_chain, expert_configs=expert_configs, **kwargs)

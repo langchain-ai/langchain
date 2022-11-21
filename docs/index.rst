@@ -8,12 +8,47 @@ create a truly powerful app - the real power comes when you are able to
 combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
-It aims to create:
 
-1. a comprehensive collection of pieces you would ever want to combine
-2. a flexible interface for combining pieces into a single comprehensive "chain"
-3. a schema for easily saving and sharing those chains
+There are three main areas (with a forth coming soon) that LangChain is designed to help with.
+These are, in increasing order of complexity:
+1. LLM and Prompt usage
+2. Chaining LLMs with other tools in a deterministic manner
+3. Having a router LLM which uses other tools as needed
+4. (Coming Soon) Memory
 
+**LLMs and Prompts**
+
+Calling out to an LLM once is pretty easy, with most of them being behind well documented APIs.
+However, there are still some challenges going from that to an application running in production that LangChain attempts to address:
+- Easy switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
+- Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
+- Prompt optimization: despite the underlying models getting better and better, there is still currently a need for carefully constructing prompts.
+- More coming soon
+
+**Chains**
+
+Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other tools.
+LangChain provides several parts to help with that:
+- Standard interface for working with Chains
+- Easy way to construct chains of LLMs
+- Lots of integrations with other tools that you may want to use in conjunction with LLMs (search, databases, Python REPL, etc)
+- End-to-end chains for common workflows (database question/answer, recursive summarization, etc)
+
+**Routing Chains**
+
+Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user input.
+In these types of chains, there is a "router" LLM chain which has access to a suite of tools.
+Depending on the user input, the router can then decide which, if any, of these tools to call.
+To help develop applications like these, LangChain provides:
+- Standard router and router chain interfaces
+- Common router LLM chains from literature
+- Common chains that can be used as tools
+
+**Memory**
+Coming soon.
+
+Documentation Structure
+=======================
 The documentation is structured into the following sections:
 
 
@@ -62,6 +97,7 @@ common tasks or cool demos.
    modules/text_splitter
    modules/vectorstore
    modules/chains
+   modules/routing_chains
 
 
 Full API documentation. This is the place to look if you want to

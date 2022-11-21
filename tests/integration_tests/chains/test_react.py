@@ -2,7 +2,7 @@
 
 from langchain.docstore.wikipedia import Wikipedia
 from langchain.llms.openai import OpenAI
-from langchain.smart_chains.react.base import ReActChain
+from langchain.routing_chains.react.base import ReActChain
 
 
 def test_react() -> None:

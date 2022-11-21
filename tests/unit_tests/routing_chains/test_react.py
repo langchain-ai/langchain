@@ -8,7 +8,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain.smart_chains.react.base import ReActChain, ReActRouterChain
+from langchain.routing_chains.react.base import ReActChain, ReActRouterChain
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -53,10 +53,10 @@ def test_predict_until_observation_normal() -> None:
     outputs = ["foo\nAction 1: search[foo]"]
     fake_llm = FakeListLLM(outputs)
     router_chain = ReActRouterChain(llm=fake_llm)
-    action, directive, ret_text = router_chain.get_action_and_input("")
-    assert ret_text == outputs[0]
-    assert action == "search"
-    assert directive == "foo"
+    output = router_chain.route("")
+    assert output.log == outputs[0]
+    assert output.tool == "search"
+    assert output.tool_input == "foo"
 
 
 def test_predict_until_observation_repeat() -> None:
@@ -64,10 +64,10 @@ def test_predict_until_observation_repeat() -> None:
     outputs = ["foo", " search[foo]"]
     fake_llm = FakeListLLM(outputs)
     router_chain = ReActRouterChain(llm=fake_llm)
-    action, directive, ret_text = router_chain.get_action_and_input("")
-    assert ret_text == "foo\nAction 1: search[foo]"
-    assert action == "search"
-    assert directive == "foo"
+    output = router_chain.route("")
+    assert output.log == "foo\nAction 1: search[foo]"
+    assert output.tool == "search"
+    assert output.tool_input == "foo"
 
 
 def test_react_chain() -> None:

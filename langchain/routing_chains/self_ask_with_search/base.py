@@ -4,12 +4,12 @@ from typing import Any, Tuple
 from langchain.chains.llm import LLMChain
 from langchain.chains.serpapi import SerpAPIChain
 from langchain.llms.base import LLM
-from langchain.smart_chains.router import LLMRouterChain
-from langchain.smart_chains.router_expert import ExpertConfig, RouterExpertChain
-from langchain.smart_chains.self_ask_with_search.prompt import PROMPT
+from langchain.routing_chains.router import LLMRouter
+from langchain.routing_chains.routing_chain import RoutingChain, ToolConfig
+from langchain.routing_chains.self_ask_with_search.prompt import PROMPT
 
 
-class SelfAskWithSearchRouter(LLMRouterChain):
+class SelfAskWithSearchRouter(LLMRouter):
     """Router for the self-ask-with-search paper."""
 
     def __init__(self, llm: LLM, **kwargs: Any):
@@ -17,7 +17,7 @@ class SelfAskWithSearchRouter(LLMRouterChain):
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
         super().__init__(llm_chain=llm_chain, **kwargs)
 
-    def _extract_action_and_input(self, text: str) -> Tuple[str, str]:
+    def _extract_tool_and_input(self, text: str) -> Tuple[str, str]:
         followup = "Follow up:"
         if "\n" not in text:
             last_line = text
@@ -52,8 +52,13 @@ class SelfAskWithSearchRouter(LLMRouterChain):
         """Prefix to append the router call with."""
         return ""
 
+    @property
+    def starter_string(self) -> str:
+        """Put this string after user input but before first router call."""
+        return "\nAre follow up questions needed here:"
 
-class SelfAskWithSearchChain(RouterExpertChain):
+
+class SelfAskWithSearchChain(RoutingChain):
     """Chain that does self ask with search.
 
     Example:
@@ -68,12 +73,6 @@ class SelfAskWithSearchChain(RouterExpertChain):
         """Initialize with just an LLM and a search chain."""
         intermediate = "\nIntermediate answer:"
         router = SelfAskWithSearchRouter(llm, stops=[intermediate])
-        expert_configs = [
-            ExpertConfig(expert_name="Intermediate Answer", expert=search_chain.run)
-        ]
-        super().__init__(
-            router_chain=router,
-            expert_configs=expert_configs,
-            starter_string="\nAre follow up questions needed here:",
-            **kwargs
-        )
+        search_tool = ToolConfig(tool_name="Intermediate Answer", tool=search_chain.run)
+        expert_configs = [search_tool]
+        super().__init__(router=router, expert_configs=expert_configs, **kwargs)

@@ -1,1 +1,0 @@
-"""Test smart chain functionality."""

@@ -17,11 +17,6 @@ create a truly powerful app - the real power comes when you are able to
 combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
-It aims to create:
-
-1. a comprehensive collection of pieces you would ever want to combine
-2. a flexible interface for combining pieces into a single comprehensive "chain"
-3. a schema for easily saving and sharing those chains
 
 ## 📖 Documentation
 
@@ -31,78 +26,42 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 - Reference (full API docs)
 - Resources (high level explanation of core concepts)
 
-## 🚀 What can I do with this
+## 🚀 What can this help with?
 
-This project was largely inspired by a few projects seen on Twitter for which we thought it would make sense to have more explicit tooling. A lot of the initial functionality was done in an attempt to recreate those. Those are:
+There are three main areas (with a forth coming soon) that LangChain is designed to help with.
+These are, in increasing order of complexity:
+1. LLM and Prompt usage
+2. Chaining LLMs with other tools in a deterministic manner
+3. Having a router LLM which uses other tools as needed
+4. (Coming Soon) Memory
 
-**[Self-ask-with-search](https://ofir.io/self-ask.pdf)**
+### LLMs and Prompts
+Calling out to an LLM once is pretty easy, with most of them being behind well documented APIs.
+However, there are still some challenges going from that to an application running in production that LangChain attempts to address:
+- Easy switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
+- Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
+- Prompt optimization: despite the underlying models getting better and better, there is still currently a need for carefully constructing prompts. 
+- More coming soon
 
-To recreate this paper, use the following code snippet or checkout the [example notebook](https://github.com/hwchase17/langchain/blob/master/docs/examples/demos/self_ask_with_search.ipynb).
+### Chains
+Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other tools.
+LangChain provides several parts to help with that:
+- Standard interface for working with Chains
+- Easy way to construct chains of LLMs
+- Lots of integrations with other tools that you may want to use in conjunction with LLMs (search, databases, Python REPL, etc)
+- End-to-end chains for common workflows (database question/answer, recursive summarization, etc)
 
-```python
-from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
+### Routing Chains
+Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user input.
+In these types of chains, there is a "router" LLM chain which has access to a suite of tools.
+Depending on the user input, the router can then decide which, if any, of these tools to call.
+To help develop applications like these, LangChain provides:
+- Standard router and router chain interfaces
+- Common router LLM chains from literature
+- Common chains that can be used as tools
 
-llm = OpenAI(temperature=0)
-search = SerpAPIChain()
-
-self_ask_with_search = SelfAskWithSearchChain(llm=llm, search_chain=search)
-
-self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
-```
-
-**[LLM Math](https://twitter.com/amasad/status/1568824744367259648?s=20&t=-7wxpXBJinPgDuyHLouP1w)**
-
-To recreate this example, use the following code snippet or check out the [example notebook](https://github.com/hwchase17/langchain/blob/master/docs/examples/demos/llm_math.ipynb).
-
-```python
-from langchain import OpenAI, LLMMathChain
-
-llm = OpenAI(temperature=0)
-llm_math = LLMMathChain(llm=llm)
-
-llm_math.run("How many of the integers between 0 and 99 inclusive are divisible by 8?")
-```
-
-**Generic Prompting**
-
-You can also use this for simple prompting pipelines, as in the below example and this [example notebook](https://github.com/hwchase17/langchain/blob/master/docs/examples/demos/simple_prompts.ipynb).
-
-```python
-from langchain import PromptTemplate, OpenAI, LLMChain
-
-template = """Question: {question}
-
-Answer: Let's think step by step."""
-prompt = PromptTemplate(template=template, input_variables=["question"])
-llm = OpenAI(temperature=0)
-llm_chain = LLMChain(prompt=prompt, llm=llm)
-
-question = "What NFL team won the Super Bowl in the year Justin Bieber was born?"
-
-llm_chain.predict(question=question)
-```
-
-**Embed & Search Documents**
-
-We support two vector databases to store and search embeddings -- FAISS and Elasticsearch. Here's a code snippet showing how to use FAISS to store embeddings and search for text similar to a query. Both database backends are featured in this [example notebook](https://github.com/hwchase17/langchain/blob/master/docs/examples/integrations/embeddings.ipynb).
-
-```python
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.faiss import FAISS
-from langchain.text_splitter import CharacterTextSplitter
-
-with open('state_of_the_union.txt') as f:
-    state_of_the_union = f.read()
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-texts = text_splitter.split_text(state_of_the_union)
-
-embeddings = OpenAIEmbeddings()
-
-docsearch = FAISS.from_texts(texts, embeddings)
-
-query = "What did the president say about Ketanji Brown Jackson"
-docs = docsearch.similarity_search(query)
-```
+### Memory
+Coming soon.
 
 ## 🤖 Developer Guide
 

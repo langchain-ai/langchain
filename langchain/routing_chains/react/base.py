@@ -8,12 +8,12 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.smart_chains.react.prompt import PROMPT
-from langchain.smart_chains.router import LLMRouterChain
-from langchain.smart_chains.router_expert import ExpertConfig, RouterExpertChain
+from langchain.routing_chains.react.prompt import PROMPT
+from langchain.routing_chains.router import LLMRouter
+from langchain.routing_chains.routing_chain import RoutingChain, ToolConfig
 
 
-class ReActRouterChain(LLMRouterChain, BaseModel):
+class ReActRouterChain(LLMRouter, BaseModel):
     """Router for the ReAct chin."""
 
     i: int = 1
@@ -27,7 +27,7 @@ class ReActRouterChain(LLMRouterChain, BaseModel):
     def _fix_text(self, text: str) -> str:
         return text + f"\nAction {self.i}:"
 
-    def _extract_action_and_input(self, text: str) -> Optional[Tuple[str, str]]:
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         action_prefix = f"Action {self.i}: "
         if not text.split("\n")[-1].startswith(action_prefix):
             return None
@@ -83,7 +83,7 @@ class DocstoreExplorer:
         return self.document.lookup(term)
 
 
-class ReActChain(RouterExpertChain):
+class ReActChain(RoutingChain):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -95,12 +95,10 @@ class ReActChain(RouterExpertChain):
 
     def __init__(self, llm: LLM, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""
-        router_chain = ReActRouterChain(llm)
+        router = ReActRouterChain(llm)
         docstore_explorer = DocstoreExplorer(docstore)
-        expert_configs = [
-            ExpertConfig(expert_name="Search", expert=docstore_explorer.search),
-            ExpertConfig(expert_name="Lookup", expert=docstore_explorer.lookup),
+        tool_configs = [
+            ToolConfig(tool_name="Search", tool=docstore_explorer.search),
+            ToolConfig(tool_name="Lookup", tool=docstore_explorer.lookup),
         ]
-        super().__init__(
-            router_chain=router_chain, expert_configs=expert_configs, **kwargs
-        )
+        super().__init__(router=router, expert_configs=tool_configs, **kwargs)
