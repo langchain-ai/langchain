@@ -5,6 +5,7 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
+from langchain.input import get_color_mapping, print_text
 
 
 class SequentialChain(Chain, BaseModel):
@@ -61,7 +62,7 @@ class SequentialChain(Chain, BaseModel):
                 output_keys = chains[-1].output_keys
             values["output_variables"] = output_keys
         else:
-            missing_vars = known_variables.difference(values["output_variables"])
+            missing_vars = set(values["output_variables"]).difference(known_variables)
             if missing_vars:
                 raise ValueError(
                     f"Expected output variables that were not found: {missing_vars}."
@@ -82,6 +83,7 @@ class SimpleSequentialChain(Chain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
 
     chains: List[Chain]
+    strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -125,6 +127,11 @@ class SimpleSequentialChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
-        for chain in self.chains:
+        color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
+        for i, chain in enumerate(self.chains):
             _input = chain.run(_input)
+            if self.strip_outputs:
+                _input = _input.strip()
+            if self.verbose:
+                print_text(_input, color=color_mapping[str(i)], end="\n")
         return {self.output_key: _input}

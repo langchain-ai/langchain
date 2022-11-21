@@ -36,8 +36,8 @@ def test_sequential_usage_single_inputs() -> None:
     """Test sequential on single input chains."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    pipeline = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
-    output = pipeline({"foo": "123"})
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+    output = chain({"foo": "123"})
     expected_output = {"baz": "123foofoo", "foo": "123"}
     assert output == expected_output
 
@@ -46,10 +46,8 @@ def test_sequential_usage_multiple_inputs() -> None:
     """Test sequential on multiple input chains."""
     chain_1 = FakeChain(input_variables=["foo", "test"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    pipeline = SequentialChain(
-        chains=[chain_1, chain_2], input_variables=["foo", "test"]
-    )
-    output = pipeline({"foo": "123", "test": "456"})
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])
+    output = chain({"foo": "123", "test": "456"})
     expected_output = {
         "baz": "123 456foo 123foo",
         "foo": "123",
@@ -62,8 +60,8 @@ def test_sequential_usage_multiple_outputs() -> None:
     """Test sequential usage on multiple output chains."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "test"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    pipeline = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
-    output = pipeline({"foo": "123"})
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+    output = chain({"foo": "123"})
     expected_output = {
         "baz": "123foo 123foo",
         "foo": "123",
@@ -93,6 +91,20 @@ def test_sequential_bad_outputs() -> None:
         )
 
 
+def test_sequential_valid_outputs() -> None:
+    """Test chain runs when valid outputs are specified."""
+    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
+    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
+    chain = SequentialChain(
+        chains=[chain_1, chain_2],
+        input_variables=["foo"],
+        output_variables=["bar", "baz"],
+    )
+    output = chain({"foo": "123"}, return_only_outputs=True)
+    expected_output = {"baz": "123foofoo", "bar": "123foo"}
+    assert output == expected_output
+
+
 def test_sequential_overlapping_inputs() -> None:
     """Test error is raised when input variables are overlapping."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "test"])
@@ -106,8 +118,8 @@ def test_simple_sequential_functionality() -> None:
     """Test simple sequential functionality."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    pipeline = SimpleSequentialChain(chains=[chain_1, chain_2])
-    output = pipeline({"input": "123"})
+    chain = SimpleSequentialChain(chains=[chain_1, chain_2])
+    output = chain({"input": "123"})
     expected_output = {"output": "123foofoo", "input": "123"}
     assert output == expected_output
 
