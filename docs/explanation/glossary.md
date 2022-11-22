@@ -29,7 +29,7 @@ This induces the to model to think about what action to take, then take it.
 
 Resources:
 - [Paper](https://arxiv.org/pdf/2210.03629.pdf)
-- [LangChain Example](https://github.com/hwchase17/langchain/blob/master/examples/react.ipynb)
+- [LangChain Example](https://github.com/hwchase17/langchain/blob/master/docs/examples/agents/react.ipynb)
 
 ### Self-ask
 
@@ -38,7 +38,7 @@ In this method, the model explicitly asks itself follow-up questions, which are 
 
 Resources:
 - [Paper](https://ofir.io/self-ask.pdf)
-- [LangChain Example](https://github.com/hwchase17/langchain/blob/master/examples/self_ask_with_search.ipynb)
+- [LangChain Example](https://github.com/hwchase17/langchain/blob/master/docs/examples/agents/self_ask_with_search.ipynb)
 
 ### Prompt Chaining
 
