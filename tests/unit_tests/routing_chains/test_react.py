@@ -8,8 +8,8 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain.routing_chains.react.base import ReActChain, ReActDocstoreRouter
-from langchain.routing_chains.tools import Tool
+from langchain.agents.react.base import ReActChain, ReActDocstoreRouter
+from langchain.agents.tools import Tool
 
 _PAGE_CONTENT = """This is a page about LangChain.
 

@@ -1,7 +1,7 @@
 """Integration test for self ask with search."""
 from langchain.chains.serpapi import SerpAPIChain
 from langchain.llms.openai import OpenAI
-from langchain.routing_chains.self_ask_with_search.base import SelfAskWithSearchChain
+from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 
 
 def test_self_ask_with_search() -> None:

@@ -21,7 +21,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
-from langchain.routing_chains import MRKLChain, ReActChain, SelfAskWithSearchChain
+from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 

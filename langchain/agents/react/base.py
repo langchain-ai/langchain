@@ -8,19 +8,18 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.routing_chains.react.prompt import PROMPT
-from langchain.routing_chains.router import LLMRouter
-from langchain.routing_chains.routing_chain import RoutingChain
-from langchain.routing_chains.tools import Tool
+from langchain.agents.react.prompt import PROMPT
+from langchain.agents.agent import Agent
+from langchain.agents.tools import Tool
 
 
-class ReActDocstoreRouter(LLMRouter, BaseModel):
+class ReActDocstoreAgent(Agent, BaseModel):
     """Router for the ReAct chin."""
 
     i: int = 1
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "ReActDocstoreRouter":
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ReActDocstoreAgent":
         """Construct a router from an LLM and tools."""
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
@@ -31,7 +30,7 @@ class ReActDocstoreRouter(LLMRouter, BaseModel):
             )
 
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        return cls(llm_chain=llm_chain)
+        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def _fix_text(self, text: str) -> str:
         return text + f"\nAction {self.i}:"
@@ -95,7 +94,7 @@ class DocstoreExplorer:
         return self.document.lookup(term)
 
 
-class ReActChain(RoutingChain):
+class ReActChain(ReActDocstoreAgent):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -112,5 +111,5 @@ class ReActChain(RoutingChain):
             Tool(name="Search", func=docstore_explorer.search),
             Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        router = ReActDocstoreRouter.from_llm_and_tools(llm, tools)
-        super().__init__(router=router, tools=tools, **kwargs)
+        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        super().__init__(llm_chain=llm_chain, tools=tools, **kwargs)

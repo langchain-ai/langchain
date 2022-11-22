@@ -4,10 +4,9 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
-from langchain.routing_chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.routing_chains.router import LLMRouter
-from langchain.routing_chains.routing_chain import RoutingChain
-from langchain.routing_chains.tools import Tool
+from langchain.agents.mrkl.prompt import BASE_TEMPLATE
+from langchain.agents.agent import Agent
+from langchain.agents.tools import Tool
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -47,7 +46,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
-class ZeroShotRouter(LLMRouter):
+class ZeroShotAgent(Agent):
     """Router for the MRKL chain."""
 
     @property
@@ -61,20 +60,20 @@ class ZeroShotRouter(LLMRouter):
         return "Thought:"
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "ZeroShotRouter":
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ZeroShotAgent":
         """Construct a router from an LLM and tools."""
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         template = BASE_TEMPLATE.format(tools=tool_strings, tool_names=tool_names)
         prompt = PromptTemplate(template=template, input_variables=["input"])
         llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain)
+        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
 
 
-class MRKLChain(RoutingChain):
+class MRKLChain(ZeroShotAgent):
     """Chain that implements the MRKL system.
 
     Example:
@@ -131,46 +130,4 @@ class MRKLChain(RoutingChain):
             Tool(name=c.action_name, func=c.action, description=c.action_description)
             for c in chains
         ]
-        return cls.from_tools_and_llm(tools, llm, **kwargs)
-
-    @classmethod
-    def from_tools_and_llm(
-        cls, tools: List[Tool], llm: LLM, **kwargs: Any
-    ) -> "MRKLChain":
-        """User friendly way to initialize the MRKL chain.
-
-        This is intended to be an easy way to get up and running with the
-        MRKL chain.
-
-        Args:
-            tools: The tools the MRKL system has access to.
-            llm: The LLM to use as the router LLM.
-            **kwargs: parameters to be passed to initialization.
-
-        Returns:
-            An initialized MRKL chain.
-
-        Example:
-            .. code-block:: python
-
-                from langchain import LLMMathChain, OpenAI, SerpAPIChain, MRKLChain
-                from langchain.routing_chains.tools import ToolConfig
-                llm = OpenAI(temperature=0)
-                search = SerpAPIChain()
-                llm_math_chain = LLMMathChain(llm=llm)
-                tools = [
-                    ToolConfig(
-                        tool_name = "Search",
-                        tool=search.search,
-                        tool_description="useful for searching"
-                    ),
-                    ToolConfig(
-                        tool_name="Calculator",
-                        tool=llm_math_chain.run,
-                        tool_description="useful for doing math"
-                    )
-                ]
-                mrkl = MRKLChain.from_tools_and_llm(llm, tools)
-        """
-        router = ZeroShotRouter.from_llm_and_tools(llm, tools)
-        return cls(router=router, tools=tools, **kwargs)
+        return cls.from_llm_and_tools(llm, tools, **kwargs)

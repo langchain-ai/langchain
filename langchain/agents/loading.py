@@ -2,16 +2,16 @@
 from typing import Any, List
 
 from langchain.llms.base import LLM
-from langchain.routing_chains.mrkl.base import ZeroShotRouter
-from langchain.routing_chains.react.base import ReActDocstoreRouter
-from langchain.routing_chains.routing_chain import RoutingChain
-from langchain.routing_chains.self_ask_with_search.base import SelfAskWithSearchRouter
-from langchain.routing_chains.tools import Tool
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.agent import Agent
+from langchain.agents.react.base import ReActDocstoreAgent
+from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
+from langchain.agents.tools import Tool
 
 ROUTER_TYPE_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotRouter,
-    "react-docstore": ReActDocstoreRouter,
-    "self-ask-with-search": SelfAskWithSearchRouter,
+    "zero-shot-react-description": ZeroShotAgent,
+    "react-docstore": ReActDocstoreAgent,
+    "self-ask-with-search": SelfAskWithSearchAgent,
 }
 
 
@@ -20,7 +20,7 @@ def load_routing_chain(
     llm: LLM,
     router_type: str = "zero-shot-react-description",
     **kwargs: Any,
-) -> RoutingChain:
+) -> Agent:
     """Load routing chain given tools and LLM.
 
     Args:
@@ -39,5 +39,4 @@ def load_routing_chain(
             f"Valid types are: {ROUTER_TYPE_TO_CLASS.keys()}."
         )
     router_cls = ROUTER_TYPE_TO_CLASS[router_type]
-    router = router_cls.from_llm_and_tools(llm, tools)
-    return RoutingChain(router=router, tools=tools, **kwargs)
+    return router_cls.from_llm_and_tools(llm, tools)

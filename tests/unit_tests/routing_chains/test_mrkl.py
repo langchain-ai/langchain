@@ -3,9 +3,9 @@
 import pytest
 
 from langchain.prompts import PromptTemplate
-from langchain.routing_chains.mrkl.base import ZeroShotRouter, get_action_and_input
-from langchain.routing_chains.mrkl.prompt import BASE_TEMPLATE
-from langchain.routing_chains.tools import Tool
+from langchain.agents.mrkl.base import ZeroShotRouter, get_action_and_input
+from langchain.agents.mrkl.prompt import BASE_TEMPLATE
+from langchain.agents.tools import Tool
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
