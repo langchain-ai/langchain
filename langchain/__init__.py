@@ -5,13 +5,11 @@ from pathlib import Path
 with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
+from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     LLMChain,
     LLMMathChain,
-    MRKLChain,
     PythonChain,
-    ReActChain,
-    SelfAskWithSearchChain,
     SerpAPIChain,
     SQLDatabaseChain,
     VectorDBQA,
