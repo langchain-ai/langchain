@@ -3,27 +3,28 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.memory import MemoryChain
-from langchain.docstore.in_memory import Docstore
-from langchain.llms.base import LLM
+from langchain.chains.base import MemoryChain
+from langchain.chains.conversation.prompt import PROMPT
+from langchain.chains.llm import LLMChain
+from langchain.prompts.base import BasePromptTemplate
 
 
-class ConversationChain(MemoryChain, BaseModel):
+class ConversationChain(LLMChain, MemoryChain, BaseModel):
     """Chain to have a conversation and load context from memory.
 
     Example:
         .. code-block:: python
 
-            from langchain import ConversationChain, InMemoryDocstore, OpenAI
-            conversation = ConversationChain(llm=OpenAI(), docstore=InMemoryDocstore())
+            from langchain import ConversationChain, OpenAI
+            conversation = ConversationChain(llm=OpenAI())
     """
 
-    llm: LLM
-    """LLM wrapper to use."""
-    docstore: Docstore
-    """Docstore to use."""
+    prompt: BasePromptTemplate = PROMPT
+    """Default conversation prompt to use."""
+    dynamic_key: str = "history"  #: :meta private:
     input_key: str = "input"  #: :meta private:
     output_key: str = "response"  #: :meta private:
+    buffer: str = ""  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -32,23 +33,18 @@ class ConversationChain(MemoryChain, BaseModel):
         arbitrary_types_allowed = True
 
     @property
-    def input_keys(self) -> List[str]:
-        """Expect input key.
+    def dynamic_keys(self) -> List[str]:
+        """Will always return list of dynamic keys.
 
         :meta private:
         """
-        return [self.input_key]
+        return [self.dynamic_key]
 
-    @property
-    def output_keys(self) -> List[str]:
-        """Expect output key.
+    def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return history buffer."""
+        return {self.dynamic_keys[0]: self.buffer}
 
-        :meta private:
-        """
-        return [self.output_key]
-
-    def _format_inputs_for_docstore(self, inputs: Dict[str, Any]) -> str:
-        return "Human: " + inputs[self.input_key]
-
-    def _format_output_for_docstore(self, output: str) -> str:
-        return "AI: {output}".format(output=output)
+    def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save context from this conversation to buffer."""
+        self.buffer += "\nHuman: " + inputs[self.input_key]
+        self.buffer += "\nAI: " + outputs[self.output_key]
