@@ -19,7 +19,7 @@ These are, in increasing order of complexity:
 
 Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
 
-**LLMs and Prompts**
+**🦜 LLMs and Prompts**
 
 Calling out to an LLM once is pretty easy, with most of them being behind well documented APIs.
 However, there are still some challenges going from that to an application running in production that LangChain attempts to address.
@@ -36,7 +36,7 @@ However, there are still some challenges going from that to an application runni
 - Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
 - Prompt optimization: despite the underlying models getting better and better, there is still currently a need for carefully constructing prompts.
 
-**Chains**
+**🔗️ Chains**
 
 Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other experts.
 LangChain provides several parts to help with that.
@@ -53,7 +53,7 @@ LangChain provides several parts to help with that.
 - Lots of integrations with other tools that you may want to use in conjunction with LLMs
 - End-to-end chains for common workflows (database question/answer, recursive summarization, etc)
 
-**Agents**
+**🤖 Agents**
 
 Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user input.
 In these types of chains, there is a “agent” which has access to a suite of tools.
@@ -71,7 +71,7 @@ Depending on the user input, the agent can then decide which, if any, of these t
 - A selection of powerful agents to choose from
 - Common chains that can be used as tools
 
-**Memory**
+**🧠 Memory**
 
 Coming soon.
 
