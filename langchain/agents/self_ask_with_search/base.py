@@ -10,13 +10,13 @@ from langchain.agents.tools import Tool
 
 
 class SelfAskWithSearchAgent(Agent):
-    """Router for the self-ask-with-search paper."""
+    """Agent for the self-ask-with-search paper."""
 
     @classmethod
     def from_llm_and_tools(
         cls, llm: LLM, tools: List[Tool], **kwargs: Any
     ) -> "SelfAskWithSearchAgent":
-        """Construct a router from an LLM and tools."""
+        """Construct an agent from an LLM and tools."""
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -59,13 +59,13 @@ class SelfAskWithSearchAgent(Agent):
         return "Intermediate answer: "
 
     @property
-    def router_prefix(self) -> str:
-        """Prefix to append the router call with."""
+    def llm_prefix(self) -> str:
+        """Prefix to append the LLM call with."""
         return ""
 
     @property
     def starter_string(self) -> str:
-        """Put this string after user input but before first router call."""
+        """Put this string after user input but before first LLM call."""
         return "\nAre follow up questions needed here:"
 
 

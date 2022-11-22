@@ -47,7 +47,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
 
 
 class ZeroShotAgent(Agent):
-    """Router for the MRKL chain."""
+    """Agent for the MRKL chain."""
 
     @property
     def observation_prefix(self) -> str:
@@ -55,13 +55,13 @@ class ZeroShotAgent(Agent):
         return "Observation: "
 
     @property
-    def router_prefix(self) -> str:
-        """Prefix to append the router call with."""
+    def llm_prefix(self) -> str:
+        """Prefix to append the llm call with."""
         return "Thought:"
 
     @classmethod
     def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ZeroShotAgent":
-        """Construct a router from an LLM and tools."""
+        """Construct an agent from an LLM and tools."""
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         template = BASE_TEMPLATE.format(tools=tool_strings, tool_names=tool_names)
@@ -97,7 +97,7 @@ class MRKLChain(ZeroShotAgent):
         MRKL chain.
 
         Args:
-            llm: The LLM to use as the router LLM.
+            llm: The LLM to use as the agent LLM.
             chains: The chains the MRKL system has access to.
             **kwargs: parameters to be passed to initialization.
 

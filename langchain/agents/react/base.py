@@ -14,13 +14,13 @@ from langchain.agents.tools import Tool
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
-    """Router for the ReAct chin."""
+    """Agent for the ReAct chin."""
 
     i: int = 1
 
     @classmethod
     def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ReActDocstoreAgent":
-        """Construct a router from an LLM and tools."""
+        """Construct an agent from an LLM and tools."""
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -64,8 +64,8 @@ class ReActDocstoreAgent(Agent, BaseModel):
         return [f"\nObservation {self.i}: "]
 
     @property
-    def router_prefix(self) -> str:
-        """Prefix to append the router call with."""
+    def llm_prefix(self) -> str:
+        """Prefix to append the LLM call with."""
         return f"Thought {self.i}:"
 
 

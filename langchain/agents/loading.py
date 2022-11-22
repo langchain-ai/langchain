@@ -1,4 +1,4 @@
-"""Load routing chains."""
+"""Load agent."""
 from typing import Any, List
 
 from langchain.llms.base import LLM
@@ -8,35 +8,35 @@ from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool
 
-ROUTER_TYPE_TO_CLASS = {
+AGENT_TYPE_TO_CLASS = {
     "zero-shot-react-description": ZeroShotAgent,
     "react-docstore": ReActDocstoreAgent,
     "self-ask-with-search": SelfAskWithSearchAgent,
 }
 
 
-def load_routing_chain(
+def initialize_agent(
     tools: List[Tool],
     llm: LLM,
-    router_type: str = "zero-shot-react-description",
+    agent_type: str = "zero-shot-react-description",
     **kwargs: Any,
 ) -> Agent:
-    """Load routing chain given tools and LLM.
+    """Load agent given tools and LLM.
 
     Args:
-        tools: List of tools this routing chain has access to.
-        llm: Language model to use as the router.
-        router_type: The router to use. Valid options are:
-            `zero-shot-react-description`.
-        **kwargs: Additional key word arguments to pass to the routing chain.
+        tools: List of tools this agent has access to.
+        llm: Language model to use as the agent.
+        agent_type: The agent to use. Valid options are:
+            `zero-shot-react-description`, `react-docstore`, `self-ask-with-search`.
+        **kwargs: Additional key word arguments to pass to the agent.
 
     Returns:
-        A routing chain.
+        An agent.
     """
-    if router_type not in ROUTER_TYPE_TO_CLASS:
+    if agent_type not in AGENT_TYPE_TO_CLASS:
         raise ValueError(
-            f"Got unknown router type: {router_type}. "
-            f"Valid types are: {ROUTER_TYPE_TO_CLASS.keys()}."
+            f"Got unknown agent type: {agent_type}. "
+            f"Valid types are: {AGENT_TYPE_TO_CLASS.keys()}."
         )
-    router_cls = ROUTER_TYPE_TO_CLASS[router_type]
-    return router_cls.from_llm_and_tools(llm, tools)
+    agent_cls = AGENT_TYPE_TO_CLASS[agent_type]
+    return agent_cls.from_llm_and_tools(llm, tools, **kwargs)

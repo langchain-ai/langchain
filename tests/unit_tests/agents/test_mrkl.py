@@ -3,7 +3,7 @@
 import pytest
 
 from langchain.prompts import PromptTemplate
-from langchain.agents.mrkl.base import ZeroShotRouter, get_action_and_input
+from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
 from langchain.agents.mrkl.prompt import BASE_TEMPLATE
 from langchain.agents.tools import Tool
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -56,12 +56,12 @@ def test_from_chains() -> None:
         Tool(name="foo", func=lambda x: "foo", description="foobar1"),
         Tool(name="bar", func=lambda x: "bar", description="foobar2"),
     ]
-    router_chain = ZeroShotRouter.from_llm_and_tools(FakeLLM(), chain_configs)
+    agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
     expected_template = BASE_TEMPLATE.format(
         tools=expected_tools_prompt, tool_names=expected_tool_names
     )
-    prompt = router_chain.llm_chain.prompt
+    prompt = agent.llm_chain.prompt
     assert isinstance(prompt, PromptTemplate)
     assert prompt.template == expected_template

@@ -20,7 +20,7 @@ class Action(NamedTuple):
 
 
 class Agent(BaseModel, ABC):
-    """Router that uses an LLM."""
+    """Agent that uses an LLM."""
 
     llm_chain: LLMChain
     tools: List[Tool]
@@ -33,8 +33,8 @@ class Agent(BaseModel, ABC):
 
     @property
     @abstractmethod
-    def router_prefix(self) -> str:
-        """Prefix to append the router call with."""
+    def llm_prefix(self) -> str:
+        """Prefix to append the LLM call with."""
 
     @property
     def finish_tool_name(self) -> str:
@@ -43,7 +43,7 @@ class Agent(BaseModel, ABC):
 
     @property
     def starter_string(self) -> str:
-        """Put this string after user input but before first router call."""
+        """Put this string after user input but before first LLM call."""
         return "\n"
 
     @abstractmethod
@@ -52,7 +52,7 @@ class Agent(BaseModel, ABC):
 
     def _fix_text(self, text: str) -> str:
         """Fix the text."""
-        raise ValueError("fix_text not implemented for this router.")
+        raise ValueError("fix_text not implemented for this agent.")
 
     @property
     def _stop(self) -> List[str]:
@@ -61,16 +61,16 @@ class Agent(BaseModel, ABC):
     @classmethod
     @abstractmethod
     def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "Agent":
-        """Construct a router from an LLM and tools."""
+        """Construct an agent from an LLM and tools."""
 
-    def route(self, text: str) -> Action:
-        """Given input, decided how to route it.
+    def get_action(self, text: str) -> Action:
+        """Given input, decided what to do.
 
         Args:
             text: input string
 
         Returns:
-            RouterOutput specifying what tool to use.
+            Action specifying what tool to use.
         """
         input_key = self.llm_chain.input_keys[0]
         inputs = {input_key: text, "stop": self._stop}
@@ -88,15 +88,15 @@ class Agent(BaseModel, ABC):
     def run(self, text: str) -> str:
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
-        # Construct the initial string to pass into the router. This is made up
-        # of the user input, the special starter string, and then the router prefix.
-        # The starter string is a special string that may be used by a router to
-        # immediately follow the user input. The router prefix is a string that
-        # prompts the router to start routing.
+        # Construct the initial string to pass into the LLM. This is made up
+        # of the user input, the special starter string, and then the LLM prefix.
+        # The starter string is a special string that may be used by a LLM to
+        # immediately follow the user input. The LLM prefix is a string that
+        # prompts the LLM to take an action.
         starter_string = (
             text
             + self.starter_string
-            + self.router_prefix
+            + self.llm_prefix
         )
         # We use the ChainedInput class to iteratively add to the input over time.
         chained_input = ChainedInput(starter_string, verbose=self.verbose)
@@ -104,10 +104,10 @@ class Agent(BaseModel, ABC):
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
-        # We now enter the router loop (until it returns something).
+        # We now enter the agent loop (until it returns something).
         while True:
-            # Call the router to see what to do.
-            output = self.route(chained_input.input)
+            # Call the LLM to see what to do.
+            output = self.get_action(chained_input.input)
             # Add the log to the Chained Input.
             chained_input.add(output.log, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
@@ -120,7 +120,7 @@ class Agent(BaseModel, ABC):
             # We then log the observation
             chained_input.add(f"\n{self.observation_prefix}")
             chained_input.add(observation, color=color_mapping[output.tool])
-            # We then add the router prefix into the prompt to get the router to start
+            # We then add the LLM prefix into the prompt to get the LLM to start
             # thinking, and start the loop all over.
-            chained_input.add(f"\n{self.router_prefix}")
+            chained_input.add(f"\n{self.llm_prefix}")
 

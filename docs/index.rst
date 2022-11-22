@@ -11,40 +11,62 @@ This library is aimed at assisting in the development of those types of applicat
 
 There are three main areas (with a forth coming soon) that LangChain is designed to help with.
 These are, in increasing order of complexity:
-1. LLM and Prompt usage
-2. Chaining LLMs with other tools in a deterministic manner
-3. Having a router LLM which uses other tools as needed
+1. LLM and Prompts
+2. Chains
+3. Agents
 4. (Coming Soon) Memory
 
-**LLMs and Prompts**
+Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
+
+LLMs and Prompts
+****************
 
 Calling out to an LLM once is pretty easy, with most of them being behind well documented APIs.
-However, there are still some challenges going from that to an application running in production that LangChain attempts to address:
-- Easy switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
+However, there are still some challenges going from that to an application running in production that LangChain attempts to address.
+
+**Key Concepts**
+- LLM: A large language model, in particular a text-to-text model.
+- Prompt: The input to a language model. Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
+- Prompt Template: An object responsible for constructing the final prompt to pass to a LLM.
+
+**Problems solved**
+- Switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
 - Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
 - Prompt optimization: despite the underlying models getting better and better, there is still currently a need for carefully constructing prompts.
-- More coming soon
 
-**Chains**
+Chains
+****************
+Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other experts.
+LangChain provides several parts to help with that.
 
-Using an LLM in isolation is fine for some simple applications, but many more complex ones require chaining LLMs - either with eachother or with other tools.
-LangChain provides several parts to help with that:
+**Key Concepts**
+- Tools: APIs designed for assisting with a particular use case (search, databases, Python REPL, etc). Prompt templates, LLMs, and chains can also be considered tools.
+- Chains: A combination of multiple tools in a deterministic manner.
+
+**Problems solved**
 - Standard interface for working with Chains
 - Easy way to construct chains of LLMs
-- Lots of integrations with other tools that you may want to use in conjunction with LLMs (search, databases, Python REPL, etc)
+- Lots of integrations with other tools that you may want to use in conjunction with LLMs
 - End-to-end chains for common workflows (database question/answer, recursive summarization, etc)
 
-**Routing Chains**
-
+Agents
+****************
 Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user input.
-In these types of chains, there is a "router" LLM chain which has access to a suite of tools.
-Depending on the user input, the router can then decide which, if any, of these tools to call.
-To help develop applications like these, LangChain provides:
-- Standard router and router chain interfaces
-- Common router LLM chains from literature
+In these types of chains, there is a “agent” which has access to a suite of tools.
+Depending on the user input, the agent can then decide which, if any, of these tools to call.
+
+**Key Concepts**
+- Tools: same as above.
+- Agent: An LLM-powered class responsible for determining which tools to use and in what order.
+
+
+**Problems solved**
+- Standard agent interfaces
+- A selection of powerful agents to choose from
 - Common chains that can be used as tools
 
-**Memory**
+Memory
+****************
 Coming soon.
 
 Documentation Structure
@@ -97,7 +119,7 @@ common tasks or cool demos.
    modules/text_splitter
    modules/vectorstore
    modules/chains
-   modules/routing_chains
+   modules/agents
 
 
 Full API documentation. This is the place to look if you want to

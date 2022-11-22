@@ -1,5 +1,5 @@
 """Routing chains."""
-from langchain.agents.loading import load_routing_chain
+from langchain.agents.loading import initialize_agent
 from langchain.agents.mrkl.base import MRKLChain
 from langchain.agents.react.base import ReActChain
 from langchain.agents.agent import Agent
@@ -10,8 +10,7 @@ __all__ = [
     "MRKLChain",
     "SelfAskWithSearchChain",
     "ReActChain",
-    "LLMRouter",
-    "RoutingChain",
+    "Agent",
     "Tool",
-    "load_routing_chain",
+    "initialize_agent",
 ]

@@ -8,7 +8,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
-from langchain.agents.react.base import ReActChain, ReActDocstoreRouter
+from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 
 _PAGE_CONTENT = """This is a page about LangChain.
@@ -57,8 +57,8 @@ def test_predict_until_observation_normal() -> None:
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
     ]
-    router_chain = ReActDocstoreRouter.from_llm_and_tools(fake_llm, tools)
-    output = router_chain.route("")
+    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
+    output = agent.get_action("")
     assert output.log == outputs[0]
     assert output.tool == "Search"
     assert output.tool_input == "foo"
@@ -72,8 +72,8 @@ def test_predict_until_observation_repeat() -> None:
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
     ]
-    router_chain = ReActDocstoreRouter.from_llm_and_tools(fake_llm, tools)
-    output = router_chain.route("")
+    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
+    output = agent.get_action("")
     assert output.log == "foo\nAction 1: Search[foo]"
     assert output.tool == "Search"
     assert output.tool_input == "foo"
@@ -88,9 +88,8 @@ def test_react_chain() -> None:
     ]
     fake_llm = FakeListLLM(responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
-    inputs = {"question": "when was langchain made"}
-    output = react_chain(inputs)
-    assert output["answer"] == "2022"
+    output = react_chain.run("when was langchain made")
+    assert output == "2022"
 
 
 def test_react_chain_bad_action() -> None:
