@@ -64,6 +64,12 @@ class ZeroShotAgent(Agent):
         cls, llm: LLM, tools: List[Tool], **kwargs: Any
     ) -> "ZeroShotAgent":
         """Construct an agent from an LLM and tools."""
+        for tool in tools:
+            if tool.description is None:
+                raise ValueError(
+                    f"Got a tool {tool.name} without a description. For this agent, "
+                    f"a description must always be provided."
+                )
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         template = BASE_TEMPLATE.format(tools=tool_strings, tool_names=tool_names)
