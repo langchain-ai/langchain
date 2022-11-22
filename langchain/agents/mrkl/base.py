@@ -4,9 +4,9 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.agents.agent import Agent
 from langchain.agents.mrkl.prompt import BASE_TEMPLATE
 from langchain.agents.tools import Tool
-from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import BasePromptTemplate
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -60,22 +60,20 @@ class ZeroShotAgent(Agent):
         return "Thought:"
 
     @classmethod
-    def from_llm_and_tools(
-        cls, llm: LLM, tools: List[Tool], **kwargs: Any
-    ) -> "ZeroShotAgent":
-        """Construct an agent from an LLM and tools."""
+    def _get_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_names = ", ".join([tool.name for tool in tools])
+        template = BASE_TEMPLATE.format(tools=tool_strings, tool_names=tool_names)
+        return PromptTemplate(template=template, input_variables=["input"])
+
+    @classmethod
+    def _validate_tools(cls, tools: List[Tool]) -> None:
         for tool in tools:
             if tool.description is None:
                 raise ValueError(
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
-        tool_names = ", ".join([tool.name for tool in tools])
-        template = BASE_TEMPLATE.format(tools=tool_strings, tool_names=tool_names)
-        prompt = PromptTemplate(template=template, input_variables=["input"])
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
@@ -96,9 +94,7 @@ class MRKLChain(ZeroShotAgent):
     """
 
     @classmethod
-    def from_chains(
-        cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any
-    ) -> "ZeroShotAgent":
+    def from_chains(cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any) -> "Agent":
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the

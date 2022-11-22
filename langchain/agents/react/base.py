@@ -1,6 +1,6 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, ClassVar, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -11,18 +11,18 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
+from langchain.prompts.base import BasePromptTemplate
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
     """Agent for the ReAct chin."""
 
+    prompt: ClassVar[BasePromptTemplate] = PROMPT
+
     i: int = 1
 
     @classmethod
-    def from_llm_and_tools(
-        cls, llm: LLM, tools: List[Tool], **kwargs: Any
-    ) -> "ReActDocstoreAgent":
-        """Construct an agent from an LLM and tools."""
+    def _validate_tools(cls, tools: List[Tool]) -> None:
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -30,9 +30,6 @@ class ReActDocstoreAgent(Agent, BaseModel):
             raise ValueError(
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
-
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def _fix_text(self, text: str) -> str:
         return text + f"\nAction {self.i}:"

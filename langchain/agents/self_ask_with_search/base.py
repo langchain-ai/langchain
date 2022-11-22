@@ -1,5 +1,5 @@
 """Chain that does self ask with search."""
-from typing import Any, List, Tuple
+from typing import Any, ClassVar, List, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.self_ask_with_search.prompt import PROMPT
@@ -7,16 +7,16 @@ from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.chains.serpapi import SerpAPIChain
 from langchain.llms.base import LLM
+from langchain.prompts.base import BasePromptTemplate
 
 
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
+    prompt: ClassVar[BasePromptTemplate] = PROMPT
+
     @classmethod
-    def from_llm_and_tools(
-        cls, llm: LLM, tools: List[Tool], **kwargs: Any
-    ) -> "SelfAskWithSearchAgent":
-        """Construct an agent from an LLM and tools."""
+    def _validate_tools(cls, tools: List[Tool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -24,9 +24,6 @@ class SelfAskWithSearchAgent(Agent):
             raise ValueError(
                 f"Tool name should be Intermediate Answer, got {tool_names}"
             )
-
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def _extract_tool_and_input(self, text: str) -> Tuple[str, str]:
         followup = "Follow up:"

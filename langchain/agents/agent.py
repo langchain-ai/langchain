@@ -1,6 +1,6 @@
 """Chain that takes in an input and produces an action and action input."""
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional, Tuple
+from typing import Any, ClassVar, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -8,6 +8,7 @@ from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
+from langchain.prompts.base import BasePromptTemplate
 
 
 class Action(NamedTuple):
@@ -21,6 +22,7 @@ class Action(NamedTuple):
 class Agent(BaseModel, ABC):
     """Agent that uses an LLM."""
 
+    prompt: ClassVar[BasePromptTemplate]
     llm_chain: LLMChain
     tools: List[Tool]
     verbose: bool = True
@@ -58,9 +60,20 @@ class Agent(BaseModel, ABC):
         return [f"\n{self.observation_prefix}"]
 
     @classmethod
-    @abstractmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> "Agent":
+    def _validate_tools(cls, tools: List[Tool]) -> None:
+        """Validate that appropriate tools are passed in."""
+        pass
+
+    @classmethod
+    def _get_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        return cls.prompt
+
+    @classmethod
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> "Agent":
         """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        llm_chain = LLMChain(llm=llm, prompt=cls._get_prompt(tools))
+        return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def get_action(self, text: str) -> Action:
         """Given input, decided what to do.
