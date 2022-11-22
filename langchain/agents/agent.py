@@ -1,14 +1,13 @@
 """Chain that takes in an input and produces an action and action input."""
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional, Tuple, Dict
+from typing import List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
-from langchain.chains.llm import LLMChain
-from langchain.llms.base import LLM
 from langchain.agents.tools import Tool
-
+from langchain.chains.llm import LLMChain
 from langchain.input import ChainedInput, get_color_mapping
+from langchain.llms.base import LLM
 
 
 class Action(NamedTuple):
@@ -86,6 +85,7 @@ class Agent(BaseModel, ABC):
         return Action(tool, tool_input, full_output)
 
     def run(self, text: str) -> str:
+        """Run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # Construct the initial string to pass into the LLM. This is made up
@@ -93,11 +93,7 @@ class Agent(BaseModel, ABC):
         # The starter string is a special string that may be used by a LLM to
         # immediately follow the user input. The LLM prefix is a string that
         # prompts the LLM to take an action.
-        starter_string = (
-            text
-            + self.starter_string
-            + self.llm_prefix
-        )
+        starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
         chained_input = ChainedInput(starter_string, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
@@ -123,4 +119,3 @@ class Agent(BaseModel, ABC):
             # We then add the LLM prefix into the prompt to get the LLM to start
             # thinking, and start the loop all over.
             chained_input.add(f"\n{self.llm_prefix}")
-

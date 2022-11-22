@@ -2,10 +2,10 @@
 
 import pytest
 
-from langchain.prompts import PromptTemplate
 from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
 from langchain.agents.mrkl.prompt import BASE_TEMPLATE
 from langchain.agents.tools import Tool
+from langchain.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -1,12 +1,12 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
+from langchain.agents.agent import Agent
+from langchain.agents.mrkl.prompt import BASE_TEMPLATE
+from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
-from langchain.agents.mrkl.prompt import BASE_TEMPLATE
-from langchain.agents.agent import Agent
-from langchain.agents.tools import Tool
 
 FINAL_ANSWER_ACTION = "Final Answer: "
 
@@ -60,7 +60,9 @@ class ZeroShotAgent(Agent):
         return "Thought:"
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ZeroShotAgent":
+    def from_llm_and_tools(
+        cls, llm: LLM, tools: List[Tool], **kwargs: Any
+    ) -> "ZeroShotAgent":
         """Construct an agent from an LLM and tools."""
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
@@ -90,7 +92,7 @@ class MRKLChain(ZeroShotAgent):
     @classmethod
     def from_chains(
         cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any
-    ) -> "MRKLChain":
+    ) -> "ZeroShotAgent":
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the

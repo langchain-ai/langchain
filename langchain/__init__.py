@@ -5,6 +5,7 @@ from pathlib import Path
 with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
+from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     LLMChain,
     LLMMathChain,
@@ -21,7 +22,6 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
-from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 

@@ -4,13 +4,13 @@ from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
+from langchain.agents.agent import Agent
+from langchain.agents.react.prompt import PROMPT
+from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.agents.react.prompt import PROMPT
-from langchain.agents.agent import Agent
-from langchain.agents.tools import Tool
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
@@ -19,7 +19,9 @@ class ReActDocstoreAgent(Agent, BaseModel):
     i: int = 1
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs:Any) -> "ReActDocstoreAgent":
+    def from_llm_and_tools(
+        cls, llm: LLM, tools: List[Tool], **kwargs: Any
+    ) -> "ReActDocstoreAgent":
         """Construct an agent from an LLM and tools."""
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")

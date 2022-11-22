@@ -1,12 +1,12 @@
 """Load agent."""
 from typing import Any, List
 
-from langchain.llms.base import LLM
-from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.agent import Agent
+from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool
+from langchain.llms.base import LLM
 
 AGENT_TYPE_TO_CLASS = {
     "zero-shot-react-description": ZeroShotAgent,
