@@ -25,3 +25,7 @@ These are datastores that store documents. They expose a method for passing in a
 ## Chains
 These are pipelines that combine multiple of the above ideas. 
 They vary greatly in complexity and are combination of generic, highly configurable pipelines and more narrow (but usually more complex) pipelines.
+
+## Agents
+As opposed to a chain, whether the steps to be taken are known ahead of time, agents
+use an LLM to determine which tools to call and in what order.

@@ -1,4 +1,4 @@
-# Using Chains
+# LLM Chains
 
 Calling an LLM is a great first step, but it's just the beginning.
 Normally when you use an LLM in an application, you are not sending user input directly to the LLM.
@@ -33,7 +33,5 @@ Now we can run that can only specifying the product!
 chain.run("colorful socks")
 ```
 
-There we go! There's the first chain.
-
-That is it for the Getting Started example. 
-As a next step, we would suggest checking out the more complex chains in the [Demos section](/examples/demos)
+There we go! There's the first chain - an LLM Chain.
+This is one of the simpler types of chains, but understanding how it works will set you up well for working with more complex chains.
