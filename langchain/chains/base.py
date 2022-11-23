@@ -1,6 +1,6 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -31,7 +31,7 @@ class Memory(BaseModel, ABC):
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
-    memory: Union[Memory, None] = None
+    memory: Optional[Memory] = None
 
     verbose: bool = False
     """Whether to print out response text."""

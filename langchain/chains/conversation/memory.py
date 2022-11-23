@@ -26,12 +26,16 @@ class ConversationBufferMemory(Memory, BaseModel):
 
     def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_keys[0]: self.buffer}
+        return {self.dynamic_key: self.buffer}
 
     def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        self.buffer += "\nHuman: " + inputs[list(inputs.keys())[0]]
-        self.buffer += "\nAI: " + outputs[list(outputs.keys())[0]]
+        prompt_input_keys = list(set(inputs.keys()) - set(self.dynamic_keys))
+        assert len(prompt_input_keys) == 1, "One input key expected"
+        assert len(outputs.keys()) == 1, "One output key expected"
+        human = "Human: " + inputs[prompt_input_keys[0]]
+        ai = "AI: " + outputs[list(outputs.keys())[0]]
+        self.buffer += "\n" + "\n".join([human, ai])
 
 
 class ConversationSummaryMemory(Memory, BaseModel):
@@ -52,16 +56,19 @@ class ConversationSummaryMemory(Memory, BaseModel):
 
     def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_keys[0]: self.buffer}
+        return {self.dynamic_key: self.buffer}
 
     def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        summary = self.buffer
-        new_lines = "\n".join(
-            [
-                "Human: " + inputs[list(inputs.keys())[0]],
-                "AI: " + outputs[list(outputs.keys())[0]],
-            ]
-        )
+        prompt_input_keys = list(set(inputs.keys()) - set(self.dynamic_keys))
+        assert len(prompt_input_keys) == 1, "One input key expected"
+        assert len(outputs.keys()) == 1, "One output key expected"
+        assert self.prompt.input_variables == [
+            "summary",
+            "new_lines",
+        ], "Expected different input keys"
+        human = "Human: " + inputs[prompt_input_keys[0]]
+        ai = "AI: " + outputs[list(outputs.keys())[0]]
+        new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        self.buffer = chain.predict(summary=summary, new_lines=new_lines)
+        self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)

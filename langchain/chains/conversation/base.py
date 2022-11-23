@@ -1,5 +1,5 @@
 """Chain that carries on a conversation and calls an LLM."""
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Memory
 from langchain.chains.conversation.memory import ConversationBufferMemory
@@ -18,7 +18,7 @@ class ConversationChain(LLMChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    memory: Memory = ConversationBufferMemory()
+    memory: Memory = Field(default_factory=ConversationBufferMemory)
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
