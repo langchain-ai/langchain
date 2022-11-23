@@ -26,6 +26,7 @@ class Agent(Chain, BaseModel, ABC):
     prompt: ClassVar[BasePromptTemplate]
     llm_chain: LLMChain
     tools: List[Tool]
+    retry_on_failed_tool: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -141,13 +142,21 @@ class Agent(Chain, BaseModel, ABC):
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
                 return {self.output_key: output.tool_input}
-            # Otherwise we lookup the tool
-            chain = name_to_tool_map[output.tool]
-            # We then call the tool on the tool input to get an observation
-            observation = chain(output.tool_input)
+            if output.tool not in name_to_tool_map:
+                if self.retry_on_failed_tool:
+                    observation = f"Tool {output.tool} not found."
+                    color = None
+                else:
+                    raise KeyError(observation)
+            else:
+                # Otherwise we lookup the tool
+                chain = name_to_tool_map[output.tool]
+                # We then call the tool on the tool input to get an observation
+                observation = chain(output.tool_input)
+                color = color_mapping[output.tool]
             # We then log the observation
             chained_input.add(f"\n{self.observation_prefix}")
-            chained_input.add(observation, color=color_mapping[output.tool])
+            chained_input.add(observation, color=color)
             # We then add the LLM prefix into the prompt to get the LLM to start
             # thinking, and start the loop all over.
             chained_input.add(f"\n{self.llm_prefix}")

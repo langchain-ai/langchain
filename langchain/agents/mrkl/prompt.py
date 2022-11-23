@@ -14,6 +14,9 @@ Observation: the result of the action
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
+Do NOT take the same action with the same action input.
+Only take actions with tools that exist.
+
 Begin!
 
 Question: {{input}}"""
