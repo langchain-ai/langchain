@@ -1,10 +1,11 @@
 """Chain that takes in an input and produces an action and action input."""
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, List, NamedTuple, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool
+from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import ChainedInput, get_color_mapping
 from langchain.llms.base import LLM
@@ -19,13 +20,30 @@ class Action(NamedTuple):
     log: str
 
 
-class Agent(BaseModel, ABC):
+class Agent(Chain, BaseModel, ABC):
     """Agent that uses an LLM."""
 
     prompt: ClassVar[BasePromptTemplate]
     llm_chain: LLMChain
     tools: List[Tool]
-    verbose: bool = True
+    input_key: str = "input"  #: :meta private:
+    output_key: str = "output"  #: :meta private:
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Return the singular input key.
+
+        :meta private:
+        """
+        return [self.input_key]
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Return the singular output key.
+
+        :meta private:
+        """
+        return [self.output_key]
 
     @property
     @abstractmethod
@@ -97,8 +115,9 @@ class Agent(BaseModel, ABC):
         tool, tool_input = parsed_output
         return Action(tool, tool_input, full_output)
 
-    def run(self, text: str) -> str:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
+        text = inputs[self.input_key]
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # Construct the initial string to pass into the LLM. This is made up
@@ -121,7 +140,7 @@ class Agent(BaseModel, ABC):
             chained_input.add(output.log, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
-                return output.tool_input
+                return {self.output_key: output.tool_input}
             # Otherwise we lookup the tool
             chain = name_to_tool_map[output.tool]
             # We then call the tool on the tool input to get an observation
