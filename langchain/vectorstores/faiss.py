@@ -38,7 +38,7 @@ class FAISS(VectorStore):
         self.index_to_docstore_id = index_to_docstore_id
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+        self, texts: Iterable[str], metadatas: Optional[Iterable[dict]] = None
     ) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
         if not isinstance(self.docstore, AddableMixin):
