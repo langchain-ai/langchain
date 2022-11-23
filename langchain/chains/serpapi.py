@@ -111,5 +111,5 @@ class SerpAPIChain(Chain, BaseModel):
         elif "snippet" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["snippet"]
         else:
-            toret = None
+            toret = "No good search result found"
         return {self.output_key: toret}
