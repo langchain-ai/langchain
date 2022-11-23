@@ -10,7 +10,9 @@ class VectorStore(ABC):
     """Interface for vector stores."""
 
     @abstractmethod
-    def add_texts(self, texts: Iterable[str]) -> None:
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
 
     @abstractmethod

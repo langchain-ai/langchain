@@ -29,6 +29,15 @@ def test_dynamic_prompt_valid(selector: LengthBasedExampleSelector) -> None:
     assert output == EXAMPLES
 
 
+def test_dynamic_prompt_add_example(selector: LengthBasedExampleSelector) -> None:
+    """Test dynamic prompt can add an example."""
+    new_example = {"question": "Question: what are you?\nAnswer: bar"}
+    selector.add_example(new_example)
+    short_question = "Short question?"
+    output = selector.select_examples({"question": short_question})
+    assert output == EXAMPLES + [new_example]
+
+
 def test_dynamic_prompt_trims_one_example(selector: LengthBasedExampleSelector) -> None:
     """Test dynamic prompt can trim one example."""
     long_question = """I am writing a really long question,
