@@ -65,7 +65,9 @@ class ElasticVectorSearch(VectorStore):
             )
         self.client = es_client
 
-    def add_texts(self, texts: Iterable[str]) -> None:
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
         try:
             from elasticsearch.helpers import bulk
@@ -76,11 +78,13 @@ class ElasticVectorSearch(VectorStore):
             )
         requests = []
         for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
             request = {
                 "_op_type": "index",
                 "_index": self.index_name,
                 "vector": self.embedding_function(text),
                 "text": text,
+                "metadata": metadata,
             }
             requests.append(request)
         bulk(self.client, requests)
