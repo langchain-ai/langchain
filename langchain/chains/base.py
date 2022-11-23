@@ -2,11 +2,17 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 
 class Memory(BaseModel, ABC):
     """Base interface for memory in chains."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @property
     @abstractmethod
