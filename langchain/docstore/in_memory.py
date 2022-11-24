@@ -1,5 +1,5 @@
 """Simple in memory docstore in the form of a dict."""
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
@@ -12,10 +12,11 @@ class InMemoryDocstore(Docstore, AddableMixin):
         """Initialize with dict."""
         self._dict = _dict
 
-    def add(self, texts: Dict[str, Document]) -> None:
+    def add(self, texts: Dict[str, Document], **kwargs: Dict[str, Any]) -> None:
         """Add texts to in memory dictionary."""
+        allow_overlap = kwargs.get("overwrite")
         overlapping = set(texts).intersection(self._dict)
-        if overlapping:
+        if overlapping and not allow_overlap:
             raise ValueError(f"Tried to add ids that already exist: {overlapping}")
         self._dict = dict(self._dict, **texts)
 
