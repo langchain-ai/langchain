@@ -26,6 +26,20 @@ def check_valid_template(
     except KeyError:
         raise ValueError("Invalid prompt schema.")
 
+class OutputParser(ABC):
+    """Class to parse the output of an LLM call."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
+        """Parse the output of an LLM call."""
+
+
+class DefaultParser(OutputParser):
+    """Just return the text."""
+
+    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
+        """Parse the output of an LLM call."""
+        return text
 
 class BasePromptTemplate(ABC):
     """Base prompt should expose the format method, returning a prompt."""
