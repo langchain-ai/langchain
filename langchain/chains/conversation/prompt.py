@@ -11,6 +11,19 @@ PROMPT = PromptTemplate(
     input_variables=["history", "input"], template=_DEFAULT_TEMPLATE
 )
 
+_DEFAULT_ENTITY_CONVERSATION_TEMPLATE = """The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+{entities}
+
+Current conversation:
+{history}
+Human: {input}
+AI:"""
+ENTITY_CONVERSATION_PROMPT = PromptTemplate(
+    input_variables=["history", "entities", "input"],
+    template=_DEFAULT_ENTITY_CONVERSATION_TEMPLATE,
+)
+
 _DEFAULT_SUMMARIZER_TEMPLATE = """Progressively summarize the lines of conversation provided, adding onto the previous summary returning a new summary.
 
 EXAMPLE

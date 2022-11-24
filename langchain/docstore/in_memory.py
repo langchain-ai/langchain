@@ -12,7 +12,7 @@ class InMemoryDocstore(Docstore, AddableMixin):
         """Initialize with dict."""
         self._dict = _dict
 
-    def add(self, texts: Dict[str, Document], **kwargs: Dict[str, Any]) -> None:
+    def add(self, texts: Dict[str, Document], **kwargs: Any) -> None:
         """Add texts to in memory dictionary."""
         allow_overlap = kwargs.get("overwrite")
         overlapping = set(texts).intersection(self._dict)

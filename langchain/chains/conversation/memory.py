@@ -50,16 +50,24 @@ class ConversationEntityMemory(Memory, BaseModel):
     """Conversation entity search and store to memory."""
 
     buffer: List[dict] = Field(default_factory=list)
-    history_window_len: int = 5
     docstore: InMemoryDocstore
     llm: LLM
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     entity_summarization_prompt: BasePromptTemplate = ENTITY_SUMMARIZATION_PROMPT
-    dynamic_keys: List[str] = ["history", "entities"]  #: :meta private:
+    history_window_len: int = 5  #: :meta private:
+    dynamic_key_list: List[str] = ["history", "entities"]  #: :meta private:
     entities_per_turn: List[str] = Field(default_factory=list)  #: :meta private:
 
+    @property
+    def dynamic_keys(self) -> List[str]:
+        """Will always return list of dynamic keys.
+
+        :meta private:
+        """
+        return self.dynamic_key_list
+
     def _format_buffer_to_string(self) -> str:
-        section = self.buffer[: -self.history_window_len]
+        section = self.buffer[-self.history_window_len :]
         result = []
         for line in section:
             result.append("Human: {input}".format(input=line["input"]))
@@ -101,6 +109,7 @@ class ConversationEntityMemory(Memory, BaseModel):
         assert self.entity_summarization_prompt.input_variables == [
             "history",
             "entity",
+            "input",
             "summary",
         ], "Expected different input keys"
         human = inputs[prompt_input_keys[0]]
@@ -115,7 +124,7 @@ class ConversationEntityMemory(Memory, BaseModel):
                 summary=entity_summary,
                 history=full_conversation,
             )
-            self.docstore.add({entity: Document(page_content=summary)})
+            self.docstore.add({entity: Document(page_content=summary)}, overwrite=True)
         self.buffer.append({"input": human, "response": ai})
 
 
