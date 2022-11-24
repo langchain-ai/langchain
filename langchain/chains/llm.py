@@ -15,7 +15,7 @@ class LLMChain(Chain, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import LLMChain, OpenAI, Prompt
+            from langchain import LLMChain, OpenAI, PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template
