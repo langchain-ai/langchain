@@ -20,11 +20,11 @@ class Memory(BaseModel, ABC):
         """Input keys this memory class will load dynamically."""
 
     @abstractmethod
-    def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return key-value pairs given the text input to the chain."""
 
     @abstractmethod
-    def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this model run to memory."""
 
 
@@ -77,7 +77,7 @@ class Chain(BaseModel, ABC):
 
         """
         if self.memory is not None:
-            external_context = self.memory._load_dynamic_keys(inputs)
+            external_context = self.memory.load_dynamic_keys(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
@@ -87,7 +87,7 @@ class Chain(BaseModel, ABC):
             print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
         if self.memory is not None:
-            self.memory._save_context(inputs, outputs)
+            self.memory.save_context(inputs, outputs)
         if return_only_outputs:
             return outputs
         else:
