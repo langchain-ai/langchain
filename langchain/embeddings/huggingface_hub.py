@@ -23,7 +23,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import HuggingFaceHubEmbeddings
             repo_id = "sentence-transformers/all-mpnet-base-v2"
             hf = HuggingFaceHubEmbeddings(
-                repo_id=repo_id, huggingfacehub_api_token="my-api-key"
+                repo_id=repo_id,
+                task="feature-extraction",
+                huggingfacehub_api_token="my-api-key",
             )
     """
 
