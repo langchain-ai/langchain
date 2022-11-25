@@ -91,6 +91,7 @@ The documentation is structured into the following sections:
    getting_started/llm_chain.md
    getting_started/sequential_chains.md
    getting_started/agents.ipynb
+   getting_started/memory.ipynb
 
 Goes over a simple walk through and tutorial for getting started setting up a simple chain that generates a company name based on what the company makes.
 Covers installation, environment set up, calling LLMs, and using prompts.

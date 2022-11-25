@@ -24,11 +24,11 @@ class ConversationBufferMemory(Memory, BaseModel):
         """
         return [self.dynamic_key]
 
-    def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
         return {self.dynamic_key: self.buffer}
 
-    def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
         if len(prompt_input_keys) != 1:
@@ -56,7 +56,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         """
         return [self.dynamic_key]
 
-    def _load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
         return {self.dynamic_key: self.buffer}
 
@@ -72,7 +72,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
             )
         return values
 
-    def _save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
         if len(prompt_input_keys) != 1:
