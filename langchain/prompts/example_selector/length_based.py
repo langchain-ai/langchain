@@ -25,6 +25,12 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
 
     example_text_lengths: List[int] = []  #: :meta private:
 
+    def add_example(self, example: Dict[str, str]) -> None:
+        """Add new example to list."""
+        self.examples.append(example)
+        string_example = self.example_prompt.format(**example)
+        self.example_text_lengths.append(self.get_text_length(string_example))
+
     @validator("example_text_lengths", always=True)
     def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
         """Calculate text lengths if they don't exist."""

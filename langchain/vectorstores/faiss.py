@@ -1,9 +1,10 @@
 """Wrapper around FAISS vector database."""
-from typing import Any, Callable, List, Optional
+import uuid
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 import numpy as np
 
-from langchain.docstore.base import Docstore
+from langchain.docstore.base import AddableMixin, Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
@@ -23,11 +24,46 @@ class FAISS(VectorStore):
 
     """
 
-    def __init__(self, embedding_function: Callable, index: Any, docstore: Docstore):
+    def __init__(
+        self,
+        embedding_function: Callable,
+        index: Any,
+        docstore: Docstore,
+        index_to_docstore_id: Dict[int, str],
+    ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
+        self.index_to_docstore_id = index_to_docstore_id
+
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
+        """Run more texts through the embeddings and add to the vectorstore."""
+        if not isinstance(self.docstore, AddableMixin):
+            raise ValueError(
+                "If trying to add texts, the underlying docstore should support "
+                f"adding items, which {self.docstore} does not"
+            )
+        # Embed and create the documents.
+        embeddings = [self.embedding_function(text) for text in texts]
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            documents.append(Document(page_content=text, metadata=metadata))
+        # Add to the index, the index_to_id mapping, and the docstore.
+        starting_len = len(self.index_to_docstore_id)
+        self.index.add(np.array(embeddings, dtype=np.float32))
+        # Get list of index, id, and docs.
+        full_info = [
+            (starting_len + i, str(uuid.uuid4()), doc)
+            for i, doc in enumerate(documents)
+        ]
+        # Add information to docstore and index.
+        self.docstore.add({_id: doc for _, _id, doc in full_info})
+        index_to_id = {index: _id for index, _id, _ in full_info}
+        self.index_to_docstore_id.update(index_to_id)
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.
@@ -46,9 +82,10 @@ class FAISS(VectorStore):
             if i == -1:
                 # This happens when not enough docs are returned.
                 continue
-            doc = self.docstore.search(str(i))
+            _id = self.index_to_docstore_id[i]
+            doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {i}, got {doc}")
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
             docs.append(doc)
         return docs
 
@@ -92,5 +129,8 @@ class FAISS(VectorStore):
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             documents.append(Document(page_content=text, metadata=metadata))
-        docstore = InMemoryDocstore({str(i): doc for i, doc in enumerate(documents)})
-        return cls(embedding.embed_query, index, docstore)
+        index_to_id = {i: str(uuid.uuid4()) for i in range(len(documents))}
+        docstore = InMemoryDocstore(
+            {index_to_id[i]: doc for i, doc in enumerate(documents)}
+        )
+        return cls(embedding.embed_query, index, docstore, index_to_id)

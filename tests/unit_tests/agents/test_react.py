@@ -4,8 +4,8 @@ from typing import Any, List, Mapping, Optional, Union
 
 import pytest
 
-from langchain.chains.llm import LLMChain
-from langchain.chains.react.base import ReActChain, predict_until_observation
+from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
+from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
@@ -51,33 +51,32 @@ class FakeDocstore(Docstore):
 
 def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
-    outputs = ["foo\nAction 1: search[foo]"]
+    outputs = ["foo\nAction 1: Search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    ret_text, action, directive = predict_until_observation(fake_llm_chain, "", 1)
-    assert ret_text == outputs[0]
-    assert action == "search"
-    assert directive == "foo"
+    tools = [
+        Tool("Search", lambda x: x),
+        Tool("Lookup", lambda x: x),
+    ]
+    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
+    output = agent.get_action("")
+    assert output.log == outputs[0]
+    assert output.tool == "Search"
+    assert output.tool_input == "foo"
 
 
 def test_predict_until_observation_repeat() -> None:
     """Test when no action is generated initially."""
-    outputs = ["foo", " search[foo]"]
+    outputs = ["foo", " Search[foo]"]
     fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    ret_text, action, directive = predict_until_observation(fake_llm_chain, "", 1)
-    assert ret_text == "foo\nAction 1: search[foo]"
-    assert action == "search"
-    assert directive == "foo"
-
-
-def test_predict_until_observation_error() -> None:
-    """Test handling of generation of text that cannot be parsed."""
-    outputs = ["foo\nAction 1: foo"]
-    fake_llm = FakeListLLM(outputs)
-    fake_llm_chain = LLMChain(llm=fake_llm, prompt=_FAKE_PROMPT)
-    with pytest.raises(ValueError):
-        predict_until_observation(fake_llm_chain, "", 1)
+    tools = [
+        Tool("Search", lambda x: x),
+        Tool("Lookup", lambda x: x),
+    ]
+    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
+    output = agent.get_action("")
+    assert output.log == "foo\nAction 1: Search[foo]"
+    assert output.tool == "Search"
+    assert output.tool_input == "foo"
 
 
 def test_react_chain() -> None:
@@ -89,9 +88,8 @@ def test_react_chain() -> None:
     ]
     fake_llm = FakeListLLM(responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
-    inputs = {"question": "when was langchain made"}
-    output = react_chain(inputs)
-    assert output["answer"] == "2022"
+    output = react_chain.run("when was langchain made")
+    assert output == "2022"
 
 
 def test_react_chain_bad_action() -> None:
@@ -101,5 +99,5 @@ def test_react_chain_bad_action() -> None:
     ]
     fake_llm = FakeListLLM(responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         react_chain.run("when was langchain made")

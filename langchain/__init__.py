@@ -5,18 +5,17 @@ from pathlib import Path
 with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
+from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
+    ConversationChain,
     LLMChain,
     LLMMathChain,
-    MRKLChain,
     PythonChain,
-    ReActChain,
-    SelfAskWithSearchChain,
     SerpAPIChain,
     SQLDatabaseChain,
     VectorDBQA,
 )
-from langchain.docstore import Wikipedia
+from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import (
     BasePromptTemplate,
@@ -48,4 +47,6 @@ __all__ = [
     "MRKLChain",
     "VectorDBQA",
     "ElasticVectorSearch",
+    "InMemoryDocstore",
+    "ConversationChain",
 ]

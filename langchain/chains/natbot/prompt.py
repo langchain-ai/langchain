@@ -2,7 +2,7 @@
 from langchain.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """
-You are an agent controlling a browser. You are given:
+You are an agents controlling a browser. You are given:
 
 	(1) an objective that you are trying to achieve
 	(2) the URL of your current web page
