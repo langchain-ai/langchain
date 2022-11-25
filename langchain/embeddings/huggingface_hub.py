@@ -1,12 +1,13 @@
 """Wrapper around HuggingFace Hub embedding models."""
-import os
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
+from langchain.utils import get_from_dict_or_env
 
 DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
+VALID_TASKS = ("feature-extraction",)
 
 
 class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
@@ -29,10 +30,12 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
+    task: Optional[str] = None
+    """Task to call the model with."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+    huggingfacehub_api_token: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -42,13 +45,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingfacehub_api_token = values.get("huggingfacehub_api_token")
-        if huggingfacehub_api_token is None or huggingfacehub_api_token == "":
-            raise ValueError(
-                "Did not find HuggingFace API token, please add an environment variable"
-                " `HUGGINGFACEHUB_API_TOKEN` which contains it, or pass"
-                " `huggingfacehub_api_token` as a named parameter."
-            )
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+        )
         try:
             from huggingface_hub.inference_api import InferenceApi
 
@@ -58,6 +57,11 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 token=huggingfacehub_api_token,
                 task="feature-extraction",
             )
+            if client.task not in VALID_TASKS:
+                raise ValueError(
+                    f"Got invalid task {client.task}, "
+                    f"currently only {VALID_TASKS} are supported"
+                )
             values["client"] = client
         except ImportError:
             raise ValueError(
