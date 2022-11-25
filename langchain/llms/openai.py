@@ -13,6 +13,9 @@ class OpenAI(LLM, BaseModel):
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
 
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
     Example:
         .. code-block:: python
 
@@ -38,6 +41,7 @@ class OpenAI(LLM, BaseModel):
     best_of: int = 1
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
 
     class Config:
