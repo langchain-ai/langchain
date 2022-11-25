@@ -50,19 +50,19 @@ def test_conversation_memory(memory: Memory) -> None:
     good_inputs = {"foo": "bar", "baz": "foo"}
     # This is a good output because these is one variable.
     good_outputs = {"bar": "foo"}
-    memory._save_context(good_inputs, good_outputs)
+    memory.save_context(good_inputs, good_outputs)
     # This is a bad input because there are two variables that aren't the same as baz.
     bad_inputs = {"foo": "bar", "foo1": "bar"}
     with pytest.raises(ValueError):
-        memory._save_context(bad_inputs, good_outputs)
+        memory.save_context(bad_inputs, good_outputs)
     # This is a bad input because the only variable is the same as baz.
     bad_inputs = {"baz": "bar"}
     with pytest.raises(ValueError):
-        memory._save_context(bad_inputs, good_outputs)
+        memory.save_context(bad_inputs, good_outputs)
     # This is a bad output because it is empty.
     with pytest.raises(ValueError):
-        memory._save_context(good_inputs, {})
+        memory.save_context(good_inputs, {})
     # This is a bad output because there are two keys.
     bad_outputs = {"foo": "bar", "foo1": "bar"}
     with pytest.raises(ValueError):
-        memory._save_context(good_inputs, bad_outputs)
+        memory.save_context(good_inputs, bad_outputs)
