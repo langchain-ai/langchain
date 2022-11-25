@@ -55,7 +55,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             client = InferenceApi(
                 repo_id=repo_id,
                 token=huggingfacehub_api_token,
-                task="feature-extraction",
+                task=values.get("task"),
             )
             if client.task not in VALID_TASKS:
                 raise ValueError(
