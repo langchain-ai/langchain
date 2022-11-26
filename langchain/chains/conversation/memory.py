@@ -10,6 +10,15 @@ from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
+def _get_prompt_input_key(inputs: Dict[str, Any], dynamic_keys: List[str]) -> str:
+    # "stop" is a special key that can be passed as input but is not used to
+    # format the prompt.
+    prompt_input_keys = list(set(inputs).difference(dynamic_keys + ["stop"]))
+    if len(prompt_input_keys) != 1:
+        raise ValueError(f"One input key expected got {prompt_input_keys}")
+    return prompt_input_keys[0]
+
+
 class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
@@ -30,12 +39,10 @@ class ConversationBufferMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
-        if len(prompt_input_keys) != 1:
-            raise ValueError(f"One input key expected got {prompt_input_keys}")
+        prompt_input_key = _get_prompt_input_key(inputs, self.dynamic_keys)
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
-        human = "Human: " + inputs[prompt_input_keys[0]]
+        human = "Human: " + inputs[prompt_input_key]
         ai = "AI: " + outputs[list(outputs.keys())[0]]
         self.buffer += "\n" + "\n".join([human, ai])
 
@@ -74,12 +81,10 @@ class ConversationSummaryMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
-        if len(prompt_input_keys) != 1:
-            raise ValueError(f"One input key expected got {prompt_input_keys}")
+        prompt_input_key = _get_prompt_input_key(inputs, self.dynamic_keys)
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
-        human = "Human: " + inputs[prompt_input_keys[0]]
+        human = "Human: " + inputs[prompt_input_key]
         ai = "AI: " + list(outputs.values())[0]
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
