@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Union
 
 import yaml
+
 from pydantic import BaseModel, root_validator
 
 from langchain.formatting import formatter
@@ -65,6 +66,9 @@ class BasePromptTemplate(BaseModel, ABC):
         Args:
             kwargs: Any arguments to be passed to the prompt template.
 
+        Returns:
+            A formatted string.
+
         Example:
 
         .. code-block:: python
@@ -81,8 +85,6 @@ class BasePromptTemplate(BaseModel, ABC):
 
         Args:
             file_path: Path to directory to save prompt to.
-        Returns:
-            None.
 
         Example:
 
