@@ -1,4 +1,5 @@
 """Prompt schema definition."""
+from pathlib import Path
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -50,6 +51,15 @@ class PromptTemplate(BaseModel, BasePromptTemplate):
             prompt.format(variable1="foo")
         """
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+
+    def _prompt_dict(self, save_path: Path) -> Dict:
+        """Return a dictionary of the prompt."""
+        prompt_dict = {
+            "_type": "prompt",
+            "input_variables": self.input_variables,
+            "template": self.template,
+        }
+        return prompt_dict
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
