@@ -76,16 +76,16 @@ class BasePromptTemplate(ABC):
         """
         # Convert file to Path object.
         if isinstance(save_path, str):
-            file_path = Path(save_path)
+            folder_path = Path(save_path)
         else:
-            file_path = save_path
-        file_path.mkdir(parents=True, exist_ok=True)
+            folder_path = save_path
+        folder_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
         prompt_dict = self._prompt_dict(save_path)
 
         save_name = file_name or "prompt.yaml"
-        file_path = file_path / save_name
+        file_path = folder_path / save_name
         if file_path.suffix == ".json":
             with open(file_path, "w") as f:
                 f.write(json.dumps(prompt_dict, indent=4))
