@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Union
 
 import yaml
+from pydantic import BaseModel, root_validator
 
 from langchain.formatting import formatter
 
@@ -41,11 +42,21 @@ def check_valid_template(
         raise ValueError("Invalid prompt schema.")
 
 
-class BasePromptTemplate(ABC):
+class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+
+    @root_validator()
+    def validate_variable_names(cls, values: Dict) -> Dict:
+        """Validate variable names do not restricted names."""
+        if "stop" in values["input_variables"]:
+            raise ValueError(
+                "Cannot have an input variable named 'stop', as it is used internally,"
+                " please rename."
+            )
+        return values
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:

@@ -11,7 +11,7 @@ from langchain.prompts.base import (
 )
 
 
-class PromptTemplate(BaseModel, BasePromptTemplate):
+class PromptTemplate(BasePromptTemplate, BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:
