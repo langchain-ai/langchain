@@ -120,6 +120,7 @@ Start here if you haven't used LangChain before.
    examples/integrations.rst
    examples/chains.rst
    examples/agents.rst
+   examples/memory.rst
    examples/model_laboratory.ipynb
 
 More elaborate examples and walk-throughs of particular
