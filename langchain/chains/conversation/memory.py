@@ -14,23 +14,23 @@ class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
     buffer: str = ""
-    dynamic_key: str = "history"  #: :meta private:
+    memory_key: str = "history"  #: :meta private:
 
     @property
-    def dynamic_keys(self) -> List[str]:
-        """Will always return list of dynamic keys.
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
 
         :meta private:
         """
-        return [self.dynamic_key]
+        return [self.memory_key]
 
-    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_key: self.buffer}
+        return {self.memory_key: self.buffer}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
+        prompt_input_keys = list(set(inputs).difference(self.memory_variables))
         if len(prompt_input_keys) != 1:
             raise ValueError(f"One input key expected got {prompt_input_keys}")
         if len(outputs) != 1:
@@ -46,19 +46,19 @@ class ConversationSummaryMemory(Memory, BaseModel):
     buffer: str = ""
     llm: LLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
-    dynamic_key: str = "history"  #: :meta private:
+    memory_key: str = "history"  #: :meta private:
 
     @property
-    def dynamic_keys(self) -> List[str]:
-        """Will always return list of dynamic keys.
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
 
         :meta private:
         """
-        return [self.dynamic_key]
+        return [self.memory_key]
 
-    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_key: self.buffer}
+        return {self.memory_key: self.buffer}
 
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
@@ -74,7 +74,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
+        prompt_input_keys = list(set(inputs).difference(self.memory_variables))
         if len(prompt_input_keys) != 1:
             raise ValueError(f"One input key expected got {prompt_input_keys}")
         if len(outputs) != 1:
