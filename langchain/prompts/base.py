@@ -2,7 +2,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import yaml
 
@@ -65,7 +65,7 @@ class BasePromptTemplate(ABC):
         """
 
     @abstractmethod
-    def _prompt_dict(self, save_path: str) -> Dict:
+    def _prompt_dict(self) -> Dict:
         """Return a dictionary of the prompt."""
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -87,12 +87,12 @@ class BasePromptTemplate(ABC):
             save_path = Path(file_path)
         else:
             save_path = file_path
-        parts = str(file_path).split("/")
-        directory_path = Path("/".join(parts[:-1]))
+
+        directory_path = Path("/".join(save_path.parts[:-1]))
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self._prompt_dict(save_path)
+        prompt_dict = self._prompt_dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

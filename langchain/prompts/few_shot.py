@@ -1,5 +1,4 @@
 """Prompt template that contains few shot examples."""
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -111,7 +110,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
-    def _prompt_dict(self, save_path: Path) -> Dict:
+    def _prompt_dict(self) -> Dict:
         """Return a dictionary of the prompt."""
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
