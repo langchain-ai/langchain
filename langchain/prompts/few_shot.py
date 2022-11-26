@@ -117,7 +117,6 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
         prompt_dict = self.dict()
         prompt_dict["_type"] = "few_shot"
-        print(prompt_dict)
 
         # Delete any keys that have none values
         cleanup_prompt_dict(prompt_dict)
