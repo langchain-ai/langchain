@@ -10,32 +10,39 @@ from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
+def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
+    # "stop" is a special key that can be passed as input but is not used to
+    # format the prompt.
+    prompt_input_keys = list(set(inputs).difference(memory_variables + ["stop"]))
+    if len(prompt_input_keys) != 1:
+        raise ValueError(f"One input key expected got {prompt_input_keys}")
+    return prompt_input_keys[0]
+
+
 class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
     buffer: str = ""
-    dynamic_key: str = "history"  #: :meta private:
+    memory_key: str = "history"  #: :meta private:
 
     @property
-    def dynamic_keys(self) -> List[str]:
-        """Will always return list of dynamic keys.
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
 
         :meta private:
         """
-        return [self.dynamic_key]
+        return [self.memory_key]
 
-    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_key: self.buffer}
+        return {self.memory_key: self.buffer}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
-        if len(prompt_input_keys) != 1:
-            raise ValueError(f"One input key expected got {prompt_input_keys}")
+        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
-        human = "Human: " + inputs[prompt_input_keys[0]]
+        human = "Human: " + inputs[prompt_input_key]
         ai = "AI: " + outputs[list(outputs.keys())[0]]
         self.buffer += "\n" + "\n".join([human, ai])
 
@@ -46,19 +53,19 @@ class ConversationSummaryMemory(Memory, BaseModel):
     buffer: str = ""
     llm: LLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
-    dynamic_key: str = "history"  #: :meta private:
+    memory_key: str = "history"  #: :meta private:
 
     @property
-    def dynamic_keys(self) -> List[str]:
-        """Will always return list of dynamic keys.
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
 
         :meta private:
         """
-        return [self.dynamic_key]
+        return [self.memory_key]
 
-    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.dynamic_key: self.buffer}
+        return {self.memory_key: self.buffer}
 
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
@@ -74,12 +81,10 @@ class ConversationSummaryMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_keys = list(set(inputs).difference(self.dynamic_keys))
-        if len(prompt_input_keys) != 1:
-            raise ValueError(f"One input key expected got {prompt_input_keys}")
+        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
-        human = "Human: " + inputs[prompt_input_keys[0]]
+        human = "Human: " + inputs[prompt_input_key]
         ai = "AI: " + list(outputs.values())[0]
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)

@@ -29,3 +29,9 @@ They vary greatly in complexity and are combination of generic, highly configura
 ## Agents
 As opposed to a chain, whether the steps to be taken are known ahead of time, agents
 use an LLM to determine which tools to call and in what order.
+
+## Memory
+By default, Chains and Agents are stateless, meaning that they treat each incoming query independently.
+In some applications (chatbots being a GREAT example) it is highly important to remember previous interactions,
+both at a short term but also at a long term level. The concept of "Memory" exists to do exactly that.
+

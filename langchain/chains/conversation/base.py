@@ -43,7 +43,7 @@ class ConversationChain(LLMChain, BaseModel):
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
-        memory_keys = values["memory"].dynamic_keys
+        memory_keys = values["memory"].memory_variables
         input_key = values["input_key"]
         if input_key in memory_keys:
             raise ValueError(
