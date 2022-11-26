@@ -43,7 +43,8 @@ def test_loading_from_JSON() -> None:
         assert prompt == expected_prompt
 
 
-def test_saving_loading_round_trip(tmp_path) -> None:
+def test_saving_loading_round_trip(tmp_path: Path) -> None:
+    """Test equality when saving and loading a prompt."""
     simple_prompt = PromptTemplate(
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",

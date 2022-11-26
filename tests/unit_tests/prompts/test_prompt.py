@@ -1,6 +1,7 @@
 """Test functionality related to prompts."""
 import pytest
 
+from langchain.prompts.base import cleanup_prompt_dict
 from langchain.prompts.prompt import PromptTemplate
 
 
@@ -11,6 +12,24 @@ def test_prompt_valid() -> None:
     prompt = PromptTemplate(input_variables=input_variables, template=template)
     assert prompt.template == template
     assert prompt.input_variables == input_variables
+
+
+def test_cleanup_dict() -> None:
+    """Test prompt cleanup."""
+    prompt_dict: dict = {
+        "examples": [],
+        "example_selector": None,
+        "prefix": "",
+        "input_variables": ["adjective"],
+        "_type": "few_shot",
+    }
+    cleanup_prompt_dict(prompt_dict)
+    expected_dict = {
+        "examples": [],
+        "input_variables": ["adjective"],
+        "_type": "few_shot",
+    }
+    assert expected_dict == prompt_dict
 
 
 def test_prompt_missing_input_variables() -> None:

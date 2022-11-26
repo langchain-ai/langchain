@@ -14,10 +14,10 @@ DEFAULT_FORMATTER_MAPPING = {
 
 
 def cleanup_prompt_dict(prompt_dict: Dict) -> None:
-    """Remove any empty keys from prompt dictionary."""
+    """Remove any empty values from prompt dictionary."""
     keys_to_delete = []
     for key, val in prompt_dict.items():
-        if not val:
+        if val is None or val == "":
             keys_to_delete.append(key)
     for key in keys_to_delete:
         del prompt_dict[key]
@@ -74,13 +74,13 @@ class BasePromptTemplate(ABC):
         Args:
             file_path: Path to directory to save prompt to.
         Returns:
-            The name of the saved prompt file.
+            None.
 
         Example:
 
         .. code-block:: python
 
-            prompt.save(save_path="path/")
+            prompt.save(file_path="path/prompt.yaml")
         """
         # Convert file to Path object.
         if isinstance(file_path, str):
@@ -88,7 +88,7 @@ class BasePromptTemplate(ABC):
         else:
             save_path = file_path
 
-        directory_path = Path("/".join(save_path.parts[:-1]))
+        directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
