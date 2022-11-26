@@ -80,7 +80,7 @@ both at a short term but also at a long term level. The concept of "Memory" exis
 *Key Concepts*
 
 - Memory: A class that can be added to an Agent or Chain to (1) pull in memories before calling that chain/agent, and (2) create new memories after the chain/agent finishes.
-- Dynamic Keys: Keys returned as memories
+- Memory Variables: Variables returned from a Memory class, to be passed into the chain/agent along with the user input.
 
 *Problems Solved*
 

@@ -16,11 +16,11 @@ class Memory(BaseModel, ABC):
 
     @property
     @abstractmethod
-    def dynamic_keys(self) -> List[str]:
+    def memory_variables(self) -> List[str]:
         """Input keys this memory class will load dynamically."""
 
     @abstractmethod
-    def load_dynamic_keys(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return key-value pairs given the text input to the chain."""
 
     @abstractmethod
@@ -77,7 +77,7 @@ class Chain(BaseModel, ABC):
 
         """
         if self.memory is not None:
-            external_context = self.memory.load_dynamic_keys(inputs)
+            external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
