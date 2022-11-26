@@ -1,5 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra
 
@@ -78,3 +78,11 @@ class LLMChain(Chain, BaseModel):
                 completion = llm.predict(adjective="funny")
         """
         return self(kwargs)[self.output_key]
+
+    def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
+        """Call predict and then parse the results."""
+        result = self.predict(**kwargs)
+        if self.prompt.output_parser is not None:
+            return self.prompt.output_parser.parse(result)
+        else:
+            return result

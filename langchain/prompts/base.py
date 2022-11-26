@@ -1,8 +1,8 @@
 """BasePrompt schema definition."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, Extra
 
 from langchain.formatting import formatter
 
@@ -29,7 +29,7 @@ def check_valid_template(
         raise ValueError("Invalid prompt schema.")
 
 
-class OutputParser(ABC):
+class BaseOutputParser(ABC):
     """Class to parse the output of an LLM call."""
 
     @abstractmethod
@@ -37,21 +37,20 @@ class OutputParser(ABC):
         """Parse the output of an LLM call."""
 
 
-class DefaultParser(OutputParser):
-    """Just return the text."""
-
-    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
-        """Parse the output of an LLM call."""
-        return text
-
 
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
-    output_parser: OutputParser = Field(default_factory=DefaultParser)
+    output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
