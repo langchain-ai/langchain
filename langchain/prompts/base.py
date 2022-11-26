@@ -65,9 +65,6 @@ class BasePromptTemplate(BaseModel, ABC):
         Args:
             kwargs: Any arguments to be passed to the prompt template.
 
-        Returns:
-            A formatted string.
-
         Example:
 
         .. code-block:: python
