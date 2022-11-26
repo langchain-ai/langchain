@@ -86,8 +86,8 @@ In some applications (chatbots being a GREAT example) it is highly important to 
 both at a short term but also at a long term level. The concept of "Memory" exists to do exactly that.
 
 **Key Concepts**
-- Memory: A class that can be added to an Agent or Chain to (1) pull in memories before calling that chain/agent, and (2) create new memories after the chain/agent finishes.
-- Dynamic Keys: Keys returned as memories
+- Memory: A class that can be added to an Agent or Chain to (1) pull in memory variables before calling that chain/agent, and (2) create new memories after the chain/agent finishes.
+- Memory Variables: Variables returned from a Memory class, to be passed into the chain/agent along with the user input.
 
 **Problems Solved**
 - Standard memory interfaces
