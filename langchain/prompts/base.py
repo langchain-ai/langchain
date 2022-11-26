@@ -85,12 +85,13 @@ class BasePromptTemplate(ABC):
         prompt_dict = self._prompt_dict(save_path)
 
         save_name = file_name or "prompt.yaml"
-        if "json" in save_name:
-            with open(file_path / save_name, "w") as f:
+        file_path = file_path / save_name
+        if file_path.suffix == ".json":
+            with open(file_path, "w") as f:
                 f.write(json.dumps(prompt_dict, indent=4))
-        elif "yaml" in save_name:
-            with open(file_path / save_name, "w") as f:
+        elif file_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_name} must be json or yaml")
-        return str(file_path / save_name)
+        return str(file_path)
