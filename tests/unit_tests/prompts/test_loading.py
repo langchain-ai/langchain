@@ -48,8 +48,8 @@ def test_saving_loading_round_trip(tmp_path) -> None:
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",
     )
-    save_path = simple_prompt.save(save_path=tmp_path)
-    loaded_prompt = load_prompt(save_path)
+    simple_prompt.save(file_path=tmp_path / "prompt.yaml")
+    loaded_prompt = load_prompt(tmp_path / "prompt.yaml")
     assert loaded_prompt == simple_prompt
 
     few_shot_prompt = FewShotPromptTemplate(
@@ -65,8 +65,8 @@ def test_saving_loading_round_trip(tmp_path) -> None:
         ],
         suffix="Input: {adjective}\nOutput:",
     )
-    save_path = few_shot_prompt.save(save_path=tmp_path, file_name="few_shot.yaml")
-    loaded_prompt = load_prompt(save_path)
+    few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
+    loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
 
 

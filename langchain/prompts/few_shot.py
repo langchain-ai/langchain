@@ -8,6 +8,7 @@ from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     BasePromptTemplate,
     check_valid_template,
+    cleanup_prompt_dict,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -112,19 +113,12 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
     def _prompt_dict(self, save_path: Path) -> Dict:
         """Return a dictionary of the prompt."""
-        example_prompt_path = self.example_prompt.save(
-            save_path, file_name="example_prompt.yaml"
-        )
-        prompt_dict = {
-            "_type": "few_shot",
-            "input_variables": self.input_variables,
-            "example_prompt_path": example_prompt_path,
-            "suffix": self.suffix,
-            "example_separator": self.example_separator,
-        }
+        if self.example_selector:
+            raise ValueError("Saving an example selector is not currently supported")
 
-        if self.prefix:
-            prompt_dict["prefix"] = self.prefix
-        if self.examples:
-            prompt_dict["examples"] = self.examples
+        prompt_dict = self.dict()
+        prompt_dict["_type"] = "few_shot"
+
+        # Delete any keys that have none values
+        cleanup_prompt_dict(prompt_dict)
         return prompt_dict

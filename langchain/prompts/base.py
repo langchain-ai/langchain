@@ -13,6 +13,16 @@ DEFAULT_FORMATTER_MAPPING = {
 }
 
 
+def cleanup_prompt_dict(prompt_dict: Dict) -> None:
+    """Remove any empty keys from prompt dictionary."""
+    keys_to_delete = []
+    for key, val in prompt_dict.items():
+        if not val:
+            keys_to_delete.append(key)
+    for key in keys_to_delete:
+        del prompt_dict[key]
+
+
 def check_valid_template(
     template: str, template_format: str, input_variables: List[str]
 ) -> None:
@@ -58,13 +68,11 @@ class BasePromptTemplate(ABC):
     def _prompt_dict(self, save_path: str) -> Dict:
         """Return a dictionary of the prompt."""
 
-    def save(self, save_path: Union[Path, str], file_name: Optional[str] = None) -> str:
+    def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
 
         Args:
-            save_path: Path to directory to save prompt to.
-            file_name: Name of file in directory to save prompt to.
-                                    Can be of type json or yaml
+            file_path: Path to directory to save prompt to.
         Returns:
             The name of the saved prompt file.
 
@@ -75,23 +83,22 @@ class BasePromptTemplate(ABC):
             prompt.save(save_path="path/")
         """
         # Convert file to Path object.
-        if isinstance(save_path, str):
-            folder_path = Path(save_path)
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
         else:
-            folder_path = save_path
-        folder_path.mkdir(parents=True, exist_ok=True)
+            save_path = file_path
+        parts = str(file_path).split("/")
+        directory_path = Path("/".join(parts[:-1]))
+        directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
         prompt_dict = self._prompt_dict(save_path)
 
-        save_name = file_name or "prompt.yaml"
-        file_path = folder_path / save_name
-        if file_path.suffix == ".json":
+        if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 f.write(json.dumps(prompt_dict, indent=4))
-        elif file_path.suffix == ".yaml":
+        elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_name} must be json or yaml")
-        return str(file_path)
+            raise ValueError(f"{save_path} must be json or yaml")

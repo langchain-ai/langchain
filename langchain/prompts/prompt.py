@@ -8,6 +8,7 @@ from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     BasePromptTemplate,
     check_valid_template,
+    cleanup_prompt_dict,
 )
 
 
@@ -54,11 +55,8 @@ class PromptTemplate(BaseModel, BasePromptTemplate):
 
     def _prompt_dict(self, save_path: Path) -> Dict:
         """Return a dictionary of the prompt."""
-        prompt_dict = {
-            "_type": "prompt",
-            "input_variables": self.input_variables,
-            "template": self.template,
-        }
+        prompt_dict = self.dict()
+        cleanup_prompt_dict(prompt_dict)
         return prompt_dict
 
     @root_validator()
