@@ -3,7 +3,7 @@
 import pytest
 
 from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
-from langchain.agents.mrkl.prompt import BASE_TEMPLATE
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -59,8 +59,13 @@ def test_from_chains() -> None:
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
-    expected_template = BASE_TEMPLATE.format(
-        tools=expected_tools_prompt, tool_names=expected_tool_names
+    expected_template = "\n\n".join(
+        [
+            PREFIX,
+            expected_tools_prompt,
+            FORMAT_INSTRUCTIONS.format(tool_names=expected_tool_names),
+            SUFFIX,
+        ]
     )
     prompt = agent.llm_chain.prompt
     assert isinstance(prompt, PromptTemplate)
