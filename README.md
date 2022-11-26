@@ -45,6 +45,9 @@ However, there are still some challenges going from that to an application runni
 - LLM: A large language model, in particular a text-to-text model.
 - Prompt: The input to a language model. Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
 - Prompt Template: An object responsible for constructing the final prompt to pass to a LLM.
+- Examples: Datapoints that can be included in the prompt in order to give the model more context what to do.
+- Few Shot Prompt Template: A subclass of the PromptTemplate class that uses examples.
+- Example Selector: A class responsible to selecting examples to use dynamically (depending on user input) in a few shot prompt.
 
 **Problems solved**
 - Switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
