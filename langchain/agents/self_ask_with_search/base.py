@@ -32,11 +32,11 @@ class SelfAskWithSearchAgent(Agent):
         else:
             last_line = text.split("\n")[-1]
 
-        if followup not in last_line:
-            finish_string = "So the final answer is: "
+        if followup not in last_line and "no" not in last_line.lower():
+            finish_string = "answer"
             if finish_string not in last_line:
                 raise ValueError("We should probably never get here")
-            return "Final Answer", text[len(finish_string) :]
+            return "Final Answer", last_line
 
         if ":" not in last_line:
             after_colon = last_line
