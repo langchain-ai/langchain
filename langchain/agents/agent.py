@@ -83,14 +83,15 @@ class Agent(Chain, BaseModel, ABC):
         pass
 
     @classmethod
-    def _get_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Create a prompt for this class."""
         return cls.prompt
 
     @classmethod
     def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> "Agent":
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        llm_chain = LLMChain(llm=llm, prompt=cls._get_prompt(tools))
+        llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def get_action(self, text: str) -> Action:
