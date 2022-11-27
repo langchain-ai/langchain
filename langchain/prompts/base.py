@@ -94,7 +94,7 @@ class BasePromptTemplate(BaseModel, ABC):
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
-                f.write(json.dumps(prompt_dict, indent=4))
+                json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix == ".yaml":
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
