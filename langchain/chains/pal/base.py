@@ -8,6 +8,7 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.chains.python import PythonChain
 from langchain.input import print_text
@@ -63,5 +64,16 @@ class PALChain(Chain, BaseModel):
             prompt=MATH_PROMPT,
             stop="\n\n",
             get_answer_expr="print(solution())",
+            **kwargs,
+        )
+
+    @classmethod
+    def from_colored_object_prompt(cls, llm: LLM, **kwargs: Any) -> "PALChain":
+        """Load PAL from colored object prompt."""
+        return cls(
+            llm=llm,
+            prompt=COLORED_OBJECT_PROMPT,
+            stop="\n\n\n",
+            get_answer_expr="print(answer)",
             **kwargs,
         )
