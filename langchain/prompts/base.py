@@ -71,11 +71,11 @@ class BasePromptTemplate(BaseModel, ABC):
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
+
         Args:
             file_path: Path to directory to save prompt to.
 
         Example:
-
         .. code-block:: python
 
             prompt.save(file_path="path/prompt.yaml")
