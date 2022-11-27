@@ -7,7 +7,6 @@ from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     BasePromptTemplate,
     check_valid_template,
-    cleanup_prompt_dict,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -117,7 +116,4 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
         prompt_dict = self.dict()
         prompt_dict["_type"] = "few_shot"
-
-        # Delete any keys that have none values
-        cleanup_prompt_dict(prompt_dict)
         return prompt_dict

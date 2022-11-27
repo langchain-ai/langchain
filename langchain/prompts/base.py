@@ -14,16 +14,6 @@ DEFAULT_FORMATTER_MAPPING = {
 }
 
 
-def cleanup_prompt_dict(prompt_dict: Dict) -> None:
-    """Remove any empty values from prompt dictionary."""
-    keys_to_delete = []
-    for key, val in prompt_dict.items():
-        if val is None or val == "":
-            keys_to_delete.append(key)
-    for key in keys_to_delete:
-        del prompt_dict[key]
-
-
 def check_valid_template(
     template: str, template_format: str, input_variables: List[str]
 ) -> None:
@@ -75,9 +65,9 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    @abstractmethod
     def _prompt_dict(self) -> Dict:
         """Return a dictionary of the prompt."""
+        return self.dict()
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
