@@ -33,7 +33,7 @@ These are, in increasing order of complexity:
 1. LLM and Prompts
 2. Chains
 3. Agents
-4. (Coming Soon) Memory
+4. Memory
 
 Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
 
