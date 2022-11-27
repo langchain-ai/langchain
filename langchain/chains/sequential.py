@@ -5,7 +5,6 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
-from langchain.input import get_color_mapping, print_text
 
 
 class SequentialChain(Chain, BaseModel):
@@ -127,11 +126,8 @@ class SimpleSequentialChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
-        color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
             _input = chain.run(_input)
             if self.strip_outputs:
                 _input = _input.strip()
-            if self.verbose:
-                print_text(_input, color=color_mapping[str(i)], end="\n")
         return {self.output_key: _input}

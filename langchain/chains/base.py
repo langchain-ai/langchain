@@ -1,9 +1,12 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+from langchain.logger import PrintLogger
+import uuid
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
+from langchain.logger import Logger, CONTEXT_KEY
 
 class Memory(BaseModel, ABC):
     """Base interface for memory in chains."""
@@ -35,6 +38,7 @@ class Chain(BaseModel, ABC):
 
     verbose: bool = False
     """Whether to print out response text."""
+    logger: Optional[Logger] = None
 
     @property
     @abstractmethod
@@ -45,6 +49,19 @@ class Chain(BaseModel, ABC):
     @abstractmethod
     def output_keys(self) -> List[str]:
         """Output keys this chain expects."""
+
+    @root_validator()
+    def add_logger(cls, values: Dict) -> Dict:
+        """Add a printing logger if verbose=True and none provided."""
+        if values["verbose"] and values["logger"] is None:
+            values["logger"] = PrintLogger()
+        return values
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     def _validate_inputs(self, inputs: Dict[str, str]) -> None:
         """Check that all inputs are present."""
@@ -76,16 +93,22 @@ class Chain(BaseModel, ABC):
                 chain will be returned. Defaults to False.
 
         """
+        if CONTEXT_KEY not in inputs:
+            inputs[CONTEXT_KEY] = {}
+        if "id" not in inputs[CONTEXT_KEY]:
+            inputs[CONTEXT_KEY]["id"] = str(uuid.uuid4())
+
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
-        if self.verbose:
-            print("\n\n\033[1m> Entering new chain...\033[0m")
+        if self.logger:
+            self.logger.log_start_of_chain(inputs)
         outputs = self._call(inputs)
-        if self.verbose:
-            print("\n\033[1m> Finished chain.\033[0m")
         self._validate_outputs(outputs)
+        outputs[CONTEXT_KEY] = inputs[CONTEXT_KEY]
+        if self.logger:
+            self.logger.log_end_of_chain(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)
         if return_only_outputs:

@@ -1,5 +1,5 @@
 """Chain for interacting with SQL Database."""
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from pydantic import BaseModel, Extra
 
@@ -9,6 +9,7 @@ from langchain.chains.sql_database.prompt import PROMPT
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
 from langchain.sql_database import SQLDatabase
+from langchain.logger import CONTEXT_KEY
 
 
 class SQLDatabaseChain(Chain, BaseModel):
@@ -51,10 +52,10 @@ class SQLDatabaseChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         chained_input = ChainedInput(
-            inputs[self.input_key] + "\nSQLQuery:", verbose=self.verbose
+            inputs[self.input_key] + "\nSQLQuery:", inputs[CONTEXT_KEY], logger=self.logger
         )
         llm_inputs = {
             "input": chained_input.input,

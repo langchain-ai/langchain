@@ -4,7 +4,7 @@ from typing import List, Optional, Sequence, Union
 from langchain.agents.agent import Agent
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import get_color_mapping, print_text
+from langchain.printing import print_text, get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
 

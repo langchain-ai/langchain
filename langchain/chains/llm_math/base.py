@@ -1,5 +1,5 @@
 """Chain that interprets a prompt and executes python code to do math."""
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from pydantic import BaseModel, Extra
 
@@ -9,6 +9,7 @@ from langchain.chains.llm_math.prompt import PROMPT
 from langchain.chains.python import PythonChain
 from langchain.input import ChainedInput
 from langchain.llms.base import LLM
+from langchain.logger import CONTEXT_KEY
 
 
 class LLMMathChain(Chain, BaseModel):
@@ -48,10 +49,10 @@ class LLMMathChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         python_executor = PythonChain()
-        chained_input = ChainedInput(inputs[self.input_key], verbose=self.verbose)
+        chained_input = ChainedInput(inputs[self.input_key], inputs[CONTEXT_KEY], logger=self.logger)
         t = llm_executor.predict(question=chained_input.input, stop=["```output"])
         chained_input.add(t, color="green")
         t = t.strip()

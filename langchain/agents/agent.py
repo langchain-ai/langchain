@@ -7,9 +7,11 @@ from pydantic import BaseModel
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import ChainedInput, get_color_mapping
+from langchain.input import ChainedInput
+from langchain.printing import get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.logger import CONTEXT_KEY
 
 
 class Action(NamedTuple):
@@ -116,7 +118,7 @@ class Agent(Chain, BaseModel, ABC):
         tool, tool_input = parsed_output
         return Action(tool, tool_input, full_output)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Run text through and get agent response."""
         text = inputs[self.input_key]
         # Construct a mapping of tool name to tool for easy lookup
@@ -128,7 +130,7 @@ class Agent(Chain, BaseModel, ABC):
         # prompts the LLM to take an action.
         starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
-        chained_input = ChainedInput(starter_string, verbose=self.verbose)
+        chained_input = ChainedInput(starter_string, inputs[CONTEXT_KEY], logger=self.logger)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
