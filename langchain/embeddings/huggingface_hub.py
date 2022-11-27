@@ -32,7 +32,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
-    task: Optional[str] = None
+    task: Optional[str] = "feature-extraction"
     """Task to call the model with."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -53,7 +53,12 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         try:
             from huggingface_hub.inference_api import InferenceApi
 
-            repo_id = values.get("repo_id", DEFAULT_REPO_ID)
+            repo_id = values["repo_id"]
+            if not repo_id.startswith("sentence-transformers"):
+                raise ValueError(
+                    "Currently only 'sentence-transformers' embedding models "
+                    f"are supported. Got invalid 'repo_id' {repo_id}."
+                )
             client = InferenceApi(
                 repo_id=repo_id,
                 token=huggingfacehub_api_token,
