@@ -1,5 +1,5 @@
 """Chain that does self ask with search."""
-from typing import Any, ClassVar, List, Tuple
+from typing import Any, ClassVar, List, Optional, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.self_ask_with_search.prompt import PROMPT
@@ -25,7 +25,7 @@ class SelfAskWithSearchAgent(Agent):
                 f"Tool name should be Intermediate Answer, got {tool_names}"
             )
 
-    def _extract_tool_and_input(self, text: str) -> Tuple[str, str]:
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         followup = "Follow up:"
         if "\n" not in text:
             last_line = text
@@ -35,8 +35,8 @@ class SelfAskWithSearchAgent(Agent):
         if followup not in last_line:
             finish_string = "So the final answer is: "
             if finish_string not in last_line:
-                raise ValueError("We should probably never get here")
-            return "Final Answer", text[len(finish_string) :]
+                return None
+            return "Final Answer", last_line[len(finish_string) :]
 
         if ":" not in last_line:
             after_colon = last_line
@@ -49,6 +49,9 @@ class SelfAskWithSearchAgent(Agent):
             print("we probably should never get here..." + text)
 
         return "Intermediate Answer", after_colon
+
+    def _fix_text(self, text: str) -> str:
+        return text + "\nSo the final answer is:"
 
     @property
     def observation_prefix(self) -> str:

@@ -15,7 +15,7 @@ def test_conversation_chain_works() -> None:
     """Test that conversation chain works in basic setting."""
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=["foo", "bar"], template="{foo} {bar}")
-    memory = ConversationBufferMemory(dynamic_key="foo")
+    memory = ConversationBufferMemory(memory_key="foo")
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="bar")
     chain.run("foo")
 
@@ -32,7 +32,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
     """Test that conversation chain works in basic setting."""
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=["foo"], template="{foo}")
-    memory = ConversationBufferMemory(dynamic_key="foo")
+    memory = ConversationBufferMemory(memory_key="foo")
     with pytest.raises(ValueError):
         ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="foo")
 
@@ -40,8 +40,8 @@ def test_conversation_chain_errors_bad_variable() -> None:
 @pytest.mark.parametrize(
     "memory",
     [
-        ConversationBufferMemory(dynamic_key="baz"),
-        ConversationSummaryMemory(llm=FakeLLM(), dynamic_key="baz"),
+        ConversationBufferMemory(memory_key="baz"),
+        ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
     ],
 )
 def test_conversation_memory(memory: Memory) -> None:
