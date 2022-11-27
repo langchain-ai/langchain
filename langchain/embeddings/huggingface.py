@@ -5,6 +5,8 @@ from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 
+DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
@@ -16,11 +18,11 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceEmbeddings
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            huggingface = HuggingFaceEmbeddings(model_name=model_name)
+            hf = HuggingFaceEmbeddings(model_name=model_name)
     """
 
     client: Any  #: :meta private:
-    model_name: str = "sentence-transformers/all-mpnet-base-v2"
+    model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
 
     def __init__(self, **kwargs: Any):
