@@ -88,7 +88,7 @@ class CombineDocumentsChain(Chain, BaseModel):
         # Format each document according to the prompt
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         # Join the documents together to put them in the prompt.
-        other_keys[self.document_variable_name] = "\n\n".join(doc_strings)
+        other_keys[self.document_variable_name] = "\n".join(doc_strings)
         # Call predict on the LLM.
         output = self.llm_chain.predict(**other_keys)
         return {self.output_key: output}
