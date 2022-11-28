@@ -64,7 +64,10 @@ class SQLDatabaseChain(Chain, BaseModel):
         }
         sql_cmd = llm_chain.predict(**llm_inputs)
         chained_input.add(sql_cmd, color="green")
-        result = self.database.run(sql_cmd)
+        try:
+            result = self.database.run(sql_cmd)
+        except Exception as e:
+            result = str(e)
         chained_input.add("\nSQLResult: ")
         chained_input.add(result, color="yellow")
         chained_input.add("\nAnswer:")

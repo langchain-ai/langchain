@@ -67,5 +67,8 @@ class SQLDatabase:
 
     def run(self, command: str) -> str:
         """Execute a SQL command and return a string of the results."""
-        result = self._engine.execute(command).fetchall()
+        try:
+            result = self._engine.execute(command).fetchall()
+        except Exception as e:
+            result = e
         return str(result)
