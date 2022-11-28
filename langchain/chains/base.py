@@ -81,10 +81,10 @@ class Chain(BaseModel, ABC):
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            print("\n\n\033[1m> Entering new chain...\033[0m")
+            print(f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m")
         outputs = self._call(inputs)
         if self.verbose:
-            print("\n\033[1m> Finished chain.\033[0m")
+            print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)
