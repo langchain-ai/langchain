@@ -1,6 +1,6 @@
 """Wrapper around Elasticsearch vector database."""
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -64,6 +64,32 @@ class ElasticVectorSearch(VectorStore):
                 f"Your elasticsearch client string is misformatted. Got error: {e} "
             )
         self.client = es_client
+
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
+        """Run more texts through the embeddings and add to the vectorstore."""
+        try:
+            from elasticsearch.helpers import bulk
+        except ImportError:
+            raise ValueError(
+                "Could not import elasticsearch python package. "
+                "Please install it with `pip install elasticearch`."
+            )
+        requests = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            request = {
+                "_op_type": "index",
+                "_index": self.index_name,
+                "vector": self.embedding_function(text),
+                "text": text,
+                "metadata": metadata,
+            }
+            requests.append(request)
+        bulk(self.client, requests)
+        # TODO: add option not to refresh
+        self.client.indices.refresh(index=self.index_name)
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.

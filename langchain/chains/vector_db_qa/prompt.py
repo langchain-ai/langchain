@@ -7,6 +7,6 @@ prompt_template = """Use the following pieces of context to answer the question 
 
 Question: {question}
 Helpful Answer:"""
-prompt = PromptTemplate(
+PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )

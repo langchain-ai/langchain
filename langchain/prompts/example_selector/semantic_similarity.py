@@ -24,6 +24,11 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    def add_example(self, example: Dict[str, str]) -> None:
+        """Add new example to vectorstore."""
+        string_example = " ".join(example.values())
+        self.vectorstore.add_texts([string_example], metadatas=[example])
+
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         """Select which examples to use based on semantic similarity."""
         # Get the docs with the highest similarity.

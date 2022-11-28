@@ -1,5 +1,6 @@
 """Question answering with sources over documents."""
 
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -17,28 +18,35 @@ from langchain.llms.base import LLM
 from langchain.prompts.prompt import Prompt
 
 
-class QAWithSourcesChain(Chain, BaseModel):
+class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     """Question answering with sources over documents."""
 
     llm_question_chain: LLMChain
     """LLM wrapper to use for asking questions to each document."""
-    document_prompt: Prompt = example_prompt
-    """The Prompt to use to format the response from each document."""
-    llm_combine_chain: LLMChain
-    """LLM wrapper to use for combining answers."""
+    combine_document_chain: CombineDocumentsChain
+    """Chain to use to combine documents."""
+    doc_source_key: str = "source"
+    """Key in document.metadata to use as source information"""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
     answer_key: str = "answer"  #: :meta private:
-    sources_key: str = "sources"  #: :meta private:
+    sources_answer_key: str = "sources"  #: :meta private:
 
     @classmethod
-    def from_llm(cls, llm: LLM, **kwargs: Any) -> "QAWithSourcesChain":
+    def from_llm(
+        cls, llm: LLM, combine_document_prompt: Prompt = example_prompt, **kwargs: Any
+    ) -> "BaseQAWithSourcesChain":
         """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)
+        combine_document_chain = CombineDocumentsChain(
+            llm_chain=llm_combine_chain,
+            document_prompt=combine_document_prompt,
+            document_variable_name="summaries",
+        )
         return cls(
             llm_question_chain=llm_question_chain,
-            llm_combine_chain=llm_combine_chain,
+            combine_document_chain=combine_document_chain,
             **kwargs,
         )
 
@@ -54,7 +62,7 @@ class QAWithSourcesChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.input_docs_key, self.question_key]
+        return [self.question_key]
 
     @property
     def output_keys(self) -> List[str]:
@@ -62,7 +70,7 @@ class QAWithSourcesChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.answer_key, self.sources_key]
+        return [self.answer_key, self.sources_answer_key]
 
     @root_validator(pre=True)
     def validate_question_chain(cls, values: Dict) -> Dict:
@@ -80,14 +88,15 @@ class QAWithSourcesChain(Chain, BaseModel):
     def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
         """Validate that the combine chain can be constructed."""
         # Try to construct the combine documents chains.
-        CombineDocumentsChain(
-            llm_chain=values["llm_combine_chain"],
-            document_prompt=values["document_prompt"],
-        )
+
         return values
 
+    @abstractmethod
+    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs to run questioning over."""
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        docs = inputs[self.input_docs_key]
+        docs = self._get_docs(inputs)
         query = inputs[self.question_key]
         content_key, query_key = self.llm_question_chain.input_keys
         results = self.llm_question_chain.apply(
@@ -98,12 +107,29 @@ class QAWithSourcesChain(Chain, BaseModel):
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
             for i, r in enumerate(results)
         ]
-        combine_chain = CombineDocumentsChain(
-            llm_chain=self.llm_combine_chain, document_prompt=self.document_prompt
+        answer_dict = self.combine_document_chain(
+            {
+                self.combine_document_chain.input_key: result_docs,
+                self.question_key: query,
+            }
         )
-        answer_dict = combine_chain(
-            {combine_chain.input_key: result_docs, self.question_key: query}
-        )
-        answer = answer_dict[combine_chain.output_key]
+        answer = answer_dict[self.combine_document_chain.output_key]
         answer, sources = answer.split("\nSources: ")
-        return {self.answer_key: answer, self.sources_key: sources}
+        return {self.answer_key: answer, self.sources_answer_key: sources}
+
+
+class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+    """Question answering with sources over documents."""
+
+    input_docs_key: str = "docs"  #: :meta private:
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Expect input key.
+
+        :meta private:
+        """
+        return [self.input_docs_key, self.question_key]
+
+    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        return inputs[self.input_docs_key]

@@ -11,9 +11,9 @@ class LLM(ABC):
         """Run the LLM on the given prompt and input."""
 
     @property
-    @abstractmethod
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
+        return {}
 
     def __str__(self) -> str:
         """Get a string representation of the object for printing."""
