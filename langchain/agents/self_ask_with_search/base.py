@@ -45,8 +45,6 @@ class SelfAskWithSearchAgent(Agent):
 
         if " " == after_colon[0]:
             after_colon = after_colon[1:]
-        if "?" != after_colon[-1]:
-            print("we probably should never get here..." + text)
 
         return "Intermediate Answer", after_colon
 
