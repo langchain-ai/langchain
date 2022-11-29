@@ -117,7 +117,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         if "\nSOURCES: " in answer:
             answer, sources = answer.split("\nSOURCES: ")
         else:
-            sources = "None"
+            sources = ""
         return {self.answer_key: answer, self.sources_answer_key: sources}
 
 
