@@ -12,7 +12,9 @@ question_prompt = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
 
-combine_prompt_template = """Given the following questions, reference links and associated content, create a final answer with references. If ANY of the content contains relevant information, please use that even if all the others do not.
+combine_prompt_template = """Given the following questions, reference links and associated content, create a final answer with references. 
+If ANY of the content contains relevant information, please use that even if all the others do not.
+ALWAYS return a "Sources" part in your answer.
 
 Question: What color is an apple?
 =========
