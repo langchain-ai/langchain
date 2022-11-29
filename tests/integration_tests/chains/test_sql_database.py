@@ -31,8 +31,7 @@ def test_sql_database_run() -> None:
 
 
 def test_sql_database_run_update() -> None:
-    """Test that statements which update the database can be run successfully
-    and are returned in the correct format."""
+    """Test that update commands run successfully and returned in correct format."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")

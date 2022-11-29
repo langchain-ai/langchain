@@ -50,7 +50,7 @@ def test_sql_database_run() -> None:
 
 
 def test_sql_database_run_update() -> None:
-    """Test that commands which update the database can be run successfully and returned in correct format."""
+    """Test commands which return no rows return an empty string."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison")
