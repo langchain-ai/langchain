@@ -87,6 +87,9 @@ class Agent(Chain, BaseModel, ABC):
         """Create a prompt for this class."""
         return cls.prompt
 
+    def _prepare_for_new_call(self) -> None:
+        pass
+
     @classmethod
     def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> "Agent":
         """Construct an agent from an LLM and tools."""
@@ -119,6 +122,8 @@ class Agent(Chain, BaseModel, ABC):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
         text = inputs[self.input_key]
+        # Do any preparation necessary when receiving a new input.
+        self._prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # Construct the initial string to pass into the LLM. This is made up
