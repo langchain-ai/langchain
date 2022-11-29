@@ -28,3 +28,20 @@ def test_sql_database_run() -> None:
     output = db_chain.run("What company does Harrison work at?")
     expected_output = " Harrison works at Foo."
     assert output == expected_output
+
+
+def test_sql_database_run_update() -> None:
+    """Test that statements which update the database be run successfully and are returned in correct format."""
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj.create_all(engine)
+    stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
+    with engine.connect() as conn:
+        conn.execute(stmt)
+    db = SQLDatabase(engine)
+    db_chain = SQLDatabaseChain(llm=OpenAI(temperature=0), database=db)
+    output = db_chain.run("Update Harrison's workplace to Bar")
+    expected_output = " Harrison's workplace has been updated to Bar."
+    assert output == expected_output
+    output = db_chain.run("What company does Harrison work at?")
+    expected_output = " Harrison works at Bar."
+    assert output == expected_output
