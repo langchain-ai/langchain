@@ -31,7 +31,7 @@ class ReActDocstoreAgent(Agent, BaseModel):
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
 
-    def _prepare_for_new_call(self):
+    def _prepare_for_new_call(self) -> None:
         self.i = 1
 
     def _fix_text(self, text: str) -> str:

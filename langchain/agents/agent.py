@@ -87,7 +87,7 @@ class Agent(Chain, BaseModel, ABC):
         """Create a prompt for this class."""
         return cls.prompt
 
-    def _prepare_for_new_call(self):
+    def _prepare_for_new_call(self) -> None:
         pass
 
     @classmethod
