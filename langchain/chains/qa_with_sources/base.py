@@ -114,7 +114,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             }
         )
         answer = answer_dict[self.combine_document_chain.output_key]
-        answer, sources = answer.split("\nSources: ")
+        answer, sources = answer.split("\nSOURCES: ")
         return {self.answer_key: answer, self.sources_answer_key: sources}
 
 
