@@ -20,11 +20,11 @@ class OpenAI(LLM, BaseModel):
         .. code-block:: python
 
             from langchain import OpenAI
-            openai = OpenAI(model="text-davinci-002")
+            openai = OpenAI(model="text-davinci-003")
     """
 
     client: Any  #: :meta private:
-    model_name: str = "text-davinci-002"
+    model_name: str = "text-davinci-003"
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
