@@ -141,6 +141,9 @@ common tasks or cool demos.
    modules/llms
    modules/embeddings
    modules/text_splitter
+   modules/python.rst
+   modules/serpapi.rst
+   modules/docstore.rst
    modules/vectorstore
    modules/chains
    modules/agents
@@ -158,6 +161,7 @@ see detailed information about the various classes, methods, and APIs.
    explanation/core_concepts.md
    explanation/agents.md
    explanation/glossary.md
+   explanation/cool_demos.md
    Discord <https://discord.gg/6adMQxSpJS>
 
 Higher level, conceptual explanations of the LangChain components.

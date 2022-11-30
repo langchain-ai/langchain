@@ -4,7 +4,7 @@ Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -25,7 +25,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-class SerpAPIChain(BaseModel):
+class SerpAPIWrapper(BaseModel):
     """Wrapper around SerpAPI.
 
     To use, you should have the ``google-search-results`` python package installed,
@@ -35,13 +35,11 @@ class SerpAPIChain(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIChain
-            serpapi = SerpAPIChain()
+            from langchain import SerpAPIWrapper
+            serpapi = SerpAPIWrapper()
     """
 
     search_engine: Any  #: :meta private:
-    input_key: str = "search_query"  #: :meta private:
-    output_key: str = "search_result"  #: :meta private:
 
     serpapi_api_key: Optional[str] = None
 
@@ -69,6 +67,7 @@ class SerpAPIChain(BaseModel):
         return values
 
     def run(self, query: str) -> str:
+        """Run query through SerpAPI and parse result."""
         params = {
             "api_key": self.serpapi_api_key,
             "engine": "google",
@@ -96,3 +95,8 @@ class SerpAPIChain(BaseModel):
         else:
             toret = "No good search result found"
         return toret
+
+
+# For backwards compatability
+
+SerpAPIChain = SerpAPIWrapper
