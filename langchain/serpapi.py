@@ -99,4 +99,4 @@ class SerpAPIWrapper(BaseModel):
 
 # For backwards compatability
 
-SerpAPIWrapper = SerpAPIWrapper
+SerpAPIChain = SerpAPIWrapper
