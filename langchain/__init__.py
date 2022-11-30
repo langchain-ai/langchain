@@ -10,6 +10,7 @@ from langchain.chains import (
     ConversationChain,
     LLMChain,
     LLMMathChain,
+    PALChain,
     PythonChain,
     SerpAPIChain,
     SQLDatabaseChain,
@@ -49,4 +50,5 @@ __all__ = [
     "ElasticVectorSearch",
     "InMemoryDocstore",
     "ConversationChain",
+    "PALChain",
 ]
