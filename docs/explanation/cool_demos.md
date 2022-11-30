@@ -22,6 +22,12 @@ Leveraging Qiskit, OpenAI and LangChain to demonstrate Grover's algorithm
 
 ## Not Open Source
 
+### [Daimon](https://twitter.com/sjwhitmore/status/1580593217153531908?s=20&t=neQvtZZTlp623U3LZwz3bQ)
+A chat-based AI personal assistant with long-term memory about you.
+
+### [Clerkie](https://twitter.com/krrish_dh/status/1581028925618106368?s=20&t=neQvtZZTlp623U3LZwz3bQ)
+Stack Tracing QA Bot to help debug complex stack tracing (especially the ones that go multi-function/file deep). 
+
 ### [Sales Email Writer](https://twitter.com/Raza_Habib496/status/1596880140490838017?s=20&t=6MqEQYWfSqmJwsKahjCVOA)
 By Raza Habib, this demo utilizes LangChain + SerpAPI + HumanLoop to write sales emails.
 Give it a company name and a person, this application will use Google Search (via SerpAPI) to get
