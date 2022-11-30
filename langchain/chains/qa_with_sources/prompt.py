@@ -1,22 +1,20 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
 
-question_prompt_template = """Use the following pieces of context to answer the question at the end. 
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
+question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question. 
+Return any relevant text verbatim.
 {context}
-
 Question: {question}
-Accurate Answer:"""
+Relevant text, if any:"""
 QUESTION_PROMPT = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
 
-combine_prompt_template = """Given the following questions, create a final answer with references. 
-If ANY of the content contains relevant information, please use that even if all the others do not.
+combine_prompt_template = """Given the following extracted parts of a long document and a question, create a final answer with references ("SOURCES"). 
+If you don't know the answer, just say that you don't know. Don't try to make up an answer.
 ALWAYS return a "SOURCES" part in your answer.
 
-QUESTION: Highlight the parts (if any) of this contract related to "Governing Law" that should be reviewed by a lawyer. Details: Which state/country's law governs the interpretation of the contract?
+QUESTION: Which state/country's law governs the interpretation of the contract?
 =========
 Content: This Agreement is governed by English law and the parties submit to the exclusive jurisdiction of the English courts in  relation to any dispute (contractual or non-contractual) concerning this Agreement save that either party may apply to any court for an  injunction or other relief to protect its Intellectual Property Rights.
 Source: 28-pl
@@ -25,7 +23,7 @@ Source: 30-pl
 Content: (b) if Google believes, in good faith, that the Distributor has violated or caused Google to violate any Anti-Bribery Laws (as  defined in Clause 8.5) or that such a violation is reasonably likely to occur,
 Source: 4-pl
 =========
-FINAL ANSWER: This Agreement is governed by English law and the parties submit to the exclusive jurisdiction of the English courts in  relation to any dispute (contractual or non-contractual) concerning this Agreement save that either party may apply to any court for an  injunction or other relief to protect its Intellectual Property Rights.
+FINAL ANSWER: This Agreement is governed by English law.
 SOURCES: 28-pl
 
 QUESTION: What did the president say about Michael Jackson?
@@ -39,7 +37,7 @@ Source: 5-pl
 Content: More support for patients and families. \n\nTo get there, I call on Congress to fund ARPA-H, the Advanced Research Projects Agency for Health. \n\nIt’s based on DARPA—the Defense Department project that led to the Internet, GPS, and so much more.  \n\nARPA-H will have a singular purpose—to drive breakthroughs in cancer, Alzheimer’s, diabetes, and more. \n\nA unity agenda for the nation. \n\nWe can do this. \n\nMy fellow Americans—tonight , we have gathered in a sacred space—the citadel of our democracy. \n\nIn this Capitol, generation after generation, Americans have debated great questions amid great strife, and have done great things. \n\nWe have fought for freedom, expanded liberty, defeated totalitarianism and terror. \n\nAnd built the strongest, freest, and most prosperous nation the world has ever known. \n\nNow is the hour. \n\nOur moment of responsibility. \n\nOur test of resolve and conscience, of history itself. \n\nIt is in this moment that our character is formed. Our purpose is found. Our future is forged. \n\nWell I know this nation.
 Source: 34-pl
 =========
-FINAL ANSWER: The president did not mention Michael Jackson
+FINAL ANSWER: The president did not mention Michael Jackson.
 SOURCES:
 
 QUESTION: {question}

@@ -10,9 +10,9 @@ from langchain.chains import (
     ConversationChain,
     LLMChain,
     LLMMathChain,
+    PALChain,
     PythonChain,
     QAWithSourcesChain,
-    SerpAPIChain,
     SQLDatabaseChain,
     VectorDBQA,
     VectorDBQAWithSourcesChain,
@@ -25,6 +25,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
+from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
@@ -33,6 +34,7 @@ __all__ = [
     "LLMMathChain",
     "PythonChain",
     "SelfAskWithSearchChain",
+    "SerpAPIWrapper",
     "SerpAPIChain",
     "Cohere",
     "OpenAI",
@@ -53,4 +55,5 @@ __all__ = [
     "ConversationChain",
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
+    "PALChain",
 ]

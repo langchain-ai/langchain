@@ -131,10 +131,10 @@ class MRKLChain(ZeroShotAgent):
         Example:
             .. code-block:: python
 
-                from langchain import LLMMathChain, OpenAI, SerpAPIChain, MRKLChain
+                from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, MRKLChain
                 from langchain.chains.mrkl.base import ChainConfig
                 llm = OpenAI(temperature=0)
-                search = SerpAPIChain()
+                search = SerpAPIWrapper()
                 llm_math_chain = LLMMathChain(llm=llm)
                 chains = [
                     ChainConfig(
