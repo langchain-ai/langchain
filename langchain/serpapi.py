@@ -4,11 +4,10 @@ Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.chains.base import Chain
 from langchain.utils import get_from_dict_or_env
 
 
@@ -26,8 +25,8 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-class SerpAPIChain(Chain, BaseModel):
-    """Chain that calls SerpAPI.
+class SerpAPIWrapper(BaseModel):
+    """Wrapper around SerpAPI.
 
     To use, you should have the ``google-search-results`` python package installed,
     and the environment variable ``SERPAPI_API_KEY`` set with your API key, or pass
@@ -36,13 +35,11 @@ class SerpAPIChain(Chain, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import SerpAPIChain
-            serpapi = SerpAPIChain()
+            from langchain import SerpAPIWrapper
+            serpapi = SerpAPIWrapper()
     """
 
     search_engine: Any  #: :meta private:
-    input_key: str = "search_query"  #: :meta private:
-    output_key: str = "search_result"  #: :meta private:
 
     serpapi_api_key: Optional[str] = None
 
@@ -50,22 +47,6 @@ class SerpAPIChain(Chain, BaseModel):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Return the singular input key.
-
-        :meta private:
-        """
-        return [self.input_key]
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
-        return [self.output_key]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -85,11 +66,12 @@ class SerpAPIChain(Chain, BaseModel):
             )
         return values
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def run(self, query: str) -> str:
+        """Run query through SerpAPI and parse result."""
         params = {
             "api_key": self.serpapi_api_key,
             "engine": "google",
-            "q": inputs[self.input_key],
+            "q": query,
             "google_domain": "google.com",
             "gl": "us",
             "hl": "en",
@@ -112,4 +94,9 @@ class SerpAPIChain(Chain, BaseModel):
             toret = res["organic_results"][0]["snippet"]
         else:
             toret = "No good search result found"
-        return {self.output_key: toret}
+        return toret
+
+
+# For backwards compatability
+
+SerpAPIWrapper = SerpAPIWrapper
