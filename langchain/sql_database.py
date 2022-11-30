@@ -66,6 +66,14 @@ class SQLDatabase:
         return "\n".join(tables)
 
     def run(self, command: str) -> str:
-        """Execute a SQL command and return a string of the results."""
-        result = self._engine.execute(command).fetchall()
-        return str(result)
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+        """
+        with self._engine.connect() as connection:
+            cursor = connection.exec_driver_sql(command)
+            if cursor.returns_rows:
+                result = cursor.fetchall()
+                return str(result)
+        return ""

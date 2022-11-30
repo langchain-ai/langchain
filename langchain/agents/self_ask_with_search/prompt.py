@@ -28,13 +28,13 @@ So the final answer is: Joseph Ball
 Question: Are both the directors of Jaws and Casino Royale from the same country?
 Are follow up questions needed here: Yes.
 Follow up: Who is the director of Jaws?
-Intermediate Answer: The director of Jaws is Steven Spielberg.
+Intermediate answer: The director of Jaws is Steven Spielberg.
 Follow up: Where is Steven Spielberg from?
-Intermediate Answer: The United States.
+Intermediate answer: The United States.
 Follow up: Who is the director of Casino Royale?
-Intermediate Answer: The director of Casino Royale is Martin Campbell.
+Intermediate answer: The director of Casino Royale is Martin Campbell.
 Follow up: Where is Martin Campbell from?
-Intermediate Answer: New Zealand.
+Intermediate answer: New Zealand.
 So the final answer is: No
 
 Question: {input}"""
