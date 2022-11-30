@@ -4,7 +4,6 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.python import PythonChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.chains.serpapi import SerpAPIChain
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
@@ -12,7 +11,6 @@ __all__ = [
     "LLMChain",
     "LLMMathChain",
     "PythonChain",
-    "SerpAPIChain",
     "SQLDatabaseChain",
     "VectorDBQA",
     "SequentialChain",
