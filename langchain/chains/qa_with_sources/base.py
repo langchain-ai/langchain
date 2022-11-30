@@ -9,13 +9,13 @@ from langchain.chains.base import Chain
 from langchain.chains.combine_documents import CombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_with_sources.prompt import (
-    combine_prompt,
-    example_prompt,
-    question_prompt,
+    COMBINE_PROMPT,
+    EXAMPLE_PROMPT,
+    QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.base import BasePromptTemplate
 
 
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
@@ -34,7 +34,12 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     @classmethod
     def from_llm(
-        cls, llm: LLM, combine_document_prompt: Prompt = example_prompt, **kwargs: Any
+        cls,
+        llm: LLM,
+        combine_document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
+        question_prompt: BasePromptTemplate = QUESTION_PROMPT,
+        combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
+        **kwargs: Any,
     ) -> "BaseQAWithSourcesChain":
         """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)

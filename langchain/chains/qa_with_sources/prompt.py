@@ -8,7 +8,7 @@ If you don't know the answer, just say that you don't know, don't try to make up
 
 Question: {question}
 Accurate Answer:"""
-question_prompt = PromptTemplate(
+QUESTION_PROMPT = PromptTemplate(
     template=question_prompt_template, input_variables=["context", "question"]
 )
 
@@ -47,11 +47,11 @@ QUESTION: {question}
 {summaries}
 =========
 FINAL ANSWER:"""
-combine_prompt = PromptTemplate(
+COMBINE_PROMPT = PromptTemplate(
     template=combine_prompt_template, input_variables=["summaries", "question"]
 )
 
-example_prompt = PromptTemplate(
+EXAMPLE_PROMPT = PromptTemplate(
     template="Content: {page_content}\nSource: {source}",
     input_variables=["page_content", "source"],
 )
