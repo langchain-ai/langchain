@@ -26,6 +26,8 @@ class Agent(Chain, BaseModel, ABC):
     prompt: ClassVar[BasePromptTemplate]
     llm_chain: LLMChain
     tools: List[Tool]
+    return_intermediate_steps: bool = False
+    intermediate_steps_key: str = "intermediate_steps"  #: :meta private:
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -43,7 +45,10 @@ class Agent(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.output_key]
+        if self.return_intermediate_steps:
+            return [self.output_key, self.intermediate_steps_key]
+        else:
+            return [self.output_key]
 
     @property
     @abstractmethod
@@ -146,7 +151,10 @@ class Agent(Chain, BaseModel, ABC):
             chained_input.add(output.log, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
-                return {self.output_key: output.tool_input}
+                final_output = {self.output_key: output.tool_input}
+                if self.return_intermediate_steps:
+                    final_output[self.intermediate_steps_key] = chained_input.input
+                return final_output
             # Otherwise we lookup the tool
             chain = name_to_tool_map[output.tool]
             # We then call the tool on the tool input to get an observation
