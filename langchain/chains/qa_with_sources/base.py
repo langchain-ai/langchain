@@ -1,5 +1,7 @@
 """Question answering with sources over documents."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
@@ -40,7 +42,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
         **kwargs: Any,
-    ) -> "BaseQAWithSourcesChain":
+    ) -> BaseQAWithSourcesChain:
         """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)

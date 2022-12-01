@@ -3,6 +3,7 @@
 Splits up a document, sends the smaller parts to the LLM with one prompt,
 then combines the results with another one.
 """
+from __future__ import annotations
 
 from typing import Dict, List
 
@@ -32,7 +33,7 @@ class MapReduceChain(Chain, BaseModel):
     @classmethod
     def from_params(
         cls, llm: LLM, prompt: BasePromptTemplate, text_splitter: TextSplitter
-    ) -> "MapReduceChain":
+    ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(map_llm=llm_chain, reduce_llm=llm_chain, text_splitter=text_splitter)

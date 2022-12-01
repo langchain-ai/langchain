@@ -1,4 +1,6 @@
 """Example selector that selects examples based on SemanticSimilarity."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
@@ -55,7 +57,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         vectorstore_cls: VectorStore,
         k: int = 4,
         **vectorstore_cls_kwargs: Any,
-    ) -> "SemanticSimilarityExampleSelector":
+    ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
 
         Reshuffles examples dynamically based on query similarity.

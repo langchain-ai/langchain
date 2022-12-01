@@ -1,4 +1,6 @@
 """Functionality for splitting text."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, List
 
@@ -46,9 +48,7 @@ class TextSplitter(ABC):
         return docs
 
     @classmethod
-    def from_huggingface_tokenizer(
-        cls, tokenizer: Any, **kwargs: Any
-    ) -> "TextSplitter":
+    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter than uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
