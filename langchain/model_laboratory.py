@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence, Union
 
-
 from langchain.agents.agent import Agent
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
