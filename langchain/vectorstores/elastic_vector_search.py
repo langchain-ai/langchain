@@ -1,4 +1,6 @@
 """Wrapper around Elasticsearch vector database."""
+from __future__ import annotations
+
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
@@ -117,7 +119,7 @@ class ElasticVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "ElasticVectorSearch":
+    ) -> ElasticVectorSearch:
         """Construct ElasticVectorSearch wrapper from raw documents.
 
         This is a user-friendly interface that:

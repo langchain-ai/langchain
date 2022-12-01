@@ -1,4 +1,6 @@
 """Chain that takes in an input and produces an action and action input."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
 
@@ -91,7 +93,7 @@ class Agent(Chain, BaseModel, ABC):
         pass
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> "Agent":
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))

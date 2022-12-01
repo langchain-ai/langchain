@@ -27,10 +27,7 @@ class SelfAskWithSearchAgent(Agent):
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         followup = "Follow up:"
-        if "\n" not in text:
-            last_line = text
-        else:
-            last_line = text.split("\n")[-1]
+        last_line = text.split("\n")[-1]
 
         if followup not in last_line:
             finish_string = "So the final answer is: "
@@ -38,10 +35,7 @@ class SelfAskWithSearchAgent(Agent):
                 return None
             return "Final Answer", last_line[len(finish_string) :]
 
-        if ":" not in last_line:
-            after_colon = last_line
-        else:
-            after_colon = text.split(":")[-1]
+        after_colon = text.split(":")[-1]
 
         if " " == after_colon[0]:
             after_colon = after_colon[1:]
@@ -49,7 +43,7 @@ class SelfAskWithSearchAgent(Agent):
         return "Intermediate Answer", after_colon
 
     def _fix_text(self, text: str) -> str:
-        return text + "\nSo the final answer is:"
+        return f"{text}\nSo the final answer is:"
 
     @property
     def observation_prefix(self) -> str:

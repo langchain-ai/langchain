@@ -1,4 +1,6 @@
 """Prompt schema definition."""
+from __future__ import annotations
+
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -67,7 +69,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
-    ) -> "PromptTemplate":
+    ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
         Intended be used as a way to dynamically create a prompt from examples.
@@ -92,7 +94,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     @classmethod
     def from_file(
         cls, template_file: str, input_variables: List[str]
-    ) -> "PromptTemplate":
+    ) -> PromptTemplate:
         """Load a prompt from a file.
 
         Args:
