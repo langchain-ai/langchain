@@ -12,8 +12,10 @@ from langchain.chains import (
     LLMMathChain,
     PALChain,
     PythonChain,
+    QAWithSourcesChain,
     SQLDatabaseChain,
     VectorDBQA,
+    VectorDBQAWithSourcesChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
@@ -51,5 +53,7 @@ __all__ = [
     "ElasticVectorSearch",
     "InMemoryDocstore",
     "ConversationChain",
+    "VectorDBQAWithSourcesChain",
+    "QAWithSourcesChain",
     "PALChain",
 ]
