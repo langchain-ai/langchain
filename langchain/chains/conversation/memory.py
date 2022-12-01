@@ -84,8 +84,8 @@ class ConversationSummaryMemory(Memory, BaseModel):
         prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
-        human = "Human: " + inputs[prompt_input_key]
-        ai = "AI: " + list(outputs.values())[0]
+        human = f"Human: {inputs[prompt_input_key]}"
+        ai = f"AI: {list(outputs.values())[0]}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
