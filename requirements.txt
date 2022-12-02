@@ -1,7 +1,0 @@
--r test_requirements.txt
--e '.[all]'
-# For trickier integrations
-playwright
-manifest-ml
-# For development
-jupyter
