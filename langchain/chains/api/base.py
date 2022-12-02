@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional
 import requests
 from pydantic import BaseModel, root_validator
 
-from langchain import LLMChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.input import print_text
 from langchain.llms.base import LLM
 
