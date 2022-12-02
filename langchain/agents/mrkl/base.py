@@ -1,4 +1,6 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
+from __future__ import annotations
+
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
 from langchain.agents.agent import Agent
@@ -114,7 +116,7 @@ class MRKLChain(ZeroShotAgent):
     """
 
     @classmethod
-    def from_chains(cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any) -> "Agent":
+    def from_chains(cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any) -> Agent:
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the
@@ -131,10 +133,10 @@ class MRKLChain(ZeroShotAgent):
         Example:
             .. code-block:: python
 
-                from langchain import LLMMathChain, OpenAI, SerpAPIChain, MRKLChain
+                from langchain import LLMMathChain, OpenAI, SerpAPIWrapper, MRKLChain
                 from langchain.chains.mrkl.base import ChainConfig
                 llm = OpenAI(temperature=0)
-                search = SerpAPIChain()
+                search = SerpAPIWrapper()
                 llm_math_chain = LLMMathChain(llm=llm)
                 chains = [
                     ChainConfig(

@@ -26,3 +26,21 @@ def test_openai_extra_kwargs() -> None:
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         OpenAI(foo=3, model_kwargs={"foo": 2})
+
+
+def test_openai_stop_valid() -> None:
+    """Test openai stop logic on valid configuration."""
+    query = "write an ordered list of five items"
+    first_llm = OpenAI(stop="3", temperature=0)
+    first_output = first_llm(query)
+    second_llm = OpenAI(temperature=0)
+    second_output = second_llm(query, stop=["3"])
+    # Because it stops on new lines, shouldn't return anything
+    assert first_output == second_output
+
+
+def test_openai_stop_error() -> None:
+    """Test openai stop logic on bad configuration."""
+    llm = OpenAI(stop="3", temperature=0)
+    with pytest.raises(ValueError):
+        llm("write an ordered list of five items", stop=["\n"])

@@ -1,7 +1,10 @@
 """BasePrompt schema definition."""
+import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import yaml
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.formatting import formatter
@@ -85,3 +88,39 @@ class BasePromptTemplate(BaseModel, ABC):
 
             prompt.format(variable1="foo")
         """
+
+    def _prompt_dict(self) -> Dict:
+        """Return a dictionary of the prompt."""
+        return self.dict()
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Save the prompt.
+
+        Args:
+            file_path: Path to directory to save prompt to.
+
+        Example:
+        .. code-block:: python
+
+            prompt.save(file_path="path/prompt.yaml")
+        """
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Fetch dictionary to save
+        prompt_dict = self._prompt_dict()
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(prompt_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(prompt_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")

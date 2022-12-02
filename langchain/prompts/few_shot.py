@@ -108,3 +108,12 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         template = self.example_separator.join([piece for piece in pieces if piece])
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+
+    def _prompt_dict(self) -> Dict:
+        """Return a dictionary of the prompt."""
+        if self.example_selector:
+            raise ValueError("Saving an example selector is not currently supported")
+
+        prompt_dict = self.dict()
+        prompt_dict["_type"] = "few_shot"
+        return prompt_dict

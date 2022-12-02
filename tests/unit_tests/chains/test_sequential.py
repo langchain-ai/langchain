@@ -28,7 +28,7 @@ class FakeChain(Chain, BaseModel):
         outputs = {}
         for var in self.output_variables:
             variables = [inputs[k] for k in self.input_variables]
-            outputs[var] = " ".join(variables) + "foo"
+            outputs[var] = f"{' '.join(variables)}foo"
         return outputs
 
 

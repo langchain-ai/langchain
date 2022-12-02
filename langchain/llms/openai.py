@@ -20,11 +20,11 @@ class OpenAI(LLM, BaseModel):
         .. code-block:: python
 
             from langchain import OpenAI
-            openai = OpenAI(model="text-davinci-002")
+            openai = OpenAI(model="text-davinci-003")
     """
 
     client: Any  #: :meta private:
-    model_name: str = "text-davinci-002"
+    model_name: str = "text-davinci-003"
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -82,7 +82,7 @@ class OpenAI(LLM, BaseModel):
         return values
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         normal_params = {
             "temperature": self.temperature,
@@ -115,7 +115,10 @@ class OpenAI(LLM, BaseModel):
 
                 response = openai("Tell me a joke.")
         """
-        response = self.client.create(
-            model=self.model_name, prompt=prompt, stop=stop, **self._default_params
-        )
+        params = self._default_params
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        response = self.client.create(model=self.model_name, prompt=prompt, **params)
         return response["choices"][0]["text"]
