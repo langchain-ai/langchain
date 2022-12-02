@@ -14,6 +14,13 @@ SQLAlchemy = "^1.4.44"
 requests = "^2.28.1"
 PyYAML = "^6.0"
 numpy = "^1.22.0"
+faiss-cpu = {version = "^1.7.3", optional = true}
+wikipedia = {version = "^1.4.0", optional = true}
+elasticsearch = {version = "^8.5.2", optional = true}
+manifest-ml = {version = "^0.0.1", optional = true}
+spacy = {version = "^3.4.3", optional = true}
+nltk = {version = "^3.7", optional = true}
+transformers = {version = "^4.25.1", optional = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -30,18 +37,16 @@ mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+playwright = "^1.28.0"
+
 [tool.poetry.extras]
-cohere = ["llms", "all"]
-openai = ["llms", "all"]
-nlpcloud = ["llms", "all"]
-huggingface_hub = ["llms", "all"]
-elasticsearch = ["all"]
-google-search-results = ["all"]
-faiss-cpu = ["all"]
-sentence_transformers = ["all"]
-transformers = ["all"]
-spacy = ["all"]
-nltk = ["all"]
+llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml"]
+all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia"]
 
 [tool.isort]
 profile = "black"
