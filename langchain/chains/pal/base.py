@@ -2,6 +2,8 @@
 
 As in https://arxiv.org/pdf/2211.10435.pdf.
 """
+from __future__ import annotations
+
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra
@@ -57,7 +59,7 @@ class PALChain(Chain, BaseModel):
         return {self.output_key: res.strip()}
 
     @classmethod
-    def from_math_prompt(cls, llm: LLM, **kwargs: Any) -> "PALChain":
+    def from_math_prompt(cls, llm: LLM, **kwargs: Any) -> PALChain:
         """Load PAL from math prompt."""
         return cls(
             llm=llm,
@@ -68,7 +70,7 @@ class PALChain(Chain, BaseModel):
         )
 
     @classmethod
-    def from_colored_object_prompt(cls, llm: LLM, **kwargs: Any) -> "PALChain":
+    def from_colored_object_prompt(cls, llm: LLM, **kwargs: Any) -> PALChain:
         """Load PAL from colored object prompt."""
         return cls(
             llm=llm,

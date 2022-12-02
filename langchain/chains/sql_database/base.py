@@ -54,7 +54,7 @@ class SQLDatabaseChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
         chained_input = ChainedInput(
-            inputs[self.input_key] + "\nSQLQuery:", verbose=self.verbose
+            f"{inputs[self.input_key]} \nSQLQuery:", verbose=self.verbose
         )
         llm_inputs = {
             "input": chained_input.input,

@@ -1,4 +1,6 @@
 """SQLAlchemy wrapper around a database."""
+from __future__ import annotations
+
 from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import create_engine, inspect
@@ -37,7 +39,7 @@ class SQLDatabase:
                 )
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any) -> "SQLDatabase":
+    def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         return cls(create_engine(database_uri), **kwargs)
 

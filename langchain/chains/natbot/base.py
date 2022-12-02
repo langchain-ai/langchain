@@ -1,4 +1,6 @@
 """Implement an LLM driven browser."""
+from __future__ import annotations
+
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -36,7 +38,7 @@ class NatBotChain(Chain, BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_default(cls, objective: str) -> "NatBotChain":
+    def from_default(cls, objective: str) -> NatBotChain:
         """Load with default LLM."""
         llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
         return cls(llm=llm, objective=objective)
