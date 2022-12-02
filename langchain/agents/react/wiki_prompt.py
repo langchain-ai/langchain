@@ -109,4 +109,4 @@ Action 3: Finish[yes]""",
 ]
 SUFFIX = """\n\nQuestion: {input}"""
 
-PROMPT = PromptTemplate.from_examples(EXAMPLES, SUFFIX, ["input"])
+WIKI_PROMPT = PromptTemplate.from_examples(EXAMPLES, SUFFIX, ["input"])
