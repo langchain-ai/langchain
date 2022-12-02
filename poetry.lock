@@ -473,7 +473,7 @@ transformers = []
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f65e1869bea6e2246209af8be5c59783385f4c1a63929daef6c791c5b57444bc"
+content-hash = "834348be49a790daffacd1e1acada04d5f5ebef3df24f0fee40fcb6dae8c7d9e"
 
 [metadata.files]
 attrs = [
