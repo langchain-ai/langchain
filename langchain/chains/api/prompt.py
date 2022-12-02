@@ -9,10 +9,16 @@ Using this documentation, generate the full API url to call for answering this q
 
 API url: """
 API_URL_PROMPT = PromptTemplate(
-    input_variables=["api_docs", "question",], template=API_URL_PROMPT_TEMPLATE
+    input_variables=[
+        "api_docs",
+        "question",
+    ],
+    template=API_URL_PROMPT_TEMPLATE,
 )
 
-API_RESPONSE_PROMPT_TEMPLATE = API_URL_PROMPT_TEMPLATE + """ {api_url}
+API_RESPONSE_PROMPT_TEMPLATE = (
+    API_URL_PROMPT_TEMPLATE
+    + """ {api_url}
 
 Here is the response from the API:
 
@@ -21,7 +27,9 @@ Here is the response from the API:
 Summarize this response to answer the original question.
 
 Summary:"""
+)
 
 API_RESPONSE_PROMPT = PromptTemplate(
-    input_variables=["api_docs", "question", "api_url", "api_response"], template=API_RESPONSE_PROMPT_TEMPLATE
+    input_variables=["api_docs", "question", "api_url", "api_response"],
+    template=API_RESPONSE_PROMPT_TEMPLATE,
 )
