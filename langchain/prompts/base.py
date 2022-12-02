@@ -1,8 +1,8 @@
 """BasePrompt schema definition."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, root_validator, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.formatting import formatter
 
@@ -36,6 +36,13 @@ class BaseOutputParser(ABC):
     def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
         """Parse the output of an LLM call."""
 
+
+class ListOutputParser(ABC):
+    """Class to parse the output of an LLM call to a list."""
+
+    @abstractmethod
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
 
 
 class BasePromptTemplate(BaseModel, ABC):
