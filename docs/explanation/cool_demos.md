@@ -19,6 +19,9 @@ GPT Index is a project consisting of a set of data structures that are created u
 ### [Grover's Algorithm](https://github.com/JavaFXpert/llm-grovers-search-party)
 Leveraging Qiskit, OpenAI and LangChain to demonstrate Grover's algorithm
 
+### [ReAct TextWorld](https://colab.research.google.com/drive/19WTIWC3prw5LDMHmRMvqNV2loD9FHls6?usp=sharing)
+Leveraging the ReActTextWorldAgent to play TextWorld with an LLM!
+
 
 ## Not Open Source
 
