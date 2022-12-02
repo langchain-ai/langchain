@@ -1,4 +1,5 @@
 """Chains are easily reusable components which can be linked together."""
+from langchain.chains.api.base import APIChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -22,4 +23,5 @@ __all__ = [
     "QAWithSourcesChain",
     "VectorDBQAWithSourcesChain",
     "PALChain",
+    "APIChain",
 ]

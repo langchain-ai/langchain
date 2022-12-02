@@ -68,11 +68,11 @@ def fake_llm_api_chain(test_api_data: dict) -> APIChain:
     fake_llm = FakeLLM(queries=queries)
     api_request_chain = LLMChain(llm=fake_llm, prompt=API_URL_PROMPT)
     api_answer_chain = LLMChain(llm=fake_llm, prompt=API_RESPONSE_PROMPT)
-    requests_chain = FakeRequestsChain(output=TEST_API_RESPONSE)
+    requests_wrapper = FakeRequestsChain(output=TEST_API_RESPONSE)
     return APIChain(
         api_request_chain=api_request_chain,
         api_answer_chain=api_answer_chain,
-        requests_chain=requests_chain,
+        requests_wrapper=requests_wrapper,
         api_docs=TEST_API_DOCS,
     )
 
