@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT
-from langchain.input import ChainedInput
+from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.sql_database import SQLDatabase
 
@@ -53,22 +53,26 @@ class SQLDatabaseChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
-        chained_input = ChainedInput(
-            f"{inputs[self.input_key]} \nSQLQuery:", verbose=self.verbose
-        )
+        input_text = f"{inputs[self.input_key]} \nSQLQuery:"
+        if self.verbose:
+            print_text(input_text)
         llm_inputs = {
-            "input": chained_input.input,
+            "input": input_text,
             "dialect": self.database.dialect,
             "table_info": self.database.table_info,
             "stop": ["\nSQLResult:"],
         }
         sql_cmd = llm_chain.predict(**llm_inputs)
-        chained_input.add(sql_cmd, color="green")
+        if self.verbose:
+            print_text(sql_cmd, color="green")
         result = self.database.run(sql_cmd)
-        chained_input.add("\nSQLResult: ")
-        chained_input.add(result, color="yellow")
-        chained_input.add("\nAnswer:")
-        llm_inputs["input"] = chained_input.input
+        if self.verbose:
+            print_text("\nSQLResult: ")
+            print_text(result, color="yellow")
+            print_text("\nAnswer:")
+        input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
+        llm_inputs["input"] = input_text
         final_result = llm_chain.predict(**llm_inputs)
-        chained_input.add(final_result, color="green")
+        if self.verbose:
+            print_text(final_result, color="green")
         return {self.output_key: final_result}
