@@ -1676,7 +1676,7 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "sqlitedict"
-version = "2.0.0"
+version = "2.1.0"
 description = "Persistent dict in Python, backed up by sqlite3 and pickle, multithread-safe."
 category = "main"
 optional = true
@@ -2047,7 +2047,7 @@ llms = ["manifest-ml"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f554f48eaf3e47207b338b991cd55de8799985ed9895547699cf96d05eb247e1"
+content-hash = "b382dc5b217ba91736e3244bf5fa7a0eadcebfaaa8e89c3ecc6d456b8e371b5c"
 
 [metadata.files]
 anyio = [
@@ -3293,7 +3293,7 @@ sqlalchemy = [
     {file = "SQLAlchemy-1.4.44.tar.gz", hash = "sha256:2dda5f96719ae89b3ec0f1b79698d86eb9aecb1d54e990abb3fdd92c04b46a90"},
 ]
 sqlitedict = [
-    {file = "sqlitedict-2.0.0.tar.gz", hash = "sha256:23a370416f4e1e962daa293382f3a8dbc4127e6a0abc06a5d4e58e6902f05d17"},
+    {file = "sqlitedict-2.1.0.tar.gz", hash = "sha256:03d9cfb96d602996f1d4c2db2856f1224b96a9c431bdd16e78032a72940f9e8c"},
 ]
 srsly = [
     {file = "srsly-2.4.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8fed31ef8acbb5fead2152824ef39e12d749fcd254968689ba5991dd257b63b4"},
