@@ -1,4 +1,6 @@
 """Example selector that selects examples based on SemanticSimilarity."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
@@ -6,6 +8,11 @@ from pydantic import BaseModel, Extra
 from langchain.embeddings.base import Embeddings
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.vectorstores.base import VectorStore
+
+
+def sorted_values(values: Dict[str, str]) -> List[Any]:
+    """Return a list of values in dict sorted by key."""
+    return [values[val] for val in sorted(values)]
 
 
 class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
@@ -24,10 +31,15 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    def add_example(self, example: Dict[str, str]) -> None:
+        """Add new example to vectorstore."""
+        string_example = " ".join(sorted_values(example))
+        self.vectorstore.add_texts([string_example], metadatas=[example])
+
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         """Select which examples to use based on semantic similarity."""
         # Get the docs with the highest similarity.
-        query = " ".join(input_variables.values())
+        query = " ".join(sorted_values(input_variables))
         example_docs = self.vectorstore.similarity_search(query, k=self.k)
         # Get the examples from the metadata.
         # This assumes that examples are stored in metadata.
@@ -45,7 +57,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         vectorstore_cls: VectorStore,
         k: int = 4,
         **vectorstore_cls_kwargs: Any,
-    ) -> "SemanticSimilarityExampleSelector":
+    ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
 
         Reshuffles examples dynamically based on query similarity.
@@ -68,7 +80,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
-        string_examples = [" ".join(eg.values()) for eg in examples]
+        string_examples = [" ".join(sorted_values(eg)) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )

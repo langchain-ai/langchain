@@ -1,4 +1,6 @@
 """Experiment with different models."""
+from __future__ import annotations
+
 from typing import List, Optional, Sequence
 
 from langchain.chains.base import Chain
@@ -45,7 +47,7 @@ class ModelLaboratory:
     @classmethod
     def from_llms(
         cls, llms: List[LLM], prompt: Optional[PromptTemplate] = None
-    ) -> "ModelLaboratory":
+    ) -> ModelLaboratory:
         """Initialize with LLMs to experiment with and optional prompt.
 
         Args:

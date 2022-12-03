@@ -1,4 +1,6 @@
 """Wrapper around FAISS vector database."""
+from __future__ import annotations
+
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
@@ -37,7 +39,9 @@ class FAISS(VectorStore):
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
 
-    def add_texts(self, texts: Iterable[str]) -> None:
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
@@ -46,7 +50,10 @@ class FAISS(VectorStore):
             )
         # Embed and create the documents.
         embeddings = [self.embedding_function(text) for text in texts]
-        documents = [Document(page_content=text) for text in texts]
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            documents.append(Document(page_content=text, metadata=metadata))
         # Add to the index, the index_to_id mapping, and the docstore.
         starting_len = len(self.index_to_docstore_id)
         self.index.add(np.array(embeddings, dtype=np.float32))
@@ -91,7 +98,7 @@ class FAISS(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "FAISS":
+    ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
 
         This is a user friendly interface that:

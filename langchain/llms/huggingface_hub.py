@@ -51,7 +51,7 @@ class HuggingFaceHub(LLM, BaseModel):
         try:
             from huggingface_hub.inference_api import InferenceApi
 
-            repo_id = values.get("repo_id", DEFAULT_REPO_ID)
+            repo_id = values["repo_id"]
             client = InferenceApi(
                 repo_id=repo_id,
                 token=huggingfacehub_api_token,

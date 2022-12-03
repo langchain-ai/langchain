@@ -43,6 +43,34 @@ def test_loading_from_JSON() -> None:
         assert prompt == expected_prompt
 
 
+def test_saving_loading_round_trip(tmp_path: Path) -> None:
+    """Test equality when saving and loading a prompt."""
+    simple_prompt = PromptTemplate(
+        input_variables=["adjective", "content"],
+        template="Tell me a {adjective} joke about {content}.",
+    )
+    simple_prompt.save(file_path=tmp_path / "prompt.yaml")
+    loaded_prompt = load_prompt(tmp_path / "prompt.yaml")
+    assert loaded_prompt == simple_prompt
+
+    few_shot_prompt = FewShotPromptTemplate(
+        input_variables=["adjective"],
+        prefix="Write antonyms for the following words.",
+        example_prompt=PromptTemplate(
+            input_variables=["input", "output"],
+            template="Input: {input}\nOutput: {output}",
+        ),
+        examples=[
+            {"input": "happy", "output": "sad"},
+            {"input": "tall", "output": "short"},
+        ],
+        suffix="Input: {adjective}\nOutput:",
+    )
+    few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
+    loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
+    assert loaded_prompt == few_shot_prompt
+
+
 def test_loading_with_template_as_file() -> None:
     """Test loading when the template is a file."""
     with change_directory():

@@ -1,13 +1,13 @@
 """Chain that does self ask with search."""
-from typing import Any, ClassVar, List, Tuple
+from typing import Any, ClassVar, List, Optional, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
-from langchain.chains.serpapi import SerpAPIChain
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.serpapi import SerpAPIWrapper
 
 
 class SelfAskWithSearchAgent(Agent):
@@ -25,30 +25,25 @@ class SelfAskWithSearchAgent(Agent):
                 f"Tool name should be Intermediate Answer, got {tool_names}"
             )
 
-    def _extract_tool_and_input(self, text: str) -> Tuple[str, str]:
+    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         followup = "Follow up:"
-        if "\n" not in text:
-            last_line = text
-        else:
-            last_line = text.split("\n")[-1]
+        last_line = text.split("\n")[-1]
 
         if followup not in last_line:
             finish_string = "So the final answer is: "
             if finish_string not in last_line:
-                raise ValueError("We should probably never get here")
-            return "Final Answer", text[len(finish_string) :]
+                return None
+            return "Final Answer", last_line[len(finish_string) :]
 
-        if ":" not in last_line:
-            after_colon = last_line
-        else:
-            after_colon = text.split(":")[-1]
+        after_colon = text.split(":")[-1]
 
         if " " == after_colon[0]:
             after_colon = after_colon[1:]
-        if "?" != after_colon[-1]:
-            print("we probably should never get here..." + text)
 
         return "Intermediate Answer", after_colon
+
+    def _fix_text(self, text: str) -> str:
+        return f"{text}\nSo the final answer is:"
 
     @property
     def observation_prefix(self) -> str:
@@ -72,12 +67,12 @@ class SelfAskWithSearchChain(SelfAskWithSearchAgent):
     Example:
         .. code-block:: python
 
-            from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIChain
-            search_chain = SerpAPIChain()
+            from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIWrapper
+            search_chain = SerpAPIWrapper()
             self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
     """
 
-    def __init__(self, llm: LLM, search_chain: SerpAPIChain, **kwargs: Any):
+    def __init__(self, llm: LLM, search_chain: SerpAPIWrapper, **kwargs: Any):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(name="Intermediate Answer", func=search_chain.run)
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)

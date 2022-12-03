@@ -7,14 +7,17 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
+    ConversationChain,
     LLMChain,
     LLMMathChain,
+    PALChain,
     PythonChain,
-    SerpAPIChain,
+    QAWithSourcesChain,
     SQLDatabaseChain,
     VectorDBQA,
+    VectorDBQAWithSourcesChain,
 )
-from langchain.docstore import Wikipedia
+from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.prompts import (
     BasePromptTemplate,
@@ -22,6 +25,7 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
+from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
@@ -30,6 +34,7 @@ __all__ = [
     "LLMMathChain",
     "PythonChain",
     "SelfAskWithSearchChain",
+    "SerpAPIWrapper",
     "SerpAPIChain",
     "Cohere",
     "OpenAI",
@@ -46,4 +51,9 @@ __all__ = [
     "MRKLChain",
     "VectorDBQA",
     "ElasticVectorSearch",
+    "InMemoryDocstore",
+    "ConversationChain",
+    "VectorDBQAWithSourcesChain",
+    "QAWithSourcesChain",
+    "PALChain",
 ]

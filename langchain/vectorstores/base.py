@@ -1,4 +1,6 @@
 """Interface for vector stores."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, List, Optional
 
@@ -10,7 +12,9 @@ class VectorStore(ABC):
     """Interface for vector stores."""
 
     @abstractmethod
-    def add_texts(self, texts: Iterable[str]) -> None:
+    def add_texts(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
         """Run more texts through the embeddings and add to the vectorstore."""
 
     @abstractmethod
@@ -24,6 +28,6 @@ class VectorStore(ABC):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any
-    ) -> "VectorStore":
+        **kwargs: Any,
+    ) -> VectorStore:
         """Return VectorStore initialized from texts and embeddings."""

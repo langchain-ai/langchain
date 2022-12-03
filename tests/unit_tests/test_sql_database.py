@@ -47,3 +47,17 @@ def test_sql_database_run() -> None:
     output = db.run(command)
     expected_output = "[('Harrison',)]"
     assert output == expected_output
+
+
+def test_sql_database_run_update() -> None:
+    """Test commands which return no rows return an empty string."""
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj.create_all(engine)
+    stmt = insert(user).values(user_id=13, user_name="Harrison")
+    with engine.connect() as conn:
+        conn.execute(stmt)
+    db = SQLDatabase(engine)
+    command = "update user set user_name='Updated' where user_id = 13"
+    output = db.run(command)
+    expected_output = ""
+    assert output == expected_output

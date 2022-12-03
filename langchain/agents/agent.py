@@ -1,4 +1,6 @@
 """Chain that takes in an input and produces an action and action input."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
 
@@ -83,14 +85,18 @@ class Agent(Chain, BaseModel, ABC):
         pass
 
     @classmethod
-    def _get_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Create a prompt for this class."""
         return cls.prompt
 
+    def _prepare_for_new_call(self) -> None:
+        pass
+
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> "Agent":
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool], **kwargs: Any) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        llm_chain = LLMChain(llm=llm, prompt=cls._get_prompt(tools))
+        llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
     def get_action(self, text: str) -> Action:
@@ -118,6 +124,8 @@ class Agent(Chain, BaseModel, ABC):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
         text = inputs[self.input_key]
+        # Do any preparation necessary when receiving a new input.
+        self._prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # Construct the initial string to pass into the LLM. This is made up

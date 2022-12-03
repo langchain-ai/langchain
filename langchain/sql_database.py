@@ -1,4 +1,6 @@
 """SQLAlchemy wrapper around a database."""
+from __future__ import annotations
+
 from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import create_engine, inspect
@@ -37,7 +39,7 @@ class SQLDatabase:
                 )
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any) -> "SQLDatabase":
+    def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         return cls(create_engine(database_uri), **kwargs)
 
@@ -66,6 +68,14 @@ class SQLDatabase:
         return "\n".join(tables)
 
     def run(self, command: str) -> str:
-        """Execute a SQL command and return a string of the results."""
-        result = self._engine.execute(command).fetchall()
-        return str(result)
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+        """
+        with self._engine.connect() as connection:
+            cursor = connection.exec_driver_sql(command)
+            if cursor.returns_rows:
+                result = cursor.fetchall()
+                return str(result)
+        return ""

@@ -1,12 +1,37 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
+
+
+class Memory(BaseModel, ABC):
+    """Base interface for memory in chains."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    @property
+    @abstractmethod
+    def memory_variables(self) -> List[str]:
+        """Input keys this memory class will load dynamically."""
+
+    @abstractmethod
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return key-value pairs given the text input to the chain."""
+
+    @abstractmethod
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save the context of this model run to memory."""
 
 
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
+
+    memory: Optional[Memory] = None
 
     verbose: bool = False
     """Whether to print out response text."""
@@ -51,13 +76,20 @@ class Chain(BaseModel, ABC):
                 chain will be returned. Defaults to False.
 
         """
+        if self.memory is not None:
+            external_context = self.memory.load_memory_variables(inputs)
+            inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            print("\n\n\033[1m> Entering new chain...\033[0m")
+            print(
+                f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
+            )
         outputs = self._call(inputs)
         if self.verbose:
-            print("\n\033[1m> Finished chain.\033[0m")
+            print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
         self._validate_outputs(outputs)
+        if self.memory is not None:
+            self.memory.save_context(inputs, outputs)
         if return_only_outputs:
             return outputs
         else:

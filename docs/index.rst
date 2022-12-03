@@ -30,7 +30,7 @@ However, there are still some challenges going from that to an application runni
 - Prompt: The input to a language model. Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
 - Prompt Template: An object responsible for constructing the final prompt to pass to a LLM.
 
-*Problems solved*
+*Problems Solved*
 
 - Switching costs: by exposing a standard interface for all the top LLM providers, LangChain makes it easy to switch from one provider to another, whether it be for production use cases or just for testing stuff out.
 - Prompt management: managing your prompts is easy when you only have one simple one, but can get tricky when you have a bunch or when they start to get more complex. LangChain provides a standard way for storing, constructing, and referencing prompts.
@@ -46,7 +46,7 @@ LangChain provides several parts to help with that.
 - Tools: APIs designed for assisting with a particular use case (search, databases, Python REPL, etc). Prompt templates, LLMs, and chains can also be considered tools.
 - Chains: A combination of multiple tools in a deterministic manner.
 
-*Problems solved*
+*Problems Solved*
 
 - Standard interface for working with Chains
 - Easy way to construct chains of LLMs
@@ -65,7 +65,7 @@ Depending on the user input, the agent can then decide which, if any, of these t
 - Agent: An LLM-powered class responsible for determining which tools to use and in what order.
 
 
-*Problems solved*
+*Problems Solved*
 
 - Standard agent interfaces
 - A selection of powerful agents to choose from
@@ -73,7 +73,20 @@ Depending on the user input, the agent can then decide which, if any, of these t
 
 **🧠 Memory**
 
-Coming soon.
+By default, Chains and Agents are stateless, meaning that they treat each incoming query independently.
+In some applications (chatbots being a GREAT example) it is highly important to remember previous interactions,
+both at a short term but also at a long term level. The concept of "Memory" exists to do exactly that.
+
+*Key Concepts*
+
+- Memory: A class that can be added to an Agent or Chain to (1) pull in memory variables before calling that chain/agent, and (2) create new memories after the chain/agent finishes.
+- Memory Variables: Variables returned from a Memory class, to be passed into the chain/agent along with the user input.
+
+*Problems Solved*
+
+- Standard memory interfaces
+- A collection of common memory implementations to choose from
+- Common chains/agents that use memory (e.g. chatbots)
 
 Documentation Structure
 =======================
@@ -91,6 +104,7 @@ The documentation is structured into the following sections:
    getting_started/llm_chain.md
    getting_started/sequential_chains.md
    getting_started/agents.ipynb
+   getting_started/memory.ipynb
 
 Goes over a simple walk through and tutorial for getting started setting up a simple chain that generates a company name based on what the company makes.
 Covers installation, environment set up, calling LLMs, and using prompts.
@@ -106,6 +120,7 @@ Start here if you haven't used LangChain before.
    examples/integrations.rst
    examples/chains.rst
    examples/agents.rst
+   examples/memory.rst
    examples/model_laboratory.ipynb
 
 More elaborate examples and walk-throughs of particular
@@ -143,6 +158,7 @@ see detailed information about the various classes, methods, and APIs.
    explanation/core_concepts.md
    explanation/agents.md
    explanation/glossary.md
+   explanation/cool_demos.md
    Discord <https://discord.gg/6adMQxSpJS>
 
 Higher level, conceptual explanations of the LangChain components.
