@@ -70,7 +70,7 @@ class SQLDatabaseChain(Chain, BaseModel):
             print_text("\nSQLResult: ")
             print_text(result, color="yellow")
             print_text("\nAnswer:")
-        input_text += f"\nSQLResult: {result}\nAnswer:"
+        input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
         llm_inputs["input"] = input_text
         final_result = llm_chain.predict(**llm_inputs)
         if self.verbose:
