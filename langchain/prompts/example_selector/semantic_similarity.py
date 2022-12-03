@@ -64,16 +64,8 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
 
         Args:
             examples: List of examples to use in the prompt.
-            suffix: String to go after the list of examples. Should generally
-                set up the user's input.
-            input_variables: A list of variable names the final prompt template
-                will expect.
             embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            example_separator: The seperator to use in between examples. Defaults
-                to two new line characters.
-            prefix: String that should go before any examples. Generally includes
-                examples. Default to an empty string.
             k: Number of examples to select
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
