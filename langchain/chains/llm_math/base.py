@@ -6,9 +6,9 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
-from langchain.chains.python import PythonChain
 from langchain.input import print_text
 from langchain.llms.base import LLM
+from langchain.python import PythonREPL
 
 
 class LLMMathChain(Chain, BaseModel):
@@ -50,7 +50,7 @@ class LLMMathChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
-        python_executor = PythonChain()
+        python_executor = PythonREPL()
         if self.verbose:
             print_text(inputs[self.input_key])
         t = llm_executor.predict(question=inputs[self.input_key], stop=["```output"])
