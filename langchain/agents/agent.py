@@ -2,24 +2,19 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import ChainedInput, get_color_mapping
+from langchain.input import get_color_mapping
+from langchain.agents.input import ChainedInput
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
-
-
-class Action(NamedTuple):
-    """Action to take."""
-
-    tool: str
-    tool_input: str
-    log: str
+from langchain.schema import AgentAction
+from langchain.logger import logger
 
 
 class Agent(Chain, BaseModel, ABC):
@@ -99,7 +94,7 @@ class Agent(Chain, BaseModel, ABC):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
-    def get_action(self, text: str) -> Action:
+    def get_action(self, text: str) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
@@ -119,7 +114,7 @@ class Agent(Chain, BaseModel, ABC):
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
-        return Action(tool, tool_input, full_output)
+        return AgentAction(tool, tool_input, full_output)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
@@ -135,7 +130,7 @@ class Agent(Chain, BaseModel, ABC):
         # prompts the LLM to take an action.
         starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
-        chained_input = ChainedInput(starter_string, verbose=self.verbose)
+        chained_input = ChainedInput(starter_string, self.observation_prefix, self.llm_prefix, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
@@ -145,7 +140,7 @@ class Agent(Chain, BaseModel, ABC):
             # Call the LLM to see what to do.
             output = self.get_action(chained_input.input)
             # Add the log to the Chained Input.
-            chained_input.add(output.log, color="green")
+            chained_input.add_action(output, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
                 return {self.output_key: output.tool_input}
@@ -154,8 +149,4 @@ class Agent(Chain, BaseModel, ABC):
             # We then call the tool on the tool input to get an observation
             observation = chain(output.tool_input)
             # We then log the observation
-            chained_input.add(f"\n{self.observation_prefix}")
-            chained_input.add(observation, color=color_mapping[output.tool])
-            # We then add the LLM prefix into the prompt to get the LLM to start
-            # thinking, and start the loop all over.
-            chained_input.add(f"\n{self.llm_prefix}")
+            chained_input.add_observation(observation, color=color_mapping[output.tool])
