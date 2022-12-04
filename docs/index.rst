@@ -141,6 +141,9 @@ common tasks or cool demos.
    modules/llms
    modules/embeddings
    modules/text_splitter
+   modules/python.rst
+   modules/serpapi.rst
+   modules/docstore.rst
    modules/vectorstore
    modules/chains
    modules/agents

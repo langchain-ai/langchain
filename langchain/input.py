@@ -36,13 +36,13 @@ class ChainedInput:
         """Initialize with verbose flag and initial text."""
         self._verbose = verbose
         if self._verbose:
-            print_text(text, None)
+            print_text(text, color=None)
         self._input = text
 
     def add(self, text: str, color: Optional[str] = None) -> None:
         """Add text to input, print if in verbose mode."""
         if self._verbose:
-            print_text(text, color)
+            print_text(text, color=color)
         self._input += text
 
     @property
