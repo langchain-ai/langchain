@@ -1,4 +1,4 @@
-"""Chain thae just inputs to alternative outputs."""
+"""Chain that runs an arbitrary python function."""
 from typing import Callable, Dict, List
 
 from pydantic import BaseModel
@@ -38,8 +38,4 @@ class TransformChain(Chain, BaseModel):
         return self.output_variables
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        missing_vars = set(inputs.keys()).difference(set(self.input_keys))
-        if missing_vars:
-            raise ValueError(f"Missing required input keys: {missing_vars}")
-
         return self.transform(inputs)
