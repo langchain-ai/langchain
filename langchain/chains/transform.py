@@ -1,4 +1,4 @@
-"""Chain that transforms inputs to alternative outputs."""
+"""Transform inputs to alternative outputs."""
 from typing import Callable, Dict, List
 
 from pydantic import BaseModel
