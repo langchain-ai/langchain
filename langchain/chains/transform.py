@@ -23,7 +23,7 @@ class TransformChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input key.
+        """Expected input keys.
 
         :meta private:
         """
@@ -31,7 +31,7 @@ class TransformChain(Chain, BaseModel):
 
     @property
     def output_keys(self) -> List[str]:
-        """Return output key.
+        """Returned output keys.
 
         :meta private:
         """
