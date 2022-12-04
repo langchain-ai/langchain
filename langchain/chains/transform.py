@@ -1,4 +1,4 @@
-"""Transform inputs to alternative outputs."""
+"""Chain thae just inputs to alternative outputs."""
 from typing import Callable, Dict, List
 
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from langchain.chains.base import Chain
 
 
 class TransformChain(Chain, BaseModel):
-    """Chain to transform chain output.
+    """Chain transform chain output.
 
     Example:
         .. code-block:: python
@@ -23,7 +23,7 @@ class TransformChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expected input keys.
+        """Expect input keys.
 
         :meta private:
         """
@@ -31,7 +31,7 @@ class TransformChain(Chain, BaseModel):
 
     @property
     def output_keys(self) -> List[str]:
-        """Returned output keys.
+        """Return output keys.
 
         :meta private:
         """
