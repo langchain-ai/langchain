@@ -6,15 +6,14 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
+from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
-from langchain.agents.input import ChainedInput
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import AgentAction
-from langchain.logger import logger
 
 
 class Agent(Chain, BaseModel, ABC):
@@ -149,4 +148,9 @@ class Agent(Chain, BaseModel, ABC):
             # We then call the tool on the tool input to get an observation
             observation = chain(output.tool_input)
             # We then log the observation
-            chained_input.add_observation(observation, self.observation_prefix, self.llm_prefix, color=color_mapping[output.tool])
+            chained_input.add_observation(
+                observation,
+                self.observation_prefix,
+                self.llm_prefix,
+                color=color_mapping[output.tool],
+            )

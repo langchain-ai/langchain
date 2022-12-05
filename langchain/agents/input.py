@@ -1,8 +1,8 @@
 """Input manager for agents."""
 from typing import Optional
 
+import langchain
 from langchain.schema import AgentAction
-from langchain.logger import logger
 
 
 class ChainedInput:
@@ -12,19 +12,25 @@ class ChainedInput:
         """Initialize with verbose flag and initial text."""
         self._verbose = verbose
         if self._verbose:
-            logger.log_agent_start(text)
+            langchain.logger.log_agent_start(text)
         self._input = text
 
     def add_action(self, action: AgentAction, color: Optional[str] = None) -> None:
         """Add text to input, print if in verbose mode."""
         if self._verbose:
-            logger.log_agent_action(action, color=color)
+            langchain.logger.log_agent_action(action, color=color)
         self._input += action.log
 
-    def add_observation(self, observation: str, observation_prefix: str, llm_prefix: str, color: Optional[str]) -> None:
+    def add_observation(
+        self,
+        observation: str,
+        observation_prefix: str,
+        llm_prefix: str,
+        color: Optional[str],
+    ) -> None:
         """Add observation to input, print if in verbose mode."""
         if self._verbose:
-            logger.log_agent_observation(
+            langchain.logger.log_agent_observation(
                 observation,
                 color=color,
                 observation_prefix=observation_prefix,

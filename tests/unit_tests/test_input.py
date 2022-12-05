@@ -3,8 +3,8 @@
 import sys
 from io import StringIO
 
-from langchain.input import get_color_mapping
 from langchain.agents.input import ChainedInput
+from langchain.input import get_color_mapping
 
 
 def test_chained_input_not_verbose() -> None:
