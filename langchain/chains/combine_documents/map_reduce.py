@@ -11,7 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 
 
-class MapDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     """Question answering with sources over documents."""
 
     llm_chain: LLMChain
