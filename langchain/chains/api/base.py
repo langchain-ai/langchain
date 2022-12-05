@@ -80,7 +80,7 @@ class APIChain(Chain, BaseModel):
             print_text(api_url, color="green", end="\n")
         api_response = self.requests_wrapper.run(api_url)
         if self.verbose:
-            print_text(api_url, color="yellow", end="\n")
+            print_text(api_response, color="yellow", end="\n")
         answer = self.api_answer_chain.predict(
             question=question,
             api_docs=self.api_docs,
