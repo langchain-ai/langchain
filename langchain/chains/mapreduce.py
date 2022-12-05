@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
-from langchain.chains.combine_documents.map import MapDocumentsChain
+from langchain.chains.combine_documents.map import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
@@ -37,7 +37,7 @@ class MapReduceChain(Chain, BaseModel):
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         reduce_chain = StuffDocumentsChain(llm_chain=llm_chain)
-        combine_documents_chain = MapDocumentsChain(
+        combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain, combine_document_chain=reduce_chain
         )
         return cls(

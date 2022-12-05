@@ -9,7 +9,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
-from langchain.chains.combine_documents.map import MapDocumentsChain
+from langchain.chains.combine_documents.map import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_with_sources.prompt import (
@@ -49,7 +49,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             document_prompt=combine_document_prompt,
             document_variable_name="summaries",
         )
-        combine_document_chain = MapDocumentsChain(
+        combine_document_chain = MapReduceDocumentsChain(
             llm_chain=llm_question_chain,
             combine_document_chain=combine_results_chain,
             document_variable_name="context",

@@ -11,13 +11,13 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 
 
-class MapDocumentsChain(BaseCombineDocumentsChain, BaseModel):
-    """Question answering with sources over documents."""
+class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+    """Combining documents by mapping a chain over them, then combining results."""
 
     llm_chain: LLMChain
-    """LLM wrapper to use for asking questions to each document."""
+    """Chain to apply to each document individually.."""
     combine_document_chain: BaseCombineDocumentsChain
-    """Chain to use to combine documents."""
+    """Chain to use to combine results of applying llm_chain to documents."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
