@@ -4,15 +4,15 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import Prompt
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.llm import LLMChain
+from langchain.docstore.document import Document
+from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 
 
-def _get_default_document_prompt() -> Prompt:
-    return Prompt(input_variables=["page_content"], template="{page_content}")
+def _get_default_document_prompt() -> PromptTemplate:
+    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
@@ -70,6 +70,6 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         # Join the documents together to put them in the prompt.
         inputs = kwargs.copy()
-        inputs[self.document_variable_name] = "\n".join(doc_strings)
+        inputs[self.document_variable_name] = "\n\n".join(doc_strings)
         # Call predict on the LLM.
         return self.llm_chain.predict(**inputs)

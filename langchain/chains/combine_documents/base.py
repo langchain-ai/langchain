@@ -1,15 +1,13 @@
 """Document combining chain."""
 
-from typing import Any, Dict, List
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel
 
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import Prompt
 from langchain.docstore.document import Document
+from langchain.prompts.prompt import Prompt
 
 
 def _get_default_document_prompt() -> Prompt:

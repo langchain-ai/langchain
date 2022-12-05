@@ -8,7 +8,9 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
-from langchain.chains.combine_documents import CombineDocumentsChain
+from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.map import MapDocumentsChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_with_sources.prompt import (
     COMBINE_PROMPT,
@@ -23,12 +25,8 @@ from langchain.prompts.base import BasePromptTemplate
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     """Question answering with sources over documents."""
 
-    llm_question_chain: LLMChain
-    """LLM wrapper to use for asking questions to each document."""
-    combine_document_chain: CombineDocumentsChain
+    combine_document_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
-    doc_source_key: str = "source"
-    """Key in document.metadata to use as source information"""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
     answer_key: str = "answer"  #: :meta private:
@@ -46,13 +44,17 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)
-        combine_document_chain = CombineDocumentsChain(
+        combine_results_chain = StuffDocumentsChain(
             llm_chain=llm_combine_chain,
             document_prompt=combine_document_prompt,
             document_variable_name="summaries",
         )
+        combine_document_chain = MapDocumentsChain(
+            llm_chain=llm_question_chain,
+            combine_document_chain=combine_results_chain,
+            document_variable_name="context",
+        )
         return cls(
-            llm_question_chain=llm_question_chain,
             combine_document_chain=combine_document_chain,
             **kwargs,
         )
@@ -82,7 +84,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     @root_validator(pre=True)
     def validate_question_chain(cls, values: Dict) -> Dict:
         """Validate question chain."""
-        llm_question_chain = values["llm_question_chain"]
+        llm_question_chain = values["combine_document_chain"].llm_chain
         if len(llm_question_chain.input_keys) != 2:
             raise ValueError(
                 f"The llm_question_chain should have two inputs: a content key "
@@ -104,23 +106,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        query = inputs[self.question_key]
-        content_key, query_key = self.llm_question_chain.input_keys
-        results = self.llm_question_chain.apply(
-            [{content_key: d.page_content, query_key: query} for d in docs]
-        )
-        question_result_key = self.llm_question_chain.output_key
-        result_docs = [
-            Document(page_content=r[question_result_key], metadata=docs[i].metadata)
-            for i, r in enumerate(results)
-        ]
-        answer_dict = self.combine_document_chain(
-            {
-                self.combine_document_chain.input_key: result_docs,
-                self.question_key: query,
-            }
-        )
-        answer = answer_dict[self.combine_document_chain.output_key]
+        answer = self.combine_document_chain.combine_docs(docs, **inputs)
         if "\nSOURCES: " in answer:
             answer, sources = answer.split("\nSOURCES: ")
         else:
@@ -142,4 +128,4 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         return [self.input_docs_key, self.question_key]
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
-        return inputs[self.input_docs_key]
+        return inputs.pop(self.input_docs_key)
