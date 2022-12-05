@@ -11,7 +11,6 @@ from langchain.chains import (
     LLMChain,
     LLMMathChain,
     PALChain,
-    PythonChain,
     QAWithSourcesChain,
     SQLDatabaseChain,
     VectorDBQA,
@@ -32,7 +31,6 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 __all__ = [
     "LLMChain",
     "LLMMathChain",
-    "PythonChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
     "SerpAPIChain",
