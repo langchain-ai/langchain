@@ -1943,6 +1943,14 @@ python-versions = "*"
 types-urllib3 = "<1.27"
 
 [[package]]
+name = "types-toml"
+version = "0.10.8.1"
+description = "Typing stubs for toml"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-urllib3"
 version = "1.26.25.4"
 description = "Typing stubs for urllib3"
@@ -2047,7 +2055,7 @@ llms = ["manifest-ml"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ec61c2519afcbcf5517e990baf5997a76fbe2d292193862afaef4148c707bdac"
+content-hash = "4c7e2033677ad4d5924096db6fed10f13be8f12e9098891e1f105e8fb5e72cee"
 
 [metadata.files]
 anyio = [
@@ -3445,6 +3453,10 @@ types-pyyaml = [
 types-requests = [
     {file = "types-requests-2.28.11.5.tar.gz", hash = "sha256:a7df37cc6fb6187a84097da951f8e21d335448aa2501a6b0a39cbd1d7ca9ee2a"},
     {file = "types_requests-2.28.11.5-py3-none-any.whl", hash = "sha256:091d4a5a33c1b4f20d8b1b952aa8fa27a6e767c44c3cf65e56580df0b05fd8a9"},
+]
+types-toml = [
+    {file = "types-toml-0.10.8.1.tar.gz", hash = "sha256:171bdb3163d79a520560f24ba916a9fc9bff81659c5448a9fea89240923722be"},
+    {file = "types_toml-0.10.8.1-py3-none-any.whl", hash = "sha256:b7b5c4977f96ab7b5ac06d8a6590d17c0bf252a96efc03b109c2711fb3e0eafd"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.25.4.tar.gz", hash = "sha256:eec5556428eec862b1ac578fb69aab3877995a99ffec9e5a12cf7fbd0cc9daee"},
