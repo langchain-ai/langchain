@@ -17,7 +17,7 @@
 
 import toml
 
-with open('../pyproject.toml') as f:
+with open("../pyproject.toml") as f:
     data = toml.load(f)
 
 # -- Project information -----------------------------------------------------
@@ -26,7 +26,7 @@ project = "LangChain"
 copyright = "2022, Harrison Chase"
 author = "Harrison Chase"
 
-version = data['tool']['poetry']['version']
+version = data["tool"]["poetry"]["version"]
 release = version
 
 
