@@ -9,6 +9,7 @@ from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChai
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.llm_search.base import LLMSearchChain
 
 __all__ = [
     "LLMChain",
@@ -22,4 +23,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "PALChain",
     "APIChain",
+    "LLMSearchChain",
 ]
