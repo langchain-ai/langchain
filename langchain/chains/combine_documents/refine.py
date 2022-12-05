@@ -18,8 +18,6 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     """LLM wrapper to use for asking questions to each document."""
     refine_llm_chain: LLMChain
     """LLM wrapper to use for asking questions to each document."""
-    combine_document_chain: BaseCombineDocumentsChain
-    """Chain to use to combine documents."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
