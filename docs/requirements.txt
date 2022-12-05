@@ -6,3 +6,4 @@ sphinx-autobuild==2021.3.14
 sphinx_rtd_theme==1.0.0
 sphinx-typlog-theme==0.8.0
 sphinx-panels
+toml
