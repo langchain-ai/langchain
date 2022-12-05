@@ -150,9 +150,12 @@ class Agent(Chain, BaseModel, ABC):
             if output.tool == self.finish_tool_name:
                 return {self.output_key: output.tool_input}
             # Otherwise we lookup the tool
-            chain = name_to_tool_map[output.tool]
-            # We then call the tool on the tool input to get an observation
-            observation = chain(output.tool_input)
+            if output.tool in name_to_tool_map:
+                chain = name_to_tool_map[output.tool]
+                # We then call the tool on the tool input to get an observation
+                observation = chain(output.tool_input)
+            else:
+                observation = f"Tool {output.tool} not found."
             # We then log the observation
             chained_input.add(f"\n{self.observation_prefix}")
             chained_input.add(observation, color=color_mapping[output.tool])
