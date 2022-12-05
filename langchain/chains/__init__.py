@@ -1,5 +1,6 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
+from langchain.chains.bash import BashChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -12,16 +13,17 @@ from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
 __all__ = [
+    "APIChain",
+    "BashChain",
+    "ConversationChain",
     "LLMChain",
     "LLMMathChain",
+    "PALChain",
     "PythonChain",
+    "QAWithSourcesChain",
     "SQLDatabaseChain",
-    "VectorDBQA",
     "SequentialChain",
     "SimpleSequentialChain",
-    "ConversationChain",
-    "QAWithSourcesChain",
+    "VectorDBQA",
     "VectorDBQAWithSourcesChain",
-    "PALChain",
-    "APIChain",
 ]
