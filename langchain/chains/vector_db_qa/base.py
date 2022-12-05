@@ -9,6 +9,7 @@ from langchain.chains.vector_db_qa.prompt import PROMPT
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
+from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 
 
 class VectorDBQA(Chain, BaseModel):
@@ -30,8 +31,8 @@ class VectorDBQA(Chain, BaseModel):
     """Vector Database to connect to."""
     k: int = 4
     """Number of documents to query for."""
-    prompt: PromptTemplate = PROMPT
-    """Prompt to use when questioning the documents."""
+    combine_documents_chain: BaseCombineDocumentsChain
+    """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -61,9 +62,5 @@ class VectorDBQA(Chain, BaseModel):
         question = inputs[self.input_key]
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         docs = self.vectorstore.similarity_search(question, k=self.k)
-        contexts = []
-        for j, doc in enumerate(docs):
-            contexts.append(f"Context {j}:\n{doc.page_content}")
-        # TODO: handle cases where this context is too long.
-        answer = llm_chain.predict(question=question, context="\n\n".join(contexts))
+        answer = self.combine_documents_chain.combine_docs(docs, question=question)
         return {self.output_key: answer}
