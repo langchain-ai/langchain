@@ -15,7 +15,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import langchain
+import importlib
 
 # -- Project information -----------------------------------------------------
 
@@ -23,8 +23,8 @@ project = "LangChain"
 copyright = "2022, Harrison Chase"
 author = "Harrison Chase"
 
-version = langchain.__version__
-release = langchain.__version__
+version = importlib.metadata.version("langchain")
+release = version
 
 
 # -- General configuration ---------------------------------------------------
