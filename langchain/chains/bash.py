@@ -6,15 +6,15 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 
 class BashChain(Chain, BaseModel):
-    """Chain to execute Bash code.
+    """Chain to execute a list of Bash code.
     Example:
         .. code-block:: python
             from langchain import BashChain, OpenAI
             bash = BashChain()
     """
 
-    input_key: str = "command"  #: :meta private:
-    output_key: str = "output"  #: :meta private:
+    input_key: str = "commands"  #: :meta private:
+    output_key: str = "outputs"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -36,11 +36,15 @@ class BashChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        command = inputs[self.input_key]
-        try:
-            output = subprocess.check_output(command, shell=True).decode()
-        except subprocess.CalledProcessError as error:
-            output = str(error)
+    def _call(self, inputs: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        commands = inputs[self.input_key]
+        outputs = []
+        for command in commands:
+            try:
+                output = subprocess.check_output(command, shell=True).decode()
+                outputs.append(output)
+            except subprocess.CalledProcessError as error:
+                outputs.append(str(error))
+                return {self.output_key: outputs}
 
-        return {self.output_key: output}
+        return {self.output_key: outputs}
