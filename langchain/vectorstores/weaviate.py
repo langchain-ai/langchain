@@ -16,8 +16,10 @@ class Weaviate(VectorStore):
     Example:
         .. code-block:: python
 
+            import weaviate
             from langchain.vectorstores import Weaviate
-            faiss = FAISS(embedding_function, index, docstore)
+            client = weaviate.Client(url=os.environ["WEAVIATE_URL"], ...)
+            faiss = Weaviate(client, index_name, text_key)
 
     """
 
@@ -28,7 +30,7 @@ class Weaviate(VectorStore):
         text_key: str,
         attributes: Optional[List[str]] = None,
     ):
-        """Initialize with weaviate client."""
+        """Initialize with Weaviate client."""
         try:
             import weaviate
         except ImportError:
