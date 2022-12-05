@@ -12,18 +12,17 @@ from langchain.docstore.document import Document
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
-    """Refine initial answer over documents."""
+    """Combine documents by doing a first pass and then refining on more documents."""
 
     initial_llm_chain: LLMChain
-    """LLM wrapper to use for asking questions to each document."""
+    """LLM chain to use on initial document."""
     refine_llm_chain: LLMChain
-    """LLM wrapper to use for asking questions to each document."""
-    combine_document_chain: BaseCombineDocumentsChain
-    """Chain to use to combine documents."""
+    """LLM chain to use when refining."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
     initial_response_name: str
+    """The variable name to format the initial response in when refining."""
 
     class Config:
         """Configuration for this pydantic object."""

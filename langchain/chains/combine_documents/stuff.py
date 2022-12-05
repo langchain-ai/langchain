@@ -1,4 +1,4 @@
-"""Document combining chain."""
+"""Chain that combines documents by stuffing into context."""
 
 from typing import Any, Dict, List
 
@@ -16,7 +16,7 @@ def _get_default_document_prompt() -> PromptTemplate:
 
 
 class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
-    """Combine documents by stuffing all documents into single prompt."""
+    """Chain that combines documents by stuffing into context."""
 
     llm_chain: LLMChain
     """LLM wrapper to use after formatting documents."""
