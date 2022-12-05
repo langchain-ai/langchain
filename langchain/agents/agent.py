@@ -130,7 +130,7 @@ class Agent(Chain, BaseModel, ABC):
         # prompts the LLM to take an action.
         starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
-        chained_input = ChainedInput(starter_string, self.observation_prefix, self.llm_prefix, verbose=self.verbose)
+        chained_input = ChainedInput(starter_string, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
@@ -149,4 +149,4 @@ class Agent(Chain, BaseModel, ABC):
             # We then call the tool on the tool input to get an observation
             observation = chain(output.tool_input)
             # We then log the observation
-            chained_input.add_observation(observation, color=color_mapping[output.tool])
+            chained_input.add_observation(observation, self.observation_prefix, self.llm_prefix, color=color_mapping[output.tool])
