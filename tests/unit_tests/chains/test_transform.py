@@ -1,5 +1,6 @@
 """Test transform chain."""
 from typing import Dict
+
 import pytest
 
 from langchain.chains.transform import TransformChain
@@ -16,9 +17,11 @@ def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:
 
 def test_tranform_chain() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(input_variables=["first_name", "last_name"],
-                                     output_variables=["greeting"],
-                                     transform=dummy_transform)
+    transform_chain = TransformChain(
+        input_variables=["first_name", "last_name"],
+        output_variables=["greeting"],
+        transform=dummy_transform,
+    )
     input_dict = {"first_name": "Leroy", "last_name": "Jenkins"}
     response = transform_chain(input_dict)
     expected_response = {"greeting": "Leroy Jenkins says hello"}
@@ -27,11 +30,11 @@ def test_tranform_chain() -> None:
 
 def test_transform_chain_bad_inputs() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(input_variables=["first_name", "last_name"],
-                                     output_variables=["greeting"],
-                                     transform=dummy_transform)
+    transform_chain = TransformChain(
+        input_variables=["first_name", "last_name"],
+        output_variables=["greeting"],
+        transform=dummy_transform,
+    )
     input_dict = {"name": "Leroy", "last_name": "Jenkins"}
     with pytest.raises(ValueError):
-         _ = transform_chain(input_dict)
-
-
+        _ = transform_chain(input_dict)
