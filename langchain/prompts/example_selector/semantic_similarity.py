@@ -31,10 +31,11 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def add_example(self, example: Dict[str, str]) -> None:
+    def add_example(self, example: Dict[str, str]) -> str:
         """Add new example to vectorstore."""
         string_example = " ".join(sorted_values(example))
-        self.vectorstore.add_texts([string_example], metadatas=[example])
+        ids = self.vectorstore.add_texts([string_example], metadatas=[example])
+        return ids[0]
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         """Select which examples to use based on semantic similarity."""
