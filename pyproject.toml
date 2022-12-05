@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.28"
+version = "0.0.29"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -21,7 +21,6 @@ manifest-ml = {version = "^0.0.1", optional = true}
 spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
-types-toml = "^0.10.8.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -37,6 +36,7 @@ flake8 = "^6.0.0"
 mypy = "^0.991"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
+types-toml = "^0.10.8.1"
 
 [tool.poetry.group.dev]
 optional = true
