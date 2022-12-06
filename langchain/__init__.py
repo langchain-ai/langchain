@@ -1,17 +1,11 @@
 """Main entrypoint into package."""
 
-from pathlib import Path
-
-with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
-    __version__ = _f.read().strip()
-
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     ConversationChain,
     LLMChain,
     LLMMathChain,
     PALChain,
-    PythonChain,
     QAWithSourcesChain,
     SQLDatabaseChain,
     VectorDBQA,
@@ -32,7 +26,6 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 __all__ = [
     "LLMChain",
     "LLMMathChain",
-    "PythonChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
     "SerpAPIChain",
