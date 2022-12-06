@@ -96,8 +96,9 @@ def test_react_chain_bad_action() -> None:
     """Test react chain when bad action given."""
     responses = [
         "I should probably search\nAction 1: BadAction[langchain]",
+        f"Oh well\nAction 2: Finish[curses foiled again]",
     ]
     fake_llm = FakeListLLM(responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
-    with pytest.raises(KeyError):
-        react_chain.run("when was langchain made")
+    output = react_chain.run("when was langchain made")
+    assert output == f"curses foiled again"
