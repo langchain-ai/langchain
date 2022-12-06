@@ -38,7 +38,10 @@ def _load_refine_chain(llm: LLM) -> RefineDocumentsChain:
     # TODO: initial response name
     refine_chain = LLMChain(llm=llm, prompt=refine_prompt.DEFAULT_REFINE_PROMPT)
     return RefineDocumentsChain(
-        initial_llm_chain=initial_chain, refine_llm_chain=refine_chain
+        initial_llm_chain=initial_chain,
+        refine_llm_chain=refine_chain,
+        document_variable_name="context_str",
+        initial_response_name="existing_answer",
     )
 
 
