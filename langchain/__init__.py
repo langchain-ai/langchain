@@ -9,6 +9,7 @@ from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     ConversationChain,
     LLMChain,
+    LLMBashChain,
     LLMMathChain,
     PALChain,
     PythonChain,
@@ -31,6 +32,7 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 __all__ = [
     "LLMChain",
+    "LLMBashChain",
     "LLMMathChain",
     "PythonChain",
     "SelfAskWithSearchChain",
