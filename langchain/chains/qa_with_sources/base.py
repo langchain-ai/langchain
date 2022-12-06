@@ -12,7 +12,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.chains.qa_with_sources.prompt import (
+from langchain.chains.qa_with_sources.map_reduce_prompt import (
     COMBINE_PROMPT,
     EXAMPLE_PROMPT,
     QUESTION_PROMPT,
@@ -36,7 +36,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     def from_llm(
         cls,
         llm: LLM,
-        combine_document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
+        document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
         **kwargs: Any,
@@ -46,7 +46,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)
         combine_results_chain = StuffDocumentsChain(
             llm_chain=llm_combine_chain,
-            document_prompt=combine_document_prompt,
+            document_prompt=document_prompt,
             document_variable_name="summaries",
         )
         combine_document_chain = MapReduceDocumentsChain(
