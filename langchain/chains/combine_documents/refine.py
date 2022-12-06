@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, root_validator, Field
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+
+
 def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
@@ -64,10 +65,10 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         """Combine by mapping first chain over all, then stuffing into final chain."""
         base_info = {"page_content": docs[0].page_content}
         base_info.update(docs[0].metadata)
-        document_info = {
-            k: base_info[k] for k in self.document_prompt.input_variables
+        document_info = {k: base_info[k] for k in self.document_prompt.input_variables}
+        base_inputs: dict = {
+            self.document_variable_name: self.document_prompt.format(**document_info)
         }
-        base_inputs: dict = {self.document_variable_name: self.document_prompt.format(**document_info)}
         inputs = {**base_inputs, **kwargs}
         res = self.initial_llm_chain.predict(**inputs)
         for doc in docs[1:]:
@@ -77,7 +78,9 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                 k: base_info[k] for k in self.document_prompt.input_variables
             }
             base_inputs = {
-                self.document_variable_name: self.document_prompt.format(**document_info),
+                self.document_variable_name: self.document_prompt.format(
+                    **document_info
+                ),
                 self.initial_response_name: res,
             }
             inputs = {**base_inputs, **kwargs}

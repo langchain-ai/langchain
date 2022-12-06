@@ -26,4 +26,3 @@ prompt_template = """Write a concise summary of the following:
 
 CONCISE SUMMARY:"""
 PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
-

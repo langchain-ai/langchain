@@ -4,11 +4,7 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.chains.summarize import (
-    map_reduce_prompt,
-    refine_prompt,
-    stuff_prompt,
-)
+from langchain.chains.summarize import map_reduce_prompt, refine_prompt, stuff_prompt
 from langchain.llms.base import LLM
 
 
@@ -45,7 +41,9 @@ def _load_refine_chain(llm: LLM) -> RefineDocumentsChain:
     )
 
 
-def load_summarize_chain(llm: LLM, chain_type: str = "stuff") -> BaseCombineDocumentsChain:
+def load_summarize_chain(
+    llm: LLM, chain_type: str = "stuff"
+) -> BaseCombineDocumentsChain:
     """Load summarizing chain.
 
     Args:
