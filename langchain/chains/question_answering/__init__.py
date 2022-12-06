@@ -22,9 +22,13 @@ def _load_map_reduce_chain(llm: LLM) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=map_reduce_prompt.QUESTION_PROMPT)
     reduce_chain = LLMChain(llm=llm, prompt=map_reduce_prompt.COMBINE_PROMPT)
     # TODO: document prompt
-    combine_document_chain = StuffDocumentsChain(llm_chain=reduce_chain, document_variable_name="summaries")
+    combine_document_chain = StuffDocumentsChain(
+        llm_chain=reduce_chain, document_variable_name="summaries"
+    )
     return MapReduceDocumentsChain(
-        llm_chain=map_chain, combine_document_chain=combine_document_chain, document_variable_name="context"
+        llm_chain=map_chain,
+        combine_document_chain=combine_document_chain,
+        document_variable_name="context",
     )
 
 
