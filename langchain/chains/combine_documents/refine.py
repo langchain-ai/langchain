@@ -19,8 +19,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     refine_llm_chain: LLMChain
     """LLM chain to use when refining."""
     document_variable_name: str
-    """The variable name in the llm_chain to put the documents in.
-    If only one variable in the llm_chain, this need not be provided."""
+    """The variable name in the initial_llm_chain to put the documents in.
+    If only one variable in the initial_llm_chain, this need not be provided."""
     initial_response_name: str
     """The variable name to format the initial response in when refining."""
 
@@ -34,7 +34,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
+            llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -43,7 +43,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
+            llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "
