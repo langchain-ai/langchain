@@ -21,4 +21,4 @@ def test_simple_question(fake_llm_bash_chain: LLMBashChain) -> None:
     """Test simple question that should not need python."""
     question = "Please write a bash script that prints 'Hello World' to the console."
     output = fake_llm_bash_chain.run(question)
-    assert output == {'commands': ['expr 1 + 1'], 'output': ['2\n']}
+    assert output == {'commands': ['expr 1 + 1'], 'output': {'outputs': ['2\n'], 'success': True}}

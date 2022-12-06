@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
-from langchain.chains.bash import BashChain
+from langchain.utilities.bash import BashProcess
 from langchain.input import print_text
 from langchain.llms.base import LLM
 
@@ -50,7 +50,7 @@ class LLMBashChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
-        bash_executor = BashChain()
+        bash_executor = BashProcess()
         if self.verbose:
             print_text(inputs[self.input_key])
 
