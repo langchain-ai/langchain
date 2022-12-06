@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, root_validator, Field
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
+
+from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+def _get_default_document_prompt() -> PromptTemplate:
+    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
@@ -23,6 +28,10 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     If only one variable in the initial_llm_chain, this need not be provided."""
     initial_response_name: str
     """The variable name to format the initial response in when refining."""
+    document_prompt: BasePromptTemplate = Field(
+        default_factory=_get_default_document_prompt
+    )
+    """Prompt to use to format each document."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,12 +62,22 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
 
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> str:
         """Combine by mapping first chain over all, then stuffing into final chain."""
-        base_inputs: dict = {self.document_variable_name: docs[0]}
+        base_info = {"page_content": docs[0].page_content}
+        base_info.update(docs[0].metadata)
+        document_info = {
+            k: base_info[k] for k in self.document_prompt.input_variables
+        }
+        base_inputs: dict = {self.document_variable_name: self.document_prompt.format(**document_info)}
         inputs = {**base_inputs, **kwargs}
         res = self.initial_llm_chain.predict(**inputs)
         for doc in docs[1:]:
+            base_info = {"page_content": doc.page_content}
+            base_info.update(doc.metadata)
+            document_info = {
+                k: base_info[k] for k in self.document_prompt.input_variables
+            }
             base_inputs = {
-                self.document_variable_name: doc,
+                self.document_variable_name: self.document_prompt.format(**document_info),
                 self.initial_response_name: res,
             }
             inputs = {**base_inputs, **kwargs}
