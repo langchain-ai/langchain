@@ -1,4 +1,4 @@
-"""Document combining chain."""
+"""Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
@@ -7,15 +7,10 @@ from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
-from langchain.prompts.prompt import Prompt
-
-
-def _get_default_document_prompt() -> Prompt:
-    return Prompt(input_variables=["page_content"], template="{page_content}")
 
 
 class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
-    """Combine documents."""
+    """Base interface for chains combining documents."""
 
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
@@ -38,7 +33,7 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
 
     @abstractmethod
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> str:
-        """Combine documents."""
+        """Combine documents into a single string."""
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_key]
