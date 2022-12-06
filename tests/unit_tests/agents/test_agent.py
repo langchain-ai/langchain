@@ -1,4 +1,3 @@
-
 from typing import Any, List, Mapping, Optional, Union
 
 from langchain.agents import initialize_agent, Tool
@@ -6,6 +5,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain import LLMMathChain
+
 
 class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
@@ -26,6 +26,7 @@ class FakeListLLM(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
 
+
 def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
     bad_action_name = "BadAction"
@@ -35,11 +36,11 @@ def test_agent_bad_action() -> None:
     ]
     fake_llm = FakeListLLM(responses)
     tools = [
-        Tool("Search", lambda x: x, 'Useful for searching'),
-        Tool("Lookup", lambda x: x, 'Useful for looking up things in a table'),
+        Tool("Search", lambda x: x, "Useful for searching"),
+        Tool("Lookup", lambda x: x, "Useful for looking up things in a table"),
     ]
-    agent = initialize_agent(tools, fake_llm, agent="zero-shot-react-description", verbose=True)
+    agent = initialize_agent(
+        tools, fake_llm, agent="zero-shot-react-description", verbose=True
+    )
     output = agent.run("when was langchain made")
     assert output == f"curses foiled again"
-
-
