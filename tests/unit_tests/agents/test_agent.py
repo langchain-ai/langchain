@@ -18,6 +18,8 @@ class FakeListLLM(LLM):
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
+        print(self.i)
+        print(self.responses)
         return self.responses[self.i]
 
     @property
@@ -45,11 +47,12 @@ def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
     bad_action_name = "BadAction"
     responses = [
-        f"I should probably turn evil\nAction: {bad_action_name}\nAction Input: devilishness",
+        f"I should probably turn evil\nAction: {bad_action_name}\nAction Input: misalignment",
+        f"Oh well\nAction: Final Answer\nAction Input: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses)
     agent = initialize_agent(tools, fake_llm, agent="zero-shot-react-description", verbose=True)
     output = agent.run("when was langchain made")
-    assert output == f"{bad_action_name} is not a valid tool, try another one."
+    assert output == f"curses foiled again"
 
 
