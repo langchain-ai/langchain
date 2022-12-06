@@ -45,6 +45,7 @@ def _load_refine_chain(llm: LLM) -> RefineDocumentsChain:
         refine_llm_chain=refine_chain,
         document_variable_name="context_str",
         initial_response_name="existing_answer",
+        document_prompt=refine_prompt.EXAMPLE_PROMPT,
     )
 
 

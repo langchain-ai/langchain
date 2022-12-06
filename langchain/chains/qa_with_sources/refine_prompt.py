@@ -31,3 +31,8 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
 DEFAULT_TEXT_QA_PROMPT = PromptTemplate(
     input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
 )
+
+EXAMPLE_PROMPT = PromptTemplate(
+    template="Content: {page_content}\nSource: {source}",
+    input_variables=["page_content", "source"],
+)
