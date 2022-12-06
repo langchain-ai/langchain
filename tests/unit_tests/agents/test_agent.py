@@ -26,23 +26,6 @@ class FakeListLLM(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
 
-class FakeDocstore(Docstore):
-    """Fake docstore for testing purposes."""
-
-    def search(self, search: str) -> Union[str, Document]:
-        """Return the fake document."""
-        document = Document(page_content=_PAGE_CONTENT)
-        return document
-
-
-fake_docstore = FakeDocstore()
-tools = [ Tool(
-    name="Fake Docstore",
-    func=fake_docstore.search,
-    description="useful for when you need to look things up in a fake docstore"
-) ]
-
-
 def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
     bad_action_name = "BadAction"
@@ -51,6 +34,10 @@ def test_agent_bad_action() -> None:
         f"Oh well\nAction: Final Answer\nAction Input: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses)
+    tools = [
+        Tool("Search", lambda x: x, 'Useful for searching'),
+        Tool("Lookup", lambda x: x, 'Useful for looking up things in a table'),
+    ]
     agent = initialize_agent(tools, fake_llm, agent="zero-shot-react-description", verbose=True)
     output = agent.run("when was langchain made")
     assert output == f"curses foiled again"
