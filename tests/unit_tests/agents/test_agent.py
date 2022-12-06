@@ -1,9 +1,8 @@
-from typing import Any, List, Mapping, Optional, Union
+"""Unit tests for agents."""
 
-from langchain import LLMMathChain
+from typing import Any, List, Mapping, Optional
+
 from langchain.agents import Tool, initialize_agent
-from langchain.docstore.base import Docstore
-from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 
 
@@ -31,8 +30,8 @@ def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
     bad_action_name = "BadAction"
     responses = [
-        f"I should probably turn evil\nAction: {bad_action_name}\nAction Input: misalignment",
-        f"Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
+        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses)
     tools = [
@@ -43,4 +42,4 @@ def test_agent_bad_action() -> None:
         tools, fake_llm, agent="zero-shot-react-description", verbose=True
     )
     output = agent.run("when was langchain made")
-    assert output == f"curses foiled again"
+    assert output == "curses foiled again"

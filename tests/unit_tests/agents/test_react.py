@@ -2,8 +2,6 @@
 
 from typing import Any, List, Mapping, Optional, Union
 
-import pytest
-
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
@@ -94,11 +92,12 @@ def test_react_chain() -> None:
 
 def test_react_chain_bad_action() -> None:
     """Test react chain when bad action given."""
+    bad_action_name = "BadAction"
     responses = [
-        "I should probably search\nAction 1: BadAction[langchain]",
-        f"Oh well\nAction 2: Finish[curses foiled again]",
+        f"I'm turning evil\nAction 1: {bad_action_name}[langchain]",
+        "Oh well\nAction 2: Finish[curses foiled again]",
     ]
     fake_llm = FakeListLLM(responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     output = react_chain.run("when was langchain made")
-    assert output == f"curses foiled again"
+    assert output == "curses foiled again"
