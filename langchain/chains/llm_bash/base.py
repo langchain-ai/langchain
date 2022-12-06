@@ -1,4 +1,3 @@
-"""Chain that interprets a prompt and executes python code to do math."""
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -48,7 +47,7 @@ class LLMBashChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Dict[str, list[str]]]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         bash_executor = BashProcess()
         if self.verbose:
@@ -62,6 +61,8 @@ class LLMBashChain(Chain, BaseModel):
         if t.startswith("```bash"):
             # Split the string into a list of substrings
             command_list = t.split('\n')
+            print(command_list)
+
             # Remove the first and last substrings
             command_list = [s for s in command_list[1:-1]]
             output = bash_executor.run(command_list)

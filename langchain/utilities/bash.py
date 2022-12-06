@@ -1,5 +1,5 @@
 import subprocess
-from typing import List
+from typing import Dict, List, Union
 
 class BashProcess:
     """Executes bash commands and returns the output."""
@@ -8,7 +8,7 @@ class BashProcess:
         self.strip_newlines = strip_newlines
 
 
-    def run(self, commands: List[str]) -> List[str]:
+    def run(self, commands: List[str]) -> Dict[str, Union[bool, list[str]]]:
         outputs = []
         for command in commands:
             try:
@@ -19,6 +19,5 @@ class BashProcess:
             except subprocess.CalledProcessError as error:
                 outputs.append(str(error))
                 return {"success": False, "outputs": outputs}
-
 
         return {"success": True, "outputs": outputs}
