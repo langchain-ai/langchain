@@ -154,11 +154,13 @@ class Agent(Chain, BaseModel, ABC):
                 chain = name_to_tool_map[output.tool]
                 # We then call the tool on the tool input to get an observation
                 observation = chain(output.tool_input)
+                color = color_mapping[output.tool]
             else:
-                observation = f"Tool {output.tool} not found."
+                observation = f"{output.tool} is not a valid tool, try another one."
+                color = None
             # We then log the observation
             chained_input.add(f"\n{self.observation_prefix}")
-            chained_input.add(observation, color=color_mapping[output.tool])
+            chained_input.add(observation, color=color)
             # We then add the LLM prefix into the prompt to get the LLM to start
             # thinking, and start the loop all over.
             chained_input.add(f"\n{self.llm_prefix}")
