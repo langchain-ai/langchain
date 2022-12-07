@@ -11,6 +11,7 @@ from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChai
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.transform import TransformChain
 
 __all__ = [
     "APIChain",
@@ -27,4 +28,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "APIChain",
     "LLMRequestsChain",
+    "TransformChain",
 ]
