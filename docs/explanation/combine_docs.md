@@ -41,23 +41,30 @@ for all methods for an easy quick start, you can edit/modify/improve these promp
 
 The chains we cover are: `stuff`, `map_reduce`, and `refine`.
 
-## `stuff`
-The `stuff` method simply puts all the relevant documents into a single prompt, along with the user input,
+### `StuffDocumentsChain`
+The `StuffDocumentsChain` simply puts all the relevant documents into a single prompt, along with the user input,
 and passes it the LLM.
 
 **Pros:** Only makes a single call to the LLM. When generating text, the LLM has access to all the documents at once.
 **Cons:** Most LLMs have a context length, and for large documents (or many documents) this will not work as it will result in a prompt larger than the context length.
 
-## `map_reduce`
-The `map_reduce` method first calls an LLM with each individual document, and then makes a final call combining the results of those calls.
+### `MapReduceDocumentsChain`
+The `MapReduceDocumentsChain` first calls an LLM with each individual document, and then makes a final call combining the results of those calls.
 
-**Pros:** Can scale to larger (and more documents) than `stuff`. The calls to the LLM on individual documents are independent and could therefor be paralellized.
-**Cons:** Requires many more calls to the LLM than `stuff`. Loses some information by the final combining call.
+**Pros:** Can scale to larger (and more documents) than `StuffDocumentsChain`. The calls to the LLM on individual documents are independent and could therefor be paralellized.
+**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. Loses some information by the final combining call.
 
-## `refine`
-The `refine` method loops over the documents. On the first document, it makes a standard LLM call. In subsequent calls, it passes in the result of the previous call and a new document, and asks the LLM to refine that answer based on the new document.
+### `RefineDocumentsChain`
+The `RefineDocumentsChain` loops over the documents. On the first document, it makes a standard LLM call. In subsequent calls, it passes in the result of the previous call and a new document, and asks the LLM to refine that answer based on the new document.
 
-**Pros:** Can perhaps pull in more relevant context, and may be less lossy than `map_reduce`.
-**Cons:** Requires many more calls to the LLM than `stuff`. The calls are also NOT independent, meaning they cannot be parralized like `map_reduce`.
+**Pros:** Can perhaps pull in more relevant context, and may be less lossy than `RefineDocumentsChain`.
+**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be parralized like `RefineDocumentsChain`.
 
-##
+## Use Cases
+
+As mentioned before, there are three common use cases that LangChain supports.
+Please the examples for more information on how to work with them.
+
+- `Question-Answering With Sources <../examples/chains/qa_with_sources.ipynb>`_
+- `Question-Answering <../examples/chains/question_answering.ipynb>`_
+- `Summarization <../examples/chains/summarize.ipynb>`_
