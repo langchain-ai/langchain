@@ -3,6 +3,7 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.base import LLMMathChain
+from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
@@ -22,4 +23,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "PALChain",
     "APIChain",
+    "LLMRequestsChain",
 ]
