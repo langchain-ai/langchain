@@ -159,6 +159,7 @@ see detailed information about the various classes, methods, and APIs.
    :name: resources
 
    explanation/core_concepts.md
+   explanation/combine_docs.md
    explanation/agents.md
    explanation/glossary.md
    explanation/cool_demos.md

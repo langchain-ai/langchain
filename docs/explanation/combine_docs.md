@@ -65,6 +65,6 @@ The `RefineDocumentsChain` loops over the documents. On the first document, it m
 As mentioned before, there are three common use cases that LangChain supports.
 Please the examples for more information on how to work with them.
 
-- `Question-Answering With Sources <../examples/chains/qa_with_sources.ipynb>`_
-- `Question-Answering <../examples/chains/question_answering.ipynb>`_
-- `Summarization <../examples/chains/summarize.ipynb>`_
+- [Question-Answering With Sources](../examples/chains/qa_with_sources.ipynb)
+- [Question-Answering](../examples/chains/question_answering.ipynb)
+- [Summarization](../examples/chains/summarize.ipynb)
