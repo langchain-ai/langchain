@@ -28,7 +28,7 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 
 ## 🚀 What can this help with?
 
-There are three main areas (with a forth coming soon) that LangChain is designed to help with.
+There are four main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 1. LLM and Prompts
 2. Chains
