@@ -41,8 +41,16 @@ class FAISS(VectorStore):
 
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
-    ) -> None:
-        """Run more texts through the embeddings and add to the vectorstore."""
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
         if not isinstance(self.docstore, AddableMixin):
             raise ValueError(
                 "If trying to add texts, the underlying docstore should support "
@@ -66,6 +74,7 @@ class FAISS(VectorStore):
         self.docstore.add({_id: doc for _, _id, doc in full_info})
         index_to_id = {index: _id for index, _id, _ in full_info}
         self.index_to_docstore_id.update(index_to_id)
+        return [_id for _, _id, _ in full_info]
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query.

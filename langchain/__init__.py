@@ -1,10 +1,5 @@
 """Main entrypoint into package."""
 
-from pathlib import Path
-
-with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
-    __version__ = _f.read().strip()
-
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     ConversationChain,
@@ -12,7 +7,6 @@ from langchain.chains import (
     LLMBashChain,
     LLMMathChain,
     PALChain,
-    PythonChain,
     QAWithSourcesChain,
     SQLDatabaseChain,
     VectorDBQA,
@@ -34,7 +28,6 @@ __all__ = [
     "LLMChain",
     "LLMBashChain",
     "LLMMathChain",
-    "PythonChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
     "SerpAPIChain",

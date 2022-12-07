@@ -15,7 +15,10 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import langchain
+import toml
+
+with open("../pyproject.toml") as f:
+    data = toml.load(f)
 
 # -- Project information -----------------------------------------------------
 
@@ -23,8 +26,8 @@ project = "LangChain"
 copyright = "2022, Harrison Chase"
 author = "Harrison Chase"
 
-version = langchain.__version__
-release = langchain.__version__
+version = data["tool"]["poetry"]["version"]
+release = version
 
 
 # -- General configuration ---------------------------------------------------

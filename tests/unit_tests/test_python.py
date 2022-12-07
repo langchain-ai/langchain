@@ -32,3 +32,11 @@ def test_python_repl_pass_in_locals() -> None:
     repl = PythonREPL(_locals=_locals)
     repl.run("bar = foo * 2")
     assert repl._locals["bar"] == 8
+
+
+def test_functionality() -> None:
+    """Test correct functionality."""
+    chain = PythonREPL()
+    code = "print(1 + 1)"
+    output = chain.run(code)
+    assert output == "2\n"
