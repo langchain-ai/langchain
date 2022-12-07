@@ -10,9 +10,9 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 @pytest.fixture
 def fake_llm_bash_chain() -> LLMBashChain:
     """Fake LLM Bash chain for testing."""
-    queries = {
-        _PROMPT_TEMPLATE.format(question="Please write a bash script that prints 'Hello World' to the console."): "```bash\nexpr 1 + 1\n```",
-    }
+    question = "Please write a bash script that prints 'Hello World' to the console."
+    prompt = _PROMPT_TEMPLATE.format(question=question)
+    queries = {prompt: "```bash\nexpr 1 + 1\n```"}
     fake_llm = FakeLLM(queries=queries)
     return LLMBashChain(llm=fake_llm, input_key="q", output_key="a")
 
@@ -21,4 +21,4 @@ def test_simple_question(fake_llm_bash_chain: LLMBashChain) -> None:
     """Test simple question that should not need python."""
     question = "Please write a bash script that prints 'Hello World' to the console."
     output = fake_llm_bash_chain.run(question)
-    assert output == {'commands': ['expr 1 + 1'], 'output': {'outputs': ['2\n'], 'success': True}}
+    assert output == "2\n"

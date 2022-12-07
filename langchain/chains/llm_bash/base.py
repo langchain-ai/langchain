@@ -1,3 +1,4 @@
+"""Chain that interprets a prompt and executes bash code to perform bash operations."""
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -5,9 +6,9 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
-from langchain.utilities.bash import BashProcess
 from langchain.input import print_text
 from langchain.llms.base import LLM
+from langchain.utilities.bash import BashProcess
 
 
 class LLMBashChain(Chain, BaseModel):
@@ -47,7 +48,7 @@ class LLMBashChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Dict[str, list[str]]]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         bash_executor = BashProcess()
         if self.verbose:
@@ -60,7 +61,7 @@ class LLMBashChain(Chain, BaseModel):
         t = t.strip()
         if t.startswith("```bash"):
             # Split the string into a list of substrings
-            command_list = t.split('\n')
+            command_list = t.split("\n")
             print(command_list)
 
             # Remove the first and last substrings
@@ -73,5 +74,4 @@ class LLMBashChain(Chain, BaseModel):
 
         else:
             raise ValueError(f"unknown format from LLM: {t}")
-        answer = {"commands": command_list, "output": output}
-        return {self.output_key: answer}
+        return {self.output_key: output}
