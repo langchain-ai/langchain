@@ -5,8 +5,9 @@ import json
 import pytest
 
 from langchain import LLMChain
-from langchain.chains.api.base import APIChain, RequestsWrapper
+from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
+from langchain.requests import RequestsWrapper
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
