@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-import requests
 from pydantic import BaseModel, root_validator
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
@@ -11,16 +10,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import print_text
 from langchain.llms.base import LLM
-
-
-class RequestsWrapper(BaseModel):
-    """Lightweight wrapper to partial out everything except the url to hit."""
-
-    headers: Optional[dict] = None
-
-    def run(self, url: str) -> str:
-        """Hit the URL and return the text."""
-        return requests.get(url, headers=self.headers).text
+from langchain.requests import RequestsWrapper
 
 
 class APIChain(Chain, BaseModel):
