@@ -52,15 +52,32 @@ With these primitives in mind, the following chains exist:
 **Vector Database Question-Answering**
 
 - **Links Used**: Vectorstore, LLMChain
-- **Notes**: This chain takes user input (a question), uses the Vectorstore and semantic search to find relevant documents, and then passes the documents plus to the original question to another LLM to generate a final answer.
+- **Notes**: This chain takes user input (a question), uses the Vectorstore and semantic search to find relevant documents, and then passes the documents plus the original question to another LLM to generate a final answer.
 - `Example Notebook <chains/vector_db_qa.ipynb>`_
+
+**Vector Database Question-Answering With Sources**
+
+- **Links Used**: Vectorstore, LLMChain
+- **Notes**: This chain takes user input (a question), uses the Vectorstore and semantic search to find relevant documents, and then passes the documents plus the original question to another LLM to generate a final answer with sources.
+- `Example Notebook <chains/vector_db_qa_with_sources.ipynb>`_
 
 **Question-Answering With Sources**
 
 - **Links Used**: LLMChain
-- **Notes**: This chain takes a question and multiple documents as input. It then runs a first LLMChain over all documents attempting to answer the provided question. It then runs a second LLMChain over the results of the first pass, combining the answers from documents into a single response that is returned.
-- `Example Notebook <chains/combine_documents.ipynb>`_
+- **Notes**: These types of chains take a question and multiple documents as input, and return an answer plus sources for where that answer came from. There are multiple underlying types of chains to do this, for more information see TODO.
+- `Example Notebook <chains/qa_with_sources.ipynb>`_
 
+**Question-Answering**
+
+- **Links Used**: LLMChain
+- **Notes**: These types of chains take a question and multiple documents as input, and return an answer. There are multiple underlying types of chains to do this, for more information see TODO.
+- `Example Notebook <chains/question_answering.ipynb>`_
+
+**Summarization**
+
+- **Links Used**: LLMChain
+- **Notes**: These types of chains take multiple documents as input, and return a summary of all documents. There are multiple underlying types of chains to do this, for more information see TODO.
+- `Example Notebook <chains/summarize.ipynb>`_
 
 .. toctree::
    :maxdepth: 1
