@@ -84,6 +84,7 @@ with larger pieces of data (like long documents) you will need to split the data
 LangChain provides some utilities to help with splitting up this data. This comes in the form of the TextSplitter class.
 The class takes in a document and splits it up into chunks, with several parameters that control the
 size of the chunks as well as the overlap in the chunks (important for maintaining context).
+See [this walkthrough](../examples/integrations/textsplitter.ipynb) for more information.
 
 The next two methods both deal with this type of split up data. 
 
