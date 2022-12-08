@@ -2,7 +2,7 @@
 from langchain.prompts import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (
-    "The original question is as follows: {query_str}\n"
+    "The original question is as follows: {question}\n"
     "We have provided an existing answer, including sources: {existing_answer}\n"
     "We have the opportunity to refine the existing answer"
     "(only if needed) with some more context below.\n"
@@ -15,7 +15,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "If the context isn't useful, return the original answer."
 )
 DEFAULT_REFINE_PROMPT = PromptTemplate(
-    input_variables=["query_str", "existing_answer", "context_str"],
+    input_variables=["question", "existing_answer", "context_str"],
     template=DEFAULT_REFINE_PROMPT_TMPL,
 )
 
@@ -26,10 +26,10 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "{context_str}"
     "\n---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {query_str}\n"
+    "answer the question: {question}\n"
 )
 DEFAULT_TEXT_QA_PROMPT = PromptTemplate(
-    input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
+    input_variables=["context_str", "question"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
 )
 
 EXAMPLE_PROMPT = PromptTemplate(
