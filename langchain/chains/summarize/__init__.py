@@ -30,8 +30,6 @@ def _load_map_reduce_chain(llm: LLM) -> MapReduceDocumentsChain:
 
 def _load_refine_chain(llm: LLM) -> RefineDocumentsChain:
     initial_chain = LLMChain(llm=llm, prompt=refine_prompt.PROMPT)
-    # TODO: document variable name
-    # TODO: initial response name
     refine_chain = LLMChain(llm=llm, prompt=refine_prompt.REFINE_PROMPT)
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
