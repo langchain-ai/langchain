@@ -37,7 +37,7 @@ class Agent(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.input_key]
+        return set(self.llm_chain.input_keys) - {"thoughts"}
 
     @property
     def output_keys(self) -> List[str]:
@@ -99,23 +99,24 @@ class Agent(Chain, BaseModel, ABC):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
-    def get_action(self, text: str) -> Action:
+    def get_action(self, thoughts: str, inputs: dict) -> Action:
         """Given input, decided what to do.
 
         Args:
-            text: input string
+            thoughts: LLM thoughts
+            inputs: user inputs
 
         Returns:
             Action specifying what tool to use.
         """
-        input_key = self.llm_chain.input_keys[0]
-        inputs = {input_key: text, "stop": self._stop}
-        full_output = self.llm_chain.predict(**inputs)
+        new_inputs = {"thoughts": thoughts, "stop": self._stop}
+        full_inputs = {**inputs, **new_inputs}
+        full_output = self.llm_chain.predict(**full_inputs)
         parsed_output = self._extract_tool_and_input(full_output)
         while parsed_output is None:
             full_output = self._fix_text(full_output)
-            inputs = {input_key: text + full_output, "stop": self._stop}
-            output = self.llm_chain.predict(**inputs)
+            full_inputs["thoughts"] += full_output
+            output = self.llm_chain.predict(**full_inputs)
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
@@ -123,19 +124,12 @@ class Agent(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
-        text = inputs[self.input_key]
         # Do any preparation necessary when receiving a new input.
         self._prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
-        # Construct the initial string to pass into the LLM. This is made up
-        # of the user input, the special starter string, and then the LLM prefix.
-        # The starter string is a special string that may be used by a LLM to
-        # immediately follow the user input. The LLM prefix is a string that
-        # prompts the LLM to take an action.
-        starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
-        chained_input = ChainedInput(starter_string, verbose=self.verbose)
+        chained_input = ChainedInput(self.llm_prefix, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
@@ -143,7 +137,7 @@ class Agent(Chain, BaseModel, ABC):
         # We now enter the agent loop (until it returns something).
         while True:
             # Call the LLM to see what to do.
-            output = self.get_action(chained_input.input)
+            output = self.get_action(chained_input.input, inputs)
             # Add the log to the Chained Input.
             chained_input.add(output.log, color="green")
             # If the tool chosen is the finishing tool, then we end and return.

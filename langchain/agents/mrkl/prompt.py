@@ -12,4 +12,4 @@ Thought: I now know the final answer
 Final Answer: the final answer to the original input question"""
 SUFFIX = """Begin!
 
-Question: {input}"""
+Question: {input}{thoughts}"""
