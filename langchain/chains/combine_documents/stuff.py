@@ -1,21 +1,22 @@
-"""Document combining chain."""
+"""Chain that combines documents by stuffing into context."""
 
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import Prompt
+from langchain.prompts.prompt import PromptTemplate
 
 
-def _get_default_document_prompt() -> Prompt:
-    return Prompt(input_variables=["page_content"], template="{page_content}")
+def _get_default_document_prompt() -> PromptTemplate:
+    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class CombineDocumentsChain(Chain, BaseModel):
-    """Combine documents."""
+class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+    """Chain that combines documents by stuffing into context."""
 
     llm_chain: LLMChain
     """LLM wrapper to use after formatting documents."""
@@ -26,30 +27,12 @@ class CombineDocumentsChain(Chain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
-    input_key: str = "input_documents"  #: :meta private:
-    output_key: str = "output_text"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Expect input key.
-
-        :meta private:
-        """
-        return [self.input_key]
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Return output key.
-
-        :meta private:
-        """
-        return [self.output_key]
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
@@ -72,10 +55,8 @@ class CombineDocumentsChain(Chain, BaseModel):
                 )
         return values
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        docs = inputs[self.input_key]
-        # Other keys are assumed to be needed for LLM prediction
-        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+    def combine_docs(self, docs: List[Document], **kwargs: Any) -> str:
+        """Stuff all documents into one prompt and pass to LLM."""
         # Get relevant information from each document.
         doc_dicts = []
         for doc in docs:
@@ -88,7 +69,7 @@ class CombineDocumentsChain(Chain, BaseModel):
         # Format each document according to the prompt
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         # Join the documents together to put them in the prompt.
-        other_keys[self.document_variable_name] = "\n".join(doc_strings)
+        inputs = kwargs.copy()
+        inputs[self.document_variable_name] = "\n\n".join(doc_strings)
         # Call predict on the LLM.
-        output = self.llm_chain.predict(**other_keys)
-        return {self.output_key: output}
+        return self.llm_chain.predict(**inputs)
