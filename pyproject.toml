@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.29"
+version = "0.0.31"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -21,6 +21,7 @@ manifest-ml = {version = "^0.0.1", optional = true}
 spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
+beautifulsoup4 = {version = "^4", optional = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -47,7 +48,7 @@ playwright = "^1.28.0"
 
 [tool.poetry.extras]
 llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml"]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia"]
+all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4"]
 
 [tool.isort]
 profile = "black"
