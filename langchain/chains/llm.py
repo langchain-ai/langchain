@@ -92,7 +92,7 @@ class LLMChain(Chain, BaseModel):
         # for branch in list_of_branches:
 
         def branch_call(branch):
-            prompt = self.prompt.format(**selected_inputs)
+            prompt = self.prompt.format(**branch)
             if self.verbose:
                 print("Prompt after formatting:")
                 print_text(prompt, color="green", end="\n")
@@ -107,7 +107,7 @@ class LLMChain(Chain, BaseModel):
 
         executor = ThreadPoolExecutor(self.max_branching_factor)
         responses = executor.map(branch_call, list_of_branches)
-        responses = list(itertools.chain(*responses))
+        responses = list(itertools.chain(*list(responses)))
         print("responses")
         print(responses)
         return {self.output_key: responses}
