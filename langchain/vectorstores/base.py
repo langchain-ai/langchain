@@ -14,8 +14,16 @@ class VectorStore(ABC):
     @abstractmethod
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
-    ) -> None:
-        """Run more texts through the embeddings and add to the vectorstore."""
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
 
     @abstractmethod
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:

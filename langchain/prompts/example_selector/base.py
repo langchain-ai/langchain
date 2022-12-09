@@ -1,13 +1,13 @@
 """Interface for selecting examples to include in prompts."""
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 class BaseExampleSelector(ABC):
     """Interface for selecting examples to include in prompts."""
 
     @abstractmethod
-    def add_example(self, example: Dict[str, str]) -> None:
+    def add_example(self, example: Dict[str, str]) -> Any:
         """Add new example to store for a key."""
 
     @abstractmethod

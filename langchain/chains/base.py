@@ -2,7 +2,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
+import langchain
 
 
 class Memory(BaseModel, ABC):
@@ -33,7 +34,7 @@ class Chain(BaseModel, ABC):
 
     memory: Optional[Memory] = None
 
-    verbose: bool = False
+    verbose: bool = Field(default_factory=langchain.verbose)
     """Whether to print out response text."""
 
     @property

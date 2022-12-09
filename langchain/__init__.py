@@ -1,13 +1,10 @@
 """Main entrypoint into package."""
 
-from pathlib import Path
-
-with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
-    __version__ = _f.read().strip()
-
+verbose = False
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     ConversationChain,
+    LLMBashChain,
     LLMChain,
     LLMMathChain,
     PALChain,
@@ -33,6 +30,7 @@ logger = BaseLogger()
 
 __all__ = [
     "LLMChain",
+    "LLMBashChain",
     "LLMMathChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
