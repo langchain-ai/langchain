@@ -1,4 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra
@@ -29,9 +30,11 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: LLM
     """LLM wrapper to use."""
-    output_key: str = "text"  #: :meta private:
     n: int = 1
     """Fanout"""
+    max_branching_factor: int = 5
+    """Max number of parallel children"""
+    output_key: str = "text"  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -72,6 +75,7 @@ class LLMChain(Chain, BaseModel):
         print("list_of_selected_inputs")
         print(list_of_selected_inputs)
         list_of_branches = []
+
         for options in itertools.product(*list_of_selected_inputs):
             # print("options")
             # print(options)
@@ -85,7 +89,9 @@ class LLMChain(Chain, BaseModel):
 
         # issue branching calls
         responses = []
-        for branch in list_of_branches:
+        # for branch in list_of_branches:
+
+        def branch_call(branch):
             prompt = self.prompt.format(**selected_inputs)
             if self.verbose:
                 print("Prompt after formatting:")
@@ -97,7 +103,11 @@ class LLMChain(Chain, BaseModel):
             # print(n)
             # print(self.n)
             response = self.llm(prompt, n=self.n or n, **kwargs)
-            responses.extend(response)
+            return response
+
+        executor = ThreadPoolExecutor(self.max_branching_factor)
+        responses = executor.map(branch_call, list_of_branches)
+        responses = list(itertools.chain(*responses))
         print("responses")
         print(responses)
         return {self.output_key: responses}
