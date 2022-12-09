@@ -16,7 +16,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 @pytest.fixture
 def fake_llm_checker_chain() -> LLMCheckerChain:
-    """Fake LLM Bash chain for testing."""
+    """Fake LLMCheckerChain for testing."""
     queries = {
         _CREATE_DRAFT_ANSWER_TEMPLATE.format(
             question="Which mammal lays the biggest eggs?"
