@@ -3,6 +3,7 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
+from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.pal.base import PALChain
@@ -18,6 +19,7 @@ __all__ = [
     "ConversationChain",
     "LLMChain",
     "LLMBashChain",
+    "LLMCheckerChain",
     "LLMMathChain",
     "PALChain",
     "QAWithSourcesChain",

@@ -5,6 +5,7 @@ from langchain.chains import (
     ConversationChain,
     LLMBashChain,
     LLMChain,
+    LLMCheckerChain,
     LLMMathChain,
     PALChain,
     QAWithSourcesChain,
@@ -27,6 +28,7 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 __all__ = [
     "LLMChain",
     "LLMBashChain",
+    "LLMCheckerChain",
     "LLMMathChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
