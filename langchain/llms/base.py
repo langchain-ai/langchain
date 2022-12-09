@@ -7,7 +7,9 @@ class LLM(ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     @abstractmethod
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def __call__(
+        self, prompt: str, stop: Optional[List[str]] = None, n: Optional[int] = 1
+    ) -> str:
         """Run the LLM on the given prompt and input."""
 
     @property

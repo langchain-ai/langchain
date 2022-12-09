@@ -64,10 +64,15 @@ class LLMCheckerChain(Chain, BaseModel):
         question = inputs[self.input_key]
 
         create_draft_answer_chain = LLMChain(
-            llm=self.llm, prompt=self.create_draft_answer_prompt, output_key="statement"
+            llm=self.llm,
+            prompt=self.create_draft_answer_prompt,
+            output_key="statement",
+            n=2,
         )
         list_assertions_chain = LLMChain(
-            llm=self.llm, prompt=self.list_assertions_prompt, output_key="assertions"
+            llm=self.llm,
+            prompt=self.list_assertions_prompt,
+            output_key="assertions",
         )
         check_assertions_chain = LLMChain(
             llm=self.llm,

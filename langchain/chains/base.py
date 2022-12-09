@@ -60,12 +60,12 @@ class Chain(BaseModel, ABC):
             )
 
     @abstractmethod
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
 
     def __call__(
         self, inputs: Dict[str, Any], return_only_outputs: bool = False
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
         Args:

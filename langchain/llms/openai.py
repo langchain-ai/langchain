@@ -90,8 +90,8 @@ class OpenAI(LLM, BaseModel):
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
+            # "best_of": self.best_of,
             "n": self.n,
-            "best_of": self.best_of,
         }
         return {**normal_params, **self.model_kwargs}
 
@@ -100,7 +100,12 @@ class OpenAI(LLM, BaseModel):
         """Get the identifying parameters."""
         return {**{"model": self.model_name}, **self._default_params}
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def __call__(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        n: Optional[int] = None,
+    ) -> List[str]:
         """Call out to OpenAI's create endpoint.
 
         Args:
@@ -115,10 +120,14 @@ class OpenAI(LLM, BaseModel):
 
                 response = openai("Tell me a joke.")
         """
+        # print("|".join([str(i) for i in [prompt, stop, n]]))
         params = self._default_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
+        params["n"] = n or self.n
+        # print(n or self.n)
         response = self.client.create(model=self.model_name, prompt=prompt, **params)
-        return response["choices"][0]["text"]
+        # print("hello world!!")
+        return [i["text"] for i in response["choices"]]
