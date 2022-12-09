@@ -72,3 +72,10 @@ Encouraging the model to think a certain way by including the start of the model
 
 Resources:
 - [Example](https://twitter.com/goodside/status/1583262455207460865?s=20&t=8Hz7XBnK1OF8siQrxxCIGQ)
+
+### MemPrompt
+
+MemPrompt maintains a memory of errors and user feedback, and uses them to prevent repetition of mistakes.
+
+Resources:
+- [Paper](https://memprompt.com/)
