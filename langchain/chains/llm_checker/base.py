@@ -81,18 +81,18 @@ class LLMCheckerChain(Chain, BaseModel):
             output_key="revised_statement",
         )
 
+        chains = [
+            create_draft_answer_chain,
+            list_assertions_chain,
+            check_assertions_chain,
+            revised_answer_chain,
+        ]
+
         question_to_checked_assertions_chain = SequentialChain(
-            chains=[
-                create_draft_answer_chain,
-                list_assertions_chain,
-                check_assertions_chain,
-                revised_answer_chain,
-            ],
+            chains=chains,
             input_variables=["question"],
             output_variables=["revised_statement"],
             verbose=True,
         )
-        output = question_to_checked_assertions_chain({"question": question})[
-            "revised_statement"
-        ]
-        return {self.output_key: output}
+        output = question_to_checked_assertions_chain({"question": question})
+        return {self.output_key: output["revised_statement"]}
