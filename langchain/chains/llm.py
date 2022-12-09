@@ -60,8 +60,8 @@ class LLMChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, Any], n: Optional[int] = 1) -> Dict[str, Any]:
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-        print("selected_inputs")
-        print(selected_inputs)
+        # print("selected_inputs")
+        # print(selected_inputs)
 
         def listify(i):
             if isinstance(i, str):
@@ -72,8 +72,8 @@ class LLMChain(Chain, BaseModel):
         list_of_selected_inputs = [
             listify(inputs[k]) for k in self.prompt.input_variables
         ]
-        print("list_of_selected_inputs")
-        print(list_of_selected_inputs)
+        # print("list_of_selected_inputs")
+        # print(list_of_selected_inputs)
         list_of_branches = []
 
         for options in itertools.product(*list_of_selected_inputs):
@@ -82,8 +82,8 @@ class LLMChain(Chain, BaseModel):
             list_of_branches.append(
                 {k: v for k, v in zip(self.prompt.input_variables, options)}
             )
-        print("list_of_branches:")
-        print(list_of_branches)
+        # print("list_of_branches:")
+        # print(list_of_branches)
         # print(list_of_branches)
         # selected_inputs
 
