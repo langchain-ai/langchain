@@ -116,9 +116,40 @@ class OpenAI(LLM, BaseModel):
                 response = openai("Tell me a joke.")
         """
         params = self._default_params
+
+        if (params["max_tokens"] == -1): 
+            params["max_tokens"] = self.max_token_for_prompt(prompt)
+
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         response = self.client.create(model=self.model_name, prompt=prompt, **params)
         return response["choices"][0]["text"]
+
+    def max_token_for_prompt(self, prompt: str) -> int:
+        """Calculate the maximum number of tokens possible to generate for a prompt.
+
+        Args:
+            prompt: The prompt to pass into the model.
+
+        Returns:
+            The maximum number of tokens to generate for a prompt.
+
+        Example:
+            .. code-block:: python
+
+                max_tokens = openai.max_token_for_prompt("Tell me a joke.")
+        """
+        # import the GPT-3 tokenizer
+        from transformers import GPT2TokenizerFast
+
+        # create a GPT-3 tokenizer instance
+        tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
+        
+        # tokenize the text using the GPT-3 tokenizer
+        tokenized_text = tokenizer.tokenize(prompt)
+
+        # calculate the number of tokens in the tokenized text (some OpenAI models have a max of 8,000 tokens?!?)
+        num_tokens = len(tokenized_text)
+        return 4000 - num_tokens
