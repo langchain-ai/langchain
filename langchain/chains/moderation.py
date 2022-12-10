@@ -1,11 +1,13 @@
 """Pass input through a moderation endpoint."""
-from langchain.chains.base import Chain
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, root_validator
-from typing import Any, Optional, Dict, List
+
+from langchain.chains.base import Chain
 from langchain.utils import get_from_dict_or_env
 
 
-class OpenAIModerationChain(Chain):
+class OpenAIModerationChain(Chain, BaseModel):
     """Pass input through a moderation endpoint.
 
     To use, you should have the ``openai`` python package installed, and the
