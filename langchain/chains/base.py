@@ -29,6 +29,10 @@ class Memory(BaseModel, ABC):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this model run to memory."""
 
+    @abstractmethod
+    def clear(self) -> None:
+        """Clear memory contents."""
+
 
 def _get_verbosity() -> bool:
     return langchain.verbose
