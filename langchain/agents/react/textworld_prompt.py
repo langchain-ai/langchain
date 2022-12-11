@@ -47,4 +47,6 @@ Action 4: Finish[yes]
 SUFFIX = """\n\nSetup: {input}
 {agent_scratchpad}"""
 
-TEXTWORLD_PROMPT = PromptTemplate.from_examples(EXAMPLES, SUFFIX, ["input", "agent_scratchpad"])
+TEXTWORLD_PROMPT = PromptTemplate.from_examples(
+    EXAMPLES, SUFFIX, ["input", "agent_scratchpad"]
+)

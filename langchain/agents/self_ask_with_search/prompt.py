@@ -39,4 +39,6 @@ So the final answer is: No
 
 Question: {input}
 {agent_scratchpad}"""
-PROMPT = PromptTemplate(input_variables=["input", "agent_scratchpad"], template=_DEFAULT_TEMPLATE)
+PROMPT = PromptTemplate(
+    input_variables=["input", "agent_scratchpad"], template=_DEFAULT_TEMPLATE
+)

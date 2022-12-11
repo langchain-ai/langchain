@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
@@ -40,6 +40,16 @@ class Agent(Chain, BaseModel, ABC):
         :meta private:
         """
         return [self.output_key]
+
+    @root_validator()
+    def validate_prompt(cls, values: Dict) -> Dict:
+        """Validate that prompt matches format."""
+        prompt = values["llm_chain"].prompt
+        if "agent_scratchpad" not in prompt.input_variables:
+            raise ValueError(
+                "`agent_scratchpad` should be a variable in prompt.input_variables"
+            )
+        return values
 
     @property
     @abstractmethod
