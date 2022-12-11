@@ -1,8 +1,11 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
+
+from langchain.chains.constants import MAX_FANOUT_PER_CALL
 
 
 class Memory(BaseModel, ABC):
@@ -95,9 +98,22 @@ class Chain(BaseModel, ABC):
         else:
             return {**inputs, **outputs}
 
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Call the chain on all inputs in the list."""
-        return [self(inputs) for inputs in input_list]
+    def apply(
+        self, input_list: List[Dict[str, Any]], max_fanout: int = MAX_FANOUT_PER_CALL
+    ) -> List[Dict[str, str]]:
+        """Apply the chain to the input list in separate threads.
+
+        Args:
+            input_list: A list of dictionaries containing the input data for the chain.
+            max_fanout: The maximum number of threads to use.
+                Defaults to MAX_FANOUT_PER_CALL.
+
+        Returns:
+            A list of dictionaries containing the results of applying the chain
+                to each input.
+        """
+        with ThreadPoolExecutor(max_workers=max_fanout) as executor:
+            return list(executor.map(self, input_list))
 
     def run(self, text: str) -> str:
         """Run text in, text out (if applicable)."""
