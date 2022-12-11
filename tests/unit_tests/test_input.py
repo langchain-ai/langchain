@@ -3,7 +3,8 @@
 import sys
 from io import StringIO
 
-from langchain.input import ChainedInput, get_color_mapping
+from langchain.agents.input import ChainedInput
+from langchain.input import get_color_mapping
 
 
 def test_chained_input_not_verbose() -> None:
@@ -18,11 +19,11 @@ def test_chained_input_not_verbose() -> None:
 
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
-    chained_input.add("bar")
+    chained_input.add_observation("bar", "1", "2", None)
     sys.stdout = old_stdout
     output = mystdout.getvalue()
     assert output == ""
-    assert chained_input.input == "foobar"
+    assert chained_input.input == "foo\n1bar\n2"
 
 
 def test_chained_input_verbose() -> None:
@@ -37,19 +38,19 @@ def test_chained_input_verbose() -> None:
 
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
-    chained_input.add("bar")
+    chained_input.add_observation("bar", "1", "2", None)
     sys.stdout = old_stdout
     output = mystdout.getvalue()
-    assert output == "bar"
-    assert chained_input.input == "foobar"
+    assert output == "\n1bar\n2"
+    assert chained_input.input == "foo\n1bar\n2"
 
     old_stdout = sys.stdout
     sys.stdout = mystdout = StringIO()
-    chained_input.add("baz", color="blue")
+    chained_input.add_observation("baz", "3", "4", "blue")
     sys.stdout = old_stdout
     output = mystdout.getvalue()
-    assert output == "\x1b[36;1m\x1b[1;3mbaz\x1b[0m"
-    assert chained_input.input == "foobarbaz"
+    assert output == "\n3\x1b[36;1m\x1b[1;3mbaz\x1b[0m\n4"
+    assert chained_input.input == "foo\n1bar\n2\n3baz\n4"
 
 
 def test_get_color_mapping() -> None:

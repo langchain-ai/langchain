@@ -31,11 +31,11 @@ class OpenAI(LLM, BaseModel):
     """What sampling temperature to use."""
     max_tokens: int = 256
     """The maximum number of tokens to generate in the completion."""
-    top_p: int = 1
+    top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
-    frequency_penalty: int = 0
+    frequency_penalty: float = 0
     """Penalizes repeated tokens according to frequency."""
-    presence_penalty: int = 0
+    presence_penalty: float = 0
     """Penalizes repeated tokens."""
     n: int = 1
     """How many completions to generate for each prompt."""

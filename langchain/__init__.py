@@ -15,6 +15,7 @@ from langchain.chains import (
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
+from langchain.logger import BaseLogger, StdOutLogger
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -24,6 +25,9 @@ from langchain.prompts import (
 from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
+
+logger: BaseLogger = StdOutLogger()
+verbose: bool = False
 
 __all__ = [
     "LLMChain",
