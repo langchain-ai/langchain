@@ -1,5 +1,6 @@
 """Routing chains."""
 from langchain.agents.agent import Agent
+from langchain.agents.load_tools import load_tools
 from langchain.agents.loading import initialize_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
@@ -15,4 +16,5 @@ __all__ = [
     "initialize_agent",
     "ZeroShotAgent",
     "ReActTextWorldAgent",
+    "load_tools",
 ]
