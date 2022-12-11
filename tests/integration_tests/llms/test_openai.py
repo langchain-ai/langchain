@@ -44,3 +44,24 @@ def test_openai_stop_error() -> None:
     llm = OpenAI(stop="3", temperature=0)
     with pytest.raises(ValueError):
         llm("write an ordered list of five items", stop=["\n"])
+
+
+def test_overridden_apply_method():
+    """Test batching to OpenAI."""
+
+    # Set temperature to zero so that the output is deterministic
+    llm = OpenAI(temperature=0.0)
+    input = {
+        "prompt": "Tell me a joke.",
+        "n": 3,
+    }
+    # Call LLM's apply method on the same instance
+    # with the same input
+    super_result = super(OpenAI, llm).apply(**input)
+
+    # Call OpenAI's apply method on the same instance
+    # with the same input
+    subclass_result = llm.apply(**input)
+
+    # Check that the results are the same
+    assert subclass_result == super_result

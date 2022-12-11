@@ -10,6 +10,14 @@ class LLM(ABC):
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Run the LLM on the given prompt and input."""
 
+    def apply(
+        self, prompt: str, stop: Optional[List[str]] = None, n: int = 1
+    ) -> List[str]:
+        """Runs the LLM on the given prompt n times and returns API.
+
+        Override this method if you want to implement batching on the server side"""
+        return [self(prompt, stop) for _ in range(n)]
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
