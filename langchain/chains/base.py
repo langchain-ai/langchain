@@ -71,7 +71,7 @@ class Chain(BaseModel, ABC):
 
     def __call__(
         self, inputs: Dict[str, Any], return_only_outputs: bool = False
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
         Args:

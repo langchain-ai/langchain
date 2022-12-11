@@ -22,6 +22,7 @@ class Agent(Chain, BaseModel, ABC):
     prompt: ClassVar[BasePromptTemplate]
     llm_chain: LLMChain
     tools: List[Tool]
+    return_intermediate_steps: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -39,7 +40,10 @@ class Agent(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.output_key]
+        if self.return_intermediate_steps:
+            return [self.output_key, "intermediate_steps"]
+        else:
+            return [self.output_key]
 
     @property
     @abstractmethod
@@ -115,7 +119,7 @@ class Agent(Chain, BaseModel, ABC):
         tool, tool_input = parsed_output
         return AgentAction(tool, tool_input, full_output)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
         text = inputs[self.input_key]
         # Do any preparation necessary when receiving a new input.
@@ -138,12 +142,17 @@ class Agent(Chain, BaseModel, ABC):
         while True:
             # Call the LLM to see what to do.
             output = self.get_action(chained_input.input)
-            # Add the log to the Chained Input.
-            chained_input.add_action(output, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
-                return {self.output_key: output.tool_input}
-            # Otherwise we lookup the tool
+                final_output: dict = {self.output_key: output.tool_input}
+                if self.return_intermediate_steps:
+                    final_output[
+                        "intermediate_steps"
+                    ] = chained_input.intermediate_steps
+                return final_output
+            # Other we add the log to the Chained Input.
+            chained_input.add_action(output, color="green")
+            # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
                 # We then call the tool on the tool input to get an observation
