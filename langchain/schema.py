@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Common schema objects."""
 
 from typing import NamedTuple
 

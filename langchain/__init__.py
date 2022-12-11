@@ -1,6 +1,5 @@
 """Main entrypoint into package."""
 
-verbose = False
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.chains import (
     ConversationChain,
@@ -16,7 +15,7 @@ from langchain.chains import (
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
-from langchain.logger import BaseLogger
+from langchain.logger import BaseLogger, StdOutLogger
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -27,7 +26,8 @@ from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
-logger = BaseLogger()
+logger: BaseLogger = StdOutLogger()
+verbose: bool = False
 
 __all__ = [
     "LLMChain",
