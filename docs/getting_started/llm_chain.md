@@ -27,7 +27,7 @@ from langchain.chains import LLMChain
 chain = LLMChain(llm=llm, prompt=prompt)
 ```
 
-Now we can run that can only specifying the product!
+Now we can run that chain only specifying the product!
 
 ```python
 chain.run("colorful socks")

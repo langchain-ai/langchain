@@ -6,6 +6,7 @@ from langchain.chains import (
     ConversationChain,
     LLMBashChain,
     LLMChain,
+    LLMCheckerChain,
     LLMMathChain,
     PALChain,
     QAWithSourcesChain,
@@ -31,6 +32,7 @@ logger = BaseLogger()
 __all__ = [
     "LLMChain",
     "LLMBashChain",
+    "LLMCheckerChain",
     "LLMMathChain",
     "SelfAskWithSearchChain",
     "SerpAPIWrapper",
