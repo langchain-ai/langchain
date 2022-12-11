@@ -55,7 +55,11 @@ class PALChain(Chain, BaseModel):
         if self.verbose:
             print_text(code, color="green", end="\n")
         repl = PythonChain()
-        res = repl.run(code + f"\n{self.get_answer_expr}")
+        try:
+            res = repl.run(code + f"\n{self.get_answer_expr}")
+        except:
+            print("Exception!")
+            res = ""
         return {self.output_key: res.strip()}
 
     @classmethod
