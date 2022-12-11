@@ -142,9 +142,9 @@ class OpenAI(LLM, BaseModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-            response = self.client.create(
-                model=self.model_name, prompt=prompt, n=n, best_of=n, **params
-            )
+        response = self.client.create(
+            model=self.model_name, prompt=prompt, n=n, best_of=n, **params
+        )
         return [i["text"] for i in response["choices"]]
 
     def modelname_to_contextsize(self, modelname: str) -> int:

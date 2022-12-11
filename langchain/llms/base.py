@@ -13,9 +13,10 @@ class LLM(ABC):
     def apply(
         self, prompt: str, stop: Optional[List[str]] = None, n: int = 1
     ) -> List[str]:
-        """Runs the LLM on the given prompt n times and returns API.
+        """Run the LLM on the given prompt n times and returns API.
 
-        Override this method if you want to implement batching on the server side"""
+        Override this method if you want to implement batching on the server side.
+        """
         return [self(prompt, stop) for _ in range(n)]
 
     @property
