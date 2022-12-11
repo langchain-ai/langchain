@@ -96,6 +96,16 @@ class AI21(BaseModel, LLM):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "ai21"
+
+    @property
+    def _auth_keys(self) -> List[str]:
+        """Return list of auth keys."""
+        return ["ai21_api_key"]
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to AI21's complete endpoint.
 

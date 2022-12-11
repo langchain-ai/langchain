@@ -1,4 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
+from pathlib import Path
 from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra
@@ -86,3 +87,15 @@ class LLMChain(Chain, BaseModel):
             return self.prompt.output_parser.parse(result)
         else:
             return result
+
+    def save(self, directory_path: Union[Path, str]) -> None:
+        # Convert file to Path object.
+        if isinstance(directory_path, str):
+            save_path = Path(directory_path)
+        else:
+            save_path = directory_path
+
+        save_path.mkdir(parents=True, exist_ok=True)
+
+        # Save prompt associated with LLM Chain
+        self.prompt.save(directory_path / "llm_prompt.yaml")

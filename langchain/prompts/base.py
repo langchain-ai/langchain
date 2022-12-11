@@ -97,7 +97,7 @@ class BasePromptTemplate(BaseModel, ABC):
         """Save the prompt.
 
         Args:
-            file_path: Path to directory to save prompt to.
+            file_path: Path to file to save prompt to.
 
         Example:
         .. code-block:: python
