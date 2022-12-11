@@ -85,7 +85,7 @@ class ZeroShotAgent(Agent):
         format_instructions = FORMAT_INSTRUCTIONS.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
-            input_variables = ["input", "thoughts"]
+            input_variables = ["input", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
 
     @classmethod

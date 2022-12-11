@@ -2,24 +2,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
+from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import ChainedInput, get_color_mapping
+from langchain.input import get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
-
-
-class Action(NamedTuple):
-    """Action to take."""
-
-    tool: str
-    tool_input: str
-    log: str
+from langchain.schema import AgentAction
 
 
 class Agent(Chain, BaseModel, ABC):
@@ -33,11 +27,11 @@ class Agent(Chain, BaseModel, ABC):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the singular input key.
+        """Return the input keys.
 
         :meta private:
         """
-        return set(self.llm_chain.input_keys) - {"thoughts"}
+        return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @property
     def output_keys(self) -> List[str]:
@@ -99,7 +93,7 @@ class Agent(Chain, BaseModel, ABC):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
-    def get_action(self, thoughts: str, inputs: dict) -> Action:
+    def get_action(self, thoughts: str, inputs: dict) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
@@ -109,18 +103,18 @@ class Agent(Chain, BaseModel, ABC):
         Returns:
             Action specifying what tool to use.
         """
-        new_inputs = {"thoughts": thoughts, "stop": self._stop}
+        new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**inputs, **new_inputs}
         full_output = self.llm_chain.predict(**full_inputs)
         parsed_output = self._extract_tool_and_input(full_output)
         while parsed_output is None:
             full_output = self._fix_text(full_output)
-            full_inputs["thoughts"] += full_output
+            full_inputs["agent_scratchpad"] += full_output
             output = self.llm_chain.predict(**full_inputs)
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
-        return Action(tool, tool_input, full_output)
+        return AgentAction(tool, tool_input, full_output)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
@@ -139,7 +133,7 @@ class Agent(Chain, BaseModel, ABC):
             # Call the LLM to see what to do.
             output = self.get_action(chained_input.input, inputs)
             # Add the log to the Chained Input.
-            chained_input.add(output.log, color="green")
+            chained_input.add_action(output, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
                 return {self.output_key: output.tool_input}
@@ -153,8 +147,9 @@ class Agent(Chain, BaseModel, ABC):
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
             # We then log the observation
-            chained_input.add(f"\n{self.observation_prefix}")
-            chained_input.add(observation, color=color)
-            # We then add the LLM prefix into the prompt to get the LLM to start
-            # thinking, and start the loop all over.
-            chained_input.add(f"\n{self.llm_prefix}")
+            chained_input.add_observation(
+                observation,
+                self.observation_prefix,
+                self.llm_prefix,
+                color=color,
+            )
