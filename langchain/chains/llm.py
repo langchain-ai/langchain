@@ -2,12 +2,15 @@
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+import yaml
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.input import print_text
 from langchain.llms.base import LLM
+from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.loading import load_prompt, load_prompt_from_config
 
 
 class LLMChain(Chain, BaseModel):
@@ -88,14 +91,63 @@ class LLMChain(Chain, BaseModel):
         else:
             return result
 
-    def save(self, directory_path: Union[Path, str]) -> None:
-        # Convert file to Path object.
-        if isinstance(directory_path, str):
-            save_path = Path(directory_path)
+    @classmethod
+    def from_config(cls, config: dict):
+        """Load LLMChain from Config."""
+        if "memory" in config:
+            raise ValueError("Loading memory not currently supported.")
+        # Load the prompt.
+        if "prompt_path" in config:
+            if "prompt" in config:
+                raise ValueError(
+                    "Only one of prompt and prompt_path should " "be specified."
+                )
+            config["prompt"] = load_prompt(config.pop("prompt_path"))
         else:
-            save_path = directory_path
+            config["prompt"] = load_prompt_from_config(config["prompt"])
 
-        save_path.mkdir(parents=True, exist_ok=True)
+        # Load the LLM
+        if "llm_path" in config:
+            if "llm" in config:
+                raise ValueError(
+                    "Only one of prompt and prompt_path should " "be specified."
+                )
+            config["llm"] = load_llm(config.pop("llm_path"))
+        else:
+            config["llm"] = load_prompt_from_config(config["llm"])
 
-        # Save prompt associated with LLM Chain
-        self.prompt.save(directory_path / "llm_prompt.yaml")
+        return cls(**config)
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        info_directory = self.dict()
+
+        if self.memory is not None:
+            raise ValueError("Saving Memory not Currently Supported.")
+        del info_directory["memory"]
+
+        # Save prompts and llms separately
+        del info_directory["prompt"]
+        del info_directory["llm"]
+
+        prompt_file = directory_path / "llm_prompt.yaml"
+        llm_file = directory_path / "llm.yaml"
+
+        info_directory["prompt_path"] = str(prompt_file)
+        info_directory["llm_path"] = str(llm_file)
+        info_directory["_type"] = "llm"
+
+        # Save prompt and llm associated with LLM Chain
+        self.prompt.save(prompt_file)
+        self.llm.save(llm_file)
+
+        with open(save_path, "w") as f:
+            yaml.dump(info_directory, f, default_flow_style=False)

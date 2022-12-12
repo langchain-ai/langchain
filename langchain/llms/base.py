@@ -5,11 +5,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 
 class LLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     @abstractmethod
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
@@ -25,8 +30,8 @@ class LLM(BaseModel, ABC):
         cls_name = f"\033[1m{self.__class__.__name__}\033[0m"
         return f"{cls_name}\nParams: {self._identifying_params}"
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _llm_type(self) -> str:
         """Return type of llm."""
 
