@@ -5,6 +5,8 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 
+params_to_rename = {"model_name": "client_name"}
+
 
 class ManifestWrapper(LLM, BaseModel):
     """Wrapper around HazyResearch's Manifest library."""
@@ -35,7 +37,19 @@ class ManifestWrapper(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
-        return {**self.client.client.get_model_params(), **kwargs}
+
+        # Way params are saved are not consitent with how they are loaded
+        model_params = self.client.client.get_model_params()
+        for param, sub_value in params_to_rename.items():
+            if param in model_params:
+                model_params[sub_value] = model_params.pop(param)
+
+        return {**model_params, **kwargs}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "manifest"
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to LLM through Manifest."""

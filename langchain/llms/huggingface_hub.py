@@ -76,6 +76,11 @@ class HuggingFaceHub(LLM, BaseModel):
         _model_kwargs = self.model_kwargs or {}
         return {**{"repo_id": self.repo_id}, **_model_kwargs}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "huggingface_hub"
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 

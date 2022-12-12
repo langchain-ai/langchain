@@ -19,7 +19,7 @@ class AI21PenaltyData(BaseModel):
     applyToEmojis: bool = True
 
 
-class AI21(BaseModel, LLM):
+class AI21(LLM, BaseModel):
     """Wrapper around AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
@@ -95,6 +95,11 @@ class AI21(BaseModel, LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "ai21"
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to AI21's complete endpoint.
