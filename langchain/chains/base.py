@@ -2,7 +2,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
+
+import langchain
 
 
 class Memory(BaseModel, ABC):
@@ -27,13 +29,21 @@ class Memory(BaseModel, ABC):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this model run to memory."""
 
+    @abstractmethod
+    def clear(self) -> None:
+        """Clear memory contents."""
+
+
+def _get_verbosity() -> bool:
+    return langchain.verbose
+
 
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
 
-    verbose: bool = False
+    verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
 
     @property
