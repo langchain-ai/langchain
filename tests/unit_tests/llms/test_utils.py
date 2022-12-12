@@ -10,6 +10,9 @@ def test_enforce_stop_tokens() -> None:
     text = "foo bar baz"
     output = enforce_stop_tokens(text, ["moo", "baz", "bar"])
     assert output == "foo "
+    text = "foo bar baz"
+    output = enforce_stop_tokens(text, ["moo", "bar"])
+    assert output == "foo "
 
 
 def test_enforce_stop_tokens_none() -> None:
