@@ -1,10 +1,10 @@
 """Chain that just formats a prompt and calls an LLM."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra
 
+import langchain
 from langchain.chains.base import Chain
-from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
@@ -55,12 +55,13 @@ class LLMChain(Chain, BaseModel):
         selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
         prompt = self.prompt.format(**selected_inputs)
         if self.verbose:
-            print("Prompt after formatting:")
-            print_text(prompt, color="green", end="\n")
+            langchain.logger.log_llm_inputs(selected_inputs, prompt)
         kwargs = {}
         if "stop" in inputs:
             kwargs["stop"] = inputs["stop"]
         response = self.llm(prompt, **kwargs)
+        if self.verbose:
+            langchain.logger.log_llm_response(response)
         return {self.output_key: response}
 
     def predict(self, **kwargs: Any) -> str:
@@ -78,3 +79,11 @@ class LLMChain(Chain, BaseModel):
                 completion = llm.predict(adjective="funny")
         """
         return self(kwargs)[self.output_key]
+
+    def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
+        """Call predict and then parse the results."""
+        result = self.predict(**kwargs)
+        if self.prompt.output_parser is not None:
+            return self.prompt.output_parser.parse(result)
+        else:
+            return result

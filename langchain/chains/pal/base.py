@@ -12,10 +12,10 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain.chains.pal.math_prompt import MATH_PROMPT
-from langchain.chains.python import PythonChain
 from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.python import PythonREPL
 
 
 class PALChain(Chain, BaseModel):
@@ -54,12 +54,8 @@ class PALChain(Chain, BaseModel):
         code = llm_chain.predict(stop=[self.stop], **inputs)
         if self.verbose:
             print_text(code, color="green", end="\n")
-        repl = PythonChain()
-        try:
-            res = repl.run(code + f"\n{self.get_answer_expr}")
-        except:
-            print("Exception!")
-            res = ""
+        repl = PythonREPL()
+        res = repl.run(code + f"\n{self.get_answer_expr}")
         return {self.output_key: res.strip()}
 
     @classmethod

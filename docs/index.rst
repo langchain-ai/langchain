@@ -9,13 +9,13 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 
-There are three main areas (with a forth coming soon) that LangChain is designed to help with.
+There are four main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
 1. LLM and Prompts
 2. Chains
 3. Agents
-4. (Coming Soon) Memory
+4. Memory
 
 Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
 
@@ -141,6 +141,9 @@ common tasks or cool demos.
    modules/llms
    modules/embeddings
    modules/text_splitter
+   modules/python.rst
+   modules/serpapi.rst
+   modules/docstore.rst
    modules/vectorstore
    modules/chains
    modules/agents
@@ -156,6 +159,7 @@ see detailed information about the various classes, methods, and APIs.
    :name: resources
 
    explanation/core_concepts.md
+   explanation/combine_docs.md
    explanation/agents.md
    explanation/glossary.md
    explanation/cool_demos.md

@@ -5,7 +5,8 @@ from typing import Any, ClassVar, List, Optional, Tuple
 from pydantic import BaseModel
 
 from langchain.agents.agent import Agent
-from langchain.agents.react.prompt import PROMPT
+from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
+from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
@@ -17,7 +18,7 @@ from langchain.prompts.base import BasePromptTemplate
 class ReActDocstoreAgent(Agent, BaseModel):
     """Agent for the ReAct chin."""
 
-    prompt: ClassVar[BasePromptTemplate] = PROMPT
+    prompt: ClassVar[BasePromptTemplate] = WIKI_PROMPT
 
     i: int = 1
 
@@ -96,6 +97,22 @@ class DocstoreExplorer:
         return self.document.lookup(term)
 
 
+class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
+    """Agent for the ReAct TextWorld chain."""
+
+    prompt: ClassVar[BasePromptTemplate] = TEXTWORLD_PROMPT
+
+    i: int = 1
+
+    @classmethod
+    def _validate_tools(cls, tools: List[Tool]) -> None:
+        if len(tools) != 1:
+            raise ValueError(f"Exactly one tool must be specified, but got {tools}")
+        tool_names = {tool.name for tool in tools}
+        if tool_names != {"Play"}:
+            raise ValueError(f"Tool name should be Play, got {tool_names}")
+
+
 class ReActChain(ReActDocstoreAgent):
     """Chain that implements the ReAct paper.
 
@@ -113,5 +130,5 @@ class ReActChain(ReActDocstoreAgent):
             Tool(name="Search", func=docstore_explorer.search),
             Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        llm_chain = LLMChain(llm=llm, prompt=WIKI_PROMPT)
         super().__init__(llm_chain=llm_chain, tools=tools, **kwargs)

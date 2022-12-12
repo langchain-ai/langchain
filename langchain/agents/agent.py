@@ -2,24 +2,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
+from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.input import ChainedInput, get_color_mapping
+from langchain.input import get_color_mapping
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
-
-
-class Action(NamedTuple):
-    """Action to take."""
-
-    tool: str
-    tool_input: str
-    log: str
+from langchain.schema import AgentAction
 
 
 class Agent(Chain, BaseModel, ABC):
@@ -99,7 +93,7 @@ class Agent(Chain, BaseModel, ABC):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
-    def get_action(self, text: str) -> Action:
+    def get_action(self, text: str) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
@@ -119,7 +113,7 @@ class Agent(Chain, BaseModel, ABC):
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
-        return Action(tool, tool_input, full_output)
+        return AgentAction(tool, tool_input, full_output)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
@@ -145,17 +139,23 @@ class Agent(Chain, BaseModel, ABC):
             # Call the LLM to see what to do.
             output = self.get_action(chained_input.input)
             # Add the log to the Chained Input.
-            chained_input.add(output.log, color="green")
+            chained_input.add_action(output, color="green")
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
                 return {self.output_key: output.tool_input}
             # Otherwise we lookup the tool
-            chain = name_to_tool_map[output.tool]
-            # We then call the tool on the tool input to get an observation
-            observation = chain(output.tool_input)
+            if output.tool in name_to_tool_map:
+                chain = name_to_tool_map[output.tool]
+                # We then call the tool on the tool input to get an observation
+                observation = chain(output.tool_input)
+                color = color_mapping[output.tool]
+            else:
+                observation = f"{output.tool} is not a valid tool, try another one."
+                color = None
             # We then log the observation
-            chained_input.add(f"\n{self.observation_prefix}")
-            chained_input.add(observation, color=color_mapping[output.tool])
-            # We then add the LLM prefix into the prompt to get the LLM to start
-            # thinking, and start the loop all over.
-            chained_input.add(f"\n{self.llm_prefix}")
+            chained_input.add_observation(
+                observation,
+                self.observation_prefix,
+                self.llm_prefix,
+                color=color,
+            )
