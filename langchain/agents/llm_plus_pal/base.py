@@ -72,7 +72,7 @@ class LLMPlusPalChain(LLMPlusPalAgent):
 
     def __init__(self, llm: LLM, **kwargs: Any):
         """Initialize with just an LLM and a pal chain."""
-        pal = OpenAI(model_name='text-davinci-003', temperature=0., max_tokens=512)
+        pal = OpenAI(model_name='text-davinci-003', temperature=0.5, max_tokens=512)
         pal_chain = PALChain.from_math_prompt(pal, verbose=True)        
         pal_tool = Tool(name=PAL_TOOL_NAME, func=pal_chain.run)
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
