@@ -130,7 +130,14 @@ class OpenAI(LLM, BaseModel):
         for i, prompt in enumerate(prompts):
             choices = response["choices"][i * self.n : (i + 1) * self.n]
             generations.append([Generation(text=choice["text"]) for choice in choices])
-        return LLMResult(generations=generations)
+        """
+            Get the token usage from the response,
+            includes prompt, completion, and total tokens used.
+        """
+        token_usage = response["usage"]
+        return LLMResult(
+            generations=generations, llm_output={"token_usage": token_usage}
+        )
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
