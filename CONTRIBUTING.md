@@ -7,9 +7,9 @@ to contributions, whether it be in the form of a new feature, improved infra, or
 To contribute to this project, please follow a ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
 Please do not try to push directly to this repo unless you are maintainer.
 
-## Contributing Guidelines
+## 🗺️Contributing Guidelines
 
-### GitHub Issues
+### 🚩GitHub Issues
 
 Our [issues](https://github.com/hwchase17/langchain/issues) page is kept up to date
 with bugs, improvements, and feature requests. There is a taxonomy of labels to help
@@ -32,7 +32,7 @@ We will try to keep these issues as up to date as possible, though
 with the rapid rate of develop in this field some may get out of date.
 If you notice this happening, please just let us know.
 
-### Getting Help
+### 🙋Getting Help
 
 Although we try to have a developer setup to make it as easy as possible for others to contribute (see below)
 it is possible that some pain point may arise around environment setup, linting, documentation, or other.
@@ -44,7 +44,7 @@ If you are finding these difficult (or even just annoying) to work with,
 feel free to contact a maintainer for help - we do not want these to get in the way of getting
 good code into the codebase.
 
-### Release process
+### 🏭Release process
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency via by
 a developer and published to [PyPI](https://pypi.org/project/ruff/).
@@ -56,9 +56,9 @@ If your contribution has made its way into a release, we will want to give you c
 If you have a Twitter account you would like us to mention, please let us know in the PR or in another manner.
 
 
-## Developer Setup
+## 🤖Developer Setup
 
-### Quick Start
+### 🚀Quick Start
 
 This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's own [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
 
@@ -72,7 +72,7 @@ This will install all requirements for running the package, examples, linting, f
 
 Now, you should be able to run the common tasks in the following section.
 
-### Common Tasks
+### ✅Common Tasks
 
 #### Code Formatting
 
