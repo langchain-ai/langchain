@@ -15,7 +15,7 @@ LIST_ASSERTIONS_PROMPT = PromptTemplate(
 
 _CHECK_ASSERTIONS_TEMPLATE = """Here is a bullet point list of assertions:
 {assertions}
-For each assertion, determine whether it is true or false. If it is false, explain why.\n\n"""
+For each assertion in the list above, determine whether it is true or false. If it is false, explain why. Evaluate each statement independently.\n\n"""
 CHECK_ASSERTIONS_PROMPT = PromptTemplate(
     input_variables=["assertions"], template=_CHECK_ASSERTIONS_TEMPLATE
 )
