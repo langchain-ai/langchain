@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
@@ -95,6 +95,43 @@ class OpenAI(LLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
+    def generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Call out to OpenAI's create endpoint.
+
+        Args:
+            prompts: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The full LLM output.
+
+        Example:
+            .. code-block:: python
+
+                response = openai.generate(["Tell me a joke."])
+        """
+        params = self._default_params
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+
+        if params["max_tokens"] == -1:
+            if len(prompts) != 1:
+                raise ValueError(
+                    "max_tokens set to -1 not supported for multiple inputs."
+                )
+            params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
+
+        response = self.client.create(model=self.model_name, prompt=prompts, **params)
+        generations = []
+        for i, prompt in enumerate(prompts):
+            choices = response["choices"][i * self.n : (i + 1) * self.n]
+            generations.append([Generation(text=choice["text"]) for choice in choices])
+        return LLMResult(generations=generations)
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -115,17 +152,7 @@ class OpenAI(LLM, BaseModel):
 
                 response = openai("Tell me a joke.")
         """
-        params = self._default_params
-
-        if params["max_tokens"] == -1:
-            params["max_tokens"] = self.max_tokens_for_prompt(prompt)
-
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        response = self.client.create(model=self.model_name, prompt=prompt, **params)
-        return response["choices"][0]["text"]
+        return self.generate([prompt], stop=stop).generations[0][0].text
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
