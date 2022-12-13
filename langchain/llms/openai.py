@@ -98,7 +98,7 @@ class OpenAI(LLM, BaseModel):
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        """Call out to OpenAI's create endpoint.
+        """"Call out to OpenAI's endpoint with k unique prompts.
 
         Args:
             prompts: The prompts to pass into the model.
@@ -130,10 +130,8 @@ class OpenAI(LLM, BaseModel):
         for i, prompt in enumerate(prompts):
             choices = response["choices"][i * self.n : (i + 1) * self.n]
             generations.append([Generation(text=choice["text"]) for choice in choices])
-        """
-            Get the token usage from the response,
-            includes prompt, completion, and total tokens used.
-        """
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
         token_usage = response["usage"]
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}
