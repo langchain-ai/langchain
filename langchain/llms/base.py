@@ -14,8 +14,9 @@ class Generation(NamedTuple):
 class LLMResult(NamedTuple):
     """Class that contains all relevant information for an LLM Result."""
 
-    generations: List[Generation]
-    """List of the things generated."""
+    generations: List[List[Generation]]
+    """List of the things generated. This is List[List[]] because
+    each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
 
@@ -30,7 +31,7 @@ class LLM(ABC):
         generations = []
         for prompt in prompts:
             text = self(prompt, stop=stop)
-            generations.append(Generation(text=text))
+            generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
 
     @abstractmethod
