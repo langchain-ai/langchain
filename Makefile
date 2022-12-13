@@ -1,5 +1,11 @@
 .PHONY: format lint tests integration_tests
 
+coverage:
+	poetry run pytest --cov \
+		--cov-config=.coveragerc \
+		--cov-report xml \
+		--cov-report term-missing:skip-covered
+
 format:
 	poetry run black .
 	poetry run isort .
