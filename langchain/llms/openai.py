@@ -177,24 +177,7 @@ class OpenAI(LLM, BaseModel):
 
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please it install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(prompt)
-
-        # calculate the number of tokens in the tokenized text
-        num_tokens = len(tokenized_text)
+        num_tokens = self.get_num_tokens(prompt)
 
         # get max context size for model by name
         max_size = self.modelname_to_contextsize(self.model_name)
