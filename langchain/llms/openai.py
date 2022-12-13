@@ -98,7 +98,7 @@ class OpenAI(LLM, BaseModel):
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        """ "Call out to OpenAI's endpoint with k unique prompts.
+        """Call out to OpenAI's endpoint with k unique prompts.
 
         Args:
             prompts: The prompts to pass into the model.
