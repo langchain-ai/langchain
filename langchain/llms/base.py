@@ -2,7 +2,25 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, List, List, Mapping, NamedTuple, Optional
+
+
+class Generation(NamedTuple):
+    """Output of a single generation."""
+
+    text: str
+    """Generated text output."""
+    # TODO: add log probs
+
+
+class LLMResult(NamedTuple):
+    """Class that contains all relevant information for an LLM Result."""
+
+    generations: List[List[Generation]]
+    """List of the things generated. This is List[List[]] because
+    each input could have multiple generations."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""
 
 import yaml
 from pydantic import BaseModel, Extra
@@ -15,6 +33,37 @@ class LLM(BaseModel, ABC):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    def generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+        for prompt in prompts:
+            text = self(prompt, stop=stop)
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Get the number of tokens present in the text."""
+        # TODO: this method may not be exact.
+        # TODO: this method may differ based on model (eg codex).
+        try:
+            from transformers import GPT2TokenizerFast
+        except ImportError:
+            raise ValueError(
+                "Could not import transformers python package. "
+                "This is needed in order to calculate max_tokens_for_prompt. "
+                "Please it install it with `pip install transformers`."
+            )
+        # create a GPT-3 tokenizer instance
+        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
+        # tokenize the text using the GPT-3 tokenizer
+        tokenized_text = tokenizer.tokenize(text)
+
+        # calculate the number of tokens in the tokenized text
+        return len(tokenized_text)
 
     @abstractmethod
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
@@ -29,7 +29,9 @@ class OpenAI(LLM, BaseModel):
     temperature: float = 0.7
     """What sampling temperature to use."""
     max_tokens: int = 256
-    """The maximum number of tokens to generate in the completion."""
+    """The maximum number of tokens to generate in the completion.
+    -1 returns as many tokens as possible given the prompt and
+    the models maximal context size."""
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
     frequency_penalty: float = 0
@@ -95,6 +97,48 @@ class OpenAI(LLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
+    def generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Call out to OpenAI's endpoint with k unique prompts.
+
+        Args:
+            prompts: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The full LLM output.
+
+        Example:
+            .. code-block:: python
+
+                response = openai.generate(["Tell me a joke."])
+        """
+        params = self._default_params
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+
+        if params["max_tokens"] == -1:
+            if len(prompts) != 1:
+                raise ValueError(
+                    "max_tokens set to -1 not supported for multiple inputs."
+                )
+            params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
+
+        response = self.client.create(model=self.model_name, prompt=prompts, **params)
+        generations = []
+        for i, prompt in enumerate(prompts):
+            choices = response["choices"][i * self.n : (i + 1) * self.n]
+            generations.append([Generation(text=choice["text"]) for choice in choices])
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        token_usage = response["usage"]
+        return LLMResult(
+            generations=generations, llm_output={"token_usage": token_usage}
+        )
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -120,17 +164,7 @@ class OpenAI(LLM, BaseModel):
 
                 response = openai("Tell me a joke.")
         """
-        params = self._default_params
-
-        if params["max_tokens"] == -1:
-            params["max_tokens"] = self.max_tokens_for_prompt(prompt)
-
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        response = self.client.create(model=self.model_name, prompt=prompt, **params)
-        return response["choices"][0]["text"]
+        return self.generate([prompt], stop=stop).generations[0][0].text
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
@@ -182,24 +216,7 @@ class OpenAI(LLM, BaseModel):
 
                 max_tokens = openai.max_token_for_prompt("Tell me a joke.")
         """
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please it install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(prompt)
-
-        # calculate the number of tokens in the tokenized text
-        num_tokens = len(tokenized_text)
+        num_tokens = self.get_num_tokens(prompt)
 
         # get max context size for model by name
         max_size = self.modelname_to_contextsize(self.model_name)
