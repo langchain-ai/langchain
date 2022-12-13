@@ -37,6 +37,6 @@ def load_llm(file: Union[str, Path]) -> LLM:
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
     else:
-        raise ValueError
+        raise ValueError("File type must be json or yaml")
     # Load the prompt from the config now.
     return load_llm_from_config(config)
