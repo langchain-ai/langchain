@@ -2,10 +2,11 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Union, List, Mapping, NamedTuple, Optional
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra
+
 
 class Generation(NamedTuple):
     """Output of a single generation."""
@@ -23,7 +24,6 @@ class LLMResult(NamedTuple):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
-
 
 
 class LLM(BaseModel, ABC):
