@@ -1,10 +1,38 @@
 """Base interface for large language models to expose."""
 from abc import ABC, abstractmethod
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, NamedTuple, Optional
+
+
+class Generation(NamedTuple):
+    """Output of a single generation."""
+
+    text: str
+    """Generated text output."""
+    # TODO: add log probs
+
+
+class LLMResult(NamedTuple):
+    """Class that contains all relevant information for an LLM Result."""
+
+    generations: List[List[Generation]]
+    """List of the things generated. This is List[List[]] because
+    each input could have multiple generations."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""
 
 
 class LLM(ABC):
     """LLM wrapper should take in a prompt and return a string."""
+
+    def generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        generations = []
+        for prompt in prompts:
+            text = self(prompt, stop=stop)
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
