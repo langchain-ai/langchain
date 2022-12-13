@@ -14,7 +14,7 @@ def test_ai21_call() -> None:
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
-    """Test saving/loading an NLPCloud LLM."""
+    """Test saving/loading an AI21 LLM."""
     llm = AI21(maxTokens=10)
     llm.save(file_path=tmp_path / "nlpcloud.yaml")
     loaded_llm = load_llm(tmp_path / "nlpcloud.yaml")
