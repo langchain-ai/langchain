@@ -7,6 +7,8 @@ The examples here all highlight how to work with LLMs and prompts.
 
 `LLM Functionality <prompts/llm_functionality.ipynb>`_: A walkthrough of all the functionality the standard LLM interface exposes.
 
+`LLM Serialization <prompts/llm_serialization.ipynb>`_: A walkthrough of how to serialize LLMs to and from disk.
+
 `Custom LLM <prompts/custom_llm.ipynb>`_: How to create and use a custom LLM class, in case you have an LLM not from one of the standard providers (including one that you host yourself).
 
 
