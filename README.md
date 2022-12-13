@@ -31,14 +31,25 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 There are four main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
-1. LLM and Prompts
-2. Chains
-3. Agents
-4. Memory
+**📃 LLMs and Prompts:**
+
+This includes prompt management, prompt optimization, generic interface for all LLMs, and common utilities for working with LLMs.
+
+**🔗 Chains:**
+
+Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
+
+**🤖 Agents:**
+
+Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
+
+**🧠 Memory:**
+
+Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
 For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/?).
 
-## 🤖 Contributing
+## 💁 Contributing
 
 As an open source project in a rapidly developing field, we are extremely open
 to contributions, whether it be in the form of a new feature, improved infra, or better documentation.
