@@ -37,6 +37,11 @@ class ManifestWrapper(LLM, BaseModel):
         kwargs = self.llm_kwargs or {}
         return {**self.client.client.get_model_params(), **kwargs}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "manifest"
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to LLM through Manifest."""
         if stop is not None and len(stop) != 1:

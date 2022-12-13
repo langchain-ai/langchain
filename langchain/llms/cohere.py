@@ -85,6 +85,11 @@ class Cohere(LLM, BaseModel):
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "cohere"
+
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Cohere's generate endpoint.
 
