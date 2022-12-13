@@ -74,7 +74,15 @@ class HuggingFaceHub(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {**{"repo_id": self.repo_id}, **_model_kwargs}
+        return {
+            **{"repo_id": self.repo_id, "task": self.task},
+            **{"model_kwargs": _model_kwargs},
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "huggingface_hub"
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
