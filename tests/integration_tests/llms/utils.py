@@ -5,6 +5,8 @@ from langchain.llms.base import LLM
 
 def assert_llm_equality(llm: LLM, loaded_llm: LLM) -> None:
     """Assert LLM Equality for tests."""
+    # Check that they are the same type.
+    assert type(llm) == type(loaded_llm)
     # Client field can be session based, so hash is different despite
     # all other values being the same, so just assess all other fields
     for field in llm.__fields__.keys():

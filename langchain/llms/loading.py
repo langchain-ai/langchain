@@ -23,7 +23,7 @@ def load_llm_from_config(config: dict) -> LLM:
 
 
 def load_llm(file: Union[str, Path]) -> LLM:
-    """Load prompt from file."""
+    """Load LLM from file."""
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)
@@ -38,5 +38,5 @@ def load_llm(file: Union[str, Path]) -> LLM:
             config = yaml.safe_load(f)
     else:
         raise ValueError("File type must be json or yaml")
-    # Load the prompt from the config now.
+    # Load the LLM from the config now.
     return load_llm_from_config(config)
