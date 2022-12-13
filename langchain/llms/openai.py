@@ -142,7 +142,12 @@ class OpenAI(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model_name}, **self._default_params}
+        return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "openai"
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to OpenAI's create endpoint.
