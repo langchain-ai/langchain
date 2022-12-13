@@ -2,11 +2,13 @@
 
 from typing import Any, List, Mapping, Optional
 
+from pydantic import BaseModel
+
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
 
 
-class FakeLLM(LLM):
+class FakeLLM(LLM, BaseModel):
     """Fake LLM wrapper for testing purposes."""
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
@@ -15,6 +17,11 @@ class FakeLLM(LLM):
             return "foo"
         else:
             return "bar"
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fake"
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

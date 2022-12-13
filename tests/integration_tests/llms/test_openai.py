@@ -1,7 +1,10 @@
 """Test OpenAI API wrapper."""
 
+from pathlib import Path
+
 import pytest
 
+from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI
 
 
@@ -44,3 +47,11 @@ def test_openai_stop_error() -> None:
     llm = OpenAI(stop="3", temperature=0)
     with pytest.raises(ValueError):
         llm("write an ordered list of five items", stop=["\n"])
+
+
+def test_saving_loading_llm(tmp_path: Path) -> None:
+    """Test saving/loading an OpenAPI LLM."""
+    llm = OpenAI(max_tokens=10)
+    llm.save(file_path=tmp_path / "openai.yaml")
+    loaded_llm = load_llm(tmp_path / "openai.yaml")
+    assert loaded_llm == llm

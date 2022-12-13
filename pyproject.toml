@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.35"
+version = "0.0.36"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -25,6 +25,7 @@ beautifulsoup4 = {version = "^4", optional = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 
 [tool.poetry.group.lint.dependencies]
