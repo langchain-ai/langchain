@@ -2,17 +2,17 @@
 
 from typing import Any, List, Mapping, Optional
 
+from pydantic import BaseModel
+
 from langchain.agents import Tool, initialize_agent
 from langchain.llms.base import LLM
 
 
-class FakeListLLM(LLM):
+class FakeListLLM(LLM, BaseModel):
     """Fake LLM for testing that outputs elements of a list."""
 
-    def __init__(self, responses: List[str]):
-        """Initialize with list of responses."""
-        self.responses = responses
-        self.i = -1
+    responses: List[str]
+    i: int = -1
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
@@ -25,6 +25,11 @@ class FakeListLLM(LLM):
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fake_list"
+
 
 def test_agent_bad_action() -> None:
     """Test react chain when bad action given."""
@@ -33,7 +38,7 @@ def test_agent_bad_action() -> None:
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
         "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses)
+    fake_llm = FakeListLLM(responses=responses)
     tools = [
         Tool("Search", lambda x: x, "Useful for searching"),
         Tool("Lookup", lambda x: x, "Useful for looking up things in a table"),
