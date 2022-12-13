@@ -29,8 +29,8 @@ class OpenAI(LLM, BaseModel):
     temperature: float = 0.7
     """What sampling temperature to use."""
     max_tokens: int = 256
-    """The maximum number of tokens to generate in the completion. 
-    -1 returns as many tokens as possible given the prompt and 
+    """The maximum number of tokens to generate in the completion.
+    -1 returns as many tokens as possible given the prompt and
     the models maximal context size."""
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
