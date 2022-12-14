@@ -130,7 +130,7 @@ class OpenAI(LLM, BaseModel):
         response = self.client.create(model=self.model_name, prompt=prompts, **params)
         generations = []
         for i, prompt in enumerate(prompts):
-            choices = response["choices"][i * self.n : (i + 1) * self.n]
+            choices = response["choices"][i * self.n: (i + 1) * self.n]
             generations.append([Generation(text=choice["text"]) for choice in choices])
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.

@@ -53,6 +53,8 @@ def _load_map_reduce_chain(
         llm_chain=map_chain,
         combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
+        question_prompt=question_prompt,
+        combine_prompt=combine_prompt,
         **kwargs,
     )
 
