@@ -36,3 +36,5 @@ __all__ = [
     "MapReduceChain",
     "OpenAIModerationChain",
 ]
+
+type_to_cls_dict = {"llm": LLMChain}
