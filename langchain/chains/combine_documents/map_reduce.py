@@ -22,8 +22,6 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
-    question_prompt: PromptTemplate
-    combine_prompt: PromptTemplate
     document_prompt: PromptTemplate
 
     class Config:
