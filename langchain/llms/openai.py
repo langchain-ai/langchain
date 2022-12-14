@@ -116,6 +116,7 @@ class OpenAI(LLM, BaseModel):
 
                 response = openai.generate(["Tell me a joke."])
         """
+        # TODO: write a unit test for this
         params = self._default_params
         if stop is not None:
             if "stop" in params:
