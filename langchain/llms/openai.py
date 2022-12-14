@@ -45,6 +45,8 @@ class OpenAI(LLM, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    batch_size: int = 20
+    """Batch size to use when passing multiple documents to generate."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -126,15 +128,31 @@ class OpenAI(LLM, BaseModel):
                     "max_tokens set to -1 not supported for multiple inputs."
                 )
             params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
-
-        response = self.client.create(model=self.model_name, prompt=prompts, **params)
-        generations = []
-        for i, prompt in enumerate(prompts):
-            choices = response["choices"][i * self.n : (i + 1) * self.n]
-            generations.append([Generation(text=choice["text"]) for choice in choices])
+        sub_prompts = [
+            prompts[i : i + self.batch_size]
+            for i in range(0, len(prompts), self.batch_size)
+        ]
+        choices = []
+        token_usage = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
-        token_usage = response["usage"]
+        _keys = ["completion_tokens", "prompt_tokens", "total_tokens"]
+        for _prompts in sub_prompts:
+            response = self.client.create(
+                model=self.model_name, prompt=_prompts, **params
+            )
+            choices.extend(response["choices"])
+            for _key in _keys:
+                if _key not in token_usage:
+                    token_usage[_key] = response["usage"][_key]
+                else:
+                    token_usage[_key] += response["usage"][_key]
+        generations = []
+        for i, prompt in enumerate(prompts):
+            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            generations.append(
+                [Generation(text=choice["text"]) for choice in sub_choices]
+            )
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}
         )
