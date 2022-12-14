@@ -111,7 +111,7 @@ class NLPCloud(LLM, BaseModel):
         """Return type of llm."""
         return "nlpcloud"
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to NLPCloud's create endpoint.
 
         Args:

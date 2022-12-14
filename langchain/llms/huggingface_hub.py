@@ -84,7 +84,7 @@ class HuggingFaceHub(LLM, BaseModel):
         """Return type of llm."""
         return "huggingface_hub"
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:

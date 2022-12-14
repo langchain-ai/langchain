@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
 import yaml
 from pydantic import BaseModel, Extra
 
+import langchain
+
 
 class Generation(NamedTuple):
     """Output of a single generation."""
@@ -66,8 +68,25 @@ class LLM(BaseModel, ABC):
         return len(tokenized_text)
 
     @abstractmethod
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Run the LLM on the given prompt and input."""
+
+    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Check Cache and run the LLM on the given prompt and input."""
+        if langchain.cache is not None:
+            params = self._llm_dict()
+            params["stop"] = stop
+            llm_string = str(sorted([(k, v) for k, v in params.items()]))
+            cache_val = langchain.cache.lookup(prompt, llm_string)
+            if cache_val is not None:
+                return cache_val
+        return_val = self._call(prompt, stop=stop)
+        if langchain.cache is not None:
+            params = self._llm_dict()
+            params["stop"] = stop
+            llm_string = str(sorted([(k, v) for k, v in params.items()]))
+            langchain.cache.update(prompt, llm_string, return_val)
+        return return_val
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

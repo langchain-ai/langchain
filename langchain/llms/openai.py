@@ -149,7 +149,7 @@ class OpenAI(LLM, BaseModel):
         """Return type of llm."""
         return "openai"
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to OpenAI's create endpoint.
 
         Args:
