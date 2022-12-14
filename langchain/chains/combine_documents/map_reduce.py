@@ -11,8 +11,6 @@ from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts import PromptTemplate
 
-from transformers import GPT2TokenizerFast
-
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     """Combining documents by mapping a chain over them, then combining results."""
@@ -78,9 +76,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         combined_texts = "\n\n".join(doc_strings)
 
         # tokenize the text and compute num tokens
-        tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
-        tokenized_text = tokenizer.tokenize(combined_texts)
-        num_tokens = len(tokenized_text)
+        num_tokens = self.combine_document_chain.llm_chain.llm.get_num_tokens(combined_texts)
         return num_tokens
 
     def combine_docs(self, docs: List[Document],
