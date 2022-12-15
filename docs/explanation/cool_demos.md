@@ -6,6 +6,9 @@ If you see any other demos that you think we should highlight, be sure to let us
 
 ## Open Source
 
+### [YouTube Transcription Question Answering with Sources](https://colab.research.google.com/drive/1sKSTjt9cPstl_WMZ86JsgEqFG-aSAwkn?usp=sharing)
+An end-to-end example of doing question answering on YouTube transcripts, returning the timestamps as sources to legitimize the answer.
+
 ### [ThoughtSource](https://github.com/OpenBioLink/ThoughtSource)
 A central, open resource and community around data and tools related to chain-of-thought reasoning in large language models.
 
