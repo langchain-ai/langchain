@@ -14,7 +14,7 @@ class FakeListLLM(LLM, BaseModel):
     responses: List[str]
     i: int = -1
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         print(self.i)

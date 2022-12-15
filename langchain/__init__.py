@@ -1,6 +1,9 @@
 """Main entrypoint into package."""
 
+from typing import Optional
+
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
+from langchain.cache import BaseCache
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -28,6 +31,7 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 logger: BaseLogger = StdOutLogger()
 verbose: bool = False
+llm_cache: Optional[BaseCache] = None
 
 __all__ = [
     "LLMChain",

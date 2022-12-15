@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.llms.base import LLM, Generation, LLMResult
+from langchain.llms.base import LLM, LLMResult
+from langchain.schema import Generation
 from langchain.utils import get_from_dict_or_env
 
 
@@ -99,7 +100,7 @@ class OpenAI(LLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def generate(
+    def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
@@ -168,7 +169,7 @@ class OpenAI(LLM, BaseModel):
         """Return type of llm."""
         return "openai"
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to OpenAI's create endpoint.
 
         Args:
