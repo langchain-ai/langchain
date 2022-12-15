@@ -57,7 +57,6 @@ def _load_map_reduce_chain(
         llm_chain=map_chain,
         combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
-        document_prompt=document_prompt,
         **kwargs,
     )
 
