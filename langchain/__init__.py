@@ -31,7 +31,7 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 logger: BaseLogger = StdOutLogger()
 verbose: bool = False
-cache: Optional[BaseCache] = None
+llm_cache: Optional[BaseCache] = None
 
 __all__ = [
     "LLMChain",

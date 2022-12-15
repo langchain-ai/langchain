@@ -8,14 +8,7 @@ import yaml
 from pydantic import BaseModel, Extra
 
 import langchain
-
-
-class Generation(NamedTuple):
-    """Output of a single generation."""
-
-    text: str
-    """Generated text output."""
-    # TODO: add log probs
+from langchain.schema import Generation
 
 
 class LLMResult(NamedTuple):
@@ -36,7 +29,7 @@ class LLM(BaseModel, ABC):
 
         extra = Extra.forbid
 
-    def generate(
+    def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
@@ -46,6 +39,33 @@ class LLM(BaseModel, ABC):
             text = self(prompt, stop=stop)
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
+
+    def generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        if langchain.llm_cache is None:
+            return self._generate(prompts, stop=stop)
+        params = self._llm_dict()
+        params["stop"] = stop
+        llm_string = str(sorted([(k, v) for k, v in params.items()]))
+        missing_prompts = []
+        missing_prompt_idxs = []
+        existing_prompts = {}
+        for i, prompt in enumerate(prompts):
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                existing_prompts[i] = cache_val
+            else:
+                missing_prompts.append(prompt)
+                missing_prompt_idxs.append(i)
+        new_results = self._generate(missing_prompts, stop=stop)
+        for i, result in enumerate(new_results.generations):
+            existing_prompts[i] = result
+            prompt = prompts[i]
+            langchain.llm_cache.update(prompt, llm_string, result)
+        generations = [existing_prompts[i] for i in range(len(prompts))]
+        return LLMResult(generations=generations, llm_output=new_results.llm_output)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
@@ -74,19 +94,21 @@ class LLM(BaseModel, ABC):
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
+        if langchain.llm_cache is None:
+            return self._call(prompt, stop=stop)
+        params = self._llm_dict()
+        params["stop"] = stop
+        llm_string = str(sorted([(k, v) for k, v in params.items()]))
         if langchain.cache is not None:
-            params = self._llm_dict()
-            params["stop"] = stop
-            llm_string = str(sorted([(k, v) for k, v in params.items()]))
-            cache_val = langchain.cache.lookup(prompt, llm_string)
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
             if cache_val is not None:
-                return cache_val
+                if isinstance(cache_val, str):
+                    return cache_val
+                else:
+                    return cache_val[0].text
         return_val = self._call(prompt, stop=stop)
         if langchain.cache is not None:
-            params = self._llm_dict()
-            params["stop"] = stop
-            llm_string = str(sorted([(k, v) for k, v in params.items()]))
-            langchain.cache.update(prompt, llm_string, return_val)
+            langchain.llm_cache.update(prompt, llm_string, return_val)
         return return_val
 
     @property
