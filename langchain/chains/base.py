@@ -95,7 +95,7 @@ class Chain(BaseModel, ABC):
                     f"multiple inputs, please call it by passing in a dictionary, "
                     "eg `chain({'foo': 1, 'bar': 2})`"
                 )
-            self.run(inputs)
+            inputs = {self.input_keys[0]: inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
