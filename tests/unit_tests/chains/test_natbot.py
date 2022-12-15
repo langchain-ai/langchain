@@ -11,7 +11,7 @@ from langchain.llms.base import LLM
 class FakeLLM(LLM, BaseModel):
     """Fake LLM wrapper for testing purposes."""
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
             return "foo"
