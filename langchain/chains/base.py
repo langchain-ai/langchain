@@ -1,6 +1,7 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from types import UnionType
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, Field
 
@@ -74,7 +75,7 @@ class Chain(BaseModel, ABC):
         """Run the logic of this chain and return the output."""
 
     def __call__(
-        self, inputs: Dict[str, Any] or str, return_only_outputs: bool = False
+        self, inputs: Union[ Dict[str, Any], str], return_only_outputs: bool = False
     ) -> Dict[str, str]:
         """Run the logic of this chain and add to output if desired.
 
