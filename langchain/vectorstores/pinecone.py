@@ -65,7 +65,6 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please it install it with `pip install pinecone-client`."
             )
-
         # Embed and create the documents
         docs = []
         ids = []
@@ -128,7 +127,7 @@ class Pinecone(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import pinecone python package. "
-                "Please it install it with `pip install pinecone-client`."
+                "Please install it with `pip install pinecone-client`."
             )
         try:
             pinecone.init(api_key=api_key, environment="us-west1-gcp")
