@@ -44,7 +44,7 @@ class Chain(BaseModel, ABC):
     memory: Optional[Memory] = None
 
     verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""\
+    """Whether to print out response text."""
 
     @property
     @abstractmethod
