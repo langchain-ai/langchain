@@ -40,6 +40,7 @@ class LLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
+        # TODO: add caching here.
         generations = []
         for prompt in prompts:
             text = self(prompt, stop=stop)
