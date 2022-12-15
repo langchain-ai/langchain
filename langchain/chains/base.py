@@ -144,8 +144,8 @@ class SingleInputChain(Chain, BaseModel, ABC):
 class MultiInputChain(Chain, BaseModel, ABC):
     """Base interface for chains that take in multiple inputs."""
 
-    input_keys: List[str] = Field(default=["input"])  #: :meta private:
-    output_keys: List[str] = Field(default=["output"])  #: :meta private:
+    input_keys: List[str]
+    output_keys: List[str]
 
     @property
     def input_keys(self) -> List[str]:
