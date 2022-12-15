@@ -1,6 +1,5 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
-from types import UnionType
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, Field
