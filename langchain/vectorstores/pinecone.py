@@ -118,12 +118,10 @@ class Pinecone(VectorStore):
                 pinecone = Pinecone.from_texts(
                     texts,
                     embeddings
-                    api_key="PINECONE_API_KEY",
-                    environment="us-west1-gcp"
+                    api_key="PINECONE_API_KEY"
                 )
         """
         api_key = get_from_dict_or_env(kwargs, "api_key", "PINECONE_API_KEY")
-        environment = get_from_dict_or_env(kwargs, "environment", "PINECONE_ENV")
         try:
             import pinecone
         except ImportError:
@@ -132,7 +130,7 @@ class Pinecone(VectorStore):
                 "Please it install it with `pip install pinecone-client`."
             )
         try:
-            pinecone.init(api_key=api_key, environment=environment)
+            pinecone.init(api_key=api_key, environment="us-west1-gcp")
         except ValueError as e:
             raise ValueError("Pinecone initialization failed. " f"Got error: {e} ")
 
