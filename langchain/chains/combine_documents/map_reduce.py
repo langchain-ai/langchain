@@ -39,7 +39,7 @@ def _reduce_chunks(
     result_docs = []
     for docs in doc_list:
         result = combine_document_chain.combine_docs(docs, **kwargs)
-        combined_metadata = docs[0].metadata
+        combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
         for doc in docs[1:]:
             for k, v in doc.metadata.items():
                 if k in combined_metadata:
