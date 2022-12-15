@@ -84,7 +84,7 @@ class Pinecone(VectorStore):
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query([query_obj], top_k=5, include_metadata=True)
-        for res in results['matches']:
+        for res in results["matches"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
             docs.append(Document(page_content=text, metadata=metadata))
@@ -122,12 +122,8 @@ class Pinecone(VectorStore):
                     environment="us-west1-gcp"
                 )
         """
-        api_key = get_from_dict_or_env(
-            kwargs, "api_key", "PINECONE_API_KEY"
-        )
-        environment = get_from_dict_or_env(
-            kwargs, "environment", "PINECONE_ENV"
-        )
+        api_key = get_from_dict_or_env(kwargs, "api_key", "PINECONE_API_KEY")
+        environment = get_from_dict_or_env(kwargs, "environment", "PINECONE_ENV")
         try:
             import pinecone
         except ImportError:
@@ -138,9 +134,7 @@ class Pinecone(VectorStore):
         try:
             pinecone.init(api_key=api_key, environment=environment)
         except ValueError as e:
-            raise ValueError(
-                "Pinecone initialization failed. " f"Got error: {e} "
-            ) 
+            raise ValueError("Pinecone initialization failed. " f"Got error: {e} ")
 
         # Create first embedding to get correct dims
         res = embedding.embed_query(texts[0])
@@ -151,14 +145,14 @@ class Pinecone(VectorStore):
         index = pinecone.Index(index_name)
         for i in range(0, len(texts), batch_size):
             # set end position of batch
-            i_end = min(i+batch_size, len(texts))
+            i_end = min(i + batch_size, len(texts))
             # get batch of texts and ids
-            lines_batch = texts[i: i+batch_size]
+            lines_batch = texts[i : i + batch_size]
             ids_batch = [str(n) for n in range(i, i_end)]
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
-            meta = [{'text': line} for line in lines_batch]
+            meta = [{"text": line} for line in lines_batch]
             to_upsert = zip(ids_batch, embeds, meta)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert))
