@@ -11,11 +11,12 @@ class FakeChain(Chain, BaseModel):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True
+    the_input_keys: List[str] = ["foo"]
 
     @property
     def input_keys(self) -> List[str]:
-        """Input key of foo."""
-        return ["foo"]
+        """Input keys."""
+        return self.the_input_keys
 
     @property
     def output_keys(self) -> List[str]:
@@ -48,3 +49,17 @@ def test_correct_call() -> None:
     chain = FakeChain()
     output = chain({"foo": "bar"})
     assert output == {"foo": "bar", "bar": "baz"}
+
+
+def test_single_input_correct() -> None:
+    """Test passing single input works."""
+    chain = FakeChain()
+    output = chain("bar")
+    assert output == {"foo": "bar", "bar": "baz"}
+
+
+def test_single_input_error() -> None:
+    """Test passing single input errors as expected."""
+    chain = FakeChain(the_input_keys=["foo", "bar"])
+    with pytest.raises(ValueError):
+        chain("bar")
