@@ -72,8 +72,9 @@ class Pinecone(VectorStore):
         for i, text in enumerate(texts):
             id = str(uuid.uuid4())
             embedding = self._embedding_function(text)
-            meta = {self._text_key: text}
-            docs.append((id, embedding, meta))
+            metadata = metadatas[i] if metadatas else {}
+            metadata[self._text_key] = text
+            docs.append((id, embedding, metadata))
             ids.append(id)
         # upsert to Pinecone
         self._index.upsert(vectors=docs)
@@ -137,7 +138,6 @@ class Pinecone(VectorStore):
         # Create first embedding to get correct dims
         res = embedding.embed_query(texts[0])
         index_name = uuid.uuid4().hex
-
         pinecone.create_index(index_name, dimension=len(res))
         # connect to index
         index = pinecone.Index(index_name)
@@ -150,9 +150,13 @@ class Pinecone(VectorStore):
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
-            meta = [{"text": line} for line in lines_batch]
-            to_upsert = zip(ids_batch, embeds, meta)
+            if metadatas:
+                metadata = metadatas[i : i + batch_size]
+            else:
+                metadata = [{} for _ in range(i, i_end)]
+            for j, line in enumerate(lines_batch):
+                metadata[j][text_key] = line
+            to_upsert = zip(ids_batch, embeds, metadata)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert))
-
         return cls(index, embedding.embed_query, text_key)
