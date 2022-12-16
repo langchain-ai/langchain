@@ -1,4 +1,5 @@
 """Wrapper around OpenAI APIs."""
+import sys
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -188,6 +189,9 @@ class OpenAI(LLM, BaseModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
+        # tiktoken NOT supported for Python 3.8 or below
+        if sys.version_info[1] <= 8:
+            return super().get_num_tokens(text)
         try:
             import tiktoken
         except ImportError:
