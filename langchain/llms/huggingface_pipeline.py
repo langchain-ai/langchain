@@ -7,6 +7,7 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
+DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
@@ -20,14 +21,14 @@ class HuggingFacePipeline(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import HuggingFacePipeline
-            hf = HuggingFacePipeline(model_id="gpt2")
+            from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+            hf = HuggingFacePipeline(model_id="gpt2", task="text-generation")
     """
 
     pipeline: Any  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
-    task: Optional[str] = None
+    task: str = DEFAULT_TASK
     """Task to call the model with. Should be a task that returns `generated_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -80,7 +81,7 @@ class HuggingFacePipeline(LLM, BaseModel):
 
     @property
     def _llm_type(self) -> str:
-        return "huggingface_local"
+        return "huggingface_pipeline"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         response = self.pipeline(text_inputs=prompt)
