@@ -1,7 +1,7 @@
 """Experiment with different models."""
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Dict
+from typing import Dict, List, Optional, Sequence
 
 from langchain.chains.base import MultiVariableChain
 from langchain.chains.llm import LLMChain
@@ -13,7 +13,9 @@ from langchain.prompts.prompt import PromptTemplate
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, chains: Sequence[MultiVariableChain], names: Optional[List[str]] = None):
+    def __init__(
+        self, chains: Sequence[MultiVariableChain], names: Optional[List[str]] = None
+    ):
         """Initialize with chains to experiment with.
 
         Args:

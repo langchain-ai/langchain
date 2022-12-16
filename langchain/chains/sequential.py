@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.chains.base import SingleVariableChain, MultiVariableChain
+from langchain.chains.base import MultiVariableChain, SingleVariableChain
 from langchain.input import get_color_mapping, print_text
 
 

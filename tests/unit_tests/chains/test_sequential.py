@@ -8,13 +8,16 @@ from langchain.chains.base import MultiVariableChain, SingleVariableChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 
 
-def fake_call(inputs: Dict[str, str], input_keys: List[str], output_keys: List[str]) -> Dict[str, str]:
+def fake_call(
+    inputs: Dict[str, str], input_keys: List[str], output_keys: List[str]
+) -> Dict[str, str]:
     """Fake call function."""
     outputs = {}
     for var in output_keys:
         variables = [inputs[k] for k in input_keys]
         outputs[var] = f"{' '.join(variables)}foo"
     return outputs
+
 
 class FakeMultiChain(MultiVariableChain, BaseModel):
     """Fake Chain for testing purposes."""
@@ -147,6 +150,6 @@ def test_simple_sequential_functionality() -> None:
     expected_output = "123foofoo"
     assert output == expected_output
 
-    output = chain({"input": "123"})
-    expected_output = {"output": "123foofoo", "input": "123"}
-    assert output == expected_output
+    output_direct = chain({"input": "123"})
+    expected_output_direct = {"output": "123foofoo", "input": "123"}
+    assert output_direct == expected_output_direct
