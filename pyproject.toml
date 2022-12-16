@@ -22,7 +22,11 @@ spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
+<<<<<<< HEAD
 torch = {version = "^1.13.1", optional = true}
+=======
+tiktoken = {version = "^0", optional = true, python="^3.9"}
+>>>>>>> master
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -50,7 +54,7 @@ playwright = "^1.28.0"
 
 [tool.poetry.extras]
 llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "torch"]
+all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch"]
 
 [tool.isort]
 profile = "black"

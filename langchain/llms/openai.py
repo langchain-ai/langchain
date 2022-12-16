@@ -186,6 +186,25 @@ class OpenAI(LLM, BaseModel):
         """
         return self.generate([prompt], stop=stop).generations[0][0].text
 
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3 encoder instance
+        enc = tiktoken.get_encoding("gpt2")
+
+        # encode the text using the GPT-3 encoder
+        tokenized_text = enc.encode(text)
+
+        # calculate the number of tokens in the encoded text
+        return len(tokenized_text)
+
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
