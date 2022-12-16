@@ -109,22 +109,6 @@ class SimpleSequentialChain(SingleVariableChain, BaseModel):
         """
         return [self.output_key]
 
-    @root_validator()
-    def validate_chains(cls, values: Dict) -> Dict:
-        """Validate that chains are all single input/output."""
-        for chain in values["chains"]:
-            if len(chain.input_keys) != 1:
-                raise ValueError(
-                    "Chains used in SimplePipeline should all have one input, got "
-                    f"{chain} with {len(chain.input_keys)} inputs."
-                )
-            if len(chain.output_keys) != 1:
-                raise ValueError(
-                    "Chains used in SimplePipeline should all have one output, got "
-                    f"{chain} with {len(chain.output_keys)} outputs."
-                )
-        return values
-
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
