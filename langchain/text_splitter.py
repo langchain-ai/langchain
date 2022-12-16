@@ -70,7 +70,7 @@ class TextSplitter(ABC):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls, encoding_name: str = "gpt2", **kwargs
+        cls, encoding_name: str = "gpt2", **kwargs: Any
     ) -> TextSplitter:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
