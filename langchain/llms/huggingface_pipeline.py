@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace APIs."""
+"""Wrapper around HuggingFace Pipeline APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -42,25 +42,8 @@ class HuggingFacePipeline(LLM, BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate python package exists in environment."""
         try:
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-            from transformers import pipeline as hf_pipeline
-
-            model_id = values["model_id"]
-            tokenizer = AutoTokenizer.from_pretrained(model_id)
-            model = AutoModelForCausalLM.from_pretrained(model_id)
-
-            pipeline = hf_pipeline(
-                values["task"],
-                model=model,
-                tokenizer=tokenizer,
-                model_kwargs=values["model_kwargs"],
-            )
-            if pipeline.task not in VALID_TASKS:
-                raise ValueError(
-                    f"Got invalid task {pipeline.task}, "
-                    f"currently only {VALID_TASKS} are supported"
-                )
-            values["pipeline"] = pipeline
+            if values.get("pipeline") is None:
+                values["pipeline"] = cls.from_model_id(values)
 
         except ImportError:
             raise ValueError(
@@ -69,6 +52,27 @@ class HuggingFacePipeline(LLM, BaseModel):
             )
 
         return values
+
+    @staticmethod
+    def from_model_id(values):
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import pipeline as hf_pipeline
+
+        model_id = values["model_id"]
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(model_id)
+        pipeline = hf_pipeline(
+            values["task"],
+            model=model,
+            tokenizer=tokenizer,
+            model_kwargs=values["model_kwargs"],
+        )
+        if pipeline.task not in VALID_TASKS:
+            raise ValueError(
+                f"Got invalid task {pipeline.task}, "
+                f"currently only {VALID_TASKS} are supported"
+            )
+        return pipeline
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
