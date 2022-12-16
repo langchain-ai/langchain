@@ -76,7 +76,7 @@ class LLM(BaseModel, ABC):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
+                "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install transformers`."
             )
         # create a GPT-3 tokenizer instance
