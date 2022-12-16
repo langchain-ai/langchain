@@ -58,7 +58,7 @@ def _load_map_reduce_chain(
         collapse_chain = None
     else:
         collapse_chain = StuffDocumentsChain(
-            llm_chain=LLMChain(llm=llm, prompt=combine_prompt),
+            llm_chain=LLMChain(llm=llm, prompt=collapse_prompt),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
         )
