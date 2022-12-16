@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -56,9 +56,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     """Combining documents by mapping a chain over them, then combining results."""
 
     llm_chain: LLMChain
-    """Chain to apply to each document individually.."""
+    """Chain to apply to each document individually."""
     combine_document_chain: BaseCombineDocumentsChain
     """Chain to use to combine results of applying llm_chain to documents."""
+    collapse_document_chain: Optional[BaseCombineDocumentsChain] = None
+    """Chain to use to collapse intermediary results if needed.
+    If None, will use the combine_document_chain."""
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
@@ -90,6 +93,13 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                 )
         return values
 
+    @property
+    def _collapse_chain(self) -> BaseCombineDocumentsChain:
+        if self.collapse_document_chain is not None:
+            return self.collapse_document_chain
+        else:
+            return self.combine_document_chain
+
     def combine_docs(
         self, docs: List[Document], token_max: int = 3000, **kwargs: Any
     ) -> str:
@@ -117,7 +127,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             result_docs = []
             for docs in new_result_doc_list:
                 new_doc = _collapse_docs(
-                    docs, self.combine_document_chain.combine_docs, **kwargs
+                    docs, self._collapse_chain.combine_docs, **kwargs
                 )
                 result_docs.append(new_doc)
             num_tokens = self.combine_document_chain.prompt_length(
