@@ -7,9 +7,7 @@ on:
     branches:
       - master
     paths:
-      - 'langchain/**.py'
       - 'pyproject.toml'
-      - 'README.md'
 
 env:
   POETRY_VERSION: "1.3.1"
