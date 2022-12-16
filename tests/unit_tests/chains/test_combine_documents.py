@@ -100,10 +100,19 @@ def test__collapse_docs_one_doc() -> None:
 
 def test__collapse_docs_metadata() -> None:
     """Test collapse documents functionality when metadata exists."""
+    metadata1 = {"source": "a", "foo": 2, "bar": "1", "extra1": "foo"}
+    metadata2 = {"source": "b", "foo": "3", "bar": 2, "extra2": "bar"}
     docs = [
-        Document(page_content="foo", metadata={"source": "a"}),
-        Document(page_content="bar", metadata={"source": "b"}),
+        Document(page_content="foo", metadata=metadata1),
+        Document(page_content="bar", metadata=metadata2),
     ]
     output = _collapse_docs(docs, _fake_combine_docs_func)
-    expected_output = Document(page_content="foobar", metadata={"source": "a, b"})
+    expected_metadata = {
+        "source": "a, b",
+        "foo": "2, 3",
+        "bar": "1, 2",
+        "extra1": "foo",
+        "extra2": "bar",
+    }
+    expected_output = Document(page_content="foobar", metadata=expected_metadata)
     assert output == expected_output

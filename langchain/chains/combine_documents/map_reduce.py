@@ -47,6 +47,8 @@ def _collapse_docs(
         for k, v in doc.metadata.items():
             if k in combined_metadata:
                 combined_metadata[k] += f", {v}"
+            else:
+                combined_metadata[k] = str(v)
     return Document(page_content=result, metadata=combined_metadata)
 
 
