@@ -20,7 +20,7 @@ class HuggingFacePipeline(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFacePipeline
+            from langchain.llms import HuggingFacePipeline
             hf = HuggingFacePipeline(model_id="gpt2")
     """
 
@@ -84,8 +84,6 @@ class HuggingFacePipeline(LLM, BaseModel):
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         response = self.pipeline(text_inputs=prompt)
-        if "error" in response:
-            raise ValueError(f"Error raised by inference API: {response['error']}")
         if self.pipeline.task == "text-generation":
             # Text generation return includes the starter text.
             text = response[0]["generated_text"][len(prompt) :]

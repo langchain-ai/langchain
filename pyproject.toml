@@ -49,8 +49,8 @@ jupyter = "^1.0.0"
 playwright = "^1.28.0"
 
 [tool.poetry.extras]
-llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml"]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4"]
+llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "torch"]
 
 [tool.isort]
 profile = "black"
