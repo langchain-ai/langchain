@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace Pipeline APIs."""
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -38,49 +38,39 @@ class HuggingFacePipeline(LLM, BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate python package exists in environment."""
+    @classmethod
+    def from_model_id(
+        cls, model_id: str, task: str, model_kwargs: Optional[dict] = None, **kwargs
+    ):
         try:
-            if values.get("pipeline") is None:
-                values["pipeline"] = cls.from_model_id(values)
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            from transformers import pipeline as hf_pipeline
 
+            tokenizer = AutoTokenizer.from_pretrained(model_id)
+            model = AutoModelForCausalLM.from_pretrained(model_id)
+            pipeline = hf_pipeline(
+                task=task, model=model, tokenizer=tokenizer, **model_kwargs
+            )
+            if pipeline.task not in VALID_TASKS:
+                raise ValueError(
+                    f"Got invalid task {pipeline.task}, "
+                    f"currently only {VALID_TASKS} are supported"
+                )
+
+            return cls(pipeline=pipeline, **kwargs)
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please it install it with `pip install transformers`."
             )
 
-        return values
-
-    @staticmethod
-    def from_model_id(values):
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        from transformers import pipeline as hf_pipeline
-
-        model_id = values["model_id"]
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        model = AutoModelForCausalLM.from_pretrained(model_id)
-        pipeline = hf_pipeline(
-            values["task"],
-            model=model,
-            tokenizer=tokenizer,
-            model_kwargs=values["model_kwargs"],
-        )
-        if pipeline.task not in VALID_TASKS:
-            raise ValueError(
-                f"Got invalid task {pipeline.task}, "
-                f"currently only {VALID_TASKS} are supported"
-            )
-        return pipeline
-
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"model_id": self.model_id, "task": self.task},
-            **{"model_kwargs": _model_kwargs},
+            **{"model_id": self.model_id, "task": self.pipeline.task},
+            **{"model_kwargs": self.model_kwargs},
         }
 
     @property
