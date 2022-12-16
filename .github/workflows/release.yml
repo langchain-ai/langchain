@@ -1,0 +1,22 @@
+name: release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+    paths:
+      - 'langchain/**.py'
+      - 'pyproject.toml'
+      - 'README.md'
+
+jobs:
+  if_release:
+    if: |
+        ${{ github.event.pull_request.merged == true }}
+        && ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo Release! 
