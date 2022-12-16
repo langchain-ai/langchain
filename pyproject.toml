@@ -22,6 +22,7 @@ spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
+torch = {version = "^1.13.1", optional = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
