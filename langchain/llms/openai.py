@@ -193,7 +193,7 @@ class OpenAI(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import tiktoken python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
+                "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
         # create a GPT-3 encoder instance
