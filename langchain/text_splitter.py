@@ -49,7 +49,7 @@ class TextSplitter(ABC):
 
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
-        """Text splitter than uses HuggingFace tokenizer to count length."""
+        """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
 
@@ -67,6 +67,27 @@ class TextSplitter(ABC):
                 "Please it install it with `pip install transformers`."
             )
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+
+    @classmethod
+    def from_tiktoken_encoder(
+        cls, encoding_name: str = "gpt2", **kwargs: Any
+    ) -> TextSplitter:
+        """Text splitter that uses tiktoken encoder to count length."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate max_tokens_for_prompt. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3 encoder instance
+        enc = tiktoken.get_encoding(encoding_name)
+
+        def _tiktoken_encoder(text: str) -> int:
+            return len(enc.encode(text))
+
+        return cls(length_function=_tiktoken_encoder, **kwargs)
 
 
 class CharacterTextSplitter(TextSplitter):
