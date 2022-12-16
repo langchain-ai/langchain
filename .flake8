@@ -1,6 +1,7 @@
 [flake8]
 exclude =
     .venv
+    venv
     __pycache__
     notebooks
 # Recommend matching the black line length (default 88),

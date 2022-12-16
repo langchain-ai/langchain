@@ -24,7 +24,7 @@ class ModelLaboratory:
         for chain in chains:
             if not isinstance(chain, MultiVariableChain):
                 raise ValueError(
-                    "ModelLaboratory should now be initialized with SingleVariableChains. "
+                    "ModelLaboratory should be initialized with MultiVariableChains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
                 )

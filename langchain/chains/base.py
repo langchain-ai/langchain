@@ -129,7 +129,7 @@ class SingleVariableChain(Chain, BaseModel, ABC):
 
 
 class MultiVariableChain(Chain, BaseModel, ABC):
-    """Base interface for chains that take in multiple inputs and/or multiple outputs."""
+    """Base interface for chains that take in multiple inputs and/or outputs."""
 
     def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Call the chain on all inputs in the list."""
