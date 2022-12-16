@@ -36,21 +36,16 @@ def _split_list_of_docs(
     return new_result_doc_list
 
 
-def _reduce_chunks(
-    doc_list: List[List[Document]],
-    combine_document_chain: BaseCombineDocumentsChain,
-    **kwargs: Any,
-) -> List[Document]:
-    result_docs = []
-    for docs in doc_list:
-        result = combine_document_chain.combine_docs(docs, **kwargs)
-        combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
-        for doc in docs[1:]:
-            for k, v in doc.metadata.items():
-                if k in combined_metadata:
-                    combined_metadata[k] += f", {v}"
-        result_docs.append(Document(page_content=result, metadata=combined_metadata))
-    return result_docs
+def _collapse_docs(
+    docs: List[Document], combine_document_func: Callable, **kwargs: Any,
+) -> Document:
+    result = combine_document_func(docs, **kwargs)
+    combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
+    for doc in docs[1:]:
+        for k, v in doc.metadata.items():
+            if k in combined_metadata:
+                combined_metadata[k] += f", {v}"
+    return Document(page_content=result, metadata=combined_metadata)
 
 
 class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
@@ -115,9 +110,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             new_result_doc_list = _split_list_of_docs(
                 result_docs, length_func, token_max, **kwargs
             )
-            result_docs = _reduce_chunks(
-                new_result_doc_list, self.combine_document_chain, **kwargs
-            )
+            result_docs = []
+            for docs in new_result_doc_list:
+                new_doc = _collapse_docs(
+                    docs, self.combine_document_chain.combine_docs, **kwargs
+                )
+                result_docs.append(new_doc)
             num_tokens = self.combine_document_chain.prompt_length(
                 result_docs, **kwargs
             )

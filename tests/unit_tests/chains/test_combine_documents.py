@@ -1,0 +1,107 @@
+"""Test functionality related to combining documents."""
+
+from langchain.chains.combine_documents.map_reduce import (
+    _split_list_of_docs,
+    _collapse_docs,
+)
+import pytest
+from langchain.docstore.document import Document
+from typing import List
+
+
+def _fake_docs_len_func(docs: List[Document]) -> int:
+    return len(_fake_combine_docs_func(docs))
+
+def _fake_combine_docs_func(docs: List[Document]) -> str:
+    return "".join([d.page_content for d in docs])
+
+
+def test__split_list_long_single_doc() -> None:
+    """Test splitting of a long single doc."""
+    docs = [Document(page_content="foo" * 100)]
+    with pytest.raises(ValueError):
+        _split_list_of_docs(docs, _fake_docs_len_func, 100)
+
+
+def test__split_list_long_pair_doc() -> None:
+    """Test splitting of a list with two medium docs."""
+    docs = [Document(page_content="foo" * 30)] * 2
+    with pytest.raises(ValueError):
+        _split_list_of_docs(docs, _fake_docs_len_func, 100)
+
+
+def test__split_list_single_doc() -> None:
+    """Test splitting works with just a single doc."""
+    docs = [Document(page_content="foo")]
+    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 100)
+    assert doc_list == [docs]
+
+
+def test__split_list_double_doc() -> None:
+    """Test splitting works with just two docs."""
+    docs = [Document(page_content="foo"), Document(page_content="bar")]
+    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 100)
+    assert doc_list == [docs]
+
+
+def test__split_list_works_correctly() -> None:
+    """Test splitting works correctly."""
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+        Document(page_content="foo" * 2),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+    doc_list = _split_list_of_docs(docs, _fake_docs_len_func, 10)
+    expected_result = [
+        # Test a group of three.
+        [
+            Document(page_content="foo"),
+            Document(page_content="bar"),
+            Document(page_content="baz"),
+        ],
+        # Test a group of two, where one is bigger.
+        [Document(page_content="foo" * 2), Document(page_content="bar")],
+        # Test no errors on last
+        [Document(page_content="baz")],
+    ]
+    assert doc_list == expected_result
+
+
+def test__collapse_docs_no_metadata() -> None:
+    """Test collapse documents functionality when no metadata."""
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+    output = _collapse_docs(docs, _fake_combine_docs_func)
+    expected_output = Document(page_content="foobarbaz")
+    assert output == expected_output
+
+def test__collapse_docs_one_doc() -> None:
+    """Test collapse documents functionality when only one document present."""
+    # Test with no metadata.
+    docs = [Document(page_content="foo")]
+    output = _collapse_docs(docs, _fake_combine_docs_func)
+    assert output == docs[0]
+
+    # Test with metadata.
+    docs = [Document(page_content="foo", metadata={"source": "a"})]
+    output = _collapse_docs(docs, _fake_combine_docs_func)
+    assert output == docs[0]
+
+def test__collapse_docs_metadata() -> None:
+    """Test collapse documents functionality when metadata exists."""
+    docs = [
+        Document(page_content="foo", metadata={"source": "a"}),
+        Document(page_content="bar", metadata={"source": "b"}),
+    ]
+    output = _collapse_docs(docs, _fake_combine_docs_func)
+    expected_output = Document(page_content="foobar", metadata={"source": "a, b"})
+    assert output == expected_output
+
+
+

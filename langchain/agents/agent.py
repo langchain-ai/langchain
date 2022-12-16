@@ -154,8 +154,5 @@ class Agent(Chain, BaseModel, ABC):
                 color = None
             # We then log the observation
             chained_input.add_observation(
-                observation,
-                self.observation_prefix,
-                self.llm_prefix,
-                color=color,
+                observation, self.observation_prefix, self.llm_prefix, color=color,
             )
