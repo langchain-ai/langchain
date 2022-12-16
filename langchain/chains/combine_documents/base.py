@@ -5,11 +5,11 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain
 from langchain.docstore.document import Document
 
 
-class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
+class BaseCombineDocumentsChain(SingleVariableChain, BaseModel, ABC):
     """Base interface for chains combining documents."""
 
     input_key: str = "input_documents"  #: :meta private:

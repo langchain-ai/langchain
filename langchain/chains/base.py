@@ -116,51 +116,25 @@ class Chain(BaseModel, ABC):
             return {**inputs, **outputs}
 
 
-class SingleInputChain(Chain, BaseModel, ABC):
-    """Base interface for chains that take in a single input."""
-
-    input_key: str = Field(default="input")  #: :meta private:
-    output_key: str = Field(default="output")  #: :meta private:
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Input keys this chain expects."""
-        return [self.input_key]
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Output keys this chain expects."""
-        return [self.output_key]
+class SingleVariableChain(Chain, BaseModel, ABC):
+    """Base interface for chains that take in a single input and single output."""
 
     def apply(self, input_list: List[str]) -> List[str]:
         """Call the chain on all inputs in the list."""
-        return [self({self.input_key: i})[self.output_key] for i in input_list]
+        return [self({self.input_keys[0]: i})[self.output_keys[0]] for i in input_list]
 
     def run(self, text: str) -> str:
         """Run text in, text out (if applicable)."""
-        return self({self.input_key: text})[self.output_key]
+        return self({self.input_keys[0]: text})[self.output_keys[0]]
 
 
-class MultiInputChain(Chain, BaseModel, ABC):
-    """Base interface for chains that take in multiple inputs."""
-
-    input_keys: List[str]
-    output_keys: List[str]
-
-    @property
-    def input_keys(self) -> List[str]:
-        """Input keys this chain expects."""
-        return self.input_keys
-
-    @property
-    def output_keys(self) -> List[str]:
-        """Output keys this chain expects."""
-        return self.output_keys
+class MultiVariableChain(Chain, BaseModel, ABC):
+    """Base interface for chains that take in multiple inputs and/or multiple outputs."""
 
     def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Call the chain on all inputs in the list."""
         return [self(inputs) for inputs in input_list]
 
-    def run(self, return_only_outputs: bool = False, **kwargs) -> Dict[str, str]:
+    def run(self, return_only_outputs: bool = False, **kwargs: str) -> Dict[str, str]:
         """Run text in, text out (if applicable)."""
         return self(kwargs, return_only_outputs=return_only_outputs)

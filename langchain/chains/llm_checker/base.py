@@ -5,7 +5,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.prompt import (
     CHECK_ASSERTIONS_PROMPT,
@@ -18,7 +18,7 @@ from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
 
 
-class LLMCheckerChain(Chain, BaseModel):
+class LLMCheckerChain(SingleVariableChain, BaseModel):
     """Chain for question-answering with self-verification.
 
     Example:

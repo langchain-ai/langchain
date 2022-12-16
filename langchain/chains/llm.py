@@ -4,12 +4,12 @@ from typing import Any, Dict, List, Union
 from pydantic import BaseModel, Extra
 
 import langchain
-from langchain.chains.base import Chain
+from langchain.chains.base import MultiVariableChain
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class LLMChain(Chain, BaseModel):
+class LLMChain(MultiVariableChain, BaseModel):
     """Chain to run queries against LLMs.
 
     Example:

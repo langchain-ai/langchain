@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.base import MultiVariableChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -22,7 +22,7 @@ from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
+class BaseQAWithSourcesChain(MultiVariableChain, BaseModel, ABC):
     """Question answering with sources over documents."""
 
     combine_document_chain: BaseCombineDocumentsChain

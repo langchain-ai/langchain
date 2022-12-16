@@ -1,9 +1,9 @@
 """Experiment with different models."""
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict
 
-from langchain.chains.base import Chain
+from langchain.chains.base import MultiVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import LLM
@@ -13,16 +13,16 @@ from langchain.prompts.prompt import PromptTemplate
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
+    def __init__(self, chains: Sequence[MultiVariableChain], names: Optional[List[str]] = None):
         """Initialize with chains to experiment with.
 
         Args:
             chains: list of chains to experiment with.
         """
         for chain in chains:
-            if not isinstance(chain, Chain):
+            if not isinstance(chain, MultiVariableChain):
                 raise ValueError(
-                    "ModelLaboratory should now be initialized with Chains. "
+                    "ModelLaboratory should now be initialized with SingleVariableChains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
                 )
@@ -61,7 +61,7 @@ class ModelLaboratory:
         names = [str(llm) for llm in llms]
         return cls(chains, names=names)
 
-    def compare(self, text: str) -> None:
+    def compare(self, chain_input: Dict[str, str]) -> None:
         """Compare model outputs on an input text.
 
         If a prompt was provided with starting the laboratory, then this text will be
@@ -69,14 +69,14 @@ class ModelLaboratory:
         entire prompt.
 
         Args:
-            text: input text to run all models on.
+            chain_input: input dictionary to run all models on.
         """
-        print(f"\033[1mInput:\033[0m\n{text}\n")
+        print(f"\033[1mInput:\033[0m\n{chain_input}\n")
         for i, chain in enumerate(self.chains):
             if self.names is not None:
                 name = self.names[i]
             else:
                 name = str(chain)
             print_text(name, end="\n")
-            output = chain.run(text)
-            print_text(output, color=self.chain_colors[str(i)], end="\n\n")
+            output = chain.run(return_only_outputs=True, **chain_input)
+            print_text(str(output), color=self.chain_colors[str(i)], end="\n\n")

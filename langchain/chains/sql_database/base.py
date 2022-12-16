@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT
 from langchain.input import print_text
@@ -11,7 +11,7 @@ from langchain.llms.base import LLM
 from langchain.sql_database import SQLDatabase
 
 
-class SQLDatabaseChain(Chain, BaseModel):
+class SQLDatabaseChain(SingleVariableChain, BaseModel):
     """Chain for interacting with SQL Database.
 
     Example:

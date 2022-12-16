@@ -18,7 +18,7 @@ def test_conversation_chain_works() -> None:
     prompt = PromptTemplate(input_variables=["foo", "bar"], template="{foo} {bar}")
     memory = ConversationBufferMemory(memory_key="foo")
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="bar")
-    chain.run("foo")
+    chain.run(foo="foo", bar="bar")
 
 
 def test_conversation_chain_errors_bad_prompt() -> None:

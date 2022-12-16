@@ -4,14 +4,14 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain, MultiVariableChain
 from langchain.input import get_color_mapping, print_text
 
 
-class SequentialChain(Chain, BaseModel):
+class SequentialChain(MultiVariableChain, BaseModel):
     """Chain where the outputs of one step feed directly into next."""
 
-    chains: List[Chain]
+    chains: List[MultiVariableChain]
     input_variables: List[str]
     output_variables: List[str]  #: :meta private:
     return_all: bool = False
@@ -72,17 +72,17 @@ class SequentialChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         known_values = inputs.copy()
         for i, chain in enumerate(self.chains):
-            outputs = chain(known_values, return_only_outputs=True)
+            outputs = chain.run(return_only_outputs=True, **known_values)
             if self.verbose:
                 print(f"\033[1mChain {i}\033[0m:\n{outputs}\n")
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
 
-class SimpleSequentialChain(Chain, BaseModel):
+class SimpleSequentialChain(SingleVariableChain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
 
-    chains: List[Chain]
+    chains: List[SingleVariableChain]
     strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:

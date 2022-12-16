@@ -3,10 +3,10 @@ from typing import Callable, Dict, List
 
 from pydantic import BaseModel
 
-from langchain.chains.base import Chain
+from langchain.chains.base import MultiVariableChain
 
 
-class TransformChain(Chain, BaseModel):
+class TransformChain(MultiVariableChain, BaseModel):
     """Chain transform chain output.
 
     Example:

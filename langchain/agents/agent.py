@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
 from langchain.llms.base import LLM
@@ -16,7 +16,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import AgentAction
 
 
-class Agent(Chain, BaseModel, ABC):
+class Agent(SingleVariableChain, BaseModel, ABC):
     """Agent that uses an LLM."""
 
     prompt: ClassVar[BasePromptTemplate]

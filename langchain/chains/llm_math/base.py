@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import SingleInputChain
+from langchain.chains.base import SingleVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 from langchain.input import print_text
@@ -11,7 +11,7 @@ from langchain.llms.base import LLM
 from langchain.python import PythonREPL
 
 
-class LLMMathChain(SingleInputChain, BaseModel):
+class LLMMathChain(SingleVariableChain, BaseModel):
     """Chain that interprets a prompt and executes python code to do math.
 
     Example:

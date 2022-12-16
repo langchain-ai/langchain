@@ -6,14 +6,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, root_validator
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
-from langchain.chains.base import Chain
+from langchain.chains.base import SingleVariableChain
 from langchain.chains.llm import LLMChain
 from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.requests import RequestsWrapper
 
 
-class APIChain(Chain, BaseModel):
+class APIChain(SingleVariableChain, BaseModel):
     """Chain that makes API calls and summarizes the responses to answer a question."""
 
     api_request_chain: LLMChain
