@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple, Union
 
 from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 
@@ -61,12 +62,12 @@ class FullLLMCache(Base):  # type: ignore
     response = Column(String)
 
 
-class SQLiteCache(BaseCache):
-    """Cache that uses SQLite as a backend."""
+class SQLAlchemyCache(BaseCache):
+    """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, database_path: str = ".langchain.db"):
-        """Initialize by creating the engine and all tables."""
-        self.engine = create_engine(f"sqlite:///{database_path}")
+    def __init__(self, engine: Engine):
+        """Initialize by creating all tables."""
+        self.engine = engine
         Base.metadata.create_all(self.engine)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
@@ -106,3 +107,12 @@ class SQLiteCache(BaseCache):
                 )
                 with Session(self.engine) as session, session.begin():
                     session.add(item)
+
+
+class SQLiteCache(SQLAlchemyCache):
+    """Cache that uses SQLite as a backend."""
+
+    def __init__(self, database_path: str = ".langchain.db"):
+        """Initialize by creating the engine and all tables."""
+        engine = create_engine(f"sqlite:///{database_path}")
+        super().__init__(engine)
