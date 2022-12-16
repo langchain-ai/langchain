@@ -3,6 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 
+import langchain
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -28,8 +29,6 @@ class HuggingFacePipeline(LLM, BaseModel):
     pipeline: Any  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
     """Model name to use."""
-    task: str = DEFAULT_TASK
-    """Task to call the model with. Should be a task that returns `generated_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
@@ -40,8 +39,12 @@ class HuggingFacePipeline(LLM, BaseModel):
 
     @classmethod
     def from_model_id(
-        cls, model_id: str, task: str, model_kwargs: Optional[dict] = None, **kwargs
-    ):
+        cls,
+        model_id: str,
+        task: str,
+        model_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> LLM:
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
             from transformers import pipeline as hf_pipeline
@@ -57,7 +60,12 @@ class HuggingFacePipeline(LLM, BaseModel):
                     f"currently only {VALID_TASKS} are supported"
                 )
 
-            return cls(pipeline=pipeline, **kwargs)
+            return cls(
+                pipeline=pipeline,
+                model_id=model_id,
+                model_kwargs=model_kwargs,
+                **kwargs,
+            )
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
@@ -69,7 +77,7 @@ class HuggingFacePipeline(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"model_id": self.model_id, "task": self.pipeline.task},
+            **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
 
