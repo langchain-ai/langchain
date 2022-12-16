@@ -54,7 +54,10 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             combine_document_chain=combine_results_chain,
             document_variable_name="context",
         )
-        return cls(combine_document_chain=combine_document_chain, **kwargs,)
+        return cls(
+            combine_document_chain=combine_document_chain,
+            **kwargs,
+        )
 
     class Config:
         """Configuration for this pydantic object."""

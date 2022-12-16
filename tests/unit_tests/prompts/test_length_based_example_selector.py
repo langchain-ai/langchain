@@ -15,7 +15,9 @@ def selector() -> LengthBasedExampleSelector:
     """Get length based selector to use in tests."""
     prompts = PromptTemplate(input_variables=["question"], template="{question}")
     selector = LengthBasedExampleSelector(
-        examples=EXAMPLES, example_prompt=prompts, max_length=25,
+        examples=EXAMPLES,
+        example_prompt=prompts,
+        max_length=25,
     )
     return selector
 
@@ -44,7 +46,9 @@ def test_selector_trims_one_example(selector: LengthBasedExampleSelector) -> Non
     assert output == EXAMPLES[:1]
 
 
-def test_selector_trims_all_examples(selector: LengthBasedExampleSelector,) -> None:
+def test_selector_trims_all_examples(
+    selector: LengthBasedExampleSelector,
+) -> None:
     """Test LengthBasedExampleSelector can trim all examples."""
     longest_question = """This question is super super super,
     super super super super super super super super super super super,

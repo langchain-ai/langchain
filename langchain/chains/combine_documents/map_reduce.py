@@ -37,7 +37,9 @@ def _split_list_of_docs(
 
 
 def _collapse_docs(
-    docs: List[Document], combine_document_func: Callable, **kwargs: Any,
+    docs: List[Document],
+    combine_document_func: Callable,
+    **kwargs: Any,
 ) -> Document:
     result = combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}

@@ -13,7 +13,8 @@ REFINE_PROMPT_TMPL = (
     "If the context isn't useful, return the original summary."
 )
 REFINE_PROMPT = PromptTemplate(
-    input_variables=["existing_answer", "text"], template=REFINE_PROMPT_TMPL,
+    input_variables=["existing_answer", "text"],
+    template=REFINE_PROMPT_TMPL,
 )
 
 

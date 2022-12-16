@@ -1,16 +1,19 @@
 """Test functionality related to combining documents."""
 
-from langchain.chains.combine_documents.map_reduce import (
-    _split_list_of_docs,
-    _collapse_docs,
-)
-import pytest
-from langchain.docstore.document import Document
 from typing import List
+
+import pytest
+
+from langchain.chains.combine_documents.map_reduce import (
+    _collapse_docs,
+    _split_list_of_docs,
+)
+from langchain.docstore.document import Document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
     return len(_fake_combine_docs_func(docs))
+
 
 def _fake_combine_docs_func(docs: List[Document]) -> str:
     return "".join([d.page_content for d in docs])
@@ -81,6 +84,7 @@ def test__collapse_docs_no_metadata() -> None:
     expected_output = Document(page_content="foobarbaz")
     assert output == expected_output
 
+
 def test__collapse_docs_one_doc() -> None:
     """Test collapse documents functionality when only one document present."""
     # Test with no metadata.
@@ -93,6 +97,7 @@ def test__collapse_docs_one_doc() -> None:
     output = _collapse_docs(docs, _fake_combine_docs_func)
     assert output == docs[0]
 
+
 def test__collapse_docs_metadata() -> None:
     """Test collapse documents functionality when metadata exists."""
     docs = [
@@ -102,6 +107,3 @@ def test__collapse_docs_metadata() -> None:
     output = _collapse_docs(docs, _fake_combine_docs_func)
     expected_output = Document(page_content="foobar", metadata={"source": "a, b"})
     assert output == expected_output
-
-
-
