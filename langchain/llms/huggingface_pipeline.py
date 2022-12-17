@@ -55,7 +55,7 @@ class HuggingFacePipeline(LLM, BaseModel):
     def from_model_id(
         cls,
         model_id: str,
-        task: Optional[str] = None,
+        task: str,
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
