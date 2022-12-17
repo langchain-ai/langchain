@@ -1,10 +1,6 @@
 """Wrapper around OpenAI APIs."""
-<<<<<<< Updated upstream
 import sys
-from typing import Any, Dict, List, Mapping, Optional, Generator
-=======
 from typing import Any, Dict, Generator, List, Mapping, Optional
->>>>>>> Stashed changes
 
 
 from pydantic import BaseModel, Extra, Field, root_validator
