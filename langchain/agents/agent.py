@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
@@ -28,11 +28,11 @@ class Agent(Chain, BaseModel, ABC):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the singular input key.
+        """Return the input keys.
 
         :meta private:
         """
-        return [self.input_key]
+        return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @property
     def output_keys(self) -> List[str]:
@@ -44,6 +44,16 @@ class Agent(Chain, BaseModel, ABC):
             return [self.output_key, "intermediate_steps"]
         else:
             return [self.output_key]
+
+    @root_validator()
+    def validate_prompt(cls, values: Dict) -> Dict:
+        """Validate that prompt matches format."""
+        prompt = values["llm_chain"].prompt
+        if "agent_scratchpad" not in prompt.input_variables:
+            raise ValueError(
+                "`agent_scratchpad` should be a variable in prompt.input_variables"
+            )
+        return values
 
     @property
     @abstractmethod
@@ -97,23 +107,24 @@ class Agent(Chain, BaseModel, ABC):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain, tools=tools, **kwargs)
 
-    def get_action(self, text: str) -> AgentAction:
+    def get_action(self, thoughts: str, inputs: dict) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
-            text: input string
+            thoughts: LLM thoughts
+            inputs: user inputs
 
         Returns:
             Action specifying what tool to use.
         """
-        input_key = self.llm_chain.input_keys[0]
-        inputs = {input_key: text, "stop": self._stop}
-        full_output = self.llm_chain.predict(**inputs)
+        new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
+        full_inputs = {**inputs, **new_inputs}
+        full_output = self.llm_chain.predict(**full_inputs)
         parsed_output = self._extract_tool_and_input(full_output)
         while parsed_output is None:
             full_output = self._fix_text(full_output)
-            inputs = {input_key: text + full_output, "stop": self._stop}
-            output = self.llm_chain.predict(**inputs)
+            full_inputs["agent_scratchpad"] += full_output
+            output = self.llm_chain.predict(**full_inputs)
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
@@ -121,19 +132,12 @@ class Agent(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
-        text = inputs[self.input_key]
         # Do any preparation necessary when receiving a new input.
         self._prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
-        # Construct the initial string to pass into the LLM. This is made up
-        # of the user input, the special starter string, and then the LLM prefix.
-        # The starter string is a special string that may be used by a LLM to
-        # immediately follow the user input. The LLM prefix is a string that
-        # prompts the LLM to take an action.
-        starter_string = text + self.starter_string + self.llm_prefix
         # We use the ChainedInput class to iteratively add to the input over time.
-        chained_input = ChainedInput(starter_string, verbose=self.verbose)
+        chained_input = ChainedInput(self.llm_prefix, verbose=self.verbose)
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
@@ -141,7 +145,7 @@ class Agent(Chain, BaseModel, ABC):
         # We now enter the agent loop (until it returns something).
         while True:
             # Call the LLM to see what to do.
-            output = self.get_action(chained_input.input)
+            output = self.get_action(chained_input.input, inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if output.tool == self.finish_tool_name:
                 final_output: dict = {self.output_key: output.tool_input}

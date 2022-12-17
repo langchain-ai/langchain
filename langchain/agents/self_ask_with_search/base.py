@@ -58,7 +58,7 @@ class SelfAskWithSearchAgent(Agent):
     @property
     def starter_string(self) -> str:
         """Put this string after user input but before first LLM call."""
-        return "\nAre follow up questions needed here:"
+        return "Are follow up questions needed here:"
 
 
 class SelfAskWithSearchChain(SelfAskWithSearchAgent):
