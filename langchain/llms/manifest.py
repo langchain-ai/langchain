@@ -3,10 +3,10 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import SimpleLLM
 
 
-class ManifestWrapper(LLM, BaseModel):
+class ManifestWrapper(SimpleLLM, BaseModel):
     """Wrapper around HazyResearch's Manifest library."""
 
     client: Any  #: :meta private:

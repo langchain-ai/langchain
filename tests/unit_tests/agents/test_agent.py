@@ -5,10 +5,10 @@ from typing import Any, List, Mapping, Optional
 from pydantic import BaseModel
 
 from langchain.agents import Tool, initialize_agent
-from langchain.llms.base import LLM
+from langchain.llms.base import SimpleLLM
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(SimpleLLM, BaseModel):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]

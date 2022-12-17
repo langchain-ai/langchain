@@ -5,10 +5,10 @@ from typing import Any, List, Mapping, Optional
 from pydantic import BaseModel
 
 from langchain.chains.natbot.base import NatBotChain
-from langchain.llms.base import LLM
+from langchain.llms.base import SimpleLLM
 
 
-class FakeLLM(LLM, BaseModel):
+class FakeLLM(SimpleLLM, BaseModel):
     """Fake LLM wrapper for testing purposes."""
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
