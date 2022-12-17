@@ -2,7 +2,7 @@
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.cohere import Cohere
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
@@ -18,7 +18,7 @@ __all__ = [
     "AI21",
 ]
 
-type_to_cls_dict: Dict[str, Type[LLM]] = {
+type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "cohere": Cohere,
     "huggingface_hub": HuggingFaceHub,

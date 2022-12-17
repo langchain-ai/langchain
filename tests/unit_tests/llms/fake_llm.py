@@ -3,10 +3,10 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel
 
-from langchain.llms.base import SimpleLLM
+from langchain.llms.base import LLM
 
 
-class FakeLLM(SimpleLLM, BaseModel):
+class FakeLLM(LLM, BaseModel):
     """Fake LLM wrapper for testing purposes."""
 
     queries: Optional[Mapping] = None

@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 
 
@@ -46,7 +46,7 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: List[LLM], prompt: Optional[PromptTemplate] = None
+        cls, llms: List[BaseLLM], prompt: Optional[PromptTemplate] = None
     ) -> ModelLaboratory:
         """Initialize with LLMs to experiment with and optional prompt.
 

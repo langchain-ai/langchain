@@ -8,7 +8,7 @@ from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.llms.base import SimpleLLM
+from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
 
 _PAGE_CONTENT = """This is a page about LangChain.
@@ -22,7 +22,7 @@ Made in 2022."""
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
-class FakeListLLM(SimpleLLM, BaseModel):
+class FakeListLLM(LLM, BaseModel):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]

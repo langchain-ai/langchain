@@ -7,7 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT
 from langchain.input import print_text
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.sql_database import SQLDatabase
 
 
@@ -22,7 +22,7 @@ class SQLDatabaseChain(Chain, BaseModel):
             db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
     """
 
-    llm: LLM
+    llm: BaseLLM
     """LLM wrapper to use."""
     database: SQLDatabase
     """SQL Database to connect to."""

@@ -21,7 +21,7 @@ class LLMResult(NamedTuple):
     """For arbitrary LLM provider specific output."""
 
 
-class LLM(BaseModel, ABC):
+class BaseLLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     class Config:
@@ -141,11 +141,12 @@ class LLM(BaseModel, ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-class SimpleLLM(LLM):
+class LLM(BaseLLM):
     """LLM class that expect subclasses to implement a simpler call method.
 
     The purpose of this class is to expose a simpler interface for working
-    with LLMs, rather than expect the user to implement the full _generate method."""
+    with LLMs, rather than expect the user to implement the full _generate method.
+    """
 
     @abstractmethod
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:

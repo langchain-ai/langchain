@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 
-from langchain.llms.base import SimpleLLM
+from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
@@ -11,7 +11,7 @@ DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class HuggingFacePipeline(SimpleLLM, BaseModel):
+class HuggingFacePipeline(LLM, BaseModel):
     """Wrapper around HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
@@ -58,7 +58,7 @@ class HuggingFacePipeline(SimpleLLM, BaseModel):
         task: str,
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
-    ) -> SimpleLLM:
+    ) -> LLM:
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer

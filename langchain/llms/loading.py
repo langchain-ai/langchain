@@ -6,10 +6,10 @@ from typing import Union
 import yaml
 
 from langchain.llms import type_to_cls_dict
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 
 
-def load_llm_from_config(config: dict) -> LLM:
+def load_llm_from_config(config: dict) -> BaseLLM:
     """Load LLM from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify an LLM Type in config")
@@ -22,7 +22,7 @@ def load_llm_from_config(config: dict) -> LLM:
     return llm_cls(**config)
 
 
-def load_llm(file: Union[str, Path]) -> LLM:
+def load_llm(file: Union[str, Path]) -> BaseLLM:
     """Load LLM from file."""
     # Convert file to Path object.
     if isinstance(file, str):
