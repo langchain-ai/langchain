@@ -18,6 +18,7 @@ from langchain.chains import (
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
+from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.logger import BaseLogger, StdOutLogger
 from langchain.prompts import (
     BasePromptTemplate,
@@ -50,6 +51,7 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
+    "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",
     "FAISS",
