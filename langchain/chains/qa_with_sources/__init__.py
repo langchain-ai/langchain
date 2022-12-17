@@ -1,5 +1,5 @@
 """Load question answering with sources chains."""
-from typing import Any, Mapping, Protocol
+from typing import Any, Mapping, Optional, Protocol
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -44,6 +44,7 @@ def _load_map_reduce_chain(
     document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
+    collapse_prompt: Optional[BasePromptTemplate] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=question_prompt)
@@ -53,10 +54,19 @@ def _load_map_reduce_chain(
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
     )
+    if collapse_prompt is None:
+        collapse_chain = None
+    else:
+        collapse_chain = StuffDocumentsChain(
+            llm_chain=LLMChain(llm=llm, prompt=collapse_prompt),
+            document_variable_name=combine_document_variable_name,
+            document_prompt=document_prompt,
+        )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
         combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
+        collapse_document_chain=collapse_chain,
         **kwargs,
     )
 

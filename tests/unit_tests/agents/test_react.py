@@ -2,6 +2,8 @@
 
 from typing import Any, List, Mapping, Optional, Union
 
+from pydantic import BaseModel
+
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
@@ -20,15 +22,18 @@ Made in 2022."""
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
-class FakeListLLM(LLM):
+class FakeListLLM(LLM, BaseModel):
     """Fake LLM for testing that outputs elements of a list."""
 
-    def __init__(self, responses: List[str]):
-        """Initialize with list of responses."""
-        self.responses = responses
-        self.i = -1
+    responses: List[str]
+    i: int = -1
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fake_list"
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
@@ -50,7 +55,7 @@ class FakeDocstore(Docstore):
 def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
     outputs = ["foo\nAction 1: Search[foo]"]
-    fake_llm = FakeListLLM(outputs)
+    fake_llm = FakeListLLM(responses=outputs)
     tools = [
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
@@ -65,7 +70,7 @@ def test_predict_until_observation_normal() -> None:
 def test_predict_until_observation_repeat() -> None:
     """Test when no action is generated initially."""
     outputs = ["foo", " Search[foo]"]
-    fake_llm = FakeListLLM(outputs)
+    fake_llm = FakeListLLM(responses=outputs)
     tools = [
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
@@ -84,7 +89,7 @@ def test_react_chain() -> None:
         "I should probably lookup\nAction 2: Lookup[made]",
         "Ah okay now I know the answer\nAction 3: Finish[2022]",
     ]
-    fake_llm = FakeListLLM(responses)
+    fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     output = react_chain.run("when was langchain made")
     assert output == "2022"
@@ -97,7 +102,7 @@ def test_react_chain_bad_action() -> None:
         f"I'm turning evil\nAction 1: {bad_action_name}[langchain]",
         "Oh well\nAction 2: Finish[curses foiled again]",
     ]
-    fake_llm = FakeListLLM(responses)
+    fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     output = react_chain.run("when was langchain made")
     assert output == "curses foiled again"
