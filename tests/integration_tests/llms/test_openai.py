@@ -1,7 +1,11 @@
 """Test OpenAI API wrapper."""
 
+from pathlib import Path
+from typing import Generator
+
 import pytest
 
+from langchain.llms.loading import load_llm
 from langchain.llms.openai import OpenAI
 
 
@@ -44,3 +48,29 @@ def test_openai_stop_error() -> None:
     llm = OpenAI(stop="3", temperature=0)
     with pytest.raises(ValueError):
         llm("write an ordered list of five items", stop=["\n"])
+
+
+def test_saving_loading_llm(tmp_path: Path) -> None:
+    """Test saving/loading an OpenAPI LLM."""
+    llm = OpenAI(max_tokens=10)
+    llm.save(file_path=tmp_path / "openai.yaml")
+    loaded_llm = load_llm(tmp_path / "openai.yaml")
+    assert loaded_llm == llm
+
+
+def test_openai_streaming() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+    generator = llm.stream("I'm Pickle Rick")
+
+    assert isinstance(generator, Generator)
+
+    for token in generator:
+        assert isinstance(token["choices"][0]["text"], str)
+
+
+def test_openai_streaming_error() -> None:
+    """Test error handling in stream."""
+    llm = OpenAI(best_of=2)
+    with pytest.raises(ValueError):
+        llm.stream("I'm Pickle Rick")
