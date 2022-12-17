@@ -2,7 +2,6 @@
 import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
-
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM, LLMResult
