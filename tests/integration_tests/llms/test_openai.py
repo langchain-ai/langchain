@@ -1,6 +1,7 @@
 """Test OpenAI API wrapper."""
 
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -55,3 +56,21 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     llm.save(file_path=tmp_path / "openai.yaml")
     loaded_llm = load_llm(tmp_path / "openai.yaml")
     assert loaded_llm == llm
+
+
+def test_openai_streaming() -> None:
+    """Test streaming tokens from OpenAI."""
+    llm = OpenAI(max_tokens=10)
+    generator = llm.stream("I'm Pickle Rick")
+
+    assert isinstance(generator, Generator)
+
+    for token in generator:
+        assert isinstance(token["choices"][0]["text"], str)
+
+
+def test_openai_streaming_error() -> None:
+    """Test error handling in stream."""
+    llm = OpenAI(best_of=2)
+    with pytest.raises(ValueError):
+        llm.stream("I'm Pickle Rick")

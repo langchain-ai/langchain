@@ -1,6 +1,6 @@
 """Wrapper around OpenAI APIs."""
 import sys
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -159,6 +159,30 @@ class OpenAI(LLM, BaseModel):
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}
         )
+
+    def stream(self, prompt: str) -> Generator:
+        """Call OpenAI with streaming flag and return the resulting generator.
+
+        Args:
+            prompt: The prompts to pass into the model.
+
+        Returns:
+            A generator representing the stream of tokens from OpenAI.
+
+        Example:
+            .. code-block:: python
+
+                generator = openai.stream("Tell me a joke.")
+                for token in generator:
+                    yield token
+        """
+        params = self._default_params
+        if params["best_of"] != 1:
+            raise ValueError("OpenAI only supports best_of == 1 for streaming")
+        params["stream"] = True
+        generator = self.client.create(model=self.model_name, prompt=prompt, **params)
+
+        return generator
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
