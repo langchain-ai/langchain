@@ -163,6 +163,9 @@ class OpenAI(LLM, BaseModel):
     def stream(self, prompt: str) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
 
+        BETA: this is a beta feature while we figure out the right abstraction.
+        Once that happens, this interface could change.
+
         Args:
             prompt: The prompts to pass into the model.
 
