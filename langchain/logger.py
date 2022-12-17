@@ -2,7 +2,7 @@
 from typing import Any, Optional
 
 from langchain.input import print_text
-from langchain.schema import AgentAction
+from langchain.schema import AgentAction, AgentFinish
 
 
 class BaseLogger:
@@ -12,7 +12,7 @@ class BaseLogger:
         """Log the start of an agent interaction."""
         pass
 
-    def log_agent_end(self, text: str, **kwargs: Any) -> None:
+    def log_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Log the end of an agent interaction."""
         pass
 

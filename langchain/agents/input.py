@@ -33,8 +33,7 @@ class ChainedInput:
 
     def add_action(self, action: AgentAction, color: Optional[str] = None) -> None:
         """Add text to input, print if in verbose mode."""
-        if self._verbose:
-            langchain.logger.log_agent_action(action, color=color)
+
         self._input += action.log
         self._intermediate_actions.append(action)
 
