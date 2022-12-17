@@ -172,7 +172,7 @@ class OpenAI(LLM, BaseModel):
         Example:
             .. code-block:: python
 
-                generator = openai.stream(["Tell me a joke."])
+                generator = openai.stream("Tell me a joke.")
                 for token in generator:
                     yield token
         """
