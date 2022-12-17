@@ -1,6 +1,10 @@
 """Wrapper around OpenAI APIs."""
+<<<<<<< Updated upstream
 import sys
 from typing import Any, Dict, List, Mapping, Optional, Generator
+=======
+from typing import Any, Dict, Generator, List, Mapping, Optional
+>>>>>>> Stashed changes
 
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -161,13 +165,14 @@ class OpenAI(LLM, BaseModel):
             generations=generations, llm_output={"token_usage": token_usage}
         )
 
-    def stream(self, prompt) -> Generator:
-        """This will pass the stream flag to OpenAI and return the resulting generator.
+    def stream(self, prompt: str) -> Generator:
+        """Call OpenAI with streaming flag and return the resulting generator.
+
         Args:
             prompt: The prompts to pass into the model.
 
         Returns:
-            A generator representing the server-sent events (SSE) OpenAI is sending back.
+            A generator representing the stream of tokens from OpenAI.
 
         Example:
             .. code-block:: python
@@ -180,9 +185,7 @@ class OpenAI(LLM, BaseModel):
         if params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
         params["stream"] = True
-        generator = self.client.create(
-            model=self.model_name, prompt=prompt, **params
-        )
+        generator = self.client.create(model=self.model_name, prompt=prompt, **params)
 
         return generator
 

@@ -59,6 +59,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
 
 
 def test_openai_streaming() -> None:
+    """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
     generator = llm.stream("I'm Pickle Rick")
 
@@ -69,6 +70,7 @@ def test_openai_streaming() -> None:
 
 
 def test_openai_streaming_error() -> None:
+    """Test error handling in stream."""
     llm = OpenAI(best_of=2)
     with pytest.raises(ValueError):
         llm.stream("I'm Pickle Rick")
