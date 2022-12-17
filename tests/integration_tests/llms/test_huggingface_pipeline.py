@@ -29,6 +29,7 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
 
 
 def test_init_with_pipeline() -> None:
+    """Test initialization with a HF pipeline."""
     model_id = "gpt2"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)

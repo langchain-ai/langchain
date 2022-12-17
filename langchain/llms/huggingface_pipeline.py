@@ -3,7 +3,6 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 
-import langchain
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -19,11 +18,26 @@ class HuggingFacePipeline(LLM, BaseModel):
 
     Only supports `text-generation` and `text2text-generation` for now.
 
-    Example:
+    Example using from_model_id:
         .. code-block:: python
 
             from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-            hf = HuggingFacePipeline(model_id="gpt2", task="text-generation")
+            hf = HuggingFacePipeline.from_model_id(
+                model_id="gpt2", task="text-generation"
+            )
+    Example passing pipeline in directly:
+    .. code-block:: python
+
+            from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+            model_id = "gpt2"
+            tokenizer = AutoTokenizer.from_pretrained(model_id)
+            model = AutoModelForCausalLM.from_pretrained(model_id)
+            pipe = pipeline(
+                "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
+            )
+            hf = HuggingFacePipeline(pipeline=pipe
     """
 
     pipeline: Any  #: :meta private:
@@ -45,6 +59,7 @@ class HuggingFacePipeline(LLM, BaseModel):
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
+        """Construct the pipeline object from model_id and task."""
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
             from transformers import pipeline as hf_pipeline
@@ -75,7 +90,6 @@ class HuggingFacePipeline(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        _model_kwargs = self.model_kwargs or {}
         return {
             **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
