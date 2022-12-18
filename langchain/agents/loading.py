@@ -1,7 +1,7 @@
 """Load agent."""
 from typing import Any, List
 
-from langchain.agents.agent import AgentWithTools
+from langchain.agents.agent import AgentExecutor
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
@@ -20,7 +20,7 @@ def initialize_agent(
     llm: LLM,
     agent: str = "zero-shot-react-description",
     **kwargs: Any,
-) -> AgentWithTools:
+) -> AgentExecutor:
     """Load agent given tools and LLM.
 
     Args:
@@ -40,4 +40,4 @@ def initialize_agent(
         )
     agent_cls = AGENT_TO_CLASS[agent]
     agent_obj = agent_cls.from_llm_and_tools(llm, tools)
-    return AgentWithTools(agent=agent_obj, tools=tools, **kwargs)
+    return AgentExecutor.from_agent_and_tools(agent=agent_obj, tools=tools, **kwargs)

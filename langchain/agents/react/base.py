@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
-from langchain.agents.agent import Agent, AgentWithTools
+from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
@@ -116,7 +116,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
-class ReActChain(AgentWithTools):
+class ReActChain(AgentExecutor):
     """Chain that implements the ReAct paper.
 
     Example:

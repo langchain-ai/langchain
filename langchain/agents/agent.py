@@ -139,12 +139,17 @@ class Agent(BaseModel):
         return cls(llm_chain=llm_chain)
 
 
-class AgentWithTools(Chain, BaseModel):
+class AgentExecutor(Chain, BaseModel):
     """Consists of an agent using tools."""
 
     agent: Agent
     tools: List[Tool]
     return_intermediate_steps: bool = False
+
+    @classmethod
+    def from_agent_and_tools(cls, agent: Agent, tools: List[tools], **kwargs):
+        """Create from agent and tools."""
+        return cls(agent=agent, tools=tools, **kwargs)
 
     @property
     def input_keys(self) -> List[str]:

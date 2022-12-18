@@ -1,5 +1,5 @@
 """Interface for agents."""
-from langchain.agents.agent import Agent, AgentWithTools
+from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.load_tools import load_tools
 from langchain.agents.loading import initialize_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
@@ -11,7 +11,7 @@ __all__ = [
     "MRKLChain",
     "SelfAskWithSearchChain",
     "ReActChain",
-    "AgentWithTools",
+    "AgentExecutor",
     "Agent",
     "Tool",
     "initialize_agent",

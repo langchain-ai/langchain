@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
-from langchain.agents.agent import Agent, AgentWithTools
+from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
@@ -101,7 +101,7 @@ class ZeroShotAgent(Agent):
         return get_action_and_input(text)
 
 
-class MRKLChain(AgentWithTools):
+class MRKLChain(AgentExecutor):
     """Chain that implements the MRKL system.
 
     Example:
@@ -118,7 +118,7 @@ class MRKLChain(AgentWithTools):
     @classmethod
     def from_chains(
         cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any
-    ) -> AgentWithTools:
+    ) -> AgentExecutor:
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the

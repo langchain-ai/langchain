@@ -1,7 +1,7 @@
 """Chain that does self ask with search."""
 from typing import Any, List, Optional, Tuple
 
-from langchain.agents.agent import Agent, AgentWithTools
+from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
@@ -63,7 +63,7 @@ class SelfAskWithSearchAgent(Agent):
         return "Are follow up questions needed here:"
 
 
-class SelfAskWithSearchChain(AgentWithTools):
+class SelfAskWithSearchChain(AgentExecutor):
     """Chain that does self ask with search.
 
     Example:
