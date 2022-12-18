@@ -18,7 +18,11 @@ from langchain.chains.moderation import OpenAIModerationChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain.chains.sequential import (
+    SequentailChainWithPreviousContext,
+    SequentialChain,
+    SimpleSequentialChain,
+)
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
@@ -37,6 +41,7 @@ __all__ = [
     "QAWithSourcesChain",
     "SQLDatabaseChain",
     "SequentialChain",
+    "SequentailChainWithPreviousContext",
     "SimpleSequentialChain",
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",

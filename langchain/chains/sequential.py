@@ -151,3 +151,30 @@ class SimpleSequentialChain(Chain, BaseModel):
                 _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
             )
         return {self.output_key: _input}
+
+
+class SequentailChainWithPreviousContext(SequentialChain, BaseModel):
+    """
+    Chain which keep the previous contexts.
+    A -> AB -> ABC -> ABCD
+    """
+
+    chains: List[Chain]
+    return_all: bool = False
+    context: str = ""
+
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        known_values = inputs.copy()
+        for i, chain in enumerate(self.chains):
+            chain.prompt.template = self.context + chain.prompt.template
+            # Only keep the variables input_variables for known_values
+            used_values = {k: known_values[k] for k in chain.prompt.input_variables}
+            outputs = chain(used_values, return_only_outputs=True)
+            prompt = chain.prompt.format(**used_values)
+            response = outputs[chain.output_key]
+            self.context = prompt + response
+
+            if self.verbose:
+                print(f"\033[1mChain {i}\033[0m:\n{outputs}\n")
+            known_values.update(outputs)
+        return {k: known_values[k] for k in self.output_variables}
