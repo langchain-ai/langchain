@@ -2,6 +2,7 @@
 
 Agents use an LLM to determine which actions to take and in what order.
 An action can either be using a tool and observing its output, or returning to the user.
+For a list of easily loadable tools, see [here](tools.md).
 Here are the agents available in LangChain.
 
 For a tutorial on how to load agents, see [here](/getting_started/agents.ipynb).
