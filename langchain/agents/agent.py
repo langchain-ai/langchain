@@ -1,13 +1,12 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, NamedTuple, Optional, Tuple, Union
+from abc import abstractmethod
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, root_validator
 
 import langchain
-from langchain.agents.input import ChainedInput
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -17,7 +16,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import AgentAction, AgentFinish
 
 
-class Planner(BaseModel):
+class Agent(BaseModel):
     """Class responsible for calling the language model and deciding the action.
 
     This is driven by an LLMChain. The prompt in the LLMChain MUST include
@@ -72,6 +71,7 @@ class Planner(BaseModel):
         return AgentAction(tool, tool_input, full_output)
 
     def prepare_for_new_call(self) -> None:
+        """Prepare the agent for new call, if needed."""
         pass
 
     @property
@@ -107,8 +107,8 @@ class Planner(BaseModel):
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
@@ -118,16 +118,17 @@ class Planner(BaseModel):
         pass
 
     @classmethod
-    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> Planner:
+    def from_llm_and_tools(cls, llm: LLM, tools: List[Tool]) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain)
 
 
-class Agent(Chain, BaseModel):
+class AgentWithTools(Chain, BaseModel):
+    """Consists of an agent using tools."""
 
-    planner: Planner
+    agent: Agent
     tools: List[Tool]
     return_intermediate_steps: bool = False
 
@@ -137,7 +138,7 @@ class Agent(Chain, BaseModel):
 
         :meta private:
         """
-        return self.planner.input_keys
+        return self.agent.input_keys
 
     @property
     def output_keys(self) -> List[str]:
@@ -146,26 +147,25 @@ class Agent(Chain, BaseModel):
         :meta private:
         """
         if self.return_intermediate_steps:
-            return self.planner.return_values + ["intermediate_steps"]
+            return self.agent.return_values + ["intermediate_steps"]
         else:
-            return self.planner.return_values
+            return self.agent.return_values
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
         # Do any preparation necessary when receiving a new input.
-        self.planner.prepare_for_new_call()
+        self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool.func for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
-        planner_inputs = inputs.copy()
         intermediate_steps: List[Tuple[AgentAction, str]] = []
         # We now enter the agent loop (until it returns something).
         while True:
             # Call the LLM to see what to do.
-            output = self.planner.plan(intermediate_steps, **planner_inputs)
+            output = self.agent.plan(intermediate_steps, **inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:

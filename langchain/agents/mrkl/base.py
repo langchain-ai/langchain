@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
-from langchain.agents.agent import Agent, Planner
+from langchain.agents.agent import Agent, AgentWithTools
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
@@ -47,7 +47,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
-class ZeroShotPlanner(Planner):
+class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
     @property
@@ -101,10 +101,7 @@ class ZeroShotPlanner(Planner):
         return get_action_and_input(text)
 
 
-ZeroShotAgent = ZeroShotPlanner
-
-
-class MRKLChain(Agent):
+class MRKLChain(AgentWithTools):
     """Chain that implements the MRKL system.
 
     Example:
@@ -119,7 +116,9 @@ class MRKLChain(Agent):
     """
 
     @classmethod
-    def from_chains(cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any) -> Agent:
+    def from_chains(
+        cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any
+    ) -> AgentWithTools:
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the
@@ -159,5 +158,5 @@ class MRKLChain(Agent):
             Tool(name=c.action_name, func=c.action, description=c.action_description)
             for c in chains
         ]
-        planner = ZeroShotPlanner.from_llm_and_tools(llm, tools)
-        return cls(planner=planner, tools=tools, **kwargs)
+        agent = ZeroShotAgent.from_llm_and_tools(llm, tools)
+        return cls(agent=agent, tools=tools, **kwargs)

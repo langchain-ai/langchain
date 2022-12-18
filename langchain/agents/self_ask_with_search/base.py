@@ -1,7 +1,7 @@
 """Chain that does self ask with search."""
 from typing import Any, List, Optional, Tuple
 
-from langchain.agents.agent import Agent, Planner
+from langchain.agents.agent import Agent, AgentWithTools
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
@@ -9,7 +9,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.serpapi import SerpAPIWrapper
 
 
-class SelfAskWithSearchPlanner(Planner):
+class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
     @classmethod
@@ -63,10 +63,7 @@ class SelfAskWithSearchPlanner(Planner):
         return "Are follow up questions needed here:"
 
 
-SelfAskWithSearchAgent = SelfAskWithSearchPlanner
-
-
-class SelfAskWithSearchChain(Agent):
+class SelfAskWithSearchChain(AgentWithTools):
     """Chain that does self ask with search.
 
     Example:
@@ -80,5 +77,5 @@ class SelfAskWithSearchChain(Agent):
     def __init__(self, llm: LLM, search_chain: SerpAPIWrapper, **kwargs: Any):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(name="Intermediate Answer", func=search_chain.run)
-        planner = SelfAskWithSearchPlanner.from_llm_and_tools(llm, [search_tool])
-        super().__init__(planner=planner, tools=[search_tool], **kwargs)
+        agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
+        super().__init__(agent=agent, tools=[search_tool], **kwargs)

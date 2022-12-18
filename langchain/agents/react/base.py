@@ -1,21 +1,20 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, ClassVar, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
-from langchain.agents.agent import Agent, Planner
+from langchain.agents.agent import Agent, AgentWithTools
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
-from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class ReActDocstorePlanner(Planner, BaseModel):
+class ReActDocstoreAgent(Agent, BaseModel):
     """Agent for the ReAct chin."""
 
     @classmethod
@@ -75,9 +74,6 @@ class ReActDocstorePlanner(Planner, BaseModel):
         return f"Thought {self.i}:"
 
 
-ReActDocstoreAgent = ReActDocstorePlanner
-
-
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
 
@@ -103,7 +99,7 @@ class DocstoreExplorer:
         return self.document.lookup(term)
 
 
-class ReActTextWorldPlanner(ReActDocstorePlanner, BaseModel):
+class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
@@ -120,10 +116,7 @@ class ReActTextWorldPlanner(ReActDocstorePlanner, BaseModel):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
-ReActTextWorldAgent = ReActTextWorldPlanner
-
-
-class ReActChain(Agent):
+class ReActChain(AgentWithTools):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -140,5 +133,5 @@ class ReActChain(Agent):
             Tool(name="Search", func=docstore_explorer.search),
             Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        planner = ReActDocstorePlanner.from_llm_and_tools(llm, tools)
-        super().__init__(planner=planner, tools=tools, **kwargs)
+        agent = ReActDocstoreAgent.from_llm_and_tools(llm, tools)
+        super().__init__(agent=agent, tools=tools, **kwargs)
