@@ -129,9 +129,7 @@ class Chain(BaseModel, ABC):
 
         if args and not kwargs:
             if len(args) != 1:
-                raise ValueError(
-                    "`run` supports only one positional argument."
-                )
+                raise ValueError("`run` supports only one positional argument.")
             return self(args[0])[self.output_keys[0]]
 
         if kwargs and not args:
