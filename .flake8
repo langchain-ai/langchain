@@ -1,5 +1,6 @@
 [flake8]
 exclude =
+    venv
     .venv
     __pycache__
     notebooks
