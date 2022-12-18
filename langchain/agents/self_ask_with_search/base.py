@@ -5,7 +5,7 @@ from langchain.agents.agent import Agent
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.serpapi import SerpAPIWrapper
 
@@ -72,7 +72,7 @@ class SelfAskWithSearchChain(SelfAskWithSearchAgent):
             self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
     """
 
-    def __init__(self, llm: LLM, search_chain: SerpAPIWrapper, **kwargs: Any):
+    def __init__(self, llm: BaseLLM, search_chain: SerpAPIWrapper, **kwargs: Any):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(name="Intermediate Answer", func=search_chain.run)
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)

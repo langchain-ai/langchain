@@ -7,19 +7,19 @@ from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
 class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
-    def __call__(self, llm: LLM, **kwargs: Any) -> BaseCombineDocumentsChain:
+    def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_stuff_chain(
-    llm: LLM,
+    llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "text",
     **kwargs: Any,
@@ -32,7 +32,7 @@ def _load_stuff_chain(
 
 
 def _load_map_reduce_chain(
-    llm: LLM,
+    llm: BaseLLM,
     map_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_document_variable_name: str = "text",
@@ -63,7 +63,7 @@ def _load_map_reduce_chain(
 
 
 def _load_refine_chain(
-    llm: LLM,
+    llm: BaseLLM,
     question_prompt: BasePromptTemplate = refine_prompts.PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.REFINE_PROMPT,
     document_variable_name: str = "text",
@@ -82,7 +82,7 @@ def _load_refine_chain(
 
 
 def load_summarize_chain(
-    llm: LLM, chain_type: str = "stuff", **kwargs: Any
+    llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
 ) -> BaseCombineDocumentsChain:
     """Load summarizing chain.
 
