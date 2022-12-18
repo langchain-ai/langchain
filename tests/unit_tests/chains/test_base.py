@@ -106,3 +106,10 @@ def test_run_args_and_kwargs_error() -> None:
     chain = FakeChain(the_input_keys=["foo", "bar"])
     with pytest.raises(ValueError):
         chain.run("bar", foo="bar")
+
+
+def test_multiple_output_keys_error() -> None:
+    """Test multiple output keys error."""
+    chain = FakeChain(the_output_keys=["foo", "bar"])
+    with pytest.raises(ValueError):
+        chain.run("bar")
