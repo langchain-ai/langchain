@@ -38,7 +38,7 @@ Intermediate answer: New Zealand.
 So the final answer is: No
 
 Question: {input}
-{agent_scratchpad}"""
+Are followup questions needed here:{agent_scratchpad}"""
 PROMPT = PromptTemplate(
     input_variables=["input", "agent_scratchpad"], template=_DEFAULT_TEMPLATE
 )

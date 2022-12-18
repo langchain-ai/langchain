@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
-from langchain.agents.agent import Agent
+from langchain.agents.agent import Agent, Planner
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
@@ -47,7 +47,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
-class ZeroShotAgent(Agent):
+class ZeroShotPlanner(Planner):
     """Agent for the MRKL chain."""
 
     @property
@@ -101,7 +101,10 @@ class ZeroShotAgent(Agent):
         return get_action_and_input(text)
 
 
-class MRKLChain(ZeroShotAgent):
+ZeroShotAgent = ZeroShotPlanner
+
+
+class MRKLChain(Agent):
     """Chain that implements the MRKL system.
 
     Example:
@@ -156,4 +159,5 @@ class MRKLChain(ZeroShotAgent):
             Tool(name=c.action_name, func=c.action, description=c.action_description)
             for c in chains
         ]
-        return cls.from_llm_and_tools(llm, tools, **kwargs)
+        planner = ZeroShotPlanner.from_llm_and_tools(llm, tools)
+        return cls(planner=planner, tools=tools, **kwargs)

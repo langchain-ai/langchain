@@ -10,6 +10,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import AgentAction
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -61,10 +62,9 @@ def test_predict_until_observation_normal() -> None:
         Tool("Lookup", lambda x: x),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.get_action("", {"input": ""})
-    assert output.log == outputs[0]
-    assert output.tool == "Search"
-    assert output.tool_input == "foo"
+    output = agent.plan([], input="")
+    expected_output = AgentAction("Search", "foo", outputs[0])
+    assert output == expected_output
 
 
 def test_predict_until_observation_repeat() -> None:
@@ -76,10 +76,9 @@ def test_predict_until_observation_repeat() -> None:
         Tool("Lookup", lambda x: x),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.get_action("", {"input": ""})
-    assert output.log == "foo\nAction 1: Search[foo]"
-    assert output.tool == "Search"
-    assert output.tool_input == "foo"
+    output = agent.plan([], input="")
+    expected_output = AgentAction("Search", "foo", "foo\nAction 1: Search[foo]")
+    assert output == expected_output
 
 
 def test_react_chain() -> None:

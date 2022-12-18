@@ -1,17 +1,17 @@
 """Load agent."""
 from typing import Any, List
 
-from langchain.agents.agent import Agent
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.react.base import ReActDocstoreAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
+from langchain.agents.agent import Agent, Planner
+from langchain.agents.mrkl.base import ZeroShotPlanner
+from langchain.agents.react.base import ReActDocstorePlanner
+from langchain.agents.self_ask_with_search.base import SelfAskWithSearchPlanner
 from langchain.agents.tools import Tool
 from langchain.llms.base import LLM
 
 AGENT_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotAgent,
-    "react-docstore": ReActDocstoreAgent,
-    "self-ask-with-search": SelfAskWithSearchAgent,
+    "zero-shot-react-description": ZeroShotPlanner,
+    "react-docstore": ReActDocstorePlanner,
+    "self-ask-with-search": SelfAskWithSearchPlanner,
 }
 
 
@@ -39,4 +39,5 @@ def initialize_agent(
             f"Valid types are: {AGENT_TO_CLASS.keys()}."
         )
     agent_cls = AGENT_TO_CLASS[agent]
-    return agent_cls.from_llm_and_tools(llm, tools, **kwargs)
+    planner = agent_cls.from_llm_and_tools(llm, tools, **kwargs)
+    return Agent(planner=planner, tools=tools)

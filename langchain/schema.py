@@ -13,6 +13,7 @@ class AgentAction(NamedTuple):
 
 class AgentFinish(NamedTuple):
     """Agent's return value."""
+
     return_values: dict
     log: str
 

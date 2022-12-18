@@ -13,4 +13,4 @@ Final Answer: the final answer to the original input question"""
 SUFFIX = """Begin!
 
 Question: {input}
-{agent_scratchpad}"""
+Thought:{agent_scratchpad}"""

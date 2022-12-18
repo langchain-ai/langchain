@@ -4,7 +4,7 @@ from typing import Any, ClassVar, List, Optional, Tuple
 
 from pydantic import BaseModel
 
-from langchain.agents.agent import Agent
+from langchain.agents.agent import Agent, Planner
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
@@ -15,10 +15,13 @@ from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class ReActDocstoreAgent(Agent, BaseModel):
+class ReActDocstorePlanner(Planner, BaseModel):
     """Agent for the ReAct chin."""
 
-    prompt: ClassVar[BasePromptTemplate] = WIKI_PROMPT
+    @classmethod
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Return default prompt."""
+        return WIKI_PROMPT
 
     i: int = 1
 
@@ -72,6 +75,9 @@ class ReActDocstoreAgent(Agent, BaseModel):
         return f"Thought {self.i}:"
 
 
+ReActDocstoreAgent = ReActDocstorePlanner
+
+
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
 
@@ -97,12 +103,13 @@ class DocstoreExplorer:
         return self.document.lookup(term)
 
 
-class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
+class ReActTextWorldPlanner(ReActDocstorePlanner, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
-    prompt: ClassVar[BasePromptTemplate] = TEXTWORLD_PROMPT
-
-    i: int = 1
+    @classmethod
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Return default prompt."""
+        return TEXTWORLD_PROMPT
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:
@@ -113,7 +120,10 @@ class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
-class ReActChain(ReActDocstoreAgent):
+ReActTextWorldAgent = ReActTextWorldPlanner
+
+
+class ReActChain(Agent):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -130,5 +140,5 @@ class ReActChain(ReActDocstoreAgent):
             Tool(name="Search", func=docstore_explorer.search),
             Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        llm_chain = LLMChain(llm=llm, prompt=WIKI_PROMPT)
-        super().__init__(llm_chain=llm_chain, tools=tools, **kwargs)
+        planner = ReActDocstorePlanner.from_llm_and_tools(llm, tools)
+        super().__init__(planner=planner, tools=tools, **kwargs)
