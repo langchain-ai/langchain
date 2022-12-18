@@ -22,3 +22,9 @@ To install all modules needed for all integrations, run:
 ```
 pip install langchain[all]
 ```
+
+Note that if you are using `zsh`, you'll need to quote square brackets when passing them as an argument to a command, for example:
+
+```
+pip install 'langchain[all]'
+```

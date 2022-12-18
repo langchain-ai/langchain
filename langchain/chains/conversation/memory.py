@@ -46,6 +46,10 @@ class ConversationBufferMemory(Memory, BaseModel):
         ai = "AI: " + outputs[list(outputs.keys())[0]]
         self.buffer += "\n" + "\n".join([human, ai])
 
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = ""
+
 
 class ConversationalBufferWindowMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
@@ -74,6 +78,10 @@ class ConversationalBufferWindowMemory(Memory, BaseModel):
         human = "Human: " + inputs[prompt_input_key]
         ai = "AI: " + outputs[list(outputs.keys())[0]]
         self.buffer.append("\n".join([human, ai]))
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = []
 
 
 class ConversationSummaryMemory(Memory, BaseModel):
@@ -118,3 +126,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = ""

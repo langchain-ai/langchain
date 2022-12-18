@@ -106,7 +106,12 @@ class NLPCloud(LLM, BaseModel):
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **self._default_params}
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "nlpcloud"
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to NLPCloud's create endpoint.
 
         Args:

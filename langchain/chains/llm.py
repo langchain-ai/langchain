@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra
 
+import langchain
 from langchain.chains.base import Chain
-from langchain.input import print_text
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 
@@ -51,17 +51,34 @@ class LLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
+    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Utilize the LLM generate method for speed gains."""
+        stop = None
+        if "stop" in input_list[0]:
+            stop = input_list[0]["stop"]
+        prompts = []
+        for inputs in input_list:
+            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            prompt = self.prompt.format(**selected_inputs)
+            if self.verbose:
+                langchain.logger.log_llm_inputs(selected_inputs, prompt)
+            if "stop" in inputs and inputs["stop"] != stop:
+                raise ValueError(
+                    "If `stop` is present in any inputs, should be present in all."
+                )
+            prompts.append(prompt)
+        response = self.llm.generate(prompts, stop=stop)
+        outputs = []
+        for generation in response.generations:
+            # Get the text of the top generated string.
+            response_str = generation[0].text
+            if self.verbose:
+                langchain.logger.log_llm_response(response_str)
+            outputs.append({self.output_key: response_str})
+        return outputs
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-        prompt = self.prompt.format(**selected_inputs)
-        if self.verbose:
-            print("Prompt after formatting:")
-            print_text(prompt, color="green", end="\n")
-        kwargs = {}
-        if "stop" in inputs:
-            kwargs["stop"] = inputs["stop"]
-        response = self.llm(prompt, **kwargs)
-        return {self.output_key: response}
+        return self.apply([inputs])[0]
 
     def predict(self, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.

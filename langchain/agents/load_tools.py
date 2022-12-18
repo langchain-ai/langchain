@@ -1,7 +1,9 @@
+# flake8: noqa
 """Load tools."""
 from typing import List, Optional
 
 from langchain.agents.tools import Tool
+from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import LLM
 from langchain.python import PythonREPL
@@ -66,9 +68,18 @@ def _get_pal_colored_objects(llm: LLM) -> Tool:
     )
 
 
+def _get_llm_math(llm: LLM) -> Tool:
+    return Tool(
+        "Calculator",
+        LLMMathChain(llm=llm).run,
+        "Useful for when you need to answer questions about math.",
+    )
+
+
 _LLM_TOOLS = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
+    "llm-math": _get_llm_math,
 }
 
 

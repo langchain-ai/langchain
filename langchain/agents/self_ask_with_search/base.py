@@ -1,10 +1,9 @@
 """Chain that does self ask with search."""
-from typing import Any, ClassVar, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
-from langchain.agents.agent import Agent
+from langchain.agents.agent import Agent, AgentWithTools
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
-from langchain.chains.llm import LLMChain
 from langchain.llms.base import LLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.serpapi import SerpAPIWrapper
@@ -13,7 +12,10 @@ from langchain.serpapi import SerpAPIWrapper
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
-    prompt: ClassVar[BasePromptTemplate] = PROMPT
+    @classmethod
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Prompt does not depend on tools."""
+        return PROMPT
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:
@@ -58,10 +60,10 @@ class SelfAskWithSearchAgent(Agent):
     @property
     def starter_string(self) -> str:
         """Put this string after user input but before first LLM call."""
-        return "\nAre follow up questions needed here:"
+        return "Are follow up questions needed here:"
 
 
-class SelfAskWithSearchChain(SelfAskWithSearchAgent):
+class SelfAskWithSearchChain(AgentWithTools):
     """Chain that does self ask with search.
 
     Example:
@@ -75,5 +77,5 @@ class SelfAskWithSearchChain(SelfAskWithSearchAgent):
     def __init__(self, llm: LLM, search_chain: SerpAPIWrapper, **kwargs: Any):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(name="Intermediate Answer", func=search_chain.run)
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        super().__init__(llm_chain=llm_chain, tools=[search_tool], **kwargs)
+        agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
+        super().__init__(agent=agent, tools=[search_tool], **kwargs)

@@ -161,6 +161,7 @@ see detailed information about the various classes, methods, and APIs.
    explanation/core_concepts.md
    explanation/combine_docs.md
    explanation/agents.md
+   explanation/tools.md
    explanation/glossary.md
    explanation/cool_demos.md
    Discord <https://discord.gg/6adMQxSpJS>

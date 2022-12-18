@@ -15,4 +15,4 @@ def test_self_ask_with_search() -> None:
     )
     answer = chain.run(question)
     final_answer = answer.split("\n")[-1]
-    assert final_answer == "So the final answer is: El Palmar, Murcia, Spain"
+    assert final_answer == "El Palmar, Spain"

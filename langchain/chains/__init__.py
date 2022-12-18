@@ -3,9 +3,11 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
+from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.mapreduce import MapReduceChain
+from langchain.chains.moderation import OpenAIModerationChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
@@ -19,6 +21,7 @@ __all__ = [
     "ConversationChain",
     "LLMChain",
     "LLMBashChain",
+    "LLMCheckerChain",
     "LLMMathChain",
     "PALChain",
     "QAWithSourcesChain",
@@ -31,4 +34,5 @@ __all__ = [
     "LLMRequestsChain",
     "TransformChain",
     "MapReduceChain",
+    "OpenAIModerationChain",
 ]
