@@ -73,18 +73,11 @@ def test_run_single_arg() -> None:
     assert output == "baz"
 
 
-def test_run_multiple_args() -> None:
-    """Test run method with multiple args."""
-    chain = FakeChain(the_input_keys=["foo", "bar"])
-    output = chain.run("bar", "foo")
-    assert output == "baz"
-
-
 def test_run_multiple_args_error() -> None:
     """Test run method with multiple args errors as expected."""
-    chain = FakeChain(the_input_keys=["foo", "bar"])
+    chain = FakeChain()
     with pytest.raises(ValueError):
-        chain.run("bar", "foo", "baz")
+        chain.run("bar", "foo")
 
 
 def test_run_kwargs() -> None:

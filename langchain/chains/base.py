@@ -128,11 +128,11 @@ class Chain(BaseModel, ABC):
             )
 
         if args and not kwargs:
-            if len(args) != len(self.input_keys):
+            if len(args) != 1:
                 raise ValueError(
-                    f"Got {len(args)} arguments, but expected {len(self.input_keys)}."
+                    "`run` supports only one positional argument."
                 )
-            return self(dict(zip(self.input_keys, args)))[self.output_keys[0]]
+            return self(args[0])[self.output_keys[0]]
 
         if kwargs and not args:
             return self(kwargs)[self.output_keys[0]]
