@@ -7,7 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.input import print_text
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.utilities.bash import BashProcess
 
 
@@ -21,7 +21,7 @@ class LLMBashChain(Chain, BaseModel):
             llm_bash = LLMBashChain(llm=OpenAI())
     """
 
-    llm: LLM
+    llm: BaseLLM
     """LLM wrapper to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:

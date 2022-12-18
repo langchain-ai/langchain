@@ -1,9 +1,9 @@
 """Utils for LLM Tests."""
 
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 
 
-def assert_llm_equality(llm: LLM, loaded_llm: LLM) -> None:
+def assert_llm_equality(llm: BaseLLM, loaded_llm: BaseLLM) -> None:
     """Assert LLM Equality for tests."""
     # Check that they are the same type.
     assert type(llm) == type(loaded_llm)

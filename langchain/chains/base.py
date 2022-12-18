@@ -119,16 +119,23 @@ class Chain(BaseModel, ABC):
         """Call the chain on all inputs in the list."""
         return [self(inputs) for inputs in input_list]
 
-    def run(self, text: str) -> str:
-        """Run text in, text out (if applicable)."""
-        if len(self.input_keys) != 1:
-            raise ValueError(
-                f"`run` not supported when there is not exactly "
-                f"one input key, got {self.input_keys}."
-            )
+    def run(self, *args: str, **kwargs: str) -> str:
+        """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 1:
             raise ValueError(
                 f"`run` not supported when there is not exactly "
-                f"one output key, got {self.output_keys}."
+                f"one output key. Got {self.output_keys}."
             )
-        return self({self.input_keys[0]: text})[self.output_keys[0]]
+
+        if args and not kwargs:
+            if len(args) != 1:
+                raise ValueError("`run` supports only one positional argument.")
+            return self(args[0])[self.output_keys[0]]
+
+        if kwargs and not args:
+            return self(kwargs)[self.output_keys[0]]
+
+        raise ValueError(
+            f"`run` supported with either positional arguments or keyword arguments"
+            f" but not both. Got args: {args} and kwargs: {kwargs}."
+        )

@@ -10,7 +10,7 @@ from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -126,7 +126,7 @@ class ReActChain(AgentExecutor):
             react = ReAct(llm=OpenAI())
     """
 
-    def __init__(self, llm: LLM, docstore: Docstore, **kwargs: Any):
+    def __init__(self, llm: BaseLLM, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [

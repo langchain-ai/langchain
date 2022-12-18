@@ -7,7 +7,7 @@ from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
@@ -54,7 +54,7 @@ _BASE_TOOLS = {
 }
 
 
-def _get_pal_math(llm: LLM) -> Tool:
+def _get_pal_math(llm: BaseLLM) -> Tool:
     return Tool(
         "PAL-MATH",
         PALChain.from_math_prompt(llm).run,
@@ -62,7 +62,7 @@ def _get_pal_math(llm: LLM) -> Tool:
     )
 
 
-def _get_pal_colored_objects(llm: LLM) -> Tool:
+def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
     return Tool(
         "PAL-COLOR-OBJ",
         PALChain.from_colored_object_prompt(llm).run,
@@ -70,7 +70,7 @@ def _get_pal_colored_objects(llm: LLM) -> Tool:
     )
 
 
-def _get_llm_math(llm: LLM) -> Tool:
+def _get_llm_math(llm: BaseLLM) -> Tool:
     return Tool(
         "Calculator",
         LLMMathChain(llm=llm).run,
@@ -78,7 +78,7 @@ def _get_llm_math(llm: LLM) -> Tool:
     )
 
 
-def _get_open_meteo_api(llm: LLM) -> Tool:
+def _get_open_meteo_api(llm: BaseLLM) -> Tool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
         "Open Meteo API",
@@ -95,7 +95,7 @@ _LLM_TOOLS = {
 }
 
 
-def _get_news_api(llm: LLM, **kwargs: Any) -> Tool:
+def _get_news_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
@@ -107,7 +107,7 @@ def _get_news_api(llm: LLM, **kwargs: Any) -> Tool:
     )
 
 
-def _get_tmdb_api(llm: LLM, **kwargs: Any) -> Tool:
+def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -128,7 +128,7 @@ _EXTRA_TOOLS = {
 
 
 def load_tools(
-    tool_names: List[str], llm: Optional[LLM] = None, **kwargs: Any
+    tool_names: List[str], llm: Optional[BaseLLM] = None, **kwargs: Any
 ) -> List[Tool]:
     """Load tools based on their name.
 
