@@ -26,6 +26,7 @@ Below is a list of all supported tools and relevant information:
 - Tool Description: The description of the tool that is passed to the LLM.
 - Notes: Notes about the tool that are NOT passed to the LLM.
 - Requires LLM: Whether this tool requires an LLM to be initialized.
+- (Optional) Extra Parameters: What extra parameters are required to initialize this tool.
 
 ### List of Tools
 
@@ -71,3 +72,23 @@ Below is a list of all supported tools and relevant information:
 - Tool Description: Useful for when you need to answer questions about math.
 - Notes: An instance of the `LLMMath` chain.
 - Requires LLM: Yes
+
+**open-meteo-api**
+- Tool Name: Open Meteo API
+- Tool Description: Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.
+- Notes: A natural language connection to the Open Meteo API (`https://api.open-meteo.com/`), specifically the `/v1/forecast` endpoint.
+- Requires LLM: Yes
+
+**news-api**
+- Tool Name: News API
+- Tool Description: Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.
+- Notes: A natural language connection to the News API (`https://newsapi.org`), specifically the `/v2/top-headlines` endpoint.
+- Requires LLM: Yes
+- Extra Parameters: `news_api_key` (your API key to access this endpoint)
+
+**tmdb-api**
+- Tool Name: TMDB API
+- Tool Description: Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.
+- Notes: A natural language connection to the TMDB API (`https://api.themoviedb.org/3`), specifically the `/search/movie` endpoint.
+- Requires LLM: Yes
+- Extra Parameters: `tmdb_bearer_token` (your Bearer Token to access this endpoint - note that this is different than the API key)

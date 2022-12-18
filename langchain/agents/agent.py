@@ -147,7 +147,9 @@ class AgentExecutor(Chain, BaseModel):
     return_intermediate_steps: bool = False
 
     @classmethod
-    def from_agent_and_tools(cls, agent: Agent, tools: List[tools], **kwargs):
+    def from_agent_and_tools(
+        cls, agent: Agent, tools: List[Tool], **kwargs: Any
+    ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(agent=agent, tools=tools, **kwargs)
 

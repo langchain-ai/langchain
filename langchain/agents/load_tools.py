@@ -1,8 +1,10 @@
 # flake8: noqa
 """Load tools."""
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
+from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
+from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import LLM
@@ -76,14 +78,58 @@ def _get_llm_math(llm: LLM) -> Tool:
     )
 
 
+def _get_open_meteo_api(llm: LLM) -> Tool:
+    chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
+    return Tool(
+        "Open Meteo API",
+        chain.run,
+        "Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
+    )
+
+
 _LLM_TOOLS = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
+    "open-meteo-api": _get_open_meteo_api,
 }
 
 
-def load_tools(tool_names: List[str], llm: Optional[LLM] = None) -> List[Tool]:
+def _get_news_api(llm: LLM, **kwargs: Any) -> Tool:
+    news_api_key = kwargs["news_api_key"]
+    chain = APIChain.from_llm_and_api_docs(
+        llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
+    )
+    return Tool(
+        "News API",
+        chain.run,
+        "Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
+    )
+
+
+def _get_tmdb_api(llm: LLM, **kwargs: Any) -> Tool:
+    tmdb_bearer_token = kwargs["tmdb_bearer_token"]
+    chain = APIChain.from_llm_and_api_docs(
+        llm,
+        tmdb_docs.TMDB_DOCS,
+        headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
+    )
+    return Tool(
+        "TMDB API",
+        chain.run,
+        "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
+    )
+
+
+_EXTRA_TOOLS = {
+    "news-api": (_get_news_api, ["news_api_key"]),
+    "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+}
+
+
+def load_tools(
+    tool_names: List[str], llm: Optional[LLM] = None, **kwargs: Any
+) -> List[Tool]:
     """Load tools based on their name.
 
     Args:
@@ -101,6 +147,23 @@ def load_tools(tool_names: List[str], llm: Optional[LLM] = None) -> List[Tool]:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tools.append(_LLM_TOOLS[name](llm))
+        elif name in _EXTRA_TOOLS:
+            if llm is None:
+                raise ValueError(f"Tool {name} requires an LLM to be provided")
+            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
+            missing_keys = set(extra_keys).difference(kwargs)
+            if missing_keys:
+                raise ValueError(
+                    f"Tool {name} requires some parameters that were not "
+                    f"provided: {missing_keys}"
+                )
+            sub_kwargs = {k: kwargs[k] for k in extra_keys}
+            tools.append(_get_tool_func(llm=llm, **sub_kwargs))
         else:
             raise ValueError(f"Got unknown tool {name}")
     return tools
+
+
+def get_all_tool_names() -> List[str]:
+    """Get a list of all possible tool names."""
+    return list(_BASE_TOOLS) + list(_EXTRA_TOOLS) + list(_LLM_TOOLS)
