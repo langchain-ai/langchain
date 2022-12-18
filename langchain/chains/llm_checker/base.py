@@ -14,7 +14,7 @@ from langchain.chains.llm_checker.prompt import (
     REVISED_ANSWER_PROMPT,
 )
 from langchain.chains.sequential import SequentialChain
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
 
@@ -28,7 +28,7 @@ class LLMCheckerChain(Chain, BaseModel):
             checker_chain = LLMCheckerChain(llm=llm)
     """
 
-    llm: LLM
+    llm: BaseLLM
     """LLM wrapper to use."""
     create_draft_answer_prompt: PromptTemplate = CREATE_DRAFT_ANSWER_PROMPT
     list_assertions_prompt: PromptTemplate = LIST_ASSERTIONS_PROMPT

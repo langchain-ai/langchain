@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, root_validator
 from langchain.chains.base import Memory
 from langchain.chains.conversation.prompt import SUMMARY_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -88,7 +88,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
-    llm: LLM
+    llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
 
