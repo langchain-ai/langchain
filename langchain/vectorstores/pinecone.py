@@ -57,14 +57,6 @@ class Pinecone(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        """Initialize with Pinecone client."""
-        try:
-            import pinecone
-        except ImportError:
-            raise ValueError(
-                "Could not import pinecone python package. "
-                "Please it install it with `pip install pinecone-client`."
-            )
         # Embed and create the documents
         docs = []
         ids = []
@@ -79,11 +71,11 @@ class Pinecone(VectorStore):
         self._index.upsert(vectors=docs)
         return ids
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(self, query: str, k: int = 5) -> List[Document]:
         """Look up similar documents in pinecone."""
         query_obj = self._embedding_function(query)
         docs = []
-        results = self._index.query([query_obj], top_k=5, include_metadata=True)
+        results = self._index.query([query_obj], top_k=k, include_metadata=True)
         for res in results["matches"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
@@ -93,6 +85,7 @@ class Pinecone(VectorStore):
     @classmethod
     def from_texts(
         cls,
+        index: Any,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -104,8 +97,7 @@ class Pinecone(VectorStore):
 
         This is a user friendly interface that:
             1. Embeds documents.
-            2. Creates a new index for the embeddings in Pinecone
-            3. Adds the documents to the newly created Pinecone index
+            2. Adds the documents to a provided Pinecone index
 
         This is intended to be a quick way to get started.
 
@@ -116,12 +108,11 @@ class Pinecone(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 pinecone = Pinecone.from_texts(
+                    index,
                     texts,
                     embeddings
-                    api_key="PINECONE_API_KEY"
                 )
         """
-        api_key = get_from_dict_or_env(kwargs, "api_key", "PINECONE_API_KEY")
         try:
             import pinecone
         except ImportError:
@@ -129,17 +120,10 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-        try:
-            pinecone.init(api_key=api_key, environment="us-west1-gcp")
-        except ValueError as e:
-            raise ValueError("Pinecone initialization failed. " f"Got error: {e} ")
-
-        # Create first embedding to get correct dims
-        res = embedding.embed_query(texts[0])
-        index_name = uuid.uuid4().hex
-        pinecone.create_index(index_name, dimension=len(res))
-        # connect to index
-        index = pinecone.Index(index_name)
+        if not isinstance(index, pinecone.index.Index):
+            raise ValueError(
+                f"client should be an instance of pinecone.index.Index, got {type(index)}"
+            )
         for i in range(0, len(texts), batch_size):
             # set end position of batch
             i_end = min(i + batch_size, len(texts))
