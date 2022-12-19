@@ -16,7 +16,11 @@ class PythonREPL:
         """Run command with own globals/locals and returns anything printed."""
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
-        exec(command, self._globals, self._locals)
-        sys.stdout = old_stdout
-        output = mystdout.getvalue()
+        try:
+            exec(command, self._globals, self._locals)
+            sys.stdout = old_stdout
+            output = mystdout.getvalue()
+        except Exception as e:
+            sys.stdout = old_stdout
+            output = str(e)
         return output

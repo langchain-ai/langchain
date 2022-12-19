@@ -1,7 +1,5 @@
 """Test functionality of Python REPL."""
 
-import pytest
-
 from langchain.python import PythonREPL
 
 
@@ -22,8 +20,8 @@ def test_python_repl_no_previous_variables() -> None:
     """Test that it does not have access to variables created outside the scope."""
     foo = 3  # noqa: F841
     repl = PythonREPL()
-    with pytest.raises(NameError):
-        repl.run("print(foo)")
+    output = repl.run("print(foo)")
+    assert output == "name 'foo' is not defined"
 
 
 def test_python_repl_pass_in_locals() -> None:

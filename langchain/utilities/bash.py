@@ -1,6 +1,6 @@
 """Wrapper around subprocess to run commands."""
 import subprocess
-from typing import List
+from typing import List, Union
 
 
 class BashProcess:
@@ -10,9 +10,11 @@ class BashProcess:
         """Initialize with stripping newlines."""
         self.strip_newlines = strip_newlines
 
-    def run(self, commands: List[str]) -> str:
+    def run(self, commands: Union[str, List[str]]) -> str:
         """Run commands and return final output."""
         outputs = []
+        if isinstance(commands, str):
+            commands = [commands]
         for command in commands:
             try:
                 output = subprocess.check_output(command, shell=True).decode()
