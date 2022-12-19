@@ -29,7 +29,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     """The prompt template."""
 
     template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string'."""
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     class Config:
         """Configuration for this pydantic object."""
