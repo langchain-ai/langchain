@@ -2,6 +2,7 @@
 from langchain.prompts.example_selector.length_based import LengthBasedExampleSelector
 from langchain.prompts.example_selector.semantic_similarity import (
     SemanticSimilarityExampleSelector,
+MaxMarginalRelevanceExampleSelector,
 )
 
-__all__ = ["LengthBasedExampleSelector", "SemanticSimilarityExampleSelector"]
+__all__ = ["LengthBasedExampleSelector", "SemanticSimilarityExampleSelector", "MaxMarginalRelevanceExampleSelector"]
