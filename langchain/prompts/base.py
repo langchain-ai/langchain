@@ -2,15 +2,24 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.formatting import formatter
 
-DEFAULT_FORMATTER_MAPPING = {
+
+def jinja2_formatter(template: str, **kwargs: Any) -> str:
+    """Format a template using jinja2."""
+    from jinja2 import Template
+
+    return Template(template).render(**kwargs)
+
+
+DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
     "f-string": formatter.format,
+    "jinja2": jinja2_formatter,
 }
 
 
