@@ -12,7 +12,13 @@ from langchain.formatting import formatter
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2."""
-    from jinja2 import Template
+    try:
+        from jinja2 import Template
+    except ImportError:
+        raise ValueError(
+            "jinja2 not installed, which is needed to use the jinja2_formatter. "
+            "Please install it with `pip install jinja`."
+        )
 
     return Template(template).render(**kwargs)
 
