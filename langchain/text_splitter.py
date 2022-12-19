@@ -1,8 +1,11 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, List
+
+logger = logging.getLogger()
 
 
 class TextSplitter(ABC):
@@ -37,13 +40,20 @@ class TextSplitter(ABC):
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            if total >= self._chunk_size:
-                docs.append(self._separator.join(current_doc))
-                while total > self._chunk_overlap:
-                    total -= self._length_function(current_doc[0])
-                    current_doc = current_doc[1:]
+            _len = self._length_function(d)
+            if total + _len >= self._chunk_size:
+                if total > self._chunk_size:
+                    logger.warning(
+                        f"Created a chunk of size {total}, "
+                        f"which is longer than the specified {self._chunk_size}"
+                    )
+                if len(current_doc) > 0:
+                    docs.append(self._separator.join(current_doc))
+                    while total > self._chunk_overlap:
+                        total -= self._length_function(current_doc[0])
+                        current_doc = current_doc[1:]
             current_doc.append(d)
-            total += self._length_function(d)
+            total += _len
         docs.append(self._separator.join(current_doc))
         return docs
 
