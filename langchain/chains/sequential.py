@@ -1,10 +1,11 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 
 
@@ -135,3 +136,18 @@ class SimpleSequentialChain(Chain, BaseModel):
             if self.verbose:
                 print_text(_input, color=color_mapping[str(i)], end="\n")
         return {self.output_key: _input}
+
+
+def construct_sequential_llm_chain(
+    llm_chain: LLMChain, add_ons: List[Tuple[str, List[str], str]]
+) -> SequentialChain:
+    base_prompt = llm_chain.prompt
+    chains = [llm_chain]
+    for template, input_vars, output_key in add_ons:
+        new_prompt = base_prompt.extend_prompt(template, input_vars)
+        new_llm_chain = LLMChain(
+            llm=llm_chain.llm, prompt=new_prompt, output_key=output_key
+        )
+        chains.append(new_llm_chain)
+
+    return SequentialChain(chains=chains, input_variables=llm_chain.input_keys)

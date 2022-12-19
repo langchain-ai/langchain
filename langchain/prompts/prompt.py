@@ -36,6 +36,20 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
         extra = Extra.forbid
 
+    def extend_prompt(
+        self, template: str, input_variables: List[str]
+    ) -> PromptTemplate:
+        """Append to template and input variables."""
+        copied_prompt = self.copy(deep=True)
+        copied_prompt.template += template
+        copied_prompt.input_variables += input_variables
+        check_valid_template(
+            copied_prompt.template,
+            copied_prompt.template_format,
+            copied_prompt.input_variables,
+        )
+        return copied_prompt
+
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
 

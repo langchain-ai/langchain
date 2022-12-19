@@ -1,4 +1,6 @@
 """Prompt template that contains few shot examples."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -40,6 +42,20 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string'."""
+
+    def extend_prompt(
+        self, template: str, input_variables: List[str]
+    ) -> FewShotPromptTemplate:
+        """Append to template and input variables."""
+        copied_prompt = self.copy(deep=True)
+        copied_prompt.suffix += template
+        copied_prompt.input_variables += input_variables
+        check_valid_template(
+            copied_prompt.prefix + copied_prompt.suffix,
+            copied_prompt.template_format,
+            copied_prompt.input_variables,
+        )
+        return copied_prompt
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
