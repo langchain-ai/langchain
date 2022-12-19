@@ -37,5 +37,8 @@ Follow up: Where is Martin Campbell from?
 Intermediate answer: New Zealand.
 So the final answer is: No
 
-Question: {input}"""
-PROMPT = PromptTemplate(input_variables=["input"], template=_DEFAULT_TEMPLATE)
+Question: {input}
+Are followup questions needed here:{agent_scratchpad}"""
+PROMPT = PromptTemplate(
+    input_variables=["input", "agent_scratchpad"], template=_DEFAULT_TEMPLATE
+)
