@@ -11,6 +11,7 @@ from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
 class FAISS(VectorStore):
@@ -93,6 +94,37 @@ class FAISS(VectorStore):
             if i == -1:
                 # This happens when not enough docs are returned.
                 continue
+            _id = self.index_to_docstore_id[i]
+            doc = self.docstore.search(_id)
+            if not isinstance(doc, Document):
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            docs.append(doc)
+        return docs
+
+    def max_marginal_relevance_search(
+        self, query: str, k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self.embedding_function(query)
+        _, indices = self.index.search(np.array([embedding], dtype=np.float32), fetch_k)
+        # -1 happens when not enough docs are returned.
+        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
+        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
+        selected_indices = [indices[0][i] for i in mmr_selected]
+        docs = []
+        for i in selected_indices:
             _id = self.index_to_docstore_id[i]
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
