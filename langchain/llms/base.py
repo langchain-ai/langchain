@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra
 
 import langchain
 from langchain.schema import Generation
@@ -37,27 +37,17 @@ class BaseLLM(BaseModel, ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
-    @property
-    def _use_cache(self) -> bool:
-        """Get cache from global variable and llm setting."""
-        if self.cache is None:
-            return langchain.llm_cache is not None
-        elif self.cache:
-            if langchain.llm_cache is None:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
-            else:
-                return True
-        else:
-            # This is the case where self.cache = False
-            return False
-
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        if not self._use_cache:
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
             return self._generate(prompts, stop=stop)
         params = self._llm_dict()
         params["stop"] = stop
