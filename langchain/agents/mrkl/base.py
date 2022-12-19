@@ -6,7 +6,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.agents.agent import Agent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
 FINAL_ANSWER_ACTION = "Final Answer: "
@@ -116,7 +116,9 @@ class MRKLChain(ZeroShotAgent):
     """
 
     @classmethod
-    def from_chains(cls, llm: LLM, chains: List[ChainConfig], **kwargs: Any) -> Agent:
+    def from_chains(
+        cls, llm: BaseLLM, chains: List[ChainConfig], **kwargs: Any
+    ) -> Agent:
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the

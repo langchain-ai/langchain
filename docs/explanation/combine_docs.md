@@ -113,7 +113,7 @@ asking the LLM to refine the output based on the new document.
 
 **Pros:** Can pull in more relevant context, and may be less lossy than `RefineDocumentsChain`.
 
-**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be paralleled like `RefineDocumentsChain`. There is also some potential dependencies on the ordering of the documents.
+**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be paralleled like `MapReduceDocumentsChain`. There is also some potential dependencies on the ordering of the documents.
 
 ## Use Cases
 LangChain supports the above three methods of augmenting LLMs with external data.

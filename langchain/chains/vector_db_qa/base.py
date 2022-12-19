@@ -10,7 +10,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.vector_db_qa.prompt import PROMPT
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
 
@@ -84,7 +84,7 @@ class VectorDBQA(Chain, BaseModel):
 
     @classmethod
     def from_llm(
-        cls, llm: LLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
+        cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
     ) -> VectorDBQA:
         """Initialize from LLM."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
