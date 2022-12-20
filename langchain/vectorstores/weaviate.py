@@ -51,7 +51,7 @@ class Weaviate(VectorStore):
 
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
-    ) -> None:
+    ) -> List[str]:
         """Not implemented for Weaviate yet."""
         raise NotImplementedError("weaviate does not currently support `add_texts`.")
 

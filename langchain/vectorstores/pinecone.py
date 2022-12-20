@@ -88,9 +88,9 @@ class Pinecone(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        index: Any = None,
         batch_size: int = 32,
         text_key: str = "text",
+        index_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -108,15 +108,11 @@ class Pinecone(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 pinecone = Pinecone.from_texts(
-                    index,
                     texts,
-                    embeddings
+                    embeddings,
+                    index_name="langchain-demo"
                 )
         """
-        if index is None:
-            raise ValueError(
-                "A pinecone index should be passed in for the parameter `index`."
-            )
         try:
             import pinecone
         except ImportError:
@@ -124,11 +120,8 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-        if not isinstance(index, pinecone.index.Index):
-            raise ValueError(
-                f"client should be an instance of pinecone.index.Index, "
-                f"got {type(index)}"
-            )
+        _index_name = index_name or str(uuid.uuid4())
+        index = None
         for i in range(0, len(texts), batch_size):
             # set end position of batch
             i_end = min(i + batch_size, len(texts))
@@ -145,6 +138,10 @@ class Pinecone(VectorStore):
             for j, line in enumerate(lines_batch):
                 metadata[j][text_key] = line
             to_upsert = zip(ids_batch, embeds, metadata)
+            # Create index if it does not exist
+            if index is None:
+                pinecone.create_index(_index_name, dimension=len(embeds[0]))
+                index = pinecone.Index(_index_name)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert))
         return cls(index, embedding.embed_query, text_key)
