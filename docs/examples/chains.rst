@@ -39,7 +39,6 @@ With these primitives in mind, the following chains exist:
 - **Notes**: This chain takes user input (a question), uses a first LLM chain to construct a SQL query to run against the SQL database, and then uses another LLMChain to take the results of that query and use it to answer the original question.
 - `Example Notebook <chains/sqlite.ipynb>`_
 
-
 .. toctree::
    :maxdepth: 1
    :glob:
