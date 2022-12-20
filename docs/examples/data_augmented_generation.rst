@@ -8,7 +8,7 @@ They cover either how to work with the components of data augmented generation (
 
 `Text Splitters <data_augmented_generation/textsplitter.ipynb>`_: A walkthrough of how to split large documents up into smaller, more manageable pieces of text.
 
-`Embeddings & VectorStores <data_augmented_generation/embeddings.ipynb>`_: A walkthrough of the different embedding functionalies LangChain supports.
+`Embeddings & VectorStores <data_augmented_generation/embeddings.ipynb>`_: A walkthrough of the different embedding and vectorstore functionalies that LangChain supports.
 
 
 **Examples**
