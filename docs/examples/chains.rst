@@ -6,11 +6,11 @@ A chain is made up of links, which can be either primitives or other chains.
 
 The following primitives exist as options to use for links:
 
-#. `LLM: <../modules/llms.rst>`_ A language model takes text as input and outputs text.
-#. `PromptTemplate: <../modules/prompt.rst>`_ A prompt template takes arbitrary string inputs and returns a final formatted string.
-#. `Python REPL: <../modules/python.rst>`_ A Python REPL takes a string representing a Python command to run, runs that command, and then returns anything that was printed during that run.
-#. `SQL Database: <../modules/sql_database.rst>`_ A SQL database takes a string representing a SQL command as input and executes that command against the database. If any rows are returned, then those are cast to a string and returned.
-#. `Search: <../modules/serpapi.rst>`_ A search object takes a string as input and executes that against a search object, returning any results.
+#. `LLM: <../reference/modules/llms.rst>`_ A language model takes text as input and outputs text.
+#. `PromptTemplate: <../reference/modules/prompt.rst>`_ A prompt template takes arbitrary string inputs and returns a final formatted string.
+#. `Python REPL: <../reference/modules/python.rst>`_ A Python REPL takes a string representing a Python command to run, runs that command, and then returns anything that was printed during that run.
+#. `SQL Database: <../reference/modules/sql_database.rst>`_ A SQL database takes a string representing a SQL command as input and executes that command against the database. If any rows are returned, then those are cast to a string and returned.
+#. `Search: <../reference/modules/serpapi.rst>`_ A search object takes a string as input and executes that against a search object, returning any results.
 
 With these primitives in mind, the following chains exist:
 

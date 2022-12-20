@@ -154,19 +154,12 @@ common tasks or cool demos.
    :caption: Reference
    :name: reference
 
-   installation.md
-   integrations.md
-   modules/prompt
-   modules/example_selector
-   modules/llms
-   modules/embeddings
-   modules/text_splitter
-   modules/python.rst
-   modules/serpapi.rst
-   modules/docstore.rst
-   modules/vectorstore
-   modules/chains
-   modules/agents
+   reference/installation.md
+   reference/integrations.md
+   reference/prompts.rst
+   reference/chains.rst
+   reference/data_augmented_generation.rst
+   reference/modules/agents
 
 
 Full API documentation. This is the place to look if you want to
