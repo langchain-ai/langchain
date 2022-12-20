@@ -21,7 +21,7 @@ They cover either how to work with the components of data augmented generation (
 
 `Vector DB Question Answering <data_augmented_generation/vector_db_qa.ipynb>`_: A walkthrough of how to use LangChain for question answering over a vector database.
 
-`Vector DB Question Answering with Sources <data_augmented_generation/custom_example_selector.ipynb>`_: A walkthrough of how to use LangChain for question answering (with sources) over a vector database.
+`Vector DB Question Answering with Sources <data_augmented_generation/vector_db_qa_with_sources.ipynb>`_: A walkthrough of how to use LangChain for question answering (with sources) over a vector database.
 
 
 .. toctree::
