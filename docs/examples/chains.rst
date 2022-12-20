@@ -36,12 +36,6 @@ With these primitives in mind, the following chains exist:
 - `Paper <https://arxiv.org/abs/2211.10435>`_
 - `Example Notebook <chains/pal.ipynb>`_
 
-**Recursive Summarization**
-
-- **Links Used**: TextSplitter, LLMChain
-- **Notes**: This chain splits a document into chunks, runs a first LLMChain over each chunk to summarize it, and then runs a second LLMChain over those results to get a summary of the summaries.
-- `Example Notebook <chains/map_reduce.ipynb>`_
-
 **SQLDatabase Chain**
 
 - **Links Used**: SQLDatabase, LLMChain
@@ -64,19 +58,19 @@ With these primitives in mind, the following chains exist:
 **Question-Answering With Sources**
 
 - **Links Used**: LLMChain
-- **Notes**: These types of chains take a question and multiple documents as input, and return an answer plus sources for where that answer came from. There are multiple underlying types of chains to do this, for more information see TODO.
+- **Notes**: These types of chains take a question and multiple documents as input, and return an answer plus sources for where that answer came from. There are multiple underlying types of chains to do this, for more information see `here <../explanation/combine_docs.md>`_.
 - `Example Notebook <chains/qa_with_sources.ipynb>`_
 
 **Question-Answering**
 
 - **Links Used**: LLMChain
-- **Notes**: These types of chains take a question and multiple documents as input, and return an answer. There are multiple underlying types of chains to do this, for more information see TODO.
+- **Notes**: These types of chains take a question and multiple documents as input, and return an answer. There are multiple underlying types of chains to do this, for more information see `here <../explanation/combine_docs.md>`_.
 - `Example Notebook <chains/question_answering.ipynb>`_
 
 **Summarization**
 
 - **Links Used**: LLMChain
-- **Notes**: These types of chains take multiple documents as input, and return a summary of all documents. There are multiple underlying types of chains to do this, for more information see TODO.
+- **Notes**: These types of chains take multiple documents as input, and return a summary of all documents. There are multiple underlying types of chains to do this, for more information see `here <../explanation/combine_docs.md>`_.
 - `Example Notebook <chains/summarize.ipynb>`_
 
 .. toctree::
