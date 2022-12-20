@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 
@@ -39,7 +38,8 @@ class Pinecone(VectorStore):
             )
         if not isinstance(index, pinecone.index.Index):
             raise ValueError(
-                f"client should be an instance of pinecone.index.Index, got {type(index)}"
+                f"client should be an instance of pinecone.index.Index, "
+                f"got {type(index)}"
             )
         self._index = index
         self._embedding_function = embedding_function
@@ -85,10 +85,10 @@ class Pinecone(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        index: Any,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        index: Any = None,
         batch_size: int = 32,
         text_key: str = "text",
         **kwargs: Any,
@@ -113,6 +113,10 @@ class Pinecone(VectorStore):
                     embeddings
                 )
         """
+        if index is None:
+            raise ValueError(
+                "A pinecone index should be passed in for the parameter `index`."
+            )
         try:
             import pinecone
         except ImportError:
@@ -122,7 +126,8 @@ class Pinecone(VectorStore):
             )
         if not isinstance(index, pinecone.index.Index):
             raise ValueError(
-                f"client should be an instance of pinecone.index.Index, got {type(index)}"
+                f"client should be an instance of pinecone.index.Index, "
+                f"got {type(index)}"
             )
         for i in range(0, len(texts), batch_size):
             # set end position of batch
