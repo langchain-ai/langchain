@@ -1,12 +1,12 @@
 """Memory modules for conversation prompts."""
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.chains.base import Memory
 from langchain.chains.conversation.prompt import SUMMARY_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -46,12 +46,49 @@ class ConversationBufferMemory(Memory, BaseModel):
         ai = "AI: " + outputs[list(outputs.keys())[0]]
         self.buffer += "\n" + "\n".join([human, ai])
 
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = ""
+
+
+class ConversationalBufferWindowMemory(Memory, BaseModel):
+    """Buffer for storing conversation memory."""
+
+    buffer: List[str] = Field(default_factory=list)
+    memory_key: str = "history"  #: :meta private:
+    k: int = 5
+
+    @property
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
+
+        :meta private:
+        """
+        return [self.memory_key]
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return history buffer."""
+        return {self.memory_key: "\n".join(self.buffer[-self.k :])}
+
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save context from this conversation to buffer."""
+        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if len(outputs) != 1:
+            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        human = "Human: " + inputs[prompt_input_key]
+        ai = "AI: " + outputs[list(outputs.keys())[0]]
+        self.buffer.append("\n".join([human, ai]))
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = []
+
 
 class ConversationSummaryMemory(Memory, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
-    llm: LLM
+    llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
 
@@ -89,3 +126,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = ""

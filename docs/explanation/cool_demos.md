@@ -6,6 +6,9 @@ If you see any other demos that you think we should highlight, be sure to let us
 
 ## Open Source
 
+### [YouTube Transcription Question Answering with Sources](https://colab.research.google.com/drive/1sKSTjt9cPstl_WMZ86JsgEqFG-aSAwkn?usp=sharing)
+An end-to-end example of doing question answering on YouTube transcripts, returning the timestamps as sources to legitimize the answer.
+
 ### [ThoughtSource](https://github.com/OpenBioLink/ThoughtSource)
 A central, open resource and community around data and tools related to chain-of-thought reasoning in large language models.
 
@@ -18,6 +21,9 @@ GPT Index is a project consisting of a set of data structures that are created u
 
 ### [Grover's Algorithm](https://github.com/JavaFXpert/llm-grovers-search-party)
 Leveraging Qiskit, OpenAI and LangChain to demonstrate Grover's algorithm
+
+### [ReAct TextWorld](https://colab.research.google.com/drive/19WTIWC3prw5LDMHmRMvqNV2loD9FHls6?usp=sharing)
+Leveraging the ReActTextWorldAgent to play TextWorld with an LLM!
 
 
 ## Not Open Source

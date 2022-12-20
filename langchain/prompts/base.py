@@ -2,15 +2,30 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.formatting import formatter
 
-DEFAULT_FORMATTER_MAPPING = {
+
+def jinja2_formatter(template: str, **kwargs: Any) -> str:
+    """Format a template using jinja2."""
+    try:
+        from jinja2 import Template
+    except ImportError:
+        raise ValueError(
+            "jinja2 not installed, which is needed to use the jinja2_formatter. "
+            "Please install it with `pip install jinja2`."
+        )
+
+    return Template(template).render(**kwargs)
+
+
+DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
     "f-string": formatter.format,
+    "jinja2": jinja2_formatter,
 }
 
 
@@ -32,11 +47,35 @@ def check_valid_template(
         raise ValueError("Invalid prompt schema.")
 
 
+class BaseOutputParser(ABC):
+    """Class to parse the output of an LLM call."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
+        """Parse the output of an LLM call."""
+
+
+class ListOutputParser(ABC):
+    """Class to parse the output of an LLM call to a list."""
+
+    @abstractmethod
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+
+
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    output_parser: Optional[BaseOutputParser] = None
+    """How to parse the output of calling an LLM on this formatted prompt."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:

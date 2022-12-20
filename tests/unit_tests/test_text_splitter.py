@@ -7,9 +7,18 @@ from langchain.text_splitter import CharacterTextSplitter
 def test_character_text_splitter() -> None:
     """Test splitting by character count."""
     text = "foo bar baz 123"
-    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=3)
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=7, chunk_overlap=3)
     output = splitter.split_text(text)
     expected_output = ["foo bar", "bar baz", "baz 123"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_long() -> None:
+    """Test splitting by character count on long words."""
+    text = "foo bar baz a a"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=3, chunk_overlap=1)
+    output = splitter.split_text(text)
+    expected_output = ["foo", "bar", "baz", "a a"]
     assert output == expected_output
 
 

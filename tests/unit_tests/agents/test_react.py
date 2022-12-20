@@ -2,7 +2,7 @@
 
 from typing import Any, List, Mapping, Optional, Union
 
-import pytest
+from pydantic import BaseModel
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
@@ -10,6 +10,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
 from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import AgentAction
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -22,15 +23,18 @@ Made in 2022."""
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
-class FakeListLLM(LLM):
+class FakeListLLM(LLM, BaseModel):
     """Fake LLM for testing that outputs elements of a list."""
 
-    def __init__(self, responses: List[str]):
-        """Initialize with list of responses."""
-        self.responses = responses
-        self.i = -1
+    responses: List[str]
+    i: int = -1
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fake_list"
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
@@ -52,31 +56,29 @@ class FakeDocstore(Docstore):
 def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
     outputs = ["foo\nAction 1: Search[foo]"]
-    fake_llm = FakeListLLM(outputs)
+    fake_llm = FakeListLLM(responses=outputs)
     tools = [
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.get_action("")
-    assert output.log == outputs[0]
-    assert output.tool == "Search"
-    assert output.tool_input == "foo"
+    output = agent.plan([], input="")
+    expected_output = AgentAction("Search", "foo", outputs[0])
+    assert output == expected_output
 
 
 def test_predict_until_observation_repeat() -> None:
     """Test when no action is generated initially."""
     outputs = ["foo", " Search[foo]"]
-    fake_llm = FakeListLLM(outputs)
+    fake_llm = FakeListLLM(responses=outputs)
     tools = [
         Tool("Search", lambda x: x),
         Tool("Lookup", lambda x: x),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.get_action("")
-    assert output.log == "foo\nAction 1: Search[foo]"
-    assert output.tool == "Search"
-    assert output.tool_input == "foo"
+    output = agent.plan([], input="")
+    expected_output = AgentAction("Search", "foo", "foo\nAction 1: Search[foo]")
+    assert output == expected_output
 
 
 def test_react_chain() -> None:
@@ -86,7 +88,7 @@ def test_react_chain() -> None:
         "I should probably lookup\nAction 2: Lookup[made]",
         "Ah okay now I know the answer\nAction 3: Finish[2022]",
     ]
-    fake_llm = FakeListLLM(responses)
+    fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
     output = react_chain.run("when was langchain made")
     assert output == "2022"
@@ -94,10 +96,12 @@ def test_react_chain() -> None:
 
 def test_react_chain_bad_action() -> None:
     """Test react chain when bad action given."""
+    bad_action_name = "BadAction"
     responses = [
-        "I should probably search\nAction 1: BadAction[langchain]",
+        f"I'm turning evil\nAction 1: {bad_action_name}[langchain]",
+        "Oh well\nAction 2: Finish[curses foiled again]",
     ]
-    fake_llm = FakeListLLM(responses)
+    fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
-    with pytest.raises(KeyError):
-        react_chain.run("when was langchain made")
+    output = react_chain.run("when was langchain made")
+    assert output == "curses foiled again"
