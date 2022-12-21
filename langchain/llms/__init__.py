@@ -8,9 +8,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import OpenAI
-
-# Need to import AzureOpenAI after OpenAI to avoid circular import
-from langchain.llms.azure_openai import AzureOpenAI
+from langchain.llms.openai import AzureOpenAI
 
 __all__ = [
     "Cohere",
