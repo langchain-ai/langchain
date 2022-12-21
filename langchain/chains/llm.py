@@ -5,7 +5,7 @@ from pydantic import BaseModel, Extra
 
 import langchain
 from langchain.chains.base import Chain
-from langchain.llms.base import BaseLLM
+from langchain.llms.base import BaseLLM, LLMResult
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -51,8 +51,8 @@ class LLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Utilize the LLM generate method for speed gains."""
+    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+        """Generate LLM result from inputs."""
         stop = None
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
@@ -68,6 +68,11 @@ class LLMChain(Chain, BaseModel):
                 )
             prompts.append(prompt)
         response = self.llm.generate(prompts, stop=stop)
+        return response
+
+    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Utilize the LLM generate method for speed gains."""
+        response = self.generate(input_list)
         outputs = []
         for generation in response.generations:
             # Get the text of the top generated string.

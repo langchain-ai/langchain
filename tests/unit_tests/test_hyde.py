@@ -1,12 +1,14 @@
 """Test HyDE."""
-from typing import List
+from typing import List, Optional
 
 import numpy as np
+from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.hyde.base import HypotheticalDocumentEmbedder
 from langchain.embeddings.hyde.prompts import PROMPT_MAP
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.base import BaseLLM, LLMResult
+from langchain.schema import Generation
 
 
 class FakeEmbeddings(Embeddings):
@@ -21,10 +23,35 @@ class FakeEmbeddings(Embeddings):
         return list(np.random.uniform(0, 1, 10))
 
 
+class FakeLLM(BaseLLM, BaseModel):
+    """Fake LLM wrapper for testing purposes."""
+
+    n: int = 1
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "fake"
+
+
 def test_hyde_from_llm() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
             FakeLLM(), FakeEmbeddings(), key
+        )
+        embedding.embed_query("foo")
+
+
+def test_hyde_from_llm_with_multiple_n() -> None:
+    """Test loading HyDE from all prompts."""
+    for key in PROMPT_MAP:
+        embedding = HypotheticalDocumentEmbedder.from_llm(
+            FakeLLM(n=8), FakeEmbeddings(), key
         )
         embedding.embed_query("foo")
