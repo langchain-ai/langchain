@@ -1,4 +1,4 @@
 """Hypothetical Document Embeddings.
 
-http://boston.lti.cs.cmu.edu/luyug/HyDE/HyDE.pdf
+https://arxiv.org/abs/2212.10496
 """

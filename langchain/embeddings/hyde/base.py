@@ -1,6 +1,6 @@
 """Hypothetical Document Embeddings.
 
-http://boston.lti.cs.cmu.edu/luyug/HyDE/HyDE.pdf
+https://arxiv.org/abs/2212.10496
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from langchain.llms.base import BaseLLM
 class HypotheticalDocumentEmbedder(Embeddings, BaseModel):
     """Generate hypothetical document for query, and then embed that.
 
-    Based on http://boston.lti.cs.cmu.edu/luyug/HyDE/HyDE.pdf
+    Based on https://arxiv.org/abs/2212.10496
     """
 
     base_embeddings: Embeddings
