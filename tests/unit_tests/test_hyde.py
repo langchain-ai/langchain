@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings.hyde.hyde import HypotheticalDocumentEmbedder
+from langchain.embeddings.hyde.base import HypotheticalDocumentEmbedder
 from langchain.embeddings.hyde.prompts import PROMPT_MAP
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
