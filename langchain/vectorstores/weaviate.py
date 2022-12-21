@@ -19,7 +19,7 @@ class Weaviate(VectorStore):
             import weaviate
             from langchain.vectorstores import Weaviate
             client = weaviate.Client(url=os.environ["WEAVIATE_URL"], ...)
-            faiss = Weaviate(client, index_name, text_key)
+            weaviate = Weaviate(client, index_name, text_key)
 
     """
 
