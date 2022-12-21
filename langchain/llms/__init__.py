@@ -7,8 +7,8 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
-from langchain.llms.openai import OpenAI
 from langchain.llms.openai import AzureOpenAI
+from langchain.llms.openai import OpenAI
 
 __all__ = [
     "Cohere",
