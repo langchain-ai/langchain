@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, List
+from typing import Any, Callable, Iterable, List, Optional
+
+from langchain.docstore.document import Document
 
 logger = logging.getLogger()
 
@@ -32,6 +34,17 @@ class TextSplitter(ABC):
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
         """Split text into multiple components."""
+
+    def create_documents(
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
+    ) -> List[Document]:
+        """Create documents from a list of texts."""
+        _metadatas = metadatas or [{}] * len(texts)
+        documents = []
+        for i, text in enumerate(texts):
+            for chunk in self.split_text(text):
+                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+        return documents
 
     def _merge_splits(self, splits: Iterable[str]) -> List[str]:
         # We now want to combine these smaller pieces into medium size
