@@ -61,7 +61,7 @@ small enough chunks.
 LangChain provides some utilities to help with splitting up larger pieces of data. This comes in the form of the TextSplitter class.
 The class takes in a document and splits it up into chunks, with several parameters that control the
 size of the chunks as well as the overlap in the chunks (important for maintaining context).
-See [this walkthrough](../examples/integrations/textsplitter.ipynb) for more information.
+See [this walkthrough](../examples/data_augmented_generation/textsplitter.ipynb) for more information.
 
 ### Relevant Documents
 A second large issue related fetching data is to make sure you are not fetching too many documents, and are only fetching
@@ -123,6 +123,6 @@ It is important to note that a large part of these implementations is the prompt
 that are used. We provide default prompts for all three use cases, but these can be configured.
 This is in case you discover a prompt that works better for your specific application.
 
-- [Question-Answering With Sources](../examples/chains/qa_with_sources.ipynb)
-- [Question-Answering](../examples/chains/question_answering.ipynb)
-- [Summarization](../examples/chains/summarize.ipynb)
+- [Question-Answering With Sources](../examples/data_augmented_generation/qa_with_sources.ipynb)
+- [Question-Answering](../examples/data_augmented_generation/question_answering.ipynb)
+- [Summarization](../examples/data_augmented_generation/summarize.ipynb)
