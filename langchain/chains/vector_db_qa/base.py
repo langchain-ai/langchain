@@ -24,7 +24,7 @@ class VectorDBQA(Chain, BaseModel):
             from langchain import OpenAI, VectorDBQA
             from langchain.faiss import FAISS
             vectordb = FAISS(...)
-            vectordbQA = VectorDBQA(llm=OpenAI(), vector_db=vectordb)
+            vectordbQA = VectorDBQA(llm=OpenAI(), vectorstore=vectordb)
 
     """
 
