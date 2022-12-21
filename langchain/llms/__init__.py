@@ -8,6 +8,8 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import OpenAI
+# Need to import AzureOpenAI after OpenAI to avoid circular import
+from langchain.llms.azure_openai import AzureOpenAI
 
 __all__ = [
     "Cohere",
@@ -16,6 +18,7 @@ __all__ = [
     "HuggingFaceHub",
     "HuggingFacePipeline",
     "AI21",
+    "AzureOpenAI",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -25,4 +28,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "huggingface_pipeline": HuggingFacePipeline,
+    "azure": AzureOpenAI,
 }
