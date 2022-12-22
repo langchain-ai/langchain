@@ -37,7 +37,7 @@ class HuggingFacePipeline(LLM, BaseModel):
             pipe = pipeline(
                 "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
-            hf = HuggingFacePipeline(pipeline=pipe
+            hf = HuggingFacePipeline(pipeline=pipe)
     """
 
     pipeline: Any  #: :meta private:
