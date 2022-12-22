@@ -108,7 +108,8 @@ class RedisCache(BaseCache):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-        assert isinstance(redis_, Redis), "Please pass in Redis object."
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass in Redis object.")
         self.redis = redis_
 
     def _key(self, prompt: str, llm_string: str, idx: int) -> str:
