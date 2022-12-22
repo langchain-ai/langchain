@@ -24,6 +24,8 @@ class LLMResult(NamedTuple):
 class BaseLLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
+    cache: Optional[bool] = None
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -39,7 +41,13 @@ class BaseLLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        if langchain.llm_cache is None:
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
             return self._generate(prompts, stop=stop)
         params = self._llm_dict()
         params["stop"] = stop

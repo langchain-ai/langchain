@@ -9,13 +9,14 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 
-There are four main areas that LangChain is designed to help with.
+There are five main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
 1. LLM and Prompts
 2. Chains
-3. Agents
-4. Memory
+3. Data Augmented Generation
+4. Agents
+5. Memory
 
 Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
 
@@ -51,7 +52,25 @@ LangChain provides several parts to help with that.
 - Standard interface for working with Chains
 - Easy way to construct chains of LLMs
 - Lots of integrations with other tools that you may want to use in conjunction with LLMs
-- End-to-end chains for common workflows (database question/answer, recursive summarization, etc)
+- End-to-end chains for common workflows (database question/answer, api calling, etc)
+
+**📚 Data Augmented Generation**
+
+LLMs have access to all the data they were trained on, but there are still large chunks of data they were not trained on.
+Data Augmented Generation covers how to use LLMs to generate text conditioning on data outside of what the LLM was trained on.
+
+*Key Concepts*
+
+- Documents: A document is a piece of text, along with some associated metadata, that can be inserted into the context of a query to condition generation on that text.
+- Embeddings: A vector representation of text (or other unstructured data). Useful for being able to numerically compare pieces of text.
+- Vectorstore: A database which stores embeddings and can be searched over.
+
+*Problems Solved*
+
+- Standard interface for working with Documents, Embeddings, and Vectorstores
+- Lots of integrations with common embedding providers and vectorstores
+- End-to-end chains for common workflows (recursive summarization, question answering over documents, etc)
+
 
 **🤖 Agents**
 
@@ -102,7 +121,8 @@ The documentation is structured into the following sections:
    getting_started/environment.md
    getting_started/llm.md
    getting_started/llm_chain.md
-   getting_started/sequential_chains.md
+   getting_started/sequential_chains.ipynb
+   getting_started/data_augmented_generation.ipynb
    getting_started/agents.ipynb
    getting_started/memory.ipynb
 
@@ -117,8 +137,8 @@ Start here if you haven't used LangChain before.
    :name: examples
 
    examples/prompts.rst
-   examples/integrations.rst
    examples/chains.rst
+   examples/data_augmented_generation.rst
    examples/agents.rst
    examples/memory.rst
    examples/model_laboratory.ipynb
@@ -134,19 +154,12 @@ common tasks or cool demos.
    :caption: Reference
    :name: reference
 
-   installation.md
-   integrations.md
-   modules/prompt
-   modules/example_selector
-   modules/llms
-   modules/embeddings
-   modules/text_splitter
-   modules/python.rst
-   modules/serpapi.rst
-   modules/docstore.rst
-   modules/vectorstore
-   modules/chains
-   modules/agents
+   reference/installation.md
+   reference/integrations.md
+   reference/prompts.rst
+   reference/chains.rst
+   reference/data_augmented_generation.rst
+   reference/modules/agents
 
 
 Full API documentation. This is the place to look if you want to

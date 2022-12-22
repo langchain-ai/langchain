@@ -9,7 +9,7 @@ from langchain.schema import Generation
 from langchain.utils import get_from_dict_or_env
 
 
-class OpenAI(BaseLLM, BaseModel):
+class BaseOpenAI(BaseLLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -122,7 +122,7 @@ class OpenAI(BaseLLM, BaseModel):
                 response = openai.generate(["Tell me a joke."])
         """
         # TODO: write a unit test for this
-        params = self._default_params
+        params = self._invocation_params
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -144,9 +144,7 @@ class OpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = ["completion_tokens", "prompt_tokens", "total_tokens"]
         for _prompts in sub_prompts:
-            response = self.client.create(
-                model=self.model_name, prompt=_prompts, **params
-            )
+            response = self.client.create(prompt=_prompts, **params)
             choices.extend(response["choices"])
             for _key in _keys:
                 if _key not in token_usage:
@@ -182,13 +180,18 @@ class OpenAI(BaseLLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        params = self._default_params
+        params = self._invocation_params
         if params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
         params["stream"] = True
-        generator = self.client.create(model=self.model_name, prompt=prompt, **params)
+        generator = self.client.create(prompt=prompt, **params)
 
         return generator
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        """Get the parameters used to invoke the model."""
+        return self._default_params
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -277,3 +280,29 @@ class OpenAI(BaseLLM, BaseModel):
         # get max context size for model by name
         max_size = self.modelname_to_contextsize(self.model_name)
         return max_size - num_tokens
+
+
+class OpenAI(BaseOpenAI):
+    """Generic OpenAI class that uses model name."""
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        return {**{"model": self.model_name}, **super()._invocation_params}
+
+
+class AzureOpenAI(BaseOpenAI):
+    """Azure specific OpenAI class that uses deployment name."""
+
+    deployment_name: str = ""
+    """Deployment name to use."""
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {
+            **{"deployment_name": self.deployment_name},
+            **super()._identifying_params,
+        }
+
+    @property
+    def _invocation_params(self) -> Dict[str, Any]:
+        return {**{"engine": self.deployment_name}, **super()._invocation_params}
