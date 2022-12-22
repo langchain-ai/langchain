@@ -2,7 +2,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
-from redis import Redis
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -99,6 +98,14 @@ class SQLiteCache(SQLAlchemyCache):
 
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
+
+    try:
+        from redis import Redis
+    except ImportError:
+        raise ValueError(
+            "Could not import redis python package. "
+            "Please install it with `pip install redis`."
+        )
 
     def __init__(self, redis_: Redis):
         """Initialize by passing in Redis instance."""
