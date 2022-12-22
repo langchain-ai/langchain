@@ -1,6 +1,6 @@
 """Wrapper around OpenAI APIs."""
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Union, Tuple
+from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -100,7 +100,7 @@ class OpenAI(BaseLLM, BaseModel):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "best_of": self.best_of,
-            "request_timeout": self.request_timeout
+            "request_timeout": self.request_timeout,
         }
         return {**normal_params, **self.model_kwargs}
 
