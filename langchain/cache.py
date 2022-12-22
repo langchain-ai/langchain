@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
+from redis import Redis
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -94,3 +95,32 @@ class SQLiteCache(SQLAlchemyCache):
         """Initialize by creating the engine and all tables."""
         engine = create_engine(f"sqlite:///{database_path}")
         super().__init__(engine)
+
+
+class RedisCache(BaseCache):
+    """Cache that uses Redis as a backend."""
+
+    def __init__(self, redis_: Redis):
+        """Initialize by passing in Redis instance."""
+        self.redis = redis_
+
+    def _key(self, prompt: str, llm_string: str, idx: int) -> str:
+        """Compute key from prompt, llm_string, and idx."""
+        return str(hash(prompt + llm_string)) + "_" + str(idx)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        idx = 0
+        generations = []
+        while self.redis.get(self._key(prompt, llm_string, idx)):
+            result = self.redis.get(self._key(prompt, llm_string, idx))
+            if not result:
+                break
+            generations.append(Generation(text=result.decode()))
+            idx += 1
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for i, generation in enumerate(return_val):
+            self.redis.set(self._key(prompt, llm_string, i), generation.text)
