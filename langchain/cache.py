@@ -1,6 +1,6 @@
 """Beta Feature: base interface for cache."""
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -94,3 +94,43 @@ class SQLiteCache(SQLAlchemyCache):
         """Initialize by creating the engine and all tables."""
         engine = create_engine(f"sqlite:///{database_path}")
         super().__init__(engine)
+
+
+class RedisCache(BaseCache):
+    """Cache that uses Redis as a backend."""
+
+    def __init__(self, redis_: Any):
+        """Initialize by passing in Redis instance."""
+        try:
+            from redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        if not isinstance(redis_, Redis):
+            raise ValueError("Please pass in Redis object.")
+        self.redis = redis_
+
+    def _key(self, prompt: str, llm_string: str, idx: int) -> str:
+        """Compute key from prompt, llm_string, and idx."""
+        return str(hash(prompt + llm_string)) + "_" + str(idx)
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        idx = 0
+        generations = []
+        while self.redis.get(self._key(prompt, llm_string, idx)):
+            result = self.redis.get(self._key(prompt, llm_string, idx))
+            if not result:
+                break
+            elif isinstance(result, bytes):
+                result = result.decode()
+            generations.append(Generation(text=result))
+            idx += 1
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for i, generation in enumerate(return_val):
+            self.redis.set(self._key(prompt, llm_string, i), generation.text)
