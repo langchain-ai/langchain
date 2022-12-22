@@ -10,7 +10,6 @@ repository = "https://www.github.com/hwchase17/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = "^1"
-redis = "^4"
 SQLAlchemy = "^1"
 requests = "^2"
 PyYAML = "^6"
@@ -18,6 +17,7 @@ numpy = "^1"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}
+redis = {version = "^4", optional = true}
 manifest-ml = {version = "^0.0.1", optional = true}
 spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}

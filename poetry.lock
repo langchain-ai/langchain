@@ -84,7 +84,7 @@ name = "async-timeout"
 version = "4.0.2"
 description = "Timeout context manager for asyncio programs"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6"
 
 [[package]]
@@ -1744,7 +1744,7 @@ name = "redis"
 version = "4.4.0"
 description = "Python client for Redis database and key-value store"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -2469,7 +2469,7 @@ llms = ["manifest-ml", "torch", "transformers"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5837f1506cf0c18dcc5789130be080c1422da70bbfac56e400c734fbf44038e4"
+content-hash = "4932dc16d72f6cc58b885833a5768968c97104c2a8f9c87847f40b25ea3eae0d"
 
 [metadata.files]
 anyio = [
