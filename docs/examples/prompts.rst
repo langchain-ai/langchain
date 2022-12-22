@@ -14,6 +14,14 @@ The examples here all highlight how to work with LLMs and prompts.
 `Custom LLM <prompts/custom_llm.ipynb>`_: How to create and use a custom LLM class, in case you have an LLM not from one of the standard providers (including one that you host yourself).
 
 
+**Specific LLM Integrations**
+
+`Huggingface Hub <prompts/huggingface_hub.ipynb>`_: Covers how to connect to LLMs hosted on HuggingFace Hub.
+
+`Azure OpenAI <prompts/azure_openai_example.ipynb>`_: Covers how to connect to Azure-hosted OpenAI Models.
+
+
+
 **Prompts**
 
 `Prompt Management <prompts/prompt_management.ipynb>`_: A walkthrough of all the functionality LangChain supports for working with prompts.
