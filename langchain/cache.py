@@ -1,6 +1,6 @@
 """Beta Feature: base interface for cache."""
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -99,16 +99,16 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
-    try:
-        from redis import Redis
-    except ImportError:
-        raise ValueError(
-            "Could not import redis python package. "
-            "Please install it with `pip install redis`."
-        )
-
-    def __init__(self, redis_: Redis):
+    def __init__(self, redis_: Any):
         """Initialize by passing in Redis instance."""
+        try:
+            from redis import Redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        assert isinstance(redis_, Redis), "Please pass in Redis object."
         self.redis = redis_
 
     def _key(self, prompt: str, llm_string: str, idx: int) -> str:
@@ -123,7 +123,9 @@ class RedisCache(BaseCache):
             result = self.redis.get(self._key(prompt, llm_string, idx))
             if not result:
                 break
-            generations.append(Generation(text=result.decode()))
+            elif isinstance(result, bytes):
+                result = result.decode()
+            generations.append(Generation(text=result))
             idx += 1
         return generations if generations else None
 
