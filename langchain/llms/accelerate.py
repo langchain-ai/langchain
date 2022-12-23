@@ -47,7 +47,7 @@ class Accelerate(LLM, BaseModel):
         extra = Extra.forbid
 
     @staticmethod
-    def get_accelerated_gpt(model_name:str = "EleutherAI/gpt-neox-20b"):
+    def get_accelerated_gpt(model_name:str = DEFAULT_MODEL_NAME)->Any:
         from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
         from accelerate import init_empty_weights, infer_auto_device_map, load_checkpoint_and_dispatch
         import torch
@@ -92,7 +92,7 @@ class Accelerate(LLM, BaseModel):
     @classmethod
     def from_model_name(
         cls,
-        model_name: str,
+        model_name: str = DEFAULT_MODEL_NAME,
         **kwargs: Any,
     ) -> LLM:
         """Construct the pipeline object from model_id and task."""
