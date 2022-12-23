@@ -111,7 +111,7 @@ This method involves an initial prompt on the first chunk of data, generating so
 For the remaining documents, that output is passed in, along with the next document, 
 asking the LLM to refine the output based on the new document. 
 
-**Pros:** Can pull in more relevant context, and may be less lossy than `RefineDocumentsChain`.
+**Pros:** Can pull in more relevant context, and may be less lossy than `MapReduceDocumentsChain`.
 
 **Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be paralleled like `MapReduceDocumentsChain`. There is also some potential dependencies on the ordering of the documents.
 
