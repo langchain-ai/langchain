@@ -1,6 +1,7 @@
 """Wrappers on top of large language models APIs."""
 from typing import Dict, Type
 
+from langchain.llms.accelerate import Accelerate
 from langchain.llms.ai21 import AI21
 from langchain.llms.base import BaseLLM
 from langchain.llms.cohere import Cohere
@@ -8,7 +9,6 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
-from langchain.llms.accelerate import Accelerate
 
 __all__ = [
     "Cohere",
