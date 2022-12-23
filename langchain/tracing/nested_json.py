@@ -2,7 +2,7 @@
 
 import datetime
 import uuid
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.tracing.base import (
     BaseTracer,
@@ -67,7 +67,9 @@ class NestedJsonTracer(BaseTracer):
         )
         self._start_trace(llm_run)
 
-    def end_llm_trace(self, response: List[List[str]], error=None) -> None:
+    def end_llm_trace(
+        self, response: List[List[str]], error: Optional[str] = None
+    ) -> None:
         """End a trace for an LLM run."""
 
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
@@ -98,7 +100,9 @@ class NestedJsonTracer(BaseTracer):
         )
         self._start_trace(chain_run)
 
-    def end_chain_trace(self, outputs: Dict[str, Any], error=None) -> None:
+    def end_chain_trace(
+        self, outputs: Dict[str, Any], error: Optional[str] = None
+    ) -> None:
         """End a trace for a chain run."""
 
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
@@ -130,7 +134,7 @@ class NestedJsonTracer(BaseTracer):
         )
         self._start_trace(tool_run)
 
-    def end_tool_trace(self, output: str, error=None) -> None:
+    def end_tool_trace(self, output: str, error: Optional[str] = None) -> None:
         """End a trace for a tool run."""
 
         if not self._stack or not isinstance(self._stack[-1], ToolRun):

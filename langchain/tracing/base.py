@@ -14,7 +14,7 @@ class Run:
     start_time: datetime
     end_time: Optional[datetime]
     extra: Dict[str, Any]
-    error: Optional[Dict[str, Any]]
+    error: Optional[str]
     execution_order: int
     serialized: Dict[str, Any]
 
@@ -23,7 +23,7 @@ class Run:
 @dataclass
 class LLMRun(Run):
     prompts: Dict[str, Any]
-    response: Optional[Dict[str, Any]]
+    response: Optional[List[List[str]]]
 
 
 @dataclass_json
@@ -57,7 +57,9 @@ class BaseTracer(ABC):
         """Start a trace for an LLM run."""
 
     @abstractmethod
-    def end_llm_trace(self, response: List[List[str]], error=None) -> None:
+    def end_llm_trace(
+        self, response: List[List[str]], error: Optional[str] = None
+    ) -> None:
         """End a trace for an LLM run."""
 
     @abstractmethod
@@ -67,7 +69,9 @@ class BaseTracer(ABC):
         """Start a trace for a chain run."""
 
     @abstractmethod
-    def end_chain_trace(self, outputs: Dict[str, Any], error=None) -> None:
+    def end_chain_trace(
+        self, outputs: Dict[str, Any], error: Optional[str] = None
+    ) -> None:
         """End a trace for a chain run."""
 
     @abstractmethod
@@ -77,5 +81,5 @@ class BaseTracer(ABC):
         """Start a trace for a tool run."""
 
     @abstractmethod
-    def end_tool_trace(self, output: str, error=None) -> None:
+    def end_tool_trace(self, output: str, error: Optional[str] = None) -> None:
         """End a trace for a tool run."""
