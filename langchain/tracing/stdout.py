@@ -1,6 +1,7 @@
 """An implementation of the Tracer interface that prints to stdout."""
 
 from typing import Any, Dict, List
+
 from langchain.tracing.base import BaseTracer
 
 
@@ -12,7 +13,9 @@ class StdOutTracer(BaseTracer):
     ) -> None:
         """Start a trace for an LLM run."""
 
-        print(f"Starting LLM trace with prompts: {prompts}, serialized: {serialized}, extra: {extra}")
+        print(
+            f"Starting LLM trace with prompts: {prompts}, serialized: {serialized}, extra: {extra}"
+        )
 
     def end_llm_trace(self, response: List[List[str]], error=None) -> None:
         """End a trace for an LLM run."""
@@ -24,7 +27,9 @@ class StdOutTracer(BaseTracer):
     ) -> None:
         """Start a trace for a chain run."""
 
-        print(f"Starting chain trace with inputs: {inputs}, serialized: {serialized}, extra: {extra}")
+        print(
+            f"Starting chain trace with inputs: {inputs}, serialized: {serialized}, extra: {extra}"
+        )
 
     def end_chain_trace(self, outputs: Dict[str, Any], error=None) -> None:
         """End a trace for a chain run."""
@@ -32,15 +37,13 @@ class StdOutTracer(BaseTracer):
         print(f"Ending chain trace with outputs: {outputs}, error: {error}")
 
     def start_tool_trace(
-        self,
-        serialized: Dict[str, Any],
-        action: str,
-        inputs: str,
-        **extra: str
+        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
     ) -> None:
         """Start a trace for a tool run."""
 
-        print(f"Starting tool trace with inputs: {inputs}, serialized: {serialized}, extra: {extra}")
+        print(
+            f"Starting tool trace with inputs: {tool_input}, serialized: {serialized}, extra: {extra}"
+        )
 
     def end_tool_trace(self, output: str, error=None) -> None:
         """End a trace for a tool run."""

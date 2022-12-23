@@ -1,76 +1,143 @@
 """An implementation of the Tracer interface that prints trace as nested json."""
 
-from typing import Any, Dict, List, Optional, Union
-from langchain.tracing.base import BaseTracer, ChainRun, LLMRun, ToolRun, TracerException
+import datetime
+import uuid
+from typing import Any, Dict, List, Union
+
+from langchain.tracing.base import (
+    BaseTracer,
+    ChainRun,
+    LLMRun,
+    ToolRun,
+    TracerException,
+)
 
 
 class NestedJsonTracer(BaseTracer):
     """An implementation of the Tracer interface that prints trace as nested json."""
 
-    def __init__(self):
-        self._stack = []
-        self._execution_order = 1
+    _instance = None
 
-    def _log_run_start(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
-        """Log the start of a run."""
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NestedJsonTracer, cls).__new__(cls)
+            cls._instance._stack = []
+            cls._instance._execution_order = 1
+        return cls._instance
 
-        run.execution_order = self._execution_order
+    def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
+        """Start a trace for a run."""
+
         self._execution_order += 1
 
-        if len(session.stack):
+        if self._stack:
             if not (
-                    isinstance(session.stack[-1], ChainRun)
-                    or isinstance(session.stack[-1], ToolRun)
+                isinstance(self._stack[-1], ChainRun)
+                or isinstance(self._stack[-1], ToolRun)
             ):
-                session.rollback()
-                raise LoggerException(
+                raise TracerException(
                     f"Nested {run.__class__.__name__} can only be logged inside a ChainRun or ToolRun"
                 )
-            if isinstance(run, LLMRun):
-                session.stack[-1].child_llm_runs.append(run)
-            elif isinstance(run, ChainRun):
-                session.stack[-1].child_chain_runs.append(run)
-            else:
-                session.stack[-1].child_tool_runs.append(run)
-        session.stack.append(run)
-        run.save()
+            self._stack[-1].child_runs.append(run)
+        self._stack.append(run)
+
+    def _end_trace(self) -> None:
+        """End a trace for a run."""
+
+        run = self._stack.pop()
+        if not self._stack:
+            self._execution_order = 1
+            print(run.to_json(indent=2))
 
     def start_llm_trace(
         self, serialized: Dict[str, Any], prompts: List[str], **extra: str
     ) -> None:
         """Start a trace for an LLM run."""
 
-        print(f"Starting LLM trace with prompts: {prompts}, serialized: {serialized}, extra: {extra}")
+        llm_run = LLMRun(
+            serialized=serialized,
+            prompts={"prompts": prompts},
+            extra=extra,
+            start_time=datetime.datetime.utcnow(),
+            error=None,
+            execution_order=self._execution_order,
+            id=str(uuid.uuid4()),
+            response=None,
+            end_time=None,
+        )
+        self._start_trace(llm_run)
 
     def end_llm_trace(self, response: List[List[str]], error=None) -> None:
         """End a trace for an LLM run."""
 
-        print(f"Ending LLM trace with response: {response}, error: {error}")
+        if not self._stack or not isinstance(self._stack[-1], LLMRun):
+            raise TracerException("No LLMRun found to be traced")
+
+        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].response = response
+        self._stack[-1].error = error
+
+        self._end_trace()
 
     def start_chain_trace(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
     ) -> None:
         """Start a trace for a chain run."""
 
-        print(f"Starting chain trace with inputs: {inputs}, serialized: {serialized}, extra: {extra}")
+        chain_run = ChainRun(
+            serialized=serialized,
+            inputs=inputs,
+            extra=extra,
+            start_time=datetime.datetime.utcnow(),
+            error=None,
+            execution_order=self._execution_order,
+            id=str(uuid.uuid4()),
+            outputs=None,
+            end_time=None,
+            child_runs=[],
+        )
+        self._start_trace(chain_run)
 
     def end_chain_trace(self, outputs: Dict[str, Any], error=None) -> None:
         """End a trace for a chain run."""
 
-        print(f"Ending chain trace with outputs: {outputs}, error: {error}")
+        if not self._stack or not isinstance(self._stack[-1], ChainRun):
+            raise TracerException("No ChainRun found to be traced")
+
+        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].outputs = outputs
+        self._stack[-1].error = error
+
+        self._end_trace()
 
     def start_tool_trace(
-        self,
-        serialized: Dict[str, Any],
-        action: str,
-        inputs: str,
-        **extra: str
+        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
     ) -> None:
         """Start a trace for a tool run."""
 
-        print(f"Starting tool trace with inputs: {inputs}, serialized: {serialized}, extra: {extra}")
+        tool_run = ToolRun(
+            serialized=serialized,
+            action=action,
+            tool_input=tool_input,
+            extra=extra,
+            start_time=datetime.datetime.utcnow(),
+            error=None,
+            execution_order=self._execution_order,
+            id=str(uuid.uuid4()),
+            output=None,
+            end_time=None,
+            child_runs=[],
+        )
+        self._start_trace(tool_run)
 
     def end_tool_trace(self, output: str, error=None) -> None:
         """End a trace for a tool run."""
 
-        print(f"Ending tool trace with output: {output}, error: {error}")
+        if not self._stack or not isinstance(self._stack[-1], ToolRun):
+            raise TracerException("No ToolRun found to be traced")
+
+        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].output = output
+        self._stack[-1].error = error
+
+        self._end_trace()

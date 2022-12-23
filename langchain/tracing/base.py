@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 from dataclasses_json import dataclass_json
 
@@ -10,11 +10,11 @@ from dataclasses_json import dataclass_json
 @dataclass_json
 @dataclass
 class Run:
-    id: int
+    id: Union[int, str]
     start_time: datetime
-    end_time: datetime
+    end_time: Optional[datetime]
     extra: Dict[str, Any]
-    error: Dict[str, Any]
+    error: Optional[Dict[str, Any]]
     execution_order: int
     serialized: Dict[str, Any]
 
@@ -23,22 +23,22 @@ class Run:
 @dataclass
 class LLMRun(Run):
     prompts: Dict[str, Any]
-    response: Dict[str, Any]
+    response: Optional[Dict[str, Any]]
 
 
 @dataclass_json
 @dataclass
 class ChainRun(Run):
     inputs: Dict[str, Any]
-    outputs: Dict[str, Any]
+    outputs: Optional[Dict[str, Any]]
     child_runs: List[Run]
 
 
 @dataclass_json
 @dataclass
 class ToolRun(Run):
-    input: str
-    output: str
+    tool_input: str
+    output: Optional[str]
     action: str
     child_runs: List[Run]
 
@@ -72,11 +72,7 @@ class BaseTracer(ABC):
 
     @abstractmethod
     def start_tool_trace(
-        self,
-        serialized: Dict[str, Any],
-        action: str,
-        inputs: str,
-        **extra: str
+        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
     ) -> None:
         """Start a trace for a tool run."""
 
