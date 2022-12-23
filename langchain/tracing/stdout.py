@@ -1,8 +1,7 @@
 """An implementation of the Tracer interface that prints to stdout."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 from langchain.tracing.base import BaseTracer
-from langchain.llms.base import LLMResult
 
 
 class StdOutTracer(BaseTracer):
@@ -15,7 +14,7 @@ class StdOutTracer(BaseTracer):
 
         print(f"Starting LLM trace with prompts: {prompts}, serialized: {serialized}, extra: {extra}")
 
-    def end_llm_trace(self, response: LLMResult, error=None) -> None:
+    def end_llm_trace(self, response: List[List[str]], error=None) -> None:
         """End a trace for an LLM run."""
 
         print(f"Ending LLM trace with response: {response}, error: {error}")

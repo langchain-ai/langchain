@@ -51,7 +51,7 @@ class BaseLLM(BaseModel, ABC):
                 )
             get_tracer().start_llm_trace({"name": self.__class__.__name__}, prompts)
             output = self._generate(prompts, stop=stop)
-            get_tracer().end_llm_trace(output)
+            get_tracer().end_llm_trace([[g.text for g in gens] for gens in output.generations])
             return output
         params = self._llm_dict()
         params["stop"] = stop
@@ -68,7 +68,7 @@ class BaseLLM(BaseModel, ABC):
                 missing_prompt_idxs.append(i)
         get_tracer().start_llm_trace({"name": self.__class__.__name__}, missing_prompts)
         new_results = self._generate(missing_prompts, stop=stop)
-        get_tracer().end_llm_trace(new_results)
+        get_tracer().end_llm_trace([[g.text for g in gens] for gens in new_results.generations])
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]

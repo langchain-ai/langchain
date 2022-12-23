@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List
-from langchain.llms.base import LLMResult
 
 from dataclasses_json import dataclass_json
 
@@ -44,6 +43,10 @@ class ToolRun(Run):
     child_runs: List[Run]
 
 
+class TracerException(Exception):
+    """Base class for exceptions in tracing module."""
+
+
 class BaseTracer(ABC):
     """Base interface for tracing runs."""
 
@@ -54,7 +57,7 @@ class BaseTracer(ABC):
         """Start a trace for an LLM run."""
 
     @abstractmethod
-    def end_llm_trace(self, response: LLMResult, error=None) -> None:
+    def end_llm_trace(self, response: List[List[str]], error=None) -> None:
         """End a trace for an LLM run."""
 
     @abstractmethod
