@@ -18,7 +18,7 @@ __all__ = [
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
-    "Accelerate"
+    "Accelerate",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -29,5 +29,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openai": OpenAI,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
-    "accelerate": Accelerate
+    "accelerate": Accelerate,
 }
