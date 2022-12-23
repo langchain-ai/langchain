@@ -143,7 +143,7 @@ Start here if you haven't used LangChain before.
    examples/memory.rst
    examples/model_laboratory.ipynb
 
-More elaborate examples and walk-throughs of particular
+More elaborate examples and walkthroughs of particular
 integrations and use cases. This is the place to look if you have questions
 about how to integrate certain pieces, or if you want to find examples of
 common tasks or cool demos.
