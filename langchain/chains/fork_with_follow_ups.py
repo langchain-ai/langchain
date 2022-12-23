@@ -47,9 +47,7 @@ class ForkChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         decision_chain_output = self.decision_chain.run(inputs)
-        classification_output = decision_chain_output
-
         try:
-            return self.follow_up_chain[classification_output](inputs)
+            return self.follow_up_chains[decision_chain_output.strip()](inputs)
         except KeyError:
             return self.follow_up_chains['default'](inputs)
