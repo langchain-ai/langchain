@@ -3,12 +3,14 @@
 # TODO Implement bf16 and model nativ types
 # TODO Update gitignore or find better place to save model_weights
 
-from typing import Any, List, Mapping, Optional
-from pydantic import BaseModel, Extra
-from langchain.llms.base import BaseLLM, LLM
-from langchain.llms.utils import enforce_stop_tokens
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, pipeline
 import os
+from typing import Any, List, Mapping, Optional
+
+from pydantic import BaseModel, Extra
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, pipeline
+
+from langchain.llms.base import LLM, BaseLLM
+from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_NAME = "EleutherAI/gpt-neox-20b"  # nme as of Huggingface
 
@@ -48,13 +50,13 @@ class Accelerate(LLM, BaseModel):
 
     @staticmethod
     def get_accelerated_gpt(model_name: str = DEFAULT_MODEL_NAME) -> Any:
-        from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+        import torch
         from accelerate import (
-            init_empty_weights,
             infer_auto_device_map,
+            init_empty_weights,
             load_checkpoint_and_dispatch,
         )
-        import torch
+        from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
         # what else models are available and compatible? TODO
 
@@ -102,9 +104,7 @@ class Accelerate(LLM, BaseModel):
     ) -> LLM:
         """Construct the pipeline object from model_id and task."""
         try:
-            from transformers import (
-                AutoTokenizer,
-            )
+            from transformers import AutoTokenizer
 
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             model = cls.get_accelerated_gpt(model_name)
