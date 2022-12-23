@@ -73,7 +73,7 @@ class Weaviate(VectorStore):
                 data_properties[key] = metadatas[key]
 
             id = get_valid_uuid(uuid4())
-            self._client.batch.add_data_object(data_properties, "Document", id)
+            self._client.batch.add_data_object(data_properties, self._index_name, id)
         
         print("Texts successfully imported to Weaviate.")
 
