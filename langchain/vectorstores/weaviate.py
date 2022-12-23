@@ -7,6 +7,9 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
+from weaviate.util import get_valid_uuid
+from uuid import uuid4
+
 
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
@@ -49,11 +52,31 @@ class Weaviate(VectorStore):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
+
+
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
     ) -> List[str]:
-        """Not implemented for Weaviate yet."""
-        raise NotImplementedError("weaviate does not currently support `add_texts`.")
+        """Upload texts with metadata (properties) to Weaviate."""
+        self._client.batch.configure(
+        batch_size=16,
+        dynamic=True,
+        timeout_retries=3,
+        callback=None,
+        )
+
+        for doc in texts:
+            data_properties = {
+                self._text_key: doc[self._text_key],
+            }
+            for key in metadatas.keys():
+                data_properties[key] = metadatas[key]
+
+            id = get_valid_uuid(uuid4())
+            self._client.batch.add_data_object(data_properties, "Document", id)
+        
+        print("Texts successfully imported to Weaviate.")
+
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Look up similar documents in weaviate."""
