@@ -8,6 +8,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
+from langchain.llms.accelerate import Accelerate
 
 __all__ = [
     "Cohere",
@@ -17,6 +18,7 @@ __all__ = [
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
+    "Accelerate"
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -27,4 +29,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openai": OpenAI,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
+    "accelerate": Accelerate
 }
