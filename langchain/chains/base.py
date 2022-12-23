@@ -1,6 +1,7 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
+from langchain.tracing import get_tracer
 
 from pydantic import BaseModel, Extra, Field
 
@@ -104,7 +105,9 @@ class Chain(BaseModel, ABC):
             print(
                 f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
             )
+        get_tracer().start_chain_trace({"name": self.__class__.__name__}, inputs)
         outputs = self._call(inputs)
+        get_tracer().end_chain_trace(outputs)
         if self.verbose:
             print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
         self._validate_outputs(outputs)

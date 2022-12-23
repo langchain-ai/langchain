@@ -17,6 +17,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
+from langchain.tracing import get_tracer
 
 logger = logging.getLogger()
 
@@ -200,8 +201,10 @@ class AgentExecutor(Chain, BaseModel):
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
+                get_tracer().start_tool_trace({"name": str(chain)[:60] + "..."}, output.tool, output.tool_input)
                 # We then call the tool on the tool input to get an observation
                 observation = chain(output.tool_input)
+                get_tracer().end_tool_trace(observation)
                 color = color_mapping[output.tool]
             else:
                 observation = f"{output.tool} is not a valid tool, try another one."

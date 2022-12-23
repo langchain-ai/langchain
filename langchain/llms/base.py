@@ -1,6 +1,7 @@
 """Base interface for large language models to expose."""
 import json
 from abc import ABC, abstractmethod
+from langchain.tracing import get_tracer
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
 
@@ -48,7 +49,10 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return self._generate(prompts, stop=stop)
+            get_tracer().start_llm_trace({"name": self.__class__.__name__}, prompts)
+            output = self._generate(prompts, stop=stop)
+            get_tracer().end_llm_trace(output)
+            return output
         params = self._llm_dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -62,7 +66,9 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
+        get_tracer().start_llm_trace({"name": self.__class__.__name__}, missing_prompts)
         new_results = self._generate(missing_prompts, stop=stop)
+        get_tracer().end_llm_trace(new_results)
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]
