@@ -1,5 +1,3 @@
-import os
-
 # TODO Garbage collect loaded models on exit?!?
 # TODO Get Contextsizes for model IDs to impleme max_length=-1
 # TODO Implement bf16 and model nativ types
@@ -10,11 +8,32 @@ from pydantic import BaseModel, Extra
 from langchain.llms.base import BaseLLM, LLM
 from langchain.llms.utils import enforce_stop_tokens
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, pipeline
+import os
 
-DEFAULT_MODEL_NAME = "EleutherAI/gpt-neox-20b" # as of Huggingface
+DEFAULT_MODEL_NAME = "EleutherAI/gpt-neox-20b" # nme as of Huggingface
 
 
 class Accelerate(LLM, BaseModel):
+    """Interference on big models on consumer hardware with the help off
+    accelerate system. It distributes models that dont fit in video ram over multiple gpus
+    and system ram, and if needed to disk (not yet implemented).
+    A locl copy of the weights for much faster loading than hugging face standard is created.
+
+    Tested with 
+    "EleutherAI/gpt-neox-20b", "EleutherAI/gpt-j-6B", "facebook/opt-30b"
+
+    30b model needs ~64gb = RAM+VRM and on an RTX 3080 16GB and 64 GB RAM it takes 10 Sek per token.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import Accelerate
+            model_name = "facebook/opt-30b"
+            FastLLM = Accelerate.from_model_name(model_name=model_name)
+            print(FastLLM("Hello World"))
+
+    """
+
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     tokenizer:Any = None
@@ -64,9 +83,9 @@ class Accelerate(LLM, BaseModel):
             model,
             weights_path,
             device_map=device_map,
+            dtype="float16",
             offload_folder=None,
-            offload_state_dict=False,
-            dtype="float16"
+            offload_state_dict=False
         )
         return model
 
@@ -99,7 +118,7 @@ class Accelerate(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"model_id": self.model_id},
+            **{"model_name": self.model_name},
         }
 
     @property
