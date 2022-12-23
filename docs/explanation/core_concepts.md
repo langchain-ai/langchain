@@ -11,12 +11,12 @@ More complex iterations dynamically construct the template string from few shot 
 For a more detailed explanation of how LangChain approaches prompts and prompt templates, see [here](/examples/prompts/prompt_management).
 
 ## LLMs
-Wrappers around Large Language Models (in particular, the `generate` ability of large language models) are some of the core functionality of LangChain.
+Wrappers around Large Language Models (in particular, the `generate` ability of large language models) are some core functionality of LangChain.
 These wrappers are classes that are callable: they take in an input string, and return the generated output string.
 
 ## Embeddings
 These classes are very similar to the LLM classes in that they are wrappers around models, 
-but rather than return a string they return an embedding (list of floats). This are particularly useful when 
+but rather than return a string they return an embedding (list of floats). These are particularly useful when 
 implementing semantic search functionality. They expose separate methods for embedding queries versus embedding documents.
 
 ## Vectorstores
