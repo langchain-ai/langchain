@@ -41,5 +41,5 @@ more information on the company and the person, and then write them a sales mess
 
 ### [Question-Answering on a Web Browser](https://twitter.com/chillzaza_/status/1592961099384905730?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ)
 By Zahid Khawaja, this demo utilizes question answering to answer questions about a given website.
-A followup added this for [Youtube videos](https://twitter.com/chillzaza_/status/1593739682013220865?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ),
+A followup added this for [YouTube videos](https://twitter.com/chillzaza_/status/1593739682013220865?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ),
 and then another followup added it for [Wikipedia](https://twitter.com/chillzaza_/status/1594847151238037505?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ).
