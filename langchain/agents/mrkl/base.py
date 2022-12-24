@@ -1,6 +1,7 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from __future__ import annotations
 
+import re
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
@@ -28,22 +29,14 @@ class ChainConfig(NamedTuple):
 
 def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     """Parse out the action and input from the LLM output."""
-    ps = [p for p in llm_output.split("\n") if p]
-    if ps[-1].startswith("Final Answer"):
-        directive = ps[-1][len(FINAL_ANSWER_ACTION) :]
-        return "Final Answer", directive
-    if not ps[-1].startswith("Action Input: "):
-        raise ValueError(
-            "The last line does not have an action input, "
-            "something has gone terribly wrong."
-        )
-    if not ps[-2].startswith("Action: "):
-        raise ValueError(
-            "The second to last line does not have an action, "
-            "something has gone terribly wrong."
-        )
-    action = ps[-2][len("Action: ") :]
-    action_input = ps[-1][len("Action Input: ") :]
+    if FINAL_ANSWER_ACTION in llm_output:
+        return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1]
+    regex = r"Action: (.*?)\nAction Input: (.*)"
+    match = re.search(regex, llm_output)
+    if not match:
+        raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+    action = match.group(1)
+    action_input = match.group(2)
     return action, action_input.strip(" ").strip('"')
 
 
