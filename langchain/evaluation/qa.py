@@ -40,9 +40,15 @@ class QAEvaluator:
         return Counter([output["grade"] for output in evaluated_outputs])
 
     def run_eval(self, predictions: List[dict]):
-        """Run the evaluation chain."""
-        return self.evaluation_chain.apply(predictions)
-
+        """Run the evaluation chain. Correcting it to all caps, as needed."""
+        e = self.evaluation_chain.apply(predictions)
+        for i, v in enumerate(e):
+            if "Correct" in v:
+                e[i] = "CORRECT"
+            if "Incorrect" in v:
+                e[i] = "INCORRECT"
+        return e
+    
     def run_and_score(self, examples: List[dict], chain):
         """Run and score predictions."""
         predictions = chain.apply(examples)
