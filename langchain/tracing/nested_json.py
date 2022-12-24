@@ -17,15 +17,13 @@ class JsonTracer(BaseTracer):
     """An implementation of the Tracer interface that prints trace as nested json."""
 
     _instance = None
+    _stack = []
+    _execution_order = 1
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(JsonTracer, cls).__new__(cls)
         return cls._instance
-
-    def __init__(self):
-        self._stack = []
-        self._execution_order = 1
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""

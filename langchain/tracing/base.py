@@ -1,4 +1,5 @@
 """Base interface for logging runs."""
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -31,7 +32,11 @@ class LLMRun(Run):
 class ChainRun(Run):
     inputs: Dict[str, Any]
     outputs: Optional[Dict[str, Any]]
-    child_runs: List[Run]
+    child_runs: List[Run]  # Consolidated child runs
+
+    child_llm_runs: List[LLMRun]
+    child_chain_runs: List[ChainRun]
+    child_tool_runs: List[ToolRun]
 
 
 @dataclass_json
@@ -40,7 +45,11 @@ class ToolRun(Run):
     tool_input: str
     output: Optional[str]
     action: str
-    child_runs: List[Run]
+    child_runs: List[Run]  # Consolidated child runs
+
+    child_llm_runs: List[LLMRun]
+    child_chain_runs: List[ChainRun]
+    child_tool_runs: List[ToolRun]
 
 
 class TracerException(Exception):
