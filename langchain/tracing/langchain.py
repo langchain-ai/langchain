@@ -1,8 +1,8 @@
-"""An implementation of the Tracer interface that prints trace as nested json."""
+"""An implementation of the Tracer interface that POSTS to the langchain endpoint."""
 
 import datetime
-import uuid
 from typing import Any, Dict, List, Optional, Union
+import requests
 
 from langchain.tracing.base import (
     BaseTracer,
@@ -14,16 +14,17 @@ from langchain.tracing.base import (
 )
 
 
-class JsonTracer(BaseTracer):
-    """An implementation of the Tracer interface that prints trace as nested json."""
+class LangChainTracer(BaseTracer):
+    """An implementation of the Tracer interface that POSTS to the langchain endpoint."""
 
     _instance = None
     _stack: List[Run] = None
     _execution_order: int = None
+    _endpoint: str = None
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "JsonTracer":
+    def __new__(cls, *args: Any, **kwargs: Any) -> "LangChainTracer":
         if cls._instance is None:
-            cls._instance = super(JsonTracer, cls).__new__(cls)
+            cls._instance = super(LangChainTracer, cls).__new__(cls)
         return cls._instance
 
     def __init__(self) -> None:
@@ -31,6 +32,8 @@ class JsonTracer(BaseTracer):
             self._stack = []
         if self._execution_order is None:
             self._execution_order = 1
+        if self._endpoint is None:
+            self._endpoint = "http://127.0.0.1:5000"
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
@@ -45,7 +48,12 @@ class JsonTracer(BaseTracer):
                 raise TracerException(
                     f"Nested {run.__class__.__name__} can only be logged inside a ChainRun or ToolRun"
                 )
-            self._stack[-1].child_runs.append(run)
+            if isinstance(run, LLMRun):
+                self._stack[-1].child_llm_runs.append(run)
+            elif isinstance(run, ChainRun):
+                self._stack[-1].child_chain_runs.append(run)
+            else:
+                self._stack[-1].child_tool_runs.append(run)
         self._stack.append(run)
 
     def _end_trace(self) -> None:
@@ -54,7 +62,14 @@ class JsonTracer(BaseTracer):
         run = self._stack.pop()
         if not self._stack:
             self._execution_order = 1
-            print(run.to_json(indent=2))
+            if isinstance(run, LLMRun):
+                endpoint = f"{self._endpoint}/llm-runs"
+            elif isinstance(run, ChainRun):
+                endpoint = f"{self._endpoint}/chain-runs"
+            else:
+                endpoint = f"{self._endpoint}/tool-runs"
+            r = requests.post(endpoint, data=run.to_json(), headers={"Content-Type": "application/json"})
+            print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
 
     def start_llm_trace(
         self, serialized: Dict[str, Any], prompts: List[str], **extra: str
@@ -68,9 +83,9 @@ class JsonTracer(BaseTracer):
             start_time=datetime.datetime.utcnow(),
             error=None,
             execution_order=self._execution_order,
-            id=str(uuid.uuid4()),
             response=None,
             end_time=None,
+            id=None
         )
         self._start_trace(llm_run)
 
@@ -100,10 +115,10 @@ class JsonTracer(BaseTracer):
             start_time=datetime.datetime.utcnow(),
             error=None,
             execution_order=self._execution_order,
-            id=str(uuid.uuid4()),
             outputs=None,
             end_time=None,
             child_runs=[],
+            id=None
         )
         self._start_trace(chain_run)
 
@@ -134,10 +149,10 @@ class JsonTracer(BaseTracer):
             start_time=datetime.datetime.utcnow(),
             error=None,
             execution_order=self._execution_order,
-            id=str(uuid.uuid4()),
             output=None,
             end_time=None,
             child_runs=[],
+            id=None
         )
         self._start_trace(tool_run)
 

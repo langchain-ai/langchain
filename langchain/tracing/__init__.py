@@ -4,6 +4,7 @@ from langchain.tracing.base import BaseTracer
 from langchain.tracing.nested_json import JsonTracer
 from langchain.tracing.noop import NoOpTracer
 from langchain.tracing.stdout import StdOutTracer
+from langchain.tracing.langchain import LangChainTracer
 
 
 def get_tracer() -> BaseTracer:
@@ -15,6 +16,8 @@ def get_tracer() -> BaseTracer:
             return StdOutTracer()
         elif tracer == "nested_json":
             return JsonTracer()
+        elif tracer == "langchain":
+            return LangChainTracer()
         else:
             raise ValueError(f"Unknown tracer {tracer}")
 

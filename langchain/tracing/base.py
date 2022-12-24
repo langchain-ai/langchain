@@ -1,7 +1,7 @@
 """Base interface for logging runs."""
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -11,7 +11,7 @@ from dataclasses_json import dataclass_json
 @dataclass_json
 @dataclass
 class Run:
-    id: Union[int, str]
+    id: Optional[Union[int, str]]
     start_time: datetime
     end_time: Optional[datetime]
     extra: Dict[str, Any]
@@ -32,11 +32,11 @@ class LLMRun(Run):
 class ChainRun(Run):
     inputs: Dict[str, Any]
     outputs: Optional[Dict[str, Any]]
-    child_runs: List[Run]  # Consolidated child runs
+    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
 
-    child_llm_runs: List[LLMRun]
-    child_chain_runs: List[ChainRun]
-    child_tool_runs: List[ToolRun]
+    child_llm_runs: List[LLMRun] = field(default_factory=list)
+    child_chain_runs: List[ChainRun] = field(default_factory=list)
+    child_tool_runs: List[ToolRun] = field(default_factory=list)
 
 
 @dataclass_json
@@ -45,11 +45,11 @@ class ToolRun(Run):
     tool_input: str
     output: Optional[str]
     action: str
-    child_runs: List[Run]  # Consolidated child runs
+    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
 
-    child_llm_runs: List[LLMRun]
-    child_chain_runs: List[ChainRun]
-    child_tool_runs: List[ToolRun]
+    child_llm_runs: List[LLMRun] = field(default_factory=list)
+    child_chain_runs: List[ChainRun] = field(default_factory=list)
+    child_tool_runs: List[ToolRun] = field(default_factory=list)
 
 
 class TracerException(Exception):
