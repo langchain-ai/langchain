@@ -13,17 +13,19 @@ from langchain.tracing.base import (
 )
 
 
-class NestedJsonTracer(BaseTracer):
+class JsonTracer(BaseTracer):
     """An implementation of the Tracer interface that prints trace as nested json."""
 
     _instance = None
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(NestedJsonTracer, cls).__new__(cls)
-            cls._instance._stack = []
-            cls._instance._execution_order = 1
+            cls._instance = super(JsonTracer, cls).__new__(cls)
         return cls._instance
+
+    def __init__(self):
+        self._stack = []
+        self._execution_order = 1
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
