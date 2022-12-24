@@ -88,14 +88,15 @@ class Chain(BaseModel, ABC):
 
         """
         if not isinstance(inputs, dict):
-            if len(self.input_keys) != 1:
+            potential_input_keys = set(self.input_keys).difference(self.memory.memory_variables)
+            if len(potential_input_keys) != 1:
                 raise ValueError(
                     f"A single string input was passed in, but this chain expects "
-                    f"multiple inputs ({self.input_keys}). When a chain expects "
+                    f"multiple inputs ({potential_input_keys}). When a chain expects "
                     f"multiple inputs, please call it by passing in a dictionary, "
                     "eg `chain({'foo': 1, 'bar': 2})`"
                 )
-            inputs = {self.input_keys[0]: inputs}
+            inputs = {list(potential_input_keys)[0]: inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
