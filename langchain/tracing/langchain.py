@@ -2,6 +2,7 @@
 
 import datetime
 from typing import Any, Dict, List, Optional, Union
+
 import requests
 
 from langchain.tracing.base import (
@@ -68,8 +69,14 @@ class LangChainTracer(BaseTracer):
                 endpoint = f"{self._endpoint}/chain-runs"
             else:
                 endpoint = f"{self._endpoint}/tool-runs"
-            r = requests.post(endpoint, data=run.to_json(), headers={"Content-Type": "application/json"})
-            print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
+            r = requests.post(
+                endpoint,
+                data=run.to_json(),
+                headers={"Content-Type": "application/json"},
+            )
+            print(
+                f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}"
+            )
 
     def start_llm_trace(
         self, serialized: Dict[str, Any], prompts: List[str], **extra: str
@@ -85,7 +92,7 @@ class LangChainTracer(BaseTracer):
             execution_order=self._execution_order,
             response=None,
             end_time=None,
-            id=None
+            id=None,
         )
         self._start_trace(llm_run)
 
@@ -118,7 +125,7 @@ class LangChainTracer(BaseTracer):
             outputs=None,
             end_time=None,
             child_runs=[],
-            id=None
+            id=None,
         )
         self._start_trace(chain_run)
 
@@ -152,7 +159,7 @@ class LangChainTracer(BaseTracer):
             output=None,
             end_time=None,
             child_runs=[],
-            id=None
+            id=None,
         )
         self._start_trace(tool_run)
 
