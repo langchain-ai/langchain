@@ -1,7 +1,7 @@
 # Tools
 
 Tools are functions that agents can use to interact with the world.
-These tools can be generic utilities (eg search), other chains, or even other agents.
+These tools can be generic utilities (e.g. search), other chains, or even other agents.
 
 Currently, tools can be loaded with the following snippet:
 
@@ -11,7 +11,7 @@ tool_names = [...]
 tools = load_tools(tool_names)
 ```
 
-Some tools (eg chains, agents) may require a base LLM to use to initialize them.
+Some tools (e.g. chains, agents) may require a base LLM to use to initialize them.
 In that case, you can pass in an LLM as well:
 
 ```python
@@ -57,13 +57,13 @@ Below is a list of all supported tools and relevant information:
 
 **pal-math**
 - Tool Name: PAL-MATH
-- Tool Description: A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.
+- Tool Description: A language model that is excellent at solving complex word math problems. Input should be a fully worded hard word math problem.
 - Notes: Based on [this paper](https://arxiv.org/pdf/2211.10435.pdf).
 - Requires LLM: Yes
 
 **pal-colored-objects**
 - Tool Name: PAL-COLOR-OBJ
-- Tool Description: A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.
+- Tool Description: A language model that is wonderful at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.
 - Notes: Based on [this paper](https://arxiv.org/pdf/2211.10435.pdf).
 - Requires LLM: Yes
 
@@ -91,4 +91,4 @@ Below is a list of all supported tools and relevant information:
 - Tool Description: Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.
 - Notes: A natural language connection to the TMDB API (`https://api.themoviedb.org/3`), specifically the `/search/movie` endpoint.
 - Requires LLM: Yes
-- Extra Parameters: `tmdb_bearer_token` (your Bearer Token to access this endpoint - note that this is different than the API key)
+- Extra Parameters: `tmdb_bearer_token` (your Bearer Token to access this endpoint - note that this is different from the API key)
