@@ -9,6 +9,8 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Custom Agent <agents/custom_agent.ipynb>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
 
+`Multi Input Tools <agents/multi_input_tool.ipynb>`_: How to use a tool that requires multiple inputs with an agent.
+
 
 The next set of examples are all end-to-end agents for specific applications.
 In all examples there is an Agent with a particular set of tools.
