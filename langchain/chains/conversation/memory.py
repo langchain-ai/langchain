@@ -186,12 +186,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
             pruned_memory = self.buffer[:-self.k]
             chain = LLMChain(llm=self.llm, prompt=self.prompt)
             self.moving_summary_buffer = chain.predict(summary=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory)))
-            self.buffer = self.buffer[-5:]
-
-    def restore_memory_variables(self, _moving_summary_buffer: str, _buffer: List[str]) -> None:
-        """Restore memory contents from previous sessions"""
-        self.buffer = _buffer
-        self.moving_summary_buffer = _moving_summary_buffer
+            self.buffer = self.buffer[-self.k:]
 
     def clear(self) -> None:
         """Clear memory contents."""
