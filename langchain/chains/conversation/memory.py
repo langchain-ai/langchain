@@ -130,3 +130,70 @@ class ConversationSummaryMemory(Memory, BaseModel):
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = ""
+
+class ConversationSummaryBufferMemory(Memory, BaseModel):
+    """Buffer with summarizer for storing conversation memory."""
+
+    buffer: List[str] = Field(default_factory=list)
+    k: int = 5 
+    moving_summary_buffer: str = ""
+    llm: BaseLLM
+    prompt: BasePromptTemplate = SUMMARY_PROMPT
+    memory_key: str = "history"
+
+    @property
+    def memory_variables(self) -> List[str]:
+        """Will always return list of memory variables.
+
+        :meta private:
+        """
+        return [self.memory_key]
+
+    def to_json(self) -> Dict[str, str]:
+        return {
+            "buffer": self.buffer, 
+            "moving_summary_buffer": self.moving_summary_buffer
+        }
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return history buffer."""
+        if self.moving_summary_buffer == "":
+            return {self.memory_key: "\n".join(self.buffer[-self.k :])}
+        return {self.memory_key: ("\n" + self.moving_summary_buffer + "\n".join(self.buffer[-self.k :]))}
+
+    @root_validator()
+    def validate_prompt_input_variables(cls, values: Dict) -> Dict:
+        """Validate that prompt input variables are consistent."""
+        prompt_variables = values["prompt"].input_variables
+        expected_keys = {"summary", "new_lines"}
+        if expected_keys != set(prompt_variables):
+            raise ValueError(
+                "Got unexpected prompt input variables. The prompt expects "
+                f"{prompt_variables}, but it should have {expected_keys}."
+            )
+        return values
+
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save context from this conversation to buffer."""
+        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if len(outputs) != 1:
+            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        human = f"Human: {inputs[prompt_input_key]}"
+        ai = f"Assistant: {list(outputs.values())[0]}"
+        new_lines = "\n".join([human, ai])
+        self.buffer.append(new_lines)
+        if len(self.buffer) > self.k:
+            pruned_memory = self.buffer[:-self.k]
+            chain = LLMChain(llm=self.llm, prompt=self.prompt)
+            self.moving_summary_buffer = chain.predict(summary=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory)))
+            self.buffer = self.buffer[-5:]
+
+    def restore_memory_variables(self, _moving_summary_buffer: str, _buffer: List[str]) -> None:
+        """Restore memory contents from previous sessions"""
+        self.buffer = _buffer
+        self.moving_summary_buffer = _moving_summary_buffer
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.buffer = []
+        self.moving_summary_buffer = ""
