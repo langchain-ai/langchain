@@ -1,5 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
 
@@ -106,5 +106,19 @@ class LLMChain(Chain, BaseModel):
         result = self.predict(**kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
+        else:
+            return result
+
+    def apply_and_parse(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        """Call apply and then parse the results."""
+        result = self.apply(input_list)
+        if self.prompt.output_parser is not None:
+            new_result = []
+            for res in result:
+                text = res[self.output_key]
+                new_result.append(self.prompt.output_parser.parse(text))
+            return new_result
         else:
             return result
