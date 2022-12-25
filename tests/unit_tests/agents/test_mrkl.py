@@ -34,6 +34,21 @@ def test_get_final_answer() -> None:
     assert action_input == "1994"
 
 
+def test_get_final_answer_multiline() -> None:
+    """Test getting final answer that is multiline."""
+    llm_output = (
+        "Thought: I need to search for NBA\n"
+        "Action: Search\n"
+        "Action Input: NBA\n"
+        "Observation: founded in 1994 and 1993\n"
+        "Thought: I can now answer the question\n"
+        "Final Answer: 1994\n1993"
+    )
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Final Answer"
+    assert action_input == "1994\n1993"
+
+
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
     llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
