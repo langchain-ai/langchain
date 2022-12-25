@@ -3,6 +3,8 @@
 import datetime
 import uuid
 from typing import Any, Dict, List, Optional, Union
+import threading
+from dataclasses import dataclass, field
 
 from langchain.tracing.base import (
     BaseTracer,
@@ -14,46 +16,58 @@ from langchain.tracing.base import (
 )
 
 
-class JsonTracer(BaseTracer):
-    """An implementation of the Tracer interface that prints trace as nested json."""
+class Singleton:
+    """A thread-safe singleton class that can be inherited from."""
 
     _instance = None
-    _stack: List[Run] = None
-    _execution_order: int = None
+    _lock = threading.Lock()
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "JsonTracer":
+    def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(JsonTracer, cls).__new__(cls)
+            with cls._lock:
+                # Another thread could have created the instance
+                # before we acquired the lock. So check that the
+                # instance is still nonexistent.
+                if not cls._instance:
+                    cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self) -> None:
-        if self._stack is None:
-            self._stack = []
-        if self._execution_order is None:
-            self._execution_order = 1
+
+@dataclass
+class TracerStack(threading.local):
+    """A stack of runs used for logging."""
+
+    stack: List[Union[LLMRun, ChainRun, ToolRun]] = field(default_factory=list)
+    execution_order: int = 1
+
+
+class JsonTracer(Singleton, BaseTracer):
+    """An implementation of the Tracer interface that prints trace as nested json."""
+
+    _tracer_stack = TracerStack()
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
 
-        self._execution_order += 1
+        self._tracer_stack.execution_order += 1
 
-        if self._stack:
+        if self._tracer_stack.stack:
             if not (
-                isinstance(self._stack[-1], ChainRun)
-                or isinstance(self._stack[-1], ToolRun)
+                isinstance(self._tracer_stack.stack[-1], ChainRun)
+                or isinstance(self._tracer_stack.stack[-1], ToolRun)
             ):
                 raise TracerException(
                     f"Nested {run.__class__.__name__} can only be logged inside a ChainRun or ToolRun"
                 )
-            self._stack[-1].child_runs.append(run)
-        self._stack.append(run)
+            self._tracer_stack.stack[-1].child_runs.append(run)
+        self._tracer_stack.stack.append(run)
 
     def _end_trace(self) -> None:
         """End a trace for a run."""
 
-        run = self._stack.pop()
-        if not self._stack:
-            self._execution_order = 1
+        run = self._tracer_stack.stack.pop()
+        if not self._tracer_stack.stack:
+            self._tracer_stack.execution_order = 1
             print(run.to_json(indent=2))
 
     def start_llm_trace(
@@ -67,7 +81,7 @@ class JsonTracer(BaseTracer):
             extra=extra,
             start_time=datetime.datetime.utcnow(),
             error=None,
-            execution_order=self._execution_order,
+            execution_order=self._tracer_stack.execution_order,
             id=str(uuid.uuid4()),
             response=None,
             end_time=None,
@@ -79,12 +93,12 @@ class JsonTracer(BaseTracer):
     ) -> None:
         """End a trace for an LLM run."""
 
-        if not self._stack or not isinstance(self._stack[-1], LLMRun):
+        if not self._tracer_stack.stack or not isinstance(self._tracer_stack.stack[-1], LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
-        self._stack[-1].response = response
-        self._stack[-1].error = error
+        self._tracer_stack.stack[-1].end_time = datetime.datetime.utcnow()
+        self._tracer_stack.stack[-1].response = response
+        self._tracer_stack.stack[-1].error = error
 
         self._end_trace()
 
@@ -99,7 +113,7 @@ class JsonTracer(BaseTracer):
             extra=extra,
             start_time=datetime.datetime.utcnow(),
             error=None,
-            execution_order=self._execution_order,
+            execution_order=self._tracer_stack.execution_order,
             id=str(uuid.uuid4()),
             outputs=None,
             end_time=None,
@@ -112,12 +126,12 @@ class JsonTracer(BaseTracer):
     ) -> None:
         """End a trace for a chain run."""
 
-        if not self._stack or not isinstance(self._stack[-1], ChainRun):
+        if not self._tracer_stack.stack or not isinstance(self._tracer_stack.stack[-1], ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
-        self._stack[-1].outputs = outputs
-        self._stack[-1].error = error
+        self._tracer_stack.stack[-1].end_time = datetime.datetime.utcnow()
+        self._tracer_stack.stack[-1].outputs = outputs
+        self._tracer_stack.stack[-1].error = error
 
         self._end_trace()
 
@@ -133,7 +147,7 @@ class JsonTracer(BaseTracer):
             extra=extra,
             start_time=datetime.datetime.utcnow(),
             error=None,
-            execution_order=self._execution_order,
+            execution_order=self._tracer_stack.execution_order,
             id=str(uuid.uuid4()),
             output=None,
             end_time=None,
@@ -144,11 +158,11 @@ class JsonTracer(BaseTracer):
     def end_tool_trace(self, output: str, error: Optional[str] = None) -> None:
         """End a trace for a tool run."""
 
-        if not self._stack or not isinstance(self._stack[-1], ToolRun):
+        if not self._tracer_stack.stack or not isinstance(self._tracer_stack.stack[-1], ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
-        self._stack[-1].output = output
-        self._stack[-1].error = error
+        self._tracer_stack.stack[-1].end_time = datetime.datetime.utcnow()
+        self._tracer_stack.stack[-1].output = output
+        self._tracer_stack.stack[-1].error = error
 
         self._end_trace()
