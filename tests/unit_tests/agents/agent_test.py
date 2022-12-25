@@ -1,9 +1,10 @@
+import concurrent.futures
 import os
+import threading
+
 from langchain import LLMMathChain, SerpAPIWrapper
 from langchain.agents import Tool, initialize_agent
 from langchain.llms import OpenAI
-import threading
-import concurrent.futures
 
 
 def main():
@@ -38,13 +39,13 @@ def main():
         "Who won the US Open men's tennis final in 2019? What is his age raised to the second power??",
         "Who won the US Open men's tennis final in 2022? What is his age raised to the third power??",
         "Who won the US Open men's tennis final in 2022? What is his age raised to the second power??",
-        "Who won the US Open men's tennis final in 2022? What is his age raised to the fourth power??"
+        "Who won the US Open men's tennis final in 2022? What is his age raised to the fourth power??",
     ]
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
-        for input in inputs[:3]:
-            futures.append(executor.submit(agent.run, input))
+        for i in inputs[:3]:
+            futures.append(executor.submit(agent.run, i))
         for future in concurrent.futures.as_completed(futures):
             print(future.result())
 
