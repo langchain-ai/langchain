@@ -12,9 +12,9 @@ The following use cases require specific installs and api keys:
 - _Cohere_:
   - Install requirements with `pip install cohere`
   - Get a Cohere api key and either set it as an environment variable (`COHERE_API_KEY`) or pass it to the LLM constructor as `cohere_api_key`.
-- _HuggingFace Hub_
+- _Hugging Face Hub_
   - Install requirements with `pip install huggingface_hub`
-  - Get a HuggingFace Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
+  - Get a Hugging Face Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
 - _SerpAPI_:
   - Install requirements with `pip install google-search-results`
   - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
