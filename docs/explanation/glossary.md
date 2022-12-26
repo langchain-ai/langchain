@@ -42,7 +42,7 @@ Resources:
 
 ### Prompt Chaining
 
-Combining multiple LLM calls together, with the output of one step being the input to the next. 
+Combining multiple LLM calls together, with the output of one-step being the input to the next. 
 
 Resources: 
 - [PromptChainer Paper](https://arxiv.org/pdf/2203.06566.pdf)

@@ -2,12 +2,12 @@
 
 ## Overview
 
-Language models are trained on large amounts of unstructured data, which makes them really good at general purpose text generation. However, there are many instances where you may want the language model to generate text based not on generic data but rather on specific data. Some common examples of this include:
+Language models are trained on large amounts of unstructured data, which makes them fantastic at general purpose text generation. However, there are many instances where you may want the language model to generate text based not on generic data but rather on specific data. Some common examples of this include:
 
-- Summarization of a specific piece of text (a website, a private document, etc)
-- Question answering over a specific piece of text (a website, a private document, etc)
-- Question answering over multiple pieces of text (multiple websites, multiple private documents, etc)
-- Using the results of some external call to an API (results from a SQL query, etc)
+- Summarization of a specific piece of text (a website, a private document, etc.)
+- Question answering over a specific piece of text (a website, a private document, etc.)
+- Question answering over multiple pieces of text (multiple websites, multiple private documents, etc.)
+- Using the results of some external call to an API (results from a SQL query, etc.)
 
 All of these examples are instances when you do not want the LLM to generate text based solely on the data it was trained over, but rather you want it to incorporate other external data in some way. At a high level, this process can be broken down into two steps:
 
@@ -25,7 +25,7 @@ This paper introduces RAG models where the parametric memory is a pre-trained se
 **[REALM](https://arxiv.org/abs/2002.08909):** Retrieval-Augmented Language Model Pre-Training. 
 To capture knowledge in a more modular and interpretable way, this paper augments language model pre-training with a latent knowledge retriever, which allows the model to retrieve and attend over documents from a large corpus such as Wikipedia, used during pre-training, fine-tuning and inference.
 
-**[HayStack](https://haystack.deepset.ai/):** This is not a paper, but rather an open source library aimed at semantic search, question answering, summarization, and document ranking for a wide range of NLP applications. The underpinnings of this library are focused on the same `fetching` and `augmenting` concepts discussed here, and incorporate some of the methods in the above papers.
+**[HayStack](https://haystack.deepset.ai/):** This is not a paper, but rather an open source library aimed at semantic search, question answering, summarization, and document ranking for a wide range of NLP applications. The underpinnings of this library are focused on the same `fetching` and `augmenting` concepts discussed here, and incorporate some methods in the above papers.
 
 These papers/open-source projects are centered around retrieval of documents, which is important for question-answering tasks over a large corpus of documents (which is how they are evaluated). However, we use the terminology of `Data Augmented Generation` to highlight that retrieval from some document store is only one possible way of fetching relevant data to include. Other methods to fetch relevant data could involve hitting an API, querying a database, or just working with user provided data (eg a specific document that they want to summarize).
 
@@ -50,7 +50,7 @@ to synthesize those results.
 There are two big issues to deal with in fetching:
 
 1. Fetching small enough pieces of information
-2. Not fetching too many pieces of information (eg fetching only the most relevant pieces)
+2. Not fetching too many pieces of information (e.g. fetching only the most relevant pieces)
 
 ### Text Splitting
 One big issue with all of these methods is how to make sure you are working with pieces of text that are not too large.
@@ -111,13 +111,13 @@ This method involves an initial prompt on the first chunk of data, generating so
 For the remaining documents, that output is passed in, along with the next document, 
 asking the LLM to refine the output based on the new document. 
 
-**Pros:** Can pull in more relevant context, and may be less lossy than `RefineDocumentsChain`.
+**Pros:** Can pull in more relevant context, and may be less lossy than `MapReduceDocumentsChain`.
 
 **Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be paralleled like `MapReduceDocumentsChain`. There is also some potential dependencies on the ordering of the documents.
 
 ## Use Cases
 LangChain supports the above three methods of augmenting LLMs with external data.
-These methods can be used to underpin several common use cases and they are discussed below.
+These methods can be used to underpin several common use cases, and they are discussed below.
 For all three of these use cases, all three methods are supported.
 It is important to note that a large part of these implementations is the prompts
 that are used. We provide default prompts for all three use cases, but these can be configured.
