@@ -22,6 +22,8 @@ def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -
 class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
+    ai_prefix: str = "AI"
+    """Prefix to use for AI generated responses."""
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:
 
@@ -43,7 +45,7 @@ class ConversationBufferMemory(Memory, BaseModel):
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
         human = "Human: " + inputs[prompt_input_key]
-        ai = "AI: " + outputs[list(outputs.keys())[0]]
+        ai = f"{self.ai_prefix}: " + outputs[list(outputs.keys())[0]]
         self.buffer += "\n" + "\n".join([human, ai])
 
     def clear(self) -> None:
@@ -54,6 +56,8 @@ class ConversationBufferMemory(Memory, BaseModel):
 class ConversationalBufferWindowMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
+    ai_prefix: str = "AI"
+    """Prefix to use for AI generated responses."""
     buffer: List[str] = Field(default_factory=list)
     memory_key: str = "history"  #: :meta private:
     k: int = 5
@@ -76,7 +80,7 @@ class ConversationalBufferWindowMemory(Memory, BaseModel):
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
         human = "Human: " + inputs[prompt_input_key]
-        ai = "AI: " + outputs[list(outputs.keys())[0]]
+        ai = f"{self.ai_prefix}: " + outputs[list(outputs.keys())[0]]
         self.buffer.append("\n".join([human, ai]))
 
     def clear(self) -> None:
@@ -88,6 +92,8 @@ class ConversationSummaryMemory(Memory, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
+    ai_prefix: str = "AI"
+    """Prefix to use for AI generated responses."""
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
@@ -122,7 +128,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"AI: {list(outputs.values())[0]}"
+        ai = f"{self.ai_prefix}: {list(outputs.values())[0]}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
@@ -131,15 +137,18 @@ class ConversationSummaryMemory(Memory, BaseModel):
         """Clear memory contents."""
         self.buffer = ""
 
+
 class ConversationSummaryBufferMemory(Memory, BaseModel):
     """Buffer with summarizer for storing conversation memory."""
 
     buffer: List[str] = Field(default_factory=list)
-    max_token_limit: int = 256
+    max_token_limit: int = 2000
     moving_summary_buffer: str = ""
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"
+    ai_prefix: str = "AI"
+    """Prefix to use for AI generated responses."""
 
     @property
     def memory_variables(self) -> List[str]:
@@ -149,17 +158,12 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
         """
         return [self.memory_key]
 
-    def to_json(self) -> Dict[str, str]:
-        return {
-            "buffer": self.buffer, 
-            "moving_summary_buffer": self.moving_summary_buffer
-        }
-
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
         if self.moving_summary_buffer == "":
             return {self.memory_key: "\n".join(self.buffer)}
-        return {self.memory_key: ("\n" + self.moving_summary_buffer + "\n" + "\n".join(self.buffer))}
+        memory_val = self.moving_summary_buffer + "\n" + "\n".join(self.buffer)
+        return {self.memory_key: memory_val}
 
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
@@ -173,13 +177,14 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
             )
         return values
 
-    def get_num_tokens_list(self, arr: List[int]) -> List[int]:
+    def get_num_tokens_list(self, arr: List[str]) -> List[int]:
+        """Get list of number of tokens in each string in the input array."""
         try:
             import tiktoken
         except ImportError:
             raise ValueError(
                 "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
+                "This is needed in order to calculate get_num_tokens_list. "
                 "Please it install it with `pip install tiktoken`."
             )
         # create a GPT-3 encoder instance
@@ -197,16 +202,20 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
         if len(outputs) != 1:
             raise ValueError(f"One output key expected, got {outputs.keys()}")
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"Assistant: {list(outputs.values())[0]}\n"
+        ai = f"{self.ai_prefix}: {list(outputs.values())[0]}"
         new_lines = "\n".join([human, ai])
         self.buffer.append(new_lines)
         # Prune buffer if it exceeds max token limit
         curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
-        while curr_buffer_length > self.max_token_limit:
-            pruned_memory = self.buffer.pop(0)
+        if curr_buffer_length > self.max_token_limit:
+            pruned_memory = []
+            while curr_buffer_length > self.max_token_limit:
+                pruned_memory.append(self.buffer.pop(0))
+                curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
             chain = LLMChain(llm=self.llm, prompt=self.prompt)
-            self.moving_summary_buffer = chain.predict(summary=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory)))
-            curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
+            self.moving_summary_buffer = chain.predict(
+                summary=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory))
+            )
 
     def clear(self) -> None:
         """Clear memory contents."""
