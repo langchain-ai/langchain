@@ -2,13 +2,11 @@
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
+from uuid import uuid4
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-
-from weaviate.util import get_valid_uuid
-from uuid import uuid4
 
 
 class Weaviate(VectorStore):
@@ -52,31 +50,26 @@ class Weaviate(VectorStore):
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
-
-
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
     ) -> List[str]:
         """Upload texts with metadata (properties) to Weaviate."""
-        self._client.batch.configure(
-        batch_size=16,
-        dynamic=True,
-        timeout_retries=3,
-        callback=None,
-        )
+        from weaviate.util import get_valid_uuid
 
-        for doc in texts:
-            data_properties = {
-                self._text_key: doc[self._text_key],
-            }
-            for key in metadatas.keys():
-                data_properties[key] = metadatas[key]
+        with self._client.batch as batch:
+            ids = []
+            for i, doc in enumerate(texts):
+                data_properties = {
+                    self._text_key: doc,
+                }
+                if metadatas is not None:
+                    for key in metadatas[i].keys():
+                        data_properties[key] = metadatas[i][key]
 
-            id = get_valid_uuid(uuid4())
-            self._client.batch.add_data_object(data_properties, self._index_name, id)
-        
-        print("Texts successfully imported to Weaviate.")
-
+                _id = get_valid_uuid(uuid4())
+                batch.add_data_object(data_properties, self._index_name, _id)
+                ids.append(_id)
+        return ids
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Look up similar documents in weaviate."""
