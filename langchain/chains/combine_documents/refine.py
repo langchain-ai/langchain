@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BaseOutputParser, BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 
 
@@ -73,6 +73,11 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                     f"not found in llm_chain input_variables: {llm_chain_variables}"
                 )
         return values
+
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        """Output parser to use for results of combine_docs."""
+        return self.refine_llm_chain.prompt.output_parser
 
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""

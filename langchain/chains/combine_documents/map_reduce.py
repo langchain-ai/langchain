@@ -9,6 +9,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
+from langchain.prompts.base import BaseOutputParser
 
 
 def _split_list_of_docs(
@@ -112,6 +113,11 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             return self.collapse_document_chain
         else:
             return self.combine_document_chain
+
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        """Output parser to use for results of combine_docs."""
+        return self.combine_document_chain.output_parser
 
     def combine_docs(
         self, docs: List[Document], token_max: int = 3000, **kwargs: Any

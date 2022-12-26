@@ -1,12 +1,13 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
+from langchain.prompts.base import BaseOutputParser
 
 
 class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
@@ -41,6 +42,21 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
     @abstractmethod
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine documents into a single string."""
+
+    @abstractmethod
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        """Output parser to use for results of combine_docs."""
+
+    def combine_and_parse(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Union[str, List[str], Dict[str, str]]:
+        """Combine documents and parse the result."""
+        result, _ = self.combine_docs(docs, **kwargs)
+        if self.output_parser is not None:
+            return self.output_parser.parse(result)
+        else:
+            return result
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_key]
