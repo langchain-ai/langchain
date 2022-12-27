@@ -53,7 +53,7 @@ class ConversationBufferMemory(Memory, BaseModel):
         self.buffer = ""
 
 
-class ConversationalBufferWindowMemory(Memory, BaseModel):
+class ConversationBufferWindowMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
 
     ai_prefix: str = "AI"
@@ -86,6 +86,10 @@ class ConversationalBufferWindowMemory(Memory, BaseModel):
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = []
+
+
+# For legacy naming reasons
+ConversationalBufferWindowMemory = ConversationBufferWindowMemory
 
 
 class ConversationSummaryMemory(Memory, BaseModel):
@@ -179,22 +183,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
 
     def get_num_tokens_list(self, arr: List[str]) -> List[int]:
         """Get list of number of tokens in each string in the input array."""
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens_list. "
-                "Please it install it with `pip install tiktoken`."
-            )
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding("gpt2")
-
-        # encode the list of text using the GPT-3 encoder
-        tokenized_text = enc.encode_ordinary_batch(arr)
-
-        # calculate the number of tokens for each encoded text in the list
-        return [len(x) for x in tokenized_text]
+        return [self.llm.get_num_tokens(x) for x in arr]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
