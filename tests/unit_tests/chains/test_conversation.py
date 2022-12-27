@@ -4,8 +4,8 @@ import pytest
 from langchain.chains.base import Memory
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversation.memory import (
-    ConversationalBufferWindowMemory,
     ConversationBufferMemory,
+    ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
 from langchain.prompts.prompt import PromptTemplate
@@ -49,7 +49,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
     "memory",
     [
         ConversationBufferMemory(memory_key="baz"),
-        ConversationalBufferWindowMemory(memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
     ],
 )
@@ -82,7 +82,7 @@ def test_conversation_memory(memory: Memory) -> None:
     [
         ConversationBufferMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
-        ConversationalBufferWindowMemory(memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
     ],
 )
 def test_clearing_conversation_memory(memory: Memory) -> None:
