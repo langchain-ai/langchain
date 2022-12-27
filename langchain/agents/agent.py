@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, root_validator
 
-import langchain
 from langchain.agents.tools import Tool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -190,13 +189,13 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    langchain.logger.log_agent_end(output, color="green")
+                    self.logger.log_agent_end(output, color="green")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
                 return final_output
             if self.verbose:
-                langchain.logger.log_agent_action(output, color="green")
+                self.logger.log_agent_action(output, color="green")
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
@@ -207,7 +206,7 @@ class AgentExecutor(Chain, BaseModel):
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
             if self.verbose:
-                langchain.logger.log_agent_observation(
+                self.logger.log_agent_observation(
                     observation,
                     color=color,
                     observation_prefix=self.agent.observation_prefix,

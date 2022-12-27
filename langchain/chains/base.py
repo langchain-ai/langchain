@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Extra, Field
 
 import langchain
+from langchain.logger import BaseLogger
 
 
 class Memory(BaseModel, ABC):
@@ -38,12 +39,17 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
+def _get_logger() -> BaseLogger:
+    return langchain.logger
+
+
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
 
     verbose: bool = Field(default_factory=_get_verbosity)
+    logger: BaseLogger = Field(default_factory=_get_logger)
     """Whether to print out response text."""
 
     @property

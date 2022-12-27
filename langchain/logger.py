@@ -1,11 +1,13 @@
 """BETA: everything in here is highly experimental, do not rely on."""
 from typing import Any, Optional
 
+from pydantic import BaseModel
+
 from langchain.input import print_text
 from langchain.schema import AgentAction, AgentFinish
 
 
-class BaseLogger:
+class BaseLogger(BaseModel):
     """Base logging interface."""
 
     def log_agent_start(self, text: str, **kwargs: Any) -> None:
