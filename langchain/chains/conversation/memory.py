@@ -1,5 +1,5 @@
 """Memory modules for conversation prompts."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -25,6 +25,7 @@ class ConversationBufferMemory(Memory, BaseModel):
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     buffer: str = ""
+    output_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
     @property
@@ -42,10 +43,14 @@ class ConversationBufferMemory(Memory, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        if len(outputs) != 1:
-            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        if self.output_key is None:
+            if len(outputs) != 1:
+                raise ValueError(f"One output key expected, got {outputs.keys()}")
+            output_key = list(outputs.keys())[0]
+        else:
+            output_key = self.output_key
         human = "Human: " + inputs[prompt_input_key]
-        ai = f"{self.ai_prefix}: " + outputs[list(outputs.keys())[0]]
+        ai = f"{self.ai_prefix}: " + outputs[output_key]
         self.buffer += "\n" + "\n".join([human, ai])
 
     def clear(self) -> None:
@@ -60,6 +65,7 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
     """Prefix to use for AI generated responses."""
     buffer: List[str] = Field(default_factory=list)
     memory_key: str = "history"  #: :meta private:
+    output_key: Optional[str] = None
     k: int = 5
 
     @property
@@ -77,10 +83,14 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        if len(outputs) != 1:
-            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        if self.output_key is None:
+            if len(outputs) != 1:
+                raise ValueError(f"One output key expected, got {outputs.keys()}")
+            output_key = list(outputs.keys())[0]
+        else:
+            output_key = self.output_key
         human = "Human: " + inputs[prompt_input_key]
-        ai = f"{self.ai_prefix}: " + outputs[list(outputs.keys())[0]]
+        ai = f"{self.ai_prefix}: " + outputs[output_key]
         self.buffer.append("\n".join([human, ai]))
 
     def clear(self) -> None:
@@ -101,6 +111,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
+    output_key: Optional[str] = None
 
     @property
     def memory_variables(self) -> List[str]:
@@ -129,10 +140,14 @@ class ConversationSummaryMemory(Memory, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        if len(outputs) != 1:
-            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        if self.output_key is None:
+            if len(outputs) != 1:
+                raise ValueError(f"One output key expected, got {outputs.keys()}")
+            output_key = list(outputs.keys())[0]
+        else:
+            output_key = self.output_key
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {list(outputs.values())[0]}"
+        ai = f"{self.ai_prefix}: {output_key}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
@@ -153,6 +168,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
     memory_key: str = "history"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
+    output_key: Optional[str] = None
 
     @property
     def memory_variables(self) -> List[str]:
@@ -188,10 +204,14 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        if len(outputs) != 1:
-            raise ValueError(f"One output key expected, got {outputs.keys()}")
+        if self.output_key is None:
+            if len(outputs) != 1:
+                raise ValueError(f"One output key expected, got {outputs.keys()}")
+            output_key = list(outputs.keys())[0]
+        else:
+            output_key = self.output_key
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {list(outputs.values())[0]}"
+        ai = f"{self.ai_prefix}: {output_key}"
         new_lines = "\n".join([human, ai])
         self.buffer.append(new_lines)
         # Prune buffer if it exceeds max token limit
