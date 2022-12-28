@@ -13,7 +13,7 @@ class SQLDatabase:
     def __init__(
         self,
         engine: Engine,
-        schema: str = None,
+        schema: Optional[str] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
     ):

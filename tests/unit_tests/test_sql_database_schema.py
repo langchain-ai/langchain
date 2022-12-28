@@ -1,16 +1,18 @@
 """Test SQL database wrapper with schema support.
-Using DuckDB as SQLite does not support schemas."""
+
+Using DuckDB as SQLite does not support schemas.
+"""
 
 from sqlalchemy import (
     Column,
     Integer,
     MetaData,
+    Sequence,
     String,
     Table,
-    Sequence,
     create_engine,
-    insert,
     event,
+    insert,
     schema,
 )
 
