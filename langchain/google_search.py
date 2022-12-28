@@ -36,7 +36,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     search_engine: Any  #: :meta private:
 
     google_api_key: Optional[str] = None
-    goolgle_cse_id: Optional[str] = None
+    google_cse_id: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
