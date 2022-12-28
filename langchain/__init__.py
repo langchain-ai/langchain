@@ -17,6 +17,7 @@ from langchain.chains import (
     VectorDBQAWithSourcesChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
+from langchain.google_search import GoogleSearchAPIChain, GoogleSearchAPIWrapper
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.logger import BaseLogger, StdOutLogger
@@ -27,7 +28,6 @@ from langchain.prompts import (
     PromptTemplate,
 )
 from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
-from langchain.google_search import GoogleSearchAPIChain, GoogleSearchAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 

@@ -29,7 +29,6 @@ def _get_serpapi() -> Tool:
         "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
-    
 
 def _get_requests() -> Tool:
     return Tool(
