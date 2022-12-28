@@ -61,6 +61,14 @@ class GoogleSearchAPIWrapper(BaseModel):
         )
         values[google_cse_id] = google_cse_id
 
+        try:    
+            from googleapiclient.discovery import build
+        except ImportError:
+            raise ImportError(
+                "google-api-python-client is not installed. "
+                "Please install it with pip install google-api-python-client"
+            )
+
         # TODO: Add error handling if package is not installed
         # TODO: Add error handling if keys are missing
         return values
@@ -70,12 +78,15 @@ class GoogleSearchAPIWrapper(BaseModel):
         
         try:
             snippets = []
+            print("Querying Google Search API... ")
+            print(self.google_api_key)
+            print(self.google_cse_id)
             results = self._google_search_results(query, self.google_api_key, self.google_cse_id, num=3)
             for result in results:
                 snippets.append(result["snippet"])
             toret = " ".join(snippets)
-        except:
-            raise ValueError("Error in Google Search API")
+        except Exception as e:
+            raise ValueError("Error in Google Search API, make sure you have GOOGLE_API_KEY and GOOGLE_CSE_ID set on your enviroment.")
         
 
         else:
