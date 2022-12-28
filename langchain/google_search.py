@@ -43,7 +43,7 @@ class GoogleSearchAPIWrapper(BaseModel):
 
         extra = Extra.forbid
     
-    def _google_search_results(search_term, api_key, cse_id, **kwargs):
+    def _google_search_results(self,search_term, api_key, cse_id, **kwargs):
         service = build("customsearch", "v1", developerKey=api_key)
         res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
         print(res)
