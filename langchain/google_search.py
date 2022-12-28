@@ -55,7 +55,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         values["google_api_key"] = google_api_key
 
         google_cse_id = get_from_dict_or_env(
-            values, "google_cse_id", "google_cse_id"
+            values, "google_cse_id", "GOOGLE_CSE_ID"
         )
         values[google_cse_id] = google_cse_id
 
