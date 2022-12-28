@@ -1,8 +1,10 @@
 """Interface for tools."""
-from typing import Callable, NamedTuple, Optional
+from dataclasses import dataclass
+from typing import Callable, Optional
 
 
-class Tool(NamedTuple):
+@dataclass
+class Tool:
     """Interface for tools."""
 
     name: str
