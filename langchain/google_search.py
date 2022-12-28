@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
+from googleapiclient.discovery import build
 
 class HiddenPrints:
     """Context manager to hide prints."""
@@ -34,7 +35,8 @@ class GoogleSearchAPIWrapper(BaseModel):
 
     search_engine: Any  #: :meta private:
 
-    serpapi_api_key: Optional[str] = None
+    google_api_key: Optional[str] = None
+    goolgle_cse_id: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,10 +66,11 @@ class GoogleSearchAPIWrapper(BaseModel):
         return values
 
     def run(self, query: str) -> str:
-        """Run query through SerpAPI and parse result."""
+        """Run query through GoogleSearch and parse result."""
+        
         try:
             snippets = []
-            results = self._google_search_results(query, my_api_key, my_cse_id, num=3)
+            results = self._google_search_results(query, self.google_api_key, self.google_cse_id, num=3)
             for result in results:
                 snippets.append(result["snippet"])
             toret = " ".join(snippets)
