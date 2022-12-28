@@ -92,9 +92,15 @@ class SerpAPIWrapper(BaseModel):
             toret = res["answer_box"]["snippet_highlighted_words"][0]
         elif "snippet" in res["organic_results"][0].keys():
             toret = res["organic_results"][0]["snippet"]
-        elif "sports_results" in res.keys() and "game_spotlight" in res["sports_results"].keys():
+        elif (
+            "sports_results" in res.keys()
+            and "game_spotlight" in res["sports_results"].keys()
+        ):
             toret = res["sports_results"]["game_spotlight"]
-        elif "knowledge_graph" in res.keys() and "description" in res["knowledge_graph"].keys():
+        elif (
+            "knowledge_graph" in res.keys()
+            and "description" in res["knowledge_graph"].keys()
+        ):
             toret = res["knowledge_graph"]["description"]
         else:
             toret = "No good search result found"
