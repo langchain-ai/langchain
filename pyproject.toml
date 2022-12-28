@@ -33,6 +33,7 @@ weaviate-client = {version = "^3", optional = true}
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
+duckdb-engine = "^0.6.6"
 pytest-watcher = "^0.2.6"
 
 [tool.poetry.group.lint.dependencies]
