@@ -1,0 +1,85 @@
+"""Chain that calls Google Search.
+
+"""
+import os
+import sys
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Extra, root_validator
+
+from langchain.utils import get_from_dict_or_env
+
+class HiddenPrints:
+    """Context manager to hide prints."""
+
+    def __enter__(self) -> None:
+        """Open file to pipe stdout to."""
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+
+    def __exit__(self, *_: Any) -> None:
+        """Close file that stdout was piped to."""
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+
+
+
+class GoogleSearchAPIWrapper(BaseModel):
+    """
+    TODO: DOCS for using it
+
+    google-api-python-client==2.70.0
+
+    """
+
+    search_engine: Any  #: :meta private:
+
+    serpapi_api_key: Optional[str] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+    
+    def _google_search_results(search_term, api_key, cse_id, **kwargs):
+        service = build("customsearch", "v1", developerKey=api_key)
+        res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
+        return res['items']
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        google_api_key = get_from_dict_or_env(
+            values, "google_api_key", "GOOGLE_API_KEY"
+        )
+        values["google_api_key"] = google_api_key
+
+        google_cse_id = get_from_dict_or_env(
+            values, "google_cse_id", "google_cse_id"
+        )
+        values[google_cse_id] = google_cse_id
+
+        # TODO: Add error handling if package is not installed
+        # TODO: Add error handling if keys are missing
+        return values
+
+    def run(self, query: str) -> str:
+        """Run query through SerpAPI and parse result."""
+        try:
+            snippets = []
+            results = self._google_search_results(query, my_api_key, my_cse_id, num=3)
+            for result in results:
+                snippets.append(result["snippet"])
+            toret = " ".join(snippets)
+        except:
+            raise ValueError("Error in Google Search API")
+        
+
+        else:
+            toret = "No good search result found"
+        return toret
+
+
+# For backwards compatability
+
+GoogleSearchAPIChain = GoogleSearchAPIWrapper
