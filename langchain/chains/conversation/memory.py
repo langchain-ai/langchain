@@ -26,6 +26,7 @@ class ConversationBufferMemory(Memory, BaseModel):
     """Prefix to use for AI generated responses."""
     buffer: str = ""
     output_key: Optional[str] = None
+    input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
     @property
@@ -42,7 +43,10 @@ class ConversationBufferMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if self.input_key is None:
+            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
@@ -66,6 +70,7 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
     buffer: List[str] = Field(default_factory=list)
     memory_key: str = "history"  #: :meta private:
     output_key: Optional[str] = None
+    input_key: Optional[str] = None
     k: int = 5
 
     @property
@@ -82,7 +87,10 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if self.input_key is None:
+            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
@@ -112,6 +120,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
     output_key: Optional[str] = None
+    input_key: Optional[str] = None
 
     @property
     def memory_variables(self) -> List[str]:
@@ -139,7 +148,10 @@ class ConversationSummaryMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if self.input_key is None:
+            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
@@ -169,6 +181,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     output_key: Optional[str] = None
+    input_key: Optional[str] = None
 
     @property
     def memory_variables(self) -> List[str]:
@@ -203,7 +216,10 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        if self.input_key is None:
+            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
