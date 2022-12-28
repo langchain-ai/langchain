@@ -159,7 +159,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         else:
             output_key = self.output_key
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {output_key}"
+        ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
@@ -227,7 +227,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
         else:
             output_key = self.output_key
         human = f"Human: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {output_key}"
+        ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
         self.buffer.append(new_lines)
         # Prune buffer if it exceeds max token limit
