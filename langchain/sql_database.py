@@ -13,7 +13,7 @@ class SQLDatabase:
     def __init__(
         self,
         engine: Engine,
-        schema: str,
+        schema: str = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
     ):
@@ -76,7 +76,7 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.connect() as connection:
-            if self._schema:
+            if self._schema is not None:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.exec_driver_sql(command)
             if cursor.returns_rows:
