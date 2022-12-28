@@ -28,7 +28,7 @@ def _load_stuff_chain(
     document_variable_name: str = "summaries",
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt)
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=kwargs.get("verbose", False))
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
@@ -49,9 +49,13 @@ def _load_map_reduce_chain(
     collapse_llm: Optional[BaseLLM] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt)
+    map_chain = LLMChain(
+        llm=llm, prompt=question_prompt, verbose=kwargs.get("verbose", False)
+    )
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt)
+    reduce_chain = LLMChain(
+        llm=_reduce_llm, prompt=combine_prompt, verbose=kwargs.get("verbose", False)
+    )
     combine_document_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
@@ -67,7 +71,11 @@ def _load_map_reduce_chain(
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
-            llm_chain=LLMChain(llm=_collapse_llm, prompt=collapse_prompt),
+            llm_chain=LLMChain(
+                llm=_collapse_llm,
+                prompt=collapse_prompt,
+                verbose=kwargs.get("verbose", False),
+            ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
         )
@@ -90,9 +98,13 @@ def _load_refine_chain(
     refine_llm: Optional[BaseLLM] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt)
+    initial_chain = LLMChain(
+        llm=llm, prompt=question_prompt, verbose=kwargs.get("verbose", False)
+    )
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt)
+    refine_chain = LLMChain(
+        llm=_refine_llm, prompt=refine_prompt, verbose=kwargs.get("verbose", False)
+    )
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
