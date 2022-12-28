@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.49"
+version = "0.0.51"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -34,6 +34,7 @@ pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.6.6"
+pytest-watcher = "^0.2.6"
 
 [tool.poetry.group.lint.dependencies]
 flake8-docstrings = "^1.6.0"
