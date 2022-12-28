@@ -1,5 +1,12 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import RegexParser
+
+output_parser = RegexParser(
+    regex=r"(.*?)\nSOURCES: (.*)",
+    output_keys=["answer", "sources"],
+    default_output_key="answer",
+)
 
 DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {question}\n"
@@ -17,6 +24,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
 DEFAULT_REFINE_PROMPT = PromptTemplate(
     input_variables=["question", "existing_answer", "context_str"],
     template=DEFAULT_REFINE_PROMPT_TMPL,
+    output_parser=output_parser,
 )
 
 

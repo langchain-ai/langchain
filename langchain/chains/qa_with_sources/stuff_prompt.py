@@ -1,5 +1,12 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import RegexParser
+
+output_parser = RegexParser(
+    regex=r"(.*?)\nSOURCES: (.*)",
+    output_keys=["answer", "sources"],
+    default_output_key="answer",
+)
 
 template = """Given the following extracted parts of a long document and a question, create a final answer with references ("SOURCES"). 
 If you don't know the answer, just say that you don't know. Don't try to make up an answer.
@@ -36,7 +43,11 @@ QUESTION: {question}
 {summaries}
 =========
 FINAL ANSWER:"""
-PROMPT = PromptTemplate(template=template, input_variables=["summaries", "question"])
+PROMPT = PromptTemplate(
+    template=template,
+    input_variables=["summaries", "question"],
+    output_parser=output_parser,
+)
 
 EXAMPLE_PROMPT = PromptTemplate(
     template="Content: {page_content}\nSource: {source}",

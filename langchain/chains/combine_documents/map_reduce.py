@@ -153,7 +153,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                 result_docs, **kwargs
             )
         if self.return_map_steps:
-            extra_return_dict = {"map_steps": results}
+            _results = [r[self.llm_chain.output_key] for r in results]
+            extra_return_dict = {"map_steps": _results}
         else:
             extra_return_dict = {}
         output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)

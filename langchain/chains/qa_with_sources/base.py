@@ -19,7 +19,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
 )
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, RegexParser
 
 
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
@@ -29,8 +29,6 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     """Chain to use to combine documents."""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
-    answer_key: str = "answer"  #: :meta private:
-    sources_answer_key: str = "sources"  #: :meta private:
 
     @classmethod
     def from_llm(
@@ -79,7 +77,13 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.answer_key, self.sources_answer_key]
+        output_parser = self.combine_document_chain.output_parser
+        if not isinstance(output_parser, RegexParser):
+            raise ValueError(
+                "Output parser of combine_document_chain should be a RegexParser,"
+                f" got {output_parser}"
+            )
+        return output_parser.output_keys
 
     @root_validator(pre=True)
     def validate_question_chain(cls, values: Dict) -> Dict:
@@ -94,9 +98,14 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         return values
 
     @root_validator()
-    def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
-        """Validate that the combine chain can be constructed."""
-        # Try to construct the combine documents chains.
+    def validate_combine_chain_output(cls, values: Dict) -> Dict:
+        """Validate that the combine chain outputs a dictionary."""
+        combine_docs_chain = values["combine_document_chain"]
+        if not isinstance(combine_docs_chain.output_parser, RegexParser):
+            raise ValueError(
+                "Output parser of combine_document_chain should be a RegexParser,"
+                f" got {combine_docs_chain.output_parser}"
+            )
 
         return values
 
@@ -106,12 +115,8 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
-        if "\nSOURCES: " in answer:
-            answer, sources = answer.split("\nSOURCES: ")
-        else:
-            sources = ""
-        return {self.answer_key: answer, self.sources_answer_key: sources}
+        answer, _ = self.combine_document_chain.combine_and_parse(docs, **inputs)
+        return answer
 
 
 class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):

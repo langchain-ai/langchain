@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
+from uuid import uuid4
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -52,8 +53,23 @@ class Weaviate(VectorStore):
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
     ) -> List[str]:
-        """Not implemented for Weaviate yet."""
-        raise NotImplementedError("weaviate does not currently support `add_texts`.")
+        """Upload texts with metadata (properties) to Weaviate."""
+        from weaviate.util import get_valid_uuid
+
+        with self._client.batch as batch:
+            ids = []
+            for i, doc in enumerate(texts):
+                data_properties = {
+                    self._text_key: doc,
+                }
+                if metadatas is not None:
+                    for key in metadatas[i].keys():
+                        data_properties[key] = metadatas[i][key]
+
+                _id = get_valid_uuid(uuid4())
+                batch.add_data_object(data_properties, self._index_name, _id)
+                ids.append(_id)
+        return ids
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Look up similar documents in weaviate."""

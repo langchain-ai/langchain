@@ -1,5 +1,12 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import RegexParser
+
+output_parser = RegexParser(
+    regex=r"(.*?)\nSOURCES: (.*)",
+    output_keys=["answer", "sources"],
+    default_output_key="answer",
+)
 
 question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question. 
 Return any relevant text verbatim.
@@ -46,7 +53,9 @@ QUESTION: {question}
 =========
 FINAL ANSWER:"""
 COMBINE_PROMPT = PromptTemplate(
-    template=combine_prompt_template, input_variables=["summaries", "question"]
+    template=combine_prompt_template,
+    input_variables=["summaries", "question"],
+    output_parser=output_parser,
 )
 
 EXAMPLE_PROMPT = PromptTemplate(

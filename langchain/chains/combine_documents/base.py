@@ -43,8 +43,8 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine documents into a single string."""
 
-    @abstractmethod
     @property
+    @abstractmethod
     def output_parser(self) -> Optional[BaseOutputParser]:
         """Output parser to use for results of combine_docs."""
 
