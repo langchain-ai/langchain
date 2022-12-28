@@ -33,6 +33,18 @@ class Memory(BaseModel, ABC):
     def clear(self) -> None:
         """Clear memory contents."""
 
+    def hydrate(
+        self, inputs: list[Dict[str, Any]], outputs: list[Dict[str, str]]
+    ) -> None:
+        """Hydrate the memory with the given history of inputs and outputs."""
+        if len(inputs) != len(outputs):
+            raise ValueError(
+                f"Number of inputs ({len(inputs)}) does not match number of outputs "
+                f"({len(outputs)})."
+            )
+        for input, output in zip(inputs, outputs):
+            self.save_context(input, output)
+
 
 def _get_verbosity() -> bool:
     return langchain.verbose
