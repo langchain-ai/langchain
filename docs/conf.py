@@ -46,6 +46,7 @@ extensions = [
     "nbsphinx",
     "sphinx_panels",
 ]
+source_suffix = [".rst", ".md"]
 
 
 autodoc_pydantic_model_show_json = False

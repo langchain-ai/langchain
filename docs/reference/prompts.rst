@@ -1,7 +1,7 @@
 LLMs & Prompts
 ==============
 
-The reference guides here all relate to objects for working with LLMs and Prompts.
+The reference guides here all relate to objects for working with Prompts.
 
 .. toctree::
    :maxdepth: 1
@@ -9,4 +9,3 @@ The reference guides here all relate to objects for working with LLMs and Prompt
 
    modules/prompt
    modules/example_selector
-   modules/llms

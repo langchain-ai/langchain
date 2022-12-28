@@ -1,4 +1,5 @@
-# Cool Demos
+# Gallery
+
 
 Lots of people have built some pretty awesome stuff with LangChain.
 This is a collection of our favorites.
