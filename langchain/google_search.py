@@ -82,14 +82,14 @@ class GoogleSearchAPIWrapper(BaseModel):
             results = self._google_search_results(query, self.google_api_key, self.google_cse_id, num=10)
             for result in results:
                 snippets.append(result["snippet"])
-            toret = " ".join(snippets)
+            return " ".join(snippets)
+        
         except Exception as e:
             raise ValueError("Error in Google Search API, make sure you have GOOGLE_API_KEY and GOOGLE_CSE_ID set on your enviroment.")
         
 
-        else:
-            toret = "No good search result found"
-        return toret
+        
+        return "No good Google Search Result was found"
 
 
 # For backwards compatability
