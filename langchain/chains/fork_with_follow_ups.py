@@ -20,7 +20,7 @@ class ForkChain(Chain, BaseModel):
         arbitrary_types_allowed = True
 
     @validator("follow_up_chains")
-    def default_in_follow_up_chains(cls, v):
+    def default_in_follow_up_chains(cls, v: Dict[str, Chain]) -> Dict[str, Chain]:
         if "default" not in v:
             raise ValueError(
                 "`follow_up_chains` must contain a 'default' option. "
@@ -46,7 +46,7 @@ class ForkChain(Chain, BaseModel):
         return []
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        decision_chain_output = self.decision_chain.run(inputs)
+        decision_chain_output = self.decision_chain.run(**inputs)
         try:
             return self.follow_up_chains[decision_chain_output.strip()](inputs)
         except KeyError:
