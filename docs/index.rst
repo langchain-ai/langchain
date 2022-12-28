@@ -9,27 +9,113 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 
-The documentation is organized in the following manner:
+Getting Started:
+----------------
 
-First, we a complete getting started example, including installation and covering all major concepts.
+To get started with LangChain, including installation and environment setup, checkout the below guide.
 
-Next, we outline the main components of LangChain.
-
-Then, we go through some main use cases for LangChain.
-
-After that, we have a page for all the reference documents.
-
-Finally, we have a gallery consisting of awesome projects built using LangChain!
-
-Discord <https://discord.gg/6adMQxSpJS>
+- `Getting Started Documentation <getting_started.rst>`_
 
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started
+   :name: getting_started
+   :hidden:
 
    getting_started.rst
-   components.rst
-   use_cases.rst
+
+Components:
+-----------
+
+There are six main components that LangChain provides support for.
+For each component we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
+These components are, in increasing order of complexity:
+
+
+- `Prompts <components/prompts.rst>`_: This includes prompt management, prompt optimization, and prompt serialization.
+
+- `LLMs <components/llms.rst>`_: This includes a generic interface for all LLMs, and common utilities for working with LLMs.
+
+- `Utils <utils.rst>`_: Language models are often more powerful when interacting with other sources of knowledge or computation. This can include Python REPLs, embeddings, search engines, and more. LangChain provides a large collection of common utils to use in your application.
+
+- `Chains <components/chains.rst>`_: Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
+
+- `Agents <components/agents.rst>`_: Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
+
+- `Memory <components/memory.rst>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Components
+   :name: components
+   :hidden:
+
+   components/prompts.md
+   components/llms.md
+   components/utils.md
+   components/chains.md
+   components/agents.md
+   components/memory.md
+
+Use Cases:
+----------
+
+The above components can be used in a variety of ways. LangChain also provides guidance and assitance in this. Below are some of the common use cases LangChain supports.
+
+`Data Augmented Generation <use_cases/combine_docs.md>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+
+`Evaluation <use_cases/evaluation.rst>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+
+`Model Laboratory <use_cases/model_laboratory.ipynb>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Use Cases
+   :name: use_cases
+   :hidden:
+
+   use_cases/combine_docs.md
+   use_cases/evaluation.rst
+   use_cases/model_laboratory.ipynb
+
+
+Reference Docs:
+---------------
+
+All of LangChain's reference documentation, in one place.
+
+- `Reference Documentation <reference.rst>`_: Full documentation on all methods, classes, and installation methods for LangChain.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+   :name: reference
+   :hidden:
+
    reference.rst
+
+
+Additional Resources:
+---------------------
+
+Additional collection of resources we think may be useful as you develop your application!
+
+
+- `Glossary <glossary.md>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
+
+- `Gallery <gallery.md>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
+
+- `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Additional Resources
+   :name: resources
+   :hidden:
+
    glossary.md
    gallery.md
 
