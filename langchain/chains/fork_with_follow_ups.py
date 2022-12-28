@@ -50,4 +50,4 @@ class ForkChain(Chain, BaseModel):
         try:
             return self.follow_up_chains[decision_chain_output.strip()](inputs)
         except KeyError:
-            return self.follow_up_chains['default'](inputs)
+            return self.follow_up_chains["default"](inputs)
