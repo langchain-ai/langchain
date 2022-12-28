@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -65,6 +65,19 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
+    return_map_steps: bool = False
+    """Return the results of the map steps in the output."""
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Expect input key.
+
+        :meta private:
+        """
+        _output_keys = super().output_keys
+        if self.return_map_steps:
+            _output_keys = _output_keys + ["map_steps"]
+        return _output_keys
 
     class Config:
         """Configuration for this pydantic object."""
@@ -102,7 +115,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
 
     def combine_docs(
         self, docs: List[Document], token_max: int = 3000, **kwargs: Any
-    ) -> str:
+    ) -> Tuple[str, dict]:
         """Combine documents in a map reduce manner.
 
         Combine by mapping first chain over all documents, then reducing the results.
@@ -133,5 +146,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             num_tokens = self.combine_document_chain.prompt_length(
                 result_docs, **kwargs
             )
-        output = self.combine_document_chain.combine_docs(result_docs, **kwargs)
-        return output
+        if self.return_map_steps:
+            _results = [r[self.llm_chain.output_key] for r in results]
+            extra_return_dict = {"map_steps": _results}
+        else:
+            extra_return_dict = {}
+        output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)
+        return output, extra_return_dict

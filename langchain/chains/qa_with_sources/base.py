@@ -106,7 +106,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer = self.combine_document_chain.combine_docs(docs, **inputs)
+        answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
         if "\nSOURCES: " in answer:
             answer, sources = answer.split("\nSOURCES: ")
         else:
