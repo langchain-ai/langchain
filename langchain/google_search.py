@@ -46,7 +46,6 @@ class GoogleSearchAPIWrapper(BaseModel):
     def _google_search_results(self,search_term, api_key, cse_id, **kwargs):
         service = build("customsearch", "v1", developerKey=api_key)
         res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
-        print(res)
         return res['items']
 
     @root_validator()
@@ -80,11 +79,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         try:
             snippets = []
             print("Querying Google Search API... ")
-            print(self.google_api_key)
-            print(self.google_cse_id)
-            print(query)
-            results = self._google_search_results(query, self.google_api_key, self.google_cse_id, num=3)
-            print(results)
+            results = self._google_search_results(query, self.google_api_key, self.google_cse_id, num=10)
             for result in results:
                 snippets.append(result["snippet"])
             toret = " ".join(snippets)
