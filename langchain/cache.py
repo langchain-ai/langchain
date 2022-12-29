@@ -52,22 +52,36 @@ class FullLLMCache(Base):  # type: ignore
     idx = Column(Integer, primary_key=True)
     response = Column(String)
 
+class PostgresFulltextLLMCache(Base):  # type: ignore
+    """Postgres table for fulltext LLM Cache (all generations)."""
+
+    __tablename__ = "full_llm_cache_fulltext"
+    id = Column(Integer, Sequence('cache_id'), primary_key=True)
+    prompt = Column(String, nullable=False)
+    llm = Column(String, nullable=False)
+    idx = Column(Integer)
+    response = Column(String)
+    prompt_tsv = Column(TSVectorType(), Computed("to_tsvector('english', llm || ' ' || prompt)", persisted=True))
+    __table_args__ = (
+        Index("idx_llm_cache_prompt_tsv", prompt_tsv, postgresql_using="gin"),
+    )
 
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, cache_schema=FullLLMCache):
         """Initialize by creating all tables."""
         self.engine = engine
+        self.cache_schema = cache_schema
         Base.metadata.create_all(self.engine)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         stmt = (
-            select(FullLLMCache.response)
-            .where(FullLLMCache.prompt == prompt)
-            .where(FullLLMCache.llm == llm_string)
-            .order_by(FullLLMCache.idx)
+            select(self.cache_schema.response)
+            .where(self.cache_schema.prompt == prompt)
+            .where(self.cache_schema.llm == llm_string)
+            .order_by(self.cache_schema.idx)
         )
         with Session(self.engine) as session:
             generations = []
@@ -80,7 +94,7 @@ class SQLAlchemyCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Look up based on prompt and llm_string."""
         for i, generation in enumerate(return_val):
-            item = FullLLMCache(
+            item = self.cache_schema(
                 prompt=prompt, llm=llm_string, response=generation.text, idx=i
             )
             with Session(self.engine) as session, session.begin():
