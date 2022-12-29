@@ -34,7 +34,7 @@ def _get_serpapi() -> Tool:
 def _get_google_search() -> Tool:
     return Tool(
         "Google Search",
-        SerpAPIWrapper().run,
+        GoogleSearchAPIWrapper().run,
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
@@ -60,7 +60,7 @@ _BASE_TOOLS = {
     "serpapi": _get_serpapi,
     "requests": _get_requests,
     "terminal": _get_terminal,
-    "google_search": _get_google_search,
+    "google-search": _get_google_search,
 }
 
 
