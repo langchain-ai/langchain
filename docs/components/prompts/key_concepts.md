@@ -15,6 +15,32 @@ More complex iterations dynamically construct the template string from few shot 
 
 To learn more about `PromptTemplates`, see [Prompt Templates](prompt_templates.md).
 
+As an example, consider the following template string:
+
+```python
+"""
+Predict the capital of a country.
+
+Country: {country}
+Capital:
+"""
+```
+
+
+### Input Variables
+
+Input variables are the variables that are used to fill in the template string. In the example above, the input variable is `country`.
+
+Given an input variable, the `PromptTemplate` can generate a prompt by filling in the template string with the input variable. For example, if the input variable is `United States`, the template string can be formatted to generate the following prompt:
+
+```python
+"""
+Predict the capital of a country.
+
+Country: United States
+Capital:
+"""
+```
 
 ## Few Shot Examples
 
