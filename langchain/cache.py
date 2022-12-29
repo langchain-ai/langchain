@@ -1,6 +1,6 @@
 """Beta Feature: base interface for cache."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -56,7 +56,7 @@ class FullLLMCache(Base):  # type: ignore
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, engine: Engine, cache_schema: Type[Base] = FullLLMCache):
+    def __init__(self, engine: Engine, cache_schema=FullLLMCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
