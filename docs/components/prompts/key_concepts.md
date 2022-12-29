@@ -13,6 +13,8 @@ A prompt is the input to a language model. It is a string of text that is used t
 The most simple implementation of this is to have a template string with some variables in it, and then format it with the incoming variables.
 More complex iterations dynamically construct the template string from few shot examples, etc.
 
+To learn more about `PromptTemplates`, see [Prompt Templates](prompt_templates.md).
+
 
 ## Few Shot Examples
 
@@ -28,6 +30,21 @@ Country: Canada
 Capital: Ottawa
 ```
 
+To learn more about how to provide few shot examples, see [Few Shot Examples](few_shot_examples.md).
+<!-- TODO(shreya): Add correct link here. -->
+
+
 ## Example selection
 
-Few shot examples are typically selected by the user. However, there are some cases where the few shot examples are selected automatically. For example, if the user is creating a prompt to predict the capital of a country, the few shot examples can be automatically selected from a list of countries and their capitals.
+If there are multiple examples that are relevant to a prompt, it is important to select the most relevant examples. Generally, the quality of the response from the LLM can be significantly improved by selecting the most relevant examples. This is because the language model will be able to better understand the context of the prompt, and also potentially learn failure modes to avoid.
+
+To help the user with selecting the most relevant examples, we provide example selectors that select the most relevant based on different criteria, such as length, semantic similarity, etc. The example selector takes in a list of examples and returns a list of selected examples, formatted as a string. The user can also provide their own example selector. To learn more about example selectors, see [Example Selection](example_selection.md).
+<!-- TODO(shreya): Add correct link here. -->
+
+
+## Serialization
+
+To make it easy to share `PromptTemplates`, we provide a `serialize` method that returns a JSON string. The JSON string can be saved to a file, and then loaded back into a `PromptTemplate` using the `deserialize` method. This allows users to share `PromptTemplates` with others, and also to save them for later use.
+
+To learn more about serialization, see [Serialization](serialization.md).
+<!-- TODO(shreya): Provide correct link. -->
