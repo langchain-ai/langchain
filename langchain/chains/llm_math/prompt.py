@@ -33,6 +33,7 @@ print(37593 * 67)
 ```
 Answer: 2518731
 
-Question: {question}"""
+Question: {question}
+"""
 
 PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)
