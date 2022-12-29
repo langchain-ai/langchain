@@ -5,17 +5,23 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.schema import Generation, LLMResult
 
 
+def _get_verbosity() -> bool:
+    return langchain.verbose
+
+
 class BaseLLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether to print out response text."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -39,11 +45,13 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            get_callback_manager().on_llm_start(
-                {"name": self.__class__.__name__}, prompts
-            )
+            if self.verbose:
+                get_callback_manager().on_llm_start(
+                    {"name": self.__class__.__name__}, prompts
+                )
             output = self._generate(prompts, stop=stop)
-            get_callback_manager().on_llm_end(output)
+            if self.verbose:
+                get_callback_manager().on_llm_end(output)
             return output
         params = self._llm_dict()
         params["stop"] = stop

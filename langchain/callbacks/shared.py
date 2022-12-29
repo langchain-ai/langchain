@@ -8,7 +8,7 @@ from langchain.callbacks.base import (
     BaseCallbackManager,
     CallbackManager,
 )
-from langchain.schema import LLMResult
+from langchain.schema import AgentAction, LLMResult
 
 
 class Singleton:
@@ -72,18 +72,16 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
             self._callback_manager.on_chain_error(error)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
+        self, serialized: Dict[str, Any], action: AgentAction, **extra: str
     ) -> None:
         """Run when tool starts running."""
         with self._lock:
-            self._callback_manager.on_tool_start(
-                serialized, action, tool_input, **extra
-            )
+            self._callback_manager.on_tool_start(serialized, action, **extra)
 
-    def on_tool_end(self, output: str) -> None:
+    def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         with self._lock:
-            self._callback_manager.on_tool_end(output)
+            self._callback_manager.on_tool_end(output, **kwargs)
 
     def on_tool_error(self, error: Exception) -> None:
         """Run when tool errors."""
