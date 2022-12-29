@@ -3,6 +3,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Union
+from langchain.callbacks import get_callback_manager
 
 import yaml
 from pydantic import BaseModel, Extra
@@ -38,7 +39,10 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return self._generate(prompts, stop=stop)
+            get_callback_manager().on_llm_start({"name": self.__class__.__name__}, prompts)
+            output = self._generate(prompts, stop=stop)
+            get_callback_manager().on_llm_end(output)
+            return output
         params = self._llm_dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -52,7 +56,9 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
+        get_callback_manager().on_llm_start({"name": self.__class__.__name__}, missing_prompts)
         new_results = self._generate(missing_prompts, stop=stop)
+        get_callback_manager().on_llm_end(new_results)
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]
