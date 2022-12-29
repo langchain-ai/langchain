@@ -3,24 +3,9 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
-from googleapiclient.discovery import build
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
-
-
-class HiddenPrints:
-    """Context manager to hide prints."""
-
-    def __enter__(self) -> None:
-        """Open file to pipe stdout to."""
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, "w")
-
-    def __exit__(self, *_: Any) -> None:
-        """Close file that stdout was piped to."""
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
 
 
 class GoogleSearchAPIWrapper(BaseModel):
@@ -73,16 +58,22 @@ class GoogleSearchAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    def _google_search_results(
-        self,
-        search_term: str,
-        api_key: Optional[str],
-        cse_id: Optional[str],
-        **kwargs: Any
-    ) -> List[dict]:
-        service = build("customsearch", "v1", developerKey=api_key)
-        res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
-        return res["items"]
+    def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
+        try:
+            from googleapiclient.discovery import build
+
+            service = build("customsearch", "v1", developerKey=self.google_api_key)
+            res = (
+                service.cse()
+                .list(q=search_term, cx=self.google_cse_id, **kwargs)
+                .execute()
+            )
+            return res["items"]
+        except ImportError:
+            raise ImportError(
+                "google-api-python-client is not installed. "
+                "Please install it with pip install google-api-python-client"
+            )
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -95,16 +86,6 @@ class GoogleSearchAPIWrapper(BaseModel):
         google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
         values[google_cse_id] = google_cse_id
 
-        try:
-            from googleapiclient.discovery import build
-
-            build("customsearch", "v1", developerKey=google_api_key)
-        except ImportError:
-            raise ImportError(
-                "google-api-python-client is not installed. "
-                "Please install it with pip install google-api-python-client"
-            )
-
         # TODO: Add error handling if keys are missing
         return values
 
@@ -112,9 +93,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         """Run query through GoogleSearch and parse result."""
         try:
             snippets = []
-            results = self._google_search_results(
-                query, self.google_api_key, self.google_cse_id, num=10
-            )
+            results = self._google_search_results(query, num=10)
             if len(results) == 0:
                 return "No good Google Search Result was found"
             for result in results:
@@ -129,7 +108,3 @@ class GoogleSearchAPIWrapper(BaseModel):
                 If you have exceeded your 10,000/day token, please refer
                 to the google cse documentation."""
             )
-
-
-# For backwards compatability
-GoogleSearchAPIChain = GoogleSearchAPIWrapper
