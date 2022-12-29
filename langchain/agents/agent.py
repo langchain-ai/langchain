@@ -18,6 +18,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
+from langchain.callbacks.base import BaseCallbackManager
 
 logger = logging.getLogger()
 
@@ -151,6 +152,18 @@ class AgentExecutor(Chain, BaseModel):
     tools: List[Tool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = None
+    callback_manager: Optional[BaseCallbackManager] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _get_callback_manager(self) -> BaseCallbackManager:
+        """Get the callback manager."""
+        if self.callback_manager is not None:
+            return self.callback_manager
+        return get_callback_manager()
 
     @classmethod
     def from_agent_and_tools(
@@ -214,12 +227,12 @@ class AgentExecutor(Chain, BaseModel):
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
-                get_callback_manager().on_tool_start(
+                self._get_callback_manager().on_tool_start(
                     {"name": str(chain)[:60] + "..."}, output.tool, output.tool_input
                 )
                 # We then call the tool on the tool input to get an observation
                 observation = chain(output.tool_input)
-                get_callback_manager().on_tool_end(observation)
+                self._get_callback_manager().on_tool_end(observation)
                 color = color_mapping[output.tool]
             else:
                 observation = f"{output.tool} is not a valid tool, try another one."

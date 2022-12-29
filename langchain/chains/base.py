@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, Field
 
 import langchain
 from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 
 
 class Memory(BaseModel, ABC):
@@ -43,9 +44,19 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
+    callback_manager: Optional[BaseCallbackManager] = None
+    verbose: bool = Field(default_factory=_get_verbosity)  # Whether to print the response text
 
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _get_callback_manager(self) -> BaseCallbackManager:
+        """Get the callback manager."""
+        if self.callback_manager is not None:
+            return self.callback_manager
+        return get_callback_manager()
 
     @property
     @abstractmethod
@@ -110,9 +121,9 @@ class Chain(BaseModel, ABC):
             print(
                 f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
             )
-        get_callback_manager().on_chain_start({"name": self.__class__.__name__}, inputs)
+        self._get_callback_manager().on_chain_start({"name": self.__class__.__name__}, inputs)
         outputs = self._call(inputs)
-        get_callback_manager().on_chain_end(outputs)  # test
+        self._get_callback_manager().on_chain_end(outputs)
         if self.verbose:
             print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
         self._validate_outputs(outputs)
