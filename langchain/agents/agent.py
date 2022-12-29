@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
+from langchain.callbacks import get_callback_manager
 
 from pydantic import BaseModel, root_validator
 
