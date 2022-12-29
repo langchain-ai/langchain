@@ -10,6 +10,7 @@ from pydantic import BaseModel, root_validator
 import langchain
 from langchain.agents.tools import Tool
 from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
@@ -18,7 +19,6 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
-from langchain.callbacks.base import BaseCallbackManager
 
 logger = logging.getLogger()
 

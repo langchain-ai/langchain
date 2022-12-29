@@ -45,7 +45,9 @@ class Chain(BaseModel, ABC):
 
     memory: Optional[Memory] = None
     callback_manager: Optional[BaseCallbackManager] = None
-    verbose: bool = Field(default_factory=_get_verbosity)  # Whether to print the response text
+    verbose: bool = Field(
+        default_factory=_get_verbosity
+    )  # Whether to print the response text
 
     class Config:
         """Configuration for this pydantic object."""
@@ -121,7 +123,9 @@ class Chain(BaseModel, ABC):
             print(
                 f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
             )
-        self._get_callback_manager().on_chain_start({"name": self.__class__.__name__}, inputs)
+        self._get_callback_manager().on_chain_start(
+            {"name": self.__class__.__name__}, inputs
+        )
         outputs = self._call(inputs)
         self._get_callback_manager().on_chain_end(outputs)
         if self.verbose:
