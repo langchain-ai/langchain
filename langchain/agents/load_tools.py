@@ -7,6 +7,7 @@ from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
+from langchain.google_search import GoogleSearchAPIWrapper
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
@@ -27,6 +28,14 @@ def _get_serpapi() -> Tool:
         "Search",
         SerpAPIWrapper().run,
         "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
+def _get_google_search() -> Tool:
+    return Tool(
+        "Google Search",
+        SerpAPIWrapper().run,
+        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
 
@@ -51,6 +60,7 @@ _BASE_TOOLS = {
     "serpapi": _get_serpapi,
     "requests": _get_requests,
     "terminal": _get_terminal,
+    "google_search": _get_google_search,
 }
 
 

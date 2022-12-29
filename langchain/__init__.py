@@ -65,4 +65,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
+    "GoogleSearchAPIWrapper",
 ]

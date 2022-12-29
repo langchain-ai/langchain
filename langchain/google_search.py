@@ -1,4 +1,4 @@
-"""Chain that calls Google Search."""
+"""Util that calls Google Search."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -8,6 +8,10 @@ from langchain.utils import get_from_dict_or_env
 
 class GoogleSearchAPIWrapper(BaseModel):
     """Wrapper for Google Search API.
+
+    Adapted from: Instructions adapted from https://stackoverflow.com/questions/
+    37083058/
+    programmatically-searching-google-in-python-using-custom-search
 
     TODO: DOCS for using it
     1. Install google-api-python-client
@@ -39,15 +43,9 @@ class GoogleSearchAPIWrapper(BaseModel):
     - Click Enable.
     URL for it: https://console.cloud.google.com/apis/library/customsearch.googleapis
     .com
-    Adapted from: Instructions adapated from https://stackoverflow.com/questions/
-    37083058/
-    programmatically-searching-google-in-python-using-custom-search
-
-
     """
 
     search_engine: Any  #: :meta private:
-
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
 
@@ -57,21 +55,12 @@ class GoogleSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
-        try:
-            from googleapiclient.discovery import build
-
-            service = build("customsearch", "v1", developerKey=self.google_api_key)
-            res = (
-                service.cse()
-                .list(q=search_term, cx=self.google_cse_id, **kwargs)
-                .execute()
-            )
-            return res["items"]
-        except ImportError:
-            raise ImportError(
-                "google-api-python-client is not installed. "
-                "Please install it with pip install google-api-python-client"
-            )
+        res = (
+            self.search_engine.cse()
+            .list(q=search_term, cx=self.google_cse_id, **kwargs)
+            .execute()
+        )
+        return res["items"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -82,27 +71,30 @@ class GoogleSearchAPIWrapper(BaseModel):
         values["google_api_key"] = google_api_key
 
         google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
-        values[google_cse_id] = google_cse_id
+        values["google_cse_id"] = google_cse_id
+
+        try:
+            from googleapiclient.discovery import build
+
+        except ImportError:
+            raise ImportError(
+                "google-api-python-client is not installed. "
+                "Please install it with `pip install google-api-python-client`"
+            )
+
+        service = build("customsearch", "v1", developerKey=google_api_key)
+        values["search_engine"] = service
 
         # TODO: Add error handling if keys are missing
         return values
 
     def run(self, query: str) -> str:
         """Run query through GoogleSearch and parse result."""
-        try:
-            snippets = []
-            results = self._google_search_results(query, num=10)
-            if len(results) == 0:
-                return "No good Google Search Result was found"
-            for result in results:
-                snippets.append(result["snippet"])
+        snippets = []
+        results = self._google_search_results(query, num=10)
+        if len(results) == 0:
+            return "No good Google Search Result was found"
+        for result in results:
+            snippets.append(result["snippet"])
 
-            return " ".join(snippets)
-
-        except Exception:
-            raise ValueError(
-                """Error in Google Search API, make sure you have
-                GOOGLE_API_KEY and GOOGLE_CSE_ID set on your enviroment.
-                If you have exceeded your 10,000/day token, please refer
-                to the google cse documentation."""
-            )
+        return " ".join(snippets)
