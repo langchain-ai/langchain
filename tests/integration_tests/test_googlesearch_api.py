@@ -1,6 +1,4 @@
 """Integration test for SerpAPI."""
-from googleapiclient.discovery import build
-
 from langchain.google_search import GoogleSearchAPIWrapper
 
 
