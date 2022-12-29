@@ -2,23 +2,13 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra
 
 import langchain
-from langchain.schema import Generation
-
-
-class LLMResult(NamedTuple):
-    """Class that contains all relevant information for an LLM Result."""
-
-    generations: List[List[Generation]]
-    """List of the things generated. This is List[List[]] because
-    each input could have multiple generations."""
-    llm_output: Optional[dict] = None
-    """For arbitrary LLM provider specific output."""
+from langchain.schema import Generation, LLMResult
 
 
 class BaseLLM(BaseModel, ABC):

@@ -5,8 +5,9 @@ from pydantic import BaseModel, Extra
 
 import langchain
 from langchain.chains.base import Chain
-from langchain.llms.base import BaseLLM, LLMResult
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import LLMResult
 
 
 class LLMChain(Chain, BaseModel):

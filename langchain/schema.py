@@ -1,6 +1,6 @@
 """Common schema objects."""
 
-from typing import NamedTuple
+from typing import List, NamedTuple, Optional
 
 
 class AgentAction(NamedTuple):
@@ -24,3 +24,13 @@ class Generation(NamedTuple):
     text: str
     """Generated text output."""
     # TODO: add log probs
+
+
+class LLMResult(NamedTuple):
+    """Class that contains all relevant information for an LLM Result."""
+
+    generations: List[List[Generation]]
+    """List of the things generated. This is List[List[]] because
+    each input could have multiple generations."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""

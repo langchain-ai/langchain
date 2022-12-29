@@ -4,8 +4,8 @@ from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.llms.base import BaseLLM, LLMResult
-from langchain.schema import Generation
+from langchain.llms.base import BaseLLM
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 
