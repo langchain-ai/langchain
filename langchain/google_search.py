@@ -1,6 +1,4 @@
 """Chain that calls Google Search."""
-import os
-import sys
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
