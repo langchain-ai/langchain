@@ -2,7 +2,8 @@
 
 from typing import Any, Dict, List
 
-from langchain.callbacks.base import BaseCallbackHandler, CallbackManager
+from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager, CallbackManager
+from langchain.callbacks.shared import SharedCallbackManager
 from langchain.schema import LLMResult
 
 
@@ -61,11 +62,8 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors += 1
 
 
-def test_callback_manager() -> None:
+def _test_callback_manager(manager: BaseCallbackManager, *handlers: FakeCallbackHandler):
     """Test the CallbackManager."""
-    handler1 = FakeCallbackHandler()
-    handler2 = FakeCallbackHandler()
-    manager = CallbackManager([handler1, handler2])
     manager.on_llm_start({}, [])
     manager.on_llm_end(LLMResult(generations=[]))
     manager.on_llm_error(Exception())
@@ -75,9 +73,29 @@ def test_callback_manager() -> None:
     manager.on_tool_start({}, "", "")
     manager.on_tool_end("")
     manager.on_tool_error(Exception())
-    assert handler1.starts == 3
-    assert handler1.ends == 3
-    assert handler1.errors == 3
-    assert handler2.starts == 3
-    assert handler2.ends == 3
-    assert handler2.errors == 3
+    for handler in handlers:
+        assert handler.starts == 3
+        assert handler.ends == 3
+        assert handler.errors == 3
+
+
+def test_callback_manager() -> None:
+    """Test the CallbackManager."""
+    handler1 = FakeCallbackHandler()
+    handler2 = FakeCallbackHandler()
+    manager = CallbackManager([handler1, handler2])
+    _test_callback_manager(manager, handler1, handler2)
+
+
+def test_shared_callback_manager() -> None:
+    """Test the SharedCallbackManager."""
+    manager1 = SharedCallbackManager()
+    manager2 = SharedCallbackManager()
+
+    assert manager1 is manager2
+
+    handler1 = FakeCallbackHandler()
+    handler2 = FakeCallbackHandler()
+    manager1.add_handler(handler1)
+    manager2.add_handler(handler2)
+    _test_callback_manager(manager1, handler1, handler2)

@@ -55,7 +55,19 @@ class BaseCallbackHandler(ABC):
         """Run when tool errors."""
 
 
-class CallbackManager(BaseCallbackHandler):
+class BaseCallbackManager(BaseCallbackHandler, ABC):
+    """Base callback manager that can be used to handle callbacks from LangChain."""
+
+    @abstractmethod
+    def add_handler(self, callback: BaseCallbackHandler) -> None:
+        """Add a handler to the callback manager."""
+
+    @abstractmethod
+    def remove_handler(self, handler: BaseCallbackHandler) -> None:
+        """Remove a handler from the callback manager."""
+
+
+class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
 
     def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
