@@ -1,11 +1,14 @@
 """A shared CallbackManager."""
 
-from langchain.callbacks.base import CallbackManager, BaseCallbackManager, BaseCallbackHandler
-from langchain.schema import LLMResult
-
+import threading
 from typing import Any, Dict, List
 
-import threading
+from langchain.callbacks.base import (
+    BaseCallbackHandler,
+    BaseCallbackManager,
+    CallbackManager,
+)
+from langchain.schema import LLMResult
 
 
 class Singleton:
@@ -14,7 +17,8 @@ class Singleton:
     _instance = None
     _lock = threading.Lock()
 
-    def __new__(cls):
+    def __new__(cls) -> Any:
+        """Create a new shared instance of the class."""
         if cls._instance is None:
             with cls._lock:
                 # Another thread could have created the instance
@@ -72,7 +76,9 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
     ) -> None:
         """Run when tool starts running."""
         with self._lock:
-            self._callback_manager.on_tool_start(serialized, action, tool_input, **extra)
+            self._callback_manager.on_tool_start(
+                serialized, action, tool_input, **extra
+            )
 
     def on_tool_end(self, output: str) -> None:
         """Run when tool ends running."""

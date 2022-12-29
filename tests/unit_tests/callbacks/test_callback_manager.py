@@ -2,7 +2,11 @@
 
 from typing import Any, Dict, List
 
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager, CallbackManager
+from langchain.callbacks.base import (
+    BaseCallbackHandler,
+    BaseCallbackManager,
+    CallbackManager,
+)
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.schema import LLMResult
 
@@ -62,7 +66,9 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors += 1
 
 
-def _test_callback_manager(manager: BaseCallbackManager, *handlers: FakeCallbackHandler):
+def _test_callback_manager(
+    manager: BaseCallbackManager, *handlers: FakeCallbackHandler
+) -> None:
     """Test the CallbackManager."""
     manager.on_llm_start({}, [])
     manager.on_llm_end(LLMResult(generations=[]))

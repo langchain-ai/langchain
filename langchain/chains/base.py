@@ -1,11 +1,11 @@
 """Base interface that all chains should implement."""
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
-from langchain.callbacks import get_callback_manager
 
 from pydantic import BaseModel, Extra, Field
 
 import langchain
+from langchain.callbacks import get_callback_manager
 
 
 class Memory(BaseModel, ABC):
