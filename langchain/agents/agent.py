@@ -9,6 +9,7 @@ from pydantic import BaseModel, root_validator
 
 import langchain
 from langchain.agents.tools import Tool
+from langchain.callbacks import get_callback_manager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
@@ -213,8 +214,12 @@ class AgentExecutor(Chain, BaseModel):
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
+                get_callback_manager().on_tool_start(
+                    {"name": str(chain)[:60] + "..."}, output.tool, output.tool_input
+                )
                 # We then call the tool on the tool input to get an observation
                 observation = chain(output.tool_input)
+                get_callback_manager().on_tool_end(observation)
                 color = color_mapping[output.tool]
             else:
                 observation = f"{output.tool} is not a valid tool, try another one."

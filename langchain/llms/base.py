@@ -2,23 +2,14 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra
 
 import langchain
-from langchain.schema import Generation
-
-
-class LLMResult(NamedTuple):
-    """Class that contains all relevant information for an LLM Result."""
-
-    generations: List[List[Generation]]
-    """List of the things generated. This is List[List[]] because
-    each input could have multiple generations."""
-    llm_output: Optional[dict] = None
-    """For arbitrary LLM provider specific output."""
+from langchain.callbacks import get_callback_manager
+from langchain.schema import Generation, LLMResult
 
 
 class BaseLLM(BaseModel, ABC):
@@ -48,7 +39,12 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return self._generate(prompts, stop=stop)
+            get_callback_manager().on_llm_start(
+                {"name": self.__class__.__name__}, prompts
+            )
+            output = self._generate(prompts, stop=stop)
+            get_callback_manager().on_llm_end(output)
+            return output
         params = self._llm_dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -62,7 +58,11 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
+        get_callback_manager().on_llm_start(
+            {"name": self.__class__.__name__}, missing_prompts
+        )
         new_results = self._generate(missing_prompts, stop=stop)
+        get_callback_manager().on_llm_end(new_results)
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]
