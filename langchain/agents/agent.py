@@ -134,10 +134,17 @@ class Agent(BaseModel):
         pass
 
     @classmethod
-    def from_llm_and_tools(cls, llm: BaseLLM, tools: List[Tool]) -> Agent:
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLLM,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+    ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
+        llm_chain = LLMChain(
+            llm=llm, prompt=cls.create_prompt(tools), callback_manager=callback_manager
+        )
         return cls(llm_chain=llm_chain)
 
     def return_stopped_response(self) -> dict:
@@ -152,7 +159,6 @@ class AgentExecutor(Chain, BaseModel):
     tools: List[Tool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = None
-    callback_manager: Optional[BaseCallbackManager] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -167,10 +173,16 @@ class AgentExecutor(Chain, BaseModel):
 
     @classmethod
     def from_agent_and_tools(
-        cls, agent: Agent, tools: List[Tool], **kwargs: Any
+        cls,
+        agent: Agent,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
-        return cls(agent=agent, tools=tools, **kwargs)
+        return cls(
+            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+        )
 
     @property
     def input_keys(self) -> List[str]:
