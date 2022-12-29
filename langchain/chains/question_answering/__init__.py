@@ -32,7 +32,10 @@ def _load_stuff_chain(
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
     # TODO: document prompt
     return StuffDocumentsChain(
-        llm_chain=llm_chain, document_variable_name=document_variable_name, **kwargs
+        llm_chain=llm_chain,
+        document_variable_name=document_variable_name,
+        verbose=verbose,
+        **kwargs,
     )
 
 
@@ -53,7 +56,9 @@ def _load_map_reduce_chain(
     reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
     # TODO: document prompt
     combine_document_chain = StuffDocumentsChain(
-        llm_chain=reduce_chain, document_variable_name=combine_document_variable_name
+        llm_chain=reduce_chain,
+        document_variable_name=combine_document_variable_name,
+        verbose=verbose,
     )
     if collapse_prompt is None:
         collapse_chain = None
@@ -77,6 +82,7 @@ def _load_map_reduce_chain(
         combine_document_chain=combine_document_chain,
         document_variable_name=map_reduce_document_variable_name,
         collapse_document_chain=collapse_chain,
+        verbose=verbose,
         **kwargs,
     )
 
@@ -99,6 +105,7 @@ def _load_refine_chain(
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
+        verbose=verbose,
         **kwargs,
     )
 
@@ -112,6 +119,8 @@ def load_qa_chain(
         llm: Language Model to use in the chain.
         chain_type: Type of document combining chain to use. Should be one of "stuff",
             "map_reduce", and "refine".
+        verbose: Whether chains should be run in verbose mode or not. Note that this
+            applies to all chains that make up the final chain.
 
     Returns:
         A chain to use for question answering.
