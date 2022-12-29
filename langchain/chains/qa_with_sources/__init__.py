@@ -26,9 +26,10 @@ def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "summaries",
+    verbose: bool = False,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt)
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
@@ -47,11 +48,12 @@ def _load_map_reduce_chain(
     collapse_prompt: Optional[BasePromptTemplate] = None,
     reduce_llm: Optional[BaseLLM] = None,
     collapse_llm: Optional[BaseLLM] = None,
+    verbose: bool = False,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt)
+    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt)
+    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
     combine_document_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
@@ -67,7 +69,11 @@ def _load_map_reduce_chain(
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
-            llm_chain=LLMChain(llm=_collapse_llm, prompt=collapse_prompt),
+            llm_chain=LLMChain(
+                llm=_collapse_llm,
+                prompt=collapse_prompt,
+                verbose=verbose,
+            ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
         )
@@ -88,11 +94,12 @@ def _load_refine_chain(
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
+    verbose: bool = False,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt)
+    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt)
+    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
@@ -104,7 +111,7 @@ def _load_refine_chain(
 
 
 def load_qa_with_sources_chain(
-    llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+    llm: BaseLLM, chain_type: str = "stuff", verbose: bool = False, **kwargs: Any
 ) -> BaseCombineDocumentsChain:
     """Load question answering with sources chain.
 
@@ -127,4 +134,4 @@ def load_qa_with_sources_chain(
             f"Should be one of {loader_mapping.keys()}"
         )
     _func: LoadingCallable = loader_mapping[chain_type]
-    return _func(llm, **kwargs)
+    return _func(llm, verbose=verbose, **kwargs)
