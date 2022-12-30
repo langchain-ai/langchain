@@ -42,8 +42,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_parser",
-    "nbsphinx",
+    "myst_nb"
     "sphinx_panels",
 ]
 source_suffix = [".rst", ".md"]
@@ -88,3 +87,4 @@ html_context = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path: list = []
+nb_execution_mode = "off"
