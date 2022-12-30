@@ -54,6 +54,10 @@ class BaseCallbackHandler(ABC):
     def on_tool_error(self, error: Exception) -> None:
         """Run when tool errors."""
 
+    @abstractmethod
+    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+        """Run when agent ends."""
+
 
 class BaseCallbackManager(BaseCallbackHandler, ABC):
     """Base callback manager that can be used to handle callbacks from LangChain."""
@@ -127,6 +131,11 @@ class CallbackManager(BaseCallbackManager):
         """Run when tool errors."""
         for handler in self.handlers:
             handler.on_tool_error(error)
+
+    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+        """Run when agent ends."""
+        for handler in self.handlers:
+            handler.on_agent_end(log, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""

@@ -88,6 +88,11 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_tool_error(error)
 
+    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+        """Run when agent ends."""
+        with self._lock:
+            self._callback_manager.on_agent_end(log, **kwargs)
+
     def add_handler(self, callback: BaseCallbackHandler) -> None:
         """Add a callback to the callback manager."""
         with self._lock:

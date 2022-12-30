@@ -85,12 +85,14 @@ def test_agent_with_callbacks() -> None:
         verbose=True,
         callback_manager=manager,
     )
+    agent.agent.llm_chain.verbose = True
 
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
-    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run, 1 ending
-    assert handler.starts == 7
+    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    assert handler.starts == 6
+    # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
 
