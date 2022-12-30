@@ -28,7 +28,7 @@ def main():
         tools, llm, agent="zero-shot-react-description", verbose=False
     )
 
-    # Nested JSON tracing
+    # Nested JSON tracers
     os.environ["LANGCHAIN_TRACER"] = "nested_json"
 
     # agent.run(
