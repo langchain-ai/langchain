@@ -25,5 +25,5 @@ The following sections of documentation are provided:
 
    memory/getting_started.ipynb
    memory/how_to_guides.rst
-   memory/conceptual_guide.rst
+   memory/key_concepts.rst
    /reference/memory.rst

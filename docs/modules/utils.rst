@@ -21,5 +21,5 @@ The following sections of documentation are provided:
    :hidden:
 
    utils/how_to_guides.rst
-   utils/conceptual_guide.md
+   utils/key_concepts.md
    Reference </reference/utils.rst>

@@ -5,6 +5,8 @@ If you're new to the library, you may want to start with the `Quickstart <gettin
 
 The user guide here shows more advanced workflows and how to use the library in different ways.
 
+`Prompt Management <prompts/prompt_management.ipynb>`_: A walkthrough of all the functionality LangChain supports for working with prompts.
+
 `Prompt Serialization <examples/prompt_serialization.ipynb>`_: A walkthrough of how to serialize prompts to and from disk.
 
 `Few Shot Examples <examples/few_shot_examples.ipynb>`_: How to include examples in the prompt.

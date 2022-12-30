@@ -28,7 +28,7 @@ Below is a list of all supported tools and relevant information:
 - Requires LLM: Whether this tool requires an LLM to be initialized.
 - (Optional) Extra Parameters: What extra parameters are required to initialize this tool.
 
-### List of Tools
+## List of Tools
 
 **python_repl**
 - Tool Name: Python REPL

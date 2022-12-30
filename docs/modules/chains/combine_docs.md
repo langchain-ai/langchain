@@ -1,4 +1,4 @@
-## CombineDocuments Chains
+# CombineDocuments Chains
 CombineDocuments chains are useful for when you need to run a language over multiple documents.
 Common use cases for this include question answering, question answering with sources, summarization, and more.
 For more information on specific use cases as well as different methods for **fetching** these documents, please see 
@@ -11,7 +11,7 @@ we are actively looking to include more, so if you have any ideas please reach o
 one best method - the decision of which one to use is often very context specific. In order from simplest to
 most complex:
 
-### Stuffing
+## Stuffing
 Stuffing is the simplest method, whereby you simply stuff all the related data into the prompt as context
 to pass to the language model. This is implemented in LangChain as the `StuffDocumentsChain`.
 
@@ -22,7 +22,7 @@ to pass to the language model. This is implemented in LangChain as the `StuffDoc
 The main downside of this method is that it only works one smaller pieces of data. Once you are working
 with many pieces of data, this approach is no longer feasible. The next two approaches are designed to help deal with that.
 
-### Map Reduce
+## Map Reduce
 This method involves an initial prompt on each chunk of data (for summarization tasks, this 
 could be a summary of that chunk; for question-answering tasks, it could be an answer based solely on that chunk).
 Then a different prompt is run to combine all the initial outputs. This is implemented in the LangChain as the `MapReduceDocumentsChain`.
@@ -31,7 +31,7 @@ Then a different prompt is run to combine all the initial outputs. This is imple
 
 **Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. Loses some information during the final combining call.
 
-### Refine
+## Refine
 This method involves an initial prompt on the first chunk of data, generating some output.
 For the remaining documents, that output is passed in, along with the next document, 
 asking the LLM to refine the output based on the new document. 

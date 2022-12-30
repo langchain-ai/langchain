@@ -10,6 +10,7 @@ Reference
    reference/installation.md
    reference/integrations.md
    reference/prompts.rst
-   reference/chains.rst
-   reference/data_augmented_generation.rst
+   reference/modules/llms
+   reference/utils.rst
+   reference/modules/chains
    reference/modules/agents
