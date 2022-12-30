@@ -13,8 +13,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
-        """Do nothing."""
-        pass
+        """Print out the prompts."""
+        st.write("Prompts after formatting:")
+        for prompt in prompts:
+            st.write(prompt)
 
     def on_llm_end(self, response: LLMResult) -> None:
         """Do nothing."""
@@ -27,12 +29,13 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
-        """Do nothing."""
-        pass
+        """Print out that we are entering a chain."""
+        class_name = serialized["name"]
+        st.write(f"Entering new {class_name} chain...")
 
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
-        """Do nothing."""
-        pass
+        """Print out that we finished a chain."""
+        st.write("Finished chain.")
 
     def on_chain_error(self, error: Exception) -> None:
         """Do nothing."""
