@@ -20,6 +20,7 @@ def initialize_agent(
     tools: List[Tool],
     llm: BaseLLM,
     agent: str = "zero-shot-react-description",
+    verbose: bool = False,
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
@@ -30,6 +31,7 @@ def initialize_agent(
         llm: Language model to use as the agent.
         agent: The agent to use. Valid options are:
             `zero-shot-react-description`, `react-docstore`, `self-ask-with-search`.
+        verbose: Whether to or not to initiate callbacks and print verbose output.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         **kwargs: Additional key word arguments to pass to the agent.
@@ -44,11 +46,12 @@ def initialize_agent(
         )
     agent_cls = AGENT_TO_CLASS[agent]
     agent_obj = agent_cls.from_llm_and_tools(
-        llm, tools, callback_manager=callback_manager
+        llm, tools, callback_manager=callback_manager, verbose=verbose
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
         tools=tools,
         callback_manager=callback_manager,
+        verbose=verbose,
         **kwargs,
     )

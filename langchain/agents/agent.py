@@ -168,11 +168,16 @@ class AgentExecutor(Chain, BaseModel):
         agent: Agent,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
         return cls(
-            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+            agent=agent,
+            tools=tools,
+            callback_manager=callback_manager,
+            verbose=verbose,
+            **kwargs,
         )
 
     @property
