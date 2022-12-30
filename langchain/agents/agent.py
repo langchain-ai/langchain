@@ -220,7 +220,7 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    self._get_callback_manager().on_agent_end(output.log, color="green")
+                    self._get_callback_manager().on_text(output.log, color="green")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps

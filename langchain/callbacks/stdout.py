@@ -67,8 +67,6 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_agent_end(
-        self, log: str, color: Optional[str] = None, **kwargs: Any
-    ) -> None:
+    def on_text(self, text: str, **kwargs: Optional[str]) -> None:
         """Run when agent ends."""
-        print_text(log, color=color)
+        print_text(text, color=color)

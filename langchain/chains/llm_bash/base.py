@@ -52,11 +52,11 @@ class LLMBashChain(Chain, BaseModel):
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         bash_executor = BashProcess()
         if self.verbose:
-            print_text(inputs[self.input_key])
+            self.callback_manager.on_text(inputs[self.input_key])
 
         t = llm_executor.predict(question=inputs[self.input_key])
         if self.verbose:
-            print_text(t, color="green")
+            self.callback_manager.on_text(t, color="green")
 
         t = t.strip()
         if t.startswith("```bash"):
