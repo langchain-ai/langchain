@@ -4,11 +4,10 @@ from typing import Optional, Union
 
 import requests
 
-from langchain.tracing.base import ChainRun, LLMRun, ToolRun
-from langchain.tracing.nested import NestedTracer
+from langchain.callbacks.tracing.tracer import Tracer, LLMRun, ChainRun, ToolRun
 
 
-class LangChainTracer(NestedTracer):
+class LangChainTracer(Tracer):
     """An implementation of the Tracer interface that POSTS to the langchain endpoint."""
 
     _endpoint: str = "http://127.0.0.1:5000"

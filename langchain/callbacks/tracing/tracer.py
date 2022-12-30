@@ -1,47 +1,66 @@
+from __future__ import annotations
+
 import datetime
-import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.tracing.base import (
-    BaseTracer,
-    ChainRun,
-    LLMRun,
-    ToolRun,
-    TracerException,
-)
+from dataclasses_json import dataclass_json
+
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema import AgentAction, LLMResult
 
 
-class Singleton:
-    """A thread-safe singleton class that can be inherited from."""
-
-    _instance = None
-    _lock = threading.Lock()
-
-    def __new__(cls):
-        if cls._instance is None:
-            with cls._lock:
-                # Another thread could have created the instance
-                # before we acquired the lock. So check that the
-                # instance is still nonexistent.
-                if not cls._instance:
-                    cls._instance = super().__new__(cls)
-        return cls._instance
-
-
+@dataclass_json
 @dataclass
-class TracerStack(threading.local):
-    """A stack of runs used for logging."""
+class Run:
+    id: Optional[Union[int, str]]
+    start_time: datetime
+    end_time: Optional[datetime]
+    extra: Dict[str, Any]
+    execution_order: int
+    serialized: Dict[str, Any]
 
-    stack: List[Union[LLMRun, ChainRun, ToolRun]] = field(default_factory=list)
-    execution_order: int = 1
+
+@dataclass_json
+@dataclass
+class LLMRun(Run):
+    prompts: Dict[str, Any]
+    response: Optional[List[List[str]]]
 
 
-class NestedTracer(Singleton, BaseTracer, ABC):
+@dataclass_json
+@dataclass
+class ChainRun(Run):
+    inputs: Dict[str, Any]
+    outputs: Optional[Dict[str, Any]]
+    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
+
+    child_llm_runs: List[LLMRun] = field(default_factory=list)
+    child_chain_runs: List[ChainRun] = field(default_factory=list)
+    child_tool_runs: List[ToolRun] = field(default_factory=list)
+
+
+@dataclass_json
+@dataclass
+class ToolRun(Run):
+    tool_input: str
+    output: Optional[str]
+    action: str
+    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
+
+    child_llm_runs: List[LLMRun] = field(default_factory=list)
+    child_chain_runs: List[ChainRun] = field(default_factory=list)
+    child_tool_runs: List[ToolRun] = field(default_factory=list)
+
+
+class TracerException(Exception):
+    """Base class for exceptions in tracing module."""
+
+
+class BaseTracer(BaseCallbackHandler, ABC):
     """An implementation of the Tracer interface that prints trace as nested json."""
-
-    _tracer_stack = TracerStack()
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
@@ -83,17 +102,16 @@ class NestedTracer(Singleton, BaseTracer, ABC):
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
 
-    def start_llm_trace(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Start a trace for an LLM run."""
 
         llm_run = LLMRun(
             serialized=serialized,
             prompts={"prompts": prompts},
-            extra=extra,
+            extra=kwargs,
             start_time=datetime.datetime.utcnow(),
-            error=None,
             execution_order=self._tracer_stack.execution_order,
             id=self._generate_id(),
             response=None,
@@ -101,8 +119,9 @@ class NestedTracer(Singleton, BaseTracer, ABC):
         )
         self._start_trace(llm_run)
 
-    def end_llm_trace(
-        self, response: List[List[str]], error: Optional[str] = None
+    def on_llm_end(
+        self,
+        response: LLMResult,
     ) -> None:
         """End a trace for an LLM run."""
 
@@ -113,21 +132,22 @@ class NestedTracer(Singleton, BaseTracer, ABC):
 
         self._tracer_stack.stack[-1].end_time = datetime.datetime.utcnow()
         self._tracer_stack.stack[-1].response = response
-        self._tracer_stack.stack[-1].error = error
 
         self._end_trace()
 
-    def start_chain_trace(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+    def on_llm_error(self, error: Exception) -> None:
+        pass
+
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Start a trace for a chain run."""
 
         chain_run = ChainRun(
             serialized=serialized,
             inputs=inputs,
-            extra=extra,
+            extra=kwargs,
             start_time=datetime.datetime.utcnow(),
-            error=None,
             execution_order=self._tracer_stack.execution_order,
             id=self._generate_id(),
             outputs=None,
@@ -136,9 +156,7 @@ class NestedTracer(Singleton, BaseTracer, ABC):
         )
         self._start_trace(chain_run)
 
-    def end_chain_trace(
-        self, outputs: Dict[str, Any], error: Optional[str] = None
-    ) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
         """End a trace for a chain run."""
 
         if not self._tracer_stack.stack or not isinstance(
@@ -148,12 +166,14 @@ class NestedTracer(Singleton, BaseTracer, ABC):
 
         self._tracer_stack.stack[-1].end_time = datetime.datetime.utcnow()
         self._tracer_stack.stack[-1].outputs = outputs
-        self._tracer_stack.stack[-1].error = error
 
         self._end_trace()
 
-    def start_tool_trace(
-        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
+    def on_chain_error(self, error: Exception) -> None:
+        pass
+
+    def on_tool_start(
+        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Start a trace for a tool run."""
 

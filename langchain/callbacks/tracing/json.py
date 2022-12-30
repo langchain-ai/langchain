@@ -3,11 +3,10 @@
 import uuid
 from typing import Optional, Union
 
-from langchain.tracing.base import ChainRun, LLMRun, ToolRun
-from langchain.tracing.nested import NestedTracer
+from langchain.callbacks.tracing.tracer import Tracer, LLMRun, ChainRun, ToolRun
 
 
-class JsonTracer(NestedTracer):
+class JsonTracer(Tracer):
     """An implementation of the Tracer interface that prints trace as nested json."""
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
