@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
@@ -23,7 +23,7 @@ class BaseLLM(BaseModel, ABC):
     cache: Optional[bool] = None
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
-    callback_manager: Optional[BaseCallbackManager] = None
+    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -31,17 +31,21 @@ class BaseLLM(BaseModel, ABC):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    @validator("callback_manager", pre=True, always=True)
+    def set_callback_manager(
+        cls, callback_manager: Optional[BaseCallbackManager]
+    ) -> BaseCallbackManager:
+        """If callback manager is None, set it.
+
+        This allows users to pass in None as context manager, which is a nice UX.
+        """
+        return callback_manager or get_callback_manager()
+
     @abstractmethod
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
-
-    def _get_callback_manager(self) -> BaseCallbackManager:
-        """Get the callback manager."""
-        if self.callback_manager is not None:
-            return self.callback_manager
-        return get_callback_manager()
 
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -55,12 +59,12 @@ class BaseLLM(BaseModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             if self.verbose:
-                self._get_callback_manager().on_llm_start(
+                self.callback_manager.on_llm_start(
                     {"name": self.__class__.__name__}, prompts
                 )
             output = self._generate(prompts, stop=stop)
             if self.verbose:
-                self._get_callback_manager().on_llm_end(output)
+                self.callback_manager.on_llm_end(output)
             return output
         params = self._llm_dict()
         params["stop"] = stop
@@ -75,11 +79,11 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
-        self._get_callback_manager().on_llm_start(
+        self.callback_manager.on_llm_start(
             {"name": self.__class__.__name__}, missing_prompts
         )
         new_results = self._generate(missing_prompts, stop=stop)
-        self._get_callback_manager().on_llm_end(new_results)
+        self.callback_manager.on_llm_end(new_results)
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]
