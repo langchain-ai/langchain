@@ -8,13 +8,13 @@ Depending on the user input, the agent can then decide which, if any, of these t
 
 The following sections of documentation are provided:
 
-- `Getting Started <agents/getting_started.ipynb>`_: A notebook to help you get started working with agents as quickly as possible.
+- `Getting Started <agents/getting_started>`_: A notebook to help you get started working with agents as quickly as possible.
 
-- `How-To Guides <agents/how_to_guides.rst>`_: A collection of how-to guides. These highlight how to integrate various types of tools, how to work with different types of agent, and how to customize agents.
+- `How-To Guides <agents/how_to_guides>`_: A collection of how-to guides. These highlight how to integrate various types of tools, how to work with different types of agent, and how to customize agents.
 
-- `Reference </reference/modules/agents.rst>`_: API reference documentation for all Agent classes.
+- `Reference </reference/modules/agents>`_: API reference documentation for all Agent classes.
 
-- `Conceptual Guide <agents/conceptual_guide.md>`_: A conceptual guide going over the various concepts related to agents.
+- `Conceptual Guide <agents/conceptual_guide>`_: A conceptual guide going over the various concepts related to agents.
 
 
 .. toctree::

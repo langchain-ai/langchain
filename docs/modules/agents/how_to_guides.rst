@@ -3,17 +3,17 @@ How-To Guides
 
 The first category of how-to guides here cover specific parts of working with agents.
 
-`Custom Tools <examples/custom_tools.ipynb>`_: How to create custom tools that an agent can use.
+`Custom Tools <examples/custom_tools>`_: How to create custom tools that an agent can use.
 
-`Intermediate Steps <examples/intermediate_steps.ipynb>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
+`Intermediate Steps <examples/intermediate_steps>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
 
-`Custom Agent <examples/custom_agent.ipynb>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
+`Custom Agent <examples/custom_agent>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
 
-`Multi Input Tools <examples/multi_input_tool.ipynb>`_: How to use a tool that requires multiple inputs with an agent.
+`Multi Input Tools <examples/multi_input_tool>`_: How to use a tool that requires multiple inputs with an agent.
 
-`Search Tools <examples/search_tools.ipynb>`_: How to use the different type of search tools that LangChain supports.
+`Search Tools <examples/search_tools>`_: How to use the different type of search tools that LangChain supports.
 
-`Max Iterations <examples/max_iterations.ipynb>`_: How to restrict an agent to a certain number of iterations.
+`Max Iterations <examples/max_iterations>`_: How to restrict an agent to a certain number of iterations.
 
 
 The next set of examples are all end-to-end agents for specific applications.
@@ -28,21 +28,21 @@ In all examples there is an Agent with a particular set of tools.
 - **Agent used**: `zero-shot-react-description`
 - `Paper <https://arxiv.org/pdf/2205.00445.pdf>`_
 - **Note**: This is the most general purpose example, so if you are looking to use an agent with arbitrary tools, please start here.
-- `Example Notebook <implementations/mrkl.ipynb>`_
+- `Example Notebook <implementations/mrkl>`_
 
 **Self-Ask-With-Search**
 
 - **Tools used**: Search
 - **Agent used**: `self-ask-with-search`
 - `Paper <https://ofir.io/self-ask.pdf>`_
-- `Example Notebook <implementations/self_ask_with_search.ipynb>`_
+- `Example Notebook <implementations/self_ask_with_search>`_
 
 **ReAct**
 
 - **Tools used**: Wikipedia Docstore
 - **Agent used**: `react-docstore`
 - `Paper <https://arxiv.org/pdf/2210.03629.pdf>`_
-- `Example Notebook <implementations/react.ipynb>`_
+- `Example Notebook <implementations/react>`_
 
 
 

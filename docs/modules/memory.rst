@@ -9,13 +9,13 @@ The concept of “Memory” exists to do exactly that.
 
 The following sections of documentation are provided:
 
-- `Getting Started <memory/getting_started.ipynb>`_: An overview of how to get started with different types of memory.
+- `Getting Started <memory/getting_started>`_: An overview of how to get started with different types of memory.
 
-- `How-To Guides <memory/how_to_guides.rst>`_: A collection of how-to guides. These highlight how to work with different types of memory, as well as how to customize memory.
+- `How-To Guides <memory/how_to_guides>`_: A collection of how-to guides. These highlight how to work with different types of memory, as well as how to customize memory.
 
-- `Reference </reference/memory.rst>`_: API reference documentation for all Memory classes.
+- `Reference </reference/memory>`_: API reference documentation for all Memory classes.
 
-- `Conceptual Guide <memory/conceptual_guide.md>`_: A conceptual guide going over the various concepts related to memory.
+- `Conceptual Guide <memory/conceptual_guide>`_: A conceptual guide going over the various concepts related to memory.
 
 
 .. toctree::
