@@ -16,7 +16,7 @@ from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema import AGENT_FINISH_OBSERVATION, AgentAction, AgentFinish
 
 logger = logging.getLogger()
 
@@ -206,7 +206,7 @@ class AgentExecutor(Chain, BaseModel):
                     get_callback_manager().on_tool_start(
                         {"name": "Finish"}, output, color="green"
                     )
-                    get_callback_manager().on_tool_end("")
+                    get_callback_manager().on_tool_end(AGENT_FINISH_OBSERVATION)
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AGENT_FINISH_OBSERVATION, AgentAction, LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
@@ -59,9 +59,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        # Observation prefix is not passed in when is the final action,
-        # and so we don't want to print on that.
-        if observation_prefix is not None:
+        if output != AGENT_FINISH_OBSERVATION:
             print_text(f"\n{observation_prefix}")
             print_text(output, color=color)
             print_text(f"\n{llm_prefix}")

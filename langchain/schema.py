@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
+AGENT_FINISH_OBSERVATION = "__agent_finish__"
+
 
 @dataclass
 class AgentAction:
