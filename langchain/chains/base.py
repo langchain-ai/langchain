@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, Field
 
 import langchain
 from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 
 
 class Memory(BaseModel, ABC):
@@ -43,9 +44,21 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
+    callback_manager: Optional[BaseCallbackManager] = None
+    verbose: bool = Field(
+        default_factory=_get_verbosity
+    )  # Whether to print the response text
 
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _get_callback_manager(self) -> BaseCallbackManager:
+        """Get the callback manager."""
+        if self.callback_manager is not None:
+            return self.callback_manager
+        return get_callback_manager()
 
     @property
     @abstractmethod
@@ -107,12 +120,12 @@ class Chain(BaseModel, ABC):
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            get_callback_manager().on_chain_start(
+            self._get_callback_manager().on_chain_start(
                 {"name": self.__class__.__name__}, inputs
             )
         outputs = self._call(inputs)
         if self.verbose:
-            get_callback_manager().on_chain_end(outputs)
+            self._get_callback_manager().on_chain_end(outputs)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)

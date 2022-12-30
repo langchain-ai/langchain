@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import Tool
-from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
@@ -132,10 +132,17 @@ class Agent(BaseModel):
         pass
 
     @classmethod
-    def from_llm_and_tools(cls, llm: BaseLLM, tools: List[Tool]) -> Agent:
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLLM,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+    ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
+        llm_chain = LLMChain(
+            llm=llm, prompt=cls.create_prompt(tools), callback_manager=callback_manager
+        )
         return cls(llm_chain=llm_chain)
 
     def return_stopped_response(self) -> dict:
@@ -153,10 +160,16 @@ class AgentExecutor(Chain, BaseModel):
 
     @classmethod
     def from_agent_and_tools(
-        cls, agent: Agent, tools: List[Tool], **kwargs: Any
+        cls,
+        agent: Agent,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
-        return cls(agent=agent, tools=tools, **kwargs)
+        return cls(
+            agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
+        )
 
     @property
     def input_keys(self) -> List[str]:
@@ -203,10 +216,10 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    get_callback_manager().on_tool_start(
+                    self._get_callback_manager().on_tool_start(
                         {"name": "Finish"}, output, color="green"
                     )
-                    get_callback_manager().on_tool_end(AGENT_FINISH_OBSERVATION)
+                    self._get_callback_manager().on_tool_end(AGENT_FINISH_OBSERVATION)
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
@@ -216,7 +229,7 @@ class AgentExecutor(Chain, BaseModel):
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
                 if self.verbose:
-                    get_callback_manager().on_tool_start(
+                    self._get_callback_manager().on_tool_start(
                         {"name": str(chain)[:60] + "..."}, output, color="green"
                     )
                 # We then call the tool on the tool input to get an observation
@@ -224,13 +237,13 @@ class AgentExecutor(Chain, BaseModel):
                 color = color_mapping[output.tool]
             else:
                 if self.verbose:
-                    get_callback_manager().on_tool_start(
+                    self._get_callback_manager().on_tool_start(
                         {"name": "N/A"}, output, color="green"
                     )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
             if self.verbose:
-                get_callback_manager().on_tool_end(
+                self._get_callback_manager().on_tool_end(
                     observation,
                     color=color,
                     observation_prefix=self.agent.observation_prefix,
