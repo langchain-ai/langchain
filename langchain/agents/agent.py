@@ -220,7 +220,7 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    self._get_callback_manager().on_agent_end(output.log, color="green")
+                    self.callback_manager.on_agent_end(output.log, color="green")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
@@ -230,7 +230,7 @@ class AgentExecutor(Chain, BaseModel):
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
                 if self.verbose:
-                    self._get_callback_manager().on_tool_start(
+                    self.callback_manager.on_tool_start(
                         {"name": str(chain)[:60] + "..."}, output, color="green"
                     )
                 # We then call the tool on the tool input to get an observation
@@ -238,13 +238,13 @@ class AgentExecutor(Chain, BaseModel):
                 color = color_mapping[output.tool]
             else:
                 if self.verbose:
-                    self._get_callback_manager().on_tool_start(
+                    self.callback_manager.on_tool_start(
                         {"name": "N/A"}, output, color="green"
                     )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
             if self.verbose:
-                self._get_callback_manager().on_tool_end(
+                self.callback_manager.on_tool_end(
                     observation,
                     color=color,
                     observation_prefix=self.agent.observation_prefix,
