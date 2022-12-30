@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, root_validator
 
@@ -46,7 +46,7 @@ class Agent(BaseModel):
 
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
-    ) -> Union[AgentFinish, AgentAction]:
+    ) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
@@ -73,7 +73,7 @@ class Agent(BaseModel):
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
         if tool == self.finish_tool_name:
-            return AgentFinish({"output": tool_input}, full_output)
+            return AgentFinish(tool, tool_input, full_output, {"output": tool_input})
         return AgentAction(tool, tool_input, full_output)
 
     def prepare_for_new_call(self) -> None:
@@ -202,8 +202,11 @@ class AgentExecutor(Chain, BaseModel):
             output = self.agent.plan(intermediate_steps, **inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
-                # if self.verbose:
-                #     langchain.logger.log_agent_end(output, color="green")
+                if self.verbose:
+                    get_callback_manager().on_tool_start(
+                        {"name": "Finish"}, output, color="green"
+                    )
+                    get_callback_manager().on_tool_end("")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps

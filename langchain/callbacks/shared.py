@@ -35,11 +35,11 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
     _callback_manager: CallbackManager = CallbackManager([])
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
         with self._lock:
-            self._callback_manager.on_llm_start(serialized, prompts, **extra)
+            self._callback_manager.on_llm_start(serialized, prompts, **kwargs)
 
     def on_llm_end(
         self,
@@ -55,11 +55,11 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
             self._callback_manager.on_llm_error(error)
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
         with self._lock:
-            self._callback_manager.on_chain_start(serialized, inputs, **extra)
+            self._callback_manager.on_chain_start(serialized, inputs, **kwargs)
 
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
         """Run when chain ends running."""
@@ -72,11 +72,11 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
             self._callback_manager.on_chain_error(error)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **extra: str
+        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         with self._lock:
-            self._callback_manager.on_tool_start(serialized, action, **extra)
+            self._callback_manager.on_tool_start(serialized, action, **kwargs)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""

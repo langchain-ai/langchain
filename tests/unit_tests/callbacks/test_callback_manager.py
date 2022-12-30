@@ -21,7 +21,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors = 0
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: str
     ) -> None:
         """Run when LLM starts running."""
         self.starts += 1

@@ -1,3 +1,4 @@
+"""Callback Handler that prints to std out."""
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -6,31 +7,37 @@ from langchain.schema import AgentAction, LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
+    """Callback Handler that prints to std out."""
+
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
+        """Print out the prompts."""
         print("Prompts after formatting:")
         for prompt in prompts:
             print_text(prompt, color="green", end="\n")
 
     def on_llm_end(self, response: LLMResult) -> None:
+        """Do nothing."""
         pass
 
     def on_llm_error(self, error: Exception) -> None:
+        """Do nothing."""
         pass
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
+        """Print out that we are entering a chain."""
         class_name = serialized["name"]
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
 
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
-        print(f"\n\033[1m> Finished chain.\033[0m")
-        if len(outputs) == 1:
-            print(list(outputs.values())[0])
+        """Print out that we finished a chain."""
+        print("\n\033[1m> Finished chain.\033[0m")
 
     def on_chain_error(self, error: Exception) -> None:
+        """Do nothing."""
         pass
 
     def on_tool_start(
@@ -38,8 +45,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         serialized: Dict[str, Any],
         action: AgentAction,
         color: Optional[str] = None,
-        **extra: str,
+        **kwargs: Any,
     ) -> None:
+        """Print out the log in specified color."""
         print_text(action.log, color=color)
 
     def on_tool_end(
@@ -50,9 +58,14 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        print_text(f"\n{observation_prefix}")
-        print_text(output, color=color)
-        print_text(f"\n{llm_prefix}")
+        """If not the final action, print out observation."""
+        # Observation prefix is not passed in when is the final action,
+        # and so we don't want to print on that.
+        if observation_prefix is not None:
+            print_text(f"\n{observation_prefix}")
+            print_text(output, color=color)
+            print_text(f"\n{llm_prefix}")
 
     def on_tool_error(self, error: Exception) -> None:
+        """Do nothing."""
         pass

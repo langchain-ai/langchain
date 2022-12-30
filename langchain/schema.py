@@ -1,9 +1,11 @@
 """Common schema objects."""
 
+from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
 
-class AgentAction(NamedTuple):
+@dataclass
+class AgentAction:
     """Agent's action to take."""
 
     tool: str
@@ -11,11 +13,11 @@ class AgentAction(NamedTuple):
     log: str
 
 
-class AgentFinish(NamedTuple):
+@dataclass
+class AgentFinish(AgentAction):
     """Agent's return value."""
 
     return_values: dict
-    log: str
 
 
 class Generation(NamedTuple):

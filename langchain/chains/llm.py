@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
 
-import langchain
 from langchain.chains.base import Chain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
