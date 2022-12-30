@@ -2,10 +2,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
-from langchain.tracing import get_tracer
+from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 
 
 class Memory(BaseModel, ABC):
@@ -43,9 +44,25 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
+    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    verbose: bool = Field(
+        default_factory=_get_verbosity
+    )  # Whether to print the response text
 
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True, always=True)
+    def set_callback_manager(
+        cls, callback_manager: Optional[BaseCallbackManager]
+    ) -> BaseCallbackManager:
+        """If callback manager is None, set it.
+
+        This allows users to pass in None as context manager, which is a nice UX.
+        """
+        return callback_manager or get_callback_manager()
 
     @property
     @abstractmethod
@@ -89,27 +106,30 @@ class Chain(BaseModel, ABC):
 
         """
         if not isinstance(inputs, dict):
-            if len(self.input_keys) != 1:
+            _input_keys = set(self.input_keys)
+            if self.memory is not None:
+                # If there are multiple input keys, but some get set by memory so that
+                # only one is not set, we can still figure out which key it is.
+                _input_keys = _input_keys.difference(self.memory.memory_variables)
+            if len(_input_keys) != 1:
                 raise ValueError(
                     f"A single string input was passed in, but this chain expects "
-                    f"multiple inputs ({self.input_keys}). When a chain expects "
+                    f"multiple inputs ({_input_keys}). When a chain expects "
                     f"multiple inputs, please call it by passing in a dictionary, "
                     "eg `chain({'foo': 1, 'bar': 2})`"
                 )
-            inputs = {self.input_keys[0]: inputs}
+            inputs = {list(_input_keys)[0]: inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            print(
-                f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
+            self.callback_manager.on_chain_start(
+                {"name": self.__class__.__name__}, inputs
             )
-        get_tracer().start_chain_trace({"name": self.__class__.__name__}, inputs)
         outputs = self._call(inputs)
-        get_tracer().end_chain_trace(outputs)
         if self.verbose:
-            print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
+            self.callback_manager.on_chain_end(outputs)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)
