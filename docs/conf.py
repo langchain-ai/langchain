@@ -88,3 +88,4 @@ html_context = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path: list = []
 nb_execution_mode = "off"
+myst_enable_extensions = ["colon_fence"]
