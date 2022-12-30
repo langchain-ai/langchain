@@ -9,7 +9,6 @@ from pydantic import BaseModel, root_validator
 
 import langchain
 from langchain.agents.tools import Tool
-from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -159,17 +158,6 @@ class AgentExecutor(Chain, BaseModel):
     tools: List[Tool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    def _get_callback_manager(self) -> BaseCallbackManager:
-        """Get the callback manager."""
-        if self.callback_manager is not None:
-            return self.callback_manager
-        return get_callback_manager()
 
     @classmethod
     def from_agent_and_tools(
