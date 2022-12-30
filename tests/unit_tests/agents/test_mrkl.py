@@ -78,7 +78,8 @@ def test_from_chains() -> None:
         [
             PREFIX,
             expected_tools_prompt,
-            FORMAT_INSTRUCTIONS.format(tool_names=expected_tool_names),
+            FORMAT_INSTRUCTIONS.format(
+                tool_names=expected_tool_names, finish_tool_name="Final Answer"),
             SUFFIX,
         ]
     )

@@ -13,6 +13,7 @@ from langchain.prompts import PromptTemplate
 
 class ConversationalAgent(Agent):
     """Agent for the MRKL chain."""
+    class_finish_tool_name: ClassVar[str] = "AI"
 
     @property
     def observation_prefix(self) -> str:
@@ -46,7 +47,8 @@ class ConversationalAgent(Agent):
         """
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = FORMAT_INSTRUCTIONS.format(tool_names=tool_names)
+        format_instructions = FORMAT_INSTRUCTIONS.format(
+            tool_names=tool_names, finish_tool_name=cls.class_finish_tool_name)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
@@ -55,11 +57,12 @@ class ConversationalAgent(Agent):
     @property
     def finish_tool_name(self) -> str:
         """Name of the tool to use to finish the chain."""
-        return "AI"
+        return self.__class__.class_finish_tool_name
 
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
-        if "AI: " in llm_output:
-            return "AI", llm_output.split("AI: ")[-1]
+        if f"{self.finish_tool_name}: " in llm_output:
+            return f"{self.finish_tool_name}", llm_output.split(f"{self.finish_tool_name}: ")[-1]
+
         regex = r"Action: (.*?)\nAction Input: (.*)"
         match = re.search(regex, llm_output)
         if not match:
