@@ -45,7 +45,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         action: AgentAction,
-        color: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
@@ -55,7 +54,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_end(
         self,
         output: str,
-        color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
@@ -68,9 +66,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_agent_end(
-        self, log: str, color: Optional[str] = None, **kwargs: Any
-    ) -> None:
-        """Run when agent ends."""
+    def on_text(self, log: str, **kwargs: Any) -> None:
+        """Run on text."""
         # st.write requires two spaces before a newline to render it
         st.write(log.replace("\n", "  \n"))
