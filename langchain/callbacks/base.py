@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from langchain.schema import LLMResult
+from langchain.schema import AgentAction, LLMResult
 
 
 class BaseCallbackHandler(ABC):
@@ -11,7 +11,7 @@ class BaseCallbackHandler(ABC):
 
     @abstractmethod
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
 
@@ -28,7 +28,7 @@ class BaseCallbackHandler(ABC):
 
     @abstractmethod
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
 
@@ -42,12 +42,12 @@ class BaseCallbackHandler(ABC):
 
     @abstractmethod
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
+        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
 
     @abstractmethod
-    def on_tool_end(self, output: str) -> None:
+    def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
 
     @abstractmethod
@@ -75,11 +75,11 @@ class CallbackManager(BaseCallbackManager):
         self.handlers = handlers
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
         for handler in self.handlers:
-            handler.on_llm_start(serialized, prompts, **extra)
+            handler.on_llm_start(serialized, prompts, **kwargs)
 
     def on_llm_end(
         self,
@@ -95,11 +95,11 @@ class CallbackManager(BaseCallbackManager):
             handler.on_llm_error(error)
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
         for handler in self.handlers:
-            handler.on_chain_start(serialized, inputs, **extra)
+            handler.on_chain_start(serialized, inputs, **kwargs)
 
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
         """Run when chain ends running."""
@@ -112,16 +112,16 @@ class CallbackManager(BaseCallbackManager):
             handler.on_chain_error(error)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
+        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         for handler in self.handlers:
-            handler.on_tool_start(serialized, action, tool_input, **extra)
+            handler.on_tool_start(serialized, action, **kwargs)
 
-    def on_tool_end(self, output: str) -> None:
+    def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         for handler in self.handlers:
-            handler.on_tool_end(output)
+            handler.on_tool_end(output, **kwargs)
 
     def on_tool_error(self, error: Exception) -> None:
         """Run when tool errors."""

@@ -2,7 +2,7 @@
 
 from langchain.callbacks.base import BaseCallbackManager, CallbackManager
 from langchain.callbacks.shared import SharedCallbackManager
-from langchain.schema import LLMResult
+from langchain.schema import AgentAction, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -13,10 +13,10 @@ def _test_callback_manager(
     manager.on_llm_start({}, [])
     manager.on_llm_end(LLMResult(generations=[]))
     manager.on_llm_error(Exception())
-    manager.on_chain_start({}, {})
+    manager.on_chain_start({"name": "foo"}, {})
     manager.on_chain_end({})
     manager.on_chain_error(Exception())
-    manager.on_tool_start({}, "", "")
+    manager.on_tool_start({}, AgentAction("", "", ""))
     manager.on_tool_end("")
     manager.on_tool_error(Exception())
     for handler in handlers:

@@ -74,7 +74,7 @@ def test_agent_with_callbacks() -> None:
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
         "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
     ]
-    fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
+    fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
         Tool("Search", lambda x: x, "Useful for searching"),
     ]
@@ -89,7 +89,36 @@ def test_agent_with_callbacks() -> None:
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
+    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run, 1 ending
+    assert handler.starts == 7
+    assert handler.ends == 7
+    assert handler.errors == 0
+
+
+def test_agent_with_callbacks_not_verbose() -> None:
+    """Test react chain with callbacks but not verbose."""
+    handler = FakeCallbackHandler()
+    manager = CallbackManager([handler])
+    tool = "Search"
+    responses = [
+        f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
+        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
+    tools = [
+        Tool("Search", lambda x: x, "Useful for searching"),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent="zero-shot-react-description",
+        callback_manager=manager,
+    )
+
+    output = agent.run("when was langchain made")
+    assert output == "curses foiled again"
+
     # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
-    assert handler.starts == 6
-    assert handler.ends == 6
+    assert handler.starts == 0
+    assert handler.ends == 0
     assert handler.errors == 0

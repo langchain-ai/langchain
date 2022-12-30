@@ -120,16 +120,12 @@ class Chain(BaseModel, ABC):
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            print(
-                f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
+            self._get_callback_manager().on_chain_start(
+                {"name": self.__class__.__name__}, inputs
             )
-        self._get_callback_manager().on_chain_start(
-            {"name": self.__class__.__name__}, inputs
-        )
         outputs = self._call(inputs)
-        self._get_callback_manager().on_chain_end(outputs)
         if self.verbose:
-            print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
+            self._get_callback_manager().on_chain_end(outputs)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)

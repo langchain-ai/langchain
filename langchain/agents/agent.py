@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, root_validator
 
-import langchain
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
@@ -17,7 +16,7 @@ from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema import AGENT_FINISH_OBSERVATION, AgentAction, AgentFinish
 
 logger = logging.getLogger()
 
@@ -47,7 +46,7 @@ class Agent(BaseModel):
 
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
-    ) -> Union[AgentFinish, AgentAction]:
+    ) -> AgentAction:
         """Given input, decided what to do.
 
         Args:
@@ -74,7 +73,7 @@ class Agent(BaseModel):
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
         if tool == self.finish_tool_name:
-            return AgentFinish({"output": tool_input}, full_output)
+            return AgentFinish(tool, tool_input, full_output, {"output": tool_input})
         return AgentAction(tool, tool_input, full_output)
 
     def prepare_for_new_call(self) -> None:
@@ -138,11 +137,15 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        verbose: bool = False,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         llm_chain = LLMChain(
-            llm=llm, prompt=cls.create_prompt(tools), callback_manager=callback_manager
+            llm=llm,
+            prompt=cls.create_prompt(tools),
+            callback_manager=callback_manager,
+            verbose=verbose,
         )
         return cls(llm_chain=llm_chain)
 
@@ -217,28 +220,34 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    langchain.logger.log_agent_end(output, color="green")
+                    self._get_callback_manager().on_tool_start(
+                        {"name": "Finish"}, output, color="green"
+                    )
+                    self._get_callback_manager().on_tool_end(AGENT_FINISH_OBSERVATION)
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
                 return final_output
-            if self.verbose:
-                langchain.logger.log_agent_action(output, color="green")
+
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
-                self._get_callback_manager().on_tool_start(
-                    {"name": str(chain)[:60] + "..."}, output.tool, output.tool_input
-                )
+                if self.verbose:
+                    self._get_callback_manager().on_tool_start(
+                        {"name": str(chain)[:60] + "..."}, output, color="green"
+                    )
                 # We then call the tool on the tool input to get an observation
                 observation = chain(output.tool_input)
-                self._get_callback_manager().on_tool_end(observation)
                 color = color_mapping[output.tool]
             else:
+                if self.verbose:
+                    self._get_callback_manager().on_tool_start(
+                        {"name": "N/A"}, output, color="green"
+                    )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
             if self.verbose:
-                langchain.logger.log_agent_observation(
+                self._get_callback_manager().on_tool_end(
                     observation,
                     color=color,
                     observation_prefix=self.agent.observation_prefix,

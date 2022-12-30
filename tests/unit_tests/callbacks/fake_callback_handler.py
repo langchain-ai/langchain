@@ -2,7 +2,7 @@
 from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
+from langchain.schema import AgentAction, LLMResult
 
 
 class FakeCallbackHandler(BaseCallbackHandler):
@@ -15,7 +15,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors = 0
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **extra: str
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
         self.starts += 1
@@ -32,7 +32,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors += 1
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **extra: str
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
         self.starts += 1
@@ -46,12 +46,12 @@ class FakeCallbackHandler(BaseCallbackHandler):
         self.errors += 1
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: str, tool_input: str, **extra: str
+        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         self.starts += 1
 
-    def on_tool_end(self, output: str) -> None:
+    def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         self.ends += 1
 

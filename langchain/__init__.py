@@ -4,6 +4,7 @@ from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
+from langchain.callbacks import set_default_callback_manager
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -33,6 +34,7 @@ from langchain.vectorstores import FAISS, ElasticVectorSearch
 logger: BaseLogger = StdOutLogger()
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
+set_default_callback_manager()
 
 __all__ = [
     "LLMChain",
