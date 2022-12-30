@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, root_validator
 
@@ -16,7 +16,7 @@ from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AGENT_FINISH_OBSERVATION, AgentAction, AgentFinish
+from langchain.schema import AgentAction, AgentFinish
 
 logger = logging.getLogger()
 
@@ -46,7 +46,7 @@ class Agent(BaseModel):
 
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
-    ) -> AgentAction:
+    ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
@@ -73,7 +73,7 @@ class Agent(BaseModel):
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
         if tool == self.finish_tool_name:
-            return AgentFinish(tool, tool_input, full_output, {"output": tool_input})
+            return AgentFinish(full_output, {"output": tool_input})
         return AgentAction(tool, tool_input, full_output)
 
     def prepare_for_new_call(self) -> None:
@@ -220,10 +220,7 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    self._get_callback_manager().on_tool_start(
-                        {"name": "Finish"}, output, color="green"
-                    )
-                    self._get_callback_manager().on_tool_end(AGENT_FINISH_OBSERVATION)
+                    self._get_callback_manager().on_agent_end(output.log, color="green")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps

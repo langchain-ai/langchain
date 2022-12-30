@@ -1,13 +1,9 @@
 """Common schema objects."""
 
-from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
-AGENT_FINISH_OBSERVATION = "__agent_finish__"
 
-
-@dataclass
-class AgentAction:
+class AgentAction(NamedTuple):
     """Agent's action to take."""
 
     tool: str
@@ -15,10 +11,10 @@ class AgentAction:
     log: str
 
 
-@dataclass
-class AgentFinish(AgentAction):
+class AgentFinish(NamedTuple):
     """Agent's return value."""
 
+    log: str
     return_values: dict
 
 
