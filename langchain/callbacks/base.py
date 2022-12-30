@@ -55,7 +55,7 @@ class BaseCallbackHandler(ABC):
         """Run when tool errors."""
 
     @abstractmethod
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent ends."""
 
 
@@ -132,10 +132,10 @@ class CallbackManager(BaseCallbackManager):
         for handler in self.handlers:
             handler.on_tool_error(error)
 
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent ends."""
         for handler in self.handlers:
-            handler.on_agent_end(log, **kwargs)
+            handler.on_text(text, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
