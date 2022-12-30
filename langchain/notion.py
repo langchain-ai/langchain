@@ -91,5 +91,5 @@ class NotionAPIWrapper(BaseModel):
         notion_client = self.notion_client(params)
 
         # TODO: change how the title is set
-        return self._write_to_notion(notion_client, document,document[0:10] + "...")
+        return self._write_to_notion(notion_client, document, document[0:10] + "...")
 
