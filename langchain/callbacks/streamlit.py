@@ -66,7 +66,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_text(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on text."""
         # st.write requires two spaces before a newline to render it
-        st.write(log.replace("\n", "  \n"))
+        st.write(text.replace("\n", "  \n"))
