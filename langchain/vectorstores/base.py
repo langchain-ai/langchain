@@ -48,6 +48,18 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @classmethod
+    def from_documents(
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> VectorStore:
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
+
+    @classmethod
     @abstractmethod
     def from_texts(
         cls,

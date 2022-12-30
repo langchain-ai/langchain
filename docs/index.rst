@@ -9,7 +9,7 @@ combine them with other sources of computation or knowledge.
 
 This library is aimed at assisting in the development of those types of applications.
 
-There are five main areas that LangChain is designed to help with.
+There are six main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
 1. LLM and Prompts
@@ -17,6 +17,7 @@ These are, in increasing order of complexity:
 3. Data Augmented Generation
 4. Agents
 5. Memory
+6. [BETA] Evaluation
 
 Let's go through these categories and for each one identify key concepts (to clarify terminology) as well as the problems in this area LangChain helps solve.
 
@@ -107,6 +108,14 @@ both at a short term but also at a long term level. The concept of "Memory" exis
 - A collection of common memory implementations to choose from
 - Common chains/agents that use memory (e.g. chatbots)
 
+**🧐 Evaluation:**
+
+[BETA] Generative models are notoriously hard to evaluate with traditional metrics.
+One new way of evaluating them is using language models themselves to do the evaluation.
+LangChain provides some prompts/chains for assisting in this.
+This is still in Beta, which also means that feedback is especially appreciated here.
+
+
 Documentation Structure
 =======================
 The documentation is structured into the following sections:
@@ -141,9 +150,10 @@ Start here if you haven't used LangChain before.
    examples/data_augmented_generation.rst
    examples/agents.rst
    examples/memory.rst
+   examples/evaluation.rst
    examples/model_laboratory.ipynb
 
-More elaborate examples and walk-throughs of particular
+More elaborate examples and walkthroughs of particular
 integrations and use cases. This is the place to look if you have questions
 about how to integrate certain pieces, or if you want to find examples of
 common tasks or cool demos.

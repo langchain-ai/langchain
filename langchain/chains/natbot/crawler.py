@@ -255,7 +255,7 @@ class Crawler:
 
             meta_data = []
 
-            # inefficient to grab the same set of keys for kinds of objects but its fine for now
+            # inefficient to grab the same set of keys for kinds of objects, but it's fine for now
             element_attributes = find_attributes(
                 attributes[index], ["type", "placeholder", "aria-label", "title", "alt"]
             )

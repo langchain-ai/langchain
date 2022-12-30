@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.45"
+version = "0.0.52"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -33,6 +33,8 @@ weaviate-client = {version = "^3", optional = true}
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
+duckdb-engine = "^0.6.6"
+pytest-watcher = "^0.2.6"
 
 [tool.poetry.group.lint.dependencies]
 flake8-docstrings = "^1.6.0"
@@ -56,7 +58,7 @@ playwright = "^1.28.0"
 
 [tool.poetry.extras]
 llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client"]
+all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis"]
 
 [tool.isort]
 profile = "black"

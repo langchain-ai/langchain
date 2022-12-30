@@ -1,10 +1,33 @@
 """Test logic on base chain class."""
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import pytest
 from pydantic import BaseModel
 
-from langchain.chains.base import Chain
+from langchain.callbacks.base import CallbackManager
+from langchain.chains.base import Chain, Memory
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+class FakeMemory(Memory, BaseModel):
+    """Fake memory class for testing purposes."""
+
+    @property
+    def memory_variables(self) -> List[str]:
+        """Return baz variable."""
+        return ["baz"]
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return baz variable."""
+        return {"baz": "foo"}
+
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Pass."""
+        pass
+
+    def clear(self) -> None:
+        """Pass."""
+        pass
 
 
 class FakeChain(Chain, BaseModel):
@@ -106,3 +129,31 @@ def test_multiple_output_keys_error() -> None:
     chain = FakeChain(the_output_keys=["foo", "bar"])
     with pytest.raises(ValueError):
         chain.run("bar")
+
+
+def test_run_arg_with_memory() -> None:
+    """Test run method works when arg is passed."""
+    chain = FakeChain(the_input_keys=["foo", "baz"], memory=FakeMemory())
+    chain.run("bar")
+
+
+def test_run_with_callback() -> None:
+    """Test run method works when callback manager is passed."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(callback_manager=CallbackManager([handler]), verbose=True)
+    output = chain.run("bar")
+    assert output == "baz"
+    assert handler.starts == 1
+    assert handler.ends == 1
+    assert handler.errors == 0
+
+
+def test_run_with_callback_not_verbose() -> None:
+    """Test run method works when callback manager is passed and not verbose."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(callback_manager=CallbackManager([handler]))
+    output = chain.run("bar")
+    assert output == "baz"
+    assert handler.starts == 0
+    assert handler.ends == 0
+    assert handler.errors == 0

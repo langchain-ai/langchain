@@ -13,16 +13,18 @@ class SQLDatabase:
     def __init__(
         self,
         engine: Engine,
+        schema: Optional[str] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
+        self._schema = schema
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
         self._inspector = inspect(self._engine)
-        self._all_tables = self._inspector.get_table_names()
+        self._all_tables = self._inspector.get_table_names(schema=schema)
         self._include_tables = include_tables or []
         if self._include_tables:
             missing_tables = set(self._include_tables).difference(self._all_tables)
@@ -60,7 +62,7 @@ class SQLDatabase:
         tables = []
         for table_name in self._get_table_names():
             columns = []
-            for column in self._inspector.get_columns(table_name):
+            for column in self._inspector.get_columns(table_name, schema=self._schema):
                 columns.append(f"{column['name']} ({str(column['type'])})")
             column_str = ", ".join(columns)
             table_str = template.format(table_name=table_name, columns=column_str)
@@ -74,6 +76,8 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.connect() as connection:
+            if self._schema is not None:
+                connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.exec_driver_sql(command)
             if cursor.returns_rows:
                 result = cursor.fetchall()

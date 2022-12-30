@@ -1,12 +1,12 @@
 """Chain that just formats a prompt and calls an LLM."""
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
 
-import langchain
 from langchain.chains.base import Chain
-from langchain.llms.base import BaseLLM, LLMResult
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import LLMResult
 
 
 class LLMChain(Chain, BaseModel):
@@ -53,6 +53,7 @@ class LLMChain(Chain, BaseModel):
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
+        self.llm.verbose = self.verbose
         stop = None
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
@@ -60,8 +61,6 @@ class LLMChain(Chain, BaseModel):
         for inputs in input_list:
             selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
             prompt = self.prompt.format(**selected_inputs)
-            if self.verbose:
-                langchain.logger.log_llm_inputs(selected_inputs, prompt)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -77,8 +76,6 @@ class LLMChain(Chain, BaseModel):
         for generation in response.generations:
             # Get the text of the top generated string.
             response_str = generation[0].text
-            if self.verbose:
-                langchain.logger.log_llm_response(response_str)
             outputs.append({self.output_key: response_str})
         return outputs
 
@@ -106,5 +103,19 @@ class LLMChain(Chain, BaseModel):
         result = self.predict(**kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
+        else:
+            return result
+
+    def apply_and_parse(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        """Call apply and then parse the results."""
+        result = self.apply(input_list)
+        if self.prompt.output_parser is not None:
+            new_result = []
+            for res in result:
+                text = res[self.output_key]
+                new_result.append(self.prompt.output_parser.parse(text))
+            return new_result
         else:
             return result

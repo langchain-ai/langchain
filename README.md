@@ -28,7 +28,7 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 
 ## 🚀 What can this help with?
 
-There are five main areas that LangChain is designed to help with.
+There are six main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
 **📃 LLMs and Prompts:**
@@ -51,7 +51,12 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 
 Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
+**🧐 Evaluation:**
+
+[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+
 For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/?).
+
 
 ## 💁 Contributing
 

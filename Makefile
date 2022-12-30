@@ -1,4 +1,4 @@
-.PHONY: format lint tests integration_tests
+.PHONY: format lint tests tests_watch integration_tests
 
 coverage:
 	poetry run pytest --cov \
@@ -18,6 +18,9 @@ lint:
 
 tests:
 	poetry run pytest tests/unit_tests
+
+tests_watch:
+	poetry run ptw --now . -- tests/unit_tests
 
 integration_tests:
 	poetry run pytest tests/integration_tests
