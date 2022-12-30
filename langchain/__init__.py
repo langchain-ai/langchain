@@ -17,7 +17,6 @@ from langchain.chains import (
     VectorDBQAWithSourcesChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
-from langchain.google_search import GoogleSearchAPIWrapper
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.logger import BaseLogger, StdOutLogger
@@ -29,6 +28,7 @@ from langchain.prompts import (
 )
 from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
+from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 logger: BaseLogger = StdOutLogger()
@@ -65,5 +65,4 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
-    "GoogleSearchAPIWrapper",
 ]

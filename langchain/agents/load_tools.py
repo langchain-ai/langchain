@@ -7,12 +7,12 @@ from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
-from langchain.google_search import GoogleSearchAPIWrapper
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
+from langchain.utilities.google_search import GoogleSearchAPIWrapper
 
 
 def _get_python_repl() -> Tool:
