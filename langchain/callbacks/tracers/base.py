@@ -132,7 +132,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             serialized=serialized,
             prompts={"prompts": prompts},
             extra=kwargs,
-            start_time=datetime.datetime.utcnow(),
+            start_time=datetime.utcnow(),
             execution_order=self._execution_order,
             id=self._generate_id(),
             response=None,
@@ -151,7 +151,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         ):
             raise TracerException("No LLMRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].end_time = datetime.utcnow()
         self._stack[-1].response = response
 
         self._end_trace()
@@ -168,7 +168,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             serialized=serialized,
             inputs=inputs,
             extra=kwargs,
-            start_time=datetime.datetime.utcnow(),
+            start_time=datetime.utcnow(),
             execution_order=self._execution_order,
             id=self._generate_id(),
             outputs=None,
@@ -185,7 +185,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         ):
             raise TracerException("No ChainRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].end_time = datetime.utcnow()
         self._stack[-1].outputs = outputs
 
         self._end_trace()
@@ -203,7 +203,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             action=action.tool,
             tool_input=action.tool_input,
             extra=kwargs,
-            start_time=datetime.datetime.utcnow(),
+            start_time=datetime.utcnow(),
             execution_order=self._execution_order,
             id=self._generate_id(),
             output=None,
@@ -220,7 +220,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         ):
             raise TracerException("No ToolRun found to be traced")
 
-        self._stack[-1].end_time = datetime.datetime.utcnow()
+        self._stack[-1].end_time = datetime.utcnow()
         self._stack[-1].output = output
 
         self._end_trace()
