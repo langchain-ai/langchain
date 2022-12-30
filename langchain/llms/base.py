@@ -41,6 +41,17 @@ class BaseLLM(BaseModel, ABC):
         """
         return callback_manager or get_callback_manager()
 
+    @validator("verbose", pre=True, always=True)
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        else:
+            return verbose
+
     @abstractmethod
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None

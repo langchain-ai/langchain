@@ -137,7 +137,6 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        verbose: bool = False,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
@@ -145,7 +144,6 @@ class Agent(BaseModel):
             llm=llm,
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
-            verbose=verbose,
         )
         return cls(llm_chain=llm_chain)
 
