@@ -1,4 +1,4 @@
-"""Chains are easily reusable components which can be linked together."""
+"""Chains are easily reusable modules which can be linked together."""
 from langchain.chains.api.base import APIChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain

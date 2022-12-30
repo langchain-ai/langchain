@@ -11,6 +11,10 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Multi Input Tools <examples/multi_input_tool.ipynb>`_: How to use a tool that requires multiple inputs with an agent.
 
+`Search Tools <examples/search_tools.ipynb>`_: How to use the different type of search tools that LangChain supports.
+
+`Max Iterations <examples/max_iterations.ipynb>`_: How to restrict an agent to a certain number of iterations.
+
 
 The next set of examples are all end-to-end agents for specific applications.
 In all examples there is an Agent with a particular set of tools.
@@ -24,21 +28,21 @@ In all examples there is an Agent with a particular set of tools.
 - **Agent used**: `zero-shot-react-description`
 - `Paper <https://arxiv.org/pdf/2205.00445.pdf>`_
 - **Note**: This is the most general purpose example, so if you are looking to use an agent with arbitrary tools, please start here.
-- `Example Notebook <examples/mrkl.ipynb>`_
+- `Example Notebook <implementations/mrkl.ipynb>`_
 
 **Self-Ask-With-Search**
 
 - **Tools used**: Search
 - **Agent used**: `self-ask-with-search`
 - `Paper <https://ofir.io/self-ask.pdf>`_
-- `Example Notebook <examples/self_ask_with_search.ipynb>`_
+- `Example Notebook <implementations/self_ask_with_search.ipynb>`_
 
 **ReAct**
 
 - **Tools used**: Wikipedia Docstore
 - **Agent used**: `react-docstore`
 - `Paper <https://arxiv.org/pdf/2210.03629.pdf>`_
-- `Example Notebook <examples/react.ipynb>`_
+- `Example Notebook <implementations/react.ipynb>`_
 
 
 
@@ -48,3 +52,10 @@ In all examples there is an Agent with a particular set of tools.
    :hidden:
 
    examples/*
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :hidden:
+
+   implementations/*

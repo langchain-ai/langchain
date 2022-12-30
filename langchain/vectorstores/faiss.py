@@ -34,7 +34,7 @@ class FAISS(VectorStore):
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
     ):
-        """Initialize with necessary components."""
+        """Initialize with necessary modules."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore

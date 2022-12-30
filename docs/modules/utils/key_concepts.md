@@ -1,4 +1,4 @@
-# Conceptual Guide
+# Key Concepts
 
 ## Text Splitter
 This class is responsible for splitting long pieces of text into smaller components.

@@ -61,7 +61,7 @@ small enough chunks.
 LangChain provides some utilities to help with splitting up larger pieces of data. This comes in the form of the TextSplitter class.
 The class takes in a document and splits it up into chunks, with several parameters that control the
 size of the chunks as well as the overlap in the chunks (important for maintaining context).
-See [this walkthrough](../components/utils/examples/textsplitter.ipynb) for more information.
+See [this walkthrough](../modules/utils/examples/textsplitter.ipynb) for more information.
 
 ### Relevant Documents
 A second large issue related fetching data is to make sure you are not fetching too many documents, and are only fetching
@@ -81,39 +81,8 @@ for language models.
 
 ## Augmenting
 So you've fetched your relevant data - now what? How do you pass them to the language model in a format it can understand?
-There are a few different methods, or chains, for doing so. LangChain supports three of the more common ones - and
-we are actively looking to include more, so if you have any ideas please reach out! Note that there is not
-one best method - the decision of which one to use is often very context specific. In order from simplest to
-most complex:
-
-### Stuffing
-Stuffing is the simplest method, whereby you simply stuff all the related data into the prompt as context
-to pass to the language model. This is implemented in LangChain as the `StuffDocumentsChain`.
-
-**Pros:** Only makes a single call to the LLM. When generating text, the LLM has access to all the data at once.
-
-**Cons:** Most LLMs have a context length, and for large documents (or many documents) this will not work as it will result in a prompt larger than the context length.
-
-The main downside of this method is that it only works one smaller pieces of data. Once you are working
-with many pieces of data, this approach is no longer feasible. The next two approaches are designed to help deal with that.
-
-### Map Reduce
-This method involves an initial prompt on each chunk of data (for summarization tasks, this 
-could be a summary of that chunk; for question-answering tasks, it could be an answer based solely on that chunk).
-Then a different prompt is run to combine all the initial outputs. This is implemented in the LangChain as the `MapReduceDocumentsChain`.
-
-**Pros:** Can scale to larger documents (and more documents) than `StuffDocumentsChain`. The calls to the LLM on individual documents are independent and can therefore be parallelized.
-
-**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. Loses some information during the final combining call.
-
-### Refine
-This method involves an initial prompt on the first chunk of data, generating some output.
-For the remaining documents, that output is passed in, along with the next document, 
-asking the LLM to refine the output based on the new document. 
-
-**Pros:** Can pull in more relevant context, and may be less lossy than `MapReduceDocumentsChain`.
-
-**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. The calls are also NOT independent, meaning they cannot be paralleled like `MapReduceDocumentsChain`. There is also some potential dependencies on the ordering of the documents.
+For a detailed overview of the different ways of doing so, and the tradeoffs between them, please see 
+[this documentation](/components/chains/combine_docs.md)
 
 ## Use Cases
 LangChain supports the above three methods of augmenting LLMs with external data.
@@ -123,6 +92,6 @@ It is important to note that a large part of these implementations is the prompt
 that are used. We provide default prompts for all three use cases, but these can be configured.
 This is in case you discover a prompt that works better for your specific application.
 
-- [Question-Answering With Sources](../components/chains/examples/qa_with_sources.ipynb)
-- [Question-Answering](../components/chains/examples/question_answering.ipynb)
-- [Summarization](../components/chains/examples/summarize.ipynb)
+- [Question-Answering With Sources](qa_with_sources.md)
+- [Question-Answering](question_answering.md)
+- [Summarization](summarization.md)

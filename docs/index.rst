@@ -24,12 +24,12 @@ To get started with LangChain, including installation and environment setup, che
 
    getting_started.rst
 
-Components:
+Modules:
 -----------
 
-There are six main components that LangChain provides support for.
-For each component we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
-These components are, in increasing order of complexity:
+There are six main modules that LangChain provides support for.
+For each module we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
+These modules are, in increasing order of complexity:
 
 
 - `Prompts <components/prompts.rst>`_: This includes prompt management, prompt optimization, and prompt serialization.
@@ -47,27 +47,35 @@ These components are, in increasing order of complexity:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Components
-   :name: components
+   :caption: Modules
+   :name: modules
    :hidden:
 
-   components/prompts.md
-   components/llms.md
-   components/utils.md
-   components/chains.md
-   components/agents.md
-   components/memory.md
+   modules/prompts.md
+   modules/llms.md
+   modules/utils.md
+   modules/chains.md
+   modules/agents.md
+   modules/memory.md
 
 Use Cases:
 ----------
 
-The above components can be used in a variety of ways. LangChain also provides guidance and assitance in this. Below are some of the common use cases LangChain supports.
+The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
 `Data Augmented Generation <use_cases/combine_docs.md>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+
+`QA with Sources <use_cases/qa_with_sources.md>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
+
+`Question Answering <use_cases/question_answering.md>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
+
+`Summarization <use_cases/summarization.md>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
 
 `Evaluation <use_cases/evaluation.rst>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 `Model Laboratory <use_cases/model_laboratory.ipynb>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+
+
 
 
 .. toctree::
