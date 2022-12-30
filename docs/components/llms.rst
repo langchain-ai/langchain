@@ -22,5 +22,5 @@ The following sections of documentation are provided:
 
    llms/getting_started.ipynb
    llms/how_to_guides.rst
-   llms/conceptual_guide.md
+   llms/key_concepts.md
    /reference/modules/llms.rst

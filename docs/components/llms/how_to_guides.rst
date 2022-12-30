@@ -1,10 +1,10 @@
 How-To Guides
 =============
 
-The examples here all highlight how to work with LLMs.
+The examples here all address certain "how-to" guides for working with LLMs.
 
 
-**LLMs**
+**Generic Functionality**
 
 `LLM Serialization <examples/llm_serialization.ipynb>`_: A walkthrough of how to serialize LLMs to and from disk.
 
@@ -19,10 +19,23 @@ The examples here all highlight how to work with LLMs.
 
 `Azure OpenAI <examples/azure_openai_example.ipynb>`_: Covers how to connect to Azure-hosted OpenAI Models.
 
+`Manifest <examples/manifest.ipynb>`_: Covers how to utilize the Manifest wrapper.
+
 
 .. toctree::
    :maxdepth: 1
    :glob:
+   :caption: Generic Functionality
+   :name: Generic Functionality
    :hidden:
 
    examples/*
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Specific LLM Integrations
+   :name: Specific LLM Integrations
+   :hidden:
+
+   integrations/*

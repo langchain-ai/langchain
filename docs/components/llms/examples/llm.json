@@ -7,5 +7,6 @@
     "presence_penalty": 0.0,
     "n": 1,
     "best_of": 1,
+    "request_timeout": null,
     "_type": "openai"
 }
