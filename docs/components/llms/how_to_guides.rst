@@ -1,10 +1,10 @@
 How-To Guides
 =============
 
-The examples here all highlight how to work with LLMs.
+The examples here all address certain "how-to" guides for working with LLMs.
 
 
-**LLMs**
+**Generic Functionality**
 
 `LLM Serialization <examples/llm_serialization.ipynb>`_: A walkthrough of how to serialize LLMs to and from disk.
 
@@ -18,6 +18,8 @@ The examples here all highlight how to work with LLMs.
 `Huggingface Hub <examples/huggingface_hub.ipynb>`_: Covers how to connect to LLMs hosted on HuggingFace Hub.
 
 `Azure OpenAI <examples/azure_openai_example.ipynb>`_: Covers how to connect to Azure-hosted OpenAI Models.
+
+`Manifest <examples/manifest.ipynb>`_: Covers how to utilize the Manifest wrapper.
 
 
 .. toctree::
