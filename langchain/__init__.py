@@ -4,7 +4,7 @@ from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
-from langchain.callbacks import set_default_callback_manager
+from langchain.callbacks import set_default_callback_manager, set_handler
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -65,4 +65,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
+    "set_handler"
 ]

@@ -102,3 +102,8 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         """Remove a callback from the callback manager."""
         with self._lock:
             self._callback_manager.remove_handler(callback)
+
+    def set_handler(self, handler: BaseCallbackHandler) -> None:
+        """Set handler as the only handler on the callback manager."""
+        with self._lock:
+            self._callback_manager.handlers = [handler]

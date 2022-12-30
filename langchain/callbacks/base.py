@@ -70,6 +70,10 @@ class BaseCallbackManager(BaseCallbackHandler, ABC):
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
 
+    @abstractmethod
+    def set_handler(self, handler: BaseCallbackHandler) -> None:
+        """Set handler as the only handler on the callback manager."""
+
 
 class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
@@ -144,3 +148,7 @@ class CallbackManager(BaseCallbackManager):
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
         self.handlers.remove(handler)
+
+    def set_handler(self, handler: BaseCallbackHandler) -> None:
+        """Set handler as the only handler on the callback manager."""
+        self.handlers = [handler]
