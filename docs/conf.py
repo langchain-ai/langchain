@@ -42,7 +42,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_nb"
+    "myst_nb",
     "sphinx_panels",
 ]
 source_suffix = [".rst", ".md"]
