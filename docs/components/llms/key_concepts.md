@@ -1,4 +1,4 @@
-# Conceptual Guide
+# Key Concepts
 
 ## LLMs
 Wrappers around Large Language Models (in particular, the "generate" ability of large language models) are at the core of LangChain functionality.
@@ -10,7 +10,7 @@ The interface for this takes in a single string, and returns a single string.
 
 ## Generation
 The output of a single generation. Currently in LangChain this is just the generated text, although could be extended in the future
-to contain log probs or the like
+to contain log probs or the like.
 
 ## LLMResult
 The full output of a call to the `generate` method of the LLM class.

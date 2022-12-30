@@ -25,6 +25,17 @@ The examples here all address certain "how-to" guides for working with LLMs.
 .. toctree::
    :maxdepth: 1
    :glob:
+   :caption: Generic Functionality
+   :name: Generic Functionality
    :hidden:
 
    examples/*
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Specific LLM Integrations
+   :name: Specific LLM Integrations
+   :hidden:
+
+   integrations/*
