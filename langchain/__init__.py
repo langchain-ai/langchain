@@ -20,6 +20,7 @@ from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.logger import BaseLogger, StdOutLogger
+from langchain.notion import NotionAPIWrapper
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -27,7 +28,6 @@ from langchain.prompts import (
     PromptTemplate,
 )
 from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
-from langchain.notion import NotionAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
@@ -64,5 +64,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
-    "NotionAPIWrapper"
+    "NotionAPIWrapper",
 ]

@@ -22,12 +22,12 @@ class NotionAPIWrapper(BaseModel):
 
     To use, you should have the ``notion-client` python package installed,
     and the environment variable ``NOTION_TOKEN`` AND ``NOTION_DATABASE_ID`` set, or pass
-    `serpapi_api_key` as a named parameter to the constructor.
+    `notion_token` as a named parameter to the constructor.
 
     To get your token:
 
     1- Go to Notion, create a new integration and save the integration secret to NOTION_TOKEN
-    2- Create a new database in notion and copy its ID to NOTION_DATABASE_ID. 
+    2- Create a new database in notion and copy its ID to NOTION_DATABASE_ID.
     The id It is normally the last part of the URL when you have a database open.
 
     """
@@ -59,14 +59,16 @@ class NotionAPIWrapper(BaseModel):
 
         except ImportError:
             raise ValueError(
-                "Could not import serpapi python package. "
+                "Could not import notion_client python package. "
                 "Please it install it with `pip install notion-client`."
             )
         return values
 
     def _write_to_notion(self, notion_client, document: str, document_title: str):
         parent = {"database_id": self.notion_database_id}
-        properties = {"Name": {"title": [{"type": "text", "text": {"content": document_title}}]}}
+        properties = {
+            "Name": {"title": [{"type": "text", "text": {"content": document_title}}]}
+        }
         children = [
             {
                 "object": "block",
@@ -92,4 +94,3 @@ class NotionAPIWrapper(BaseModel):
 
         # TODO: change how the title is set
         return self._write_to_notion(notion_client, document, document[0:10] + "...")
-
