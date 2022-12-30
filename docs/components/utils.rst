@@ -22,4 +22,4 @@ The following sections of documentation are provided:
 
    utils/how_to_guides.rst
    utils/conceptual_guide.md
-   /reference/utils.rst
+   Reference </reference/utils.rst>
