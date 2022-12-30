@@ -30,3 +30,9 @@ We provide an easy component to execute bash commands.
 The web contains a lot of information that LLMs do not have access to. 
 In order to easily let LLMs interact with that information, 
 we provide a wrapper around the Python Requests module that takes in a URL and fetches data from that URL.
+
+## Google Search
+This uses the official Google Search API to look up information on the web.
+
+## SerpAPI
+This uses SerpAPI, a third party search API engine, to interact with Google Search.

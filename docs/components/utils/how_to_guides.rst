@@ -13,6 +13,8 @@ These can largely be grouped into two categories: generic utilities, and then ut
 
 `Requests <examples/requests.ipynb>`_: How to use a requests wrapper to interact with the web.
 
+`Google Search <examples/google_search.ipynb>`_: How to use the google search wrapper to search the web.
+
 **Utilities for working with Documents**
 
 `Text Splitters <examples/textsplitter.ipynb>`_: A walkthrough of how to split large documents up into smaller, more manageable pieces of text.
