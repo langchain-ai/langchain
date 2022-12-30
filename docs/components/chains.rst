@@ -22,4 +22,4 @@ The following sections of documentation are provided:
 
    chains/how_to_guides.rst
    chains/conceptual_guide.rst
-   /reference/chains.rst
+   /reference/modules/chains.rst
