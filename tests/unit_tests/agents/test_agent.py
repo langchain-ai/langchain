@@ -85,6 +85,7 @@ def test_agent_with_callbacks() -> None:
         verbose=True,
         callback_manager=manager,
     )
+    agent.agent.llm_chain.verbose = True
 
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
