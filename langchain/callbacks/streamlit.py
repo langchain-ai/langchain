@@ -1,10 +1,10 @@
 """Callback Handler that logs to streamlit."""
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.input import print_text
-from langchain.schema import AgentAction, LLMResult
 import streamlit as st
+
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema import AgentAction, LLMResult
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
@@ -13,10 +13,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
-        """Print out the prompts."""
-        st.write("Prompts after formatting:")
-        for prompt in prompts:
-            st.write(prompt)
+        """Do nothing."""
+        pass
 
     def on_llm_end(self, response: LLMResult) -> None:
         """Do nothing."""
@@ -29,13 +27,12 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
-        """Print out that we are entering a chain."""
-        class_name = serialized["name"]
-        st.write(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
+        """Do nothing."""
+        pass
 
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
-        """Print out that we finished a chain."""
-        st.write("\n\033[1m> Finished chain.\033[0m")
+        """Do nothing."""
+        pass
 
     def on_chain_error(self, error: Exception) -> None:
         """Do nothing."""
@@ -49,7 +46,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
-        st.write(action.log)
+        # st.write requires two spaces before a newline to render it
+        st.markdown(action.log.replace("\n", "  \n"))
 
     def on_tool_end(
         self,
@@ -60,9 +58,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        st.write(f"\n{observation_prefix}")
-        st.write(output)
-        st.write(f"\n{llm_prefix}")
+        st.write(f"{observation_prefix}{output}")
+        st.write(llm_prefix)
 
     def on_tool_error(self, error: Exception) -> None:
         """Do nothing."""
@@ -72,4 +69,5 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, log: str, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Run when agent ends."""
-        st.write(log)
+        # st.write requires two spaces before a newline to render it
+        st.write(log.replace("\n", "  \n"))

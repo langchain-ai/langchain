@@ -65,5 +65,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
-    "set_handler"
+    "set_handler",
 ]
