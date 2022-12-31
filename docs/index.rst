@@ -81,11 +81,14 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    :name: use_cases
    :hidden:
 
+   use_cases/agents.md
+   use_cases/chatbots.md
    use_cases/combine_docs.md
    use_cases/qa_with_sources.md
    use_cases/question_answering.md
    use_cases/summarization.md
    use_cases/evaluation.rst
+   use_cases/model_laboratory.ipynb
 
 
 Reference Docs
@@ -102,6 +105,29 @@ All of LangChain's reference documentation, in one place.
    :hidden:
 
    reference.rst
+
+
+LangChain Ecosystem
+-------------------
+
+Guides for how other companies/products can be used with LangChain
+
+- `OpenAI <ecosystem/openai.html>`_
+- `Cohere <ecosystem/cohere.html>`_
+- `Hugging Face <ecosystem/huggingface.html>`_
+- `NLPCloud <ecosystem/nlpcloud.html>`_
+- `Weaviate <ecosystem/weaviate.html>`_
+- `Pinecone <ecosystem/pinecone.html>`_
+- `Hazy Research <ecosystem/hazy_research.html>`_
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Ecosystem
+   :name: ecosystem
+   :hidden:
+
+   ecosystem/*
 
 
 Additional Resources
@@ -126,5 +152,3 @@ Additional collection of resources we think may be useful as you develop your ap
 
    glossary.md
    gallery.md
-   model_laboratory.ipynb
-
