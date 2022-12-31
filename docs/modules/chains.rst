@@ -7,11 +7,11 @@ LangChain provides a standard interface for Chains, as well as some common imple
 
 The following sections of documentation are provided:
 
-- `How-To Guides <chains/how_to_guides>`_: A collection of how-to guides. These highlight how to use various types of chains.
+- `How-To Guides <chains/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use various types of chains.
 
-- `Reference </reference/chains>`_: API reference documentation for all Chain classes.
+- `Reference </reference/chains.html>`_: API reference documentation for all Chain classes.
 
-- `Conceptual Guide <chains/conceptual_guide>`_: A conceptual guide going over the various concepts related to chains.
+- `Key Concepts <chains/key_concepts.html>`_: A conceptual guide going over the various concepts related to chains.
 
 
 .. toctree::
