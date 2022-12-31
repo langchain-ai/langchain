@@ -22,8 +22,8 @@ class LLMCheckerChain(Chain, BaseModel):
     """Chain for question-answering with self-verification.
 
     Example:
-
         .. code-block:: python
+
             from langchain import OpenAI, LLMCheckerChain
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain(llm=llm)

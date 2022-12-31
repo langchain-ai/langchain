@@ -15,7 +15,7 @@ def change_directory() -> Iterator:
     """Change the working directory to the right folder."""
     origin = Path().absolute()
     try:
-        os.chdir("docs/examples/prompts")
+        os.chdir("docs/modules/prompts/examples")
         yield
     finally:
         os.chdir(origin)
