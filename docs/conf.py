@@ -22,7 +22,7 @@ with open("../pyproject.toml") as f:
 
 # -- Project information -----------------------------------------------------
 
-project = "LangChain"
+project = "🦜⛓ LangChain"
 copyright = "2022, Harrison Chase"
 author = "Harrison Chase"
 

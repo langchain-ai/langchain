@@ -7,7 +7,6 @@ Reference
    :caption: Reference
    :name: reference
 
-   reference/installation.md
    reference/integrations.md
    reference/prompts.rst
    reference/modules/llms

@@ -22,7 +22,15 @@ To get started with LangChain, including installation and environment setup, che
    :name: getting_started
    :hidden:
 
-   getting_started.rst
+   getting_started/getting_started.md
+   getting_started/installation.md
+   getting_started/environment.md
+   .. getting_started/llm.ipynb
+   .. getting_started/prompts.ipynb
+   .. getting_started/chains.ipynb
+   .. getting_started/chains_cont.ipynb
+   .. getting_started/agents.ipynb
+   .. getting_started/memory.ipynb
 
 Modules
 -----------
@@ -63,6 +71,8 @@ Use Cases
 
 The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
+- `Generate similar examples <use_cases/generate_examples.html>`_: Generating similar examples to a given input. This is a common use case for many applications, and LangChain provides some prompts/chains for assisting in this.
+
 - `Data Augmented Generation <use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
 - `QA with Sources <use_cases/qa_with_sources.html>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
@@ -81,6 +91,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    :name: use_cases
    :hidden:
 
+   use_cases/generate_examples.ipynb
    use_cases/combine_docs.md
    use_cases/qa_with_sources.md
    use_cases/question_answering.md
@@ -101,7 +112,12 @@ All of LangChain's reference documentation, in one place.
    :name: reference
    :hidden:
 
-   reference.rst
+   reference/integrations.md
+   reference/prompts.rst
+   reference/modules/llms
+   reference/utils.rst
+   reference/modules/chains
+   reference/modules/agents
 
 
 Additional Resources
