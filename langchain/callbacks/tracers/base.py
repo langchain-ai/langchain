@@ -32,8 +32,8 @@ class Run:
 @dataclass_json
 @dataclass
 class LLMRun(Run):
-    prompts: Dict[str, Any]
-    response: Optional[List[List[str]]]
+    prompts: List[str]
+    response: Optional[LLMResult]
 
 
 @dataclass_json
@@ -130,7 +130,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         llm_run = LLMRun(
             serialized=serialized,
-            prompts={"prompts": prompts},
+            prompts=prompts,
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
@@ -232,11 +232,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         pass
 
 
-class Tracer(BaseModel, BaseTracer, ABC):
+class Tracer(BaseTracer, ABC):
     """A non-thread safe implementation of the BaseTracer interface."""
 
-    _tracer_stack: List[Union[LLMRun, ChainRun, ToolRun]] = []
-    _tracer_execution_order: int = 1
+    def __init__(self) -> None:
+        """Initialize a tracer."""
+        self._tracer_stack: List[Union[LLMRun, ChainRun, ToolRun]] = []
+        self._tracer_execution_order = 1
 
     @property
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
