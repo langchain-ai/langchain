@@ -22,7 +22,15 @@ To get started with LangChain, including installation and environment setup, che
    :name: getting_started
    :hidden:
 
-   getting_started.rst
+   getting_started/getting_started.md
+   getting_started/installation.md
+   getting_started/environment.md
+   .. getting_started/llm.ipynb
+   .. getting_started/prompts.ipynb
+   .. getting_started/chains.ipynb
+   .. getting_started/chains_cont.ipynb
+   .. getting_started/agents.ipynb
+   .. getting_started/memory.ipynb
 
 Modules
 -----------
