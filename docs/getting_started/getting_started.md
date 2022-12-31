@@ -65,7 +65,7 @@ text = "What would be a good company name a company that makes colorful socks?"
 print(llm(text))
 ```
 
-```bash
+```pycon
 Feetful of Fun
 ```
 
@@ -101,7 +101,7 @@ Let's now see how this works! We can call the `.format` method to format it.
 print(prompt.format(product="colorful socks"))
 ```
 
-```bash
+```pycon
 What is a good name for a company that makes colorful socks?
 ```
 
@@ -194,7 +194,7 @@ agent = initialize_agent(tools, llm, agent="zero-shot-react-description", verbos
 agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")
 ```
 
-```
+```pycon
 Entering new AgentExecutor chain...
  I need to find out who Olivia Wilde's boyfriend is and then calculate his age raised to the 0.23 power.
 Action: Search
@@ -236,7 +236,7 @@ conversation = ConversationChain(llm=llm, verbose=True)
 conversation.predict(input="Hi there!")
 ```
 
-```bash
+```pycon
 > Entering new chain...
 Prompt after formatting:
 The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
@@ -254,7 +254,7 @@ AI:
 conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
 ```
 
-```bash
+```pycon
 > Entering new chain...
 Prompt after formatting:
 The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
