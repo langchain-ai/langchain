@@ -61,7 +61,7 @@ small enough chunks.
 LangChain provides some utilities to help with splitting up larger pieces of data. This comes in the form of the TextSplitter class.
 The class takes in a document and splits it up into chunks, with several parameters that control the
 size of the chunks as well as the overlap in the chunks (important for maintaining context).
-See [this walkthrough](../modules/utils/examples/textsplitter.ipynb) for more information.
+See [this walkthrough](../modules/utils/combine_docs_examples/textsplitter.ipynb) for more information.
 
 ### Relevant Documents
 A second large issue related fetching data is to make sure you are not fetching too many documents, and are only fetching
