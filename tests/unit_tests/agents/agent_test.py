@@ -9,7 +9,7 @@ from langchain.llms import OpenAI
 from langchain.callbacks import get_callback_manager, set_default_callback_manager
 from langchain.callbacks.tracers import SharedJsonTracer
 get_callback_manager().add_handler(SharedJsonTracer())
-
+langchain.verbose = True
 
 def main():
     llm = OpenAI(temperature=0, verbose=True)

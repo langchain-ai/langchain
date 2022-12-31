@@ -283,7 +283,7 @@ class SharedTracer(Singleton, BaseTracer, ABC):
         self._tracer_stack.execution_order = value
 
 
-class JsonTracer(BaseTracer, ABC):
+class BaseJsonTracer(BaseTracer, ABC):
     """An implementation of SharedTracer that prints trace as nested json."""
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
@@ -306,7 +306,7 @@ class JsonTracer(BaseTracer, ABC):
         return str(uuid.uuid4())
 
 
-class LangChainTracer(BaseTracer, ABC):
+class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     _endpoint: str = "http://127.0.0.1:5000"
