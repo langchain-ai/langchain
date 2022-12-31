@@ -11,11 +11,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 from dataclasses_json import dataclass_json
+from pydantic import BaseModel
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.shared import Singleton
 from langchain.schema import AgentAction, LLMResult
-from pydantic import BaseModel
 
 
 @dataclass_json
@@ -146,9 +146,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> None:
         """End a trace for an LLM run."""
 
-        if not self._stack or not isinstance(
-            self._stack[-1], LLMRun
-        ):
+        if not self._stack or not isinstance(self._stack[-1], LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
         self._stack[-1].end_time = datetime.utcnow()
@@ -180,9 +178,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_chain_end(self, outputs: Dict[str, Any]) -> None:
         """End a trace for a chain run."""
 
-        if not self._stack or not isinstance(
-            self._stack[-1], ChainRun
-        ):
+        if not self._stack or not isinstance(self._stack[-1], ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
         self._stack[-1].end_time = datetime.utcnow()
@@ -215,9 +211,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """End a trace for a tool run."""
 
-        if not self._stack or not isinstance(
-            self._stack[-1], ToolRun
-        ):
+        if not self._stack or not isinstance(self._stack[-1], ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
         self._stack[-1].end_time = datetime.utcnow()

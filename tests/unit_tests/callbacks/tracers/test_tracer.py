@@ -1,15 +1,23 @@
 """Test Tracer classes."""
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from langchain.callbacks.tracers.base import Tracer, SharedTracer, LLMRun, ChainRun, ToolRun, BaseTracer
-
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel
-from langchain.schema import AgentAction, LLMResult
-from freezegun import freeze_time
-from datetime import datetime
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
+
+from freezegun import freeze_time
+from pydantic import BaseModel
+
+from langchain.callbacks.tracers.base import (
+    BaseTracer,
+    ChainRun,
+    LLMRun,
+    SharedTracer,
+    ToolRun,
+    Tracer,
+)
+from langchain.schema import AgentAction, LLMResult
 
 
 @freeze_time("2023-01-01")
@@ -43,9 +51,9 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                         execution_order=3,
                         serialized={},
                         prompts=[],
-                        response=LLMResult([[]])
+                        response=LLMResult([[]]),
                     )
-                ]
+                ],
             ),
             LLMRun(
                 id=None,
@@ -55,9 +63,9 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                 execution_order=4,
                 serialized={},
                 prompts=[],
-                response=LLMResult([[]])
-            )
-        ]
+                response=LLMResult([[]]),
+            ),
+        ],
     )
 
 
@@ -65,7 +73,9 @@ def _perform_nested_run(tracer: BaseTracer):
     """Perform a nested run."""
 
     tracer.on_chain_start(serialized={}, inputs={})
-    tracer.on_tool_start(serialized={}, action=AgentAction(tool="action", tool_input="test", log=""))
+    tracer.on_tool_start(
+        serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
+    )
     tracer.on_llm_start(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult([[]]))
     tracer.on_tool_end("test")
@@ -133,16 +143,18 @@ class FakeSharedTracer(SharedTracer):
 def test_tracer_llm_run() -> None:
     """Test tracer on an LLM run."""
 
-    tracer = FakeTracer(compare_run=LLMRun(
-        id=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
-        extra={},
-        execution_order=1,
-        serialized={},
-        prompts=[],
-        response=LLMResult([[]])
-    ))
+    tracer = FakeTracer(
+        compare_run=LLMRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            prompts=[],
+            response=LLMResult([[]]),
+        )
+    )
 
     tracer.on_llm_start(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult([[]]))
@@ -152,16 +164,18 @@ def test_tracer_llm_run() -> None:
 def test_tracer_chain_run() -> None:
     """Test traceron a Chain run."""
 
-    tracer = FakeTracer(compare_run=ChainRun(
-        id=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
-        extra={},
-        execution_order=1,
-        serialized={},
-        inputs={},
-        outputs={},
-    ))
+    tracer = FakeTracer(
+        compare_run=ChainRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            inputs={},
+            outputs={},
+        )
+    )
 
     tracer.on_chain_start(serialized={}, inputs={})
     tracer.on_chain_end(outputs={})
@@ -171,19 +185,23 @@ def test_tracer_chain_run() -> None:
 def test_tracer_tool_run() -> None:
     """Test tracer on a Tool run."""
 
-    tracer = FakeTracer(compare_run=ToolRun(
-        id=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
-        extra={},
-        execution_order=1,
-        serialized={},
-        tool_input="test",
-        output="test",
-        action="action"
-    ))
+    tracer = FakeTracer(
+        compare_run=ToolRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            tool_input="test",
+            output="test",
+            action="action",
+        )
+    )
 
-    tracer.on_tool_start(serialized={}, action=AgentAction(tool="action", tool_input="test", log=""))
+    tracer.on_tool_start(
+        serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
+    )
     tracer.on_tool_end("test")
 
 
