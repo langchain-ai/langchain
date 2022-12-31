@@ -68,6 +68,7 @@ def test_agent_stopped_early() -> None:
 def test_agent_with_callbacks_global() -> None:
     """Test react chain with callbacks by setting verbose globally."""
     import langchain
+
     langchain.verbose = True
     handler = FakeCallbackHandler()
     manager = CallbackManager([handler])
@@ -101,6 +102,7 @@ def test_agent_with_callbacks_global() -> None:
 def test_agent_with_callbacks_local() -> None:
     """Test react chain with callbacks by setting verbose locally."""
     import langchain
+
     langchain.verbose = False
     handler = FakeCallbackHandler()
     manager = CallbackManager([handler])
@@ -136,6 +138,7 @@ def test_agent_with_callbacks_local() -> None:
 def test_agent_with_callbacks_not_verbose() -> None:
     """Test react chain with callbacks but not verbose."""
     import langchain
+
     langchain.verbose = False
     handler = FakeCallbackHandler()
     manager = CallbackManager([handler])

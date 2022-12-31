@@ -151,6 +151,7 @@ def test_run_with_callback() -> None:
 def test_run_with_callback_not_verbose() -> None:
     """Test run method works when callback manager is passed and not verbose."""
     import langchain
+
     langchain.verbose = False
 
     handler = FakeCallbackHandler()

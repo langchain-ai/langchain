@@ -18,6 +18,7 @@ def test_llm_with_callbacks() -> None:
 def test_llm_with_callbacks_not_verbose() -> None:
     """Test LLM callbacks but not verbose."""
     import langchain
+
     langchain.verbose = False
 
     handler = FakeCallbackHandler()
