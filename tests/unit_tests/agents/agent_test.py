@@ -10,7 +10,7 @@ from langchain.callbacks.tracers import SharedJsonTracer
 from langchain.llms import OpenAI
 
 get_callback_manager().add_handler(SharedJsonTracer())
-langchain.verbose = True
+# langchain.verbose = True
 
 
 def main():
