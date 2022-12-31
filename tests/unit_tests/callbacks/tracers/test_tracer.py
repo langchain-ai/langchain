@@ -138,6 +138,12 @@ class FakeSharedTracer(SharedTracer):
 
         return None
 
+    def remove_runs(self):
+        """Remove all runs."""
+
+        with self._lock:
+            self.runs = []
+
 
 @freeze_time("2023-01-01")
 def test_tracer_llm_run() -> None:
@@ -218,6 +224,7 @@ def test_shared_tracer_nested_run() -> None:
     """Test shared tracer on a nested run."""
 
     tracer = FakeSharedTracer()
+    tracer.remove_runs()
     _perform_nested_run(tracer)
     assert tracer.runs == [_get_compare_run()]
 
@@ -227,6 +234,7 @@ def test_shared_tracer_nested_run_multithreaded() -> None:
     """Test shared tracer on a nested run."""
 
     tracer = FakeSharedTracer()
+    tracer.remove_runs()
     threads = []
     num_threads = 10
     for _ in range(num_threads):
