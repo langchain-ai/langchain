@@ -228,7 +228,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_tool_error(self, error: Exception) -> None:
         pass
 
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         pass
 
 
