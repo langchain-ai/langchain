@@ -137,7 +137,7 @@ class CallbackManager(BaseCallbackManager):
             handler.on_tool_error(error)
 
     def on_text(self, text: str, **kwargs: Any) -> None:
-        """Run when agent ends."""
+        """Run on additional input from chains and agents."""
         for handler in self.handlers:
             handler.on_text(text, **kwargs)
 
