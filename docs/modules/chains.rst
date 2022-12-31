@@ -20,6 +20,7 @@ The following sections of documentation are provided:
    :name: Chains
    :hidden:
 
+   chains/getting_started.ipynb
    chains/how_to_guides.rst
    chains/key_concepts.rst
    Reference</reference/modules/chains.rst>
