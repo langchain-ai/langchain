@@ -1,4 +1,4 @@
-LLMs & Prompts
+Prompts
 ==============
 
 The reference guides here all relate to objects for working with Prompts.

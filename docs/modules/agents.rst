@@ -26,4 +26,4 @@ The following sections of documentation are provided:
    agents/getting_started.ipynb
    agents/how_to_guides.rst
    agents/key_concepts.md
-   /reference/modules/agents.rst
+   Reference</reference/modules/agents.rst>

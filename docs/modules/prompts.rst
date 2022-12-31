@@ -27,4 +27,4 @@ The following sections of documentation are provided:
    prompts/getting_started.md
    prompts/key_concepts.md
    prompts/how_to_guides.rst
-   /reference/prompts.rst
+   Reference</reference/prompts.rst>

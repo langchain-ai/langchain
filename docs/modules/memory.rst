@@ -13,8 +13,6 @@ The following sections of documentation are provided:
 
 - `How-To Guides <memory/how_to_guides.html>`_: A collection of how-to guides. These highlight how to work with different types of memory, as well as how to customize memory.
 
-- `Reference </reference/memory.html>`_: API reference documentation for all Memory classes.
-
 - `Key Concepts <memory/key_concepts.html>`_: A conceptual guide going over the various concepts related to memory.
 
 
@@ -26,4 +24,3 @@ The following sections of documentation are provided:
    memory/getting_started.ipynb
    memory/how_to_guides.rst
    memory/key_concepts.rst
-   /reference/memory.rst
