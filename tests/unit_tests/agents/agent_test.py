@@ -14,7 +14,7 @@ langchain.verbose = True
 
 
 def main():
-    llm = OpenAI(temperature=0)
+    llm = OpenAI(temperature=0, verbose=True)
     search = SerpAPIWrapper()
     llm_math_chain = LLMMathChain(llm=llm, verbose=True)
     tools = [
@@ -33,6 +33,8 @@ def main():
     agent = initialize_agent(
         tools, llm, agent="zero-shot-react-description", verbose=True
     )
+
+    # agent.agent.llm_chain.verbose = True  # TODO: rm this after merging with latest changes
 
     agent.run(
         "Who won the US Open men's tennis final in 2019? What is his age raised to the second power?"
