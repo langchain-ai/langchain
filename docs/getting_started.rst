@@ -11,8 +11,9 @@ It is recommended that you follow the steps in order, as later steps depend on p
 
    getting_started/installation.md
    getting_started/environment.md
-   getting_started/llm.md
-   getting_started/llm_chain.md
-   getting_started/sequential_chains.ipynb
+   getting_started/llm.ipynb
+   getting_started/prompts.ipynb
+   getting_started/chains.ipynb
+   getting_started/chains_cont.ipynb
    getting_started/agents.ipynb
    getting_started/memory.ipynb

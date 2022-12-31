@@ -11,17 +11,7 @@ There should also be helpful error messages raised if you try to run an integrat
 The environment variable needed varies based on the integration. See the list of integrations for details.
 There should also be helpful error messages raised if you try to run an integration and are missing any required environment variables.
 
-You can set the environment variable in a few ways. 
-If you are trying to set the environment variable `FOO` to value `bar`, here are the ways you could do so:
-- From the command line:
-```
-export FOO=bar
-```
-- From the python notebook/script:
-```python
-import os
-os.environ["FOO"] = "bar"
-```
+You can set the environment variable in a few ways, either from the command line or from the python notebook/script.
 
 For the Getting Started example, we will be using OpenAI's APIs, so we will first need to install their SDK:
 
@@ -29,9 +19,17 @@ For the Getting Started example, we will be using OpenAI's APIs, so we will firs
 pip install openai
 ```
 
-We will then need to set the environment variable. Let's do this from inside the Jupyter notebook (or Python script).
+We will then need to set the environment variable. 
+If we do this from inside the Jupyter notebook (or Python script), this is how we would do that:
 
 ```python
 import os
 os.environ["OPENAI_API_KEY"] = "..."
+```
+
+Alternatively, we could also do this from the command line before starting our Jupyter notebook.
+In that case, it would look like:
+
+```python
+export FOO=bar
 ```

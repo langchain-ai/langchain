@@ -1,6 +1,8 @@
 Evaluation
 ==============
 
+Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+
 The examples here all highlight how to use language models to assist in evaluation of themselves.
 
 `Question Answering <evaluation/question_answering.html>`_: An overview of LLMs aimed at evaluating question answering systems in general.

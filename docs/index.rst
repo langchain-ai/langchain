@@ -63,18 +63,15 @@ Use Cases
 
 The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
-`Data Augmented Generation <use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+- `Data Augmented Generation <use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
-`QA with Sources <use_cases/qa_with_sources.html>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
+- `QA with Sources <use_cases/qa_with_sources.html>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
 
-`Question Answering <use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
+- `Question Answering <use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
 
-`Summarization <use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
+- `Summarization <use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
 
-`Evaluation <use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
-
-`Model Laboratory <use_cases/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
-
+- `Evaluation <use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 
 
@@ -89,7 +86,6 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    use_cases/question_answering.md
    use_cases/summarization.md
    use_cases/evaluation.rst
-   use_cases/model_laboratory.ipynb
 
 
 Reference Docs
@@ -113,6 +109,7 @@ Additional Resources
 
 Additional collection of resources we think may be useful as you develop your application!
 
+- `Model Laboratory <model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 - `Glossary <glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
@@ -129,4 +126,5 @@ Additional collection of resources we think may be useful as you develop your ap
 
    glossary.md
    gallery.md
+   model_laboratory.ipynb
 

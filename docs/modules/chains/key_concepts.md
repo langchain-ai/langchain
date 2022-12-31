@@ -1,7 +1,7 @@
 # Key Concepts
 
 ## Chains
-These are pipelines that combine multiple of the above ideas. 
+A chain is made up of links, which can be either primitives or other chains. 
 They vary greatly in complexity and are combination of generic, highly configurable pipelines and more narrow (but usually more complex) pipelines.
 
 ## Sequential Chain
