@@ -55,7 +55,7 @@ class BaseCallbackHandler(ABC):
         """Run when tool errors."""
 
     @abstractmethod
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent ends."""
 
 
@@ -69,6 +69,10 @@ class BaseCallbackManager(BaseCallbackHandler, ABC):
     @abstractmethod
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
+
+    @abstractmethod
+    def set_handler(self, handler: BaseCallbackHandler) -> None:
+        """Set handler as the only handler on the callback manager."""
 
 
 class CallbackManager(BaseCallbackManager):
@@ -132,10 +136,10 @@ class CallbackManager(BaseCallbackManager):
         for handler in self.handlers:
             handler.on_tool_error(error)
 
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent ends."""
         for handler in self.handlers:
-            handler.on_agent_end(log, **kwargs)
+            handler.on_text(text, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -144,3 +148,7 @@ class CallbackManager(BaseCallbackManager):
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
         self.handlers.remove(handler)
+
+    def set_handler(self, handler: BaseCallbackHandler) -> None:
+        """Set handler as the only handler on the callback manager."""
+        self.handlers = [handler]

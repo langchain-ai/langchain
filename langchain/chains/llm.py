@@ -53,7 +53,6 @@ class LLMChain(Chain, BaseModel):
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
-        self.llm.verbose = self.verbose
         stop = None
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]

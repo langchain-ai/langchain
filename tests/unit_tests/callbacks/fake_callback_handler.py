@@ -59,6 +59,6 @@ class FakeCallbackHandler(BaseCallbackHandler):
         """Run when tool errors."""
         self.errors += 1
 
-    def on_agent_end(self, log: str, **kwargs: Any) -> None:
+    def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent is ending."""
         self.ends += 1

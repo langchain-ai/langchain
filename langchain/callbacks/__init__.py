@@ -1,5 +1,5 @@
 """Callback handlers that allow listening to events in LangChain."""
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
@@ -20,3 +20,9 @@ def set_tracing_callback_manager() -> None:
     """Set tracing callback manager."""
     callback = get_callback_manager()
     callback.add_handler(SharedLangChainTracer())
+
+
+def set_handler(handler: BaseCallbackHandler) -> None:
+    """Set handler."""
+    callback = get_callback_manager()
+    callback.set_handler(handler)

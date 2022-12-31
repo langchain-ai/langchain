@@ -37,9 +37,20 @@ class BaseLLM(BaseModel, ABC):
     ) -> BaseCallbackManager:
         """If callback manager is None, set it.
 
-        This allows users to pass in None as context manager, which is a nice UX.
+        This allows users to pass in None as callback manager, which is a nice UX.
         """
         return callback_manager or get_callback_manager()
+
+    @validator("verbose", pre=True, always=True)
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        else:
+            return verbose
 
     @abstractmethod
     def _generate(

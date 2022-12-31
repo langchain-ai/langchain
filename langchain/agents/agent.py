@@ -137,7 +137,6 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        verbose: bool = False,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
@@ -145,7 +144,6 @@ class Agent(BaseModel):
             llm=llm,
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
-            verbose=verbose,
         )
         return cls(llm_chain=llm_chain)
 
@@ -220,7 +218,7 @@ class AgentExecutor(Chain, BaseModel):
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
                 if self.verbose:
-                    self.callback_manager.on_agent_end(output.log, color="green")
+                    self.callback_manager.on_text(output.log, color="green")
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
