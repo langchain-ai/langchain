@@ -165,4 +165,4 @@ Additional collection of resources we think may be useful as you develop your ap
    :hidden:
 
    glossary.md
-   gallery.md
+   gallery.rst
