@@ -5,7 +5,7 @@ An action can either be using a tool and observing its output, or returning to t
 For a list of easily loadable tools, see [here](tools.md).
 Here are the agents available in LangChain.
 
-For a tutorial on how to load agents, see [here](/getting_started/agents.ipynb).
+For a tutorial on how to load agents, see [here](getting_started.ipynb).
 
 ## `zero-shot-react-description`
 
