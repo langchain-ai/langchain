@@ -1,4 +1,4 @@
-:mod:`langchain.llms`
+LLMs
 =======================
 
 .. automodule:: langchain.llms

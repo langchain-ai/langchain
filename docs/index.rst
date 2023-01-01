@@ -105,22 +105,17 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 Reference Docs
 ---------------
 
-All of LangChain's reference documentation, in one place.
+All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, and installation methods for LangChain.
 
-- `Reference Documentation <reference.html>`_: Full documentation on all methods, classes, and installation methods for LangChain.
 
+- `Reference Documentation <reference.html>`_
 .. toctree::
    :maxdepth: 1
    :caption: Reference
    :name: reference
    :hidden:
 
-   reference/integrations.md
-   reference/prompts.rst
-   reference/modules/llms
-   reference/utils.rst
-   reference/modules/chains
-   reference/modules/agents
+   reference.rst
 
 
 LangChain Ecosystem
@@ -128,13 +123,7 @@ LangChain Ecosystem
 
 Guides for how other companies/products can be used with LangChain
 
-- `OpenAI <ecosystem/openai.html>`_
-- `Cohere <ecosystem/cohere.html>`_
-- `Hugging Face <ecosystem/huggingface.html>`_
-- `NLPCloud <ecosystem/nlpcloud.html>`_
-- `Weaviate <ecosystem/weaviate.html>`_
-- `Pinecone <ecosystem/pinecone.html>`_
-- `Hazy Research <ecosystem/hazy_research.html>`_
+- `LangChain Ecosystem <ecosystem.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -143,7 +132,7 @@ Guides for how other companies/products can be used with LangChain
    :name: ecosystem
    :hidden:
 
-   ecosystem/*
+   ecosystem.rst
 
 
 Additional Resources

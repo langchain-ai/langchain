@@ -1,11 +1,11 @@
 Reference
 ==========================
 
+All of LangChain's reference documentation, in one place.
+Full documentation on all methods, classes, and installation methods for LangChain.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Reference
-   :name: reference
 
    reference/integrations.md
    reference/prompts.rst
