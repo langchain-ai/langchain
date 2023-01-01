@@ -12,7 +12,7 @@ This library is aimed at assisting in the development of those types of applicat
 Getting Started
 ----------------
 
-To get started with LangChain, including installation and environment setup, checkout the below guide.
+Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
 
 - `Getting Started Documentation <getting_started.html>`_
 
@@ -23,8 +23,6 @@ To get started with LangChain, including installation and environment setup, che
    :hidden:
 
    getting_started/getting_started.md
-   getting_started/installation.md
-   getting_started/environment.md
 
 Modules
 -----------
@@ -71,8 +69,6 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 
 - `Data Augmented Generation <use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
-- `QA with Sources <use_cases/qa_with_sources.html>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
-
 - `Question Answering <use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
 
 - `Summarization <use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
@@ -95,7 +91,6 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    use_cases/chatbots.md
    use_cases/generate_examples.ipynb
    use_cases/combine_docs.md
-   use_cases/qa_with_sources.md
    use_cases/question_answering.md
    use_cases/summarization.md
    use_cases/evaluation.rst
@@ -105,7 +100,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 Reference Docs
 ---------------
 
-All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, and installation methods for LangChain.
+All of LangChain's reference documentation, in one place. Full documentation on all methods, classes, installation methods, and integration setups for LangChain.
 
 
 - `Reference Documentation <reference.html>`_
@@ -115,6 +110,8 @@ All of LangChain's reference documentation, in one place. Full documentation on 
    :name: reference
    :hidden:
 
+   reference/installation.md
+   reference/integrations.md
    reference.rst
 
 

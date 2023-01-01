@@ -30,6 +30,13 @@ We will then need to set the environment variable in the terminal.
 export OPENAI_API_KEY="..."
 ```
 
+Alternatively, you could do this from inside the Jupyter notebook (or Python script):
+
+```python
+import os
+os.environ["OPENAI_API_KEY"] = "..."
+```
+
 
 ## Building a Language Model Application
 

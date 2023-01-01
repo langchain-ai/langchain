@@ -1,4 +1,4 @@
-# Installing LangChain
+# Installation
 
 ## Official Releases
 
