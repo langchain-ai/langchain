@@ -33,3 +33,6 @@ tests_watch:
 
 integration_tests:
 	poetry run pytest tests/integration_tests
+
+notebook_tests:
+	poetry run pytest --nbmake --nbmake-timeout=300 docs
