@@ -13,7 +13,7 @@ A prompt is the input to a language model. It is a string of text that is used t
 The most simple implementation of this is to have a template string with some variables in it, and then format it with the incoming variables.
 More complex iterations dynamically construct the template string from few shot examples, etc.
 
-To learn more about `PromptTemplates`, see [Prompt Templates](prompt_templates.md).
+To learn more about `PromptTemplates`, see [Prompt Templates](getting_started.md).
 
 As an example, consider the following template string:
 
@@ -56,7 +56,7 @@ Country: Canada
 Capital: Ottawa
 ```
 
-To learn more about how to provide few shot examples, see [Few Shot Examples](few_shot_examples.md).
+To learn more about how to provide few shot examples, see [Few Shot Examples](examples/few_shot_examples.ipynb).
 <!-- TODO(shreya): Add correct link here. -->
 
 
@@ -72,5 +72,5 @@ To help the user with selecting the most relevant examples, we provide example s
 
 To make it easy to share `PromptTemplates`, we provide a `serialize` method that returns a JSON string. The JSON string can be saved to a file, and then loaded back into a `PromptTemplate` using the `deserialize` method. This allows users to share `PromptTemplates` with others, and also to save them for later use.
 
-To learn more about serialization, see [Serialization](serialization.md).
+To learn more about serialization, see [Serialization](examples/prompt_serialization.ipynb).
 <!-- TODO(shreya): Provide correct link. -->

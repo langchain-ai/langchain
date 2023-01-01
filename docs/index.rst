@@ -22,7 +22,9 @@ To get started with LangChain, including installation and environment setup, che
    :name: getting_started
    :hidden:
 
-   getting_started.rst
+   getting_started/getting_started.md
+   getting_started/installation.md
+   getting_started/environment.md
 
 Modules
 -----------
@@ -63,6 +65,10 @@ Use Cases
 
 The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
+- `Agents <use_cases/agents.html>`_: Agents are systems that use a language model to interact with other tools. These can be used to do more grounded question/answering, interact with APIs, or even take actions.
+
+- `Chatbots <use_cases/chatbots.html>`_: Since language models are good at producing text, that makes them ideal for creating chatbots.
+
 - `Data Augmented Generation <use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
 - `QA with Sources <use_cases/qa_with_sources.html>`_: Answering questions over specific documents, while also making sure to say what source it got its information from. A type of Data Augmented Generation.
@@ -72,6 +78,10 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 - `Summarization <use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
 
 - `Evaluation <use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+
+- `Generate similar examples <use_cases/generate_examples.html>`_: Generating similar examples to a given input. This is a common use case for many applications, and LangChain provides some prompts/chains for assisting in this.
+
+- `Compare models <model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 
 
@@ -83,6 +93,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 
    use_cases/agents.md
    use_cases/chatbots.md
+   use_cases/generate_examples.ipynb
    use_cases/combine_docs.md
    use_cases/qa_with_sources.md
    use_cases/question_answering.md
@@ -104,7 +115,12 @@ All of LangChain's reference documentation, in one place.
    :name: reference
    :hidden:
 
-   reference.rst
+   reference/integrations.md
+   reference/prompts.rst
+   reference/modules/llms
+   reference/utils.rst
+   reference/modules/chains
+   reference/modules/agents
 
 
 LangChain Ecosystem
@@ -134,8 +150,6 @@ Additional Resources
 ---------------------
 
 Additional collection of resources we think may be useful as you develop your application!
-
-- `Model Laboratory <model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 - `Glossary <glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 

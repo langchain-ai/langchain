@@ -9,18 +9,19 @@ The following sections of documentation are provided:
 
 - `Getting Started <llms/getting_started.html>`_: An overview of all the functionality the LangChain LLM class provides.
 
+- `Key Concepts <llms/key_concepts.html>`_: A conceptual guide going over the various concepts related to LLMs.
+
 - `How-To Guides <llms/how_to_guides.html>`_: A collection of how-to guides. These highlight how to accomplish various objectives with our LLM class, as well as how to integrate with various LLM providers.
 
 - `Reference </reference/modules/llms.html>`_: API reference documentation for all LLM classes.
 
-- `Key Concepts <llms/key_concepts.html>`_: A conceptual guide going over the various concepts related to LLMs.
 
 .. toctree::
    :maxdepth: 1
    :name: LLMs
    :hidden:
 
+   llms/key_concepts.md
    llms/getting_started.ipynb
    llms/how_to_guides.rst
-   llms/key_concepts.md
    Reference</reference/modules/llms.rst>

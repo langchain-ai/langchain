@@ -44,7 +44,7 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/utils/combine_docs_examples/text_splitter.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/utils/combine_docs_examples/textsplitter.ipynb)
 
 ### Moderation
 You can also access the OpenAI content moderation endpoint with

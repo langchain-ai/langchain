@@ -7,10 +7,9 @@ Reference
    :caption: Reference
    :name: reference
 
-   reference/installation.md
    reference/integrations.md
    reference/prompts.rst
-   reference/modules/llms
+   LLMs<reference/modules/llms>
    reference/utils.rst
-   reference/modules/chains
-   reference/modules/agents
+   Chains<reference/modules/chains>
+   Agents<reference/modules/agents>

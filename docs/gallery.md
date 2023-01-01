@@ -7,11 +7,28 @@ If you see any other demos that you think we should highlight, be sure to let us
 
 ## Open Source
 
+### [HowDoI.ai](https://github.com/bborn/howdoi.ai)
+This is an experiment in building a large-language-model-backed chatbot. 
+It can hold a conversation, remember previous comments/questions, 
+and answer all types of queries (history, web search, movie data, weather, news, and more).
+
 ### [YouTube Transcription Question Answering with Sources](https://colab.research.google.com/drive/1sKSTjt9cPstl_WMZ86JsgEqFG-aSAwkn?usp=sharing)
 An end-to-end example of doing question answering on YouTube transcripts, returning the timestamps as sources to legitimize the answer.
 
 ### [ThoughtSource](https://github.com/OpenBioLink/ThoughtSource)
 A central, open resource and community around data and tools related to chain-of-thought reasoning in large language models.
+
+### [LLM Strategy](https://github.com/blackhc/llm-strategy)
+This Python package adds a decorator llm_strategy that connects to an LLM 
+(such as OpenAI’s GPT-3) and uses the LLM to "implement" abstract methods in interface classes. 
+It does this by forwarding requests to the LLM and converting the responses back to Python data 
+using Python's @dataclasses.
+
+### [GPT Math Techniques](https://huggingface.co/spaces/JavaFXpert/gpt-math-techniques)
+A Hugging Face spaces project showing off the benefits of using PAL for math problems.
+
+### [GPT Political Compass](https://colab.research.google.com/drive/1xt2IsFPGYMEQdoJFNgWNAjWGxa60VXdV)
+Measure the political compass of GPT.
 
 ### [Notion Database Question-Answering Bot](https://github.com/hwchase17/notion-qa)
 Open source GitHub project shows how to use LangChain to create a
@@ -26,11 +43,17 @@ Leveraging Qiskit, OpenAI and LangChain to demonstrate Grover's algorithm
 ### [ReAct TextWorld](https://colab.research.google.com/drive/19WTIWC3prw5LDMHmRMvqNV2loD9FHls6?usp=sharing)
 Leveraging the ReActTextWorldAgent to play TextWorld with an LLM!
 
+### [Fact Checker](https://github.com/jagilley/fact-checker)
+This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
+
 
 ## Not Open Source
 
 ### [Daimon](https://twitter.com/sjwhitmore/status/1580593217153531908?s=20&t=neQvtZZTlp623U3LZwz3bQ)
 A chat-based AI personal assistant with long-term memory about you.
+
+### [AI Assisted SQL Query Generator](https://twitter.com/dory111111/status/1608406234646052870?s=20&t=XYlrbKM0ornJsrtGa0br-g)
+An app to write SQL using natural language, and execute against real DB.
 
 ### [Clerkie](https://twitter.com/krrish_dh/status/1581028925618106368?s=20&t=neQvtZZTlp623U3LZwz3bQ)
 Stack Tracing QA Bot to help debug complex stack tracing (especially the ones that go multi-function/file deep). 

@@ -10,11 +10,12 @@ The following sections of documentation are provided:
 
 - `Getting Started <agents/getting_started.html>`_: A notebook to help you get started working with agents as quickly as possible.
 
+- `Key Concepts <agents/key_concepts.html>`_: A conceptual guide going over the various concepts related to agents.
+
 - `How-To Guides <agents/how_to_guides.html>`_: A collection of how-to guides. These highlight how to integrate various types of tools, how to work with different types of agent, and how to customize agents.
 
 - `Reference </reference/modules/agents.html>`_: API reference documentation for all Agent classes.
 
-- `Key Concepts <agents/key_concepts.html>`_: A conceptual guide going over the various concepts related to agents.
 
 
 .. toctree::
@@ -24,6 +25,6 @@ The following sections of documentation are provided:
    :hidden:
 
    agents/getting_started.ipynb
-   agents/how_to_guides.rst
    agents/key_concepts.md
+   agents/how_to_guides.rst
    Reference</reference/modules/agents.rst>
