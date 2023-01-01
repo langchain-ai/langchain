@@ -2422,6 +2422,26 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx", "sphinxcontrib-github-al
 test = ["pep440", "pre-commit", "pytest", "testpath"]
 
 [[package]]
+name = "nbmake"
+version = "1.3.0"
+description = "Pytest plugin for testing notebooks"
+category = "dev"
+optional = false
+python-versions = ">=3.7.0,<4.0.0"
+files = [
+    {file = "nbmake-1.3.0-py3-none-any.whl", hash = "sha256:8b38089dd232142ce894a9ad3e57a7c0f0a0edb0254662a8446346a84ac4079d"},
+    {file = "nbmake-1.3.0.tar.gz", hash = "sha256:49d5c59aefe45eaf8e2d8feff86c8e6de5547d823667305562364385e60d7206"},
+]
+
+[package.dependencies]
+ipykernel = ">=5.4.0"
+nbclient = ">=0.5.13,<0.6.0"
+nbformat = ">=5.0.8,<6.0.0"
+pydantic = ">=1.7.2,<2.0.0"
+Pygments = ">=2.7.3,<3.0.0"
+pytest = ">=6.1.0"
+
+[[package]]
 name = "nbsphinx"
 version = "0.8.11"
 description = "Jupyter Notebook Tools for Sphinx"
@@ -5144,4 +5164,4 @@ llms = ["manifest-ml", "torch", "transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e6d702a8244b8646db76252fedde20b938ebc33214ac8d912681b190e769be0f"
+content-hash = "1dfba76a7a2ba2a279978613031e82f99a84837d07033ef36d5e478c204d9cad"
