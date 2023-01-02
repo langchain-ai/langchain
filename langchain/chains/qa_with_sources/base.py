@@ -115,7 +115,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer, _ = self.combine_document_chain.combine_and_parse(docs, **inputs)
+        answer = self.combine_document_chain.combine_and_parse(docs, **inputs)
         return answer
 
 
