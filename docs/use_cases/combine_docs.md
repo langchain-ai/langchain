@@ -82,7 +82,7 @@ for language models.
 ## Augmenting
 So you've fetched your relevant data - now what? How do you pass them to the language model in a format it can understand?
 For a detailed overview of the different ways of doing so, and the tradeoffs between them, please see 
-[this documentation](/modules/chains/combine_docs.md)
+[this documentation](../modules/chains/combine_docs.md)
 
 ## Use Cases
 LangChain supports the above three methods of augmenting LLMs with external data.
@@ -92,6 +92,5 @@ It is important to note that a large part of these implementations is the prompt
 that are used. We provide default prompts for all three use cases, but these can be configured.
 This is in case you discover a prompt that works better for your specific application.
 
-- [Question-Answering With Sources](qa_with_sources.md)
 - [Question-Answering](question_answering.md)
 - [Summarization](summarization.md)
