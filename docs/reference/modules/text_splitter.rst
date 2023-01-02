@@ -1,4 +1,4 @@
-:mod:`langchain.text_splitter`
+Text Splitter
 ==============================
 
 .. automodule:: langchain.text_splitter

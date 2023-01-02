@@ -1,4 +1,4 @@
-:mod:`langchain.prompts`
+PromptTemplates
 ========================
 
 .. automodule:: langchain.prompts
