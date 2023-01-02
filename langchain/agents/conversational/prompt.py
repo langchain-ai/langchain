@@ -9,7 +9,7 @@ Thought: you should always think about what to do
 
 [do this if you just want to respond directly to the human]
 
-AI: response to the human
+{ai_prefix}: response to the human
 
 [do this if you need to use a tool]
 
@@ -18,22 +18,22 @@ Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
-AI: the final answer to the original input question"""
-SUFFIX = """You do NOT need to use these tools. For most normal conversation, you will not need to, and you can just respond directly to the Human.
+{ai_prefix}: the final answer to the original input question
+
+You do NOT need to use these tools. For most normal conversation, you will not need to, and you can just respond directly to the Human.
 
 When you have a response to say to the Human, you MUST use the format:
 
 ```
-AI: [your response here]
-```
+{ai_prefix}: [your response here]
+```"""
 
-Begin!"
+SUFFIX = """Begin!
 
 Previous conversation history:
 {chat_history}
 
-If you need to use any of the tools, you MUST do that BEFORE you respond to the Human. If you do not need to, just respond directly with `AI: ...`
+If you need to use any of the tools, you MUST do that BEFORE you respond to the Human.
 
-New human input:
-Human: {input}
+New input: {input}
 {agent_scratchpad}"""

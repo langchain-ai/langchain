@@ -132,11 +132,13 @@ class Agent(BaseModel):
         pass
 
     @classmethod
-    def from_llm_and_tools(cls, llm: BaseLLM, tools: List[Tool]) -> Agent:
+    def from_llm_and_tools(
+        cls, llm: BaseLLM, tools: List[Tool], **kwargs: Any
+    ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
-        return cls(llm_chain=llm_chain)
+        return cls(llm_chain=llm_chain, **kwargs)
 
     def return_stopped_response(self) -> dict:
         """Return response when agent has been stopped due to max iterations."""
