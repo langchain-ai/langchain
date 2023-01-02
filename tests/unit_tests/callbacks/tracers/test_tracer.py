@@ -1,6 +1,7 @@
 """Test Tracer classes."""
 from __future__ import annotations
 
+import pytest
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -16,8 +17,12 @@ from langchain.callbacks.tracers.base import (
     SharedTracer,
     ToolRun,
     Tracer,
+    TracerSession,
+    TracerException
 )
 from langchain.schema import AgentAction, LLMResult
+
+TEST_SESSION_ID = "test_session_id"
 
 
 @freeze_time("2023-01-01")
@@ -31,6 +36,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
         serialized={},
         inputs={},
         outputs={},
+        session_id=TEST_SESSION_ID,
         child_runs=[
             ToolRun(
                 id=None,
@@ -42,6 +48,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                 tool_input="test",
                 output="test",
                 action="action",
+                session_id=TEST_SESSION_ID,
                 child_runs=[
                     LLMRun(
                         id=None,
@@ -52,6 +59,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                         serialized={},
                         prompts=[],
                         response=LLMResult([[]]),
+                        session_id=TEST_SESSION_ID,
                     )
                 ],
             ),
@@ -64,6 +72,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                 serialized={},
                 prompts=[],
                 response=LLMResult([[]]),
+                session_id=TEST_SESSION_ID,
             ),
         ],
     )
@@ -112,6 +121,11 @@ class FakeTracer(Tracer):
 
         return None
 
+    def _persist_session(self, session: TracerSession) -> None:
+        """Persist a tracing session."""
+
+        session.id = TEST_SESSION_ID
+
 
 class FakeSharedTracer(SharedTracer):
     """Fake shared tracer that records LangChain execution."""
@@ -138,6 +152,11 @@ class FakeSharedTracer(SharedTracer):
 
         return None
 
+    def _persist_session(self, session: TracerSession) -> None:
+        """Persist a tracing session."""
+
+        session.id = TEST_SESSION_ID
+
     def remove_runs(self):
         """Remove all runs."""
 
@@ -159,16 +178,92 @@ def test_tracer_llm_run() -> None:
             serialized={},
             prompts=[],
             response=LLMResult([[]]),
+            session_id=TEST_SESSION_ID,
         )
     )
 
+    session = tracer.new_session()
     tracer.on_llm_start(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult([[]]))
+    assert session.child_runs == [tracer.compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_llm_run_errors_no_session() -> None:
+    """Test tracer on an LLM run without a session."""
+
+    tracer = FakeTracer(
+        compare_run=LLMRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            prompts=[],
+            response=LLMResult([[]]),
+            session_id=TEST_SESSION_ID,
+        )
+    )
+
+    with pytest.raises(TracerException):
+        tracer.on_llm_start(serialized={}, prompts=[])
+
+
+@freeze_time("2023-01-01")
+def test_tracer_llm_run_errors_no_start() -> None:
+    """Test tracer on an LLM run without a start."""
+
+    tracer = FakeTracer(
+        compare_run=LLMRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            prompts=[],
+            response=LLMResult([[]]),
+            session_id=TEST_SESSION_ID,
+        )
+    )
+
+    session = tracer.new_session()
+    with pytest.raises(TracerException):
+        tracer.on_llm_end(response=LLMResult([[]]))
+    assert session.child_runs == []
+
+
+@freeze_time("2023-01-01")
+def test_tracer_multiple_llm_runs() -> None:
+    """Test the tracer with multiple runs."""
+
+    tracer = FakeTracer(
+        compare_run=LLMRun(
+            id=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            extra={},
+            execution_order=1,
+            serialized={},
+            prompts=[],
+            response=LLMResult([[]]),
+            session_id=TEST_SESSION_ID,
+        )
+    )
+
+    num_runs = 10
+    session = tracer.new_session()
+    for _ in range(num_runs):
+        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_end(response=LLMResult([[]]))
+    assert len(session.child_runs) == num_runs
+    assert all(run == tracer.compare_run for run in session.child_runs)
 
 
 @freeze_time("2023-01-01")
 def test_tracer_chain_run() -> None:
-    """Test traceron a Chain run."""
+    """Test tracer on a Chain run."""
 
     tracer = FakeTracer(
         compare_run=ChainRun(
@@ -180,11 +275,14 @@ def test_tracer_chain_run() -> None:
             serialized={},
             inputs={},
             outputs={},
+            session_id=TEST_SESSION_ID,
         )
     )
 
+    session = tracer.new_session()
     tracer.on_chain_start(serialized={}, inputs={})
     tracer.on_chain_end(outputs={})
+    assert session.child_runs == [tracer.compare_run]
 
 
 @freeze_time("2023-01-01")
@@ -202,13 +300,16 @@ def test_tracer_tool_run() -> None:
             tool_input="test",
             output="test",
             action="action",
+            session_id=TEST_SESSION_ID,
         )
     )
 
+    session = tracer.new_session()
     tracer.on_tool_start(
         serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
     )
     tracer.on_tool_end("test")
+    assert session.child_runs == [tracer.compare_run]
 
 
 @freeze_time("2023-01-01")
@@ -216,7 +317,9 @@ def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
 
     tracer = FakeTracer(compare_run=_get_compare_run())
+    session = tracer.new_session()
     _perform_nested_run(tracer)
+    assert session.child_runs == [tracer.compare_run]
 
 
 @freeze_time("2023-01-01")
@@ -224,9 +327,11 @@ def test_shared_tracer_nested_run() -> None:
     """Test shared tracer on a nested run."""
 
     tracer = FakeSharedTracer()
+    session = tracer.new_session()
     tracer.remove_runs()
     _perform_nested_run(tracer)
     assert tracer.runs == [_get_compare_run()]
+    assert session.child_runs == tracer.runs
 
 
 @freeze_time("2023-01-01")
@@ -234,6 +339,7 @@ def test_shared_tracer_nested_run_multithreaded() -> None:
     """Test shared tracer on a nested run."""
 
     tracer = FakeSharedTracer()
+    session = tracer.new_session()
     tracer.remove_runs()
     threads = []
     num_threads = 10
@@ -246,3 +352,4 @@ def test_shared_tracer_nested_run_multithreaded() -> None:
         thread.join()
 
     assert tracer.runs == [_get_compare_run()] * num_threads
+    assert session.child_runs == tracer.runs

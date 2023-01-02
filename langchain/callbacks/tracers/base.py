@@ -20,6 +20,15 @@ from langchain.schema import AgentAction, LLMResult
 
 @dataclass_json
 @dataclass
+class TracerSession:
+    id: Optional[Union[int, str]]
+    start_time: datetime = field(default_factory=datetime.utcnow)
+    extra: Dict[str, Any] = field(default_factory=dict)
+    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
+
+
+@dataclass_json
+@dataclass
 class Run:
     id: Optional[Union[int, str]]
     start_time: datetime
@@ -27,6 +36,7 @@ class Run:
     extra: Dict[str, Any]
     execution_order: int
     serialized: Dict[str, Any]
+    session_id: Optional[Union[int, str]]
 
 
 @dataclass_json
@@ -81,8 +91,19 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Persist a run."""
 
     @abstractmethod
+    def _persist_session(self, session: TracerSession) -> None:
+        """Persist a tracing session."""
+
+    @abstractmethod
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
+
+    def new_session(self, **kwargs) -> TracerSession:
+        """Start a new tracing session. NOT thread safe, do not call this method from multiple threads."""
+        session = TracerSession(id=None, extra=kwargs)
+        self._persist_session(session)
+        self._session = session
+        return session
 
     @property
     @abstractmethod
@@ -96,8 +117,18 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     @_execution_order.setter
     @abstractmethod
-    def _execution_order(self, value) -> None:
+    def _execution_order(self, value: int) -> None:
         """Set the execution order for a run."""
+
+    @property
+    @abstractmethod
+    def _session(self) -> Optional[TracerSession]:
+        """Get the tracing session."""
+
+    @_session.setter
+    @abstractmethod
+    def _session(self, value: TracerSession) -> None:
+        """Set the tracing session."""
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
@@ -120,6 +151,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         run = self._stack.pop()
         if not self._stack:
+            self._session.child_runs.append(run)
             self._execution_order = 1
             self._persist_run(run)
 
@@ -127,6 +159,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Start a trace for an LLM run."""
+
+        if self._session is None:
+            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
 
         llm_run = LLMRun(
             serialized=serialized,
@@ -137,6 +172,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=self._generate_id(),
             response=None,
             end_time=None,
+            session_id=self._session.id,
         )
         self._start_trace(llm_run)
 
@@ -162,6 +198,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> None:
         """Start a trace for a chain run."""
 
+        if self._session is None:
+            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
+
         chain_run = ChainRun(
             serialized=serialized,
             inputs=inputs,
@@ -172,6 +211,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             outputs=None,
             end_time=None,
             child_runs=[],
+            session_id=self._session.id,
         )
         self._start_trace(chain_run)
 
@@ -194,6 +234,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
     ) -> None:
         """Start a trace for a tool run."""
 
+        if self._session is None:
+            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
+
         tool_run = ToolRun(
             serialized=serialized,
             action=action.tool,
@@ -205,6 +248,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             output=None,
             end_time=None,
             child_runs=[],
+            session_id=self._session.id,
         )
         self._start_trace(tool_run)
 
@@ -233,6 +277,7 @@ class Tracer(BaseTracer, ABC):
         """Initialize a tracer."""
         self._tracer_stack: List[Union[LLMRun, ChainRun, ToolRun]] = []
         self._tracer_execution_order = 1
+        self._tracer_session = None
 
     @property
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
@@ -245,9 +290,22 @@ class Tracer(BaseTracer, ABC):
         return self._tracer_execution_order
 
     @_execution_order.setter
-    def _execution_order(self, value) -> None:
+    def _execution_order(self, value: int) -> None:
         """Set the execution order for a run."""
         self._tracer_execution_order = value
+
+    @property
+    def _session(self) -> Optional[TracerSession]:
+        """Get the tracing session."""
+        return self._tracer_session
+
+    @_session.setter
+    def _session(self, value: TracerSession) -> None:
+        """Set the tracing session."""
+
+        if self._stack:
+            raise TracerException("Cannot set a session while a trace is being recorded")
+        self._tracer_session = value
 
 
 @dataclass
@@ -274,9 +332,24 @@ class SharedTracer(Singleton, BaseTracer, ABC):
         return self._tracer_stack.execution_order
 
     @_execution_order.setter
-    def _execution_order(self, value) -> None:
+    def _execution_order(self, value: int) -> None:
         """Set the execution order for a run."""
         self._tracer_stack.execution_order = value
+
+    @property
+    def _session(self) -> Optional[TracerSession]:
+        """Get the tracing session."""
+        return self._tracer_session
+
+    @_session.setter
+    def _session(self, value: TracerSession) -> None:
+        """Set the tracing session."""
+        with self._lock:
+            # TODO: currently, we are only checking current thread's stack. Need to make sure that
+            #   we are not in the middle of a trace in any thread.
+            if self._stack:
+                raise TracerException("Cannot set a session while a trace is being recorded")
+            self._tracer_session = value
 
 
 class BaseJsonTracer(BaseTracer, ABC):
@@ -286,6 +359,11 @@ class BaseJsonTracer(BaseTracer, ABC):
         """Persist a run."""
 
         print(run.to_json(indent=2))
+
+    def _persist_session(self, session: TracerSession) -> None:
+        """Persist a session."""
+
+        print(session.to_json(indent=2))
 
     def _add_child_run(
         self,
@@ -322,6 +400,17 @@ class BaseLangChainTracer(BaseTracer, ABC):
             headers={"Content-Type": "application/json"},
         )
         print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
+
+    def _persist_session(self, session: TracerSession) -> None:
+        """Persist a session."""
+
+        r = requests.post(
+            f"{self._endpoint}/sessions",
+            data=session.to_json(),
+            headers={"Content-Type": "application/json"},
+        )
+        print(f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}")
+        session.id = r.json()["id"]
 
     def _add_child_run(
         self,
