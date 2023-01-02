@@ -16,8 +16,6 @@ pip install langchain
 
 Using LangChain will usually require integrations with one or more model providers, data stores, apis, etc.
 
-There are two components to setting this up, installing the correct python packages and setting the right environment variables.
-
 For this example, we will be using OpenAI's APIs, so we will first need to install their SDK:
 
 ```bash
