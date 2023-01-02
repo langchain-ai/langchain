@@ -28,3 +28,9 @@ This agent utilizes a single tool that should be named `Intermediate Answer`.
 This tool should be able to lookup factual answers to questions. This agent
 is equivalent to the original [self ask with search paper](https://ofir.io/self-ask.pdf),
 where a Google search API was provided as the tool.
+
+### `conversational-react-description`
+
+This agent is designed to be used in conversational settings.
+The prompt is designed to make the agent helpful and conversational.
+It uses the ReAct framework to decide which tool to use, and uses memory to remember the previous conversation interactions.

@@ -1,18 +1,17 @@
+"""An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, List, NamedTuple, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from langchain.agents.agent import Agent
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
-from langchain.agents.conversational.prompt import PREFIX, SUFFIX
+from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
-from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
 
 class ConversationalAgent(Agent):
-    """Agent for the MRKL chain."""
+    """An agent designed to hold a conversation in addition to using tools."""
 
     @property
     def observation_prefix(self) -> str:
