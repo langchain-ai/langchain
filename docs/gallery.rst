@@ -59,6 +59,17 @@ Open Source
 
     ---
 
+    .. link-button:: https://github.com/JohnNay/gpt-lawyer/blob/main/notebooks/gpt_corporate_lobbying_zero_shot.ipynb
+        :type: url
+        :text: Zero-Shot Corporate Lobbyist
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A notebook showing how to use GPT to help with the work of a corporate lobbyist.
+
+    ---
+
     .. link-button:: https://huggingface.co/spaces/JavaFXpert/gpt-math-techniques
         :type: url
         :text: GPT Math Techniques
