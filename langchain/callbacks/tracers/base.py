@@ -328,6 +328,7 @@ class SharedTracer(Singleton, BaseTracer, ABC):
     """A thread-safe Singleton implementation of BaseTracer."""
 
     _tracer_stack = TracerStack()
+    _tracer_session = None
 
     @property
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
