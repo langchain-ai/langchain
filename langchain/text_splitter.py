@@ -33,7 +33,7 @@ class TextSplitter(ABC):
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
-        """Split text into multiple modules."""
+        """Split text into multiple components."""
 
     def create_documents(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
