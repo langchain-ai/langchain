@@ -1,4 +1,4 @@
-# Integration Reference
+# Integrations
 
 Besides the installation of this python package, you will also need to install packages and set environment variables depending on which chains you want to use.
 
