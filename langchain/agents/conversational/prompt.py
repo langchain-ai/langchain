@@ -5,19 +5,19 @@ The AI has access to the following tools:"""
 FORMAT_INSTRUCTIONS = """Use the following format:
 
 Question: the input question you must answer
-Thought: you should always think about what to do
+Thought: Do I need to use a tool? [Yes/No]
 
-[do this if you just want to respond directly to the human]
+[if no]
 
 {ai_prefix}: response to the human
 
-[do this if you need to use a tool]
+[if yes]
 
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
+Thought: Do I need to use a tool? No
 {ai_prefix}: the final answer to the original input question
 
 You do NOT need to use these tools. For most normal conversation, you will not need to, and you can just respond directly to the Human.
@@ -33,7 +33,7 @@ SUFFIX = """Begin!
 Previous conversation history:
 {chat_history}
 
-If you need to use any of the tools, you MUST do that BEFORE you respond to the Human.
+If you need to use any of the tools, you MUST do that BEFORE you respond to the Human. Think really carefully about whether you need to use a tool though!
 
 New input: {input}
 {agent_scratchpad}"""
