@@ -1,4 +1,4 @@
-# Integration Reference
+# Integrations
 
 Besides the installation of this python package, you will also need to install packages and set environment variables depending on which chains you want to use.
 
@@ -18,6 +18,9 @@ The following use cases require specific installs and api keys:
 - _SerpAPI_:
   - Install requirements with `pip install google-search-results`
   - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
+- _GoogleSearchAPI_:
+  - Install requirements with `pip install google-api-python-client`
+  - Get a Google api key and either set it as an environment variable (`GOOGLE_API_KEY`) or pass it to the LLM constructor as `google_api_key`. You will also need to set the `GOOGLE_CSE_ID` environment variable to your custom search engine id. You can pass it to the LLM constructor as `google_cse_id` as well.
 - _NatBot_:
   - Install requirements with `pip install playwright`
 - _Wikipedia_:
