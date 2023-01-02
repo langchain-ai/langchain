@@ -15,7 +15,7 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
@@ -32,7 +32,7 @@ class MapReduceChain(Chain, BaseModel):
 
     @classmethod
     def from_params(
-        cls, llm: LLM, prompt: BasePromptTemplate, text_splitter: TextSplitter
+        cls, llm: BaseLLM, prompt: BasePromptTemplate, text_splitter: TextSplitter
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
@@ -70,5 +70,5 @@ class MapReduceChain(Chain, BaseModel):
         # Split the larger text into smaller chunks.
         texts = self.text_splitter.split_text(inputs[self.input_key])
         docs = [Document(page_content=text) for text in texts]
-        outputs = self.combine_documents_chain.combine_docs(docs)
+        outputs, _ = self.combine_documents_chain.combine_docs(docs)
         return {self.output_key: outputs}

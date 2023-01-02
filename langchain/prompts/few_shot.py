@@ -39,7 +39,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     """A prompt template string to put before the examples."""
 
     template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string'."""
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:

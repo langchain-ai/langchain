@@ -1,24 +1,26 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, ClassVar, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
-from langchain.agents.agent import Agent
+from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
-from langchain.chains.llm import LLMChain
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
     """Agent for the ReAct chin."""
 
-    prompt: ClassVar[BasePromptTemplate] = WIKI_PROMPT
+    @classmethod
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Return default prompt."""
+        return WIKI_PROMPT
 
     i: int = 1
 
@@ -64,7 +66,7 @@ class ReActDocstoreAgent(Agent, BaseModel):
 
     @property
     def _stop(self) -> List[str]:
-        return [f"\nObservation {self.i}: "]
+        return [f"\nObservation {self.i}:"]
 
     @property
     def llm_prefix(self) -> str:
@@ -100,9 +102,10 @@ class DocstoreExplorer:
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
-    prompt: ClassVar[BasePromptTemplate] = TEXTWORLD_PROMPT
-
-    i: int = 1
+    @classmethod
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+        """Return default prompt."""
+        return TEXTWORLD_PROMPT
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:
@@ -113,7 +116,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
             raise ValueError(f"Tool name should be Play, got {tool_names}")
 
 
-class ReActChain(ReActDocstoreAgent):
+class ReActChain(AgentExecutor):
     """Chain that implements the ReAct paper.
 
     Example:
@@ -123,12 +126,12 @@ class ReActChain(ReActDocstoreAgent):
             react = ReAct(llm=OpenAI())
     """
 
-    def __init__(self, llm: LLM, docstore: Docstore, **kwargs: Any):
+    def __init__(self, llm: BaseLLM, docstore: Docstore, **kwargs: Any):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [
             Tool(name="Search", func=docstore_explorer.search),
             Tool(name="Lookup", func=docstore_explorer.lookup),
         ]
-        llm_chain = LLMChain(llm=llm, prompt=WIKI_PROMPT)
-        super().__init__(llm_chain=llm_chain, tools=tools, **kwargs)
+        agent = ReActDocstoreAgent.from_llm_and_tools(llm, tools)
+        super().__init__(agent=agent, tools=tools, **kwargs)

@@ -10,7 +10,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.vector_db_qa.prompt import PROMPT
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
 
@@ -24,7 +24,7 @@ class VectorDBQA(Chain, BaseModel):
             from langchain import OpenAI, VectorDBQA
             from langchain.faiss import FAISS
             vectordb = FAISS(...)
-            vectordbQA = VectorDBQA(llm=OpenAI(), vector_db=vectordb)
+            vectordbQA = VectorDBQA(llm=OpenAI(), vectorstore=vectordb)
 
     """
 
@@ -84,7 +84,7 @@ class VectorDBQA(Chain, BaseModel):
 
     @classmethod
     def from_llm(
-        cls, llm: LLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
+        cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
     ) -> VectorDBQA:
         """Initialize from LLM."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
@@ -101,5 +101,5 @@ class VectorDBQA(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         docs = self.vectorstore.similarity_search(question, k=self.k)
-        answer = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
         return {self.output_key: answer}

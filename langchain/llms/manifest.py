@@ -42,7 +42,7 @@ class ManifestWrapper(LLM, BaseModel):
         """Return type of llm."""
         return "manifest"
 
-    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to LLM through Manifest."""
         if stop is not None and len(stop) != 1:
             raise NotImplementedError(

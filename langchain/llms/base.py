@@ -7,13 +7,8 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
 import yaml
 from pydantic import BaseModel, Extra
 
-
-class Generation(NamedTuple):
-    """Output of a single generation."""
-
-    text: str
-    """Generated text output."""
-    # TODO: add log probs
+import langchain
+from langchain.schema import Generation
 
 
 class LLMResult(NamedTuple):
@@ -26,23 +21,54 @@ class LLMResult(NamedTuple):
     """For arbitrary LLM provider specific output."""
 
 
-class LLM(BaseModel, ABC):
+class BaseLLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
+
+    cache: Optional[bool] = None
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
 
+    @abstractmethod
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompts."""
+
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        generations = []
-        for prompt in prompts:
-            text = self(prompt, stop=stop)
-            generations.append([Generation(text=text)])
-        return LLMResult(generations=generations)
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            return self._generate(prompts, stop=stop)
+        params = self._llm_dict()
+        params["stop"] = stop
+        llm_string = str(sorted([(k, v) for k, v in params.items()]))
+        missing_prompts = []
+        missing_prompt_idxs = []
+        existing_prompts = {}
+        for i, prompt in enumerate(prompts):
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                existing_prompts[i] = cache_val
+            else:
+                missing_prompts.append(prompt)
+                missing_prompt_idxs.append(i)
+        new_results = self._generate(missing_prompts, stop=stop)
+        for i, result in enumerate(new_results.generations):
+            existing_prompts[i] = result
+            prompt = prompts[i]
+            langchain.llm_cache.update(prompt, llm_string, result)
+        generations = [existing_prompts[i] for i in range(len(prompts))]
+        return LLMResult(generations=generations, llm_output=new_results.llm_output)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
@@ -53,7 +79,7 @@ class LLM(BaseModel, ABC):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
+                "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install transformers`."
             )
         # create a GPT-3 tokenizer instance
@@ -65,9 +91,9 @@ class LLM(BaseModel, ABC):
         # calculate the number of tokens in the tokenized text
         return len(tokenized_text)
 
-    @abstractmethod
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Run the LLM on the given prompt and input."""
+        """Check Cache and run the LLM on the given prompt and input."""
+        return self.generate([prompt], stop=stop).generations[0][0].text
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -121,3 +147,26 @@ class LLM(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+class LLM(BaseLLM):
+    """LLM class that expect subclasses to implement a simpler call method.
+
+    The purpose of this class is to expose a simpler interface for working
+    with LLMs, rather than expect the user to implement the full _generate method.
+    """
+
+    @abstractmethod
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Run the LLM on the given prompt and input."""
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        # TODO: add caching here.
+        generations = []
+        for prompt in prompts:
+            text = self._call(prompt, stop=stop)
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)

@@ -8,7 +8,7 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 
 
@@ -22,7 +22,7 @@ class NatBotChain(Chain, BaseModel):
             natbot = NatBotChain(llm=OpenAI(), objective="Buy me a new hat.")
     """
 
-    llm: LLM
+    llm: BaseLLM
     """LLM wrapper to use."""
     objective: str
     """Objective that NatBot is tasked with completing."""

@@ -18,7 +18,7 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.llms.base import LLM
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -35,7 +35,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     @classmethod
     def from_llm(
         cls,
-        llm: LLM,
+        llm: BaseLLM,
         document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
@@ -106,7 +106,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer = self.combine_document_chain.combine_docs(docs, **inputs)
+        answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
         if "\nSOURCES: " in answer:
             answer, sources = answer.split("\nSOURCES: ")
         else:

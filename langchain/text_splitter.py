@@ -1,8 +1,13 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, List
+from typing import Any, Callable, Iterable, List, Optional
+
+from langchain.docstore.document import Document
+
+logger = logging.getLogger()
 
 
 class TextSplitter(ABC):
@@ -30,6 +35,17 @@ class TextSplitter(ABC):
     def split_text(self, text: str) -> List[str]:
         """Split text into multiple components."""
 
+    def create_documents(
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
+    ) -> List[Document]:
+        """Create documents from a list of texts."""
+        _metadatas = metadatas or [{}] * len(texts)
+        documents = []
+        for i, text in enumerate(texts):
+            for chunk in self.split_text(text):
+                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+        return documents
+
     def _merge_splits(self, splits: Iterable[str]) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
@@ -37,19 +53,26 @@ class TextSplitter(ABC):
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            if total >= self._chunk_size:
-                docs.append(self._separator.join(current_doc))
-                while total > self._chunk_overlap:
-                    total -= self._length_function(current_doc[0])
-                    current_doc = current_doc[1:]
+            _len = self._length_function(d)
+            if total + _len >= self._chunk_size:
+                if total > self._chunk_size:
+                    logger.warning(
+                        f"Created a chunk of size {total}, "
+                        f"which is longer than the specified {self._chunk_size}"
+                    )
+                if len(current_doc) > 0:
+                    docs.append(self._separator.join(current_doc))
+                    while total > self._chunk_overlap:
+                        total -= self._length_function(current_doc[0])
+                        current_doc = current_doc[1:]
             current_doc.append(d)
-            total += self._length_function(d)
+            total += _len
         docs.append(self._separator.join(current_doc))
         return docs
 
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
-        """Text splitter than uses HuggingFace tokenizer to count length."""
+        """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
 
@@ -67,6 +90,27 @@ class TextSplitter(ABC):
                 "Please it install it with `pip install transformers`."
             )
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
+
+    @classmethod
+    def from_tiktoken_encoder(
+        cls, encoding_name: str = "gpt2", **kwargs: Any
+    ) -> TextSplitter:
+        """Text splitter that uses tiktoken encoder to count length."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate max_tokens_for_prompt. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3 encoder instance
+        enc = tiktoken.get_encoding(encoding_name)
+
+        def _tiktoken_encoder(text: str) -> int:
+            return len(enc.encode(text))
+
+        return cls(length_function=_tiktoken_encoder, **kwargs)
 
 
 class CharacterTextSplitter(TextSplitter):

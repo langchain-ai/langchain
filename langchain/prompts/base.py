@@ -1,16 +1,32 @@
 """BasePrompt schema definition."""
 import json
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.formatting import formatter
 
-DEFAULT_FORMATTER_MAPPING = {
+
+def jinja2_formatter(template: str, **kwargs: Any) -> str:
+    """Format a template using jinja2."""
+    try:
+        from jinja2 import Template
+    except ImportError:
+        raise ValueError(
+            "jinja2 not installed, which is needed to use the jinja2_formatter. "
+            "Please install it with `pip install jinja2`."
+        )
+
+    return Template(template).render(**kwargs)
+
+
+DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
     "f-string": formatter.format,
+    "jinja2": jinja2_formatter,
 }
 
 
@@ -40,12 +56,34 @@ class BaseOutputParser(ABC):
         """Parse the output of an LLM call."""
 
 
-class ListOutputParser(ABC):
+class ListOutputParser(BaseOutputParser):
     """Class to parse the output of an LLM call to a list."""
 
     @abstractmethod
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
+
+
+class RegexParser(BaseOutputParser, BaseModel):
+    """Class to parse the output into a dictionary."""
+
+    regex: str
+    output_keys: List[str]
+    default_output_key: Optional[str] = None
+
+    def parse(self, text: str) -> Dict[str, str]:
+        """Parse the output of an LLM call."""
+        match = re.search(self.regex, text)
+        if match:
+            return {key: match.group(i + 1) for i, key in enumerate(self.output_keys)}
+        else:
+            if self.default_output_key is None:
+                raise ValueError(f"Could not parse output: {text}")
+            else:
+                return {
+                    key: text if key == self.default_output_key else ""
+                    for key in self.output_keys
+                }
 
 
 class BasePromptTemplate(BaseModel, ABC):

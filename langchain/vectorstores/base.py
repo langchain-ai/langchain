@@ -29,6 +29,36 @@ class VectorStore(ABC):
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
         """Return docs most similar to query."""
 
+    def max_marginal_relevance_search(
+        self, query: str, k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def from_documents(
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> VectorStore:
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
+
     @classmethod
     @abstractmethod
     def from_texts(

@@ -29,7 +29,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     """The prompt template."""
 
     template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string'."""
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -80,7 +80,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
                 set up the user's input.
             input_variables: A list of variable names the final prompt template
                 will expect.
-            example_separator: The seperator to use in between examples. Defaults
+            example_separator: The separator to use in between examples. Defaults
                 to two new line characters.
             prefix: String that should go before any examples. Generally includes
                 examples. Default to an empty string.

@@ -28,7 +28,7 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 
 ## 🚀 What can this help with?
 
-There are four main areas that LangChain is designed to help with.
+There are six main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
 **📃 LLMs and Prompts:**
@@ -39,6 +39,10 @@ This includes prompt management, prompt optimization, generic interface for all 
 
 Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
 
+**📚 Data Augmented Generation:**
+
+Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+
 **🤖 Agents:**
 
 Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
@@ -47,7 +51,12 @@ Agents involve an LLM making decisions about which Actions to take, taking that 
 
 Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
+**🧐 Evaluation:**
+
+[BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
+
 For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/?).
+
 
 ## 💁 Contributing
 

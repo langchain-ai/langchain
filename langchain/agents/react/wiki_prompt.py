@@ -107,6 +107,9 @@ Thought 3: Leonid Levin is a mathematician and computer scientist. So Pavel Urys
 and Leonid Levin have the same type of work.
 Action 3: Finish[yes]""",
 ]
-SUFFIX = """\n\nQuestion: {input}"""
+SUFFIX = """\nQuestion: {input}
+{agent_scratchpad}"""
 
-WIKI_PROMPT = PromptTemplate.from_examples(EXAMPLES, SUFFIX, ["input"])
+WIKI_PROMPT = PromptTemplate.from_examples(
+    EXAMPLES, SUFFIX, ["input", "agent_scratchpad"]
+)
