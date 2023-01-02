@@ -1,6 +1,8 @@
 """Common schema objects."""
 
 from typing import List, NamedTuple, Optional
+from dataclasses_json import dataclass_json
+from dataclasses import dataclass
 
 
 class AgentAction(NamedTuple):
@@ -18,7 +20,9 @@ class AgentFinish(NamedTuple):
     return_values: dict
 
 
-class Generation(NamedTuple):
+@dataclass_json
+@dataclass
+class Generation:
     """Output of a single generation."""
 
     text: str
@@ -26,7 +30,9 @@ class Generation(NamedTuple):
     # TODO: add log probs
 
 
-class LLMResult(NamedTuple):
+@dataclass_json
+@dataclass
+class LLMResult:
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
