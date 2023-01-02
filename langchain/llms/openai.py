@@ -22,7 +22,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         .. code-block:: python
 
             from langchain import OpenAI
-            openai = OpenAI(model="text-davinci-003")
+            openai = OpenAI(model_name="text-davinci-003")
     """
 
     client: Any  #: :meta private:
