@@ -21,7 +21,7 @@ def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -
 
 class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
-
+    human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     buffer: str = ""
@@ -53,7 +53,7 @@ class ConversationBufferMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = "Human: " + inputs[prompt_input_key]
+        human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
         self.buffer += "\n" + "\n".join([human, ai])
 
@@ -64,7 +64,7 @@ class ConversationBufferMemory(Memory, BaseModel):
 
 class ConversationBufferWindowMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
-
+    human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     buffer: List[str] = Field(default_factory=list)
@@ -97,7 +97,7 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = "Human: " + inputs[prompt_input_key]
+        human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
         self.buffer.append("\n".join([human, ai]))
 
@@ -114,6 +114,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
+    human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     llm: BaseLLM
@@ -158,7 +159,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"Human: {inputs[prompt_input_key]}"
+        human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
         ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
@@ -178,6 +179,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"
+    human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     output_key: Optional[str] = None
@@ -226,7 +228,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"Human: {inputs[prompt_input_key]}"
+        human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
         ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
         self.buffer.append(new_lines)
