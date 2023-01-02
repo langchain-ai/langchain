@@ -161,7 +161,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for an LLM run."""
 
         if self._session is None:
-            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
+            raise TracerException(
+                "Initialize a session with `new_session()` before starting a trace."
+            )
 
         llm_run = LLMRun(
             serialized=serialized,
@@ -199,7 +201,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a chain run."""
 
         if self._session is None:
-            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
+            raise TracerException(
+                "Initialize a session with `new_session()` before starting a trace."
+            )
 
         chain_run = ChainRun(
             serialized=serialized,
@@ -235,7 +239,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a tool run."""
 
         if self._session is None:
-            raise TracerException("Initialize a session with `new_session()` before starting a trace.")
+            raise TracerException(
+                "Initialize a session with `new_session()` before starting a trace."
+            )
 
         tool_run = ToolRun(
             serialized=serialized,
@@ -304,7 +310,9 @@ class Tracer(BaseTracer, ABC):
         """Set the tracing session."""
 
         if self._stack:
-            raise TracerException("Cannot set a session while a trace is being recorded")
+            raise TracerException(
+                "Cannot set a session while a trace is being recorded"
+            )
         self._tracer_session = value
 
 
@@ -348,7 +356,9 @@ class SharedTracer(Singleton, BaseTracer, ABC):
             # TODO: currently, we are only checking current thread's stack. Need to make sure that
             #   we are not in the middle of a trace in any thread.
             if self._stack:
-                raise TracerException("Cannot set a session while a trace is being recorded")
+                raise TracerException(
+                    "Cannot set a session while a trace is being recorded"
+                )
             self._tracer_session = value
 
 
@@ -409,7 +419,9 @@ class BaseLangChainTracer(BaseTracer, ABC):
             data=session.to_json(),
             headers={"Content-Type": "application/json"},
         )
-        print(f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}")
+        print(
+            f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}"
+        )
         session.id = r.json()["id"]
 
     def _add_child_run(

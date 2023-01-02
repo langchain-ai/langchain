@@ -1,12 +1,12 @@
 """Test Tracer classes."""
 from __future__ import annotations
 
-import pytest
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
+import pytest
 from freezegun import freeze_time
 from pydantic import BaseModel
 
@@ -17,8 +17,8 @@ from langchain.callbacks.tracers.base import (
     SharedTracer,
     ToolRun,
     Tracer,
+    TracerException,
     TracerSession,
-    TracerException
 )
 from langchain.schema import AgentAction, LLMResult
 
