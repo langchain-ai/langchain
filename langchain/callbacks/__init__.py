@@ -9,13 +9,12 @@ def get_callback_manager() -> BaseCallbackManager:
     return SharedCallbackManager()
 
 
-def set_default_callback_manager() -> None:
-    """Set default callback manager."""
-    callback = get_callback_manager()
-    callback.add_handler(StdOutCallbackHandler())
-
-
 def set_handler(handler: BaseCallbackHandler) -> None:
     """Set handler."""
     callback = get_callback_manager()
     callback.set_handler(handler)
+
+
+def set_default_callback_manager() -> None:
+    """Set default callback manager."""
+    set_handler(StdOutCallbackHandler())
