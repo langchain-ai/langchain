@@ -33,7 +33,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         default_factory=_get_default_document_prompt
     )
     """Prompt to use to format each document."""
-    return_refine_steps: bool = False
+    return_intermediate_steps: bool = False
     """Return the results of the refine steps in the output."""
 
     @property
@@ -43,8 +43,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         :meta private:
         """
         _output_keys = super().output_keys
-        if self.return_refine_steps:
-            _output_keys = _output_keys + ["refine_steps"]
+        if self.return_intermediate_steps:
+            _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
     class Config:
@@ -52,6 +52,14 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+        """For backwards compatibility."""
+        if "return_refine_steps" in values:
+            values["return_intermediate_steps"] = values["return_refine_steps"]
+            del values["return_refine_steps"]
+        return values
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
@@ -100,8 +108,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             inputs = {**base_inputs, **kwargs}
             res = self.refine_llm_chain.predict(**inputs)
             refine_steps.append(res)
-        if self.return_refine_steps:
-            extra_return_dict = {"refine_steps": refine_steps}
+        if self.return_intermediate_steps:
+            extra_return_dict = {"intermediate_steps": refine_steps}
         else:
             extra_return_dict = {}
         return res, extra_return_dict
