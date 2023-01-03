@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
@@ -70,3 +70,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         """Run on text."""
         # st.write requires two spaces before a newline to render it
         st.write(text.replace("\n", "  \n"))
+
+    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Run on agent end."""
+        # st.write requires two spaces before a newline to render it
+        st.write(finish.log.replace("\n", "  \n"))

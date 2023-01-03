@@ -8,7 +8,7 @@ from langchain.callbacks.base import (
     BaseCallbackManager,
     CallbackManager,
 )
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class Singleton:
@@ -32,7 +32,7 @@ class Singleton:
 class SharedCallbackManager(Singleton, BaseCallbackManager):
     """A thread-safe singleton CallbackManager."""
 
-    _callback_manager: CallbackManager = CallbackManager([])
+    _callback_manager: CallbackManager = CallbackManager(handlers=[])
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -89,9 +89,14 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
             self._callback_manager.on_tool_error(error)
 
     def on_text(self, text: str, **kwargs: Any) -> None:
-        """Run when agent ends."""
+        """Run on arbitrary text."""
         with self._lock:
             self._callback_manager.on_text(text, **kwargs)
+
+    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Run on agent end."""
+        with self._lock:
+            self._callback_manager.on_agent_end(finish, **kwargs)
 
     def add_handler(self, callback: BaseCallbackHandler) -> None:
         """Add a callback to the callback manager."""

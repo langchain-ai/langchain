@@ -29,7 +29,7 @@ def test_callback_manager() -> None:
     """Test the CallbackManager."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
-    manager = CallbackManager([handler1, handler2])
+    manager = CallbackManager(handlers=[handler1, handler2])
     _test_callback_manager(manager, handler1, handler2)
 
 

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
@@ -76,3 +76,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color, end=end)
+
+    def on_agent_end(
+        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Run on agent end."""
+        print_text(finish.log, color=color, end="\n")
