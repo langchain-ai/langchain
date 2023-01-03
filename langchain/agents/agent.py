@@ -73,7 +73,7 @@ class Agent(BaseModel):
             parsed_output = self._extract_tool_and_input(full_output)
         tool, tool_input = parsed_output
         if tool == self.finish_tool_name:
-            return AgentFinish(full_output, {"output": tool_input})
+            return AgentFinish({"output": tool_input}, full_output)
         return AgentAction(tool, tool_input, full_output)
 
     def prepare_for_new_call(self) -> None:
