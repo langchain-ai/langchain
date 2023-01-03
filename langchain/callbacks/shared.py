@@ -32,7 +32,7 @@ class Singleton:
 class SharedCallbackManager(Singleton, BaseCallbackManager):
     """A thread-safe singleton CallbackManager."""
 
-    _callback_manager: CallbackManager = CallbackManager([])
+    _callback_manager: CallbackManager = CallbackManager(handlers=[])
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any

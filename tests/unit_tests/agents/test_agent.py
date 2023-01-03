@@ -71,7 +71,7 @@ def test_agent_with_callbacks_global() -> None:
 
     langchain.verbose = True
     handler = FakeCallbackHandler()
-    manager = CallbackManager([handler])
+    manager = CallbackManager(handlers=[handler])
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
@@ -105,7 +105,7 @@ def test_agent_with_callbacks_local() -> None:
 
     langchain.verbose = False
     handler = FakeCallbackHandler()
-    manager = CallbackManager([handler])
+    manager = CallbackManager(handlers=[handler])
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
@@ -141,7 +141,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
 
     langchain.verbose = False
     handler = FakeCallbackHandler()
-    manager = CallbackManager([handler])
+    manager = CallbackManager(handlers=[handler])
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
