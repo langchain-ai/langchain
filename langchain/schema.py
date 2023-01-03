@@ -1,8 +1,9 @@
 """Common schema objects."""
 
-from typing import List, NamedTuple, Optional
-from dataclasses_json import dataclass_json
 from dataclasses import dataclass
+from typing import List, NamedTuple, Optional
+
+from dataclasses_json import dataclass_json
 
 
 class AgentAction(NamedTuple):

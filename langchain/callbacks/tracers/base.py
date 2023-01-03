@@ -24,7 +24,6 @@ class TracerSession:
     id: Optional[Union[int, str]]
     start_time: datetime = field(default_factory=datetime.utcnow)
     extra: Dict[str, Any] = field(default_factory=dict)
-    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
 
 
 @dataclass_json
@@ -105,6 +104,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._session = session
         return session
 
+    @abstractmethod
+    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+        """Load a tracing session and set it as the Tracer's session."""
+
     @property
     @abstractmethod
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
@@ -151,7 +154,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         run = self._stack.pop()
         if not self._stack:
-            self._session.child_runs.append(run)
             self._execution_order = 1
             self._persist_run(run)
 
@@ -376,6 +378,12 @@ class BaseJsonTracer(BaseTracer, ABC):
 
         print(session.to_json(indent=2))
 
+    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+        """Load a session from the tracer."""
+
+        # TODO: implement this
+        raise NotImplementedError("load_session is not implemented for BaseJsonTracer")
+
     def _add_child_run(
         self,
         parent_run: Union[ChainRun, ToolRun],
@@ -424,6 +432,16 @@ class BaseLangChainTracer(BaseTracer, ABC):
             f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}"
         )
         session.id = r.json()["id"]
+
+    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+        """Load a session from the tracer."""
+
+        r = requests.get(f"{self._endpoint}/sessions/{session_id}")
+        if r.status_code != 200:
+            raise TracerException(f"Failed to load session {session_id}")
+        tracer_session = TracerSession.from_json(r.json())
+        self._session = tracer_session
+        return tracer_session
 
     def _add_child_run(
         self,
