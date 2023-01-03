@@ -65,7 +65,7 @@ class BaseCallbackHandler(BaseModel, ABC):
         """Run on arbitrary text."""
 
     @abstractmethod
-    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run on agent end."""
 
 
@@ -158,11 +158,11 @@ class CallbackManager(BaseCallbackManager):
         for handler in self.handlers:
             handler.on_text(text, **kwargs)
 
-    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run on agent end."""
         for handler in self.handlers:
             if not handler.ignore_agent:
-                handler.on_agent_end(finish, **kwargs)
+                handler.on_agent_finish(finish, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""

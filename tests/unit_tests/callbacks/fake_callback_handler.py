@@ -61,6 +61,6 @@ class FakeCallbackHandler(BaseCallbackHandler):
         """Run when agent is ending."""
         self.ends += 1
 
-    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
         self.ends += 1

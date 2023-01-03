@@ -71,7 +71,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         # st.write requires two spaces before a newline to render it
         st.write(text.replace("\n", "  \n"))
 
-    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run on agent end."""
         # st.write requires two spaces before a newline to render it
         st.write(finish.log.replace("\n", "  \n"))

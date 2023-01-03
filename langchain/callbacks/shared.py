@@ -93,10 +93,10 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_text(text, **kwargs)
 
-    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run on agent end."""
         with self._lock:
-            self._callback_manager.on_agent_end(finish, **kwargs)
+            self._callback_manager.on_agent_finish(finish, **kwargs)
 
     def add_handler(self, callback: BaseCallbackHandler) -> None:
         """Add a callback to the callback manager."""

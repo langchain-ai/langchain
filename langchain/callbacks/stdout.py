@@ -77,7 +77,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Run when agent ends."""
         print_text(text, color=color, end=end)
 
-    def on_agent_end(
+    def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Run on agent end."""
