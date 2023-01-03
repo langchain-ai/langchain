@@ -78,6 +78,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "sphinx_book_theme"
 
+html_theme_options = {
+    "path_to_docs": "docs",
+    "repository_url": "https://github.com/hwchase17/langchain",
+    "use_repository_button": True,
+}
+
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "hwchase17",  # Username
