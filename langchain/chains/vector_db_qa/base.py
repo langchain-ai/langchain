@@ -35,7 +35,7 @@ class VectorDBQA(Chain, BaseModel):
     """
 
     vectorstore: Optional[VectorStore]  # type: ignore
-    """[DEPRECATED] Vector Database to connect to. Use the key `vectorstores` instead."""
+    """[DEPRECATED] Vector Database to connect to. Use the key `vectorstores` instead"""
 
     vectorstores: Optional[List[VectorStore]]
     """Vector Databases to connect to."""
@@ -76,7 +76,6 @@ class VectorDBQA(Chain, BaseModel):
     @root_validator(pre=True)
     def validate_vectorstores(cls, values: Dict) -> Dict:
         """Validate vectorstores."""
-
         # Check to make sure vectorstores defined correctly
         only_one_key_defined = bool("vectorstore" in values) ^ bool(
             "vectorstores" in values
@@ -89,7 +88,7 @@ class VectorDBQA(Chain, BaseModel):
         return values
 
     def __init__(self, *args, **kwargs):  # type: ignore
-
+        """Initialize VectorDBQA."""
         # Call super to init instance
         super().__init__(*args, **kwargs)
 
@@ -103,7 +102,7 @@ class VectorDBQA(Chain, BaseModel):
         cumulative_n = self.n * num_stores
 
         assert cumulative_n >= self.k, (
-            f"`n={n}` times number of stores={num_stores} "
+            f"`n={self.n}` times number of stores={num_stores} "
             f"is smaller than specified `k={self.k}`."
         )
 
