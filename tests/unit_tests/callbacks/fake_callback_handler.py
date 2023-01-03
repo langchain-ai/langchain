@@ -2,7 +2,7 @@
 from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, LLMResult, AgentFinish
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class FakeCallbackHandler(BaseCallbackHandler):
@@ -66,4 +66,3 @@ class FakeCallbackHandler(BaseCallbackHandler):
     def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
         self.ends += 1
-
