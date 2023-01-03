@@ -439,7 +439,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
         r = requests.get(f"{self._endpoint}/sessions/{session_id}")
         if r.status_code != 200:
             raise TracerException(f"Failed to load session {session_id}")
-        tracer_session = TracerSession.from_json(r.json())
+        tracer_session = TracerSession.from_dict(r.json())
         self._session = tracer_session
         return tracer_session
 
