@@ -101,5 +101,5 @@ class VectorDBQA(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         question = inputs[self.input_key]
         docs = self.vectorstore.similarity_search(question, k=self.k)
-        answer = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
         return {self.output_key: answer}

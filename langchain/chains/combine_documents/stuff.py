@@ -1,13 +1,13 @@
 """Chain that combines documents by stuffing into context."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BaseOutputParser, BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 
 
@@ -78,8 +78,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         prompt = self.llm_chain.prompt.format(**inputs)
         return self.llm_chain.llm.get_num_tokens(prompt)
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> str:
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        """Output parser to use for results of combine_docs."""
+        return self.llm_chain.prompt.output_parser
+
+    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM."""
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
-        return self.llm_chain.predict(**inputs)
+        return self.llm_chain.predict(**inputs), {}

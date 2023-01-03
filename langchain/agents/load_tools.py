@@ -12,6 +12,7 @@ from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
+from langchain.utilities.google_search import GoogleSearchAPIWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -27,6 +28,14 @@ def _get_serpapi() -> Tool:
         "Search",
         SerpAPIWrapper().run,
         "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
+def _get_google_search() -> Tool:
+    return Tool(
+        "Google Search",
+        GoogleSearchAPIWrapper().run,
+        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
 
@@ -51,6 +60,7 @@ _BASE_TOOLS = {
     "serpapi": _get_serpapi,
     "requests": _get_requests,
     "terminal": _get_terminal,
+    "google-search": _get_google_search,
 }
 
 
