@@ -22,12 +22,14 @@ with open("../pyproject.toml") as f:
 
 # -- Project information -----------------------------------------------------
 
-project = "LangChain"
+project = "🦜🔗 LangChain"
 copyright = "2022, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]
 release = version
+
+html_title = project + " " + version
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,10 +44,11 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "myst_parser",
-    "nbsphinx",
+    "myst_nb",
     "sphinx_panels",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
+source_suffix = [".rst", ".md"]
 
 
 autodoc_pydantic_model_show_json = False
@@ -73,8 +76,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
-# html_theme = "sphinx_typlog_theme"
+html_theme = "sphinx_book_theme"
+
+html_theme_options = {
+    "path_to_docs": "docs",
+    "repository_url": "https://github.com/hwchase17/langchain",
+    "use_repository_button": True,
+}
 
 html_context = {
     "display_github": True,  # Integrate GitHub
@@ -88,3 +96,5 @@ html_context = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path: list = []
+nb_execution_mode = "off"
+myst_enable_extensions = ["colon_fence"]
