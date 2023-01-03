@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class BaseCallbackHandler(ABC):
@@ -56,7 +56,11 @@ class BaseCallbackHandler(ABC):
 
     @abstractmethod
     def on_text(self, text: str, **kwargs: Any) -> None:
-        """Run when agent ends."""
+        """Run on arbitrary text."""
+
+    @abstractmethod
+    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Run on agent end."""
 
 
 class BaseCallbackManager(BaseCallbackHandler, ABC):
@@ -140,6 +144,11 @@ class CallbackManager(BaseCallbackManager):
         """Run on additional input from chains and agents."""
         for handler in self.handlers:
             handler.on_text(text, **kwargs)
+
+    def on_agent_end(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Run on agent end."""
+        for handler in self.handlers:
+            handler.on_agent_end(finish, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
