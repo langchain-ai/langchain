@@ -15,7 +15,6 @@ from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
-from langchain.chains.vector_db_qa.multi import MultiVectorDBQA
 
 __all__ = [
     "APIChain",
@@ -24,7 +23,6 @@ __all__ = [
     "LLMBashChain",
     "LLMCheckerChain",
     "LLMMathChain",
-    "MultiVectorDBQA",
     "PALChain",
     "QAWithSourcesChain",
     "SQLDatabaseChain",
