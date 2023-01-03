@@ -138,9 +138,49 @@ class Agent(BaseModel):
         llm_chain = LLMChain(llm=llm, prompt=cls.create_prompt(tools))
         return cls(llm_chain=llm_chain)
 
-    def return_stopped_response(self) -> dict:
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations."""
-        return {k: "Agent stopped due to max iterations." for k in self.return_values}
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+        elif early_stopping_method == "generate":
+            # Generate does one final forward pass
+            thoughts = ""
+            for action, observation in intermediate_steps:
+                thoughts += action.log
+                thoughts += (
+                    f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
+                )
+            # Adding to the previous steps, we now tell the LLM to make a final pred
+            thoughts += (
+                "\n\nI now need to return a final answer based on the previous steps:"
+            )
+            new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
+            full_inputs = {**kwargs, **new_inputs}
+            full_output = self.llm_chain.predict(**full_inputs)
+            # We try to extract a final answer
+            parsed_output = self._extract_tool_and_input(full_output)
+            if parsed_output is None:
+                # If we cannot extract, we just return the full output
+                return AgentFinish({"output": full_output}, full_output)
+            tool, tool_input = parsed_output
+            if tool == self.finish_tool_name:
+                # If we can extract, we send the correct stuff
+                return AgentFinish({"output": tool_input}, full_output)
+            else:
+                # If we can extract, but the tool is not the final tool,
+                # we just return the full output
+                return AgentFinish({"output": full_output}, full_output)
+        else:
+            raise ValueError(
+                "early_stopping_method should be one of `force` or `generate`, "
+                f"got {early_stopping_method}"
+            )
 
 
 class AgentExecutor(Chain, BaseModel):
@@ -150,6 +190,7 @@ class AgentExecutor(Chain, BaseModel):
     tools: List[Tool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = None
+    early_stopping_method: str = "force"
 
     @classmethod
     def from_agent_and_tools(
@@ -228,7 +269,10 @@ class AgentExecutor(Chain, BaseModel):
                 )
             intermediate_steps.append((output, observation))
             iterations += 1
-        final_output = self.agent.return_stopped_response()
+        output = self.agent.return_stopped_response(
+            self.early_stopping_method, intermediate_steps, **inputs
+        )
+        final_output = output.return_values
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
