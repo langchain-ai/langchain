@@ -16,17 +16,47 @@ Helpful Answer: [answer here]
 Score: [score between 0 and 100]
 
 How to determine the score:
-- Higher is better
+- Higher is a better answer
 - Better responds fully to the asked question, with lots of detail
 - If you do not know the answer based on the context, that should be a score of 0
 - Don't be overconfident!
 
-Begin! Use this context:
+Example #1
 
+Context:
+---------
+Apples are red
+---------
+Question: what color are apples?
+Helpful Answer: red
+Score: 100
+
+Example #2
+
+Context:
+---------
+Apples are either red or orange
+---------
+Question: what color are apples?
+Helpful Answer: red or orange
+Score: 60
+
+Example #3
+
+Context:
+---------
+Pears are either red or orange
+---------
+Question: what color are apples?
+Helpful Answer: This document does not answer the question
+Score: 0
+
+Begin!
+
+Context:
 ---------
 {context}
 ---------
-
 Question: {question}
 Helpful Answer:"""
 PROMPT = PromptTemplate(
