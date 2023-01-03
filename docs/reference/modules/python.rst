@@ -1,4 +1,4 @@
-:mod:`langchain.python`
+Python REPL
 =============================
 
 .. automodule:: langchain.python

@@ -22,7 +22,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         .. code-block:: python
 
             from langchain import OpenAI
-            openai = OpenAI(model="text-davinci-003")
+            openai = OpenAI(model_name="text-davinci-003")
     """
 
     client: Any  #: :meta private:
@@ -142,11 +142,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
         token_usage = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
-        _keys = ["completion_tokens", "prompt_tokens", "total_tokens"]
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             response = self.client.create(prompt=_prompts, **params)
             choices.extend(response["choices"])
-            for _key in _keys:
+            _keys_to_use = _keys.intersection(response["usage"])
+            for _key in _keys_to_use:
                 if _key not in token_usage:
                     token_usage[_key] = response["usage"][_key]
                 else:

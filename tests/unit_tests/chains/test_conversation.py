@@ -4,12 +4,19 @@ import pytest
 from langchain.chains.base import Memory
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversation.memory import (
-    ConversationalBufferWindowMemory,
     ConversationBufferMemory,
+    ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
 from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
+
+def test_memory_ai_prefix() -> None:
+    """Test that ai_prefix in the memory component works."""
+    memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
+    memory.save_context({"input": "bar"}, {"output": "foo"})
+    assert memory.buffer == "\nHuman: bar\nAssistant: foo"
 
 
 def test_conversation_chain_works() -> None:
@@ -42,6 +49,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
     "memory",
     [
         ConversationBufferMemory(memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
     ],
 )
@@ -74,14 +82,14 @@ def test_conversation_memory(memory: Memory) -> None:
     [
         ConversationBufferMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
-        ConversationalBufferWindowMemory(memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
     ],
 )
 def test_clearing_conversation_memory(memory: Memory) -> None:
     """Test clearing the conversation memory."""
     # This is a good input because the input is not the same as baz.
     good_inputs = {"foo": "bar", "baz": "foo"}
-    # This is a good output because these is one variable.
+    # This is a good output because there is one variable.
     good_outputs = {"bar": "foo"}
     memory.save_context(good_inputs, good_outputs)
 
