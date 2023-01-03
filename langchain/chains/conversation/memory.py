@@ -21,6 +21,7 @@ def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -
 
 class ConversationBufferMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
+
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
@@ -64,6 +65,7 @@ class ConversationBufferMemory(Memory, BaseModel):
 
 class ConversationBufferWindowMemory(Memory, BaseModel):
     """Buffer for storing conversation memory."""
+
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
