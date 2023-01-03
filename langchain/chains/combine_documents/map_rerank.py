@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -98,7 +98,11 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             # FYI - this is parallelized and so it is fast.
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
         )
-        sorted_res = sorted(zip(results, docs), key=lambda x: -int(x[0][self.rank_key]))
+        typed_results = cast(List[dict], results)
+
+        sorted_res = sorted(
+            zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
+        )
         output, document = sorted_res[0]
         extra_info = {}
         if self.metadata_keys is not None:
