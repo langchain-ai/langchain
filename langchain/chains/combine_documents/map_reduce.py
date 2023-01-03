@@ -65,7 +65,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
-    return_map_steps: bool = False
+    return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
     @property
@@ -75,8 +75,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         :meta private:
         """
         _output_keys = super().output_keys
-        if self.return_map_steps:
-            _output_keys = _output_keys + ["map_steps"]
+        if self.return_intermediate_steps:
+            _output_keys = _output_keys + ["intermediate_steps"]
         return _output_keys
 
     class Config:
@@ -84,6 +84,14 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+        """For backwards compatibility."""
+        if "return_map_steps" in values:
+            values["return_intermediate_steps"] = values["return_map_steps"]
+            del values["return_map_steps"]
+        return values
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
@@ -146,9 +154,9 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             num_tokens = self.combine_document_chain.prompt_length(
                 result_docs, **kwargs
             )
-        if self.return_map_steps:
+        if self.return_intermediate_steps:
             _results = [r[self.llm_chain.output_key] for r in results]
-            extra_return_dict = {"map_steps": _results}
+            extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
         output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)
