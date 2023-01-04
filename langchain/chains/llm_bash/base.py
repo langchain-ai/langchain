@@ -6,7 +6,6 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
-from langchain.input import print_text
 from langchain.llms.base import BaseLLM
 from langchain.utilities.bash import BashProcess
 
@@ -52,11 +51,11 @@ class LLMBashChain(Chain, BaseModel):
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         bash_executor = BashProcess()
         if self.verbose:
-            print_text(inputs[self.input_key])
+            self.callback_manager.on_text(inputs[self.input_key])
 
         t = llm_executor.predict(question=inputs[self.input_key])
         if self.verbose:
-            print_text(t, color="green")
+            self.callback_manager.on_text(t, color="green")
 
         t = t.strip()
         if t.startswith("```bash"):
@@ -69,8 +68,8 @@ class LLMBashChain(Chain, BaseModel):
             output = bash_executor.run(command_list)
 
             if self.verbose:
-                print_text("\nAnswer: ")
-                print_text(output, color="yellow")
+                self.callback_manager.on_text("\nAnswer: ")
+                self.callback_manager.on_text(output, color="yellow")
 
         else:
             raise ValueError(f"unknown format from LLM: {t}")

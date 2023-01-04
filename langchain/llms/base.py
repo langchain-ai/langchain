@@ -2,34 +2,55 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
-from langchain.schema import Generation
+from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema import Generation, LLMResult
 
 
-class LLMResult(NamedTuple):
-    """Class that contains all relevant information for an LLM Result."""
-
-    generations: List[List[Generation]]
-    """List of the things generated. This is List[List[]] because
-    each input could have multiple generations."""
-    llm_output: Optional[dict] = None
-    """For arbitrary LLM provider specific output."""
+def _get_verbosity() -> bool:
+    return langchain.verbose
 
 
 class BaseLLM(BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether to print out response text."""
+    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True, always=True)
+    def set_callback_manager(
+        cls, callback_manager: Optional[BaseCallbackManager]
+    ) -> BaseCallbackManager:
+        """If callback manager is None, set it.
+
+        This allows users to pass in None as callback manager, which is a nice UX.
+        """
+        return callback_manager or get_callback_manager()
+
+    @validator("verbose", pre=True, always=True)
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        else:
+            return verbose
 
     @abstractmethod
     def _generate(
@@ -48,7 +69,14 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            return self._generate(prompts, stop=stop)
+            if self.verbose:
+                self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__}, prompts
+                )
+            output = self._generate(prompts, stop=stop)
+            if self.verbose:
+                self.callback_manager.on_llm_end(output)
+            return output
         params = self._llm_dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -62,7 +90,11 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
+        self.callback_manager.on_llm_start(
+            {"name": self.__class__.__name__}, missing_prompts
+        )
         new_results = self._generate(missing_prompts, stop=stop)
+        self.callback_manager.on_llm_end(new_results)
         for i, result in enumerate(new_results.generations):
             existing_prompts[i] = result
             prompt = prompts[i]

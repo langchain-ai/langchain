@@ -4,7 +4,9 @@ from typing import Any, Dict, List
 import pytest
 from pydantic import BaseModel
 
+from langchain.callbacks.base import CallbackManager
 from langchain.chains.base import Chain, Memory
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 class FakeMemory(Memory, BaseModel):
@@ -133,3 +135,31 @@ def test_run_arg_with_memory() -> None:
     """Test run method works when arg is passed."""
     chain = FakeChain(the_input_keys=["foo", "baz"], memory=FakeMemory())
     chain.run("bar")
+
+
+def test_run_with_callback() -> None:
+    """Test run method works when callback manager is passed."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        callback_manager=CallbackManager(handlers=[handler]), verbose=True
+    )
+    output = chain.run("bar")
+    assert output == "baz"
+    assert handler.starts == 1
+    assert handler.ends == 1
+    assert handler.errors == 0
+
+
+def test_run_with_callback_not_verbose() -> None:
+    """Test run method works when callback manager is passed and not verbose."""
+    import langchain
+
+    langchain.verbose = False
+
+    handler = FakeCallbackHandler()
+    chain = FakeChain(callback_manager=CallbackManager(handlers=[handler]))
+    output = chain.run("bar")
+    assert output == "baz"
+    assert handler.starts == 0
+    assert handler.ends == 0
+    assert handler.errors == 0
