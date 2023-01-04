@@ -97,6 +97,8 @@ def test_agent_with_callbacks_global() -> None:
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
+    # during LLMChain
+    assert handler.text == 2
 
 
 def test_agent_with_callbacks_local() -> None:
@@ -133,6 +135,8 @@ def test_agent_with_callbacks_local() -> None:
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
+    # during LLMChain
+    assert handler.text == 2
 
 
 def test_agent_with_callbacks_not_verbose() -> None:

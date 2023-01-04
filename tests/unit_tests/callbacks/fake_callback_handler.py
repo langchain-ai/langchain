@@ -11,6 +11,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
     starts: int = 0
     ends: int = 0
     errors: int = 0
+    text: int = 0
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -59,7 +60,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent is ending."""
-        self.ends += 1
+        self.text += 1
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
