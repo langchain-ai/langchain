@@ -2,9 +2,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
+from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 
 
 class Memory(BaseModel, ABC):
@@ -42,9 +44,36 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
+    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    verbose: bool = Field(
+        default_factory=_get_verbosity
+    )  # Whether to print the response text
 
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True, always=True)
+    def set_callback_manager(
+        cls, callback_manager: Optional[BaseCallbackManager]
+    ) -> BaseCallbackManager:
+        """If callback manager is None, set it.
+
+        This allows users to pass in None as callback manager, which is a nice UX.
+        """
+        return callback_manager or get_callback_manager()
+
+    @validator("verbose", pre=True, always=True)
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        else:
+            return verbose
 
     @property
     @abstractmethod
@@ -106,12 +135,12 @@ class Chain(BaseModel, ABC):
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         if self.verbose:
-            print(
-                f"\n\n\033[1m> Entering new {self.__class__.__name__} chain...\033[0m"
+            self.callback_manager.on_chain_start(
+                {"name": self.__class__.__name__}, inputs
             )
         outputs = self._call(inputs)
         if self.verbose:
-            print(f"\n\033[1m> Finished {self.__class__.__name__} chain.\033[0m")
+            self.callback_manager.on_chain_end(outputs)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)
