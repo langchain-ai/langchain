@@ -56,7 +56,7 @@ class FullLLMCache(Base):  # type: ignore
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, engine: Engine, cache_schema=FullLLMCache):
+    def __init__(self, engine: Engine, cache_schema: Any = FullLLMCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
