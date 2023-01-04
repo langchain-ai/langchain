@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import os
 import threading
 import uuid
 from abc import ABC, abstractmethod
@@ -11,7 +12,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 from dataclasses_json import dataclass_json
-from pydantic import BaseModel
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.shared import Singleton
@@ -402,7 +402,7 @@ class BaseJsonTracer(BaseTracer, ABC):
 class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    _endpoint: str = "http://127.0.0.1:5000"
+    _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
