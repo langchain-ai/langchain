@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -33,12 +33,33 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         default_factory=_get_default_document_prompt
     )
     """Prompt to use to format each document."""
+    return_intermediate_steps: bool = False
+    """Return the results of the refine steps in the output."""
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Expect input key.
+
+        :meta private:
+        """
+        _output_keys = super().output_keys
+        if self.return_intermediate_steps:
+            _output_keys = _output_keys + ["intermediate_steps"]
+        return _output_keys
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def get_return_intermediate_steps(cls, values: Dict) -> Dict:
+        """For backwards compatibility."""
+        if "return_refine_steps" in values:
+            values["return_intermediate_steps"] = values["return_refine_steps"]
+            del values["return_refine_steps"]
+        return values
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
@@ -61,7 +82,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                 )
         return values
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> str:
+    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
         base_info = {"page_content": docs[0].page_content}
         base_info.update(docs[0].metadata)
@@ -71,6 +92,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         }
         inputs = {**base_inputs, **kwargs}
         res = self.initial_llm_chain.predict(**inputs)
+        refine_steps = [res]
         for doc in docs[1:]:
             base_info = {"page_content": doc.page_content}
             base_info.update(doc.metadata)
@@ -85,4 +107,9 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             }
             inputs = {**base_inputs, **kwargs}
             res = self.refine_llm_chain.predict(**inputs)
-        return res
+            refine_steps.append(res)
+        if self.return_intermediate_steps:
+            extra_return_dict = {"intermediate_steps": refine_steps}
+        else:
+            extra_return_dict = {}
+        return res, extra_return_dict
