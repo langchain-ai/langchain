@@ -126,10 +126,10 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
-class SmartCharacterTextSplitter(TextSplitter):
+class IterativeCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 
-    Is "smart" in that it tries to split by different characters to find one
+    Iteratively tries to split by different characters to find one
     that works.
     """
 
