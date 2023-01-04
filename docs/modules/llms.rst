@@ -21,7 +21,7 @@ The following sections of documentation are provided:
    :name: LLMs
    :hidden:
 
-   llms/key_concepts.md
-   llms/getting_started.ipynb
-   llms/how_to_guides.rst
-   Reference</reference/modules/llms.rst>
+   ./llms/key_concepts.md
+   ./llms/getting_started.ipynb
+   ./llms/how_to_guides.rst
+   Reference<../reference/modules/llms.rst>

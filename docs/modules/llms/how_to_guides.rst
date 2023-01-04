@@ -13,5 +13,5 @@ They are split into two categories:
    :glob:
    :hidden:
 
-   generic_how_to.rst
-   integrations.rst
+   ./generic_how_to.rst
+   ./integrations.rst

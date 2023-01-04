@@ -22,6 +22,6 @@ The following sections of documentation are provided:
    :caption: Memory
    :name: Memory
 
-   memory/getting_started.ipynb
-   memory/key_concepts.rst
-   memory/how_to_guides.rst
+   ./memory/getting_started.ipynb
+   ./memory/key_concepts.rst
+   ./memory/how_to_guides.rst

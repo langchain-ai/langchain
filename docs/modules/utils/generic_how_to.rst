@@ -21,4 +21,4 @@ The utilities listed here are all generic utilities.
    :glob:
    :hidden:
 
-   examples/*
+   ./examples/*

@@ -56,4 +56,4 @@ The examples here are all end-to-end chains for specific applications, focused o
    :name: generic
    :hidden:
 
-   examples/*
+   ./examples/*

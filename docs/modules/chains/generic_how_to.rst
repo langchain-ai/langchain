@@ -30,4 +30,4 @@ The examples here are all generic end-to-end chains that are meant to be used to
    :name: generic
    :hidden:
 
-   generic/*
+   ./generic/*

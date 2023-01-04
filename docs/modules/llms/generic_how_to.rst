@@ -17,4 +17,4 @@ The examples here all address certain "how-to" guides for working with LLMs.
    :name: Generic Functionality
    :hidden:
 
-   examples/*
+   ./examples/*

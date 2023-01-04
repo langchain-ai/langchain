@@ -27,8 +27,8 @@ The user guide here shows more advanced workflows and how to use the library in 
    :glob:
    :hidden:
 
-   examples/custom_prompt_template.md
-   examples/custom_example_selector.md
-   examples/few_shot_examples.ipynb
-   examples/prompt_serialization.ipynb
-   examples/few_shot_examples_data.ipynb
+   ./examples/custom_prompt_template.md
+   ./examples/custom_example_selector.md
+   ./examples/few_shot_examples.ipynb
+   ./examples/prompt_serialization.ipynb
+   ./examples/few_shot_examples_data.ipynb

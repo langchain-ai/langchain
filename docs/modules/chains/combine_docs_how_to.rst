@@ -23,4 +23,4 @@ The examples here are all end-to-end chains for working with documents.
    :name: combine_docs
    :hidden:
 
-   combine_docs_examples/*
+   ./combine_docs_examples/*

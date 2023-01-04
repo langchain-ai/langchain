@@ -13,5 +13,5 @@ These can largely be grouped into two categories:
    :glob:
    :hidden:
 
-   generic_how_to.rst
-   combine_docs_how_to.rst
+   ./generic_how_to.rst
+   ./combine_docs_how_to.rst

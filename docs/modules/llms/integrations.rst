@@ -17,4 +17,4 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
    :name: Specific LLM Integrations
    :hidden:
 
-   integrations/*
+   ./integrations/*

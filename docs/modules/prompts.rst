@@ -24,7 +24,7 @@ The following sections of documentation are provided:
    :name: Prompts
    :hidden:
 
-   prompts/getting_started.md
-   prompts/key_concepts.md
-   prompts/how_to_guides.rst
-   Reference</reference/prompts.rst>
+   ./prompts/getting_started.md
+   ./prompts/key_concepts.md
+   ./prompts/how_to_guides.rst
+   Reference<../reference/prompts.rst>

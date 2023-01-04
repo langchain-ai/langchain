@@ -15,6 +15,6 @@ They are broken up into three categories:
    :glob:
    :hidden:
 
-   generic_how_to.rst
-   combine_docs_how_to.rst
-   utility_how_to.rst
+   ./generic_how_to.rst
+   ./combine_docs_how_to.rst
+   ./utility_how_to.rst

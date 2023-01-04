@@ -21,6 +21,6 @@ The following sections of documentation are provided:
    :name: Utils
    :hidden:
 
-   utils/key_concepts.md
-   utils/how_to_guides.rst
-   Reference </reference/utils.rst>
+   ./utils/key_concepts.md
+   ./utils/how_to_guides.rst
+   Reference <../reference/utils.rst>

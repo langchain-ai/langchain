@@ -24,7 +24,7 @@ The following sections of documentation are provided:
    :name: Agents
    :hidden:
 
-   agents/getting_started.ipynb
-   agents/key_concepts.md
-   agents/how_to_guides.rst
-   Reference</reference/modules/agents.rst>
+   ./agents/getting_started.ipynb
+   ./agents/key_concepts.md
+   ./agents/how_to_guides.rst
+   Reference<../reference/modules/agents.rst>

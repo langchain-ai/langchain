@@ -51,12 +51,12 @@ These modules are, in increasing order of complexity:
    :name: modules
    :hidden:
 
-   modules/prompts.md
-   modules/llms.md
-   modules/utils.md
-   modules/chains.md
-   modules/agents.md
-   modules/memory.md
+   ./modules/prompts.md
+   ./modules/llms.md
+   ./modules/utils.md
+   ./modules/chains.md
+   ./modules/agents.md
+   ./modules/memory.md
 
 Use Cases
 ----------
@@ -87,14 +87,14 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    :name: use_cases
    :hidden:
 
-   use_cases/agents.md
-   use_cases/chatbots.md
-   use_cases/generate_examples.ipynb
-   use_cases/combine_docs.md
-   use_cases/question_answering.md
-   use_cases/summarization.md
-   use_cases/evaluation.rst
-   use_cases/model_laboratory.ipynb
+   ./use_cases/agents.md
+   ./use_cases/chatbots.md
+   ./use_cases/generate_examples.ipynb
+   ./use_cases/combine_docs.md
+   ./use_cases/question_answering.md
+   ./use_cases/summarization.md
+   ./use_cases/evaluation.rst
+   ./use_cases/model_laboratory.ipynb
 
 
 Reference Docs
@@ -110,9 +110,9 @@ All of LangChain's reference documentation, in one place. Full documentation on 
    :name: reference
    :hidden:
 
-   reference/installation.md
-   reference/integrations.md
-   reference.rst
+   ./reference/installation.md
+   ./reference/integrations.md
+   ./reference.rst
 
 
 LangChain Ecosystem
@@ -120,7 +120,7 @@ LangChain Ecosystem
 
 Guides for how other companies/products can be used with LangChain
 
-- `LangChain Ecosystem <ecosystem.html>`_
+- `LangChain Ecosystem <./ecosystem.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -129,7 +129,7 @@ Guides for how other companies/products can be used with LangChain
    :name: ecosystem
    :hidden:
 
-   ecosystem.rst
+   ./ecosystem.rst
 
 
 Additional Resources
@@ -150,5 +150,5 @@ Additional collection of resources we think may be useful as you develop your ap
    :name: resources
    :hidden:
 
-   glossary.md
-   gallery.rst
+   ./glossary.md
+   ./gallery.rst

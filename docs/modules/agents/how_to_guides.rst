@@ -19,8 +19,8 @@ The first category of how-to guides here cover specific parts of working with ag
 The next set of examples are all end-to-end agents for specific applications.
 In all examples there is an Agent with a particular set of tools.
 
-- Tools: A tool can be anything that takes in a string and returns a string. This means that you can use both the primitives AND the chains found in `this <./chains.html>`_ documentation. LangChain also provides a list of easily loadable tools. For detailed information on those, please see `this documentation <../explanation/tools.html>`_
-- Agents: An agent uses an LLMChain to determine which tools to use. For a list of all available agent types, see `here <../explanation/agents.html>`_.
+- Tools: A tool can be anything that takes in a string and returns a string. This means that you can use both the primitives AND the chains found in `this <./chains.html>`_ documentation. LangChain also provides a list of easily loadable tools. For detailed information on those, please see `this documentation <./tools.html>`_
+- Agents: An agent uses an LLMChain to determine which tools to use. For a list of all available agent types, see `here <./agents.html>`_.
 
 **MRKL**
 
@@ -51,11 +51,11 @@ In all examples there is an Agent with a particular set of tools.
    :glob:
    :hidden:
 
-   examples/*
+   ./examples/*
 
 .. toctree::
    :maxdepth: 1
    :glob:
    :hidden:
 
-   implementations/*
+   ./implementations/*
