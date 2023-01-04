@@ -14,7 +14,7 @@ Getting Started
 
 Checkout the below guide for a walkthrough of how to get started using LangChain to create an Language Model application.
 
-- `Getting Started Documentation <getting_started.html>`_
+- `Getting Started Documentation <getting_started/getting_started.html>`_
 
 .. toctree::
    :maxdepth: 1

@@ -59,7 +59,7 @@ Open Source
 
     ---
 
-    .. link-button:: https://github.com/JohnNay/gpt-lawyer/blob/main/notebooks/gpt_corporate_lobbying_zero_shot.ipynb
+    .. link-button:: https://github.com/JohnNay/llm-lobbyist
         :type: url
         :text: Zero-Shot Corporate Lobbyist
         :classes: stretched-link btn-lg
