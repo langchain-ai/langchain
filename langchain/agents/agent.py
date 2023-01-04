@@ -288,17 +288,17 @@ class AgentExecutor(Chain, BaseModel):
                 color = None
                 return_direct = False
             if self.verbose:
+                llm_prefix = "" if return_direct else self.agent.llm_prefix
                 self.callback_manager.on_tool_end(
                     observation,
                     color=color,
                     observation_prefix=self.agent.observation_prefix,
-                    llm_prefix=self.agent.llm_prefix,
+                    llm_prefix=llm_prefix,
                 )
             intermediate_steps.append((output, observation))
             if return_direct:
-                output = AgentFinish(
-                    {self.agent.return_values[0]: observation}, observation
-                )
+                # Set the log to "" because we do not want to log it.
+                output = AgentFinish({self.agent.return_values[0]: observation}, "")
                 return self._return(output, intermediate_steps)
             iterations += 1
         output = self.agent.return_stopped_response(
