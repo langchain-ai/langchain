@@ -13,9 +13,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        print("Prompts after formatting:")
-        for prompt in prompts:
-            print_text(prompt, color="green", end="\n")
+        pass
 
     def on_llm_end(self, response: LLMResult) -> None:
         """Do nothing."""
