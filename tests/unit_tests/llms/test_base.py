@@ -13,10 +13,15 @@ def test_caching() -> None:
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
-    output = llm.generate(["foo", "bar"])
+    output = llm.generate(["foo", "bar", "foo"])
     langchain.llm_cache = None
+    expected_generations = [
+        [Generation(text="fizz")],
+        [Generation(text="foo")],
+        [Generation(text="fizz")],
+    ]
     expected_output = LLMResult(
-        generations=[[Generation(text="fizz")], [Generation(text="foo")]],
+        expected_generations,
         llm_output=None,
     )
     assert output == expected_output
