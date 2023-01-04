@@ -156,7 +156,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
         for i, prompt in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
-                [Generation(text=choice["text"]) for choice in sub_choices]
+                [
+                    Generation(
+                        text=choice["text"], finish_reason=choice["finish_reason"]
+                    )
+                    for choice in sub_choices
+                ]
             )
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}

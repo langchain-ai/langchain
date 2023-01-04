@@ -1,6 +1,6 @@
 """Common schema objects."""
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 
 class AgentAction(NamedTuple):
@@ -23,4 +23,7 @@ class Generation(NamedTuple):
 
     text: str
     """Generated text output."""
+
+    finish_reason: Optional[str] = None
+    """Reason for finishing (OpenAI specific)"""
     # TODO: add log probs
