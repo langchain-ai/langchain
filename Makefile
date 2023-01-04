@@ -6,6 +6,15 @@ coverage:
 		--cov-report xml \
 		--cov-report term-missing:skip-covered
 
+docs_build:
+	cd docs && make html
+
+docs_clean:
+	cd docs && make clean
+
+docs_linkcheck:
+	cd docs && make linkcheck
+
 format:
 	poetry run black .
 	poetry run isort .
