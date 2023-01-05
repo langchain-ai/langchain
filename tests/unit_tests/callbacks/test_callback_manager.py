@@ -19,7 +19,7 @@ def _test_callback_manager(
     manager.on_tool_start({}, AgentAction("", "", ""))
     manager.on_tool_end("")
     manager.on_tool_error(Exception())
-    manager.on_agent_finish(AgentFinish({}, ""))
+    manager.on_agent_finish(AgentFinish(log="", return_values={}))
     for handler in handlers:
         assert handler.starts == 3
         assert handler.ends == 4
@@ -30,13 +30,13 @@ def test_callback_manager() -> None:
     """Test the CallbackManager."""
     handler1 = FakeCallbackHandler()
     handler2 = FakeCallbackHandler()
-    manager = CallbackManager(handlers=[handler1, handler2])
+    manager = CallbackManager([handler1, handler2])
     _test_callback_manager(manager, handler1, handler2)
 
 
 def test_ignore_llm() -> None:
     """Test ignore llm param for callback handlers."""
-    handler1 = FakeCallbackHandler(ignore_llm=True)
+    handler1 = FakeCallbackHandler(ignore_llm_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
     manager.on_llm_start({}, [])
@@ -52,7 +52,7 @@ def test_ignore_llm() -> None:
 
 def test_ignore_chain() -> None:
     """Test ignore chain param for callback handlers."""
-    handler1 = FakeCallbackHandler(ignore_chain=True)
+    handler1 = FakeCallbackHandler(ignore_chain_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
     manager.on_chain_start({"name": "foo"}, {})
@@ -68,13 +68,13 @@ def test_ignore_chain() -> None:
 
 def test_ignore_agent() -> None:
     """Test ignore agent param for callback handlers."""
-    handler1 = FakeCallbackHandler(ignore_agent=True)
+    handler1 = FakeCallbackHandler(ignore_agent_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
     manager.on_tool_start({}, AgentAction("", "", ""))
     manager.on_tool_end("")
     manager.on_tool_error(Exception())
-    manager.on_agent_finish(AgentFinish({}, ""))
+    manager.on_agent_finish(AgentFinish(log="", return_values={}))
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0

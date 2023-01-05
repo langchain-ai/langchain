@@ -15,7 +15,7 @@ from dataclasses_json import dataclass_json
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.shared import Singleton
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 @dataclass_json
@@ -301,6 +301,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._handle_error(str(error))
 
     def on_text(self, text: str, **kwargs: Any) -> None:
+        pass
+
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         pass
 
 

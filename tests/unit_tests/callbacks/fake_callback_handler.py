@@ -3,15 +3,34 @@ from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
+from pydantic import BaseModel
 
 
-class FakeCallbackHandler(BaseCallbackHandler):
+class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
     """Fake callback handler for testing."""
 
     starts: int = 0
     ends: int = 0
     errors: int = 0
     text: int = 0
+    ignore_llm_: bool = False
+    ignore_chain_: bool = False
+    ignore_agent_: bool = False
+
+    @property
+    def ignore_llm(self) -> bool:
+        """Whether to ignore LLM callbacks."""
+        return self.ignore_llm_
+
+    @property
+    def ignore_chain(self) -> bool:
+        """Whether to ignore chain callbacks."""
+        return self.ignore_chain_
+
+    @property
+    def ignore_agent(self) -> bool:
+        """Whether to ignore agent callbacks."""
+        return self.ignore_agent_
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any

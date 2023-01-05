@@ -3,17 +3,29 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
-
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class BaseCallbackHandler(BaseModel, ABC):
+class BaseCallbackHandler(ABC):
     """Base callback handler that can be used to handle callbacks from langchain."""
 
-    ignore_llm: bool = False
-    ignore_chain: bool = False
-    ignore_agent: bool = False
+    @property
+    def ignore_llm(self) -> bool:
+        """Whether to ignore LLM callbacks."""
+
+        return False
+
+    @property
+    def ignore_chain(self) -> bool:
+        """Whether to ignore chain callbacks."""
+
+        return False
+
+    @property
+    def ignore_agent(self) -> bool:
+        """Whether to ignore agent callbacks."""
+
+        return False
 
     @abstractmethod
     def on_llm_start(
@@ -88,7 +100,9 @@ class BaseCallbackManager(BaseCallbackHandler, ABC):
 class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
 
-    handlers: List[BaseCallbackHandler]
+    def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Initialize callback manager."""
+        self.handlers: List[BaseCallbackHandler] = handlers
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
