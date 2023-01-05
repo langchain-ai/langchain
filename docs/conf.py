@@ -50,25 +50,6 @@ extensions = [
 ]
 source_suffix = [".ipynb", ".html", ".md", ".rst"]
 
-linkcheck_ignore = [
-    # Directories containing (primarily) notebooks
-    r'./combine_docs_examples/*',
-    r'./examples/*',
-    r'./evaluation/*',
-    r'./generic/*',
-    r'./implementations/*',
-    r'./integrations/*',
-    
-    # One-off Markdown file links
-    r'./prompts/key_concepts.html',
-    r'./prompts/getting_started.html',
-    r'./utils/key_concepts.html',
-    r'./utils/key_concepts.html',
-    r'./llms/key_concepts.html'
-]
-
-
-
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
 autodoc_pydantic_config_members = False

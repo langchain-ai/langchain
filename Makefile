@@ -13,7 +13,7 @@ docs_clean:
 	cd docs && make clean
 
 docs_linkcheck:
-	cd docs && make linkcheck
+	linkchecker docs/_build/html/index.html
 
 format:
 	poetry run black .

@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+      - name: Build the docs
+        run: |
+          make docs_build
       - name: Analyzing the docs with linkcheck
         run: |
           make docs_linkcheck

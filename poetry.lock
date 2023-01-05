@@ -776,7 +776,7 @@ name = "dnspython"
 version = "2.2.1"
 description = "DNS toolkit"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6,<4.0"
 files = [
     {file = "dnspython-2.2.1-py3-none-any.whl", hash = "sha256:a851e51367fb93e9e1361732c1d60dab63eff98712e503ea7d92e6eccb109b4f"},
@@ -1829,6 +1829,23 @@ files = [
 
 [package.extras]
 data = ["language-data (>=1.1,<2.0)"]
+
+[[package]]
+name = "linkchecker"
+version = "10.2.1"
+description = "check links in web documents or full websites"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "LinkChecker-10.2.1-py3-none-any.whl", hash = "sha256:5438496290826f5e2f4a2041f11482608378150b6c2d05ca8f94f460b7cb7c9e"},
+    {file = "LinkChecker-10.2.1.tar.gz", hash = "sha256:97eae069ccfe892a18e380c7f4762dfe3f352e87c442ef6124e8c60b887cddcd"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.8.1"
+dnspython = ">=2.0"
+requests = ">=2.20"
 
 [[package]]
 name = "livereload"
@@ -5127,4 +5144,4 @@ llms = ["manifest-ml", "torch", "transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "9add0cf132165dc94ef8596964897b7bd1b860d94eca6fddf9b64456936f3257"
+content-hash = "e6d702a8244b8646db76252fedde20b938ebc33214ac8d912681b190e769be0f"
