@@ -138,7 +138,12 @@ class Chain(BaseModel, ABC):
             self.callback_manager.on_chain_start(
                 {"name": self.__class__.__name__}, inputs
             )
-        outputs = self._call(inputs)
+        try:
+            outputs = self._call(inputs)
+        except Exception as e:
+            if self.verbose:
+                self.callback_manager.on_chain_error(e)
+            raise e
         if self.verbose:
             self.callback_manager.on_chain_end(outputs)
         self._validate_outputs(outputs)

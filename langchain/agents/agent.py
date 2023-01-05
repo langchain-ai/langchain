@@ -275,10 +275,15 @@ class AgentExecutor(Chain, BaseModel):
                     self.callback_manager.on_tool_start(
                         {"name": str(tool.func)[:60] + "..."}, output, color="green"
                     )
-                # We then call the tool on the tool input to get an observation
-                observation = tool.func(output.tool_input)
-                color = color_mapping[output.tool]
-                return_direct = tool.return_direct
+                try:
+                    # We then call the tool on the tool input to get an observation
+                    observation = tool.func(output.tool_input)
+                    color = color_mapping[output.tool]
+                    return_direct = tool.return_direct
+                except Exception as e:
+                    if self.verbose:
+                        self.callback_manager.on_tool_error(e)
+                    raise e
             else:
                 if self.verbose:
                     self.callback_manager.on_tool_start(
