@@ -27,7 +27,7 @@ jobs:
           cache: poetry
       - name: Install dependencies
         run: |
-          poetry install
+          poetry install --with docs
       - name: Build the docs
         run: |
           make docs_build
