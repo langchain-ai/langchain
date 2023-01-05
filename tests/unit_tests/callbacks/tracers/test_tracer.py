@@ -29,6 +29,7 @@ TEST_SESSION_ID = "test_session_id"
 def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
     return ChainRun(
         id=None,
+        error=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -49,9 +50,11 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                 output="test",
                 action="action",
                 session_id=TEST_SESSION_ID,
+                error=None,
                 child_runs=[
                     LLMRun(
                         id=None,
+                        error=None,
                         start_time=datetime.utcnow(),
                         end_time=datetime.utcnow(),
                         extra={},
@@ -65,6 +68,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
             ),
             LLMRun(
                 id=None,
+                error=None,
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
                 extra={},
@@ -188,6 +192,7 @@ def test_tracer_llm_run() -> None:
         prompts=[],
         response=LLMResult([[]]),
         session_id=TEST_SESSION_ID,
+        error=None,
     )
     tracer = FakeTracer()
 
@@ -232,6 +237,7 @@ def test_tracer_multiple_llm_runs() -> None:
         prompts=[],
         response=LLMResult([[]]),
         session_id=TEST_SESSION_ID,
+        error=None,
     )
     tracer = FakeTracer()
 
@@ -258,6 +264,7 @@ def test_tracer_chain_run() -> None:
         inputs={},
         outputs={},
         session_id=TEST_SESSION_ID,
+        error=None,
     )
     tracer = FakeTracer()
 
@@ -282,6 +289,7 @@ def test_tracer_tool_run() -> None:
         output="test",
         action="action",
         session_id=TEST_SESSION_ID,
+        error=None,
     )
     tracer = FakeTracer()
 
@@ -301,6 +309,183 @@ def test_tracer_nested_run() -> None:
     tracer.new_session()
     _perform_nested_run(tracer)
     assert tracer.runs == [_get_compare_run()]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_llm_run_on_error() -> None:
+    """Test tracer on an LLM run with an error."""
+
+    exception = Exception("test")
+
+    compare_run = LLMRun(
+        id=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        serialized={},
+        prompts=[],
+        response=None,
+        session_id=TEST_SESSION_ID,
+        error=str(exception),
+    )
+    tracer = FakeTracer()
+
+    tracer.new_session()
+    tracer.on_llm_start(serialized={}, prompts=[])
+    tracer.on_llm_error(exception)
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_chain_run_on_error() -> None:
+    """Test tracer on a Chain run with an error."""
+
+    exception = Exception("test")
+
+    compare_run = ChainRun(
+        id=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        serialized={},
+        inputs={},
+        outputs=None,
+        session_id=TEST_SESSION_ID,
+        error=str(exception),
+    )
+    tracer = FakeTracer()
+
+    tracer.new_session()
+    tracer.on_chain_start(serialized={}, inputs={})
+    tracer.on_chain_error(exception)
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_tool_run_on_error() -> None:
+    """Test tracer on a Tool run with an error."""
+
+    exception = Exception("test")
+
+    compare_run = ToolRun(
+        id=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        serialized={},
+        tool_input="test",
+        output=None,
+        action="action",
+        session_id=TEST_SESSION_ID,
+        error=str(exception),
+    )
+    tracer = FakeTracer()
+
+    tracer.new_session()
+    tracer.on_tool_start(
+        serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
+    )
+    tracer.on_tool_error(exception)
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
+def test_tracer_nested_runs_on_error() -> None:
+    """Test tracer on a nested run with an error."""
+
+    exception = Exception("test")
+
+    tracer = FakeTracer()
+    tracer.new_session()
+
+    for _ in range(3):
+        tracer.on_chain_start(serialized={}, inputs={})
+        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_tool_start(
+            serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
+        )
+        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_error(exception)
+
+    compare_run = ChainRun(
+        id=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        serialized={},
+        session_id="test_session_id",
+        error="test",
+        inputs={},
+        outputs=None,
+        child_runs=[
+            LLMRun(
+                id=None,
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                extra={},
+                execution_order=2,
+                serialized={},
+                session_id="test_session_id",
+                error=None,
+                prompts=[],
+                response=LLMResult(generations=[[]], llm_output=None),
+            ),
+            LLMRun(
+                id=None,
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                extra={},
+                execution_order=3,
+                serialized={},
+                session_id="test_session_id",
+                error=None,
+                prompts=[],
+                response=LLMResult(generations=[[]], llm_output=None),
+            ),
+            ToolRun(
+                id=None,
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                extra={},
+                execution_order=4,
+                serialized={},
+                session_id="test_session_id",
+                error="test",
+                tool_input="test",
+                output=None,
+                action="action",
+                child_runs=[
+                    LLMRun(
+                        id=None,
+                        start_time=datetime.utcnow(),
+                        end_time=datetime.utcnow(),
+                        extra={},
+                        execution_order=5,
+                        serialized={},
+                        session_id="test_session_id",
+                        error="test",
+                        prompts=[],
+                        response=None,
+                    )
+                ],
+                child_llm_runs=[],
+                child_chain_runs=[],
+                child_tool_runs=[],
+            ),
+        ],
+        child_llm_runs=[],
+        child_chain_runs=[],
+        child_tool_runs=[],
+    )
+
+    assert tracer.runs == [compare_run] * 3
 
 
 @freeze_time("2023-01-01")

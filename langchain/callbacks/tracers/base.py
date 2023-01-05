@@ -36,6 +36,7 @@ class Run:
     execution_order: int
     serialized: Dict[str, Any]
     session_id: Optional[Union[int, str]]
+    error: Optional[str]
 
 
 @dataclass_json
@@ -177,6 +178,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             response=None,
             end_time=None,
             session_id=self._session.id,
+            error=None,
         )
         self._start_trace(llm_run)
 
@@ -194,8 +196,26 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
+    def _handle_error(self, error: str) -> None:
+        """Handle an error."""
+
+        if not self._stack:
+            raise TracerException("No run found to be traced")
+
+        run = self._stack[-1]
+        # flush the stack
+        while self._stack:
+            self._stack[-1].error = error
+            self._stack[-1].end_time = datetime.utcnow()
+            run = self._stack.pop()
+
+        self._execution_order = 1
+        self._persist_run(run)
+
     def on_llm_error(self, error: Exception) -> None:
-        pass
+        """Handle an error for an LLM run."""
+
+        self._handle_error(str(error))
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
@@ -218,6 +238,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             end_time=None,
             child_runs=[],
             session_id=self._session.id,
+            error=None,
         )
         self._start_trace(chain_run)
 
@@ -233,7 +254,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace()
 
     def on_chain_error(self, error: Exception) -> None:
-        pass
+        """Handle an error for a chain run."""
+
+        self._handle_error(str(error))
 
     def on_tool_start(
         self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
@@ -257,6 +280,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             end_time=None,
             child_runs=[],
             session_id=self._session.id,
+            error=None,
         )
         self._start_trace(tool_run)
 
@@ -272,7 +296,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace()
 
     def on_tool_error(self, error: Exception) -> None:
-        pass
+        """Handle an error for a tool run."""
+
+        self._handle_error(str(error))
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         pass
