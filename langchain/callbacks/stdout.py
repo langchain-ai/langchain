@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.input import print_text
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
@@ -13,9 +13,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        print("Prompts after formatting:")
-        for prompt in prompts:
-            print_text(prompt, color="green", end="\n")
+        pass
 
     def on_llm_end(self, response: LLMResult) -> None:
         """Do nothing."""
@@ -76,3 +74,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color, end=end)
+
+    def on_agent_finish(
+        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Run on agent end."""
+        print_text(finish.log, color=color, end="\n")

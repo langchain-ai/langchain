@@ -1,4 +1,4 @@
-:mod:`langchain.embeddings`
+Embeddings
 ===========================
 
 .. automodule:: langchain.embeddings

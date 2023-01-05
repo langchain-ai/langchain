@@ -20,10 +20,16 @@ def get_color_mapping(
     return color_mapping
 
 
+def get_colored_text(text: str, color: str) -> str:
+    """Get colored text."""
+    color_str = _TEXT_COLOR_MAPPING[color]
+    return f"\u001b[{color_str}m\033[1;3m{text}\u001b[0m"
+
+
 def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     """Print text with highlighting and no end characters."""
     if color is None:
-        print(text, end=end)
+        text_to_print = text
     else:
-        color_str = _TEXT_COLOR_MAPPING[color]
-        print(f"\u001b[{color_str}m\033[1;3m{text}\u001b[0m", end=end)
+        text_to_print = get_colored_text(text, color)
+    print(text_to_print, end=end)

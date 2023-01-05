@@ -2,17 +2,16 @@
 from typing import Any, Dict, List
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class FakeCallbackHandler(BaseCallbackHandler):
     """Fake callback handler for testing."""
 
-    def __init__(self) -> None:
-        """Initialize the mock callback handler."""
-        self.starts = 0
-        self.ends = 0
-        self.errors = 0
+    starts: int = 0
+    ends: int = 0
+    errors: int = 0
+    text: int = 0
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -61,4 +60,8 @@ class FakeCallbackHandler(BaseCallbackHandler):
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run when agent is ending."""
+        self.text += 1
+
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Run when agent ends running."""
         self.ends += 1

@@ -73,7 +73,12 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_start(
                     {"name": self.__class__.__name__}, prompts
                 )
-            output = self._generate(prompts, stop=stop)
+            try:
+                output = self._generate(prompts, stop=stop)
+            except Exception as e:
+                if self.verbose:
+                    self.callback_manager.on_llm_error(e)
+                raise e
             if self.verbose:
                 self.callback_manager.on_llm_end(output)
             return output
@@ -90,13 +95,20 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
-        self.callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, missing_prompts
-        )
-        new_results = self._generate(missing_prompts, stop=stop)
-        self.callback_manager.on_llm_end(new_results)
+        if self.verbose:
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, missing_prompts
+            )
+        try:
+            new_results = self._generate(missing_prompts, stop=stop)
+        except Exception as e:
+            if self.verbose:
+                self.callback_manager.on_llm_error(e)
+            raise e
+        if self.verbose:
+            self.callback_manager.on_llm_end(new_results)
         for i, result in enumerate(new_results.generations):
-            existing_prompts[i] = result
+            existing_prompts[missing_prompt_idxs[i]] = result
             prompt = prompts[i]
             langchain.llm_cache.update(prompt, llm_string, result)
         generations = [existing_prompts[i] for i in range(len(prompts))]

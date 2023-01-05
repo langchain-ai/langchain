@@ -10,19 +10,18 @@ def get_callback_manager() -> BaseCallbackManager:
     return SharedCallbackManager()
 
 
+def set_handler(handler: BaseCallbackHandler) -> None:
+    """Set handler."""
+    callback = get_callback_manager()
+    callback.set_handler(handler)
+
+
 def set_default_callback_manager() -> None:
     """Set default callback manager."""
-    callback = get_callback_manager()
-    callback.add_handler(StdOutCallbackHandler())
+    set_handler(StdOutCallbackHandler())
 
 
 def set_tracing_callback_manager() -> None:
     """Set tracing callback manager."""
     callback = get_callback_manager()
     callback.add_handler(SharedLangChainTracer())
-
-
-def set_handler(handler: BaseCallbackHandler) -> None:
-    """Set handler."""
-    callback = get_callback_manager()
-    callback.set_handler(handler)

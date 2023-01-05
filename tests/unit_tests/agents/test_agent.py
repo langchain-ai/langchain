@@ -65,10 +65,13 @@ def test_agent_stopped_early() -> None:
     assert output == "Agent stopped due to max iterations."
 
 
-def test_agent_with_callbacks() -> None:
-    """Test react chain with callbacks."""
+def test_agent_with_callbacks_global() -> None:
+    """Test react chain with callbacks by setting verbose globally."""
+    import langchain
+
+    langchain.verbose = True
     handler = FakeCallbackHandler()
-    manager = CallbackManager([handler])
+    manager = CallbackManager(handlers=[handler])
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
@@ -85,6 +88,43 @@ def test_agent_with_callbacks() -> None:
         verbose=True,
         callback_manager=manager,
     )
+
+    output = agent.run("when was langchain made")
+    assert output == "curses foiled again"
+
+    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    assert handler.starts == 6
+    # 1 extra agent end
+    assert handler.ends == 7
+    assert handler.errors == 0
+    # during LLMChain
+    assert handler.text == 2
+
+
+def test_agent_with_callbacks_local() -> None:
+    """Test react chain with callbacks by setting verbose locally."""
+    import langchain
+
+    langchain.verbose = False
+    handler = FakeCallbackHandler()
+    manager = CallbackManager(handlers=[handler])
+    tool = "Search"
+    responses = [
+        f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
+        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
+    tools = [
+        Tool("Search", lambda x: x, "Useful for searching"),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent="zero-shot-react-description",
+        verbose=True,
+        callback_manager=manager,
+    )
+
     agent.agent.llm_chain.verbose = True
 
     output = agent.run("when was langchain made")
@@ -95,12 +135,17 @@ def test_agent_with_callbacks() -> None:
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
+    # during LLMChain
+    assert handler.text == 2
 
 
 def test_agent_with_callbacks_not_verbose() -> None:
     """Test react chain with callbacks but not verbose."""
+    import langchain
+
+    langchain.verbose = False
     handler = FakeCallbackHandler()
-    manager = CallbackManager([handler])
+    manager = CallbackManager(handlers=[handler])
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",

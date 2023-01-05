@@ -1,4 +1,5 @@
 """Wrapper around OpenAI APIs."""
+import logging
 import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
@@ -7,6 +8,8 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -22,7 +25,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         .. code-block:: python
 
             from langchain import OpenAI
-            openai = OpenAI(model="text-davinci-003")
+            openai = OpenAI(model_name="text-davinci-003")
     """
 
     client: Any  #: :meta private:
@@ -55,7 +58,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -67,6 +70,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
             if field_name not in all_required_field_names:
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transfered to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
         return values
@@ -142,11 +150,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
         token_usage = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
-        _keys = ["completion_tokens", "prompt_tokens", "total_tokens"]
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             response = self.client.create(prompt=_prompts, **params)
             choices.extend(response["choices"])
-            for _key in _keys:
+            _keys_to_use = _keys.intersection(response["usage"])
+            for _key in _keys_to_use:
                 if _key not in token_usage:
                     token_usage[_key] = response["usage"][_key]
                 else:
