@@ -30,6 +30,19 @@ pinecone-client = {version = "^2", optional = true}
 weaviate-client = {version = "^3", optional = true}
 google-api-python-client = {version = "2.70.0", optional = true}
 
+[tool.poetry.group.docs.dependencies]
+autodoc_pydantic = "^1.8.0"
+myst_parser = "^0.18.1"
+nbsphinx = "^0.8.9"
+sphinx = "^4.5.0"
+sphinx-autobuild = "^2021.3.14"
+sphinx_book_theme = "^0.3.3"
+sphinx_rtd_theme = "^1.0.0"
+sphinx-typlog-theme = "^0.8.0"
+sphinx-panels = "^0.6.0"
+toml = "^0.10.2"
+myst-nb = "^0.17.1"
+linkchecker = "^10.2.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
