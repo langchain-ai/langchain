@@ -13,7 +13,7 @@ The following sections of documentation are provided:
 
 - `How-To Guides <./chains/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use various types of chains.
 
-- `Reference <../reference/chains.html>`_: API reference documentation for all Chain classes.
+- `Reference <../reference/modules/chains.html>`_: API reference documentation for all Chain classes.
 
 
 
