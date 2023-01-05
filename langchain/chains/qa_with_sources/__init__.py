@@ -25,6 +25,7 @@ class LoadingCallable(Protocol):
 def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
+    document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
     verbose: Optional[bool] = None,
     **kwargs: Any,
@@ -33,7 +34,7 @@ def _load_stuff_chain(
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
-        document_prompt=stuff_prompt.EXAMPLE_PROMPT,
+        document_prompt=document_prompt,
         verbose=verbose,
         **kwargs,
     )
