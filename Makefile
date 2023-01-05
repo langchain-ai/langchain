@@ -7,13 +7,13 @@ coverage:
 		--cov-report term-missing:skip-covered
 
 docs_build:
-	cd docs && make html
+	cd docs && poetry run make html
 
 docs_clean:
-	cd docs && make clean
+	cd docs && poetry run make clean
 
 docs_linkcheck:
-	linkchecker docs/_build/html/index.html
+	poetry run linkchecker docs/_build/html/index.html
 
 format:
 	poetry run black .
