@@ -17,7 +17,7 @@ Score: [score between 0 and 100]
 
 How to determine the score:
 - Higher is a better answer
-- Better responds fully to the asked question, with lots of detail
+- Better responds fully to the asked question, with sufficient level of detail
 - If you do not know the answer based on the context, that should be a score of 0
 - Don't be overconfident!
 
@@ -35,10 +35,10 @@ Example #2
 
 Context:
 ---------
-Apples are either red or orange
+it was night and the witness forgot his glasses. he was not sure if it was a sports car or an suv
 ---------
-Question: what color are apples?
-Helpful Answer: red or orange
+Question: what type was the car?
+Helpful Answer: a sports car or an suv
 Score: 60
 
 Example #3
