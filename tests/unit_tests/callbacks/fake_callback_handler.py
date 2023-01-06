@@ -1,9 +1,10 @@
 """A fake callback handler for testing purposes."""
 from typing import Any, Dict, List
 
+from pydantic import BaseModel
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-from pydantic import BaseModel
 
 
 class FakeCallbackHandler(BaseModel, BaseCallbackHandler):

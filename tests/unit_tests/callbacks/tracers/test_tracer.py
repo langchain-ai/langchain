@@ -412,6 +412,8 @@ def test_tracer_nested_runs_on_error() -> None:
         )
         tracer.on_llm_start(serialized={}, prompts=[])
         tracer.on_llm_error(exception)
+        tracer.on_tool_error(exception)
+        tracer.on_chain_error(exception)
 
     compare_run = ChainRun(
         id=None,

@@ -196,26 +196,16 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def _handle_error(self, error: str) -> None:
-        """Handle an error."""
-
-        if not self._stack:
-            raise TracerException("No run found to be traced")
-
-        run = self._stack[-1]
-        # flush the stack
-        while self._stack:
-            self._stack[-1].error = error
-            self._stack[-1].end_time = datetime.utcnow()
-            run = self._stack.pop()
-
-        self._execution_order = 1
-        self._persist_run(run)
-
     def on_llm_error(self, error: Exception) -> None:
         """Handle an error for an LLM run."""
 
-        self._handle_error(str(error))
+        if not self._stack or not isinstance(self._stack[-1], LLMRun):
+            raise TracerException("No LLMRun found to be traced")
+
+        self._stack[-1].error = str(error)
+        self._stack[-1].end_time = datetime.utcnow()
+
+        self._end_trace()
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
@@ -256,7 +246,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_chain_error(self, error: Exception) -> None:
         """Handle an error for a chain run."""
 
-        self._handle_error(str(error))
+        if not self._stack or not isinstance(self._stack[-1], ChainRun):
+            raise TracerException("No ChainRun found to be traced")
+
+        self._stack[-1].end_time = datetime.utcnow()
+        self._stack[-1].error = str(error)
+
+        self._end_trace()
 
     def on_tool_start(
         self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
@@ -298,7 +294,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_tool_error(self, error: Exception) -> None:
         """Handle an error for a tool run."""
 
-        self._handle_error(str(error))
+        if not self._stack or not isinstance(self._stack[-1], ToolRun):
+            raise TracerException("No ToolRun found to be traced")
+
+        self._stack[-1].end_time = datetime.utcnow()
+        self._stack[-1].error = str(error)
+
+        self._end_trace()
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         pass
