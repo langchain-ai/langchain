@@ -7,6 +7,7 @@ from typing import Any, List, Optional, Tuple
 from langchain.agents.agent import Agent
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 from langchain.prompts import PromptTemplate
@@ -51,7 +52,9 @@ class ConversationalAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join([f"> {tool.name}: {tool.description}" for tool in tools])
+        tool_strings = "\n".join(
+            [f"> {tool.name}: {tool.description}" for tool in tools]
+        )
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = FORMAT_INSTRUCTIONS.format(
             tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
@@ -82,16 +85,19 @@ class ConversationalAgent(Agent):
         cls,
         llm: BaseLLM,
         tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
+        prompt = cls.create_prompt(
+            tools, ai_prefix=ai_prefix, human_prefix=human_prefix
+        )
         llm_chain = LLMChain(
             llm=llm,
-            prompt=cls.create_prompt(
-                tools, ai_prefix=ai_prefix, human_prefix=human_prefix
-            ),
+            prompt=prompt,
+            callback_manager=callback_manager,
         )
         return cls(llm_chain=llm_chain, ai_prefix=ai_prefix, **kwargs)

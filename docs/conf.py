@@ -48,8 +48,7 @@ extensions = [
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
-source_suffix = [".rst", ".md"]
-
+source_suffix = [".ipynb", ".html", ".md", ".rst"]
 
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_field_list_validators = False
@@ -77,6 +76,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "sphinx_book_theme"
+
+html_theme_options = {
+    "path_to_docs": "docs",
+    "repository_url": "https://github.com/hwchase17/langchain",
+    "use_repository_button": True,
+}
 
 html_context = {
     "display_github": True,  # Integrate GitHub

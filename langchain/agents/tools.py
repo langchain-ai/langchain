@@ -10,3 +10,4 @@ class Tool:
     name: str
     func: Callable[[str], str]
     description: Optional[str] = None
+    return_direct: bool = False
