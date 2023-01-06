@@ -14,6 +14,9 @@ def test_caching() -> None:
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo", "bar", "foo"])
+    expected_cache_output = [Generation(text="foo")]
+    cache_output = langchain.llm_cache.lookup("bar", llm_string)
+    assert cache_output == expected_cache_output
     langchain.llm_cache = None
     expected_generations = [
         [Generation(text="fizz")],
