@@ -168,8 +168,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     Generation(
                         text=choice["text"],
                         generation_info=dict(
-                            finish_reason=choice["finish_reason"],
-                            logprobs=choice["logprobs"],
+                            finish_reason=choice.get("finish_reason"),
+                            logprobs=choice.get("logprobs"),
                         ),
                     )
                     for choice in sub_choices
