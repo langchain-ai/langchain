@@ -1,6 +1,6 @@
 """Common schema objects."""
 
-from typing import NamedTuple, Optional
+from typing import List, NamedTuple, Optional
 
 
 class AgentAction(NamedTuple):
@@ -27,3 +27,13 @@ class Generation(NamedTuple):
     finish_reason: Optional[str] = None
     """Reason for finishing (OpenAI specific)"""
     # TODO: add log probs
+
+
+class LLMResult(NamedTuple):
+    """Class that contains all relevant information for an LLM Result."""
+
+    generations: List[List[Generation]]
+    """List of the things generated. This is List[List[]] because
+    each input could have multiple generations."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""

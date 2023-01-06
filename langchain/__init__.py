@@ -4,6 +4,7 @@ from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
+from langchain.callbacks import set_default_callback_manager, set_handler
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -19,7 +20,6 @@ from langchain.chains import (
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.logger import BaseLogger, StdOutLogger
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -31,9 +31,9 @@ from langchain.sql_database import SQLDatabase
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
-logger: BaseLogger = StdOutLogger()
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
+set_default_callback_manager()
 
 __all__ = [
     "LLMChain",
@@ -65,4 +65,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
+    "set_handler",
 ]

@@ -4,7 +4,6 @@
 
 A prompt is the input to a language model. It is a string of text that is used to generate a response from the language model.
 
-
 ## Prompt Templates
 
 `PromptTemplates` are a way to create prompts in a reproducible way. They contain a template string, and a set of input variables. The template string can be formatted with the input variables to generate a prompt. The template string often contains instructions to the language model, a few shot examples, and a question to the language model.
@@ -25,7 +24,6 @@ Country: {country}
 Capital:
 """
 ```
-
 
 ### Input Variables
 
@@ -57,20 +55,21 @@ Capital: Ottawa
 ```
 
 To learn more about how to provide few shot examples, see [Few Shot Examples](examples/few_shot_examples.ipynb).
-<!-- TODO(shreya): Add correct link here. -->
 
+<!-- TODO(shreya): Add correct link here. -->
 
 ## Example selection
 
 If there are multiple examples that are relevant to a prompt, it is important to select the most relevant examples. Generally, the quality of the response from the LLM can be significantly improved by selecting the most relevant examples. This is because the language model will be able to better understand the context of the prompt, and also potentially learn failure modes to avoid.
 
 To help the user with selecting the most relevant examples, we provide example selectors that select the most relevant based on different criteria, such as length, semantic similarity, etc. The example selector takes in a list of examples and returns a list of selected examples, formatted as a string. The user can also provide their own example selector. To learn more about example selectors, see [Example Selection](example_selection.md).
-<!-- TODO(shreya): Add correct link here. -->
 
+<!-- TODO(shreya): Add correct link here. -->
 
 ## Serialization
 
 To make it easy to share `PromptTemplates`, we provide a `serialize` method that returns a JSON string. The JSON string can be saved to a file, and then loaded back into a `PromptTemplate` using the `deserialize` method. This allows users to share `PromptTemplates` with others, and also to save them for later use.
 
 To learn more about serialization, see [Serialization](examples/prompt_serialization.ipynb).
+
 <!-- TODO(shreya): Provide correct link. -->
