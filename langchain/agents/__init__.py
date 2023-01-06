@@ -1,5 +1,6 @@
 """Interface for agents."""
 from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.load_tools import get_all_tool_names, load_tools
 from langchain.agents.loading import initialize_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
@@ -19,4 +20,5 @@ __all__ = [
     "ReActTextWorldAgent",
     "load_tools",
     "get_all_tool_names",
+    "ConversationalAgent",
 ]

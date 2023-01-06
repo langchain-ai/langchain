@@ -137,6 +137,7 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
@@ -145,7 +146,7 @@ class Agent(BaseModel):
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
         )
-        return cls(llm_chain=llm_chain)
+        return cls(llm_chain=llm_chain, **kwargs)
 
     def return_stopped_response(
         self,
