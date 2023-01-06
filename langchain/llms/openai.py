@@ -166,7 +166,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
             generations.append(
                 [
                     Generation(
-                        text=choice["text"], finish_reason=choice["finish_reason"]
+                        text=choice["text"],
+                        generation_info=dict(
+                            finish_reason=choice["finish_reason"],
+                            logprobs=choice["logprobs"],
+                        ),
                     )
                     for choice in sub_choices
                 ]
