@@ -7,6 +7,7 @@ Most chat based applications rely on remembering what happened in previous inter
 The following resources exist:
 - [ChatGPT Clone](../modules/memory/examples/chatgpt_clone.ipynb): A notebook walking through how to recreate a ChatGPT-like experience with LangChain.
 - [Conversation Memory](../modules/memory/getting_started.ipynb): A notebook walking through how to use different types of conversational memory.
+- [Conversation Agent](../modules/memory/examples/conversational_agent.ipynb): A notebook walking through how to create an agent optimized for conversation.
 
 
 Additional related resources include:
