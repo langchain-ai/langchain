@@ -11,19 +11,35 @@ TOOLS:
 ------
 
 Assistant has access to the following tools:"""
-FORMAT_INSTRUCTIONS = """To use a tool, please use the following format:
+FORMAT_INSTRUCTIONS = """
+To use a tool, please use the following format:
 
 ```
-Thought: Do I need to use a tool? Yes
+Thought: Do I have sufficient context? Yes. Do I need to use a tool? Yes
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
-Observation: the result of the action
+Observation: the result of the action.
+```
+You may ONLY use a tool if you have sufficient context.
+
+
+CONTEXT:
+--------
+Do not try to answer questions with insufficient context. First, break each question apart into its components,
+and examine each component to ensure you have enough context to answer the entire question.
+When there is insufficient context to answer accurately, you MUST use the format:
+
+```
+Thought: Do I have sufficient context? No. Do I need to use a tool? No
+{ai_prefix}: [your response here]
 ```
 
-When you have a response to say to the Human, or if you do not need to use a too, you MUST use the format:
+RESPONDING:
+-----------
+When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
 
 ```
-Thought: Do I need to use a tool? No
+Thought: Do I have sufficient context? Yes. Do I need to use a tool? No
 {ai_prefix}: [your response here]
 ```"""
 
