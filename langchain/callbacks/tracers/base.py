@@ -449,7 +449,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
             data=run.to_json(),
             headers={"Content-Type": "application/json"},
         )
-        print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
+        # print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
 
     def _persist_session(self, session: TracerSession) -> None:
         """Persist a session."""
@@ -459,9 +459,9 @@ class BaseLangChainTracer(BaseTracer, ABC):
             data=session.to_json(),
             headers={"Content-Type": "application/json"},
         )
-        print(
-            f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}"
-        )
+        # print(
+        #     f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}"
+        # )
         session.id = r.json()["id"]
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
