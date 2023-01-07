@@ -184,7 +184,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: LLMResult, **kwargs: Any
     ) -> None:
         """End a trace for an LLM run."""
 
@@ -196,13 +196,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Handle an error for an LLM run."""
 
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
-        self._stack[-1].error = str(error)
+        self._stack[-1].error = repr(error)
         self._stack[-1].end_time = datetime.utcnow()
 
         self._end_trace()
@@ -232,7 +232,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(chain_run)
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """End a trace for a chain run."""
 
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
@@ -243,14 +243,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Handle an error for a chain run."""
 
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
         self._stack[-1].end_time = datetime.utcnow()
-        self._stack[-1].error = str(error)
+        self._stack[-1].error = repr(error)
 
         self._end_trace()
 
@@ -291,14 +291,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Handle an error for a tool run."""
 
         if not self._stack or not isinstance(self._stack[-1], ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
         self._stack[-1].end_time = datetime.utcnow()
-        self._stack[-1].error = str(error)
+        self._stack[-1].error = repr(error)
 
         self._end_trace()
 
@@ -432,7 +432,7 @@ class BaseJsonTracer(BaseTracer, ABC):
 
 class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
-
+    always_verbose: bool = True
     _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:

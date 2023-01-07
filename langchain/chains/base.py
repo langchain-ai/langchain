@@ -134,18 +134,15 @@ class Chain(BaseModel, ABC):
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
-        if self.verbose:
-            self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__}, inputs
-            )
+        self.callback_manager.on_chain_start(
+            {"name": self.__class__.__name__}, inputs, verbose=self.verbose
+        )
         try:
             outputs = self._call(inputs)
-        except Exception as e:
-            if self.verbose:
-                self.callback_manager.on_chain_error(e)
+        except (KeyboardInterrupt, Exception) as e:
+            self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
-        if self.verbose:
-            self.callback_manager.on_chain_end(outputs)
+        self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)

@@ -258,8 +258,7 @@ class AgentExecutor(Chain, BaseModel):
             output = self.agent.plan(intermediate_steps, **inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
-                if self.verbose:
-                    self.callback_manager.on_agent_finish(output, color="green")
+                self.callback_manager.on_agent_finish(output, color="green", verbose=self.verbose)
                 final_output = output.return_values
                 if self.return_intermediate_steps:
                     final_output["intermediate_steps"] = intermediate_steps
@@ -268,39 +267,35 @@ class AgentExecutor(Chain, BaseModel):
             # And then we lookup the tool
             if output.tool in name_to_tool_map:
                 chain = name_to_tool_map[output.tool]
-                if self.verbose:
-                    self.callback_manager.on_tool_start(
-                        {"name": str(chain)[:60] + "..."}, output, color="green"
-                    )
+                self.callback_manager.on_tool_start(
+                    {"name": str(chain)[:60] + "..."}, output, color="green", verbose=self.verbose
+                )
                 try:
                     # We then call the tool on the tool input to get an observation
                     observation = chain(output.tool_input)
                     color = color_mapping[output.tool]
-                except Exception as e:
-                    if self.verbose:
-                        self.callback_manager.on_tool_error(e)
+                except (KeyboardInterrupt, Exception) as e:
+                    self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
             else:
-                if self.verbose:
-                    self.callback_manager.on_tool_start(
-                        {"name": "N/A"}, output, color="green"
-                    )
+                self.callback_manager.on_tool_start(
+                    {"name": "N/A"}, output, color="green", verbose=self.verbose
+                )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
-            if self.verbose:
-                self.callback_manager.on_tool_end(
-                    observation,
-                    color=color,
-                    observation_prefix=self.agent.observation_prefix,
-                    llm_prefix=self.agent.llm_prefix,
-                )
+            self.callback_manager.on_tool_end(
+                observation,
+                color=color,
+                observation_prefix=self.agent.observation_prefix,
+                llm_prefix=self.agent.llm_prefix,
+                verbose=self.verbose
+            )
             intermediate_steps.append((output, observation))
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
-        if self.verbose:
-            self.callback_manager.on_agent_finish(output, color="green")
+        self.callback_manager.on_agent_finish(output, color="green", verbose=self.verbose)
         final_output = output.return_values
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
