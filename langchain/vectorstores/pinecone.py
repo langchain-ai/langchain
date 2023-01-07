@@ -91,6 +91,7 @@ class Pinecone(VectorStore):
         batch_size: int = 32,
         text_key: str = "text",
         index_name: Optional[str] = None,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -143,5 +144,5 @@ class Pinecone(VectorStore):
                 pinecone.create_index(_index_name, dimension=len(embeds[0]))
                 index = pinecone.Index(_index_name)
             # upsert to Pinecone
-            index.upsert(vectors=list(to_upsert))
+            index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key)
