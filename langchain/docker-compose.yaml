@@ -1,0 +1,14 @@
+version: '3'
+services:
+  langchain-frontend:
+    image: notlangchain/langchainplus-frontend:latest
+    ports:
+      - 5173:5173
+    environment:
+      - BACKEND_URL=http://langchain-backend:8000
+    depends_on:
+      - langchain-backend
+  langchain-backend:
+    image: notlangchain/langchainplus:latest
+    ports:
+      - 8000:8000

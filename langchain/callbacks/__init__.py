@@ -5,6 +5,7 @@ from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
 import langchain
+from typing import Optional
 
 
 def get_callback_manager() -> BaseCallbackManager:
@@ -24,18 +25,25 @@ def set_default_callback_manager() -> None:
     if default_handler == "stdout":
         set_handler(StdOutCallbackHandler())
     elif default_handler == "langchain":
-        langchain.verbose = True
-        handler = SharedLangChainTracer()
-        set_handler(handler)
-        session = int(os.environ.get("LANGCHAIN_SESSION", "1"))
-        try:
-            handler.load_session(int(session))
-        except:
-            handler.new_session()
+        session = os.environ.get("LANGCHAIN_SESSION")
+        session = session if session is None else int(session)
+        set_tracing_callback_manager(session)
     else:
         raise ValueError(f"LANGCHAIN_HANDLER should be one of `stdout` or `langchain`, got {default_handler}")
 
 
-def set_tracing_callback_manager() -> None:
+def set_tracing_callback_manager(session: Optional[int] = None) -> None:
     """Set tracing callback manager."""
-    set_handler(SharedLangChainTracer())
+    langchain.verbose = True
+    handler = SharedLangChainTracer()
+    set_handler(handler)
+    if session is None:
+        handler.new_session()
+    else:
+        try:
+            handler.load_session(int(session))
+        except:
+            if session == "1":
+                handler.new_session()
+            else:
+                raise ValueError(f"session {session} not found")
