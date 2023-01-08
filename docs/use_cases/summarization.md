@@ -1,7 +1,15 @@
 # Summarization
 
 Summarization involves creating a smaller summary of multiple longer documents.
-This can be useful for distilling long documents into the core pieces of information
+This can be useful for distilling long documents into the core pieces of information.
+
+The recommended way to get started using a summarization chain is:
+
+```python
+from langchain.chains.summarize import load_summarize_chain
+chain = load_summarize_chain(llm, chain_type="map_reduce")
+chain.run(docs)
+```
 
 The following resources exist:
 - [Summarization Notebook](/modules/chains/combine_docs_examples/summarize.ipynb): A notebook walking through how to accomplish this task.
