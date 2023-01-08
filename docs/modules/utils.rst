@@ -7,11 +7,11 @@ and goes over how to easily use them from within LangChain.
 
 The following sections of documentation are provided:
 
-- `Key Concepts <utils/key_concepts.html>`_: A conceptual guide going over the various types of utils.
+- `Key Concepts <./utils/key_concepts.html>`_: A conceptual guide going over the various types of utils.
 
-- `How-To Guides <utils/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use various types of utils.
+- `How-To Guides <./utils/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use various types of utils.
 
-- `Reference </reference/utils.html>`_: API reference documentation for all Util classes.
+- `Reference <../reference/utils.html>`_: API reference documentation for all Util classes.
 
 
 
@@ -21,6 +21,6 @@ The following sections of documentation are provided:
    :name: Utils
    :hidden:
 
-   utils/key_concepts.md
-   utils/how_to_guides.rst
-   Reference </reference/utils.rst>
+   ./utils/key_concepts.md
+   ./utils/how_to_guides.rst
+   Reference <../reference/utils.rst>

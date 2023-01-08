@@ -3,10 +3,11 @@ from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
 
-import langchain
 from langchain.chains.base import Chain
-from langchain.llms.base import BaseLLM, LLMResult
+from langchain.input import get_colored_text
+from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import LLMResult
 
 
 class LLMChain(Chain, BaseModel):
@@ -61,7 +62,9 @@ class LLMChain(Chain, BaseModel):
             selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
             prompt = self.prompt.format(**selected_inputs)
             if self.verbose:
-                langchain.logger.log_llm_inputs(selected_inputs, prompt)
+                _colored_text = get_colored_text(prompt, "green")
+                _text = "Prompt after formatting:\n" + _colored_text
+                self.callback_manager.on_text(_text, end="\n")
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -77,8 +80,6 @@ class LLMChain(Chain, BaseModel):
         for generation in response.generations:
             # Get the text of the top generated string.
             response_str = generation[0].text
-            if self.verbose:
-                langchain.logger.log_llm_response(response_str)
             outputs.append({self.output_key: response_str})
         return outputs
 

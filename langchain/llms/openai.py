@@ -1,12 +1,15 @@
 """Wrapper around OpenAI APIs."""
+import logging
 import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.llms.base import BaseLLM, LLMResult
-from langchain.schema import Generation
+from langchain.llms.base import BaseLLM
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -51,11 +54,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
+    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    """Adjust the probability of specific tokens being generated."""
 
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = Extra.ignore
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -67,6 +72,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
             if field_name not in all_required_field_names:
                 if field_name in extra:
                     raise ValueError(f"Found {field_name} supplied twice.")
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transfered to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
                 extra[field_name] = values.pop(field_name)
         values["model_kwargs"] = extra
         return values
@@ -101,6 +111,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
             "n": self.n,
             "best_of": self.best_of,
             "request_timeout": self.request_timeout,
+            "logit_bias": self.logit_bias,
         }
         return {**normal_params, **self.model_kwargs}
 
@@ -156,7 +167,16 @@ class BaseOpenAI(BaseLLM, BaseModel):
         for i, prompt in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
-                [Generation(text=choice["text"]) for choice in sub_choices]
+                [
+                    Generation(
+                        text=choice["text"],
+                        generation_info=dict(
+                            finish_reason=choice.get("finish_reason"),
+                            logprobs=choice.get("logprobs"),
+                        ),
+                    )
+                    for choice in sub_choices
+                ]
             )
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}

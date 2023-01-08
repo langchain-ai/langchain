@@ -46,15 +46,16 @@ def _load_map_rerank_chain(
 def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
+    document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
-        document_prompt=stuff_prompt.EXAMPLE_PROMPT,
+        document_prompt=document_prompt,
         verbose=verbose,
         **kwargs,
     )
@@ -70,7 +71,7 @@ def _load_map_reduce_chain(
     collapse_prompt: Optional[BasePromptTemplate] = None,
     reduce_llm: Optional[BaseLLM] = None,
     collapse_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -118,7 +119,7 @@ def _load_refine_chain(
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -136,7 +137,10 @@ def _load_refine_chain(
 
 
 def load_qa_with_sources_chain(
-    llm: BaseLLM, chain_type: str = "stuff", verbose: bool = False, **kwargs: Any
+    llm: BaseLLM,
+    chain_type: str = "stuff",
+    verbose: Optional[bool] = None,
+    **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load question answering with sources chain.
 

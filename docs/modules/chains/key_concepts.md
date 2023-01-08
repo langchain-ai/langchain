@@ -7,7 +7,7 @@ They vary greatly in complexity and are combination of generic, highly configura
 ## Sequential Chain
 This is a specific type of chain where multiple other chains are run in sequence, with the outputs being added as inputs
 to the next. A subtype of this type of chain is the `SimpleSequentialChain`, where all subchains have only one input and one output,
-and the output of one is therefor used as sole input to the next chain.
+and the output of one is therefore used as sole input to the next chain.
 
 ## CombineDocuments Chains
 These are a subset of chains designed to work with documents. There are two pieces to consider:

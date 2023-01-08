@@ -81,18 +81,6 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         """
         return [self.answer_key, self.sources_answer_key]
 
-    @root_validator(pre=True)
-    def validate_question_chain(cls, values: Dict) -> Dict:
-        """Validate question chain."""
-        llm_question_chain = values["combine_document_chain"].llm_chain
-        if len(llm_question_chain.input_keys) != 2:
-            raise ValueError(
-                f"The llm_question_chain should have two inputs: a content key "
-                f"(the first one) and a question key (the second one). Got "
-                f"{llm_question_chain.input_keys}."
-            )
-        return values
-
     @root_validator()
     def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
         """Validate that the combine chain can be constructed."""
@@ -107,8 +95,8 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
         answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
-        if "\nSOURCES: " in answer:
-            answer, sources = answer.split("\nSOURCES: ")
+        if "SOURCES: " in answer:
+            answer, sources = answer.split("SOURCES: ")
         else:
             sources = ""
         return {self.answer_key: answer, self.sources_answer_key: sources}
