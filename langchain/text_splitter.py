@@ -44,6 +44,14 @@ class TextSplitter(ABC):
                 documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
         return documents
 
+    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
+        text = separator.join(docs)
+        text = text.strip()
+        if text == "":
+            return None
+        else:
+            return text
+
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
@@ -59,7 +67,9 @@ class TextSplitter(ABC):
                         f"which is longer than the specified {self._chunk_size}"
                     )
                 if len(current_doc) > 0:
-                    docs.append(separator.join(current_doc))
+                    doc = self._join_docs(current_doc, separator)
+                    if doc is not None:
+                        docs.append(doc)
                     # Keep on popping if:
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
@@ -70,7 +80,9 @@ class TextSplitter(ABC):
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += _len
-        docs.append(separator.join(current_doc))
+        doc = self._join_docs(current_doc, separator)
+        if doc is not None:
+            docs.append(doc)
         return docs
 
     @classmethod

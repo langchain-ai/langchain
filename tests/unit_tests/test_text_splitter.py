@@ -22,7 +22,7 @@ def test_character_text_splitter_empty_doc() -> None:
     text = "foo  bar"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=2, chunk_overlap=0)
     output = splitter.split_text(text)
-    expected_output = ['foo', '', ' bar']
+    expected_output = ["foo", "bar"]
     assert output == expected_output
 
 
