@@ -60,7 +60,12 @@ class TextSplitter(ABC):
                     )
                 if len(current_doc) > 0:
                     docs.append(separator.join(current_doc))
-                    while total > self._chunk_overlap:
+                    # Keep on popping if:
+                    # - we have a larger chunk than in the chunk overlap
+                    # - or if we still have any chunks and the length is long
+                    while total > self._chunk_overlap or (
+                        total + _len > self._chunk_size and total > 0
+                    ):
                         total -= self._length_function(current_doc[0])
                         current_doc = current_doc[1:]
             current_doc.append(d)
@@ -122,14 +127,17 @@ class CharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        splits = text.split(self._separator)
+        if self._separator:
+            splits = text.split(self._separator)
+        else:
+            splits = list(text)
         return self._merge_splits(splits, self._separator)
 
 
-class IterativeCharacterTextSplitter(TextSplitter):
+class RecursiveCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 
-    Iteratively tries to split by different characters to find one
+    Recursively tries to split by different characters to find one
     that works.
     """
 
@@ -140,17 +148,37 @@ class IterativeCharacterTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        for _separator in self._separators:
-            # Try to split the text by the chosen separator
-            splits = text.split(_separator)
-            # Check to see if the largest chunk is under the limit
-            if max([len(s) for s in splits]) < self._chunk_size:
-                # If it is, use it!
-                return self._merge_splits(splits, _separator)
-        # If nothing worked, use the last separator
-        _separator = self._separators[-1]
-        splits = text.split(_separator)
-        return self._merge_splits(splits, _separator)
+        final_chunks = []
+        # Get appropriate separator to use
+        separator = self._separators[-1]
+        for _s in self._separators:
+            if _s == "":
+                separator = _s
+                break
+            if _s in text:
+                separator = _s
+                break
+        # Now that we have the separator, split the text
+        if separator:
+            splits = text.split(separator)
+        else:
+            splits = list(text)
+        # Now go merging things, recursively splitting longer texts.
+        _good_splits = []
+        for s in splits:
+            if len(s) < self._chunk_size:
+                _good_splits.append(s)
+            else:
+                if _good_splits:
+                    merged_text = self._merge_splits(_good_splits, separator)
+                    final_chunks.extend(merged_text)
+                    _good_splits = []
+                other_info = self.split_text(s)
+                final_chunks.extend(other_info)
+        if _good_splits:
+            merged_text = self._merge_splits(_good_splits, separator)
+            final_chunks.extend(merged_text)
+        return final_chunks
 
 
 class NLTKTextSplitter(TextSplitter):
