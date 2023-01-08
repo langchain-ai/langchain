@@ -2,7 +2,10 @@
 import pytest
 
 from langchain.docstore.document import Document
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import (
+    CharacterTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 
 def test_character_text_splitter() -> None:
@@ -29,6 +32,15 @@ def test_character_text_splitter_long() -> None:
     splitter = CharacterTextSplitter(separator=" ", chunk_size=3, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "a a"]
+    assert output == expected_output
+
+
+def test_character_text_splitter_short_words_first() -> None:
+    """Test splitting by character count when shorter words are first."""
+    text = "a a foo bar baz"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=3, chunk_overlap=1)
+    output = splitter.split_text(text)
+    expected_output = ["a a", "foo", "bar", "baz"]
     assert output == expected_output
 
 
@@ -71,3 +83,33 @@ def test_create_documents_with_metadata() -> None:
         Document(page_content="baz", metadata={"source": "2"}),
     ]
     assert docs == expected_docs
+
+
+def test_iterative_text_splitter() -> None:
+    """Test iterative text splitter."""
+    text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
+This is a weird text to write, but gotta test the splittingggg some how.
+
+Bye!\n\n-H."""
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=1)
+    output = splitter.split_text(text)
+    expected_output = [
+        "Hi.",
+        "I'm",
+        "Harrison.",
+        "How? Are?",
+        "You?",
+        "Okay then f",
+        "f f f f.",
+        "This is a",
+        "a weird",
+        "text to",
+        "write, but",
+        "gotta test",
+        "the",
+        "splitting",
+        "gggg",
+        "some how.",
+        "Bye!\n\n-H.",
+    ]
+    assert output == expected_output
