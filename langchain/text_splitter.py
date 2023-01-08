@@ -15,7 +15,6 @@ class TextSplitter(ABC):
 
     def __init__(
         self,
-        separator: str = "\n\n",
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
@@ -26,7 +25,6 @@ class TextSplitter(ABC):
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
                 f"({chunk_size}), should be smaller."
             )
-        self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
@@ -46,7 +44,7 @@ class TextSplitter(ABC):
                 documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
         return documents
 
-    def _merge_splits(self, splits: Iterable[str]) -> List[str]:
+    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         docs = []
@@ -61,13 +59,18 @@ class TextSplitter(ABC):
                         f"which is longer than the specified {self._chunk_size}"
                     )
                 if len(current_doc) > 0:
-                    docs.append(self._separator.join(current_doc))
-                    while total > self._chunk_overlap:
+                    docs.append(separator.join(current_doc))
+                    # Keep on popping if:
+                    # - we have a larger chunk than in the chunk overlap
+                    # - or if we still have any chunks and the length is long
+                    while total > self._chunk_overlap or (
+                        total + _len > self._chunk_size and total > 0
+                    ):
                         total -= self._length_function(current_doc[0])
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += _len
-        docs.append(self._separator.join(current_doc))
+        docs.append(separator.join(current_doc))
         return docs
 
     @classmethod
@@ -116,21 +119,74 @@ class TextSplitter(ABC):
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters."""
 
+    def __init__(self, separator: str = "\n\n", **kwargs: Any):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        splits = text.split(self._separator)
-        return self._merge_splits(splits)
+        if self._separator:
+            splits = text.split(self._separator)
+        else:
+            splits = list(text)
+        return self._merge_splits(splits, self._separator)
+
+
+class RecursiveCharacterTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at characters.
+
+    Recursively tries to split by different characters to find one
+    that works.
+    """
+
+    def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        self._separators = separators or ["\n\n", "\n", " ", ""]
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        final_chunks = []
+        # Get appropriate separator to use
+        separator = self._separators[-1]
+        for _s in self._separators:
+            if _s == "":
+                separator = _s
+                break
+            if _s in text:
+                separator = _s
+                break
+        # Now that we have the separator, split the text
+        if separator:
+            splits = text.split(separator)
+        else:
+            splits = list(text)
+        # Now go merging things, recursively splitting longer texts.
+        _good_splits = []
+        for s in splits:
+            if len(s) < self._chunk_size:
+                _good_splits.append(s)
+            else:
+                if _good_splits:
+                    merged_text = self._merge_splits(_good_splits, separator)
+                    final_chunks.extend(merged_text)
+                    _good_splits = []
+                other_info = self.split_text(s)
+                final_chunks.extend(other_info)
+        if _good_splits:
+            merged_text = self._merge_splits(_good_splits, separator)
+            final_chunks.extend(merged_text)
+        return final_chunks
 
 
 class NLTKTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using NLTK."""
 
-    def __init__(
-        self, separator: str = "\n\n", chunk_size: int = 4000, chunk_overlap: int = 200
-    ):
+    def __init__(self, separator: str = "\n\n", **kwargs: Any):
         """Initialize the NLTK splitter."""
-        super(NLTKTextSplitter, self).__init__(separator, chunk_size, chunk_overlap)
+        super().__init__(**kwargs)
         try:
             from nltk.tokenize import sent_tokenize
 
@@ -139,26 +195,23 @@ class NLTKTextSplitter(TextSplitter):
             raise ImportError(
                 "NLTK is not installed, please install it with `pip install nltk`."
             )
+        self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         splits = self._tokenizer(text)
-        return self._merge_splits(splits)
+        return self._merge_splits(splits, self._separator)
 
 
 class SpacyTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using Spacy."""
 
     def __init__(
-        self,
-        separator: str = "\n\n",
-        pipeline: str = "en_core_web_sm",
-        chunk_size: int = 4000,
-        chunk_overlap: int = 200,
+        self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ):
         """Initialize the spacy text splitter."""
-        super(SpacyTextSplitter, self).__init__(separator, chunk_size, chunk_overlap)
+        super.__init__(**kwargs)
         try:
             import spacy
         except ImportError:
@@ -166,8 +219,9 @@ class SpacyTextSplitter(TextSplitter):
                 "Spacy is not installed, please install it with `pip install spacy`."
             )
         self._tokenizer = spacy.load(pipeline)
+        self._separator = separator
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = (str(s) for s in self._tokenizer(text).sents)
-        return self._merge_splits(splits)
+        return self._merge_splits(splits, self._separator)
