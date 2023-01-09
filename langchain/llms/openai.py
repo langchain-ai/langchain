@@ -52,8 +52,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
     openai_api_key: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
-    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
 
@@ -110,7 +108,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "best_of": self.best_of,
-            "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
         }
         return {**normal_params, **self.model_kwargs}
