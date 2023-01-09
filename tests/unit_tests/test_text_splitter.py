@@ -17,6 +17,15 @@ def test_character_text_splitter() -> None:
     assert output == expected_output
 
 
+def test_character_text_splitter_empty_doc() -> None:
+    """Test splitting by character count doesn't create empty documents."""
+    text = "foo  bar"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=2, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["foo", "bar"]
+    assert output == expected_output
+
+
 def test_character_text_splitter_long() -> None:
     """Test splitting by character count on long words."""
     text = "foo bar baz a a"
