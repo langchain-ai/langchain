@@ -222,6 +222,6 @@ print(dynamic_prompt.format(adjective=long_string))
 ```
 
 <!-- TODO(shreya): Add correct link here. -->
-LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](examples/example_selectors.ipynb).
+LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](./examples/example_selectors.ipynb).
 
 You can create custom example selectors that select examples based on any criteria you want. For more details on how to do this, see [Creating a custom example selector](examples/custom_example_selector.ipynb).
