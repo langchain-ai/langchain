@@ -84,6 +84,10 @@ class Pinecone(VectorStore):
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 docs.append(Document(page_content=text, metadata=metadata))
+            else:
+                logger.warning(
+                    f"Found document with no `{self._text_key}` key. Skipping."
+                )
         return docs
 
     @classmethod
