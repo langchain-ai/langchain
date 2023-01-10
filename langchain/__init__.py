@@ -30,6 +30,7 @@ from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
+from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
@@ -44,6 +45,7 @@ __all__ = [
     "SerpAPIWrapper",
     "SerpAPIChain",
     "GoogleSearchAPIWrapper",
+    "WolframAlphaAPIWrapper",
     "Cohere",
     "OpenAI",
     "BasePromptTemplate",
