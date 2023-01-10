@@ -158,6 +158,17 @@ Open Source
 
     ---
 
+    .. link-button:: https://huggingface.co/spaces/rituthombre/QNim
+        :type: url
+        :text: QNimGPT
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A chat UI to play Nim, where a player can select an opponent, either a quantum computer or an AI
+
+    ---
+
     .. link-button:: https://colab.research.google.com/drive/19WTIWC3prw5LDMHmRMvqNV2loD9FHls6?usp=sharing
         :type: url
         :text: ReAct TextWorld
