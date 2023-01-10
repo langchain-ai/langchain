@@ -43,6 +43,12 @@ Below is a list of all supported tools and relevant information:
 - Notes: Calls the Serp API and then parses results.
 - Requires LLM: No
 
+**wolfram-alpha**
+- Tool Name: Wolfram Alpha
+- Tool Description: A wolfram alpha search engine. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.
+- Notes: Calls the Wolfram Alpha API and then parses results.
+- Requires LLM: No
+
 **requests**
 - Tool Name: Requests
 - Tool Description: A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.
