@@ -7,6 +7,9 @@ from typing import Any, Callable, Iterable, List, Optional
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Pinecone(VectorStore):
