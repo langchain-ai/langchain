@@ -70,6 +70,39 @@ Open Source
 
     ---
 
+    .. link-button:: https://dagster.io/blog/chatgpt-langchain
+        :type: url
+        :text: Dagster Documentation ChatBot
+        :classes: stretched-link btn-lg
+
+    +++
+
+    Build a GitHub support bot with GPT3, LangChain, and Python.
+
+    ---
+
+    .. link-button:: https://huggingface.co/spaces/team7/talk_with_wind
+        :type: url
+        :text: Talk With Wind
+        :classes: stretched-link btn-lg
+
+    +++
+
+    Record sounds of anything (birds, wind, fire, train station) and chat with it.
+
+    ---
+
+    .. link-button:: https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain
+        :type: url
+        :text: ChatGPT LangChain
+        :classes: stretched-link btn-lg
+
+    +++
+
+    This simple application demonstrates a conversational agent implemented with OpenAI GPT-3.5 and LangChain. When necessary, it leverages tools for complex math, searching the internet, and accessing news and weather.
+
+    ---
+
     .. link-button:: https://huggingface.co/spaces/JavaFXpert/gpt-math-techniques
         :type: url
         :text: GPT Math Techniques
