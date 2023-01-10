@@ -16,9 +16,9 @@ This repo serves as a template for how to deploy a LangChain with Streamlit.
 It implements a chatbot interface.
 It also contains instructions for how to deploy this app on the Streamlit platform.
 
-## [Gradio](https://github.com/hwchase17/langchain-gradio-template)
+## [Gradio (on Hugging Face)](https://github.com/hwchase17/langchain-gradio-template)
 
 This repo serves as a template for how deploy a LangChain with Gradio.
 It implements a chatbot interface, with a "Bring-Your-Own-Token" approach (nice for not wracking up big bills).
 It also contains instructions for how to deploy this app on the Hugging Face platform.
-
+This is heavily influenced by James Weaver's [excellent examples](https://huggingface.co/JavaFXpert).
