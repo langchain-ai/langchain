@@ -17,7 +17,7 @@ It is broken into two parts: installation and setup, and then references to spec
 There exists a WolframAlphaAPIWrapper utility which wraps this API. To import this utility:
 
 ```python
-from langchain.utilities import WolframAlphaAPIWrapper
+from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/wolfram_alpha.ipynb).
