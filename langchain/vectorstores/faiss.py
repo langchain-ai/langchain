@@ -88,9 +88,9 @@ class FAISS(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding_function(query)
-        _, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
+        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
         docs = []
-        for i in indices[0]:
+        for j, i in enumerate(indices[0]):
             if i == -1:
                 # This happens when not enough docs are returned.
                 continue
@@ -98,6 +98,9 @@ class FAISS(VectorStore):
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            metadata = doc.metadata.copy()
+            metadata["_similarity_to_query"] = scores[0][j]
+            doc.metadata = metadata
             docs.append(doc)
         return docs
 

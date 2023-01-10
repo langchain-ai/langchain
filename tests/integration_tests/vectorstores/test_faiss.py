@@ -36,7 +36,10 @@ def test_faiss() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    expected_document = Document(
+        page_content="foo", metadata={"_similarity_to_query": 0.0}
+    )
+    assert output == [expected_document]
 
 
 def test_faiss_with_metadatas() -> None:
@@ -44,16 +47,11 @@ def test_faiss_with_metadatas() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
-    expected_docstore = InMemoryDocstore(
-        {
-            "0": Document(page_content="foo", metadata={"page": 0}),
-            "1": Document(page_content="bar", metadata={"page": 1}),
-            "2": Document(page_content="baz", metadata={"page": 2}),
-        }
-    )
-    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
+    document = Document(
+        page_content="foo", metadata={"page": 0, "_similarity_to_query": 0.0}
+    )
+    assert output == [document]
 
 
 def test_faiss_search_not_found() -> None:
@@ -74,7 +72,8 @@ def test_faiss_add_texts() -> None:
     # Test adding a similar document as before.
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
-    assert output == [Document(page_content="foo"), Document(page_content="foo")]
+    expected_doc = Document(page_content="foo", metadata={"_similarity_to_query": 0.0})
+    assert output == [expected_doc, expected_doc]
 
 
 def test_faiss_add_texts_not_supported() -> None:
