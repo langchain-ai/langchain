@@ -69,10 +69,8 @@ class Anthropic(LLM, BaseModel):
         return {
             "max_tokens_to_sample": self.max_tokens_to_sample,
             "temperature": self.temperature,
-            "k": self.k,
-            "p": self.p,
-            "frequency_penalty": self.frequency_penalty,
-            "presence_penalty": self.presence_penalty,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
         }
 
     @property
@@ -103,5 +101,5 @@ class Anthropic(LLM, BaseModel):
         response = self.client.completion(
             model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
         )
-        text = response.generations[0].text
+        text = response['completion']
         return text
