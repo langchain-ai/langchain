@@ -1,4 +1,4 @@
-"""Integration test for Google Search API Wrapper."""
+"""Integration test for Wolfram Alpha API Wrapper."""
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
