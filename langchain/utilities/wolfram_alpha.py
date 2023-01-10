@@ -1,5 +1,5 @@
-"""Util that calls WolframAlpha/"""
-from typing import Any, Dict, List, Optional
+"""Util that calls WolframAlpha."""
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -7,7 +7,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 class WolframAlphaAPIWrapper(BaseModel):
-    """Wrapper for Wolfram Alpha
+    """Wrapper for Wolfram Alpha.
 
     Docs for using:
 
@@ -15,7 +15,7 @@ class WolframAlphaAPIWrapper(BaseModel):
     2. Create an app and get your APP ID
     3. Save your APP ID into WOLFRAM_ALPHA_APPID env variable
     4. pip install wolframalpha
-    
+
     """
 
     wolfram_client: Any  #: :meta private:
@@ -26,7 +26,6 @@ class WolframAlphaAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-   
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -37,7 +36,6 @@ class WolframAlphaAPIWrapper(BaseModel):
 
         try:
             import wolframalpha
-
 
         except ImportError:
             raise ImportError(

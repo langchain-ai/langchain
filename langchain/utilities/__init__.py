@@ -11,6 +11,6 @@ __all__ = [
     "RequestsWrapper",
     "PythonREPL",
     "GoogleSearchAPIWrapper",
-    "WolframAlphaAPIWrapper"
+    "WolframAlphaAPIWrapper",
     "SerpAPIWrapper",
 ]
