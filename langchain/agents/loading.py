@@ -31,7 +31,7 @@ def initialize_agent(
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
         agent: The agent to use. Valid options are:
-            `zero-shot-react-description`, `react-docstore`, `self-ask-with-search`.
+            `zero-shot-react-description`, `react-docstore`, `self-ask-with-search`, `conversational-react-description`.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         **kwargs: Additional key word arguments to pass to the agent.
