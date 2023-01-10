@@ -78,8 +78,9 @@ class Pinecone(VectorStore):
         results = self._index.query([query_obj], top_k=k, include_metadata=True)
         for res in results["matches"]:
             metadata = res["metadata"]
-            text = metadata.pop(self._text_key)
-            docs.append(Document(page_content=text, metadata=metadata))
+            if self._text_key in metadata:
+                text = metadata.pop(self._text_key)
+                docs.append(Document(page_content=text, metadata=metadata))
         return docs
 
     @classmethod
