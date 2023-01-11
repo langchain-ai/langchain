@@ -1,7 +1,7 @@
 # Wolfram Alpha Wrapper
 
 This page covers how to use the Wolfram Alpha API within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Pinecone wrappers.
+It is broken into two parts: installation and setup, and then references to specific Wolfram Alpha wrappers.
 
 ## Installation and Setup
 - Install requirements with `pip install wolframalpha`
