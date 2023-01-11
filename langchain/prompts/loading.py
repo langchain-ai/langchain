@@ -114,7 +114,7 @@ def load_from_hub(path: str):
     if r.status_code != 200:
         raise ValueError(f"Could not find file at {full_url}")
     if suffix == "json":
-        config = json.load(r.content)
+        config = json.loads(r.content)
         return load_prompt_from_config(config)
     elif suffix == "yaml":
         config = yaml.safe_load(r.content)
