@@ -98,8 +98,21 @@ class VectorDBQA(Chain, BaseModel):
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self, inputs: Dict[str, str], return_source_documents: bool = False
+    ) -> Dict[str, Any]:
+        """Run the vectorDBQA chain.
+
+        Args:
+            inputs: Dictionary of inputs.
+            return_source_documents: boolean for whether to return
+            the documents that were used as a context for the llm. Defaults to false.
+        """
         question = inputs[self.input_key]
         docs = self.vectorstore.similarity_search(question, k=self.k)
         answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
-        return {self.output_key: answer}
+
+        if return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}
