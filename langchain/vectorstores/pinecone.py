@@ -71,11 +71,18 @@ class Pinecone(VectorStore):
         self._index.upsert(vectors=docs)
         return ids
 
-    def similarity_search(self, query: str, k: int = 5) -> List[Document]:
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 5,
+        namespace: Optional[str] = None,
+    ) -> List[Document]:
         """Look up similar documents in pinecone."""
         query_obj = self._embedding_function(query)
         docs = []
-        results = self._index.query([query_obj], top_k=k, include_metadata=True)
+        results = self._index.query(
+            [query_obj], top_k=k, include_metadata=True, namespace=namespace
+        )
         for res in results["matches"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
