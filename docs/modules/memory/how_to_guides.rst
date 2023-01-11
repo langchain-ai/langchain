@@ -17,6 +17,8 @@ The examples here all highlight how to use memory in different ways.
 
 `Conversation Agent <./examples/conversational_agent.html>`_: Example of a conversation agent, which combines memory with agents and a conversation focused prompt.
 
+`Multiple Memory <./examples/multiple_memory.html>`_: How to use multiple types of memory in the same chain.
+
 
 .. toctree::
    :maxdepth: 1
