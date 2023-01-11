@@ -122,7 +122,7 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
         _index_name = index_name or str(uuid.uuid4())
-        indexes = pinecone.list_indexes() # checks if provided index exists
+        indexes = pinecone.list_indexes()  # checks if provided index exists
         if _index_name in indexes:
             index = pinecone.Index(_index_name)
         else:
