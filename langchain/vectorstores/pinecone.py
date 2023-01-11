@@ -91,6 +91,7 @@ class Pinecone(VectorStore):
         batch_size: int = 32,
         text_key: str = "text",
         index_name: Optional[str] = None,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> Pinecone:
         """Construct Pinecone wrapper from raw documents.
@@ -121,7 +122,11 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
         _index_name = index_name or str(uuid.uuid4())
-        index = None
+        indexes = pinecone.list_indexes()  # checks if provided index exists
+        if _index_name in indexes:
+            index = pinecone.Index(_index_name)
+        else:
+            index = None
         for i in range(0, len(texts), batch_size):
             # set end position of batch
             i_end = min(i + batch_size, len(texts))
@@ -143,5 +148,5 @@ class Pinecone(VectorStore):
                 pinecone.create_index(_index_name, dimension=len(embeds[0]))
                 index = pinecone.Index(_index_name)
             # upsert to Pinecone
-            index.upsert(vectors=list(to_upsert))
+            index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key)
