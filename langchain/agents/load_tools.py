@@ -13,6 +13,7 @@ from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -39,6 +40,14 @@ def _get_google_search() -> Tool:
     )
 
 
+def _get_wolfram_alpha() -> Tool:
+    return Tool(
+        "Wolfram Alpha",
+        WolframAlphaAPIWrapper().run,
+        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+    )
+
+
 def _get_requests() -> Tool:
     return Tool(
         "Requests",
@@ -61,6 +70,7 @@ _BASE_TOOLS = {
     "requests": _get_requests,
     "terminal": _get_terminal,
     "google-search": _get_google_search,
+    "wolfram-alpha": _get_wolfram_alpha,
 }
 
 
