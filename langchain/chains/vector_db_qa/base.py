@@ -36,6 +36,8 @@ class VectorDBQA(Chain, BaseModel):
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    _input_keys: List[str] = [input_key]  #: :meta private:
+    _output_keys: List[str] = [output_key]  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -45,19 +47,19 @@ class VectorDBQA(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the singular input key.
+        """Return the input keys.
 
         :meta private:
         """
-        return [self.input_key]
+        return self._input_keys
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the singular output key.
+        """Return the output keys.
 
         :meta private:
         """
-        return [self.output_key]
+        return self._output_keys
 
     # TODO: deprecate this
     @root_validator(pre=True)
@@ -96,23 +98,32 @@ class VectorDBQA(Chain, BaseModel):
             document_variable_name="context",
             document_prompt=document_prompt,
         )
+
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     def _call(
-        self, inputs: Dict[str, str], return_source_documents: bool = False
+        self,
+        inputs: Dict[str, str],
     ) -> Dict[str, Any]:
-        """Run the vectorDBQA chain.
+        """Run similarity search and llm on input query.
 
-        Args:
-            inputs: Dictionary of inputs.
-            return_source_documents: boolean for whether to return
-            the documents that were used as a context for the llm. Defaults to false.
+        If inputs contains 'return_source_documents' as 'True', returns
+        the retrieved documents as well under the key 'source_documents'.
+
+        Example:
+        .. code-block:: python
+
+        res = vectordbqa({'query': 'This is my query', 'return_source_documents': True})
+        answer, docs = res['result'], res['source_documents']
         """
         question = inputs[self.input_key]
+        return_source_documents = inputs.get("return_source_documents") or False
+
         docs = self.vectorstore.similarity_search(question, k=self.k)
         answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
 
         if return_source_documents:
+            self._output_keys.append("source_documents")
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
