@@ -1,9 +1,11 @@
 """Load prompts from disk."""
+import importlib
 import json
+import tempfile
 from pathlib import Path
 from typing import Union
-import requests
 
+import requests
 import yaml
 
 from langchain.prompts.base import BasePromptTemplate
@@ -98,14 +100,29 @@ def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
     elif file_path.suffix == ".yaml":
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
+    elif file_path.suffix == ".py":
+        spec = importlib.util.spec_from_loader(
+            "prompt", loader=None, origin=str(file_path)
+        )
+        if spec is None:
+            raise ValueError("could not load spec")
+        helper = importlib.util.module_from_spec(spec)
+        with open(file_path, "rb") as f:
+            exec(f.read(), helper.__dict__)
+        if not isinstance(helper.PROMPT, BasePromptTemplate):
+            raise ValueError("Did not get object of type BasePromptTemplate.")
+        return helper.PROMPT
     else:
-        raise ValueError
+        raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
 
-import importlib
+
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-def load_from_hub(path: str):
+
+
+def load_from_hub(path: str) -> BasePromptTemplate:
+    """Load prompt from hub."""
     suffix = path.split(".")[-1]
     if suffix not in {"py", "json", "yaml"}:
         raise ValueError("Unsupported file type.")
@@ -113,18 +130,8 @@ def load_from_hub(path: str):
     r = requests.get(full_url)
     if r.status_code != 200:
         raise ValueError(f"Could not find file at {full_url}")
-    if suffix == "json":
-        config = json.loads(r.content)
-        return load_prompt_from_config(config)
-    elif suffix == "yaml":
-        config = yaml.safe_load(r.content)
-        return load_prompt_from_config(config)
-    elif suffix == "py":
-        spec = importlib.util.spec_from_loader("prompt", loader=None, origin=full_url)
-        helper = importlib.util.module_from_spec(spec)
-        exec(r.content, helper.__dict__)
-        if not isinstance(helper.PROMPT, BasePromptTemplate):
-            raise ValueError("Did not get object of type BasePromptTemplate.")
-        return helper.PROMPT
-    else:
-        raise ValueError(f"Got unsupported file type {suffix}")
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file = tmpdirname + "/prompt." + suffix
+        with open(file, "wb") as f:
+            f.write(r.content)
+        return load_prompt(file)
