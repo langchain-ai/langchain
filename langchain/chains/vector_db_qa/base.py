@@ -9,6 +9,7 @@ from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.vector_db_qa.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
@@ -104,19 +105,24 @@ class VectorDBQA(Chain, BaseModel):
 
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
-    def _call(
-        self,
-        inputs: Dict[str, str],
-    ) -> Dict[str, Any]:
+    @classmethod
+    def from_chain_type(
+        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+    ) -> VectorDBQA:
+        """Load chain from chain type."""
+        combine_documents_chain = load_qa_chain(llm, chain_type=chain_type)
+        return cls(combine_documents_chain=combine_documents_chain, **kwargs)
+
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run similarity search and llm on input query.
 
-        If inputs contains 'return_source_documents' as 'True', returns
+        If chain has 'return_source_documents' as 'True', returns
         the retrieved documents as well under the key 'source_documents'.
 
         Example:
         .. code-block:: python
 
-        res = vectordbqa({'query': 'This is my query', 'return_source_documents': True})
+        res = vectordbqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
         question = inputs[self.input_key]
