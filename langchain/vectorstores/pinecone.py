@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -46,8 +46,8 @@ class Pinecone(VectorStore):
         self._text_key = text_key
 
     def add_texts(
-        self, 
-        texts: Iterable[str], 
+        self,
+        texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         namespace: Optional[str] = None,
     ) -> List[str]:
@@ -57,7 +57,7 @@ class Pinecone(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             namespace: Optional pinecone namespace to add the texts to.
-            
+
         Returns:
             List of ids from adding the texts into the vectorstore.
 
@@ -202,5 +202,14 @@ class Pinecone(VectorStore):
     @classmethod
     def from_existing_index(
         cls, index_name: str, embedding: Embeddings, text_key: str = "text"
-    ):
+    ) -> Pinecone:
+        """Load pinecone vectorstore from index name."""
+        try:
+            import pinecone
+        except ImportError:
+            raise ValueError(
+                "Could not import pinecone python package. "
+                "Please install it with `pip install pinecone-client`."
+            )
+
         return cls(pinecone.Index(index_name), embedding.embed_query, text_key)
