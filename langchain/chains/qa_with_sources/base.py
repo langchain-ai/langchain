@@ -26,7 +26,7 @@ from langchain.prompts.base import BasePromptTemplate
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     """Question answering with sources over documents."""
 
-    combine_document_chain: BaseCombineDocumentsChain
+    combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
@@ -56,7 +56,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             document_variable_name="context",
         )
         return cls(
-            combine_document_chain=combine_document_chain,
+            combine_documents_chain=combine_document_chain,
             **kwargs,
         )
 
@@ -66,7 +66,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
         combine_document_chain = load_qa_with_sources_chain(llm, chain_type=chain_type)
-        return cls(combine_document_chain=combine_document_chain, **kwargs)
+        return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -90,11 +90,11 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         """
         return [self.answer_key, self.sources_answer_key]
 
-    @root_validator()
-    def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
-        """Validate that the combine chain can be constructed."""
-        # Try to construct the combine documents chains.
-
+    @root_validator(pre=True)
+    def validate_naming(cls, values: Dict) -> Dict:
+        """Fix backwards compatability in naming."""
+        if "combine_document_chain" in values:
+            values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
 
     @abstractmethod
@@ -103,7 +103,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
+        answer, _ = self.combine_documents_chain.combine_docs(docs, **inputs)
         if "SOURCES: " in answer:
             answer, sources = answer.split("SOURCES: ")
         else:
