@@ -12,6 +12,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.chains.qa_with_sources.loading import load_qa_with_sources_chain
 from langchain.chains.qa_with_sources.map_reduce_prompt import (
     COMBINE_PROMPT,
     EXAMPLE_PROMPT,
@@ -58,6 +59,14 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             combine_document_chain=combine_document_chain,
             **kwargs,
         )
+
+    @classmethod
+    def from_chain_type(
+        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+    ) -> BaseQAWithSourcesChain:
+        """Load chain from chain type."""
+        combine_document_chain = load_qa_with_sources_chain(llm, chain_type=chain_type)
+        return cls(combine_document_chain=combine_document_chain, **kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
