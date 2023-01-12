@@ -113,7 +113,7 @@ class VectorDBQA(Chain, BaseModel):
         combine_documents_chain = load_qa_chain(llm, chain_type=chain_type)
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run similarity search and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
