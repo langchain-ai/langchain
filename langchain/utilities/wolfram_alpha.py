@@ -52,7 +52,7 @@ class WolframAlphaAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run query through WolframAlpha and parse result."""
         res = self.wolfram_client.query(query)
-        
+
         try:
             assumption = next(res.pods).text
             answer = next(res.results).text
