@@ -8,7 +8,11 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 class BaseCallbackHandler(ABC):
     """Base callback handler that can be used to handle callbacks from langchain."""
-    always_verbose: bool = False
+
+    @property
+    def always_verbose(self) -> bool:
+        """Whether to call verbose callbacks even if verbose is False."""
+        return False
 
     @property
     def ignore_llm(self) -> bool:

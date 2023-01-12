@@ -50,18 +50,15 @@ class LLMMathChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
         python_executor = PythonREPL()
-        if self.verbose:
-            self.callback_manager.on_text(inputs[self.input_key])
+        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
         t = llm_executor.predict(question=inputs[self.input_key], stop=["```output"])
-        if self.verbose:
-            self.callback_manager.on_text(t, color="green")
+        self.callback_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         if t.startswith("```python"):
             code = t[9:-4]
             output = python_executor.run(code)
-            if self.verbose:
-                self.callback_manager.on_text("\nAnswer: ")
-                self.callback_manager.on_text(output, color="yellow")
+            self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
+            self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
             answer = "Answer: " + output
         elif t.startswith("Answer:"):
             answer = t

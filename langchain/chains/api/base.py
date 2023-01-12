@@ -65,11 +65,9 @@ class APIChain(Chain, BaseModel):
         api_url = self.api_request_chain.predict(
             question=question, api_docs=self.api_docs
         )
-        if self.verbose:
-            self.callback_manager.on_text(api_url, color="green", end="\n")
+        self.callback_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
         api_response = self.requests_wrapper.run(api_url)
-        if self.verbose:
-            self.callback_manager.on_text(api_response, color="yellow", end="\n")
+        self.callback_manager.on_text(api_response, color="yellow", end="\n", verbose=self.verbose)
         answer = self.api_answer_chain.predict(
             question=question,
             api_docs=self.api_docs,

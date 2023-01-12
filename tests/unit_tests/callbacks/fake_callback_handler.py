@@ -17,6 +17,12 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
     ignore_llm_: bool = False
     ignore_chain_: bool = False
     ignore_agent_: bool = False
+    always_verbose_: bool = False
+
+    @property
+    def always_verbose(self) -> bool:
+        """Whether to call verbose callbacks even if verbose is False."""
+        return self.always_verbose_
 
     @property
     def ignore_llm(self) -> bool:
@@ -41,12 +47,12 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
 
     def on_llm_end(
         self,
-        response: LLMResult,
+        response: LLMResult, **kwargs: Any
     ) -> None:
         """Run when LLM ends running."""
         self.ends += 1
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when LLM errors."""
         self.errors += 1
 
@@ -56,11 +62,11 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when chain starts running."""
         self.starts += 1
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
         self.ends += 1
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when chain errors."""
         self.errors += 1
 
@@ -74,7 +80,7 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when tool ends running."""
         self.ends += 1
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when tool errors."""
         self.errors += 1
 

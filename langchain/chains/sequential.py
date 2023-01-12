@@ -132,8 +132,7 @@ class SimpleSequentialChain(Chain, BaseModel):
             _input = chain.run(_input)
             if self.strip_outputs:
                 _input = _input.strip()
-            if self.verbose:
-                self.callback_manager.on_text(
-                    _input, color=color_mapping[str(i)], end="\n"
-                )
+            self.callback_manager.on_text(
+                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+            )
         return {self.output_key: _input}

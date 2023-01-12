@@ -51,8 +51,7 @@ class PALChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         code = llm_chain.predict(stop=[self.stop], **inputs)
-        if self.verbose:
-            self.callback_manager.on_text(code, color="green", end="\n")
+        self.callback_manager.on_text(code, color="green", end="\n", verbose=self.verbose)
         repl = PythonREPL()
         res = repl.run(code + f"\n{self.get_answer_expr}")
         return {self.output_key: res.strip()}
