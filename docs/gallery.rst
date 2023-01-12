@@ -189,7 +189,7 @@ Open Source
 
     This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
 
-Colab Notebooks
+Misc. Colab Notebooks
 ~~~~~~~~~~~~~~~
 
 .. panels::
