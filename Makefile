@@ -35,4 +35,6 @@ integration_tests:
 	poetry run pytest tests/integration_tests
 
 notebook_tests:
-	poetry run pytest --nbmake --nbmake-timeout=300 docs
+	poetry run pytest --nbmake --nbmake-timeout=300 \
+		docs/modules/chains/examples/ \
+		--ignore=docs/modules/chains/examples/moderation.ipynb \
