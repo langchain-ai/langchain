@@ -3,11 +3,13 @@ from typing import Any, Mapping, Optional, Protocol
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import (
     map_reduce_prompt,
+    map_rerank_prompt,
     refine_prompts,
     stuff_prompt,
 )
@@ -22,11 +24,30 @@ class LoadingCallable(Protocol):
         """Callable to load the combine documents chain."""
 
 
+def _load_map_rerank_chain(
+    llm: BaseLLM,
+    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    verbose: bool = False,
+    document_variable_name: str = "context",
+    rank_key: str = "score",
+    answer_key: str = "answer",
+    **kwargs: Any,
+) -> MapRerankDocumentsChain:
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    return MapRerankDocumentsChain(
+        llm_chain=llm_chain,
+        rank_key=rank_key,
+        answer_key=answer_key,
+        document_variable_name=document_variable_name,
+        **kwargs,
+    )
+
+
 def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "context",
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
@@ -48,7 +69,7 @@ def _load_map_reduce_chain(
     collapse_prompt: Optional[BasePromptTemplate] = None,
     reduce_llm: Optional[BaseLLM] = None,
     collapse_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -94,7 +115,7 @@ def _load_refine_chain(
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -111,7 +132,10 @@ def _load_refine_chain(
 
 
 def load_qa_chain(
-    llm: BaseLLM, chain_type: str = "stuff", verbose: bool = False, **kwargs: Any
+    llm: BaseLLM,
+    chain_type: str = "stuff",
+    verbose: Optional[bool] = None,
+    **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load question answering chain.
 
@@ -129,6 +153,7 @@ def load_qa_chain(
         "stuff": _load_stuff_chain,
         "map_reduce": _load_map_reduce_chain,
         "refine": _load_refine_chain,
+        "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
         raise ValueError(

@@ -7,8 +7,8 @@ from pydantic import BaseModel
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.hyde.base import HypotheticalDocumentEmbedder
 from langchain.embeddings.hyde.prompts import PROMPT_MAP
-from langchain.llms.base import BaseLLM, LLMResult
-from langchain.schema import Generation
+from langchain.llms.base import BaseLLM
+from langchain.schema import Generation, LLMResult
 
 
 class FakeEmbeddings(Embeddings):

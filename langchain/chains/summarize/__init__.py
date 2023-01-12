@@ -22,7 +22,7 @@ def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "text",
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
@@ -44,7 +44,7 @@ def _load_map_reduce_chain(
     collapse_prompt: Optional[BasePromptTemplate] = None,
     reduce_llm: Optional[BaseLLM] = None,
     collapse_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(llm=llm, prompt=map_prompt, verbose=verbose)
@@ -90,7 +90,7 @@ def _load_refine_chain(
     document_variable_name: str = "text",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
 
@@ -108,7 +108,10 @@ def _load_refine_chain(
 
 
 def load_summarize_chain(
-    llm: BaseLLM, chain_type: str = "stuff", verbose: bool = False, **kwargs: Any
+    llm: BaseLLM,
+    chain_type: str = "stuff",
+    verbose: Optional[bool] = None,
+    **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load summarizing chain.
 
