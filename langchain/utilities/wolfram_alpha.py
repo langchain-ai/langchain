@@ -52,8 +52,15 @@ class WolframAlphaAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run query through WolframAlpha and parse result."""
         res = self.wolfram_client.query(query)
-        # Includes only text from the response
-        answer = next(res.results).text
+
+        try:
+            assumption = next(res.pods).text
+            answer = next(res.results).text
+        except StopIteration:
+            return "Wolfram Alpha wasn't able to answer it"
+
         if answer is None or answer == "":
+            # We don't want to return the assumption alone if answer is empty
             return "No good Wolfram Alpha Result was found"
-        return answer
+        else:
+            return f"Assumption: {assumption} \nAnswer: {answer}"
