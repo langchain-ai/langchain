@@ -1,4 +1,4 @@
-"""Load question answering chains."""
+"""Load question answering with sources chains."""
 from typing import Any, Mapping, Optional, Protocol
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -7,12 +7,12 @@ from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChai
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.chains.question_answering import (
+from langchain.chains.qa_with_sources import (
     map_reduce_prompt,
-    map_rerank_prompt,
     refine_prompts,
     stuff_prompt,
 )
+from langchain.chains.question_answering import map_rerank_prompt
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
@@ -46,15 +46,16 @@ def _load_map_rerank_chain(
 def _load_stuff_chain(
     llm: BaseLLM,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
-    document_variable_name: str = "context",
+    document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
+    document_variable_name: str = "summaries",
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
-    # TODO: document prompt
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
+        document_prompt=document_prompt,
         verbose=verbose,
         **kwargs,
     )
@@ -64,6 +65,7 @@ def _load_map_reduce_chain(
     llm: BaseLLM,
     question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.COMBINE_PROMPT,
+    document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
     collapse_prompt: Optional[BasePromptTemplate] = None,
@@ -75,10 +77,10 @@ def _load_map_reduce_chain(
     map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
-    # TODO: document prompt
     combine_document_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
+        document_prompt=document_prompt,
         verbose=verbose,
     )
     if collapse_prompt is None:
@@ -97,6 +99,7 @@ def _load_map_reduce_chain(
                 verbose=verbose,
             ),
             document_variable_name=combine_document_variable_name,
+            document_prompt=document_prompt,
         )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
@@ -112,6 +115,7 @@ def _load_refine_chain(
     llm: BaseLLM,
     question_prompt: BasePromptTemplate = refine_prompts.DEFAULT_TEXT_QA_PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.DEFAULT_REFINE_PROMPT,
+    document_prompt: BasePromptTemplate = refine_prompts.EXAMPLE_PROMPT,
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
@@ -126,18 +130,19 @@ def _load_refine_chain(
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
+        document_prompt=document_prompt,
         verbose=verbose,
         **kwargs,
     )
 
 
-def load_qa_chain(
+def load_qa_with_sources_chain(
     llm: BaseLLM,
     chain_type: str = "stuff",
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
-    """Load question answering chain.
+    """Load question answering with sources chain.
 
     Args:
         llm: Language Model to use in the chain.
@@ -147,7 +152,7 @@ def load_qa_chain(
             applies to all chains that make up the final chain.
 
     Returns:
-        A chain to use for question answering.
+        A chain to use for question answering with sources.
     """
     loader_mapping: Mapping[str, LoadingCallable] = {
         "stuff": _load_stuff_chain,
@@ -160,4 +165,5 @@ def load_qa_chain(
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
-    return loader_mapping[chain_type](llm, verbose=verbose, **kwargs)
+    _func: LoadingCallable = loader_mapping[chain_type]
+    return _func(llm, verbose=verbose, **kwargs)
