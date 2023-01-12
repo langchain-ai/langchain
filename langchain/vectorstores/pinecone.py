@@ -46,16 +46,21 @@ class Pinecone(VectorStore):
         self._text_key = text_key
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+        self, 
+        texts: Iterable[str], 
+        metadatas: Optional[List[dict]] = None,
+        namespace: Optional[str] = None,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-
+            namespace: Optional pinecone namespace to add the texts to.
+            
         Returns:
             List of ids from adding the texts into the vectorstore.
+
         """
         # Embed and create the documents
         docs = []
@@ -68,14 +73,57 @@ class Pinecone(VectorStore):
             docs.append((id, embedding, metadata))
             ids.append(id)
         # upsert to Pinecone
-        self._index.upsert(vectors=docs)
+        self._index.upsert(vectors=docs, namespace=namespace)
         return ids
 
-    def similarity_search(self, query: str, k: int = 5) -> List[Document]:
-        """Look up similar documents in pinecone."""
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 5,
+        namespace: Optional[str] = None,
+    ) -> List[Tuple[Document, float]]:
+        """Return pinecone documents most similar to query, along with scores.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            namespace: Namespace to search in. Default will search in '' namespace.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         query_obj = self._embedding_function(query)
         docs = []
-        results = self._index.query([query_obj], top_k=k, include_metadata=True)
+        results = self._index.query(
+            [query_obj], top_k=k, include_metadata=True, namespace=namespace
+        )
+        for res in results["matches"]:
+            metadata = res["metadata"]
+            text = metadata.pop(self._text_key)
+            docs.append((Document(page_content=text, metadata=metadata), res["score"]))
+        return docs
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 5,
+        namespace: Optional[str] = None,
+    ) -> List[Document]:
+        """Return pinecone documents most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            namespace: Namespace to search in. Default will search in '' namespace.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        query_obj = self._embedding_function(query)
+        docs = []
+        results = self._index.query(
+            [query_obj], top_k=k, include_metadata=True, namespace=namespace
+        )
         for res in results["matches"]:
             metadata = res["metadata"]
             text = metadata.pop(self._text_key)
@@ -132,7 +180,7 @@ class Pinecone(VectorStore):
             i_end = min(i + batch_size, len(texts))
             # get batch of texts and ids
             lines_batch = texts[i : i + batch_size]
-            ids_batch = [str(n) for n in range(i, i_end)]
+            ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
