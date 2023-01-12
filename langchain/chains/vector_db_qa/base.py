@@ -36,8 +36,8 @@ class VectorDBQA(Chain, BaseModel):
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
-    _input_keys: List[str] = [input_key]  #: :meta private:
-    _output_keys: List[str] = [output_key]  #: :meta private:
+    return_source_documents: bool = False
+    """Return the source documents."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -51,7 +51,7 @@ class VectorDBQA(Chain, BaseModel):
 
         :meta private:
         """
-        return self._input_keys
+        return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
@@ -59,7 +59,10 @@ class VectorDBQA(Chain, BaseModel):
 
         :meta private:
         """
-        return self._output_keys
+        _output_keys = [self.output_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
 
     # TODO: deprecate this
     @root_validator(pre=True)
@@ -117,13 +120,11 @@ class VectorDBQA(Chain, BaseModel):
         answer, docs = res['result'], res['source_documents']
         """
         question = inputs[self.input_key]
-        return_source_documents = inputs.get("return_source_documents") or False
 
         docs = self.vectorstore.similarity_search(question, k=self.k)
         answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
 
-        if return_source_documents:
-            self._output_keys.append("source_documents")
+        if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
