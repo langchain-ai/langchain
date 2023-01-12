@@ -150,3 +150,10 @@ class Pinecone(VectorStore):
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key)
+
+    @classmethod
+    def from_existing_index(cls,
+                            index_name: str,
+                            embedding: Embeddings,
+                            text_key: str = "text"):
+        return cls(pinecone.Index(index_name), embedding.embed_query, text_key)
