@@ -327,7 +327,7 @@ def test_tracer_llm_run_on_error() -> None:
         prompts=[],
         response=None,
         session_id=TEST_SESSION_ID,
-        error=str(exception),
+        error=repr(exception),
     )
     tracer = FakeTracer()
 
@@ -353,7 +353,7 @@ def test_tracer_chain_run_on_error() -> None:
         inputs={},
         outputs=None,
         session_id=TEST_SESSION_ID,
-        error=str(exception),
+        error=repr(exception),
     )
     tracer = FakeTracer()
 
@@ -380,7 +380,7 @@ def test_tracer_tool_run_on_error() -> None:
         output=None,
         action="action",
         session_id=TEST_SESSION_ID,
-        error=str(exception),
+        error=repr(exception),
     )
     tracer = FakeTracer()
 
@@ -423,7 +423,7 @@ def test_tracer_nested_runs_on_error() -> None:
         execution_order=1,
         serialized={},
         session_id="test_session_id",
-        error="test",
+        error=repr(exception),
         inputs={},
         outputs=None,
         child_runs=[
@@ -459,7 +459,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 execution_order=4,
                 serialized={},
                 session_id="test_session_id",
-                error="test",
+                error=repr(exception),
                 tool_input="test",
                 output=None,
                 action="action",
@@ -472,7 +472,7 @@ def test_tracer_nested_runs_on_error() -> None:
                         execution_order=5,
                         serialized={},
                         session_id="test_session_id",
-                        error="test",
+                        error=repr(exception),
                         prompts=[],
                         response=None,
                     )
