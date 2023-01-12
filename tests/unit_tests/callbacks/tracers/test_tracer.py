@@ -20,9 +20,10 @@ from langchain.callbacks.tracers.base import (
     TracerException,
     TracerSession,
 )
+from langchain.callbacks.tracers.schemas import TracerSessionCreate
 from langchain.schema import AgentAction, LLMResult
 
-TEST_SESSION_ID = "test_session_id"
+TEST_SESSION_ID = 2023
 
 
 @freeze_time("2023-01-01")
@@ -125,10 +126,10 @@ class FakeTracer(Tracer):
 
         return None
 
-    def _persist_session(self, session: TracerSession) -> None:
+    def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
-        session.id = TEST_SESSION_ID
+        return TracerSession(id=TEST_SESSION_ID, start_time=session.start_time, extra=session.extra)
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a tracing session."""
@@ -161,10 +162,10 @@ class FakeSharedTracer(SharedTracer):
 
         return None
 
-    def _persist_session(self, session: TracerSession) -> None:
+    def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
-        session.id = TEST_SESSION_ID
+        return TracerSession(id=TEST_SESSION_ID, **session.dict())
 
     def remove_runs(self):
         """Remove all runs."""
@@ -422,7 +423,7 @@ def test_tracer_nested_runs_on_error() -> None:
         extra={},
         execution_order=1,
         serialized={},
-        session_id="test_session_id",
+        session_id=TEST_SESSION_ID,
         error=repr(exception),
         inputs={},
         outputs=None,
@@ -434,7 +435,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 extra={},
                 execution_order=2,
                 serialized={},
-                session_id="test_session_id",
+                session_id=TEST_SESSION_ID,
                 error=None,
                 prompts=[],
                 response=LLMResult(generations=[[]], llm_output=None),
@@ -446,7 +447,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 extra={},
                 execution_order=3,
                 serialized={},
-                session_id="test_session_id",
+                session_id=TEST_SESSION_ID,
                 error=None,
                 prompts=[],
                 response=LLMResult(generations=[[]], llm_output=None),
@@ -458,7 +459,7 @@ def test_tracer_nested_runs_on_error() -> None:
                 extra={},
                 execution_order=4,
                 serialized={},
-                session_id="test_session_id",
+                session_id=TEST_SESSION_ID,
                 error=repr(exception),
                 tool_input="test",
                 output=None,
@@ -471,7 +472,7 @@ def test_tracer_nested_runs_on_error() -> None:
                         extra={},
                         execution_order=5,
                         serialized={},
-                        session_id="test_session_id",
+                        session_id=TEST_SESSION_ID,
                         error=repr(exception),
                         prompts=[],
                         response=None,

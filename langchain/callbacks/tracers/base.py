@@ -11,64 +11,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from dataclasses_json import dataclass_json
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.shared import Singleton
+from langchain.callbacks.tracers.schemas import TracerSession, TracerSessionCreate, LLMRun, ChainRun, ToolRun
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-
-
-@dataclass_json
-@dataclass
-class TracerSession:
-    id: Optional[Union[int, str]]
-    start_time: datetime = field(default_factory=datetime.utcnow)
-    extra: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass_json
-@dataclass
-class Run:
-    id: Optional[Union[int, str]]
-    start_time: datetime
-    end_time: Optional[datetime]
-    extra: Dict[str, Any]
-    execution_order: int
-    serialized: Dict[str, Any]
-    session_id: Optional[Union[int, str]]
-    error: Optional[str]
-
-
-@dataclass_json
-@dataclass
-class LLMRun(Run):
-    prompts: List[str]
-    response: Optional[LLMResult]
-
-
-@dataclass_json
-@dataclass
-class ChainRun(Run):
-    inputs: Dict[str, Any]
-    outputs: Optional[Dict[str, Any]]
-    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
-
-    child_llm_runs: List[LLMRun] = field(default_factory=list)
-    child_chain_runs: List[ChainRun] = field(default_factory=list)
-    child_tool_runs: List[ToolRun] = field(default_factory=list)
-
-
-@dataclass_json
-@dataclass
-class ToolRun(Run):
-    tool_input: str
-    output: Optional[str]
-    action: str
-    child_runs: List[Run] = field(default_factory=list)  # Consolidated child runs
-
-    child_llm_runs: List[LLMRun] = field(default_factory=list)
-    child_chain_runs: List[ChainRun] = field(default_factory=list)
-    child_tool_runs: List[ToolRun] = field(default_factory=list)
 
 
 class TracerException(Exception):
@@ -91,7 +38,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Persist a run."""
 
     @abstractmethod
-    def _persist_session(self, session: TracerSession) -> None:
+    def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
     @abstractmethod
@@ -100,8 +47,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def new_session(self, **kwargs) -> TracerSession:
         """Start a new tracing session. NOT thread safe, do not call this method from multiple threads."""
-        session = TracerSession(id=None, extra=kwargs)
-        self._persist_session(session)
+        session_create = TracerSessionCreate(extra=kwargs)
+        session = self._persist_session(session_create)
         self._session = session
         return session
 
@@ -174,11 +121,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
-            id=self._generate_id(),
-            response=None,
-            end_time=None,
             session_id=self._session.id,
-            error=None,
+            id=self._generate_id(),
         )
         self._start_trace(llm_run)
 
@@ -223,12 +167,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
-            id=self._generate_id(),
-            outputs=None,
-            end_time=None,
             child_runs=[],
             session_id=self._session.id,
-            error=None,
+            id=self._generate_id(),
         )
         self._start_trace(chain_run)
 
@@ -271,12 +212,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
-            id=self._generate_id(),
-            output=None,
-            end_time=None,
             child_runs=[],
             session_id=self._session.id,
-            error=None,
+            id=self._generate_id(),
         )
         self._start_trace(tool_run)
 
@@ -402,12 +340,14 @@ class BaseJsonTracer(BaseTracer, ABC):
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
 
-        print(run.to_json(indent=2))
+        print(run.json(indent=2))
 
-    def _persist_session(self, session: TracerSession) -> None:
+    def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
         """Persist a session."""
 
-        print(session.to_json(indent=2))
+        session = TracerSession(id=self._generate_id(), **session_create.dict())
+        print(session.json(indent=2))
+        return session
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a session from the tracer."""
@@ -444,25 +384,23 @@ class BaseLangChainTracer(BaseTracer, ABC):
             endpoint = f"{self._endpoint}/chain-runs"
         else:
             endpoint = f"{self._endpoint}/tool-runs"
-        r = requests.post(
+        requests.post(
             endpoint,
-            data=run.to_json(),
+            data=run.json(),
             headers={"Content-Type": "application/json"},
         )
         # print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
 
-    def _persist_session(self, session: TracerSession) -> None:
+    def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
         """Persist a session."""
 
         r = requests.post(
             f"{self._endpoint}/sessions",
-            data=session.to_json(),
+            data=session_create.json(),
             headers={"Content-Type": "application/json"},
         )
-        # print(
-        #     f"POST {self._endpoint}/sessions, status code: {r.status_code}, id: {r.json()['id']}"
-        # )
-        session.id = r.json()["id"]
+        session = TracerSession(id=r.json()["id"], **session_create.dict())
+        return session
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a session from the tracer."""
@@ -470,7 +408,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
         r = requests.get(f"{self._endpoint}/sessions/{session_id}")
         if r.status_code != 200:
             raise TracerException(f"Failed to load session {session_id}")
-        tracer_session = TracerSession.from_dict(r.json())
+        tracer_session = TracerSession(**r.json())
         self._session = tracer_session
         return tracer_session
 
