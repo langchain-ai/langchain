@@ -223,7 +223,7 @@ class SpacyTextSplitter(TextSplitter):
         self, separator: str = "\n\n", pipeline: str = "en_core_web_sm", **kwargs: Any
     ):
         """Initialize the spacy text splitter."""
-        super.__init__(**kwargs)
+        super().__init__(**kwargs)
         try:
             import spacy
         except ImportError:
