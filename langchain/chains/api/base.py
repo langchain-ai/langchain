@@ -9,7 +9,7 @@ from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts import BasePromptTemplate
 from langchain.requests import RequestsWrapper
 
 
@@ -22,8 +22,6 @@ class APIChain(Chain, BaseModel):
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT
-    api_url_prompt: BasePromptTemplate = API_URL_PROMPT
 
     @property
     def input_keys(self) -> List[str]:
@@ -83,12 +81,18 @@ class APIChain(Chain, BaseModel):
 
     @classmethod
     def from_llm_and_api_docs(
-        cls, llm: BaseLLM, api_docs: str, headers: Optional[dict] = None, **kwargs: Any
+        cls,
+        llm: BaseLLM,
+        api_docs: str,
+        headers: Optional[dict] = None,
+        api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
+        api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
+        **kwargs: Any,
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
-        get_request_chain = LLMChain(llm=llm, prompt=self.api_url_prompt)
+        get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
         requests_wrapper = RequestsWrapper(headers=headers)
-        get_answer_chain = LLMChain(llm=llm, prompt=self.api_response_prompt)
+        get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
         return cls(
             api_request_chain=get_request_chain,
             api_answer_chain=get_answer_chain,
