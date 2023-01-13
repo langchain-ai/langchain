@@ -1,23 +1,21 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List
 
+from langchain import PromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import PROMPT
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
-
 
 
 class QAEvalChain(LLMChain):
     """LLM Chain specifically for evaluating question answering."""
 
-    prompt: BasePromptTemplate = PROMPT
-    """Prompt to use to evaluate."""
-
     @classmethod
-    def from_llm(cls, llm: BaseLLM, prompt=prompt, **kwargs: Any) -> QAEvalChain:
+    def from_llm(
+        cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
+    ) -> QAEvalChain:
         """Load QA Eval Chain from LLM."""
         return cls(llm=llm, prompt=prompt, **kwargs)
 
@@ -31,11 +29,27 @@ class QAEvalChain(LLMChain):
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = []
-        for i, example in enumerate(examples):
-            _input = {
-                "query": example[question_key],
-                "answer": example[answer_key],
-                "result": predictions[i][prediction_key],
-            }
-            inputs.append(_input)
+        if self.prompt != PROMPT:
+            prompt_keys = self.prompt.input_variables
+            input_keys = [question_key, answer_key, prediction_key]
+            if set(prompt_keys) != set(input_keys):
+                raise ValueError(
+                    f"Input keys {input_keys} do not match prompt keys {prompt_keys}"
+                )
+            for i, example in enumerate(examples):
+                _input = {
+                    question_key: example[question_key],
+                    answer_key: example[answer_key],
+                    prediction_key: predictions[i][prediction_key],
+                }
+                inputs.append(_input)
+        else:
+            for i, example in enumerate(examples):
+                _input = {
+                    "query": example[question_key],
+                    "answer": example[answer_key],
+                    "result": predictions[i][prediction_key],
+                }
+                inputs.append(_input)
+
         return self.apply(inputs)
