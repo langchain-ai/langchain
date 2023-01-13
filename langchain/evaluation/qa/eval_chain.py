@@ -6,15 +6,20 @@ from typing import Any, List
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import PROMPT
 from langchain.llms.base import BaseLLM
+from langchain.prompts.base import BasePromptTemplate
+
 
 
 class QAEvalChain(LLMChain):
     """LLM Chain specifically for evaluating question answering."""
 
+    prompt: BasePromptTemplate = PROMPT
+    """Prompt to use to evaluate."""
+
     @classmethod
     def from_llm(cls, llm: BaseLLM, **kwargs: Any) -> QAEvalChain:
         """Load QA Eval Chain from LLM."""
-        return cls(llm=llm, prompt=PROMPT, **kwargs)
+        return cls(llm=llm, prompt=cls.prompt, **kwargs)
 
     def evaluate(
         self,
