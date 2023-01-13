@@ -6,7 +6,7 @@ import os
 import sys
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
@@ -25,6 +25,15 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
+def _get_default_params():
+    return {
+        "engine": "google",
+        "google_domain": "google.com",
+        "gl": "us",
+        "hl": "en",
+    }
+
+
 class SerpAPIWrapper(BaseModel):
     """Wrapper around SerpAPI.
 
@@ -40,7 +49,7 @@ class SerpAPIWrapper(BaseModel):
     """
 
     search_engine: Any  #: :meta private:
-
+    params: dict = Field(default_factory=_get_default_params)
     serpapi_api_key: Optional[str] = None
 
     class Config:
@@ -68,14 +77,11 @@ class SerpAPIWrapper(BaseModel):
 
     def run(self, query: str) -> str:
         """Run query through SerpAPI and parse result."""
-        params = {
+        _params = {
             "api_key": self.serpapi_api_key,
-            "engine": "google",
             "q": query,
-            "google_domain": "google.com",
-            "gl": "us",
-            "hl": "en",
         }
+        params = {**self.params, **_params}
         with HiddenPrints():
             search = self.search_engine(params)
             res = search.get_dict()
