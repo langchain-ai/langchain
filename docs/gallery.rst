@@ -189,6 +189,44 @@ Open Source
 
     This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
 
+Misc. Colab Notebooks
+~~~~~~~~~~~~~~~
+
+.. panels::
+    :body: text-center
+
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1AAyEdTz-Z6ShKvewbt1ZHUICqak0MiwR?usp=sharing
+        :type: url
+        :text: Wolfram Alpha in Conversational Agent
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Give ChatGPT a WolframAlpha neural implant
+    
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1UsCLcPy8q5PMNQ5ytgrAAAHa124dzLJg?usp=sharing
+        :type: url
+        :text: Tool Updates in Agents
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Agent improvements (6th Jan 2023)
+    
+    ---
+
+    .. link-button:: https://colab.research.google.com/drive/1UsCLcPy8q5PMNQ5ytgrAAAHa124dzLJg?usp=sharing
+        :type: url
+        :text: Conversational Agent with Tools (Langchain AGI)
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Langchain AGI (23rd Dec 2022)    
 
 Proprietary
 -----------
