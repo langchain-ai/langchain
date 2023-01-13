@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT
 from langchain.llms.base import BaseLLM
+from langchain.prompts.base import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 
 
@@ -25,6 +26,8 @@ class SQLDatabaseChain(Chain, BaseModel):
     """LLM wrapper to use."""
     database: SQLDatabase
     """SQL Database to connect to."""
+    prompt: BasePromptTemplate = PROMPT
+    """Prompt to use to translate natural language to SQL."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -51,7 +54,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        llm_chain = LLMChain(llm=self.llm, prompt=PROMPT)
+        llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         input_text = f"{inputs[self.input_key]} \nSQLQuery:"
         if self.verbose:
             self.callback_manager.on_text(input_text)
