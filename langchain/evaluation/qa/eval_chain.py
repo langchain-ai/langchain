@@ -1,7 +1,7 @@
 """LLM Chain specifically for evaluating question answering."""
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, List, Optional
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import PROMPT
@@ -17,9 +17,9 @@ class QAEvalChain(LLMChain):
     """Prompt to use to evaluate."""
 
     @classmethod
-    def from_llm(cls, llm: BaseLLM, **kwargs: Any) -> QAEvalChain:
+    def from_llm(cls, llm: BaseLLM, prompt=prompt, **kwargs: Any) -> QAEvalChain:
         """Load QA Eval Chain from LLM."""
-        return cls(llm=llm, prompt=cls.prompt, **kwargs)
+        return cls(llm=llm, prompt=prompt, **kwargs)
 
     def evaluate(
         self,
