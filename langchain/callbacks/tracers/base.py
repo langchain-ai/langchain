@@ -374,6 +374,9 @@ class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
     always_verbose: bool = True
     _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
+    _headers = {"Content-Type": "application/json"}
+    if os.getenv("LANGCHAIN_API_KEY"):
+        _headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
@@ -387,9 +390,8 @@ class BaseLangChainTracer(BaseTracer, ABC):
         requests.post(
             endpoint,
             data=run.json(),
-            headers={"Content-Type": "application/json"},
+            headers=self._headers,
         )
-        # print(f"POST {endpoint}, status code: {r.status_code}, id: {r.json()['id']}")
 
     def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
         """Persist a session."""
@@ -397,7 +399,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
         r = requests.post(
             f"{self._endpoint}/sessions",
             data=session_create.json(),
-            headers={"Content-Type": "application/json"},
+            headers=self._headers,
         )
         session = TracerSession(id=r.json()["id"], **session_create.dict())
         return session
@@ -405,7 +407,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a session from the tracer."""
 
-        r = requests.get(f"{self._endpoint}/sessions/{session_id}")
+        r = requests.get(f"{self._endpoint}/sessions/{session_id}", headers=self._headers)
         if r.status_code != 200:
             raise TracerException(f"Failed to load session {session_id}")
         tracer_session = TracerSession(**r.json())
