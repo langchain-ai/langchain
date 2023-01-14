@@ -31,6 +31,12 @@ class QAEvalChain(LLMChain):
         Returns:
             QAEvalChain: the loaded QA eval chain.
         """
+        expected_input_vars = {"query", "answer", "result"}
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
         return cls(llm=llm, prompt=prompt, **kwargs)
 
     def evaluate(
