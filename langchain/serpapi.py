@@ -25,7 +25,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-def _get_default_params():
+def _get_default_params() -> dict:
     return {
         "engine": "google",
         "google_domain": "google.com",
