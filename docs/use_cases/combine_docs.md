@@ -55,7 +55,7 @@ There are two big issues to deal with in fetching:
 ### Text Splitting
 One big issue with all of these methods is how to make sure you are working with pieces of text that are not too large.
 This is important because most language models have a context length, and so you cannot (yet) just pass a 
-large document in as context. Therefor, it is important to not only fetch relevant data but also make sure it is
+large document in as context. Therefore, it is important to not only fetch relevant data but also make sure it is in
 small enough chunks.
 
 LangChain provides some utilities to help with splitting up larger pieces of data. This comes in the form of the TextSplitter class.
