@@ -16,7 +16,21 @@ class QAEvalChain(LLMChain):
     def from_llm(
         cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
     ) -> QAEvalChain:
-        """Load QA Eval Chain from LLM."""
+        """Load QA Eval Chain from LLM.
+
+        Args:
+            llm (BaseLLM): the base language model to use.
+
+            prompt (PromptTemplate): A prompt template containing the input_variables:
+            'input', 'answer' and 'result' that will be used as the prompt
+            for evaluation.
+            Defaults to PROMPT.
+
+            **kwargs: additional keyword arguments.
+
+        Returns:
+            QAEvalChain: the loaded QA eval chain.
+        """
         return cls(llm=llm, prompt=prompt, **kwargs)
 
     def evaluate(
@@ -29,27 +43,12 @@ class QAEvalChain(LLMChain):
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
         inputs = []
-        if self.prompt != PROMPT:
-            prompt_keys = self.prompt.input_variables
-            input_keys = [question_key, answer_key, prediction_key]
-            if set(prompt_keys) != set(input_keys):
-                raise ValueError(
-                    f"Input keys {input_keys} do not match prompt keys {prompt_keys}"
-                )
-            for i, example in enumerate(examples):
-                _input = {
-                    question_key: example[question_key],
-                    answer_key: example[answer_key],
-                    prediction_key: predictions[i][prediction_key],
-                }
-                inputs.append(_input)
-        else:
-            for i, example in enumerate(examples):
-                _input = {
-                    "query": example[question_key],
-                    "answer": example[answer_key],
-                    "result": predictions[i][prediction_key],
-                }
-                inputs.append(_input)
+        for i, example in enumerate(examples):
+            _input = {
+                "query": example[question_key],
+                "answer": example[answer_key],
+                "result": predictions[i][prediction_key],
+            }
+            inputs.append(_input)
 
         return self.apply(inputs)
