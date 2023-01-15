@@ -19,7 +19,7 @@ Sometimes, for complex calculations, rather than have an LLM generate the answer
 it can be better to have the LLM generate code to calculate the answer, and then run that code to get the answer. 
 In order to easily do that, we provide a simple Python REPL to execute commands in.
 This interface will only return things that are printed - 
-therefor, if you want to use it to calculate an answer, make sure to have it print out the answer.
+therefore, if you want to use it to calculate an answer, make sure to have it print out the answer.
 
 ## Bash
 It can often be useful to have an LLM generate bash commands, and then run them. 

@@ -2,7 +2,7 @@ LLMs
 ==========================
 
 Large Language Models (LLMs) are a core component of LangChain.
-LangChain is a provider of LLMs, but rather provides a standard interface through which
+LangChain is not a provider of LLMs, but rather provides a standard interface through which
 you can interact with a variety of LLMs.
 
 The following sections of documentation are provided:

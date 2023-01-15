@@ -80,6 +80,7 @@ class Pinecone(VectorStore):
         self,
         query: str,
         k: int = 5,
+        filter: Optional[dict] = None,
         namespace: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
         """Return pinecone documents most similar to query, along with scores.
@@ -87,6 +88,7 @@ class Pinecone(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Dictionary of argument(s) to filter on metadata
             namespace: Namespace to search in. Default will search in '' namespace.
 
         Returns:
@@ -95,7 +97,11 @@ class Pinecone(VectorStore):
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
-            [query_obj], top_k=k, include_metadata=True, namespace=namespace
+            [query_obj],
+            top_k=k,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
         )
         for res in results["matches"]:
             metadata = res["metadata"]
@@ -107,6 +113,7 @@ class Pinecone(VectorStore):
         self,
         query: str,
         k: int = 5,
+        filter: Optional[dict] = None,
         namespace: Optional[str] = None,
     ) -> List[Document]:
         """Return pinecone documents most similar to query.
@@ -114,6 +121,7 @@ class Pinecone(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Dictionary of argument(s) to filter on metadata
             namespace: Namespace to search in. Default will search in '' namespace.
 
         Returns:
@@ -122,7 +130,11 @@ class Pinecone(VectorStore):
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
-            [query_obj], top_k=k, include_metadata=True, namespace=namespace
+            [query_obj],
+            top_k=k,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
         )
         for res in results["matches"]:
             metadata = res["metadata"]
