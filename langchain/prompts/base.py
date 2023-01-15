@@ -64,6 +64,14 @@ class ListOutputParser(BaseOutputParser):
         """Parse the output of an LLM call."""
 
 
+class CommaSeparatedListOutputParser(ListOutputParser):
+    """Parse out comma separated lists."""
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+
 class RegexParser(BaseOutputParser, BaseModel):
     """Class to parse the output into a dictionary."""
 
