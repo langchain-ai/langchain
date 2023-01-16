@@ -24,6 +24,12 @@ The examples here are all end-to-end chains for specific applications, focused o
 - **Notes**: This chain takes user input (a question), uses a first LLM chain to construct a SQL query to run against the SQL database, and then uses another LLMChain to take the results of that query and use it to answer the original question.
 - `Example Notebook <./examples/sqlite.html>`_
 
+**API Chain**
+
+- **Links Used**: LLMChain, Requests
+- **Notes**: This chain first uses a LLM to construct the url to hit, then makes that request with the Requests wrapper, and finally runs that result through the language model again in order to product a natural language response.
+- `Example Notebook <./examples/api.html>`_
+
 **LLMBash Chain**
 
 - **Links Used**: BashProcess, LLMChain
