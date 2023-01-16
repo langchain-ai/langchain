@@ -29,10 +29,10 @@ class ChainConfig(NamedTuple):
 
 def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     """Parse out the action and input from the LLM output.
-    
+
     Note: if you're specifying a custom prompt for the ZeroShotAgent, you will need to ensure that it meets the following Regex requirements.
     The string starting with "Action:" and the following string starting with "Action Input:" should be separated by a newline.
-    
+
     """
     if FINAL_ANSWER_ACTION in llm_output:
         return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
