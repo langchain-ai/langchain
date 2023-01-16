@@ -30,8 +30,10 @@ class Wikipedia(Docstore):
 
         try:
             page_content = wikipedia.page(search).content
-            url          = wikipedia.page(search).url
-            result: Union[str, Document] = Document(page_content=page_content,metadata={"page": url})
+            url = wikipedia.page(search).url
+            result: Union[str, Document] = Document(
+                page_content=page_content, metadata={"page": url}
+            )
         except wikipedia.PageError:
             result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
         except wikipedia.DisambiguationError:
