@@ -30,6 +30,8 @@ class SQLDatabaseChain(Chain, BaseModel):
     """SQL Database to connect to."""
     prompt: BasePromptTemplate = PROMPT
     """Prompt to use to translate natural language to SQL."""
+    top_k: int = 5
+    """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
 
@@ -65,10 +67,12 @@ class SQLDatabaseChain(Chain, BaseModel):
         table_info = self.database.get_table_info(table_names=table_names_to_use)
         llm_inputs = {
             "input": input_text,
+            "top_k": self.top_k,
             "dialect": self.database.dialect,
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
+
         sql_cmd = llm_chain.predict(**llm_inputs)
         if self.verbose:
             self.callback_manager.on_text(sql_cmd, color="green")
