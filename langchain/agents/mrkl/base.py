@@ -10,7 +10,7 @@ from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
-FINAL_ANSWER_ACTION = "Final Answer: "
+FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class ChainConfig(NamedTuple):
@@ -35,7 +35,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     
     """
     if FINAL_ANSWER_ACTION in llm_output:
-        return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1]
+        return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
     regex = r"Action: (.*?)\nAction Input: (.*)"
     match = re.search(regex, llm_output)
     if not match:

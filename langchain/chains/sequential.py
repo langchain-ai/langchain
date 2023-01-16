@@ -47,7 +47,10 @@ class SequentialChain(Chain, BaseModel):
         for chain in chains:
             missing_vars = set(chain.input_keys).difference(known_variables)
             if missing_vars:
-                raise ValueError(f"Missing required input keys: {missing_vars}")
+                raise ValueError(
+                    f"Missing required input keys: {missing_vars}, "
+                    f"only had {known_variables}"
+                )
             overlapping_keys = known_variables.intersection(chain.output_keys)
             if overlapping_keys:
                 raise ValueError(
