@@ -118,11 +118,18 @@ class AI21(LLM, BaseModel):
         """
         if stop is None:
             stop = []
-        response = requests.post(
-            url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
-            headers={"Authorization": f"Bearer {self.ai21_api_key}"},
-            json={"prompt": prompt, "stopSequences": stop, **self._default_params},
-        )
+        if self.model == "j1-grande-instruct":  # beta model
+            response = requests.post(
+                url=f"https://api.ai21.com/studio/v1/experimental/{self.model}/complete",
+                headers={"Authorization": f"Bearer {self.ai21_api_key}"},
+                json={"prompt": prompt, "stopSequences": stop, **self._default_params},
+            )
+        else:
+            response = requests.post(
+                url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
+                headers={"Authorization": f"Bearer {self.ai21_api_key}"},
+                json={"prompt": prompt, "stopSequences": stop, **self._default_params},
+            )
         if response.status_code != 200:
             optional_detail = response.json().get("error")
             raise ValueError(
