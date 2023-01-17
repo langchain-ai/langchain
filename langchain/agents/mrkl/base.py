@@ -6,6 +6,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.mrkl.sql_prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
@@ -93,6 +94,17 @@ class ZeroShotAgent(Agent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
 
+class SQLAgent(ZeroShotAgent):
+    @classmethod
+    def create_prompt(
+        cls,
+        tools: List[Tool],
+        prefix: str = SQL_PREFIX,
+        suffix: str = SQL_SUFFIX,
+        input_variables: Optional[List[str]] = None,
+    ) -> PromptTemplate:
+        return super().create_prompt(tools, prefix, suffix, input_variables)
+
 
 class MRKLChain(AgentExecutor):
     """Chain that implements the MRKL system.
@@ -103,9 +115,8 @@ class MRKLChain(AgentExecutor):
             from langchain import OpenAI, MRKLChain
             from langchain.chains.mrkl.base import ChainConfig
             llm = OpenAI(temperature=0)
-            prompt = PromptTemplate(...)
             chains = [...]
-            mrkl = MRKLChain.from_chains(llm=llm, prompt=prompt)
+            mrkl = MRKLChain.from_chains(llm=llm, chains=chains)
     """
 
     @classmethod
@@ -151,5 +162,6 @@ class MRKLChain(AgentExecutor):
             Tool(name=c.action_name, func=c.action, description=c.action_description)
             for c in chains
         ]
+
         agent = ZeroShotAgent.from_llm_and_tools(llm, tools)
         return cls(agent=agent, tools=tools, **kwargs)
