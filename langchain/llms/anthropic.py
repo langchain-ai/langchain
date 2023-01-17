@@ -18,7 +18,7 @@ class Anthropic(LLM, BaseModel):
         .. code-block:: python
 
             from langchain import Anthropic
-            anthropic = Anthropic(model_name="<model_name>", anthropic_api_key="my-api-key")
+            anthropic = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
