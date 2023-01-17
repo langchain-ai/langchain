@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import threading
 import uuid
@@ -387,32 +388,46 @@ class BaseLangChainTracer(BaseTracer, ABC):
             endpoint = f"{self._endpoint}/chain-runs"
         else:
             endpoint = f"{self._endpoint}/tool-runs"
-        requests.post(
-            endpoint,
-            data=run.json(),
-            headers=self._headers,
-        )
+
+        try:
+            requests.post(
+                endpoint,
+                data=run.json(),
+                headers=self._headers,
+            )
+        except:
+            logging.warning(f"Failed to persist run")
 
     def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
         """Persist a session."""
-
-        r = requests.post(
-            f"{self._endpoint}/sessions",
-            data=session_create.json(),
-            headers=self._headers,
-        )
-        session = TracerSession(id=r.json()["id"], **session_create.dict())
+        try:
+            r = requests.post(
+                f"{self._endpoint}/sessions",
+                data=session_create.json(),
+                headers=self._headers,
+            )
+            session = TracerSession(id=r.json()["id"], **session_create.dict())
+        except:
+            logging.warning("Failed to create session, using default session")
+            session = TracerSession(id=1, **session_create.dict())
         return session
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a session from the tracer."""
 
-        r = requests.get(f"{self._endpoint}/sessions/{session_id}", headers=self._headers)
-        if r.status_code != 200:
-            raise TracerException(f"Failed to load session {session_id}")
-        tracer_session = TracerSession(**r.json())
-        self._session = tracer_session
-        return tracer_session
+        try:
+            r = requests.get(
+                f"{self._endpoint}/sessions/{session_id}",
+                headers=self._headers,
+            )
+            tracer_session = TracerSession(**r.json())
+            self._session = tracer_session
+            return tracer_session
+        except:
+            logging.warning(f"Failed to load session {session_id}, using empty session")
+            tracer_session = TracerSession(id=session_id)
+            self._session = tracer_session
+            return tracer_session
 
     def _add_child_run(
         self,
