@@ -1,5 +1,5 @@
 """Wrapper around Cohere APIs."""
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -103,3 +103,24 @@ class Anthropic(LLM, BaseModel):
         )
         text = response['completion']
         return text
+
+    def stream(self, prompt: str) -> Generator:
+        """Call Anthropic completion_stream and return the resulting generator.
+
+        BETA: this is a beta feature while we figure out the right abstraction.
+        Once that happens, this interface could change.
+
+        Args:
+            prompt: The prompts to pass into the model.
+
+        Returns:
+            A generator representing the stream of tokens from Anthropic.
+
+        Example:
+            .. code-block:: python
+
+                generator = anthropic.stream("Tell me a joke.")
+                for token in generator:
+                    yield token
+        """
+        return self.client.completion_stream(prompt=prompt, **self._default_params)
