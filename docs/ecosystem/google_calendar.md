@@ -24,11 +24,17 @@ For a more detailed walkthrough of this wrapper, see [this notebook](../modules/
 
 ### Tool
 
-You can also easily load this wrapper as a Tool (to use with an Agent).
-You can do this with:
+You can use it like:
+
 ```python
-from langchain.agents import load_tools
-tools = load_tools(["google-search"])
+from langchain.utilities.google_calendar import GoogleCalendarAPIWrapper
+
+google_calendar = GoogleCalendarAPIWrapper()
+
+Tool(
+    name="Google Calendar",
+    func=google_calendar.run,
+    description="Useful for when you need to perform an action in a calendar. The input should be the initial query you want to ask the calendar.",
+),
 ```
 
-For more information on this, see [this page](../modules/agents/tools.md)
