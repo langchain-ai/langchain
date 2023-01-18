@@ -4,11 +4,12 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
+from langchain import LLMChain
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.mrkl.sql_prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.tools import Tool
-from langchain.llms.base import BaseLLM
+from langchain.llms.base import BaseLLM, BaseCallbackManager
 from langchain.prompts import PromptTemplate
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -94,6 +95,7 @@ class ZeroShotAgent(Agent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
 
+
 class SQLAgent(ZeroShotAgent):
     @classmethod
     def create_prompt(
@@ -104,6 +106,41 @@ class SQLAgent(ZeroShotAgent):
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
         return super().create_prompt(tools, prefix, suffix, input_variables)
+
+    @classmethod
+    def from_llm_and_sql_tool(
+        cls,
+        llm: BaseLLM,
+        sql_tool: Tool,
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and SQL Chain tool."""
+
+        cls._validate_tool(sql_tool)
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=cls.create_prompt([sql_tool]),
+            callback_manager=callback_manager,
+        )
+        return cls(llm_chain=llm_chain, **kwargs)
+
+    @classmethod
+    def _validate_tool(cls, tool: Tool) -> None:
+
+        if isinstance(tool, List):
+            raise TypeError("The SQLAgent must be used with only one tool.")
+
+        if tool.func.__self__.__class__.__name__ != "SQLDatabaseChain":
+            raise ValueError(
+                "The SQLAgent must be used with an 'SQLDatabaseChain' based tool."
+            )
+
+        if tool.description is None:
+            raise ValueError(
+                f"Got a tool {tool.name} without a description. For this agent, "
+                f"a description must always be provided."
+            )
 
 
 class MRKLChain(AgentExecutor):

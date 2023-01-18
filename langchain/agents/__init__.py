@@ -3,7 +3,7 @@ from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.load_tools import get_all_tool_names, load_tools
 from langchain.agents.loading import initialize_agent
-from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent, SQLAgent
+from langchain.agents.mrkl.base import MRKLChain, SQLAgent, ZeroShotAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.tools import Tool
