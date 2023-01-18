@@ -123,4 +123,4 @@ class Anthropic(LLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        return self.client.completion_stream(prompt=prompt, **self._default_params)
+        return self.client.completion_stream(model=self.model, prompt=prompt, **self._default_params)
