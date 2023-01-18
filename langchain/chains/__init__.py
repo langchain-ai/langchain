@@ -12,7 +12,10 @@ from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.chains.sql_database.base import SQLDatabaseChain, SQLDatabaseSequentialChain
+from langchain.chains.sql_database.base import (
+    SQLDatabaseChain,
+    SQLDatabaseSequentialChain,
+)
 from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
