@@ -14,7 +14,7 @@ from langchain.utilities.google_calendar.prompts import (
 )
 
 
-class GoogleCalendarWrapper(BaseModel):
+class GoogleCalendarAPIWrapper(BaseModel):
     """Wrapper around Google Calendar API.
 
     To use, you need to create a Google Cloud project and
@@ -22,6 +22,10 @@ class GoogleCalendarWrapper(BaseModel):
 
     Follow instructions here:
     - https://developers.google.com/calendar/api/quickstart/python
+
+    For pip libraries:
+    - pip install --upgrade
+    google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
     OAuth2.0 done through credentials.json folder in the root directory.
     """

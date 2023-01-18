@@ -1,4 +1,4 @@
 """Google Calendar utilities."""
-from langchain.utilities.google_calendar.base import GoogleCalendarWrapper
+from langchain.utilities.google_calendar.base import GoogleCalendarAPIWrapper
 
-__all__ = ["GoogleCalendarWrapper"]
+__all__ = ["GoogleCalendarAPIWrapper"]

@@ -14,6 +14,7 @@ from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.google_calendar import GoogleCalendarAPIWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -140,10 +141,18 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
         "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
     )
 
+def _get_google_calendar() -> Tool:
+    return Tool(
+            name="Google Calendar",
+            func=GoogleCalendarAPIWrapper().run,
+            description="Useful for when you need to perform an action in a calendar. The input should be the initial query you want to ask the calendar.",
+        )
+
 
 _EXTRA_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+    "google-calendar": (_get_google_calendar, []),
 }
 
 
