@@ -64,6 +64,9 @@ class AI21(LLM, BaseModel):
 
     ai21_api_key: Optional[str] = None
 
+    base_url: Optional[str] = None
+    """Base url to use, if None decides based on model name."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -118,8 +121,15 @@ class AI21(LLM, BaseModel):
         """
         if stop is None:
             stop = []
+        if self.base_url is not None:
+            base_url = self.base_url
+        else:
+            if self.model in ("j1-grande-instruct",):
+                base_url = "https://api.ai21.com/studio/v1/experimental"
+            else:
+                base_url = "https://api.ai21.com/studio/v1"
         response = requests.post(
-            url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
+            url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
             json={"prompt": prompt, "stopSequences": stop, **self._default_params},
         )
