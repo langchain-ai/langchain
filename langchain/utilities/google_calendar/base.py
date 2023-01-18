@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.utilities.google_calendar.prompts import (
     CLASSIFICATION_PROMPT,
     CREATE_EVENT_PROMPT,
@@ -211,6 +210,8 @@ class GoogleCalendarAPIWrapper(BaseModel):
 
     def run_classification(self, query: str) -> str:
         """Run classification on query."""
+        from langchain import LLMChain, OpenAI, PromptTemplate
+
         prompt = PromptTemplate(
             template=CLASSIFICATION_PROMPT, input_variables=["query"]
         )
@@ -223,6 +224,8 @@ class GoogleCalendarAPIWrapper(BaseModel):
 
     def run_create_event(self, query: str) -> str:
         """Run create event on query."""
+        from langchain import LLMChain, OpenAI, PromptTemplate
+
         # Use a classification chain to classify the query
         date_prompt = PromptTemplate(
             input_variables=["date", "query", "u_timezone"],

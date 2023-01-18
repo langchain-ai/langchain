@@ -28,9 +28,9 @@ from langchain.prompts import (
 )
 from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
+from langchain.utilities.google_calendar import GoogleCalendarAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.utilities.google_calendar import GoogleCalendarAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 verbose: bool = False
