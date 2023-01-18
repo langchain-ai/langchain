@@ -22,7 +22,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
-    model: str = "medium"
+    model: str = "large"
     """Model name to use."""
 
     cohere_api_key: Optional[str] = None
