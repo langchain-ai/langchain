@@ -110,7 +110,8 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
         sql_chain = SQLDatabaseChain(
-            llm=llm, database=database, prompt=query_prompt, **kwargs)
+            llm=llm, database=database, prompt=query_prompt, **kwargs
+        )
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )
