@@ -53,6 +53,7 @@ class Pinecone(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
+        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         namespace: Optional[str] = None,
     ) -> List[str]:
@@ -60,6 +61,7 @@ class Pinecone(VectorStore):
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
+            ids: Optional list of ids to associate with the texts.
             metadatas: Optional list of metadatas associated with the texts.
             namespace: Optional pinecone namespace to add the texts to.
 
@@ -69,14 +71,12 @@ class Pinecone(VectorStore):
         """
         # Embed and create the documents
         docs = []
-        ids = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         for i, text in enumerate(texts):
-            id = str(uuid.uuid4())
             embedding = self._embedding_function(text)
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
-            docs.append((id, embedding, metadata))
-            ids.append(id)
+            docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace)
         return ids
@@ -152,6 +152,7 @@ class Pinecone(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
+        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         batch_size: int = 32,
         text_key: str = "text",
@@ -197,7 +198,11 @@ class Pinecone(VectorStore):
             i_end = min(i + batch_size, len(texts))
             # get batch of texts and ids
             lines_batch = texts[i : i + batch_size]
-            ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
+            # create ids if not provided
+            if ids:
+                ids_batch = ids[i : i + batch_size]
+            else:
+                ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
