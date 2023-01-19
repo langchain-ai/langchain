@@ -14,7 +14,12 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     vectorstore: VectorStore
     """Vector Database to connect to."""
     k: int = 4
+    """Number of results to return from store"""
+    search_kwargs: Dict[str, Any] = {}
+    """Extra search args"""
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        return self.vectorstore.similarity_search(question, k=self.k)
+        return self.vectorstore.similarity_search(
+            question, k=self.k, **self.search_kwargs
+        )
