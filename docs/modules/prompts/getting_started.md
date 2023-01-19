@@ -155,11 +155,11 @@ from langchain.prompts.example_selector import LengthBasedExampleSelector
 
 # These are a lot of examples of a pretend task of creating antonyms.
 examples = [
-    {"input": "happy", "output": "sad"},
-    {"input": "tall", "output": "short"},
-    {"input": "energetic", "output": "lethargic"},
-    {"input": "sunny", "output": "gloomy"},
-    {"input": "windy", "output": "calm"},
+    {"word": "happy", "antonym": "sad"},
+    {"word": "tall", "antonym": "short"},
+    {"word": "energetic", "antonym": "lethargic"},
+    {"word": "sunny", "antonym": "gloomy"},
+    {"word": "windy", "antonym": "calm"},
 ]
 
 # We'll use the `LengthBasedExampleSelector` to select the examples.
@@ -174,7 +174,7 @@ example_selector = LengthBasedExampleSelector(
 )
 
 # We can now use the `example_selector` to create a `FewShotPromptTemplate`.
-few_shot_prompt = FewShotPromptTemplate(
+dynamic_prompt = FewShotPromptTemplate(
     # We provide an ExampleSelector instead of examples.
     example_selector=example_selector,
     example_prompt=example_prompt,
@@ -185,7 +185,7 @@ few_shot_prompt = FewShotPromptTemplate(
 )
 
 # We can now generate a prompt using the `format` method.
-print(few_shot_prompt.format(input="big"))
+print(dynamic_prompt.format(input="big"))
 # -> Give the antonym of every input
 # ->
 # -> Word: happy
