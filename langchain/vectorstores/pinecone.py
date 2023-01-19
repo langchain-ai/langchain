@@ -17,9 +17,14 @@ class Pinecone(VectorStore):
     Example:
         .. code-block:: python
 
-            import pinecone
             from langchain.vectorstores import Pinecone
-            vectorstore = Pinecone(pinecone_index, embedding_function, "text_key")
+            from langchain.embeddings.openai import OpenAIEmbeddings
+            import pinecone
+
+            pinecone.init(api_key="***", environment="us-west1-gcp")
+            index = pinecone.Index("langchain-demo")
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Pinecone(index, embeddings.embed_query, "text")
     """
 
     def __init__(
