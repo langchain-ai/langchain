@@ -20,4 +20,6 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        return self.vectorstore.similarity_search(question, k=self.k, **self.search_kwargs)
+        return self.vectorstore.similarity_search(
+            question, k=self.k, **self.search_kwargs
+        )
