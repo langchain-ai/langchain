@@ -54,7 +54,7 @@ event_summary:\n
 Date format: YYYY-MM-DDThh:mm:ss+00:00
 Based on this event description:\n{query}, output a json of the
 following parameters: \n
-Today's datetime on UTC time {date} and timezeon of the user {u_timezone},
+Today's datetime on UTC time {date} and timezone of the user {u_timezone},
 take into account the timezone of the user and today's date.
 
 
