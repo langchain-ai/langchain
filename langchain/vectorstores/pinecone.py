@@ -53,16 +53,16 @@ class Pinecone(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
-            ids: Optional list of ids to associate with the texts.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
             namespace: Optional pinecone namespace to add the texts to.
 
         Returns:
@@ -152,8 +152,8 @@ class Pinecone(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         batch_size: int = 32,
         text_key: str = "text",
         index_name: Optional[str] = None,
