@@ -120,6 +120,7 @@ class Pinecone(VectorStore):
         k: int = 5,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return pinecone documents most similar to query.
 

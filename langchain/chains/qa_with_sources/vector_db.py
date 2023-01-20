@@ -1,7 +1,7 @@
 """Question-answering with sources over a vector database."""
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
@@ -15,8 +15,8 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Vector Database to connect to."""
     k: int = 4
     """Number of results to return from store"""
-    search_kwargs: Dict[str, Any] = {}
-    """Extra search args"""
+    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Extra search args."""
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
