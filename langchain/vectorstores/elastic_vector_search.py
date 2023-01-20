@@ -106,7 +106,9 @@ class ElasticVectorSearch(VectorStore):
         self.client.indices.refresh(index=self.index_name)
         return ids
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:

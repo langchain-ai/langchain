@@ -103,7 +103,9 @@ class FAISS(VectorStore):
             docs.append((doc, scores[0][j]))
         return docs
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
