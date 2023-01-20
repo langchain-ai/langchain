@@ -71,7 +71,9 @@ class Qdrant(VectorStore):
 
         return ids
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
