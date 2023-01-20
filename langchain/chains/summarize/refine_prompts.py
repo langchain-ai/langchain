@@ -18,7 +18,7 @@ REFINE_PROMPT = PromptTemplate(
 )
 
 
-prompt_template = """Write a concise summary of the following: 
+prompt_template = """Write a concise summary of the following:
 
 
 "{text}"
