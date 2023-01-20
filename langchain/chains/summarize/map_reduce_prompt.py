@@ -1,10 +1,10 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
 
-prompt_template = """Write a concise summary of the following:
+prompt_template = """Write a concise summary of the following: 
 
 
-{text}
+"{text}"
 
 
 CONCISE SUMMARY:"""
