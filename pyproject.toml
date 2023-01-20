@@ -30,6 +30,7 @@ pinecone-client = {version = "^2", optional = true}
 weaviate-client = {version = "^3", optional = true}
 google-api-python-client = {version = "2.70.0", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
+qdrant-client = {version = "^0.11.7", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
