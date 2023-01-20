@@ -1,3 +1,4 @@
+"""Test Qdrant functionality."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -6,6 +7,8 @@ from langchain.vectorstores import Qdrant
 
 
 class FakeEmbeddings(Embeddings):
+    """Fake embeddings functionality for testing."""
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings."""
         return [[1.0] * 9 + [float(i)] for i in range(len(texts))]
@@ -16,6 +19,7 @@ class FakeEmbeddings(Embeddings):
 
 
 def test_qdrant() -> None:
+    """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     docsearch = Qdrant.from_texts(texts, FakeEmbeddings(), host="localhost")
     output = docsearch.similarity_search("foo", k=1)

@@ -11,7 +11,8 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
 class Qdrant(VectorStore):
-    """Wrapper around Qdrant vector database.
+    """
+    Wrapper around Qdrant vector database.
 
     To use you should have the ``qdrant-client`` package installed.
 
@@ -22,9 +23,11 @@ class Qdrant(VectorStore):
 
             client = QdrantClient()
             collection_name = "MyCollection"
-            qdrant = Qdrant(client, collection_name, embedding_function)"""
+            qdrant = Qdrant(client, collection_name, embedding_function)
+    """
 
     def __init__(self, client: Any, collection_name: str, embedding_function: Callable):
+        """Initialize with necessary components."""
         try:
             import qdrant_client
         except ImportError:
@@ -46,6 +49,15 @@ class Qdrant(VectorStore):
     def add_texts(
         self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
     ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
         from qdrant_client.http import models as rest
 
         ids = [uuid.uuid4().hex for _ in texts]
@@ -61,12 +73,30 @@ class Qdrant(VectorStore):
         return ids
 
     def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
         results = self.similarity_search_with_score(query, k)
         return list(map(itemgetter(0), results))
 
     def similarity_search_with_score(
         self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         embedding = self.embedding_function(query)
         results = self.client.search(
             collection_name=self.collection_name,
@@ -85,6 +115,19 @@ class Qdrant(VectorStore):
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
         embedding = self.embedding_function(query)
         results = self.client.search(
             collection_name=self.collection_name,
@@ -105,6 +148,23 @@ class Qdrant(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "Qdrant":
+        """Construct Qdrant wrapper from raw documents.
+
+        This is a user friendly interface that:
+            1. Embeds documents.
+            2. Creates an in memory docstore
+            3. Initializes the Qdrant database
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import Qdrant
+                from langchain.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                faiss = Qdrant.from_texts(texts, embeddings)
+        """
         try:
             import qdrant_client
         except ImportError:
