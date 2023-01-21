@@ -32,20 +32,6 @@ def _get_serpapi() -> Tool:
     )
 
 
-def _get_google_search() -> Tool:
-    return Tool(
-        "Google Search",
-        GoogleSearchAPIWrapper().run,
-        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
-def _get_wolfram_alpha() -> Tool:
-    return Tool(
-        "Wolfram Alpha",
-        WolframAlphaAPIWrapper().run,
-        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
-    )
 
 
 def _get_requests() -> Tool:
@@ -68,9 +54,7 @@ _BASE_TOOLS = {
     "python_repl": _get_python_repl,
     "serpapi": _get_serpapi,
     "requests": _get_requests,
-    "terminal": _get_terminal,
-    "google-search": _get_google_search,
-    "wolfram-alpha": _get_wolfram_alpha,
+    "terminal": _get_terminal
 }
 
 
@@ -140,10 +124,27 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
         "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
     )
 
+def _get_wolfram_alpha(llm=None, **kwargs: Any) -> Tool:
+    return Tool(
+        "Wolfram Alpha",
+        WolframAlphaAPIWrapper(**kwargs).run,
+        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+    )
+
+def _get_google_search(llm=None, **kwargs: Any) -> Tool:
+    return Tool(
+        "Google Search",
+        GoogleSearchAPIWrapper(**kwargs).run,
+        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
 
 _EXTRA_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+    "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),    
+    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"])
 }
 
 
