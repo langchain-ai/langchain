@@ -89,3 +89,15 @@ def test_faiss_add_texts_not_supported() -> None:
     docsearch = FAISS(FakeEmbeddings().embed_query, None, Wikipedia(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
+
+
+def test_faiss_local_save_load() -> None:
+    """Test end to end serialization."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+
+    with tempfile.NamedTemporaryFile() as temp_file:
+        docsearch.save_local(temp_file.name)
+        docsearch.index = None
+        docsearch.load_local(temp_file.name)
+    assert docsearch.index is not None
