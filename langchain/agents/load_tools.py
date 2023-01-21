@@ -32,8 +32,6 @@ def _get_serpapi() -> Tool:
     )
 
 
-
-
 def _get_requests() -> Tool:
     return Tool(
         "Requests",
@@ -54,7 +52,7 @@ _BASE_TOOLS = {
     "python_repl": _get_python_repl,
     "serpapi": _get_serpapi,
     "requests": _get_requests,
-    "terminal": _get_terminal
+    "terminal": _get_terminal,
 }
 
 
@@ -124,14 +122,16 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
         "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
     )
 
-def _get_wolfram_alpha(llm=None, **kwargs: Any) -> Tool:
+
+def _get_wolfram_alpha(**kwargs: Any) -> Tool:
     return Tool(
         "Wolfram Alpha",
         WolframAlphaAPIWrapper(**kwargs).run,
         "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
     )
 
-def _get_google_search(llm=None, **kwargs: Any) -> Tool:
+
+def _get_google_search(**kwargs: Any) -> Tool:
     return Tool(
         "Google Search",
         GoogleSearchAPIWrapper(**kwargs).run,
@@ -139,12 +139,13 @@ def _get_google_search(llm=None, **kwargs: Any) -> Tool:
     )
 
 
-
-_EXTRA_TOOLS = {
+_EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
-    "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),    
-    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"])
+}
+_EXTRA_TOOLS = {
+    "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
+    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
 }
 
 
@@ -168,7 +169,7 @@ def load_tools(
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tools.append(_LLM_TOOLS[name](llm))
-        elif name in _EXTRA_TOOLS:
+        elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
@@ -180,6 +181,17 @@ def load_tools(
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
             tools.append(_get_tool_func(llm=llm, **sub_kwargs))
+        elif name in _EXTRA_TOOLS:
+            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
+            missing_keys = set(extra_keys).difference(kwargs)
+            if missing_keys:
+                raise ValueError(
+                    f"Tool {name} requires some parameters that were not "
+                    f"provided: {missing_keys}"
+                )
+            sub_kwargs = {k: kwargs[k] for k in extra_keys}
+            tools.append(_get_tool_func(**sub_kwargs))
+
         else:
             raise ValueError(f"Got unknown tool {name}")
     return tools
