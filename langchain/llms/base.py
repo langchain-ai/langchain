@@ -160,6 +160,12 @@ class BaseLLM(BaseModel, ABC):
         starter_dict["_type"] = self._llm_type
         return starter_dict
 
+    def dict(
+        self,
+        **kwargs: Any
+    ):
+        return self._llm_dict()
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the LLM.
 
