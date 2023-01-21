@@ -1,12 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Lisa"
-  given-names: "Mona"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-- family-names: "Bot"
-  given-names: "Hew"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
+- family-names: "Chase"
+  given-names: "Harrison"
 title: "LangChain"
 version: 0.0.66
 date-released: 2022-10-17
