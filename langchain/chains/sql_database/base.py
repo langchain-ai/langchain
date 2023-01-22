@@ -76,7 +76,11 @@ class SQLDatabaseChain(Chain, BaseModel):
         sql_cmd = llm_chain.predict(**llm_inputs)
         if self.verbose:
             self.callback_manager.on_text(sql_cmd, color="green")
+        #TODO: add a try except or exception handler here
+        #Can also handle this exception withtn sql_database
+        #want to retry running llm_chain.predict in the same way?
         result = self.database.run(sql_cmd)
+
         if self.verbose:
             self.callback_manager.on_text("\nSQLResult: ")
             self.callback_manager.on_text(result, color="yellow")
