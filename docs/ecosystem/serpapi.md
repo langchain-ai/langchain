@@ -1,7 +1,7 @@
 # SerpAPI
 
 This page covers how to use the SerpAPI search APIs within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Pinecone wrappers.
+It is broken into two parts: installation and setup, and then references to the specific SerpAPI wrapper.
 
 ## Installation and Setup
 - Install requirements with `pip install google-search-results`
