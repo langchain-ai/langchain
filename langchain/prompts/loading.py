@@ -54,15 +54,16 @@ def _load_examples(config: dict) -> dict:
         with open(config["examples"]) as f:
             if config["examples"].endswith(".json"):
                 examples = json.load(f)
-            elif config["examples"].endswith(".yaml") or config["examples"].endswith(".yml"):
+            elif config["examples"].endswith((".yaml", ".yml")):
                 examples = yaml.safe_load(f)
             else:
-                raise ValueError("Invalid file format. Only json or yaml formats are supported.")
+                raise ValueError(
+                    "Invalid file format. Only json or yaml formats are supported."
+                )
         config["examples"] = examples
     else:
         raise ValueError("Invalid examples format. Only list or string are supported.")
     return config
-
 
 
 def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
