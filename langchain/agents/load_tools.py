@@ -23,15 +23,6 @@ def _get_python_repl() -> Tool:
         "A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
     )
 
-
-def _get_serpapi() -> Tool:
-    return Tool(
-        "Search",
-        SerpAPIWrapper().run,
-        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
 def _get_requests() -> Tool:
     return Tool(
         "Requests",
@@ -50,7 +41,6 @@ def _get_terminal() -> Tool:
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
-    "serpapi": _get_serpapi,
     "requests": _get_requests,
     "terminal": _get_terminal,
 }
@@ -138,6 +128,14 @@ def _get_google_search(**kwargs: Any) -> Tool:
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
+def _get_serpapi(**kwargs: Any) -> Tool:
+    return Tool(
+        "Search",
+        SerpAPIWrapper(**kwargs).run,
+        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
 
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
@@ -146,6 +144,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "serpapi": (_get_serpapi, ["serpapi_api_key"]),
 }
 
 
