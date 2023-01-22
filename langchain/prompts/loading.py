@@ -52,10 +52,17 @@ def _load_examples(config: dict) -> dict:
         pass
     elif isinstance(config["examples"], str):
         with open(config["examples"]) as f:
-            examples = json.load(f)
+            if config["examples"].endswith(".json"):
+                examples = json.load(f)
+            elif config["examples"].endswith((".yaml", ".yml")):
+                examples = yaml.safe_load(f)
+            else:
+                raise ValueError(
+                    "Invalid file format. Only json or yaml formats are supported."
+                )
         config["examples"] = examples
     else:
-        raise ValueError
+        raise ValueError("Invalid examples format. Only list or string are supported.")
     return config
 
 
