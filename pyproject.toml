@@ -85,6 +85,11 @@ ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 exclude = ["notebooks"]
 
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
