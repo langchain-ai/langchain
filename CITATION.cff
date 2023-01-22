@@ -4,6 +4,6 @@ authors:
 - family-names: "Chase"
   given-names: "Harrison"
 title: "LangChain"
-version: 0.0.66
+version: 0.0.67
 date-released: 2022-10-17
 url: "https://github.com/hwchase17/langchain"
