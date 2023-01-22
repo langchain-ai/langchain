@@ -258,7 +258,6 @@ class ConversationEntityMemory(Memory, BaseModel):
             history="\n".join(self.buffer[-self.k :]),
             input=inputs[prompt_input_key],
         )
-        print(f"Entities: {output}")
         if output.strip() == "NONE":
             entities = []
         else:
@@ -298,7 +297,6 @@ class ConversationEntityMemory(Memory, BaseModel):
                 input=inputs[prompt_input_key],
                 entity=entity,
             )
-            print(f"Entity: {entity}, Summary: {output.strip()}")
             self.store[entity] = output.strip()
         new_lines = "\n".join([human, ai])
         self.buffer.append(new_lines)
