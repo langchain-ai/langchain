@@ -248,7 +248,7 @@ class ConversationEntityMemory(Memory, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         chain = LLMChain(
-            llm=self.llm, verbose=True, prompt=self.entity_extraction_prompt
+            llm=self.llm, prompt=self.entity_extraction_prompt
         )
         if self.input_key is None:
             prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
@@ -288,7 +288,7 @@ class ConversationEntityMemory(Memory, BaseModel):
         ai = f"{self.ai_prefix}: " + outputs[output_key]
         for entity in self.entity_cache:
             chain = LLMChain(
-                llm=self.llm, verbose=True, prompt=self.entity_summarization_prompt
+                llm=self.llm, prompt=self.entity_summarization_prompt
             )
             # key value store for entity
             existing_summary = self.store.get(entity, "")
