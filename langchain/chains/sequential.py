@@ -76,8 +76,6 @@ class SequentialChain(Chain, BaseModel):
         known_values = inputs.copy()
         for i, chain in enumerate(self.chains):
             outputs = chain(known_values, return_only_outputs=True)
-            if self.verbose:
-                print(f"\033[1mChain {i}\033[0m:\n{outputs}\n")
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
@@ -135,8 +133,7 @@ class SimpleSequentialChain(Chain, BaseModel):
             _input = chain.run(_input)
             if self.strip_outputs:
                 _input = _input.strip()
-            if self.verbose:
-                self.callback_manager.on_text(
-                    _input, color=color_mapping[str(i)], end="\n"
-                )
+            self.callback_manager.on_text(
+                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+            )
         return {self.output_key: _input}
