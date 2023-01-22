@@ -4,6 +4,8 @@ moved to a method in the SQLDatabaseChain class.
 """
 
 from sqlalchemy.exc import InvalidRequestError
+from langchain.chains.sql_database.base import SQLDatabaseChain
+from langchain.chains.llm import LLMChain
 
 class ExceptionHandler:
     """
@@ -16,15 +18,20 @@ class ExceptionHandler:
     InvalidRequestError
     """
 
-    #TODO: ask about max_tries default value
-    def __init__(self, exception: InvalidRequestError, max_tries: int = 3):
-        self.exception = exception
+    #TODO: if this is the only method required, can either move the implementation
+    #  to the SQLDataBaseChain class, or make this a static method
 
+    #TODO: ask about max_tries default value (what it is and how it should be requested)
 
-    """Potential handle function:
-    switch statment for different types of errors
-    if an error occurs again, recursively call function with max_tries - 1
-    if max_tries == 0, raise exception (or print something)
-    would require passing in the chain object to the ExceptionHandler class
-    return new value for result in base.py
-    """
+    #TODO: could have multiple methods with this name, or make more specific later
+    def handle(self, exception:Exception, llm_chain:LLMChain, 
+                llm_inputs: dict[str,], max_tries: int = 3) -> str:
+        if(max_tries == 0):
+            #TODO: ask Andy what output is desired here
+            raise Exception("Max tries reached")
+        if isinstance(self.exception, InvalidRequestError): #could be the same as many others
+            try:
+                return llm_chain.predict(**llm_inputs)
+            except Exception as e:
+                return self.handle(exception=e, llm_chain=llm_chain,
+                                    llm_inputs=llm_inputs, max_tries=max_tries-1)

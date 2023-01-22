@@ -77,13 +77,12 @@ class SQLDatabaseChain(Chain, BaseModel):
         sql_cmd = llm_chain.predict(**llm_inputs)
         if self.verbose:
             self.callback_manager.on_text(sql_cmd, color="green")
-        #TODO: add a try except or exception handler here
-        #want to set result again
+        #TODO: may want to move implementation here later
         try:
             result = self.database.run(sql_cmd)
         except Exception as e:
             handler = ExceptionHandler(e)
-
+            result = handler.handle(e, llm_chain, llm_inputs)
         if self.verbose:
             self.callback_manager.on_text("\nSQLResult: ")
             self.callback_manager.on_text(result, color="yellow")
