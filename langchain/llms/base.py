@@ -69,18 +69,15 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if self.verbose:
-                self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__}, prompts
-                )
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+            )
             try:
                 output = self._generate(prompts, stop=stop)
             except Exception as e:
-                if self.verbose:
-                    self.callback_manager.on_llm_error(e)
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            if self.verbose:
-                self.callback_manager.on_llm_end(output)
+            self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
         params = self._llm_dict()
         params["stop"] = stop
@@ -95,18 +92,15 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
-        if self.verbose:
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts
-            )
+        self.callback_manager.on_llm_start(
+            {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+        )
         try:
             new_results = self._generate(missing_prompts, stop=stop)
         except Exception as e:
-            if self.verbose:
-                self.callback_manager.on_llm_error(e)
+            self.callback_manager.on_llm_error(e, verbose=self.verbose)
             raise e
-        if self.verbose:
-            self.callback_manager.on_llm_end(new_results)
+        self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
         for i, result in enumerate(new_results.generations):
             existing_prompts[missing_prompt_idxs[i]] = result
             prompt = prompts[missing_prompt_idxs[i]]
