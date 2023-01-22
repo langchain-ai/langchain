@@ -28,8 +28,9 @@ Last line:
 Human: {input}
 You:"""
 
-ENTITY_MEMORY_CONVERSATION_TEMPLATE= PromptTemplate(
-    input_variables=["entities", "history", "input"], template=_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE
+ENTITY_MEMORY_CONVERSATION_TEMPLATE = PromptTemplate(
+    input_variables=["entities", "history", "input"],
+    template=_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
 )
 
 _DEFAULT_SUMMARIZER_TEMPLATE = """Progressively summarize the lines of conversation provided, adding onto the previous summary returning a new summary.
@@ -114,5 +115,6 @@ Human: {input}
 Updated summary:"""
 
 ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
-    input_variables=["entity", "summary", "history", "input"], template=_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE
+    input_variables=["entity", "summary", "history", "input"],
+    template=_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE,
 )

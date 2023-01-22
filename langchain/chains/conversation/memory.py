@@ -4,7 +4,11 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.chains.base import Memory
-from langchain.chains.conversation.prompt import ENTITY_EXTRACTION_PROMPT, ENTITY_SUMMARIZATION_PROMPT, SUMMARY_PROMPT
+from langchain.chains.conversation.prompt import (
+    ENTITY_EXTRACTION_PROMPT,
+    ENTITY_SUMMARIZATION_PROMPT,
+    SUMMARY_PROMPT,
+)
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
@@ -226,11 +230,11 @@ class ConversationEntityMemory(Memory, BaseModel):
     llm: BaseLLM
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     entity_summarization_prompt: BasePromptTemplate = ENTITY_SUMMARIZATION_PROMPT
-    memory_keys: List[str] = ["entities", "history"] #: :meta private:
+    memory_keys: List[str] = ["entities", "history"]  #: :meta private:
     output_key: Optional[str] = None
     input_key: Optional[str] = None
-    store: Dict[str, str] = {}
-    entity_cache: Optional[List[str]] = None
+    store: Dict[str, Optional[str]] = {}
+    entity_cache: List[str] = []
     k: int = 3
 
     @property
@@ -241,16 +245,18 @@ class ConversationEntityMemory(Memory, BaseModel):
         """
         return ["entities", "history"]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        chain = LLMChain(llm=self.llm, verbose=True, prompt=self.entity_extraction_prompt)
+        chain = LLMChain(
+            llm=self.llm, verbose=True, prompt=self.entity_extraction_prompt
+        )
         if self.input_key is None:
             prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
         else:
             prompt_input_key = self.input_key
         output = chain.predict(
-            history="\n".join(self.buffer[-self.k :]), 
-            input=inputs[prompt_input_key], 
+            history="\n".join(self.buffer[-self.k :]),
+            input=inputs[prompt_input_key],
         )
         print(f"Entities: {output}")
         if output.strip() == "NONE":
@@ -259,11 +265,11 @@ class ConversationEntityMemory(Memory, BaseModel):
             entities = [w.strip() for w in output.split(",")]
         entity_summaries = {}
         for entity in entities:
-            entity_summaries[entity] = self.store.get(entity)
+            entity_summaries[entity] = self.store.get(entity, "")
         self.entity_cache = entities
         return {
-            "history": "\n".join(self.buffer[-self.k :]), 
-            "entities": entity_summaries
+            "history": "\n".join(self.buffer[-self.k :]),
+            "entities": entity_summaries,
         }
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
@@ -281,14 +287,16 @@ class ConversationEntityMemory(Memory, BaseModel):
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
         for entity in self.entity_cache:
-            chain = LLMChain(llm=self.llm, verbose=True, prompt=self.entity_summarization_prompt)
+            chain = LLMChain(
+                llm=self.llm, verbose=True, prompt=self.entity_summarization_prompt
+            )
             # key value store for entity
             existing_summary = self.store.get(entity, "")
             output = chain.predict(
-                summary=existing_summary, 
-                history="\n".join(self.buffer[-self.k :]), 
-                input=inputs[prompt_input_key], 
-                entity=entity
+                summary=existing_summary,
+                history="\n".join(self.buffer[-self.k :]),
+                input=inputs[prompt_input_key],
+                entity=entity,
             )
             print(f"Entity: {entity}, Summary: {output.strip()}")
             self.store[entity] = output.strip()
