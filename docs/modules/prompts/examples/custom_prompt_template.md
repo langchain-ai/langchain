@@ -7,7 +7,7 @@ Let's suppose we want the LLM to generate English language explanations of a fun
 LangChain provides a set of default prompt templates that can be used to generate prompts for a variety of tasks. However, there may be cases where the default prompt templates do not meet your needs. For example, you may want to create a prompt template with specific dynamic instructions for your language model. In such cases, you can create a custom prompt template.
 
 :::{note}
-Take a look at the current set of default prompt templates [here](../prompt_templates.md).
+Take a look at the current set of default prompt templates [here](../getting_started.md).
 :::
 <!-- TODO(shreya): Add correct link here. -->
 
