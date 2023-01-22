@@ -18,11 +18,11 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         for prompt in prompts:
             st.write(prompt)
 
-    def on_llm_end(self, response: LLMResult) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -33,11 +33,11 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         class_name = serialized["name"]
         st.write(f"Entering new {class_name} chain...")
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
         st.write("Finished chain.")
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -62,7 +62,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         st.write(f"{observation_prefix}{output}")
         st.write(llm_prefix)
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
