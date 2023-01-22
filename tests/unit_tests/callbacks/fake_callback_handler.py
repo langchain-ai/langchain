@@ -19,14 +19,11 @@ class FakeCallbackHandler(BaseCallbackHandler):
         """Run when LLM starts running."""
         self.starts += 1
 
-    def on_llm_end(
-        self,
-        response: LLMResult,
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
         self.ends += 1
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when LLM errors."""
         self.errors += 1
 
@@ -36,11 +33,11 @@ class FakeCallbackHandler(BaseCallbackHandler):
         """Run when chain starts running."""
         self.starts += 1
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
         self.ends += 1
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when chain errors."""
         self.errors += 1
 
@@ -54,7 +51,7 @@ class FakeCallbackHandler(BaseCallbackHandler):
         """Run when tool ends running."""
         self.ends += 1
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Run when tool errors."""
         self.errors += 1
 
