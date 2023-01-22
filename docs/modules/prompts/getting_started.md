@@ -211,7 +211,7 @@ In contrast, if we provide a very long input, the `LengthBasedExampleSelector` w
 
 ```python
 long_string = "big and huge and massive and large and gigantic and tall and much much much much much bigger than everything else"
-print(dynamic_prompt.format(adjective=long_string))
+print(dynamic_prompt.format(input=long_string))
 # -> Give the antonym of every input
 
 # -> Word: happy
