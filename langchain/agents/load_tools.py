@@ -143,7 +143,7 @@ _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
 }
-_EXTRA_TOOLS = {
+_EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
 }
@@ -172,7 +172,7 @@ def load_tools(
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
+            _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             missing_keys = set(extra_keys).difference(kwargs)
             if missing_keys:
                 raise ValueError(
@@ -181,15 +181,9 @@ def load_tools(
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
             tools.append(_get_tool_func(llm=llm, **sub_kwargs))
-        elif name in _EXTRA_TOOLS:
-            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
-            missing_keys = set(extra_keys).difference(kwargs)
-            if missing_keys:
-                raise ValueError(
-                    f"Tool {name} requires some parameters that were not "
-                    f"provided: {missing_keys}"
-                )
-            sub_kwargs = {k: kwargs[k] for k in extra_keys}
+        elif name in _EXTRA_OPTIONAL_TOOLS:
+            _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
+            sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
             tools.append(_get_tool_func(**sub_kwargs))
 
         else:
@@ -199,4 +193,4 @@ def load_tools(
 
 def get_all_tool_names() -> List[str]:
     """Get a list of all possible tool names."""
-    return list(_BASE_TOOLS) + list(_EXTRA_TOOLS) + list(_LLM_TOOLS)
+    return list(_BASE_TOOLS) + list(_EXTRA_OPTIONAL_TOOLS) + list(_LLM_TOOLS)
