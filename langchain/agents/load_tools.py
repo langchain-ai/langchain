@@ -171,7 +171,7 @@ def load_tools(
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
+            _get_tool_func, extra_keys = _EXTRA_LLM_TOOLS[name]
             missing_keys = set(extra_keys).difference(kwargs)
             if missing_keys:
                 raise ValueError(
@@ -198,4 +198,4 @@ def load_tools(
 
 def get_all_tool_names() -> List[str]:
     """Get a list of all possible tool names."""
-    return list(_BASE_TOOLS) + list(_EXTRA_TOOLS) + list(_LLM_TOOLS)
+    return list(_BASE_TOOLS) + list(_EXTRA_TOOLS) + list(_EXTRA_LLM_TOOLS) + list(_LLM_TOOLS)
