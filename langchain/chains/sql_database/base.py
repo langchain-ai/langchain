@@ -11,7 +11,8 @@ from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
-
+#TODO: decide whether this is neccesary
+from exception_handler import ExceptionHandler
 
 class SQLDatabaseChain(Chain, BaseModel):
     """Chain for interacting with SQL Database.
@@ -77,9 +78,11 @@ class SQLDatabaseChain(Chain, BaseModel):
         if self.verbose:
             self.callback_manager.on_text(sql_cmd, color="green")
         #TODO: add a try except or exception handler here
-        #Can also handle this exception withtn sql_database
-        #want to retry running llm_chain.predict in the same way?
-        result = self.database.run(sql_cmd)
+        #want to set result again
+        try:
+            result = self.database.run(sql_cmd)
+        except Exception as e:
+            handler = ExceptionHandler(e)
 
         if self.verbose:
             self.callback_manager.on_text("\nSQLResult: ")
