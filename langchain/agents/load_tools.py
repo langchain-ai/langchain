@@ -23,6 +23,7 @@ def _get_python_repl() -> Tool:
         "A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
     )
 
+
 def _get_requests() -> Tool:
     return Tool(
         "Requests",
@@ -128,13 +129,13 @@ def _get_google_search(**kwargs: Any) -> Tool:
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
+
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
         "Search",
         SerpAPIWrapper(**kwargs).run,
         "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
-
 
 
 _EXTRA_LLM_TOOLS = {
@@ -171,7 +172,7 @@ def load_tools(
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            _get_tool_func, extra_keys = _EXTRA_LLM_TOOLS[name]
+            _get_llm_tool_func, extra_keys = _EXTRA_LLM_TOOLS[name]
             missing_keys = set(extra_keys).difference(kwargs)
             if missing_keys:
                 raise ValueError(
@@ -179,7 +180,7 @@ def load_tools(
                     f"provided: {missing_keys}"
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
-            tools.append(_get_tool_func(llm=llm, **sub_kwargs))
+            tools.append(_get_llm_tool_func(llm=llm, **sub_kwargs))
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
@@ -192,4 +193,9 @@ def load_tools(
 
 def get_all_tool_names() -> List[str]:
     """Get a list of all possible tool names."""
-    return list(_BASE_TOOLS) + list(_EXTRA_OPTIONAL_TOOLS) + list(_EXTRA_LLM_TOOLS) + list(_LLM_TOOLS)
+    return (
+        list(_BASE_TOOLS)
+        + list(_EXTRA_OPTIONAL_TOOLS)
+        + list(_EXTRA_LLM_TOOLS)
+        + list(_LLM_TOOLS)
+    )
