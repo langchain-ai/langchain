@@ -12,6 +12,8 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 
+URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
+
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     """Get the right type from the config and load it accordingly."""
@@ -93,7 +95,16 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
+def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
+    """Unified method for loading a prompt from LangChainHub or local fs."""
+    if isinstance(path, str) and path.startswith("lc://prompts"):
+        path = path.lstrip("lc://prompts/")
+        return _load_from_hub(path)
+    else:
+        return _load_prompt_from_file(path)
+
+
+def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to Path object.
     if isinstance(file, str):
@@ -125,10 +136,7 @@ def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
-URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-
-
-def load_from_hub(path: str) -> BasePromptTemplate:
+def _load_from_hub(path: str) -> BasePromptTemplate:
     """Load prompt from hub."""
     suffix = path.split(".")[-1]
     if suffix not in {"py", "json", "yaml"}:
@@ -141,4 +149,4 @@ def load_from_hub(path: str) -> BasePromptTemplate:
         file = tmpdirname + "/prompt." + suffix
         with open(file, "wb") as f:
             f.write(r.content)
-        return load_prompt(file)
+        return _load_prompt_from_file(file)
