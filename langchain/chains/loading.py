@@ -1,3 +1,4 @@
+"""Functionality for loading chains."""
 import json
 from pathlib import Path
 from typing import Union
