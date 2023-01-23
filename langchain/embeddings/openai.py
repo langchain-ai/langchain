@@ -18,7 +18,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import OpenAIEmbeddings
-            openai = OpenAIEmbeddings(model_name="davinci", openai_api_key="my-api-key")
+            openai = OpenAIEmbeddings(openai_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
