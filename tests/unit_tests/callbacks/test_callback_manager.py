@@ -72,9 +72,9 @@ def test_ignore_llm() -> None:
     handler1 = FakeCallbackHandler(ignore_llm_=True, always_verbose_=True)
     handler2 = FakeCallbackHandler(always_verbose_=True)
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_llm_start({}, [])
-    manager.on_llm_end(LLMResult(generations=[]))
-    manager.on_llm_error(Exception())
+    manager.on_llm_start({}, [], verbose=True)
+    manager.on_llm_end(LLMResult(generations=[]), verbose=True)
+    manager.on_llm_error(Exception(), verbose=True)
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
@@ -88,9 +88,9 @@ def test_ignore_chain() -> None:
     handler1 = FakeCallbackHandler(ignore_chain_=True, always_verbose_=True)
     handler2 = FakeCallbackHandler(always_verbose_=True)
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_chain_start({"name": "foo"}, {})
-    manager.on_chain_end({})
-    manager.on_chain_error(Exception())
+    manager.on_chain_start({"name": "foo"}, {}, verbose=True)
+    manager.on_chain_end({}, verbose=True)
+    manager.on_chain_error(Exception(), verbose=True)
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
@@ -104,10 +104,10 @@ def test_ignore_agent() -> None:
     handler1 = FakeCallbackHandler(ignore_agent_=True, always_verbose_=True)
     handler2 = FakeCallbackHandler(always_verbose_=True)
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_tool_start({}, AgentAction("", "", ""))
-    manager.on_tool_end("")
-    manager.on_tool_error(Exception())
-    manager.on_agent_finish(AgentFinish(log="", return_values={}))
+    manager.on_tool_start({}, AgentAction("", "", ""), verbose=True)
+    manager.on_tool_end("", verbose=True)
+    manager.on_tool_error(Exception(), verbose=True)
+    manager.on_agent_finish(AgentFinish({}, ""), verbose=True)
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0

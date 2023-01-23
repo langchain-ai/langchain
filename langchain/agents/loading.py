@@ -2,6 +2,7 @@
 from typing import Any, List, Optional
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
@@ -13,6 +14,7 @@ AGENT_TO_CLASS = {
     "zero-shot-react-description": ZeroShotAgent,
     "react-docstore": ReActDocstoreAgent,
     "self-ask-with-search": SelfAskWithSearchAgent,
+    "conversational-react-description": ConversationalAgent,
 }
 
 
@@ -29,7 +31,10 @@ def initialize_agent(
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
         agent: The agent to use. Valid options are:
-            `zero-shot-react-description`, `react-docstore`, `self-ask-with-search`.
+            `zero-shot-react-description`
+            `react-docstore`
+            `self-ask-with-search`
+            `conversational-react-description`.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         **kwargs: Additional key word arguments to pass to the agent.

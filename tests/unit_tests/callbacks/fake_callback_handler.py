@@ -45,10 +45,7 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when LLM starts running."""
         self.starts += 1
 
-    def on_llm_end(
-        self,
-        response: LLMResult, **kwargs: Any
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
         self.ends += 1
 

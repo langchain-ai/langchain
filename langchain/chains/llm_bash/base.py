@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.llms.base import BaseLLM
+from langchain.prompts.base import BasePromptTemplate
 from langchain.utilities.bash import BashProcess
 
 
@@ -24,6 +25,7 @@ class LLMBashChain(Chain, BaseModel):
     """LLM wrapper to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
+    prompt: BasePromptTemplate = PROMPT
 
     class Config:
         """Configuration for this pydantic object."""
@@ -48,7 +50,7 @@ class LLMBashChain(Chain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        llm_executor = LLMChain(prompt=PROMPT, llm=self.llm)
+        llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
         bash_executor = BashProcess()
         self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
@@ -64,7 +66,6 @@ class LLMBashChain(Chain, BaseModel):
             # Remove the first and last substrings
             command_list = [s for s in command_list[1:-1]]
             output = bash_executor.run(command_list)
-
 
             self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
             self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)

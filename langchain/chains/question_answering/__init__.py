@@ -3,11 +3,13 @@ from typing import Any, Mapping, Optional, Protocol
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import (
     map_reduce_prompt,
+    map_rerank_prompt,
     refine_prompts,
     stuff_prompt,
 )
@@ -20,6 +22,25 @@ class LoadingCallable(Protocol):
 
     def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
+
+
+def _load_map_rerank_chain(
+    llm: BaseLLM,
+    prompt: BasePromptTemplate = map_rerank_prompt.PROMPT,
+    verbose: bool = False,
+    document_variable_name: str = "context",
+    rank_key: str = "score",
+    answer_key: str = "answer",
+    **kwargs: Any,
+) -> MapRerankDocumentsChain:
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    return MapRerankDocumentsChain(
+        llm_chain=llm_chain,
+        rank_key=rank_key,
+        answer_key=answer_key,
+        document_variable_name=document_variable_name,
+        **kwargs,
+    )
 
 
 def _load_stuff_chain(
@@ -132,6 +153,7 @@ def load_qa_chain(
         "stuff": _load_stuff_chain,
         "map_reduce": _load_map_reduce_chain,
         "refine": _load_refine_chain,
+        "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
         raise ValueError(

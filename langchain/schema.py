@@ -1,7 +1,7 @@
 """Common schema objects."""
 
 from dataclasses import dataclass
-from typing import List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from dataclasses_json import dataclass_json
 
@@ -28,6 +28,10 @@ class Generation:
 
     text: str
     """Generated text output."""
+
+    generation_info: Optional[Dict[str, Any]] = None
+    """Raw generation info response from the provider"""
+    """May include things like reason for finishing (e.g. in OpenAI)"""
     # TODO: add log probs
 
 

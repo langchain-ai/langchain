@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.vector_db_qa.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
@@ -36,6 +37,10 @@ class VectorDBQA(Chain, BaseModel):
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    return_source_documents: bool = False
+    """Return the source documents."""
+    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Extra search args."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -45,7 +50,7 @@ class VectorDBQA(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the singular input key.
+        """Return the input keys.
 
         :meta private:
         """
@@ -53,11 +58,14 @@ class VectorDBQA(Chain, BaseModel):
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the singular output key.
+        """Return the output keys.
 
         :meta private:
         """
-        return [self.output_key]
+        _output_keys = [self.output_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
 
     # TODO: deprecate this
     @root_validator(pre=True)
@@ -96,10 +104,37 @@ class VectorDBQA(Chain, BaseModel):
             document_variable_name="context",
             document_prompt=document_prompt,
         )
+
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    @classmethod
+    def from_chain_type(
+        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+    ) -> VectorDBQA:
+        """Load chain from chain type."""
+        combine_documents_chain = load_qa_chain(llm, chain_type=chain_type)
+        return cls(combine_documents_chain=combine_documents_chain, **kwargs)
+
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+        """Run similarity search and llm on input query.
+
+        If chain has 'return_source_documents' as 'True', returns
+        the retrieved documents as well under the key 'source_documents'.
+
+        Example:
+        .. code-block:: python
+
+        res = vectordbqa({'query': 'This is my query'})
+        answer, docs = res['result'], res['source_documents']
+        """
         question = inputs[self.input_key]
-        docs = self.vectorstore.similarity_search(question, k=self.k)
+
+        docs = self.vectorstore.similarity_search(
+            question, k=self.k, **self.search_kwargs
+        )
         answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
-        return {self.output_key: answer}
+
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}

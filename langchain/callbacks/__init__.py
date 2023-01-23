@@ -1,11 +1,12 @@
 """Callback handlers that allow listening to events in LangChain."""
 import os
+from typing import Optional
+
+import langchain
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
-import langchain
-from typing import Optional
 
 
 def get_callback_manager() -> BaseCallbackManager:
@@ -29,7 +30,9 @@ def set_default_callback_manager() -> None:
         session = session if session is None else int(session)
         set_tracing_callback_manager(session)
     else:
-        raise ValueError(f"LANGCHAIN_HANDLER should be one of `stdout` or `langchain`, got {default_handler}")
+        raise ValueError(
+            f"LANGCHAIN_HANDLER should be one of `stdout` or `langchain`, got {default_handler}"
+        )
 
 
 def set_tracing_callback_manager(session: Optional[int] = None) -> None:

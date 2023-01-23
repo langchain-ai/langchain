@@ -32,6 +32,11 @@ class BaseCallbackHandler(ABC):
 
         return False
 
+    @property
+    def always_verbose(self) -> bool:
+        """Whether to call verbose callbacks even if verbose is False."""
+        return False
+
     @abstractmethod
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -39,10 +44,7 @@ class BaseCallbackHandler(ABC):
         """Run when LLM starts running."""
 
     @abstractmethod
-    def on_llm_end(
-        self,
-        response: LLMResult, **kwargs: Any
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
 
     @abstractmethod
@@ -114,8 +116,11 @@ class CallbackManager(BaseCallbackManager):
         self.handlers: List[BaseCallbackHandler] = handlers
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str],
-            verbose: bool=False, **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        prompts: List[str],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when LLM starts running."""
         for handler in self.handlers:
@@ -124,10 +129,7 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_llm_start(serialized, prompts, **kwargs)
 
     def on_llm_end(
-        self,
-        response: LLMResult,
-            verbose: bool=False
-            , **kwargs: Any
+        self, response: LLMResult, verbose: bool = False, **kwargs: Any
     ) -> None:
         """Run when LLM ends running."""
         for handler in self.handlers:
@@ -135,9 +137,9 @@ class CallbackManager(BaseCallbackManager):
                 if verbose or handler.always_verbose:
                     handler.on_llm_end(response)
 
-    def on_llm_error(self, error: Exception,
-            verbose: bool=False
-            , **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Exception, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
         for handler in self.handlers:
             if not handler.ignore_llm:
@@ -145,7 +147,11 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_llm_error(error)
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], verbose:bool=False, **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when chain starts running."""
         for handler in self.handlers:
@@ -153,18 +159,18 @@ class CallbackManager(BaseCallbackManager):
                 if verbose or handler.always_verbose:
                     handler.on_chain_start(serialized, inputs, **kwargs)
 
-    def on_chain_end(self, outputs: Dict[str, Any],
-            verbose: bool=False
-            , **kwargs: Any) -> None:
+    def on_chain_end(
+        self, outputs: Dict[str, Any], verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Run when chain ends running."""
         for handler in self.handlers:
             if not handler.ignore_chain:
                 if verbose or handler.always_verbose:
                     handler.on_chain_end(outputs)
 
-    def on_chain_error(self, error: Exception,
-            verbose: bool=False
-            , **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Exception, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
         for handler in self.handlers:
             if not handler.ignore_chain:
@@ -172,7 +178,11 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_chain_error(error)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, verbose:bool=False, **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        action: AgentAction,
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         for handler in self.handlers:
@@ -180,29 +190,31 @@ class CallbackManager(BaseCallbackManager):
                 if verbose or handler.always_verbose:
                     handler.on_tool_start(serialized, action, **kwargs)
 
-    def on_tool_end(self, output: str, verbose:bool=False,**kwargs: Any) -> None:
+    def on_tool_end(self, output: str, verbose: bool = False, **kwargs: Any) -> None:
         """Run when tool ends running."""
         for handler in self.handlers:
             if not handler.ignore_agent:
                 if verbose or handler.always_verbose:
                     handler.on_tool_end(output, **kwargs)
 
-    def on_tool_error(self, error: Exception,
-            verbose: bool=False
-            , **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Exception, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
         for handler in self.handlers:
             if not handler.ignore_agent:
                 if verbose or handler.always_verbose:
                     handler.on_tool_error(error)
 
-    def on_text(self, text: str, verbose=False, **kwargs: Any) -> None:
+    def on_text(self, text: str, verbose: bool = False, **kwargs: Any) -> None:
         """Run on additional input from chains and agents."""
         for handler in self.handlers:
             if verbose or handler.always_verbose:
                 handler.on_text(text, **kwargs)
 
-    def on_agent_finish(self, finish: AgentFinish, verbose=False,**kwargs: Any) -> None:
+    def on_agent_finish(
+        self, finish: AgentFinish, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Run on agent end."""
         for handler in self.handlers:
             if not handler.ignore_agent:

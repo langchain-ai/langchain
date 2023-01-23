@@ -155,11 +155,11 @@ from langchain.prompts.example_selector import LengthBasedExampleSelector
 
 # These are a lot of examples of a pretend task of creating antonyms.
 examples = [
-    {"input": "happy", "output": "sad"},
-    {"input": "tall", "output": "short"},
-    {"input": "energetic", "output": "lethargic"},
-    {"input": "sunny", "output": "gloomy"},
-    {"input": "windy", "output": "calm"},
+    {"word": "happy", "antonym": "sad"},
+    {"word": "tall", "antonym": "short"},
+    {"word": "energetic", "antonym": "lethargic"},
+    {"word": "sunny", "antonym": "gloomy"},
+    {"word": "windy", "antonym": "calm"},
 ]
 
 # We'll use the `LengthBasedExampleSelector` to select the examples.
@@ -174,7 +174,7 @@ example_selector = LengthBasedExampleSelector(
 )
 
 # We can now use the `example_selector` to create a `FewShotPromptTemplate`.
-few_shot_prompt = FewShotPromptTemplate(
+dynamic_prompt = FewShotPromptTemplate(
     # We provide an ExampleSelector instead of examples.
     example_selector=example_selector,
     example_prompt=example_prompt,
@@ -185,7 +185,7 @@ few_shot_prompt = FewShotPromptTemplate(
 )
 
 # We can now generate a prompt using the `format` method.
-print(few_shot_prompt.format(input="big"))
+print(dynamic_prompt.format(input="big"))
 # -> Give the antonym of every input
 # ->
 # -> Word: happy
@@ -211,7 +211,7 @@ In contrast, if we provide a very long input, the `LengthBasedExampleSelector` w
 
 ```python
 long_string = "big and huge and massive and large and gigantic and tall and much much much much much bigger than everything else"
-print(dynamic_prompt.format(adjective=long_string))
+print(dynamic_prompt.format(input=long_string))
 # -> Give the antonym of every input
 
 # -> Word: happy
@@ -222,6 +222,6 @@ print(dynamic_prompt.format(adjective=long_string))
 ```
 
 <!-- TODO(shreya): Add correct link here. -->
-LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](examples/example_selectors.ipynb).
+LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](./examples/example_selectors.ipynb).
 
 You can create custom example selectors that select examples based on any criteria you want. For more details on how to do this, see [Creating a custom example selector](examples/custom_example_selector.ipynb).

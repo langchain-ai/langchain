@@ -169,3 +169,24 @@ def test_agent_with_callbacks_not_verbose() -> None:
     assert handler.starts == 0
     assert handler.ends == 0
     assert handler.errors == 0
+
+
+def test_agent_tool_return_direct() -> None:
+    """Test agent using tools that return directly."""
+    tool = "Search"
+    responses = [
+        f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
+        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses)
+    tools = [
+        Tool("Search", lambda x: x, "Useful for searching", return_direct=True),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent="zero-shot-react-description",
+    )
+
+    output = agent.run("when was langchain made")
+    assert output == "misalignment"

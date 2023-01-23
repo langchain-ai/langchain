@@ -1,30 +1,35 @@
 from __future__ import annotations
 
 import datetime
-from typing import Dict, Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
 
 from langchain.schema import LLMResult
-from pydantic import BaseModel, Field
 
 
 class TracerSessionBase(BaseModel):
     """Base class for TracerSession."""
+
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     extra: Optional[Dict[str, Any]] = None
 
 
 class TracerSessionCreate(TracerSessionBase):
     """Create class for TracerSession."""
+
     pass
 
 
 class TracerSession(TracerSessionBase):
     """TracerSession schema."""
+
     id: int
 
 
 class BaseRun(BaseModel):
     """Base class for Run."""
+
     id: Optional[Union[int, str]] = None
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
@@ -37,12 +42,14 @@ class BaseRun(BaseModel):
 
 class LLMRun(BaseRun):
     """Class for LLMRun."""
+
     prompts: List[str]
     response: Optional[LLMResult] = None
 
 
 class ChainRun(BaseRun):
     """Class for ChainRun."""
+
     inputs: Dict[str, Any]
     outputs: Optional[Dict[str, Any]] = None
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
@@ -53,6 +60,7 @@ class ChainRun(BaseRun):
 
 class ToolRun(BaseRun):
     """Class for ToolRun."""
+
     tool_input: str
     output: Optional[str] = None
     action: str

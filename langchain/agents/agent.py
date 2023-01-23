@@ -137,6 +137,7 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
@@ -145,7 +146,7 @@ class Agent(BaseModel):
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
         )
-        return cls(llm_chain=llm_chain)
+        return cls(llm_chain=llm_chain, **kwargs)
 
     def return_stopped_response(
         self,
@@ -239,12 +240,21 @@ class AgentExecutor(Chain, BaseModel):
         else:
             return iterations < self.max_iterations
 
+    def _return(self, output: AgentFinish, intermediate_steps: list) -> Dict[str, Any]:
+        self.callback_manager.on_agent_finish(
+            output, color="green", verbose=self.verbose
+        )
+        final_output = output.return_values
+        if self.return_intermediate_steps:
+            final_output["intermediate_steps"] = intermediate_steps
+        return final_output
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tool.name: tool.func for tool in self.tools}
+        name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
@@ -258,22 +268,22 @@ class AgentExecutor(Chain, BaseModel):
             output = self.agent.plan(intermediate_steps, **inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
-                self.callback_manager.on_agent_finish(output, color="green", verbose=self.verbose)
-                final_output = output.return_values
-                if self.return_intermediate_steps:
-                    final_output["intermediate_steps"] = intermediate_steps
-                return final_output
+                return self._return(output, intermediate_steps)
 
-            # And then we lookup the tool
+            # Otherwise we lookup the tool
             if output.tool in name_to_tool_map:
-                chain = name_to_tool_map[output.tool]
+                tool = name_to_tool_map[output.tool]
                 self.callback_manager.on_tool_start(
-                    {"name": str(chain)[:60] + "..."}, output, color="green", verbose=self.verbose
+                    {"name": str(tool.func)[:60] + "..."},
+                    output,
+                    color="green",
+                    verbose=self.verbose,
                 )
                 try:
                     # We then call the tool on the tool input to get an observation
-                    observation = chain(output.tool_input)
+                    observation = tool.func(output.tool_input)
                     color = color_mapping[output.tool]
+                    return_direct = tool.return_direct
                 except (KeyboardInterrupt, Exception) as e:
                     self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
@@ -283,20 +293,22 @@ class AgentExecutor(Chain, BaseModel):
                 )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
+                return_direct = False
+            llm_prefix = "" if return_direct else self.agent.llm_prefix
             self.callback_manager.on_tool_end(
                 observation,
                 color=color,
                 observation_prefix=self.agent.observation_prefix,
-                llm_prefix=self.agent.llm_prefix,
-                verbose=self.verbose
+                llm_prefix=llm_prefix,
+                verbose=self.verbose,
             )
             intermediate_steps.append((output, observation))
+            if return_direct:
+                # Set the log to "" because we do not want to log it.
+                output = AgentFinish({self.agent.return_values[0]: observation}, "")
+                return self._return(output, intermediate_steps)
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
-        self.callback_manager.on_agent_finish(output, color="green", verbose=self.verbose)
-        final_output = output.return_values
-        if self.return_intermediate_steps:
-            final_output["intermediate_steps"] = intermediate_steps
-        return final_output
+        return self._return(output, intermediate_steps)

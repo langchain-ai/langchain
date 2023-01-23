@@ -1,6 +1,6 @@
 """Test functionality related to combining documents."""
 
-from typing import List
+from typing import Any, List, Tuple
 
 import pytest
 
@@ -12,11 +12,11 @@ from langchain.docstore.document import Document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
-    return len(_fake_combine_docs_func(docs))
+    return len(_fake_combine_docs_func(docs)[0])
 
 
-def _fake_combine_docs_func(docs: List[Document]) -> str:
-    return "".join([d.page_content for d in docs])
+def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    return "".join([d.page_content for d in docs]), {}
 
 
 def test__split_list_long_single_doc() -> None:

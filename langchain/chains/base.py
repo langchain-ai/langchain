@@ -135,7 +135,9 @@ class Chain(BaseModel, ABC):
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
         self.callback_manager.on_chain_start(
-            {"name": self.__class__.__name__}, inputs, verbose=self.verbose
+            {"name": self.__class__.__name__},
+            inputs,
+            verbose=self.verbose,
         )
         try:
             outputs = self._call(inputs)

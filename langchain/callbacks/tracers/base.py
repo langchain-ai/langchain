@@ -15,7 +15,13 @@ import requests
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.shared import Singleton
-from langchain.callbacks.tracers.schemas import TracerSession, TracerSessionCreate, LLMRun, ChainRun, ToolRun
+from langchain.callbacks.tracers.schemas import (
+    ChainRun,
+    LLMRun,
+    ToolRun,
+    TracerSession,
+    TracerSessionCreate,
+)
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
@@ -127,10 +133,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
 
-    def on_llm_end(
-        self,
-        response: LLMResult, **kwargs: Any
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
 
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
@@ -373,6 +376,7 @@ class BaseJsonTracer(BaseTracer, ABC):
 
 class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+
     always_verbose: bool = True
     _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
     _headers = {"Content-Type": "application/json"}

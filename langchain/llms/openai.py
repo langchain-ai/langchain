@@ -54,6 +54,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
+    logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
+    """Adjust the probability of specific tokens being generated."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -109,6 +111,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
             "n": self.n,
             "best_of": self.best_of,
             "request_timeout": self.request_timeout,
+            "logit_bias": self.logit_bias,
         }
         return {**normal_params, **self.model_kwargs}
 
@@ -164,7 +167,16 @@ class BaseOpenAI(BaseLLM, BaseModel):
         for i, prompt in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
-                [Generation(text=choice["text"]) for choice in sub_choices]
+                [
+                    Generation(
+                        text=choice["text"],
+                        generation_info=dict(
+                            finish_reason=choice.get("finish_reason"),
+                            logprobs=choice.get("logprobs"),
+                        ),
+                    )
+                    for choice in sub_choices
+                ]
             )
         return LLMResult(
             generations=generations, llm_output={"token_usage": token_usage}

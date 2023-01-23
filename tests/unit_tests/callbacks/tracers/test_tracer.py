@@ -129,7 +129,9 @@ class FakeTracer(Tracer):
     def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
-        return TracerSession(id=TEST_SESSION_ID, start_time=session.start_time, extra=session.extra)
+        return TracerSession(
+            id=TEST_SESSION_ID, start_time=session.start_time, extra=session.extra
+        )
 
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a tracing session."""

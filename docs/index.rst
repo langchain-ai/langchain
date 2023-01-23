@@ -141,6 +141,8 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
 
+- `Deployments <./deployments.html>`_: A collection of instructions, code snippets, and template repositories for deploying LangChain apps.
+
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
 
@@ -152,3 +154,4 @@ Additional collection of resources we think may be useful as you develop your ap
 
    ./glossary.md
    ./gallery.rst
+   ./deployments.md
