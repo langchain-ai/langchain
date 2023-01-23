@@ -89,8 +89,7 @@ def _load_prompt(config: dict) -> PromptTemplate:
 
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local fs"""
-
+    """Unified method for loading a prompt from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://prompts"):
         path = path.lstrip("lc://prompts/")
         return _load_from_hub(path)
