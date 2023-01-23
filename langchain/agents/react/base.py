@@ -15,7 +15,7 @@ from langchain.prompts.base import BasePromptTemplate
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
-    """Agent for the ReAct chin."""
+    """Agent for the ReAct chain."""
 
     @classmethod
     def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
