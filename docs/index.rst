@@ -137,6 +137,8 @@ Additional Resources
 
 Additional collection of resources we think may be useful as you develop your application!
 
+- `LangChain Hub <./langchainhub.html>`_: Overview of the LangChain Hub, a place to share and explore other prompts, chains, and agents.
+
 - `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
 - `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
