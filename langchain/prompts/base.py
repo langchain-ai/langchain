@@ -135,10 +135,6 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    def _prompt_dict(self) -> Dict:
-        """Return a dictionary of the prompt."""
-        return self.dict()
-
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
 
@@ -160,7 +156,7 @@ class BasePromptTemplate(BaseModel, ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self._prompt_dict()
+        prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
