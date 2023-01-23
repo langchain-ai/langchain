@@ -1,26 +1,33 @@
-"""Callback Handler that logs to streamlit."""
+"""Callback Handler that prints to std out."""
 from typing import Any, Dict, List, Optional
-
-import streamlit as st
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class StreamlitCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that logs to streamlit."""
+class OpenAICallbackHandler(BaseCallbackHandler):
+    """Callback Handler that tracks OpenAI info."""
+
+    total_tokens: int = 0
+
+    @property
+    def always_verbose(self) -> bool:
+        """Whether to call verbose callbacks even if verbose is False."""
+        return True
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        st.write("Prompts after formatting:")
-        for prompt in prompts:
-            st.write(prompt)
+        pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
-        pass
+        if response.llm_output is not None:
+            if "token_usage" in response.llm_output:
+                token_usage = response.llm_output["token_usage"]
+                if "total_tokens" in token_usage:
+                    self.total_tokens += token_usage["total_tokens"]
 
     def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
@@ -30,12 +37,11 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Print out that we are entering a chain."""
-        class_name = serialized["name"]
-        st.write(f"Entering new {class_name} chain...")
+        pass
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
-        st.write("Finished chain.")
+        pass
 
     def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
@@ -45,33 +51,39 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         action: AgentAction,
+        color: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
-        # st.write requires two spaces before a newline to render it
-        st.markdown(action.log.replace("\n", "  \n"))
+        pass
 
     def on_tool_end(
         self,
         output: str,
+        color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        st.write(f"{observation_prefix}{output}")
-        st.write(llm_prefix)
+        pass
 
     def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
-    def on_text(self, text: str, **kwargs: Any) -> None:
-        """Run on text."""
-        # st.write requires two spaces before a newline to render it
-        st.write(text.replace("\n", "  \n"))
+    def on_text(
+        self,
+        text: str,
+        color: Optional[str] = None,
+        end: str = "",
+        **kwargs: Optional[str],
+    ) -> None:
+        """Run when agent ends."""
+        pass
 
-    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
+    def on_agent_finish(
+        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
         """Run on agent end."""
-        # st.write requires two spaces before a newline to render it
-        st.write(finish.log.replace("\n", "  \n"))
+        pass

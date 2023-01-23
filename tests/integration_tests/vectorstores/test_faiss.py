@@ -1,4 +1,5 @@
 """Test FAISS functionality."""
+import tempfile
 from typing import List
 
 import pytest
@@ -46,9 +47,15 @@ def test_faiss_with_metadatas() -> None:
     docsearch = FAISS.from_texts(texts, FakeEmbeddings(), metadatas=metadatas)
     expected_docstore = InMemoryDocstore(
         {
-            "0": Document(page_content="foo", metadata={"page": 0}),
-            "1": Document(page_content="bar", metadata={"page": 1}),
-            "2": Document(page_content="baz", metadata={"page": 2}),
+            docsearch.index_to_docstore_id[0]: Document(
+                page_content="foo", metadata={"page": 0}
+            ),
+            docsearch.index_to_docstore_id[1]: Document(
+                page_content="bar", metadata={"page": 1}
+            ),
+            docsearch.index_to_docstore_id[2]: Document(
+                page_content="baz", metadata={"page": 2}
+            ),
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
@@ -82,3 +89,15 @@ def test_faiss_add_texts_not_supported() -> None:
     docsearch = FAISS(FakeEmbeddings().embed_query, None, Wikipedia(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
+
+
+def test_faiss_local_save_load() -> None:
+    """Test end to end serialization."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+
+    with tempfile.NamedTemporaryFile() as temp_file:
+        docsearch.save_local(temp_file.name)
+        docsearch.index = None
+        docsearch.load_local(temp_file.name)
+    assert docsearch.index is not None

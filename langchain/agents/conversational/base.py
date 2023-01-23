@@ -78,7 +78,7 @@ class ConversationalAgent(Agent):
             raise ValueError(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1)
         action_input = match.group(2)
-        return action, action_input.strip(" ").strip('"')
+        return action.strip(), action_input.strip(" ").strip('"')
 
     @classmethod
     def from_llm_and_tools(

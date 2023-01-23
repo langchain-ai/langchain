@@ -241,8 +241,9 @@ class AgentExecutor(Chain, BaseModel):
             return iterations < self.max_iterations
 
     def _return(self, output: AgentFinish, intermediate_steps: list) -> Dict[str, Any]:
-        if self.verbose:
-            self.callback_manager.on_agent_finish(output, color="green")
+        self.callback_manager.on_agent_finish(
+            output, color="green", verbose=self.verbose
+        )
         final_output = output.return_values
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
@@ -272,35 +273,35 @@ class AgentExecutor(Chain, BaseModel):
             # Otherwise we lookup the tool
             if output.tool in name_to_tool_map:
                 tool = name_to_tool_map[output.tool]
-                if self.verbose:
-                    self.callback_manager.on_tool_start(
-                        {"name": str(tool.func)[:60] + "..."}, output, color="green"
-                    )
+                self.callback_manager.on_tool_start(
+                    {"name": str(tool.func)[:60] + "..."},
+                    output,
+                    color="green",
+                    verbose=self.verbose,
+                )
                 try:
                     # We then call the tool on the tool input to get an observation
                     observation = tool.func(output.tool_input)
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
                 except Exception as e:
-                    if self.verbose:
-                        self.callback_manager.on_tool_error(e)
+                    self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
             else:
-                if self.verbose:
-                    self.callback_manager.on_tool_start(
-                        {"name": "N/A"}, output, color="green"
-                    )
+                self.callback_manager.on_tool_start(
+                    {"name": "N/A"}, output, color="green", verbose=self.verbose
+                )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
                 return_direct = False
-            if self.verbose:
-                llm_prefix = "" if return_direct else self.agent.llm_prefix
-                self.callback_manager.on_tool_end(
-                    observation,
-                    color=color,
-                    observation_prefix=self.agent.observation_prefix,
-                    llm_prefix=llm_prefix,
-                )
+            llm_prefix = "" if return_direct else self.agent.llm_prefix
+            self.callback_manager.on_tool_end(
+                observation,
+                color=color,
+                observation_prefix=self.agent.observation_prefix,
+                llm_prefix=llm_prefix,
+                verbose=self.verbose,
+            )
             intermediate_steps.append((output, observation))
             if return_direct:
                 # Set the log to "" because we do not want to log it.
