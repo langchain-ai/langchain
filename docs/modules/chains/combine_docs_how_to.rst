@@ -11,6 +11,8 @@ The examples here are all end-to-end chains for working with documents.
 
 `Summarization <./combine_docs_examples/summarize.html>`_: A walkthrough of how to use LangChain for summarization over specific documents.
 
+`Vector DB Text Generation <./combine_docs_examples/vector_db_text_generation.html>`_: A walkthrough of how to use LangChain for text generation over a vector database.
+
 `Vector DB Question Answering <./combine_docs_examples/vector_db_qa.html>`_: A walkthrough of how to use LangChain for question answering over a vector database.
 
 `Vector DB Question Answering with Sources <./combine_docs_examples/vector_db_qa_with_sources.html>`_: A walkthrough of how to use LangChain for question answering (with sources) over a vector database.
