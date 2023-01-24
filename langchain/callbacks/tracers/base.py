@@ -63,6 +63,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def load_session(self, session_id: Union[int, str]) -> TracerSession:
         """Load a tracing session and set it as the Tracer's session."""
 
+    @abstractmethod
+    def load_default_session(self) -> TracerSession:
+        """Load the default tracing session and set it as the Tracer's session."""
+
     @property
     @abstractmethod
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
@@ -430,6 +434,23 @@ class BaseLangChainTracer(BaseTracer, ABC):
         except:
             logging.warning(f"Failed to load session {session_id}, using empty session")
             tracer_session = TracerSession(id=session_id)
+            self._session = tracer_session
+            return tracer_session
+
+    def load_default_session(self) -> TracerSession:
+        """Load the default tracing session and set it as the Tracer's session."""
+        try:
+            r = requests.get(
+                f"{self._endpoint}/sessions",
+                headers=self._headers,
+            )
+            # Use the first session result
+            tracer_session = TracerSession(**r.json()[0])
+            self._session = tracer_session
+            return tracer_session
+        except:
+            logging.warning(f"Failed to default session, using empty session")
+            tracer_session = TracerSession(id=1)
             self._session = tracer_session
             return tracer_session
 

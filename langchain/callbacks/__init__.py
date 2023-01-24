@@ -41,12 +41,9 @@ def set_tracing_callback_manager(session: Optional[int] = None) -> None:
     callback = get_callback_manager()
     callback.set_handlers([handler, StdOutCallbackHandler()])
     if session is None:
-        handler.new_session()
+        handler.load_default_session()
     else:
         try:
             handler.load_session(int(session))
         except:
-            if session == 1:
-                handler.new_session()
-            else:
-                raise ValueError(f"session {session} not found")
+            raise ValueError(f"session {session} not found")
