@@ -224,7 +224,11 @@ class Pinecone(VectorStore):
 
     @classmethod
     def from_existing_index(
-        cls, index_name: str, embedding: Embeddings, text_key: str = "text"
+        cls,
+        index_name: str,
+        embedding: Embeddings,
+        text_key: str = "text",
+        namespace: Optional[str] = None,
     ) -> Pinecone:
         """Load pinecone vectorstore from index name."""
         try:
@@ -235,4 +239,6 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        return cls(pinecone.Index(index_name), embedding.embed_query, text_key)
+        return cls(
+            pinecone.Index(index_name, namespace), embedding.embed_query, text_key
+        )
