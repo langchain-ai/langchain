@@ -34,5 +34,7 @@ class ExceptionHandler:
             except Exception as e:
                 return self.handle(exception=e, llm_chain=llm_chain,
                                     llm_inputs=llm_inputs, max_tries=max_tries-1)
+        else:
+            raise Exception("Unhandled exception")
     
     #TODO: other implementations of handle, including logical errors
