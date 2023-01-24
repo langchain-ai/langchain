@@ -34,7 +34,7 @@ Next, we'll create a custom prompt template that takes in the function name as i
 
 ```python
 from langchain.prompts import BasePromptTemplate
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class FunctionExplainerPromptTemplate(BasePromptTemplate, BaseModel):
