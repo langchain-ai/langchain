@@ -96,6 +96,39 @@ def _perform_nested_run(tracer: BaseTracer):
     tracer.on_chain_end(outputs={})
 
 
+def _add_child_run(
+        parent_run: Union[ChainRun, ToolRun],
+    child_run: Union[LLMRun, ChainRun, ToolRun],
+) -> None:
+    """Add child run to a chain run or tool run."""
+
+    parent_run.child_runs.append(child_run)
+
+
+def _generate_id() -> Optional[Union[int, str]]:
+    """Generate an id for a run."""
+
+    return None
+
+
+def load_session(session_name: str) -> TracerSession:
+    """Load a tracing session."""
+
+    return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
+
+
+def _persist_session(session: TracerSessionCreate) -> TracerSession:
+    """Persist a tracing session."""
+
+    return TracerSession(id=TEST_SESSION_ID, **session.dict())
+
+
+def load_default_session() -> TracerSession:
+    """Load a tracing session."""
+
+    return TracerSession(id=1, name="default", start_time=datetime.utcnow())
+
+
 class FakeTracer(Tracer):
     """Fake tracer that records LangChain execution."""
 
@@ -117,29 +150,27 @@ class FakeTracer(Tracer):
     ) -> None:
         """Add child run to a chain run or tool run."""
 
-        parent_run.child_runs.append(child_run)
+        _add_child_run(parent_run, child_run)
 
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
 
-        return None
+        return _generate_id()
 
     def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
-        return TracerSession(
-            id=TEST_SESSION_ID, start_time=session.start_time, extra=session.extra
-        )
+        return _persist_session(session)
 
     def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
+        return load_session(session_name)
 
     def load_default_session(self) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=1, name="default", start_time=datetime.utcnow())
+        return load_default_session()
 
 
 class FakeSharedTracer(SharedTracer):
@@ -153,6 +184,12 @@ class FakeSharedTracer(SharedTracer):
         with self._lock:
             self.runs.append(run)
 
+    def remove_runs(self):
+        """Remove all runs."""
+
+        with self._lock:
+            self.runs = []
+
     def _add_child_run(
         self,
         parent_run: Union[ChainRun, ToolRun],
@@ -160,33 +197,27 @@ class FakeSharedTracer(SharedTracer):
     ) -> None:
         """Add child run to a chain run or tool run."""
 
-        parent_run.child_runs.append(child_run)
+        _add_child_run(parent_run, child_run)
 
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
 
-        return None
+        return _generate_id()
 
     def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
 
-        return TracerSession(id=TEST_SESSION_ID, **session.dict())
-
-    def remove_runs(self):
-        """Remove all runs."""
-
-        with self._lock:
-            self.runs = []
+        return _persist_session(session)
 
     def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
+        return load_session(session_name)
 
     def load_default_session(self) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=1, name="default", start_time=datetime.utcnow())
+        return load_default_session()
 
 
 @freeze_time("2023-01-01")

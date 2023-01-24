@@ -5,7 +5,6 @@ import datetime
 import logging
 import os
 import threading
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
