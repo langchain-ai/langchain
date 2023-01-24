@@ -2,13 +2,11 @@
 from __future__ import annotations
 
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional, Union
 
 import pytest
 from freezegun import freeze_time
-from pydantic import BaseModel
 
 from langchain.callbacks.tracers.base import (
     BaseTracer,
@@ -133,10 +131,15 @@ class FakeTracer(Tracer):
             id=TEST_SESSION_ID, start_time=session.start_time, extra=session.extra
         )
 
-    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+    def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=session_id, start_time=datetime.utcnow())
+        return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
+
+    def load_default_session(self) -> TracerSession:
+        """Load a tracing session."""
+
+        return TracerSession(id=1, name="default", start_time=datetime.utcnow())
 
 
 class FakeSharedTracer(SharedTracer):
@@ -175,10 +178,15 @@ class FakeSharedTracer(SharedTracer):
         with self._lock:
             self.runs = []
 
-    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+    def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
 
-        return TracerSession(id=session_id, start_time=datetime.utcnow())
+        return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
+
+    def load_default_session(self) -> TracerSession:
+        """Load a tracing session."""
+
+        return TracerSession(id=1, name="default", start_time=datetime.utcnow())
 
 
 @freeze_time("2023-01-01")

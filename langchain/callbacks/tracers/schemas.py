@@ -12,6 +12,7 @@ class TracerSessionBase(BaseModel):
     """Base class for TracerSession."""
 
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    name: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
 
 

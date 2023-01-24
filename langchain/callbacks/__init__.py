@@ -35,15 +35,15 @@ def set_default_callback_manager() -> None:
         )
 
 
-def set_tracing_callback_manager(session: Optional[int] = None) -> None:
+def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
     """Set tracing callback manager."""
     handler = SharedLangChainTracer()
     callback = get_callback_manager()
     callback.set_handlers([handler, StdOutCallbackHandler()])
-    if session is None:
+    if session_name is None:
         handler.load_default_session()
     else:
         try:
-            handler.load_session(int(session))
+            handler.load_session(session_name)
         except:
-            raise ValueError(f"session {session} not found")
+            raise ValueError(f"session {session_name} not found")

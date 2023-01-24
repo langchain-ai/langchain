@@ -52,15 +52,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
 
-    def new_session(self, **kwargs) -> TracerSession:
+    def new_session(self, name: Optional[str] = None, **kwargs: Any) -> TracerSession:
         """Start a new tracing session. NOT thread safe, do not call this method from multiple threads."""
-        session_create = TracerSessionCreate(extra=kwargs)
+        session_create = TracerSessionCreate(name=name, extra=kwargs)
         session = self._persist_session(session_create)
         self._session = session
         return session
 
     @abstractmethod
-    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+    def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session and set it as the Tracer's session."""
 
     @abstractmethod
@@ -342,42 +342,6 @@ class SharedTracer(Singleton, BaseTracer, ABC):
             self._tracer_session = value
 
 
-class BaseJsonTracer(BaseTracer, ABC):
-    """An implementation of SharedTracer that prints trace as nested json."""
-
-    def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
-        """Persist a run."""
-
-        print(run.json(indent=2))
-
-    def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
-        """Persist a session."""
-
-        session = TracerSession(id=self._generate_id(), **session_create.dict())
-        print(session.json(indent=2))
-        return session
-
-    def load_session(self, session_id: Union[int, str]) -> TracerSession:
-        """Load a session from the tracer."""
-
-        # TODO: implement this
-        raise NotImplementedError("load_session is not implemented for BaseJsonTracer")
-
-    def _add_child_run(
-        self,
-        parent_run: Union[ChainRun, ToolRun],
-        child_run: Union[LLMRun, ChainRun, ToolRun],
-    ) -> None:
-        """Add child run to a chain run or tool run."""
-
-        parent_run.child_runs.append(child_run)
-
-    def _generate_id(self) -> Optional[Union[int, str]]:
-        """Generate an id for a run."""
-
-        return str(uuid.uuid4())
-
-
 class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
@@ -420,20 +384,20 @@ class BaseLangChainTracer(BaseTracer, ABC):
             session = TracerSession(id=1, **session_create.dict())
         return session
 
-    def load_session(self, session_id: Union[int, str]) -> TracerSession:
+    def load_session(self, session_name: str) -> TracerSession:
         """Load a session from the tracer."""
 
         try:
             r = requests.get(
-                f"{self._endpoint}/sessions/{session_id}",
+                f"{self._endpoint}/sessions?name={session_name}",
                 headers=self._headers,
             )
-            tracer_session = TracerSession(**r.json())
+            tracer_session = TracerSession(**r.json()[0])
             self._session = tracer_session
             return tracer_session
         except:
-            logging.warning(f"Failed to load session {session_id}, using empty session")
-            tracer_session = TracerSession(id=session_id)
+            logging.warning(f"Failed to load session {session_name}, using empty session")
+            tracer_session = TracerSession(id=1)
             self._session = tracer_session
             return tracer_session
 
