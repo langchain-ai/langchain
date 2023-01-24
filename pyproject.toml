@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.65"
+version = "0.0.69"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -84,6 +84,11 @@ profile = "black"
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 exclude = ["notebooks"]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
 
 [build-system]
 requires = ["poetry-core"]

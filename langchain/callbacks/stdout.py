@@ -15,11 +15,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out the prompts."""
         pass
 
-    def on_llm_end(self, response: LLMResult) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -30,11 +30,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         class_name = serialized["name"]
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
         print("\n\033[1m> Finished chain.\033[0m")
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -61,7 +61,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         print_text(output, color=color)
         print_text(f"\n{llm_prefix}")
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """Do nothing."""
         pass
 

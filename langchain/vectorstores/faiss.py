@@ -14,6 +14,19 @@ from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
+def dependable_faiss_import() -> Any:
+    """Import faiss if available, otherwise raise error."""
+    try:
+        import faiss
+    except ImportError:
+        raise ValueError(
+            "Could not import faiss python package. "
+            "Please it install it with `pip install faiss` "
+            "or `pip install faiss-cpu` (depending on Python version)."
+        )
+    return faiss
+
+
 class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
@@ -103,7 +116,9 @@ class FAISS(VectorStore):
             docs.append((doc, scores[0][j]))
         return docs
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -172,14 +187,7 @@ class FAISS(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
-        try:
-            import faiss
-        except ImportError:
-            raise ValueError(
-                "Could not import faiss python package. "
-                "Please it install it with `pip install faiss` "
-                "or `pip install faiss-cpu` (depending on Python version)."
-            )
+        faiss = dependable_faiss_import()
         embeddings = embedding.embed_documents(texts)
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
@@ -192,3 +200,21 @@ class FAISS(VectorStore):
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
         return cls(embedding.embed_query, index, docstore, index_to_id)
+
+    def save_local(self, path: str) -> None:
+        """Save FAISS index to disk.
+
+        Args:
+            path: Path to save FAISS index to.
+        """
+        faiss = dependable_faiss_import()
+        faiss.write_index(self.index, path)
+
+    def load_local(self, path: str) -> None:
+        """Load FAISS index from disk.
+
+        Args:
+            path: Path to load FAISS index from.
+        """
+        faiss = dependable_faiss_import()
+        self.index = faiss.read_index(path)

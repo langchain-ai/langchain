@@ -60,7 +60,7 @@ class SQLAlchemyCache(BaseCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
-        Base.metadata.create_all(self.engine)
+        self.cache_schema.metadata.create_all(self.engine)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""

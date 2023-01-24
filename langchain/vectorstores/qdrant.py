@@ -11,8 +11,7 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
 class Qdrant(VectorStore):
-    """
-    Wrapper around Qdrant vector database.
+    """Wrapper around Qdrant vector database.
 
     To use you should have the ``qdrant-client`` package installed.
 
@@ -72,7 +71,9 @@ class Qdrant(VectorStore):
 
         return ids
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -163,7 +164,7 @@ class Qdrant(VectorStore):
                 from langchain import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                faiss = Qdrant.from_texts(texts, embeddings)
+                qdrant = Qdrant.from_texts(texts, embeddings)
         """
         try:
             import qdrant_client
@@ -175,7 +176,8 @@ class Qdrant(VectorStore):
 
         from qdrant_client.http import models as rest
 
-        embeddings = embedding.embed_documents(texts)
+        # Just do a single quick embedding to get vector size
+        embeddings = embedding.embed_documents(texts[:1])
         vector_size = len(embeddings[0])
 
         qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")

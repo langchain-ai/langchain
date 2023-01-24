@@ -60,8 +60,7 @@ class SQLDatabaseChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         input_text = f"{inputs[self.input_key]} \nSQLQuery:"
-        if self.verbose:
-            self.callback_manager.on_text(input_text)
+        self.callback_manager.on_text(input_text, verbose=self.verbose)
         # If not present, then defaults to None which is all tables.
         table_names_to_use = inputs.get("table_names_to_use")
         table_info = self.database.get_table_info(table_names=table_names_to_use)
@@ -74,18 +73,15 @@ class SQLDatabaseChain(Chain, BaseModel):
         }
 
         sql_cmd = llm_chain.predict(**llm_inputs)
-        if self.verbose:
-            self.callback_manager.on_text(sql_cmd, color="green")
+        self.callback_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
         result = self.database.run(sql_cmd)
-        if self.verbose:
-            self.callback_manager.on_text("\nSQLResult: ")
-            self.callback_manager.on_text(result, color="yellow")
-            self.callback_manager.on_text("\nAnswer:")
+        self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
+        self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
+        self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
         input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
         llm_inputs["input"] = input_text
         final_result = llm_chain.predict(**llm_inputs)
-        if self.verbose:
-            self.callback_manager.on_text(final_result, color="green")
+        self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
 
 
@@ -146,9 +142,12 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
             "table_names": table_names,
         }
         table_names_to_use = self.decider_chain.predict_and_parse(**llm_inputs)
-        if self.verbose:
-            self.callback_manager.on_text("Table names to use:", end="\n")
-            self.callback_manager.on_text(str(table_names_to_use), color="yellow")
+        self.callback_manager.on_text(
+            "Table names to use:", end="\n", verbose=self.verbose
+        )
+        self.callback_manager.on_text(
+            str(table_names_to_use), color="yellow", verbose=self.verbose
+        )
         new_inputs = {
             self.sql_chain.input_key: inputs[self.input_key],
             "table_names_to_use": table_names_to_use,

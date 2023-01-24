@@ -24,30 +24,6 @@ def _get_python_repl() -> Tool:
     )
 
 
-def _get_serpapi() -> Tool:
-    return Tool(
-        "Search",
-        SerpAPIWrapper().run,
-        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
-def _get_google_search() -> Tool:
-    return Tool(
-        "Google Search",
-        GoogleSearchAPIWrapper().run,
-        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
-def _get_wolfram_alpha() -> Tool:
-    return Tool(
-        "Wolfram Alpha",
-        WolframAlphaAPIWrapper().run,
-        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
-    )
-
-
 def _get_requests() -> Tool:
     return Tool(
         "Requests",
@@ -66,11 +42,8 @@ def _get_terminal() -> Tool:
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
-    "serpapi": _get_serpapi,
     "requests": _get_requests,
     "terminal": _get_terminal,
-    "google-search": _get_google_search,
-    "wolfram-alpha": _get_wolfram_alpha,
 }
 
 
@@ -141,9 +114,38 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     )
 
 
-_EXTRA_TOOLS = {
+def _get_wolfram_alpha(**kwargs: Any) -> Tool:
+    return Tool(
+        "Wolfram Alpha",
+        WolframAlphaAPIWrapper(**kwargs).run,
+        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+    )
+
+
+def _get_google_search(**kwargs: Any) -> Tool:
+    return Tool(
+        "Google Search",
+        GoogleSearchAPIWrapper(**kwargs).run,
+        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
+def _get_serpapi(**kwargs: Any) -> Tool:
+    return Tool(
+        "Search",
+        SerpAPIWrapper(**kwargs).run,
+        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
+_EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+}
+_EXTRA_OPTIONAL_TOOLS = {
+    "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
+    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "serpapi": (_get_serpapi, ["serpapi_api_key"]),
 }
 
 
@@ -167,10 +169,10 @@ def load_tools(
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
             tools.append(_LLM_TOOLS[name](llm))
-        elif name in _EXTRA_TOOLS:
+        elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            _get_tool_func, extra_keys = _EXTRA_TOOLS[name]
+            _get_llm_tool_func, extra_keys = _EXTRA_LLM_TOOLS[name]
             missing_keys = set(extra_keys).difference(kwargs)
             if missing_keys:
                 raise ValueError(
@@ -178,7 +180,12 @@ def load_tools(
                     f"provided: {missing_keys}"
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
-            tools.append(_get_tool_func(llm=llm, **sub_kwargs))
+            tools.append(_get_llm_tool_func(llm=llm, **sub_kwargs))
+        elif name in _EXTRA_OPTIONAL_TOOLS:
+            _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
+            sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
+            tools.append(_get_tool_func(**sub_kwargs))
+
         else:
             raise ValueError(f"Got unknown tool {name}")
     return tools
@@ -186,4 +193,9 @@ def load_tools(
 
 def get_all_tool_names() -> List[str]:
     """Get a list of all possible tool names."""
-    return list(_BASE_TOOLS) + list(_EXTRA_TOOLS) + list(_LLM_TOOLS)
+    return (
+        list(_BASE_TOOLS)
+        + list(_EXTRA_OPTIONAL_TOOLS)
+        + list(_EXTRA_LLM_TOOLS)
+        + list(_LLM_TOOLS)
+    )
