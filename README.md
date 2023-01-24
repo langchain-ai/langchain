@@ -20,7 +20,7 @@ This library is aimed at assisting in the development of those types of applicat
 **❓ Question Answering over specific documents**
 
 - [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/question_answering.html)
-- End-to-end Example: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa>)
+- End-to-end Example: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa)
 
 **💬 Chatbots**
 
