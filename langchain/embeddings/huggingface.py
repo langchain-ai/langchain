@@ -54,7 +54,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         embeddings = self.client.encode(texts)
-        return embeddings
+        return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -67,4 +67,4 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         """
         text = text.replace("\n", " ")
         embedding = self.client.encode(text)
-        return embedding
+        return embedding.tolist()
