@@ -18,8 +18,7 @@ class ExceptionHandler:
     InvalidRequestError
     """
 
-    #TODO: if this is the only method required, can either move the implementation
-    #  to the SQLDataBaseChain class, or make this a static method
+    #TODO: ask if I shoudl make this a static method
 
     #TODO: ask about max_tries default value (what it is and how it should be requested)
 
@@ -35,3 +34,5 @@ class ExceptionHandler:
             except Exception as e:
                 return self.handle(exception=e, llm_chain=llm_chain,
                                     llm_inputs=llm_inputs, max_tries=max_tries-1)
+    
+    #TODO: other implementations of handle, including logical errors
