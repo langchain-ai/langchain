@@ -7,7 +7,22 @@ But using these LLMs in isolation is often not enough to
 create a truly powerful app - the real power comes when you are able to
 combine them with other sources of computation or knowledge.
 
-This library is aimed at assisting in the development of those types of applications.
+This library is aimed at assisting in the development of those types of applications. Common examples of these types of applications include:
+
+**Question Answering over specific documents**
+
+- `Documentation <./use_cases/question_answering.html>`_
+- End-to-end Example: `Question Answering over Notion Database <https://github.com/hwchase17/notion-qa>`_
+
+**Chatbots**
+
+- `Documentation <./use_cases/chatbots.html>`_
+- End-to-end Example: `Chat-LangChain <https://github.com/hwchase17/chat-langchain>`_
+
+**Agents**
+
+- `Documentation <./use_cases/agents.html>`_
+- End-to-end Example: `GPT+WolframAlpha <https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain>`_
 
 Getting Started
 ----------------
