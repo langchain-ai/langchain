@@ -137,7 +137,7 @@ Additional Resources
 
 Additional collection of resources we think may be useful as you develop your application!
 
-- `LangChain Hub <./langchainhub.html>`_: Overview of the LangChain Hub, a place to share and explore other prompts, chains, and agents.
+- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
 
 - `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
@@ -154,6 +154,7 @@ Additional collection of resources we think may be useful as you develop your ap
    :name: resources
    :hidden:
 
+   LangChainHub <https://github.com/hwchase17/langchain-hub>
    ./glossary.md
    ./gallery.rst
    ./deployments.md
