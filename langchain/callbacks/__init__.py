@@ -2,7 +2,6 @@
 import os
 from typing import Optional
 
-import langchain
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
@@ -27,7 +26,6 @@ def set_default_callback_manager() -> None:
         set_handler(StdOutCallbackHandler())
     elif default_handler == "langchain":
         session = os.environ.get("LANGCHAIN_SESSION")
-        session = session if session is None else int(session)
         set_tracing_callback_manager(session)
     else:
         raise ValueError(

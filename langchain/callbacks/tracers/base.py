@@ -366,8 +366,8 @@ class BaseLangChainTracer(BaseTracer, ABC):
                 data=run.json(),
                 headers=self._headers,
             )
-        except:
-            logging.warning(f"Failed to persist run")
+        except Exception as e:
+            logging.warning(f"Failed to persist run: {e}")
 
     def _persist_session(self, session_create: TracerSessionCreate) -> TracerSession:
         """Persist a session."""
@@ -394,8 +394,8 @@ class BaseLangChainTracer(BaseTracer, ABC):
             tracer_session = TracerSession(**r.json()[0])
             self._session = tracer_session
             return tracer_session
-        except:
-            logging.warning(f"Failed to load session {session_name}, using empty session")
+        except Exception as e:
+            logging.warning(f"Failed to load session {session_name}, using empty session: {e}")
             tracer_session = TracerSession(id=1)
             self._session = tracer_session
             return tracer_session
@@ -411,8 +411,8 @@ class BaseLangChainTracer(BaseTracer, ABC):
             tracer_session = TracerSession(**r.json()[0])
             self._session = tracer_session
             return tracer_session
-        except:
-            logging.warning(f"Failed to default session, using empty session")
+        except Exception as e:
+            logging.warning(f"Failed to default session, using empty session: {e}")
             tracer_session = TracerSession(id=1)
             self._session = tracer_session
             return tracer_session
