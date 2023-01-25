@@ -11,6 +11,7 @@ from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import RequestsWrapper
+from langchain.chains import load_chain
 
 
 class APIChain(Chain, BaseModel):
@@ -101,4 +102,36 @@ class APIChain(Chain, BaseModel):
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
             **kwargs,
+        )
+
+    @property
+    def _chain_type(self) -> str:
+        return "api_chain"
+
+    @classmethod
+    def from_config(config: Dict) -> APIChain:
+        try:
+            api_request_chain_cfg = config.get("api_request_chain")
+            api_request_chain = load_chain(api_request_chain_cfg)
+
+            api_answer_chain_cfg = config.get("api_answer_chain")
+            api_answer_chain = load_chain(api_answer_chain_cfg)
+
+            request_headers = config.get("requests_wrapper").get("headers")
+            requests_wrapper = RequestsWrapper(headers=request_headers)
+
+            api_docs = config.get("api_docs")
+            question_key = config.get("question_key")
+            output_key = config.get("output_key")
+
+        except:
+            raise ValueError("Could not load API answer chain.")
+
+        return APIChain(
+            api_request_chain=api_request_chain,
+            api_answer_chain=api_answer_chain,
+            requests_wrapper=requests_wrapper,
+            api_docs=api_docs,
+            question_key=question_key,
+            output_key=output_key,
         )

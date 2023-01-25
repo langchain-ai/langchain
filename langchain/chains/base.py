@@ -226,3 +226,7 @@ class Chain(BaseModel, ABC):
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+    @classmethod
+    def from_config(config: Dict) -> "Chain":
+        raise NotImplementedError("Abstract method.")
