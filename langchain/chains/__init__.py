@@ -19,6 +19,8 @@ from langchain.chains.sql_database.base import (
 )
 from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
+
 
 __all__ = [
     "APIChain",
@@ -41,4 +43,5 @@ __all__ = [
     "OpenAIModerationChain",
     "SQLDatabaseSequentialChain",
     "load_chain",
+    "HypotheticalDocumentEmbedder",
 ]

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings.hyde.prompts import PROMPT_MAP
+from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.llms.base import BaseLLM
 
 
