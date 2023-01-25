@@ -1,7 +1,7 @@
 """A shared CallbackManager."""
 
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -46,7 +46,7 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_llm_end(response, **kwargs)
 
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when LLM errors."""
         with self._lock:
             self._callback_manager.on_llm_error(error, **kwargs)
@@ -63,7 +63,7 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_chain_end(outputs, **kwargs)
 
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when chain errors."""
         with self._lock:
             self._callback_manager.on_chain_error(error, **kwargs)
@@ -80,7 +80,7 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_tool_end(output, **kwargs)
 
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when tool errors."""
         with self._lock:
             self._callback_manager.on_tool_error(error, **kwargs)

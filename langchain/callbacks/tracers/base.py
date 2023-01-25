@@ -146,7 +146,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Handle an error for an LLM run."""
 
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
@@ -190,7 +190,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Handle an error for a chain run."""
 
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
@@ -235,7 +235,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self._end_trace()
 
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Handle an error for a tool run."""
 
         if not self._stack or not isinstance(self._stack[-1], ToolRun):

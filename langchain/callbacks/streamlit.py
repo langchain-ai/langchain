@@ -1,5 +1,5 @@
 """Callback Handler that logs to streamlit."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import streamlit as st
 
@@ -22,7 +22,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -37,7 +37,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain."""
         st.write("Finished chain.")
 
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
@@ -62,7 +62,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         st.write(f"{observation_prefix}{output}")
         st.write(llm_prefix)
 
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Do nothing."""
         pass
 
