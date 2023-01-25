@@ -86,7 +86,7 @@ class SQLDatabase:
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        with self._engine.connect() as connection:
+        with self._engine.begin() as connection:
             if self._schema is not None:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.exec_driver_sql(command)

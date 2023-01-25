@@ -79,7 +79,7 @@ class BaseLLM(BaseModel, ABC):
                 raise e
             self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
-        params = self._llm_dict()
+        params = self.dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
         missing_prompts = []
@@ -148,8 +148,8 @@ class BaseLLM(BaseModel, ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
-    def _llm_dict(self) -> Dict:
-        """Return a dictionary of the prompt."""
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
@@ -175,7 +175,7 @@ class BaseLLM(BaseModel, ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self._llm_dict()
+        prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

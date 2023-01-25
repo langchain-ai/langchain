@@ -1,8 +1,14 @@
 """Callback handlers that allow listening to events in LangChain."""
+<<<<<<< HEAD
 import os
 from typing import Optional
+=======
+from contextlib import contextmanager
+from typing import Generator
+>>>>>>> master
 
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
@@ -45,3 +51,13 @@ def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
             handler.load_session(session_name)
         except:
             raise ValueError(f"session {session_name} not found")
+
+
+@contextmanager
+def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
+    """Get OpenAI callback handler in a context manager."""
+    handler = OpenAICallbackHandler()
+    manager = get_callback_manager()
+    manager.add_handler(handler)
+    yield handler
+    manager.remove_handler(handler)

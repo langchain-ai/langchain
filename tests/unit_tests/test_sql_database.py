@@ -40,7 +40,7 @@ def test_sql_database_run() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison")
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     command = "select user_name from user where user_id = 13"
@@ -54,7 +54,7 @@ def test_sql_database_run_update() -> None:
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison")
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine)
     command = "update user set user_name='Updated' where user_id = 13"
