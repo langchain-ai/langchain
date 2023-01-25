@@ -20,7 +20,8 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     reduce_k_below_max_tokens: bool = False
     """Reduce the number of results to return from store based on tokens limit"""
     max_tokens_limit: int = 3375
-    """Restrict the docs to return from store based on tokens, only applicable for StuffDocumentChain and if reduce_k_below_max_tokens set to true"""
+    """Restrict the docs to return from store based on tokens,
+    enforced only for StuffDocumentChain and if reduce_k_below_max_tokens is to true"""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
