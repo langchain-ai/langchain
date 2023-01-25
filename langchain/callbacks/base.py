@@ -43,7 +43,9 @@ class BaseCallbackHandler(ABC):
         """Run when LLM ends running."""
 
     @abstractmethod
-    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
 
     @abstractmethod
@@ -57,7 +59,9 @@ class BaseCallbackHandler(ABC):
         """Run when chain ends running."""
 
     @abstractmethod
-    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
 
     @abstractmethod
@@ -71,7 +75,9 @@ class BaseCallbackHandler(ABC):
         """Run when tool ends running."""
 
     @abstractmethod
-    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
 
     @abstractmethod
@@ -133,7 +139,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_llm_end(response)
 
     def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         for handler in self.handlers:
@@ -164,7 +173,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_chain_end(outputs)
 
     def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         for handler in self.handlers:
@@ -193,7 +205,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_tool_end(output, **kwargs)
 
     def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         for handler in self.handlers:

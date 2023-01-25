@@ -19,7 +19,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 
@@ -34,7 +36,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain."""
         print("\n\033[1m> Finished chain.\033[0m")
 
-    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 
@@ -61,7 +65,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         print_text(output, color=color)
         print_text(f"\n{llm_prefix}")
 
-    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 

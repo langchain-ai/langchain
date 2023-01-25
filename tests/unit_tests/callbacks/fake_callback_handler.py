@@ -49,7 +49,9 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when LLM ends running."""
         self.ends += 1
 
-    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
         self.errors += 1
 
@@ -63,7 +65,9 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when chain ends running."""
         self.ends += 1
 
-    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
         self.errors += 1
 
@@ -77,7 +81,9 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
         """Run when tool ends running."""
         self.ends += 1
 
-    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
         self.errors += 1
 
