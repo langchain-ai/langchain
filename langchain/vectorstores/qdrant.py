@@ -146,8 +146,6 @@ class Qdrant(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        collection_name: Optional[str] = None,
-        distance_func: Optional[str] = None,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "Qdrant":
@@ -184,10 +182,10 @@ class Qdrant(VectorStore):
 
         qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
         kwargs.pop("host")
-        client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
+        collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
+        distance_func = kwargs.pop("distance_func", "Cosine").upper()
 
-        collection_name = collection_name or uuid.uuid4().hex
-        distance_func = distance_func or 'Cosine'.upper()
+        client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
 
         client.recreate_collection(
             collection_name=collection_name,
