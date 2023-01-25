@@ -1,14 +1,13 @@
 """Question-answering with sources over a vector database."""
-import sys
 
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 
 
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
