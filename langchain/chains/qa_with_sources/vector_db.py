@@ -46,10 +46,10 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
 
-    def _page_content(self, doc: Document):
+    def _page_content(self, doc: Document) -> str:
         return doc.page_content
 
-    def _reduce_tokens_below_limit(self, docs):
+    def _reduce_tokens_below_limit(self, docs) -> List[Document]:
         tokens = len(self._get_num_tokens("".join(map(self._page_content, docs))))
         return docs if (tokens <= self.max_tokens_limit) else self._reduce_tokens_below_limit(docs[:-1])
 
