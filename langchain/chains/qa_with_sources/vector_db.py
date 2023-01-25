@@ -29,9 +29,15 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         return doc.page_content
 
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
-        if (isinstance(self.combine_documents_chain, StuffDocumentsChain)):
-            tokens = self.combine_documents_chain.llm_chain.llm.get_num_tokens("".join(map(self._page_content, docs)))
-            return docs if (tokens <= self.max_tokens_limit) else self._reduce_tokens_below_limit(docs[:-1])
+        if isinstance(self.combine_documents_chain, StuffDocumentsChain):
+            tokens = self.combine_documents_chain.llm_chain.llm.get_num_tokens(
+                "".join(map(self._page_content, docs))
+            )
+            return (
+                docs
+                if (tokens <= self.max_tokens_limit)
+                else self._reduce_tokens_below_limit(docs[:-1])
+            )
         else:
             return docs
 
