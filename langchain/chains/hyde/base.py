@@ -9,9 +9,9 @@ from typing import List
 import numpy as np
 from pydantic import BaseModel, Extra
 
+from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
-from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.llms.base import BaseLLM
 
 
