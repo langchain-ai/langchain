@@ -1,6 +1,9 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
+from pathlib import Path
+import json
+import yaml
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -192,6 +195,50 @@ class Agent(BaseModel):
                 f"got {early_stopping_method}"
             )
 
+    @property
+    @abstractmethod
+    def _agent_type(self) -> str:
+        """Identifier of agent type."""
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        _dict["_type"] = self._agent_type
+        return _dict
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Save the agent.
+
+        Args:
+            file_path: Path to file to save the agent to.
+
+        Example:
+        .. code-block:: python
+
+            # If working with agent executor
+            agent.agent.save(file_path="path/agent.yaml")
+        """
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Fetch dictionary to save
+        agent_dict = self.dict()
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(agent_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(agent_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")
+
+
 
 class AgentExecutor(Chain, BaseModel):
     """Consists of an agent using tools."""
@@ -214,6 +261,18 @@ class AgentExecutor(Chain, BaseModel):
         return cls(
             agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
         )
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Saving not supported for Agent Executors."""
+        raise ValueError(
+            "Saving not supported for agent executors. "
+            "If you are trying to save the agent, please use the "
+            "`.save_agent(...)`"
+        )
+
+    def save_agent(self, file_path: Union[Path, str]) -> None:
+        """Save the underlying agent."""
+        return self.agent.save(file_path)
 
     @property
     def input_keys(self) -> List[str]:

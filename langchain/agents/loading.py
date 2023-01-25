@@ -1,59 +1,50 @@
-"""Load agent."""
-from typing import Any, List, Optional
+"""Functionality for loading agents."""
+import json
+from pathlib import Path
+from typing import Union
 
-from langchain.agents.agent import AgentExecutor
+import yaml
+
+from langchain.agents.agent import Agent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.react.base import ReActDocstoreAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
-from langchain.agents.tools import Tool
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.llms.base import BaseLLM
-
-AGENT_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotAgent,
-    "react-docstore": ReActDocstoreAgent,
-    "self-ask-with-search": SelfAskWithSearchAgent,
-    "conversational-react-description": ConversationalAgent,
-}
+from la
+from langchain.chains.loading import load_chain, load_chain_from_config
 
 
-def initialize_agent(
-    tools: List[Tool],
-    llm: BaseLLM,
-    agent: str = "zero-shot-react-description",
-    callback_manager: Optional[BaseCallbackManager] = None,
-    **kwargs: Any,
-) -> AgentExecutor:
-    """Load agent given tools and LLM.
 
-    Args:
-        tools: List of tools this agent has access to.
-        llm: Language model to use as the agent.
-        agent: The agent to use. Valid options are:
-            `zero-shot-react-description`
-            `react-docstore`
-            `self-ask-with-search`
-            `conversational-react-description`.
-        callback_manager: CallbackManager to use. Global callback manager is used if
-            not provided. Defaults to None.
-        **kwargs: Additional key word arguments to pass to the agent.
 
-    Returns:
-        An agent.
-    """
-    if agent not in AGENT_TO_CLASS:
-        raise ValueError(
-            f"Got unknown agent type: {agent}. "
-            f"Valid types are: {AGENT_TO_CLASS.keys()}."
-        )
-    agent_cls = AGENT_TO_CLASS[agent]
-    agent_obj = agent_cls.from_llm_and_tools(
-        llm, tools, callback_manager=callback_manager
-    )
-    return AgentExecutor.from_agent_and_tools(
-        agent=agent_obj,
-        tools=tools,
-        callback_manager=callback_manager,
-        **kwargs,
-    )
+type_to_loader_dict = {"llm_chain": _load_llm_chain}
+
+
+def load_chain_from_config(config: dict) -> Chain:
+    """Load chain from Config Dict."""
+    if "_type" not in config:
+        raise ValueError("Must specify an chain Type in config")
+    config_type = config.pop("_type")
+
+    if config_type not in type_to_loader_dict:
+        raise ValueError(f"Loading {config_type} chain not supported")
+
+    chain_loader = type_to_loader_dict[config_type]
+    return chain_loader(config)
+
+
+def load_chain(file: Union[str, Path]) -> Chain:
+    """Load chain from file."""
+    # Convert file to Path object.
+    if isinstance(file, str):
+        file_path = Path(file)
+    else:
+        file_path = file
+    # Load from either json or yaml.
+    if file_path.suffix == ".json":
+        with open(file_path) as f:
+            config = json.load(f)
+    elif file_path.suffix == ".yaml":
+        with open(file_path, "r") as f:
+            config = yaml.safe_load(f)
+    else:
+        raise ValueError("File type must be json or yaml")
+    # Load the chain from the config now.
+    return load_chain_from_config(config)

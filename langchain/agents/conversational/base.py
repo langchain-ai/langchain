@@ -19,6 +19,11 @@ class ConversationalAgent(Agent):
     ai_prefix: str = "AI"
 
     @property
+    def _agent_type(self) -> str:
+        """Identifier for agent type."""
+        return "conversational-react-description"
+
+    @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
         return "Observation: "
