@@ -1,11 +1,8 @@
 """Callback handlers that allow listening to events in LangChain."""
-<<<<<<< HEAD
 import os
 from typing import Optional
-=======
 from contextlib import contextmanager
 from typing import Generator
->>>>>>> master
 
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.callbacks.openai_info import OpenAICallbackHandler
