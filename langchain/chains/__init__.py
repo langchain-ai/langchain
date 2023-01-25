@@ -1,5 +1,6 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
+from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -41,4 +42,5 @@ __all__ = [
     "OpenAIModerationChain",
     "SQLDatabaseSequentialChain",
     "load_chain",
+    "AnalyzeDocumentChain",
 ]
