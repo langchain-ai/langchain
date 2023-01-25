@@ -1,13 +1,13 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
-from pathlib import Path
 import json
-import yaml
 import logging
 from abc import abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import yaml
 from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import Tool
@@ -199,6 +199,7 @@ class Agent(BaseModel):
     @abstractmethod
     def _agent_type(self) -> str:
         """Identifier of agent type."""
+
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
@@ -237,7 +238,6 @@ class Agent(BaseModel):
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
-
 
 
 class AgentExecutor(Chain, BaseModel):

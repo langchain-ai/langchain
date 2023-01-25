@@ -2,27 +2,18 @@
 from typing import Any, List, Optional
 
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.conversational.base import ConversationalAgent
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.react.base import ReActDocstoreAgent
-from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
+from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.llms.base import BaseLLM
-
-AGENT_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotAgent,
-    "react-docstore": ReActDocstoreAgent,
-    "self-ask-with-search": SelfAskWithSearchAgent,
-    "conversational-react-description": ConversationalAgent,
-}
 
 
 def initialize_agent(
     tools: List[Tool],
     llm: BaseLLM,
-    agent: str = "zero-shot-react-description",
+    agent: Optional[str] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    agent_path: Optional[str] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Load agent given tools and LLM.
@@ -34,23 +25,41 @@ def initialize_agent(
             `zero-shot-react-description`
             `react-docstore`
             `self-ask-with-search`
-            `conversational-react-description`.
+            `conversational-react-description`
+            If None and agent_path is also None, will default to
+            `zero-shot-react-description`.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
+        agent_path: Path to serialized agent to use.
         **kwargs: Additional key word arguments to pass to the agent.
 
     Returns:
         An agent.
     """
-    if agent not in AGENT_TO_CLASS:
+    if agent is None and agent_path is None:
+        agent = "zero-shot-react-description"
+    if agent is not None and agent_path is not None:
         raise ValueError(
-            f"Got unknown agent type: {agent}. "
-            f"Valid types are: {AGENT_TO_CLASS.keys()}."
+            "Both `agent` and `agent_path` are specified, "
+            "but at most only one should be."
         )
-    agent_cls = AGENT_TO_CLASS[agent]
-    agent_obj = agent_cls.from_llm_and_tools(
-        llm, tools, callback_manager=callback_manager
-    )
+    if agent is not None:
+        if agent not in AGENT_TO_CLASS:
+            raise ValueError(
+                f"Got unknown agent type: {agent}. "
+                f"Valid types are: {AGENT_TO_CLASS.keys()}."
+            )
+        agent_cls = AGENT_TO_CLASS[agent]
+        agent_obj = agent_cls.from_llm_and_tools(
+            llm, tools, callback_manager=callback_manager
+        )
+    elif agent_path is not None:
+        agent_obj = load_agent(agent_path, callback_manager=callback_manager)
+    else:
+        raise ValueError(
+            "Somehow both `agent` and `agent_path` are None, "
+            "this should never happen."
+        )
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
         tools=tools,
