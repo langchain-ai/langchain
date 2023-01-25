@@ -4,9 +4,9 @@ from typing import List, Optional
 import numpy as np
 from pydantic import BaseModel
 
+from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
+from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings.hyde.base import HypotheticalDocumentEmbedder
-from langchain.embeddings.hyde.prompts import PROMPT_MAP
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 
