@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pytest
 from freezegun import freeze_time
@@ -81,7 +81,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
     )
 
 
-def _perform_nested_run(tracer: BaseTracer):
+def _perform_nested_run(tracer: BaseTracer) -> None:
     """Perform a nested run."""
 
     tracer.on_chain_start(serialized={}, inputs={})
@@ -97,7 +97,7 @@ def _perform_nested_run(tracer: BaseTracer):
 
 
 def _add_child_run(
-        parent_run: Union[ChainRun, ToolRun],
+    parent_run: Union[ChainRun, ToolRun],
     child_run: Union[LLMRun, ChainRun, ToolRun],
 ) -> None:
     """Add child run to a chain run or tool run."""
@@ -136,7 +136,7 @@ class FakeTracer(Tracer):
         """Initialize the tracer."""
 
         super().__init__()
-        self.runs = []
+        self.runs: List[Union[LLMRun, ChainRun, ToolRun]] = []
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
@@ -176,7 +176,7 @@ class FakeTracer(Tracer):
 class FakeSharedTracer(SharedTracer):
     """Fake shared tracer that records LangChain execution."""
 
-    runs = []
+    runs: List[Union[LLMRun, ChainRun, ToolRun]] = []
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
@@ -184,7 +184,7 @@ class FakeSharedTracer(SharedTracer):
         with self._lock:
             self.runs.append(run)
 
-    def remove_runs(self):
+    def remove_runs(self) -> None:
         """Remove all runs."""
 
         with self._lock:

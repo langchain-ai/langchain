@@ -32,11 +32,6 @@ class BaseCallbackHandler(ABC):
 
         return False
 
-    @property
-    def always_verbose(self) -> bool:
-        """Whether to call verbose callbacks even if verbose is False."""
-        return False
-
     @abstractmethod
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any

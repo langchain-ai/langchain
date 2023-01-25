@@ -1,7 +1,6 @@
 """Base interfaces for tracing runs."""
 from __future__ import annotations
 
-import datetime
 import logging
 import os
 import threading
@@ -261,7 +260,7 @@ class Tracer(BaseTracer, ABC):
         """Initialize a tracer."""
         self._tracer_stack: List[Union[LLMRun, ChainRun, ToolRun]] = []
         self._tracer_execution_order = 1
-        self._tracer_session = None
+        self._tracer_session: Optional[TracerSession] = None
 
     @property
     def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
@@ -346,7 +345,7 @@ class BaseLangChainTracer(BaseTracer, ABC):
 
     always_verbose: bool = True
     _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
-    _headers = {"Content-Type": "application/json"}
+    _headers: Dict[str, Any] = {"Content-Type": "application/json"}
     if os.getenv("LANGCHAIN_API_KEY"):
         _headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
 
@@ -395,7 +394,9 @@ class BaseLangChainTracer(BaseTracer, ABC):
             self._session = tracer_session
             return tracer_session
         except Exception as e:
-            logging.warning(f"Failed to load session {session_name}, using empty session: {e}")
+            logging.warning(
+                f"Failed to load session {session_name}, using empty session: {e}"
+            )
             tracer_session = TracerSession(id=1)
             self._session = tracer_session
             return tracer_session
