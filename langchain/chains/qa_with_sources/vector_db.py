@@ -25,22 +25,24 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    def _page_content(self, doc: Document) -> str:
-        return doc.page_content
-
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
+        num_docs = len(docs)
+
         if self.reduce_k_below_max_tokens and isinstance(
             self.combine_documents_chain, StuffDocumentsChain
         ):
-            tokens = self.combine_documents_chain.llm_chain.llm.get_num_tokens(
-                "".join(map(self._page_content, docs))
-            )
-            return (
-                docs
-                if (tokens <= self.max_tokens_limit)
-                else self._reduce_tokens_below_limit(docs[:-1])
-            )
-        return docs
+            tokens = [
+                self.combine_documents_chain.llm_chain.llm.get_num_tokens(
+                    doc.page_content
+                )
+                for doc in docs
+            ]
+            token_count = sum(tokens[:num_docs])
+            while token_count > self.max_tokens_limit:
+                num_docs -= 1
+                token_count -= tokens[num_docs]
+
+        return docs[:num_docs]
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
