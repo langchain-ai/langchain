@@ -81,7 +81,7 @@ class SQLDatabase:
         for table_name in all_table_names:
             if self._sample_row_in_table_info:
                 sample_row = self.run(f"SELECT * FROM {table_name} LIMIT 1")
-                sample_row = [str(i)[:100] for i in eval(sample_row)[0]]
+                sample_row = ' '.join([str(i)[:100] for i in eval(sample_row)[0]])
 
             columns = []
             for column in self._inspector.get_columns(table_name, schema=self._schema):
