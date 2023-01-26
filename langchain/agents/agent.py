@@ -199,7 +199,7 @@ class AgentExecutor(Chain, BaseModel):
     agent: Agent
     tools: List[Tool]
     return_intermediate_steps: bool = False
-    max_iterations: Optional[int] = None
+    max_iterations: Optional[int] = 15
     early_stopping_method: str = "force"
 
     @classmethod
