@@ -1176,7 +1176,7 @@ files = [
 name = "freezegun"
 version = "1.2.2"
 description = "Let your Python tests travel through time"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -5666,4 +5666,4 @@ llms = ["manifest-ml", "torch", "transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8996366838dcdffbda8eb49d6a9e3c5cc8799d1c33a14e4bb520d220d3b0173e"
+content-hash = "537ede877b299a8800eb26a428607be97b59f89435259abda2c7cc86092306c6"
