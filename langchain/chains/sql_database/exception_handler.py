@@ -1,6 +1,5 @@
 """
-TODO: Depending on how many exceptions end up being handled, this could be
-moved to a method in the SQLDatabaseChain class.
+TODO: move this to the base class
 """
 
 from sqlalchemy.exc import InvalidRequestError
