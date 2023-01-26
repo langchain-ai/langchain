@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://www.github.com/hwchase17/langchain"
 
 [tool.poetry.scripts]
-langchain-server = "langchain.run:main"
+langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
