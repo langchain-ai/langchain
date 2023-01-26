@@ -135,8 +135,8 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    @abstractmethod
     @property
+    @abstractmethod
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
 

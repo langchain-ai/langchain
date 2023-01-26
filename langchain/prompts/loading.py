@@ -83,7 +83,7 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
             )
         config["example_prompt"] = load_prompt(config.pop("example_prompt_path"))
     else:
-        config["example_prompt"] = _load_prompt(config["example_prompt"])
+        config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
     config = _load_examples(config)
     return FewShotPromptTemplate(**config)
