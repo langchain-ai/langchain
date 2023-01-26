@@ -21,6 +21,7 @@ class ExceptionHandler:
     #TODO: ask if I shoudl make this a static method
 
     #TODO: ask about max_tries default value (what it is and how it should be requested)
+    #Default value is 3, can be changed (may be good to set in base)
 
     #TODO: could have multiple methods with this name, or make more specific later
     def handle(self, exception:Exception, llm_chain:LLMChain, 
