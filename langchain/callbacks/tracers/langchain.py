@@ -4,12 +4,18 @@ from __future__ import annotations
 import logging
 import os
 from abc import ABC
-from typing import Dict, Any, Union, Optional
+from typing import Any, Dict, Optional, Union
 
 import requests
 
 from langchain.callbacks.tracers.base import BaseTracer
-from langchain.callbacks.tracers.schemas import LLMRun, ChainRun, ToolRun, TracerSessionCreate, TracerSession
+from langchain.callbacks.tracers.schemas import (
+    ChainRun,
+    LLMRun,
+    ToolRun,
+    TracerSession,
+    TracerSessionCreate,
+)
 
 
 class BaseLangChainTracer(BaseTracer, ABC):
