@@ -21,6 +21,7 @@ class ExceptionHandler:
     #TODO: ask if I shoudl make this a static method
 
     #TODO: ask about max_tries default value (what it is and how it should be requested)
+    #Should be 3 for now (Andy said so), make a constant for it in the class definition
 
     #TODO: could have multiple methods with this name, or make more specific later
     def handle(self, exception:Exception, llm_chain:LLMChain, 
@@ -34,5 +35,7 @@ class ExceptionHandler:
             except Exception as e:
                 return self.handle(exception=e, llm_chain=llm_chain,
                                     llm_inputs=llm_inputs, max_tries=max_tries-1)
+        else:
+            raise Exception("Unhandled exception")
     
     #TODO: other implementations of handle, including logical errors
