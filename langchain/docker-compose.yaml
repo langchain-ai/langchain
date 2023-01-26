@@ -3,10 +3,11 @@ services:
   langchain-frontend:
     image: notlangchain/langchainplus-frontend:latest
     ports:
-      - 5173:5173
+      - 4173:4173
     environment:
       - BACKEND_URL=http://langchain-backend:8000
       - PUBLIC_BASE_URL=http://localhost:8000
+      - PUBLIC_DEV_MODE=true
     depends_on:
       - langchain-backend
   langchain-backend:
