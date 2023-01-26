@@ -7,7 +7,22 @@ But using these LLMs in isolation is often not enough to
 create a truly powerful app - the real power comes when you are able to
 combine them with other sources of computation or knowledge.
 
-This library is aimed at assisting in the development of those types of applications.
+This library is aimed at assisting in the development of those types of applications. Common examples of these types of applications include:
+
+**❓ Question Answering over specific documents**
+
+- `Documentation <./use_cases/question_answering.html>`_
+- End-to-end Example: `Question Answering over Notion Database <https://github.com/hwchase17/notion-qa>`_
+
+**💬 Chatbots**
+
+- `Documentation <./use_cases/chatbots.html>`_
+- End-to-end Example: `Chat-LangChain <https://github.com/hwchase17/chat-langchain>`_
+
+**🤖 Agents**
+
+- `Documentation <./use_cases/agents.html>`_
+- End-to-end Example: `GPT+WolframAlpha <https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain>`_
 
 Getting Started
 ----------------
@@ -137,6 +152,8 @@ Additional Resources
 
 Additional collection of resources we think may be useful as you develop your application!
 
+- `LangChainHub <https://github.com/hwchase17/langchain-hub>`_: The LangChainHub is a place to share and explore other prompts, chains, and agents.
+
 - `Glossary <./glossary.html>`_: A glossary of all related terms, papers, methods, etc. Whether implemented in LangChain or not!
 
 - `Gallery <./gallery.html>`_: A collection of our favorite projects that use LangChain. Useful for finding inspiration or seeing how things were done in other applications.
@@ -152,6 +169,7 @@ Additional collection of resources we think may be useful as you develop your ap
    :name: resources
    :hidden:
 
+   LangChainHub <https://github.com/hwchase17/langchain-hub>
    ./glossary.md
    ./gallery.rst
    ./deployments.md

@@ -80,6 +80,20 @@ Currently, the template should be formatted as a Python f-string. We also suppor
 :::
 
 
+## Load a prompt template from LangChainHub
+
+LangChainHub contains a collection of prompts which can be loaded directly via LangChain.
+
+
+```python
+from langchain.prompts import load_prompt
+
+prompt = load_prompt("lc://prompts/conversation/prompt.json")
+prompt.format(history="", input="What is 1 + 1?")
+```
+
+You can read more about LangChainHub and the prompts available with it [here](https://github.com/hwchase17/langchain-hub).
+
 ## Pass few shot examples to a prompt template
 
 Few shot examples are a set of examples that can be used to help the language model generate a better response.
@@ -211,7 +225,7 @@ In contrast, if we provide a very long input, the `LengthBasedExampleSelector` w
 
 ```python
 long_string = "big and huge and massive and large and gigantic and tall and much much much much much bigger than everything else"
-print(dynamic_prompt.format(adjective=long_string))
+print(dynamic_prompt.format(input=long_string))
 # -> Give the antonym of every input
 
 # -> Word: happy

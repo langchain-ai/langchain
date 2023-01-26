@@ -177,15 +177,16 @@ class Qdrant(VectorStore):
         from qdrant_client.http import models as rest
 
         # Just do a single quick embedding to get vector size
-        embeddings = embedding.embed_documents(texts[:1])
-        vector_size = len(embeddings[0])
+        partial_embeddings = embedding.embed_documents(texts[:1])
+        vector_size = len(partial_embeddings[0])
 
         qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
         kwargs.pop("host")
+        collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
+        distance_func = kwargs.pop("distance_func", "Cosine").upper()
+
         client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
 
-        collection_name = kwargs.get("collection_name", uuid.uuid4().hex)
-        distance_func = kwargs.pop("distance_func", "Cosine").upper()
         client.recreate_collection(
             collection_name=collection_name,
             vectors_config=rest.VectorParams(
@@ -193,6 +194,9 @@ class Qdrant(VectorStore):
                 distance=rest.Distance[distance_func],
             ),
         )
+
+        # Now generate the embeddings for all the texts
+        embeddings = embedding.embed_documents(texts)
 
         client.upsert(
             collection_name=collection_name,

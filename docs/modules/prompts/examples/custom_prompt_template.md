@@ -34,7 +34,7 @@ Next, we'll create a custom prompt template that takes in the function name as i
 
 ```python
 from langchain.prompts import BasePromptTemplate
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class FunctionExplainerPromptTemplate(BasePromptTemplate, BaseModel):
@@ -54,7 +54,7 @@ class FunctionExplainerPromptTemplate(BasePromptTemplate, BaseModel):
         # Generate the prompt to be sent to the language model
         prompt = f"""
         Given the function name and source code, generate an English language explanation of the function.
-        Function Name: {kwargs["function_name"]}
+        Function Name: {kwargs["function_name"].__name__}
         Source Code:
         {source_code}
         Explanation:

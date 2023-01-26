@@ -1,6 +1,6 @@
 """Test base LLM functionality."""
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
@@ -12,7 +12,7 @@ def test_caching() -> None:
     """Test caching behavior."""
     langchain.llm_cache = InMemoryCache()
     llm = FakeLLM()
-    params = llm._llm_dict()
+    params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
@@ -50,7 +50,7 @@ def test_custom_caching() -> None:
     engine = create_engine("sqlite://")
     langchain.llm_cache = SQLAlchemyCache(engine, FulltextLLMCache)
     llm = FakeLLM()
-    params = llm._llm_dict()
+    params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
