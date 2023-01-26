@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
-from langchain.utils import get_from_dict_or_env
+from langchain.utils import get_from_dict_or_env, retry
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +155,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = self.client.create(prompt=_prompts, **params)
+            @retry()
+            def create():
+                return self.client.create(prompt=_prompts, **params)
+            response = create()
             choices.extend(response["choices"])
             _keys_to_use = _keys.intersection(response["usage"])
             for _key in _keys_to_use:
