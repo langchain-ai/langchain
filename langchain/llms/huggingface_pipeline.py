@@ -97,9 +97,9 @@ class HuggingFacePipeline(LLM, BaseModel):
                 if device < 0 and cuda_device_count > 0:
                     logger.warning(
                         "Device has %d GPUs available. "
-                        "Provide device={deviceId} to `from_model_id` to use available GPUs"
-                        " for execution. deviceId is -1 (default) for CPU and can be a "
-                        "positive integer associated with CUDA device id.",
+                        "Provide device={deviceId} to `from_model_id` to use available"
+                        "GPUs for execution. deviceId is -1 (default) for CPU and "
+                        "can be a positive integer associated with CUDA device id.",
                         cuda_device_count,
                     )
 
