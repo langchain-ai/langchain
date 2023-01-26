@@ -75,12 +75,15 @@ class SQLDatabase:
         template = "Table '{table_name}' has columns: {columns}."
 
         if self._sample_row_in_table_info:
-            template += " Here is an example row for this table (long strings are truncated): {sample_row}."
+            template += (
+                " Here is an example row for this table"
+                " (long strings are truncated): {sample_row}."
+            )
 
         tables = []
         for table_name in all_table_names:
             if self._sample_row_in_table_info:
-                sample_row = self.run(f"SELECT * FROM {table_name} LIMIT 1")
+                sample_row = self.run(f"SELECT * FROM '{table_name}' LIMIT 1")
                 sample_row = " ".join([str(i)[:100] for i in eval(sample_row)[0]])
 
             columns = []
