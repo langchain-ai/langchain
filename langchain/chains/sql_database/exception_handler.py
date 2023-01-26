@@ -24,11 +24,11 @@ class ExceptionHandler:
 
     #TODO: could have multiple methods with this name, or make more specific later
     def handle(self, exception:Exception, llm_chain:LLMChain, 
-                llm_inputs: dict[str,], max_tries: int = 3) -> str:
+                llm_inputs: dict[str,any], max_tries: int = 3) -> str:
         if(max_tries == 0):
             #TODO: ask Andy what output is desired here
             raise Exception("Max tries reached")
-        if isinstance(self.exception, InvalidRequestError): #could be the same as many others
+        if isinstance(exception, InvalidRequestError): #could be the same as many others
             try:
                 return llm_chain.predict(**llm_inputs)
             except Exception as e:
