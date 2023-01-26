@@ -5,6 +5,7 @@ TODO: move this to the base class
 from sqlalchemy.exc import InvalidRequestError
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.chains.llm import LLMChain
+import typing
 
 class ExceptionHandler:
     """
@@ -23,7 +24,7 @@ class ExceptionHandler:
     #Should be 3 for now (Andy said so), make a constant for it in the class definition in base
     #TODO: could have multiple methods with this name, or make more specific later
     def handle(self, exception:Exception, llm_chain:LLMChain, 
-                llm_inputs: dict[str,any], max_tries: int = 3) -> str:
+                llm_inputs: dict[str,object], max_tries: int = 3) -> str:
         if(max_tries == 0):
             #TODO: ask Andy what output is desired here
             raise Exception("Max tries reached")
