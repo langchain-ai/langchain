@@ -122,3 +122,7 @@ class LLMChain(Chain, BaseModel):
             return new_result
         else:
             return result
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_chain"
