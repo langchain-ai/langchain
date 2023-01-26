@@ -1,7 +1,18 @@
 # flake8: noqa
 import time
 from sys import platform
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Set, Tuple, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, CDPSession, Page, sync_playwright
@@ -25,8 +36,8 @@ black_listed_elements: Set[str] = {
 class ElementInViewPort(TypedDict):
     node_index: str
     backend_node_id: int
-    node_name: str | None
-    node_value: str | None
+    node_name: Optional[str]
+    node_value: Optional[str]
     node_meta: List[str]
     is_clickable: bool
     origin_x: int
@@ -67,7 +78,7 @@ class Crawler:
                 "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop + window.innerHeight;"
             )
 
-    def click(self, id: str | int) -> None:
+    def click(self, id: Union[str, int]) -> None:
         # Inject javascript into the page which removes the target= attribute from all links
         js = """
 		links = document.getElementsByTagName("a");
@@ -86,7 +97,7 @@ class Crawler:
         else:
             print("Could not find element")
 
-    def type(self, id: str | int, text: str) -> None:
+    def type(self, id: Union[str, int], text: str) -> None:
         self.click(id)
         self.page.keyboard.type(text)
 
@@ -155,10 +166,12 @@ class Crawler:
         child_nodes: Dict[str, List[Dict[str, Any]]] = {}
         elements_in_view_port: List[ElementInViewPort] = []
 
-        anchor_ancestry: Dict[str, Tuple[bool, int | None]] = {"-1": (False, None)}
-        button_ancestry: Dict[str, Tuple[bool, int | None]] = {"-1": (False, None)}
+        anchor_ancestry: Dict[str, Tuple[bool, Optional[int]]] = {"-1": (False, None)}
+        button_ancestry: Dict[str, Tuple[bool, Optional[int]]] = {"-1": (False, None)}
 
-        def convert_name(node_name: str | None, has_click_handler: bool | None) -> str:
+        def convert_name(
+            node_name: Optional[str], has_click_handler: Optional[bool]
+        ) -> str:
             if node_name == "a":
                 return "link"
             if node_name == "input":
@@ -193,12 +206,12 @@ class Crawler:
             return values
 
         def add_to_hash_tree(
-            hash_tree: Dict[str, Tuple[bool, int | None]],
+            hash_tree: Dict[str, Tuple[bool, Optional[int]]],
             tag: str,
             node_id: int,
-            node_name: str | None,
+            node_name: Optional[str],
             parent_id: int,
-        ) -> Tuple[bool, int | None]:
+        ) -> Tuple[bool, Optional[int]]:
             parent_id_str = str(parent_id)
             if not parent_id_str in hash_tree:
                 parent_name = strings[node_names[parent_id]].lower()
@@ -212,7 +225,7 @@ class Crawler:
 
             # even if the anchor is nested in another anchor, we set the "root" for all descendants to be ::Self
             if node_name == tag:
-                value: Tuple[bool, int | None] = (True, node_id)
+                value: Tuple[bool, Optional[int]] = (True, node_id)
             elif (
                 is_parent_desc_anchor
             ):  # reuse the parent's anchor_id (which could be much higher in the tree)
@@ -229,7 +242,7 @@ class Crawler:
 
         for index, node_name_index in enumerate(node_names):
             node_parent = parent[index]
-            node_name: str | None = strings[node_name_index].lower()
+            node_name: Optional[str] = strings[node_name_index].lower()
 
             is_ancestor_of_anchor, anchor_id = add_to_hash_tree(
                 anchor_ancestry, "a", index, node_name, node_parent
@@ -363,7 +376,7 @@ class Crawler:
             node_name = element.get("node_name")
             element_node_value = element.get("node_value")
             node_is_clickable = element.get("is_clickable")
-            node_meta_data: List[str] | None = element.get("node_meta")
+            node_meta_data: Optional[List[str]] = element.get("node_meta")
 
             inner_text = f"{element_node_value} " if element_node_value else ""
             meta = ""
