@@ -17,19 +17,16 @@ class BaseCallbackHandler(ABC):
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
-
         return False
 
     @property
     def ignore_chain(self) -> bool:
         """Whether to ignore chain callbacks."""
-
         return False
 
     @property
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
-
         return False
 
     @abstractmethod

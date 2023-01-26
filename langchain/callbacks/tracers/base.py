@@ -51,7 +51,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Generate an id for a run."""
 
     def new_session(self, name: Optional[str] = None, **kwargs: Any) -> TracerSession:
-        """Start a new tracing session. NOT thread safe, do not call this method from multiple threads."""
+        """NOT thread safe, do not call this method from multiple threads."""
         session_create = TracerSessionCreate(name=name, extra=kwargs)
         session = self._persist_session(session_create)
         self._session = session
@@ -92,7 +92,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
-
         self._execution_order += 1
 
         if self._stack:
@@ -101,14 +100,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 or isinstance(self._stack[-1], ToolRun)
             ):
                 raise TracerException(
-                    f"Nested {run.__class__.__name__} can only be logged inside a ChainRun or ToolRun"
+                    f"Nested {run.__class__.__name__} can only be"
+                    f" logged inside a ChainRun or ToolRun"
                 )
             self._add_child_run(self._stack[-1], run)
         self._stack.append(run)
 
     def _end_trace(self) -> None:
         """End a trace for a run."""
-
         run = self._stack.pop()
         if not self._stack:
             self._execution_order = 1
@@ -118,7 +117,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Start a trace for an LLM run."""
-
         if self._session is None:
             raise TracerException(
                 "Initialize a session with `new_session()` before starting a trace."
@@ -137,7 +135,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
-
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
@@ -150,7 +147,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Handle an error for an LLM run."""
-
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
@@ -163,7 +159,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
         """Start a trace for a chain run."""
-
         if self._session is None:
             raise TracerException(
                 "Initialize a session with `new_session()` before starting a trace."
@@ -183,7 +178,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """End a trace for a chain run."""
-
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
@@ -196,7 +190,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Handle an error for a chain run."""
-
         if not self._stack or not isinstance(self._stack[-1], ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
@@ -209,7 +202,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
     ) -> None:
         """Start a trace for a tool run."""
-
         if self._session is None:
             raise TracerException(
                 "Initialize a session with `new_session()` before starting a trace."
@@ -230,7 +222,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """End a trace for a tool run."""
-
         if not self._stack or not isinstance(self._stack[-1], ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
@@ -243,7 +234,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         """Handle an error for a tool run."""
-
         if not self._stack or not isinstance(self._stack[-1], ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
@@ -253,9 +243,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace()
 
     def on_text(self, text: str, **kwargs: Any) -> None:
+        """Handle a text message."""
         pass
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
+        """Handle an agent finish message."""
         pass
 
 
@@ -291,7 +283,6 @@ class Tracer(BaseTracer, ABC):
     @_session.setter
     def _session(self, value: TracerSession) -> None:
         """Set the tracing session."""
-
         if self._stack:
             raise TracerException(
                 "Cannot set a session while a trace is being recorded"
@@ -337,8 +328,9 @@ class SharedTracer(Singleton, BaseTracer, ABC):
     def _session(self, value: TracerSession) -> None:
         """Set the tracing session."""
         with self._lock:
-            # TODO: currently, we are only checking current thread's stack. Need to make sure that
-            #   we are not in the middle of a trace in any thread.
+            # TODO: currently, we are only checking current thread's stack.
+            #  Need to make sure that we are not in the middle of a trace
+            #  in any thread.
             if self._stack:
                 raise TracerException(
                     "Cannot set a session while a trace is being recorded"
@@ -357,7 +349,6 @@ class BaseLangChainTracer(BaseTracer, ABC):
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
-
         if isinstance(run, LLMRun):
             endpoint = f"{self._endpoint}/llm-runs"
         elif isinstance(run, ChainRun):
@@ -383,14 +374,13 @@ class BaseLangChainTracer(BaseTracer, ABC):
                 headers=self._headers,
             )
             session = TracerSession(id=r.json()["id"], **session_create.dict())
-        except:
-            logging.warning("Failed to create session, using default session")
+        except Exception as e:
+            logging.warning(f"Failed to create session, using default session: {e}")
             session = TracerSession(id=1, **session_create.dict())
         return session
 
     def load_session(self, session_name: str) -> TracerSession:
         """Load a session from the tracer."""
-
         try:
             r = requests.get(
                 f"{self._endpoint}/sessions?name={session_name}",
@@ -430,7 +420,6 @@ class BaseLangChainTracer(BaseTracer, ABC):
         child_run: Union[LLMRun, ChainRun, ToolRun],
     ) -> None:
         """Add child run to a chain run or tool run."""
-
         if isinstance(child_run, LLMRun):
             parent_run.child_llm_runs.append(child_run)
         elif isinstance(child_run, ChainRun):
@@ -440,5 +429,4 @@ class BaseLangChainTracer(BaseTracer, ABC):
 
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
-
         return None

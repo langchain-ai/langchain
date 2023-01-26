@@ -4,8 +4,8 @@ from langchain.callbacks.tracers.base import BaseLangChainTracer, SharedTracer, 
 
 
 class SharedLangChainTracer(SharedTracer, BaseLangChainTracer):
-    """Shared tracer that records LangChain execution and POSTs to LangChain endpoint."""
+    """Shared tracer that records LangChain execution to LangChain endpoint."""
 
 
 class LangChainTracer(Tracer, BaseLangChainTracer):
-    """Tracer that records LangChain execution and POSTs to LangChain endpoint."""
+    """Tracer that records LangChain execution to LangChain endpoint."""

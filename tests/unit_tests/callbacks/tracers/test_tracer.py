@@ -83,7 +83,6 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
 
 def _perform_nested_run(tracer: BaseTracer) -> None:
     """Perform a nested run."""
-
     tracer.on_chain_start(serialized={}, inputs={})
     tracer.on_tool_start(
         serialized={}, action=AgentAction(tool="action", tool_input="test", log="")
@@ -101,31 +100,26 @@ def _add_child_run(
     child_run: Union[LLMRun, ChainRun, ToolRun],
 ) -> None:
     """Add child run to a chain run or tool run."""
-
     parent_run.child_runs.append(child_run)
 
 
 def _generate_id() -> Optional[Union[int, str]]:
     """Generate an id for a run."""
-
     return None
 
 
 def load_session(session_name: str) -> TracerSession:
     """Load a tracing session."""
-
     return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
 
 
 def _persist_session(session: TracerSessionCreate) -> TracerSession:
     """Persist a tracing session."""
-
     return TracerSession(id=TEST_SESSION_ID, **session.dict())
 
 
 def load_default_session() -> TracerSession:
     """Load a tracing session."""
-
     return TracerSession(id=1, name="default", start_time=datetime.utcnow())
 
 
@@ -134,13 +128,11 @@ class FakeTracer(Tracer):
 
     def __init__(self) -> None:
         """Initialize the tracer."""
-
         super().__init__()
         self.runs: List[Union[LLMRun, ChainRun, ToolRun]] = []
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
-
         self.runs.append(run)
 
     def _add_child_run(
@@ -149,27 +141,22 @@ class FakeTracer(Tracer):
         child_run: Union[LLMRun, ChainRun, ToolRun],
     ) -> None:
         """Add child run to a chain run or tool run."""
-
         _add_child_run(parent_run, child_run)
 
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
-
         return _generate_id()
 
     def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
-
         return _persist_session(session)
 
     def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
-
         return load_session(session_name)
 
     def load_default_session(self) -> TracerSession:
         """Load a tracing session."""
-
         return load_default_session()
 
 
@@ -180,13 +167,11 @@ class FakeSharedTracer(SharedTracer):
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
-
         with self._lock:
             self.runs.append(run)
 
     def remove_runs(self) -> None:
         """Remove all runs."""
-
         with self._lock:
             self.runs = []
 
@@ -196,34 +181,28 @@ class FakeSharedTracer(SharedTracer):
         child_run: Union[LLMRun, ChainRun, ToolRun],
     ) -> None:
         """Add child run to a chain run or tool run."""
-
         _add_child_run(parent_run, child_run)
 
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
-
         return _generate_id()
 
     def _persist_session(self, session: TracerSessionCreate) -> TracerSession:
         """Persist a tracing session."""
-
         return _persist_session(session)
 
     def load_session(self, session_name: str) -> TracerSession:
         """Load a tracing session."""
-
         return load_session(session_name)
 
     def load_default_session(self) -> TracerSession:
         """Load a tracing session."""
-
         return load_default_session()
 
 
 @freeze_time("2023-01-01")
 def test_tracer_llm_run() -> None:
     """Test tracer on an LLM run."""
-
     compare_run = LLMRun(
         id=None,
         start_time=datetime.utcnow(),
@@ -247,7 +226,6 @@ def test_tracer_llm_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_llm_run_errors_no_session() -> None:
     """Test tracer on an LLM run without a session."""
-
     tracer = FakeTracer()
 
     with pytest.raises(TracerException):
@@ -257,7 +235,6 @@ def test_tracer_llm_run_errors_no_session() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_llm_run_errors_no_start() -> None:
     """Test tracer on an LLM run without a start."""
-
     tracer = FakeTracer()
 
     tracer.new_session()
@@ -268,7 +245,6 @@ def test_tracer_llm_run_errors_no_start() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_multiple_llm_runs() -> None:
     """Test the tracer with multiple runs."""
-
     compare_run = LLMRun(
         id=None,
         start_time=datetime.utcnow(),
@@ -295,7 +271,6 @@ def test_tracer_multiple_llm_runs() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_chain_run() -> None:
     """Test tracer on a Chain run."""
-
     compare_run = ChainRun(
         id=None,
         start_time=datetime.utcnow(),
@@ -319,7 +294,6 @@ def test_tracer_chain_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_tool_run() -> None:
     """Test tracer on a Tool run."""
-
     compare_run = ToolRun(
         id=None,
         start_time=datetime.utcnow(),
@@ -346,7 +320,6 @@ def test_tracer_tool_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
-
     tracer = FakeTracer()
     tracer.new_session()
     _perform_nested_run(tracer)
@@ -356,7 +329,6 @@ def test_tracer_nested_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_llm_run_on_error() -> None:
     """Test tracer on an LLM run with an error."""
-
     exception = Exception("test")
 
     compare_run = LLMRun(
@@ -382,7 +354,6 @@ def test_tracer_llm_run_on_error() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_chain_run_on_error() -> None:
     """Test tracer on a Chain run with an error."""
-
     exception = Exception("test")
 
     compare_run = ChainRun(
@@ -408,7 +379,6 @@ def test_tracer_chain_run_on_error() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_tool_run_on_error() -> None:
     """Test tracer on a Tool run with an error."""
-
     exception = Exception("test")
 
     compare_run = ToolRun(
@@ -437,7 +407,6 @@ def test_tracer_tool_run_on_error() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_nested_runs_on_error() -> None:
     """Test tracer on a nested run with an error."""
-
     exception = Exception("test")
 
     tracer = FakeTracer()
@@ -535,7 +504,6 @@ def test_tracer_nested_runs_on_error() -> None:
 @freeze_time("2023-01-01")
 def test_shared_tracer_nested_run() -> None:
     """Test shared tracer on a nested run."""
-
     tracer = FakeSharedTracer()
     tracer.new_session()
     tracer.remove_runs()
@@ -546,7 +514,6 @@ def test_shared_tracer_nested_run() -> None:
 @freeze_time("2023-01-01")
 def test_shared_tracer_nested_run_multithreaded() -> None:
     """Test shared tracer on a nested run."""
-
     tracer = FakeSharedTracer()
     tracer.remove_runs()
     tracer.new_session()

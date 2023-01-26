@@ -31,7 +31,8 @@ def set_default_callback_manager() -> None:
         set_tracing_callback_manager(session)
     else:
         raise ValueError(
-            f"LANGCHAIN_HANDLER should be one of `stdout` or `langchain`, got {default_handler}"
+            f"LANGCHAIN_HANDLER should be one of `stdout` "
+            f"or `langchain`, got {default_handler}"
         )
 
 
@@ -45,7 +46,7 @@ def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
     else:
         try:
             handler.load_session(session_name)
-        except:
+        except Exception:
             raise ValueError(f"session {session_name} not found")
 
 
