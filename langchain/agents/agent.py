@@ -198,7 +198,7 @@ class Agent(BaseModel):
     @property
     @abstractmethod
     def _agent_type(self) -> str:
-        """Identifier of agent type."""
+        """Return Identifier of agent type."""
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
@@ -263,7 +263,7 @@ class AgentExecutor(Chain, BaseModel):
         )
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Saving not supported for Agent Executors."""
+        """Raise error - saving not supported for Agent Executors."""
         raise ValueError(
             "Saving not supported for agent executors. "
             "If you are trying to save the agent, please use the "

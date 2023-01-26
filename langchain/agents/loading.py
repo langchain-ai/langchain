@@ -37,7 +37,7 @@ def load_agent_from_config(config: dict, **kwargs: Any) -> Agent:
     else:
         raise ValueError("One of `llm_chain` and `llm_chain_path` should be specified.")
     combined_config = {**config, **kwargs}
-    return agent_cls(**combined_config)
+    return agent_cls(**combined_config)  # type: ignore
 
 
 def load_agent(file: Union[str, Path], **kwargs: Any) -> Agent:

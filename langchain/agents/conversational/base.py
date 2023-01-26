@@ -20,7 +20,7 @@ class ConversationalAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        """Identifier for agent type."""
+        """Return Identifier of agent type."""
         return "conversational-react-description"
 
     @property

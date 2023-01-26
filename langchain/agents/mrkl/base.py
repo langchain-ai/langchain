@@ -51,7 +51,7 @@ class ZeroShotAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        """Identifier for agent type."""
+        """Return Identifier of agent type."""
         return "zero-shot-react-description"
 
     @property

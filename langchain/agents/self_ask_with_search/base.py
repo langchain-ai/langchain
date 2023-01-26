@@ -14,7 +14,7 @@ class SelfAskWithSearchAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        """Identifier for agent type."""
+        """Return Identifier of agent type."""
         return "self-ask-with-search"
 
     @classmethod
