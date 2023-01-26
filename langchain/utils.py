@@ -1,6 +1,6 @@
 """Generic utility functions."""
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable, Type
 from time import sleep
 from functools import wraps
 import logging
@@ -27,7 +27,7 @@ def get_from_dict_or_env(
 
 
 
-def retry(ExceptionToCheck=Exception, tries=5, delay=0.5, backoff=2, ExceptionToRaise=AssertionError):
+def retry(ExceptionToCheck: Type[Exception] = Exception, tries: int = 5, delay: float = 0.5, backoff: int = 2, ExceptionToRaise: Type[Exception] =AssertionError) -> Callable:
     """Retry calling the decorated function using an exponential backoff.
 
     http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
@@ -46,10 +46,10 @@ def retry(ExceptionToCheck=Exception, tries=5, delay=0.5, backoff=2, ExceptionTo
     :param ExceptionToRaise: exceptions that should be raised instead of retried. may be a tuple.
     :type ExceptionToRaise: Exception or tuple
     """
-    def deco_retry(f):
+    def deco_retry(f):   # type: ignore
 
         @wraps(f)
-        def f_retry(*args, **kwargs):
+        def f_retry(*args, **kwargs):  # type: ignore
             mtries, mdelay = tries, delay
             while mtries > 1:
                 try:
