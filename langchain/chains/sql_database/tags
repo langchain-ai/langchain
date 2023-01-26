@@ -1,0 +1,25 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Config	base.py	/^    class Config:$/;"	c	class:SQLDatabaseChain
+DECIDER_PROMPT	prompt.py	/^DECIDER_PROMPT = PromptTemplate($/;"	v
+PROMPT	prompt.py	/^PROMPT = PromptTemplate($/;"	v
+SQLDatabaseChain	base.py	/^class SQLDatabaseChain(Chain, BaseModel):$/;"	c
+SQLDatabaseSequentialChain	base.py	/^class SQLDatabaseSequentialChain(Chain, BaseModel):$/;"	c
+_call	base.py	/^    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:SQLDatabaseChain
+_call	base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:SQLDatabaseSequentialChain
+arbitrary_types_allowed	base.py	/^        arbitrary_types_allowed = True$/;"	v	class:SQLDatabaseChain.Config
+extra	base.py	/^        extra = Extra.forbid$/;"	v	class:SQLDatabaseChain.Config
+from_llm	base.py	/^    def from_llm($/;"	m	class:SQLDatabaseSequentialChain
+input_keys	base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseChain
+input_keys	base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseSequentialChain
+input_variables	prompt.py	/^    input_variables=["input", "table_info", "dialect", "top_k"],$/;"	v
+input_variables	prompt.py	/^    input_variables=["query", "table_names"],$/;"	v
+output_keys	base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseChain
+output_keys	base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseSequentialChain
+output_parser	prompt.py	/^    output_parser=CommaSeparatedListOutputParser(),$/;"	v
+template	prompt.py	/^    template=_DECIDER_TEMPLATE,$/;"	v
+template	prompt.py	/^    template=_DEFAULT_TEMPLATE,$/;"	v

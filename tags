@@ -1,0 +1,1314 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AGENT_TO_CLASS	langchain/agents/loading.py	/^AGENT_TO_CLASS = {$/;"	v
+AI21	langchain/llms/ai21.py	/^class AI21(LLM, BaseModel):$/;"	c
+AI21PenaltyData	langchain/llms/ai21.py	/^class AI21PenaltyData(BaseModel):$/;"	c
+APIChain	langchain/chains/api/base.py	/^class APIChain(Chain, BaseModel):$/;"	c
+API_RESPONSE_PROMPT	langchain/chains/api/prompt.py	/^API_RESPONSE_PROMPT = PromptTemplate($/;"	v
+API_RESPONSE_PROMPT_TEMPLATE	langchain/chains/api/prompt.py	/^API_RESPONSE_PROMPT_TEMPLATE = ($/;"	v
+API_URL_PROMPT	langchain/chains/api/prompt.py	/^API_URL_PROMPT = PromptTemplate($/;"	v
+AddableMixin	langchain/docstore/base.py	/^class AddableMixin(ABC):$/;"	c
+Agent	langchain/agents/agent.py	/^class Agent(BaseModel):$/;"	c
+AgentAction	langchain/schema.py	/^class AgentAction(NamedTuple):$/;"	c
+AgentExecutor	langchain/agents/agent.py	/^class AgentExecutor(Chain, BaseModel):$/;"	c
+AgentFinish	langchain/schema.py	/^class AgentFinish(NamedTuple):$/;"	c
+AzureOpenAI	langchain/llms/openai.py	/^class AzureOpenAI(BaseOpenAI):$/;"	c
+BUILDDIR	docs/Makefile	/^BUILDDIR      = _build$/;"	m
+BUILDDIR	docs/make.bat	/^set BUILDDIR=_build$/;"	v
+Base	langchain/cache.py	/^Base = declarative_base()$/;"	v
+BaseCache	langchain/cache.py	/^class BaseCache(ABC):$/;"	c
+BaseCallbackHandler	langchain/callbacks/base.py	/^class BaseCallbackHandler(BaseModel, ABC):$/;"	c
+BaseCallbackManager	langchain/callbacks/base.py	/^class BaseCallbackManager(BaseCallbackHandler, ABC):$/;"	c
+BaseCombineDocumentsChain	langchain/chains/combine_documents/base.py	/^class BaseCombineDocumentsChain(Chain, BaseModel, ABC):$/;"	c
+BaseExampleSelector	langchain/prompts/example_selector/base.py	/^class BaseExampleSelector(ABC):$/;"	c
+BaseLLM	langchain/llms/base.py	/^class BaseLLM(BaseModel, ABC):$/;"	c
+BaseOpenAI	langchain/llms/openai.py	/^class BaseOpenAI(BaseLLM, BaseModel):$/;"	c
+BaseOutputParser	langchain/prompts/base.py	/^class BaseOutputParser(ABC):$/;"	c
+BasePromptTemplate	langchain/prompts/base.py	/^class BasePromptTemplate(BaseModel, ABC):$/;"	c
+BaseQAWithSourcesChain	langchain/chains/qa_with_sources/base.py	/^class BaseQAWithSourcesChain(Chain, BaseModel, ABC):$/;"	c
+BashProcess	langchain/utilities/bash.py	/^class BashProcess:$/;"	c
+BingSearchAPIWrapper	langchain/utilities/bing_search.py	/^class BingSearchAPIWrapper(BaseModel):$/;"	c
+CHECK_ASSERTIONS_PROMPT	langchain/chains/llm_checker/prompt.py	/^CHECK_ASSERTIONS_PROMPT = PromptTemplate($/;"	v
+COLORED_OBJECT_PROMPT	langchain/chains/pal/colored_object_prompt.py	/^COLORED_OBJECT_PROMPT = PromptTemplate(input_variables=["question"], template=template)$/;"	v
+COMBINE_PROMPT	langchain/chains/qa_with_sources/map_reduce_prompt.py	/^COMBINE_PROMPT = PromptTemplate($/;"	v
+COMBINE_PROMPT	langchain/chains/question_answering/map_reduce_prompt.py	/^COMBINE_PROMPT = PromptTemplate($/;"	v
+CREATE_DRAFT_ANSWER_PROMPT	langchain/chains/llm_checker/prompt.py	/^CREATE_DRAFT_ANSWER_PROMPT = PromptTemplate($/;"	v
+CallbackManager	langchain/callbacks/base.py	/^class CallbackManager(BaseCallbackManager):$/;"	c
+Chain	langchain/chains/base.py	/^class Chain(BaseModel, ABC):$/;"	c
+ChainConfig	langchain/agents/mrkl/base.py	/^class ChainConfig(NamedTuple):$/;"	c
+CharacterTextSplitter	langchain/text_splitter.py	/^class CharacterTextSplitter(TextSplitter):$/;"	c
+Cohere	langchain/llms/cohere.py	/^class Cohere(LLM, BaseModel):$/;"	c
+CohereEmbeddings	langchain/embeddings/cohere.py	/^class CohereEmbeddings(BaseModel, Embeddings):$/;"	c
+CombineDocsProtocol	langchain/chains/combine_documents/map_reduce.py	/^class CombineDocsProtocol(Protocol):$/;"	c
+CombinedMemory	langchain/chains/conversation/memory.py	/^class CombinedMemory(Memory, BaseModel):$/;"	c
+CommaSeparatedListOutputParser	langchain/prompts/base.py	/^class CommaSeparatedListOutputParser(ListOutputParser):$/;"	c
+Config	langchain/chains/base.py	/^    class Config:$/;"	c	class:Chain
+Config	langchain/chains/base.py	/^    class Config:$/;"	c	class:Memory
+Config	langchain/chains/combine_documents/map_reduce.py	/^    class Config:$/;"	c	class:MapReduceDocumentsChain
+Config	langchain/chains/combine_documents/map_rerank.py	/^    class Config:$/;"	c	class:MapRerankDocumentsChain
+Config	langchain/chains/combine_documents/refine.py	/^    class Config:$/;"	c	class:RefineDocumentsChain
+Config	langchain/chains/combine_documents/stuff.py	/^    class Config:$/;"	c	class:StuffDocumentsChain
+Config	langchain/chains/conversation/base.py	/^    class Config:$/;"	c	class:ConversationChain
+Config	langchain/chains/hyde/base.py	/^    class Config:$/;"	c	class:HypotheticalDocumentEmbedder
+Config	langchain/chains/llm.py	/^    class Config:$/;"	c	class:LLMChain
+Config	langchain/chains/llm_bash/base.py	/^    class Config:$/;"	c	class:LLMBashChain
+Config	langchain/chains/llm_checker/base.py	/^    class Config:$/;"	c	class:LLMCheckerChain
+Config	langchain/chains/llm_math/base.py	/^    class Config:$/;"	c	class:LLMMathChain
+Config	langchain/chains/llm_requests.py	/^    class Config:$/;"	c	class:LLMRequestsChain
+Config	langchain/chains/mapreduce.py	/^    class Config:$/;"	c	class:MapReduceChain
+Config	langchain/chains/natbot/base.py	/^    class Config:$/;"	c	class:NatBotChain
+Config	langchain/chains/pal/base.py	/^    class Config:$/;"	c	class:PALChain
+Config	langchain/chains/qa_with_sources/base.py	/^    class Config:$/;"	c	class:BaseQAWithSourcesChain
+Config	langchain/chains/sequential.py	/^    class Config:$/;"	c	class:SequentialChain
+Config	langchain/chains/sequential.py	/^    class Config:$/;"	c	class:SimpleSequentialChain
+Config	langchain/chains/sql_database/base.py	/^    class Config:$/;"	c	class:SQLDatabaseChain
+Config	langchain/chains/vector_db_qa/base.py	/^    class Config:$/;"	c	class:VectorDBQA
+Config	langchain/embeddings/cohere.py	/^    class Config:$/;"	c	class:CohereEmbeddings
+Config	langchain/embeddings/huggingface.py	/^    class Config:$/;"	c	class:HuggingFaceEmbeddings
+Config	langchain/embeddings/huggingface_hub.py	/^    class Config:$/;"	c	class:HuggingFaceHubEmbeddings
+Config	langchain/embeddings/openai.py	/^    class Config:$/;"	c	class:OpenAIEmbeddings
+Config	langchain/llms/ai21.py	/^    class Config:$/;"	c	class:AI21
+Config	langchain/llms/base.py	/^    class Config:$/;"	c	class:BaseLLM
+Config	langchain/llms/cohere.py	/^    class Config:$/;"	c	class:Cohere
+Config	langchain/llms/huggingface_hub.py	/^    class Config:$/;"	c	class:HuggingFaceHub
+Config	langchain/llms/huggingface_pipeline.py	/^    class Config:$/;"	c	class:HuggingFacePipeline
+Config	langchain/llms/manifest.py	/^    class Config:$/;"	c	class:ManifestWrapper
+Config	langchain/llms/nlpcloud.py	/^    class Config:$/;"	c	class:NLPCloud
+Config	langchain/llms/openai.py	/^    class Config:$/;"	c	class:BaseOpenAI
+Config	langchain/prompts/base.py	/^    class Config:$/;"	c	class:BasePromptTemplate
+Config	langchain/prompts/example_selector/semantic_similarity.py	/^    class Config:$/;"	c	class:SemanticSimilarityExampleSelector
+Config	langchain/prompts/few_shot.py	/^    class Config:$/;"	c	class:FewShotPromptTemplate
+Config	langchain/prompts/prompt.py	/^    class Config:$/;"	c	class:PromptTemplate
+Config	langchain/serpapi.py	/^    class Config:$/;"	c	class:SerpAPIWrapper
+Config	langchain/utilities/bing_search.py	/^    class Config:$/;"	c	class:BingSearchAPIWrapper
+Config	langchain/utilities/google_search.py	/^    class Config:$/;"	c	class:GoogleSearchAPIWrapper
+Config	langchain/utilities/wolfram_alpha.py	/^    class Config:$/;"	c	class:WolframAlphaAPIWrapper
+ConversationBufferMemory	langchain/chains/conversation/memory.py	/^class ConversationBufferMemory(Memory, BaseModel):$/;"	c
+ConversationBufferWindowMemory	langchain/chains/conversation/memory.py	/^class ConversationBufferWindowMemory(Memory, BaseModel):$/;"	c
+ConversationChain	langchain/chains/conversation/base.py	/^class ConversationChain(LLMChain, BaseModel):$/;"	c
+ConversationEntityMemory	langchain/chains/conversation/memory.py	/^class ConversationEntityMemory(Memory, BaseModel):$/;"	c
+ConversationSummaryBufferMemory	langchain/chains/conversation/memory.py	/^class ConversationSummaryBufferMemory(Memory, BaseModel):$/;"	c
+ConversationSummaryMemory	langchain/chains/conversation/memory.py	/^class ConversationSummaryMemory(Memory, BaseModel):$/;"	c
+ConversationalAgent	langchain/agents/conversational/base.py	/^class ConversationalAgent(Agent):$/;"	c
+ConversationalBufferWindowMemory	langchain/chains/conversation/memory.py	/^ConversationalBufferWindowMemory = ConversationBufferWindowMemory$/;"	v
+Crawler	langchain/chains/natbot/crawler.py	/^class Crawler:$/;"	c
+DECIDER_PROMPT	langchain/chains/sql_database/prompt.py	/^DECIDER_PROMPT = PromptTemplate($/;"	v
+DEFAULT_HEADERS	langchain/chains/llm_requests.py	/^DEFAULT_HEADERS = {$/;"	v
+DEFAULT_MODEL_ID	langchain/llms/huggingface_pipeline.py	/^DEFAULT_MODEL_ID = "gpt2"$/;"	v
+DEFAULT_MODEL_NAME	langchain/embeddings/huggingface.py	/^DEFAULT_MODEL_NAME = "sentence-transformers\/all-mpnet-base-v2"$/;"	v
+DEFAULT_REFINE_PROMPT	langchain/chains/qa_with_sources/refine_prompts.py	/^DEFAULT_REFINE_PROMPT = PromptTemplate($/;"	v
+DEFAULT_REFINE_PROMPT	langchain/chains/question_answering/refine_prompts.py	/^DEFAULT_REFINE_PROMPT = PromptTemplate($/;"	v
+DEFAULT_REFINE_PROMPT_TMPL	langchain/chains/qa_with_sources/refine_prompts.py	/^DEFAULT_REFINE_PROMPT_TMPL = ($/;"	v
+DEFAULT_REFINE_PROMPT_TMPL	langchain/chains/question_answering/refine_prompts.py	/^DEFAULT_REFINE_PROMPT_TMPL = ($/;"	v
+DEFAULT_REPO_ID	langchain/embeddings/huggingface_hub.py	/^DEFAULT_REPO_ID = "sentence-transformers\/all-mpnet-base-v2"$/;"	v
+DEFAULT_REPO_ID	langchain/llms/huggingface_hub.py	/^DEFAULT_REPO_ID = "gpt2"$/;"	v
+DEFAULT_TASK	langchain/llms/huggingface_pipeline.py	/^DEFAULT_TASK = "text-generation"$/;"	v
+DEFAULT_TEXT_QA_PROMPT	langchain/chains/qa_with_sources/refine_prompts.py	/^DEFAULT_TEXT_QA_PROMPT = PromptTemplate($/;"	v
+DEFAULT_TEXT_QA_PROMPT	langchain/chains/question_answering/refine_prompts.py	/^DEFAULT_TEXT_QA_PROMPT = PromptTemplate($/;"	v
+DEFAULT_TEXT_QA_PROMPT_TMPL	langchain/chains/qa_with_sources/refine_prompts.py	/^DEFAULT_TEXT_QA_PROMPT_TMPL = ($/;"	v
+DEFAULT_TEXT_QA_PROMPT_TMPL	langchain/chains/question_answering/refine_prompts.py	/^DEFAULT_TEXT_QA_PROMPT_TMPL = ($/;"	v
+Docstore	langchain/docstore/base.py	/^class Docstore(ABC):$/;"	c
+DocstoreExplorer	langchain/agents/react/base.py	/^class DocstoreExplorer:$/;"	c
+Document	langchain/docstore/document.py	/^class Document(BaseModel):$/;"	c
+ENTITY_EXTRACTION_PROMPT	langchain/chains/conversation/prompt.py	/^ENTITY_EXTRACTION_PROMPT = PromptTemplate($/;"	v
+ENTITY_MEMORY_CONVERSATION_TEMPLATE	langchain/chains/conversation/prompt.py	/^ENTITY_MEMORY_CONVERSATION_TEMPLATE = PromptTemplate($/;"	v
+ENTITY_SUMMARIZATION_PROMPT	langchain/chains/conversation/prompt.py	/^ENTITY_SUMMARIZATION_PROMPT = PromptTemplate($/;"	v
+EXAMPLES	langchain/agents/react/textworld_prompt.py	/^EXAMPLES = [$/;"	v
+EXAMPLES	langchain/agents/react/wiki_prompt.py	/^EXAMPLES = [$/;"	v
+EXAMPLES	tests/unit_tests/prompts/test_length_based_example_selector.py	/^EXAMPLES = [$/;"	v
+EXAMPLE_PROMPT	langchain/chains/qa_with_sources/map_reduce_prompt.py	/^EXAMPLE_PROMPT = PromptTemplate($/;"	v
+EXAMPLE_PROMPT	langchain/chains/qa_with_sources/refine_prompts.py	/^EXAMPLE_PROMPT = PromptTemplate($/;"	v
+EXAMPLE_PROMPT	langchain/chains/qa_with_sources/stuff_prompt.py	/^EXAMPLE_PROMPT = PromptTemplate($/;"	v
+EXAMPLE_PROMPT	tests/unit_tests/prompts/test_few_shot.py	/^EXAMPLE_PROMPT = PromptTemplate($/;"	v
+ElasticVectorSearch	langchain/vectorstores/elastic_vector_search.py	/^class ElasticVectorSearch(VectorStore):$/;"	c
+Embeddings	langchain/embeddings/base.py	/^class Embeddings(ABC):$/;"	c
+FAISS	langchain/vectorstores/faiss.py	/^class FAISS(VectorStore):$/;"	c
+FINAL_ANSWER_ACTION	langchain/agents/mrkl/base.py	/^FINAL_ANSWER_ACTION = "Final Answer:"$/;"	v
+FakeCallbackHandler	tests/unit_tests/callbacks/fake_callback_handler.py	/^class FakeCallbackHandler(BaseCallbackHandler):$/;"	c
+FakeChain	tests/unit_tests/chains/test_base.py	/^class FakeChain(Chain, BaseModel):$/;"	c
+FakeChain	tests/unit_tests/chains/test_sequential.py	/^class FakeChain(Chain, BaseModel):$/;"	c
+FakeDocstore	tests/unit_tests/agents/test_react.py	/^class FakeDocstore(Docstore):$/;"	c
+FakeEmbeddings	tests/integration_tests/vectorstores/test_elasticsearch.py	/^class FakeEmbeddings(Embeddings):$/;"	c
+FakeEmbeddings	tests/integration_tests/vectorstores/test_faiss.py	/^class FakeEmbeddings(Embeddings):$/;"	c
+FakeEmbeddings	tests/integration_tests/vectorstores/test_qdrant.py	/^class FakeEmbeddings(Embeddings):$/;"	c
+FakeEmbeddings	tests/unit_tests/chains/test_hyde.py	/^class FakeEmbeddings(Embeddings):$/;"	c
+FakeLLM	tests/unit_tests/chains/test_hyde.py	/^class FakeLLM(BaseLLM, BaseModel):$/;"	c
+FakeLLM	tests/unit_tests/chains/test_natbot.py	/^class FakeLLM(LLM, BaseModel):$/;"	c
+FakeLLM	tests/unit_tests/llms/fake_llm.py	/^class FakeLLM(LLM, BaseModel):$/;"	c
+FakeListLLM	tests/unit_tests/agents/test_agent.py	/^class FakeListLLM(LLM, BaseModel):$/;"	c
+FakeListLLM	tests/unit_tests/agents/test_react.py	/^class FakeListLLM(LLM, BaseModel):$/;"	c
+FakeMemory	tests/unit_tests/chains/test_base.py	/^class FakeMemory(Memory, BaseModel):$/;"	c
+FakeOutputParser	tests/unit_tests/chains/test_llm.py	/^class FakeOutputParser(BaseOutputParser):$/;"	c
+FakeRequestsChain	tests/unit_tests/chains/test_api.py	/^class FakeRequestsChain(RequestsWrapper):$/;"	c
+FewShotPromptTemplate	langchain/prompts/few_shot.py	/^class FewShotPromptTemplate(BasePromptTemplate, BaseModel):$/;"	c
+FullLLMCache	langchain/cache.py	/^class FullLLMCache(Base):  # type: ignore$/;"	c
+FulltextLLMCache	tests/unit_tests/llms/test_base.py	/^    class FulltextLLMCache(Base):  # type: ignore$/;"	c	function:test_custom_caching
+Generation	langchain/schema.py	/^class Generation(NamedTuple):$/;"	c
+GoogleSearchAPIWrapper	langchain/utilities/google_search.py	/^class GoogleSearchAPIWrapper(BaseModel):$/;"	c
+HiddenPrints	langchain/serpapi.py	/^class HiddenPrints:$/;"	c
+HuggingFaceEmbeddings	langchain/embeddings/huggingface.py	/^class HuggingFaceEmbeddings(BaseModel, Embeddings):$/;"	c
+HuggingFaceHub	langchain/llms/huggingface_hub.py	/^class HuggingFaceHub(LLM, BaseModel):$/;"	c
+HuggingFaceHubEmbeddings	langchain/embeddings/huggingface_hub.py	/^class HuggingFaceHubEmbeddings(BaseModel, Embeddings):$/;"	c
+HuggingFacePipeline	langchain/llms/huggingface_pipeline.py	/^class HuggingFacePipeline(LLM, BaseModel):$/;"	c
+HypotheticalDocumentEmbedder	langchain/chains/hyde/base.py	/^class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):$/;"	c
+InMemoryCache	langchain/cache.py	/^class InMemoryCache(BaseCache):$/;"	c
+InMemoryDocstore	langchain/docstore/in_memory.py	/^class InMemoryDocstore(Docstore, AddableMixin):$/;"	c
+LIST_ASSERTIONS_PROMPT	langchain/chains/llm_checker/prompt.py	/^LIST_ASSERTIONS_PROMPT = PromptTemplate($/;"	v
+LLM	langchain/llms/base.py	/^class LLM(BaseLLM):$/;"	c
+LLMBashChain	langchain/chains/llm_bash/base.py	/^class LLMBashChain(Chain, BaseModel):$/;"	c
+LLMChain	langchain/chains/llm.py	/^class LLMChain(Chain, BaseModel):$/;"	c
+LLMCheckerChain	langchain/chains/llm_checker/base.py	/^class LLMCheckerChain(Chain, BaseModel):$/;"	c
+LLMMathChain	langchain/chains/llm_math/base.py	/^class LLMMathChain(Chain, BaseModel):$/;"	c
+LLMRequestsChain	langchain/chains/llm_requests.py	/^class LLMRequestsChain(Chain, BaseModel):$/;"	c
+LLMResult	langchain/schema.py	/^class LLMResult(NamedTuple):$/;"	c
+LengthBasedExampleSelector	langchain/prompts/example_selector/length_based.py	/^class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):$/;"	c
+ListOutputParser	langchain/prompts/base.py	/^class ListOutputParser(BaseOutputParser):$/;"	c
+LoadingCallable	langchain/chains/qa_with_sources/loading.py	/^class LoadingCallable(Protocol):$/;"	c
+LoadingCallable	langchain/chains/question_answering/__init__.py	/^class LoadingCallable(Protocol):$/;"	c
+LoadingCallable	langchain/chains/summarize/__init__.py	/^class LoadingCallable(Protocol):$/;"	c
+MATH_PROMPT	langchain/chains/pal/math_prompt.py	/^MATH_PROMPT = PromptTemplate(input_variables=["question"], template=template)$/;"	v
+MRKLChain	langchain/agents/mrkl/base.py	/^class MRKLChain(AgentExecutor):$/;"	c
+ManifestWrapper	langchain/llms/manifest.py	/^class ManifestWrapper(LLM, BaseModel):$/;"	c
+MapReduceChain	langchain/chains/mapreduce.py	/^class MapReduceChain(Chain, BaseModel):$/;"	c
+MapReduceDocumentsChain	langchain/chains/combine_documents/map_reduce.py	/^class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):$/;"	c
+MapRerankDocumentsChain	langchain/chains/combine_documents/map_rerank.py	/^class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):$/;"	c
+MaxMarginalRelevanceExampleSelector	langchain/prompts/example_selector/semantic_similarity.py	/^class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, BaseModel):$/;"	c
+Memory	langchain/chains/base.py	/^class Memory(BaseModel, ABC):$/;"	c
+ModelLaboratory	langchain/model_laboratory.py	/^class ModelLaboratory:$/;"	c
+NLPCloud	langchain/llms/nlpcloud.py	/^class NLPCloud(LLM, BaseModel):$/;"	c
+NLTKTextSplitter	langchain/text_splitter.py	/^class NLTKTextSplitter(TextSplitter):$/;"	c
+NatBotChain	langchain/chains/natbot/base.py	/^class NatBotChain(Chain, BaseModel):$/;"	c
+OpenAI	langchain/llms/openai.py	/^class OpenAI(BaseOpenAI):$/;"	c
+OpenAICallbackHandler	langchain/callbacks/openai_info.py	/^class OpenAICallbackHandler(BaseCallbackHandler):$/;"	c
+OpenAIEmbeddings	langchain/embeddings/openai.py	/^class OpenAIEmbeddings(BaseModel, Embeddings):$/;"	c
+OpenAIModerationChain	langchain/chains/moderation.py	/^class OpenAIModerationChain(Chain, BaseModel):$/;"	c
+PALChain	langchain/chains/pal/base.py	/^class PALChain(Chain, BaseModel):$/;"	c
+PROMPT	langchain/agents/self_ask_with_search/prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/conversation/prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/llm_bash/prompt.py	/^PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)$/;"	v
+PROMPT	langchain/chains/llm_math/prompt.py	/^PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)$/;"	v
+PROMPT	langchain/chains/natbot/prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/qa_with_sources/stuff_prompt.py	/^PROMPT = PromptTemplate(template=template, input_variables=["summaries", "question"])$/;"	v
+PROMPT	langchain/chains/question_answering/map_rerank_prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/question_answering/stuff_prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/sql_database/prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/chains/summarize/map_reduce_prompt.py	/^PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])$/;"	v
+PROMPT	langchain/chains/summarize/refine_prompts.py	/^PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])$/;"	v
+PROMPT	langchain/chains/summarize/stuff_prompt.py	/^PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])$/;"	v
+PROMPT	langchain/chains/vector_db_qa/prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/evaluation/qa/eval_prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT	langchain/evaluation/qa/generate_prompt.py	/^PROMPT = PromptTemplate($/;"	v
+PROMPT_MAP	langchain/chains/hyde/prompts.py	/^PROMPT_MAP = {$/;"	v
+Pinecone	langchain/vectorstores/pinecone.py	/^class Pinecone(VectorStore):$/;"	c
+Prompt	langchain/prompts/prompt.py	/^Prompt = PromptTemplate$/;"	v
+PromptTemplate	langchain/prompts/prompt.py	/^class PromptTemplate(BasePromptTemplate, BaseModel):$/;"	c
+PythonREPL	langchain/python.py	/^class PythonREPL:$/;"	c
+QAEvalChain	langchain/evaluation/qa/eval_chain.py	/^class QAEvalChain(LLMChain):$/;"	c
+QAGenerateChain	langchain/evaluation/qa/generate_chain.py	/^class QAGenerateChain(LLMChain):$/;"	c
+QAWithSourcesChain	langchain/chains/qa_with_sources/base.py	/^class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):$/;"	c
+QUESTION_PROMPT	langchain/chains/qa_with_sources/map_reduce_prompt.py	/^QUESTION_PROMPT = PromptTemplate($/;"	v
+QUESTION_PROMPT	langchain/chains/question_answering/map_reduce_prompt.py	/^QUESTION_PROMPT = PromptTemplate($/;"	v
+Qdrant	langchain/vectorstores/qdrant.py	/^class Qdrant(VectorStore):$/;"	c
+REFINE_PROMPT	langchain/chains/summarize/refine_prompts.py	/^REFINE_PROMPT = PromptTemplate($/;"	v
+REFINE_PROMPT_TMPL	langchain/chains/summarize/refine_prompts.py	/^REFINE_PROMPT_TMPL = ($/;"	v
+RETURN_VAL_TYPE	langchain/cache.py	/^RETURN_VAL_TYPE = List[Generation]$/;"	v
+REVISED_ANSWER_PROMPT	langchain/chains/llm_checker/prompt.py	/^REVISED_ANSWER_PROMPT = PromptTemplate($/;"	v
+ReActChain	langchain/agents/react/base.py	/^class ReActChain(AgentExecutor):$/;"	c
+ReActDocstoreAgent	langchain/agents/react/base.py	/^class ReActDocstoreAgent(Agent, BaseModel):$/;"	c
+ReActTextWorldAgent	langchain/agents/react/base.py	/^class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):$/;"	c
+RecursiveCharacterTextSplitter	langchain/text_splitter.py	/^class RecursiveCharacterTextSplitter(TextSplitter):$/;"	c
+RedisCache	langchain/cache.py	/^class RedisCache(BaseCache):$/;"	c
+RefineDocumentsChain	langchain/chains/combine_documents/refine.py	/^class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):$/;"	c
+RegexParser	langchain/prompts/base.py	/^class RegexParser(BaseOutputParser, BaseModel):$/;"	c
+RequestsWrapper	langchain/requests.py	/^class RequestsWrapper(BaseModel):$/;"	c
+SOURCEDIR	docs/Makefile	/^SOURCEDIR     = .$/;"	m
+SOURCEDIR	docs/make.bat	/^set SOURCEDIR=.$/;"	v
+SPHINXAUTOBUILD	docs/Makefile	/^SPHINXAUTOBUILD   ?= sphinx-autobuild$/;"	m
+SPHINXBUILD	docs/Makefile	/^SPHINXBUILD   ?= sphinx-build$/;"	m
+SPHINXBUILD	docs/make.bat	/^	set SPHINXBUILD=sphinx-build$/;"	v
+SPHINXOPTS	docs/Makefile	/^SPHINXOPTS    ?= $/;"	m
+SQLAlchemyCache	langchain/cache.py	/^class SQLAlchemyCache(BaseCache):$/;"	c
+SQLDatabase	langchain/sql_database.py	/^class SQLDatabase:$/;"	c
+SQLDatabaseChain	langchain/chains/sql_database/base.py	/^class SQLDatabaseChain(Chain, BaseModel):$/;"	c
+SQLDatabaseSequentialChain	langchain/chains/sql_database/base.py	/^class SQLDatabaseSequentialChain(Chain, BaseModel):$/;"	c
+SQLiteCache	langchain/cache.py	/^class SQLiteCache(SQLAlchemyCache):$/;"	c
+SUMMARY_PROMPT	langchain/chains/conversation/prompt.py	/^SUMMARY_PROMPT = PromptTemplate($/;"	v
+SelfAskWithSearchAgent	langchain/agents/self_ask_with_search/base.py	/^class SelfAskWithSearchAgent(Agent):$/;"	c
+SelfAskWithSearchChain	langchain/agents/self_ask_with_search/base.py	/^class SelfAskWithSearchChain(AgentExecutor):$/;"	c
+SemanticSimilarityExampleSelector	langchain/prompts/example_selector/semantic_similarity.py	/^class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):$/;"	c
+SequentialChain	langchain/chains/sequential.py	/^class SequentialChain(Chain, BaseModel):$/;"	c
+SerpAPIChain	langchain/serpapi.py	/^SerpAPIChain = SerpAPIWrapper$/;"	v
+SerpAPIWrapper	langchain/serpapi.py	/^class SerpAPIWrapper(BaseModel):$/;"	c
+SharedCallbackManager	langchain/callbacks/shared.py	/^class SharedCallbackManager(Singleton, BaseCallbackManager):$/;"	c
+SimpleSequentialChain	langchain/chains/sequential.py	/^class SimpleSequentialChain(Chain, BaseModel):$/;"	c
+Singleton	langchain/callbacks/shared.py	/^class Singleton:$/;"	c
+SpacyTextSplitter	langchain/text_splitter.py	/^class SpacyTextSplitter(TextSplitter):$/;"	c
+StdOutCallbackHandler	langchain/callbacks/stdout.py	/^class StdOutCallbackHandler(BaseCallbackHandler):$/;"	c
+StreamlitCallbackHandler	langchain/callbacks/streamlit.py	/^class StreamlitCallbackHandler(BaseCallbackHandler):$/;"	c
+StrictFormatter	langchain/formatting.py	/^class StrictFormatter(Formatter):$/;"	c
+StuffDocumentsChain	langchain/chains/combine_documents/stuff.py	/^class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):$/;"	c
+TEST_GEN_TEMPLATE_SUFFIX	langchain/example_generator.py	/^TEST_GEN_TEMPLATE_SUFFIX = "Add another example."$/;"	v
+TEXTWORLD_PROMPT	langchain/agents/react/textworld_prompt.py	/^TEXTWORLD_PROMPT = PromptTemplate.from_examples($/;"	v
+TextSplitter	langchain/text_splitter.py	/^class TextSplitter(ABC):$/;"	c
+Tool	langchain/agents/tools.py	/^class Tool:$/;"	c
+TransformChain	langchain/chains/transform.py	/^class TransformChain(Chain, BaseModel):$/;"	c
+URL_BASE	langchain/prompts/loading.py	/^URL_BASE = "https:\/\/raw.githubusercontent.com\/hwchase17\/langchain-hub\/master\/prompts\/"$/;"	v
+VALID_TASKS	langchain/embeddings/huggingface_hub.py	/^VALID_TASKS = ("feature-extraction",)$/;"	v
+VALID_TASKS	langchain/llms/huggingface_hub.py	/^VALID_TASKS = ("text2text-generation", "text-generation")$/;"	v
+VALID_TASKS	langchain/llms/huggingface_pipeline.py	/^VALID_TASKS = ("text2text-generation", "text-generation")$/;"	v
+VectorDBQA	langchain/chains/vector_db_qa/base.py	/^class VectorDBQA(Chain, BaseModel):$/;"	c
+VectorDBQAWithSourcesChain	langchain/chains/qa_with_sources/vector_db.py	/^class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):$/;"	c
+VectorStore	langchain/vectorstores/base.py	/^class VectorStore(ABC):$/;"	c
+WIKI_PROMPT	langchain/agents/react/wiki_prompt.py	/^WIKI_PROMPT = PromptTemplate.from_examples($/;"	v
+Weaviate	langchain/vectorstores/weaviate.py	/^class Weaviate(VectorStore):$/;"	c
+Wikipedia	langchain/docstore/wikipedia.py	/^class Wikipedia(Docstore):$/;"	c
+WolframAlphaAPIWrapper	langchain/utilities/wolfram_alpha.py	/^class WolframAlphaAPIWrapper(BaseModel):$/;"	c
+ZeroShotAgent	langchain/agents/mrkl/base.py	/^class ZeroShotAgent(Agent):$/;"	c
+_BASE_TOOLS	langchain/agents/load_tools.py	/^_BASE_TOOLS = {$/;"	v
+_EXTRA_LLM_TOOLS	langchain/agents/load_tools.py	/^_EXTRA_LLM_TOOLS = {$/;"	v
+_EXTRA_OPTIONAL_TOOLS	langchain/agents/load_tools.py	/^_EXTRA_OPTIONAL_TOOLS = {$/;"	v
+_FAKE_PROMPT	tests/unit_tests/agents/test_react.py	/^_FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")$/;"	v
+_LLM_TOOLS	langchain/agents/load_tools.py	/^_LLM_TOOLS = {$/;"	v
+_TEXT_COLOR_MAPPING	langchain/input.py	/^_TEXT_COLOR_MAPPING = {$/;"	v
+__all__	langchain/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/agents/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/chains/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/chains/qa_with_sources/__init__.py	/^__all__ = ["load_qa_with_sources_chain"]$/;"	v
+__all__	langchain/docstore/__init__.py	/^__all__ = ["InMemoryDocstore", "Wikipedia"]$/;"	v
+__all__	langchain/embeddings/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/evaluation/qa/__init__.py	/^__all__ = ["QAEvalChain", "QAGenerateChain"]$/;"	v
+__all__	langchain/llms/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/prompts/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/prompts/example_selector/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/utilities/__init__.py	/^__all__ = [$/;"	v
+__all__	langchain/vectorstores/__init__.py	/^__all__ = [$/;"	v
+__call__	langchain/chains/base.py	/^    def __call__($/;"	m	class:Chain	file:
+__call__	langchain/chains/combine_documents/map_reduce.py	/^    def __call__(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	m	class:CombineDocsProtocol	file:
+__call__	langchain/chains/qa_with_sources/loading.py	/^    def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:$/;"	m	class:LoadingCallable	file:
+__call__	langchain/chains/question_answering/__init__.py	/^    def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:$/;"	m	class:LoadingCallable	file:
+__call__	langchain/chains/summarize/__init__.py	/^    def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:$/;"	m	class:LoadingCallable	file:
+__call__	langchain/llms/base.py	/^    def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:BaseLLM	file:
+__enter__	langchain/serpapi.py	/^    def __enter__(self) -> None:$/;"	m	class:HiddenPrints	file:
+__exit__	langchain/serpapi.py	/^    def __exit__(self, *_: Any) -> None:$/;"	m	class:HiddenPrints	file:
+__init__	langchain/agents/react/base.py	/^    def __init__(self, docstore: Docstore):$/;"	m	class:DocstoreExplorer
+__init__	langchain/agents/react/base.py	/^    def __init__(self, llm: BaseLLM, docstore: Docstore, **kwargs: Any):$/;"	m	class:ReActChain
+__init__	langchain/agents/self_ask_with_search/base.py	/^    def __init__(self, llm: BaseLLM, search_chain: SerpAPIWrapper, **kwargs: Any):$/;"	m	class:SelfAskWithSearchChain
+__init__	langchain/cache.py	/^    def __init__(self) -> None:$/;"	m	class:InMemoryCache
+__init__	langchain/cache.py	/^    def __init__(self, database_path: str = ".langchain.db"):$/;"	m	class:SQLiteCache
+__init__	langchain/cache.py	/^    def __init__(self, engine: Engine, cache_schema: Any = FullLLMCache):$/;"	m	class:SQLAlchemyCache
+__init__	langchain/cache.py	/^    def __init__(self, redis_: Any):$/;"	m	class:RedisCache
+__init__	langchain/chains/natbot/crawler.py	/^    def __init__(self):$/;"	m	class:Crawler
+__init__	langchain/docstore/in_memory.py	/^    def __init__(self, _dict: Dict[str, Document]):$/;"	m	class:InMemoryDocstore
+__init__	langchain/docstore/wikipedia.py	/^    def __init__(self) -> None:$/;"	m	class:Wikipedia
+__init__	langchain/embeddings/huggingface.py	/^    def __init__(self, **kwargs: Any):$/;"	m	class:HuggingFaceEmbeddings
+__init__	langchain/model_laboratory.py	/^    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):$/;"	m	class:ModelLaboratory
+__init__	langchain/python.py	/^    def __init__(self, _globals: Optional[Dict] = None, _locals: Optional[Dict] = None):$/;"	m	class:PythonREPL
+__init__	langchain/sql_database.py	/^    def __init__($/;"	m	class:SQLDatabase
+__init__	langchain/text_splitter.py	/^    def __init__($/;"	m	class:SpacyTextSplitter
+__init__	langchain/text_splitter.py	/^    def __init__($/;"	m	class:TextSplitter
+__init__	langchain/text_splitter.py	/^    def __init__(self, separator: str = "\\n\\n", **kwargs: Any):$/;"	m	class:CharacterTextSplitter
+__init__	langchain/text_splitter.py	/^    def __init__(self, separator: str = "\\n\\n", **kwargs: Any):$/;"	m	class:NLTKTextSplitter
+__init__	langchain/text_splitter.py	/^    def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):$/;"	m	class:RecursiveCharacterTextSplitter
+__init__	langchain/utilities/bash.py	/^    def __init__(self, strip_newlines: bool = False):$/;"	m	class:BashProcess
+__init__	langchain/vectorstores/elastic_vector_search.py	/^    def __init__($/;"	m	class:ElasticVectorSearch
+__init__	langchain/vectorstores/faiss.py	/^    def __init__($/;"	m	class:FAISS
+__init__	langchain/vectorstores/pinecone.py	/^    def __init__($/;"	m	class:Pinecone
+__init__	langchain/vectorstores/qdrant.py	/^    def __init__(self, client: Any, collection_name: str, embedding_function: Callable):$/;"	m	class:Qdrant
+__init__	langchain/vectorstores/weaviate.py	/^    def __init__($/;"	m	class:Weaviate
+__new__	langchain/callbacks/shared.py	/^    def __new__(cls) -> Any:$/;"	m	class:Singleton	file:
+__str__	langchain/llms/base.py	/^    def __str__(self) -> str:$/;"	m	class:BaseLLM	file:
+__tablename__	langchain/cache.py	/^    __tablename__ = "full_llm_cache"$/;"	v	class:FullLLMCache
+__tablename__	tests/unit_tests/llms/test_base.py	/^        __tablename__ = "llm_cache_fulltext"$/;"	v	class:test_custom_caching.FulltextLLMCache
+_bing_search_results	langchain/utilities/bing_search.py	/^    def _bing_search_results(self, search_term: str, count: int) -> List[dict]:$/;"	m	class:BingSearchAPIWrapper
+_build_payloads	langchain/vectorstores/qdrant.py	/^    def _build_payloads($/;"	m	class:Qdrant
+_call	langchain/agents/agent.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:$/;"	m	class:AgentExecutor
+_call	langchain/chains/api/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:APIChain
+_call	langchain/chains/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:Chain
+_call	langchain/chains/combine_documents/base.py	/^    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:BaseCombineDocumentsChain
+_call	langchain/chains/hyde/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:HypotheticalDocumentEmbedder
+_call	langchain/chains/llm.py	/^    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:LLMChain
+_call	langchain/chains/llm_bash/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:LLMBashChain
+_call	langchain/chains/llm_checker/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:LLMCheckerChain
+_call	langchain/chains/llm_math/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:LLMMathChain
+_call	langchain/chains/llm_requests.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:LLMRequestsChain
+_call	langchain/chains/mapreduce.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:MapReduceChain
+_call	langchain/chains/moderation.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:OpenAIModerationChain
+_call	langchain/chains/natbot/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:NatBotChain
+_call	langchain/chains/pal/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:PALChain
+_call	langchain/chains/qa_with_sources/base.py	/^    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:BaseQAWithSourcesChain
+_call	langchain/chains/sequential.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:SequentialChain
+_call	langchain/chains/sequential.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:SimpleSequentialChain
+_call	langchain/chains/sql_database/base.py	/^    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:SQLDatabaseChain
+_call	langchain/chains/sql_database/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:SQLDatabaseSequentialChain
+_call	langchain/chains/transform.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:TransformChain
+_call	langchain/chains/vector_db_qa/base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:$/;"	m	class:VectorDBQA
+_call	langchain/llms/ai21.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:AI21
+_call	langchain/llms/base.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:LLM
+_call	langchain/llms/cohere.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:Cohere
+_call	langchain/llms/huggingface_hub.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:HuggingFaceHub
+_call	langchain/llms/huggingface_pipeline.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:HuggingFacePipeline
+_call	langchain/llms/manifest.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:ManifestWrapper
+_call	langchain/llms/nlpcloud.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:NLPCloud
+_call	tests/unit_tests/agents/test_agent.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:FakeListLLM
+_call	tests/unit_tests/agents/test_react.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:FakeListLLM
+_call	tests/unit_tests/chains/test_base.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:FakeChain
+_call	tests/unit_tests/chains/test_natbot.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:FakeLLM
+_call	tests/unit_tests/chains/test_sequential.py	/^    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:$/;"	m	class:FakeChain
+_call	tests/unit_tests/llms/fake_llm.py	/^    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:$/;"	m	class:FakeLLM
+_chain_type	langchain/chains/base.py	/^    def _chain_type(self) -> str:$/;"	m	class:Chain
+_chain_type	langchain/chains/llm.py	/^    def _chain_type(self) -> str:$/;"	m	class:LLMChain
+_collapse_chain	langchain/chains/combine_documents/map_reduce.py	/^    def _collapse_chain(self) -> BaseCombineDocumentsChain:$/;"	m	class:MapReduceDocumentsChain
+_collapse_docs	langchain/chains/combine_documents/map_reduce.py	/^def _collapse_docs($/;"	f
+_crawler	docs/modules/agents/implementations/natbot.py	/^    _crawler = Crawler()$/;"	v
+_default_params	langchain/llms/ai21.py	/^    def _default_params(self) -> Mapping[str, Any]:$/;"	m	class:AI21
+_default_params	langchain/llms/cohere.py	/^    def _default_params(self) -> Mapping[str, Any]:$/;"	m	class:Cohere
+_default_params	langchain/llms/nlpcloud.py	/^    def _default_params(self) -> Mapping[str, Any]:$/;"	m	class:NLPCloud
+_default_params	langchain/llms/openai.py	/^    def _default_params(self) -> Dict[str, Any]:$/;"	m	class:BaseOpenAI
+_default_script_query	langchain/vectorstores/elastic_vector_search.py	/^def _default_script_query(query_vector: List[int]) -> Dict:$/;"	f
+_default_text_mapping	langchain/vectorstores/elastic_vector_search.py	/^def _default_text_mapping(dim: int) -> Dict:$/;"	f
+_document_from_scored_point	langchain/vectorstores/qdrant.py	/^    def _document_from_scored_point(cls, scored_point: Any) -> Document:$/;"	m	class:Qdrant
+_embedding_func	langchain/embeddings/openai.py	/^    def _embedding_func(self, text: str, *, engine: str) -> List[float]:$/;"	m	class:OpenAIEmbeddings
+_extract_tool_and_input	langchain/agents/agent.py	/^    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:$/;"	m	class:Agent
+_extract_tool_and_input	langchain/agents/conversational/base.py	/^    def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:$/;"	m	class:ConversationalAgent
+_extract_tool_and_input	langchain/agents/mrkl/base.py	/^    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:$/;"	m	class:ZeroShotAgent
+_extract_tool_and_input	langchain/agents/react/base.py	/^    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:$/;"	m	class:ReActDocstoreAgent
+_extract_tool_and_input	langchain/agents/self_ask_with_search/base.py	/^    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:$/;"	m	class:SelfAskWithSearchAgent
+_fake_combine_docs_func	tests/unit_tests/chains/test_combine_documents.py	/^def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	f
+_fake_docs_len_func	tests/unit_tests/chains/test_combine_documents.py	/^def _fake_docs_len_func(docs: List[Document]) -> int:$/;"	f
+_fix_text	langchain/agents/agent.py	/^    def _fix_text(self, text: str) -> str:$/;"	m	class:Agent
+_fix_text	langchain/agents/react/base.py	/^    def _fix_text(self, text: str) -> str:$/;"	m	class:ReActDocstoreAgent
+_fix_text	langchain/agents/self_ask_with_search/base.py	/^    def _fix_text(self, text: str) -> str:$/;"	m	class:SelfAskWithSearchAgent
+_generate	langchain/llms/base.py	/^    def _generate($/;"	m	class:BaseLLM
+_generate	langchain/llms/base.py	/^    def _generate($/;"	m	class:LLM
+_generate	langchain/llms/openai.py	/^    def _generate($/;"	m	class:BaseOpenAI
+_generate	tests/unit_tests/chains/test_hyde.py	/^    def _generate($/;"	m	class:FakeLLM
+_get_agent	tests/unit_tests/agents/test_agent.py	/^def _get_agent(**kwargs: Any) -> AgentExecutor:$/;"	f
+_get_default_document_prompt	langchain/chains/combine_documents/refine.py	/^def _get_default_document_prompt() -> PromptTemplate:$/;"	f
+_get_default_document_prompt	langchain/chains/combine_documents/stuff.py	/^def _get_default_document_prompt() -> PromptTemplate:$/;"	f
+_get_default_params	langchain/serpapi.py	/^def _get_default_params() -> dict:$/;"	f
+_get_docs	langchain/chains/qa_with_sources/base.py	/^    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:$/;"	m	class:BaseQAWithSourcesChain
+_get_docs	langchain/chains/qa_with_sources/base.py	/^    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:$/;"	m	class:QAWithSourcesChain
+_get_docs	langchain/chains/qa_with_sources/vector_db.py	/^    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:$/;"	m	class:VectorDBQAWithSourcesChain
+_get_examples	langchain/prompts/few_shot.py	/^    def _get_examples(self, **kwargs: Any) -> List[dict]:$/;"	m	class:FewShotPromptTemplate
+_get_google_search	langchain/agents/load_tools.py	/^def _get_google_search(**kwargs: Any) -> Tool:$/;"	f
+_get_inputs	langchain/chains/combine_documents/stuff.py	/^    def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:$/;"	m	class:StuffDocumentsChain
+_get_llm_math	langchain/agents/load_tools.py	/^def _get_llm_math(llm: BaseLLM) -> Tool:$/;"	f
+_get_news_api	langchain/agents/load_tools.py	/^def _get_news_api(llm: BaseLLM, **kwargs: Any) -> Tool:$/;"	f
+_get_open_meteo_api	langchain/agents/load_tools.py	/^def _get_open_meteo_api(llm: BaseLLM) -> Tool:$/;"	f
+_get_pal_colored_objects	langchain/agents/load_tools.py	/^def _get_pal_colored_objects(llm: BaseLLM) -> Tool:$/;"	f
+_get_pal_math	langchain/agents/load_tools.py	/^def _get_pal_math(llm: BaseLLM) -> Tool:$/;"	f
+_get_prompt_input_key	langchain/chains/conversation/memory.py	/^def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:$/;"	f
+_get_python_repl	langchain/agents/load_tools.py	/^def _get_python_repl() -> Tool:$/;"	f
+_get_requests	langchain/agents/load_tools.py	/^def _get_requests() -> Tool:$/;"	f
+_get_serpapi	langchain/agents/load_tools.py	/^def _get_serpapi(**kwargs: Any) -> Tool:$/;"	f
+_get_terminal	langchain/agents/load_tools.py	/^def _get_terminal() -> Tool:$/;"	f
+_get_tmdb_api	langchain/agents/load_tools.py	/^def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:$/;"	f
+_get_verbosity	langchain/chains/base.py	/^def _get_verbosity() -> bool:$/;"	f
+_get_verbosity	langchain/llms/base.py	/^def _get_verbosity() -> bool:$/;"	f
+_get_wolfram_alpha	langchain/agents/load_tools.py	/^def _get_wolfram_alpha(**kwargs: Any) -> Tool:$/;"	f
+_google_search_results	langchain/utilities/google_search.py	/^    def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:$/;"	m	class:GoogleSearchAPIWrapper
+_huggingface_tokenizer_length	langchain/text_splitter.py	/^            def _huggingface_tokenizer_length(text: str) -> int:$/;"	f	function:TextSplitter.from_huggingface_tokenizer
+_identifying_params	langchain/llms/ai21.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:AI21
+_identifying_params	langchain/llms/base.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:BaseLLM
+_identifying_params	langchain/llms/cohere.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:Cohere
+_identifying_params	langchain/llms/huggingface_hub.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:HuggingFaceHub
+_identifying_params	langchain/llms/huggingface_pipeline.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:HuggingFacePipeline
+_identifying_params	langchain/llms/manifest.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:ManifestWrapper
+_identifying_params	langchain/llms/nlpcloud.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:NLPCloud
+_identifying_params	langchain/llms/openai.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:AzureOpenAI
+_identifying_params	langchain/llms/openai.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:BaseOpenAI
+_identifying_params	tests/unit_tests/agents/test_agent.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:FakeListLLM
+_identifying_params	tests/unit_tests/agents/test_react.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:FakeListLLM
+_identifying_params	tests/unit_tests/chains/test_natbot.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:FakeLLM
+_identifying_params	tests/unit_tests/llms/fake_llm.py	/^    def _identifying_params(self) -> Mapping[str, Any]:$/;"	m	class:FakeLLM
+_instance	langchain/callbacks/shared.py	/^    _instance = None$/;"	v	class:Singleton
+_invocation_params	langchain/llms/openai.py	/^    def _invocation_params(self) -> Dict[str, Any]:$/;"	m	class:AzureOpenAI
+_invocation_params	langchain/llms/openai.py	/^    def _invocation_params(self) -> Dict[str, Any]:$/;"	m	class:BaseOpenAI
+_invocation_params	langchain/llms/openai.py	/^    def _invocation_params(self) -> Dict[str, Any]:$/;"	m	class:OpenAI
+_join_docs	langchain/text_splitter.py	/^    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:$/;"	m	class:TextSplitter
+_key	langchain/cache.py	/^    def _key(self, prompt: str, llm_string: str, idx: int) -> str:$/;"	m	class:RedisCache
+_llm_type	langchain/llms/ai21.py	/^    def _llm_type(self) -> str:$/;"	m	class:AI21
+_llm_type	langchain/llms/base.py	/^    def _llm_type(self) -> str:$/;"	m	class:BaseLLM
+_llm_type	langchain/llms/cohere.py	/^    def _llm_type(self) -> str:$/;"	m	class:Cohere
+_llm_type	langchain/llms/huggingface_hub.py	/^    def _llm_type(self) -> str:$/;"	m	class:HuggingFaceHub
+_llm_type	langchain/llms/huggingface_pipeline.py	/^    def _llm_type(self) -> str:$/;"	m	class:HuggingFacePipeline
+_llm_type	langchain/llms/manifest.py	/^    def _llm_type(self) -> str:$/;"	m	class:ManifestWrapper
+_llm_type	langchain/llms/nlpcloud.py	/^    def _llm_type(self) -> str:$/;"	m	class:NLPCloud
+_llm_type	langchain/llms/openai.py	/^    def _llm_type(self) -> str:$/;"	m	class:BaseOpenAI
+_llm_type	tests/unit_tests/agents/test_agent.py	/^    def _llm_type(self) -> str:$/;"	m	class:FakeListLLM
+_llm_type	tests/unit_tests/agents/test_react.py	/^    def _llm_type(self) -> str:$/;"	m	class:FakeListLLM
+_llm_type	tests/unit_tests/chains/test_hyde.py	/^    def _llm_type(self) -> str:$/;"	m	class:FakeLLM
+_llm_type	tests/unit_tests/chains/test_natbot.py	/^    def _llm_type(self) -> str:$/;"	m	class:FakeLLM
+_llm_type	tests/unit_tests/llms/fake_llm.py	/^    def _llm_type(self) -> str:$/;"	m	class:FakeLLM
+_load_examples	langchain/prompts/loading.py	/^def _load_examples(config: dict) -> dict:$/;"	f
+_load_few_shot_prompt	langchain/prompts/loading.py	/^def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:$/;"	f
+_load_from_hub	langchain/prompts/loading.py	/^def _load_from_hub(path: str) -> BasePromptTemplate:$/;"	f
+_load_llm_chain	langchain/chains/loading.py	/^def _load_llm_chain(config: dict) -> LLMChain:$/;"	f
+_load_map_reduce_chain	langchain/chains/qa_with_sources/loading.py	/^def _load_map_reduce_chain($/;"	f
+_load_map_reduce_chain	langchain/chains/question_answering/__init__.py	/^def _load_map_reduce_chain($/;"	f
+_load_map_reduce_chain	langchain/chains/summarize/__init__.py	/^def _load_map_reduce_chain($/;"	f
+_load_map_rerank_chain	langchain/chains/qa_with_sources/loading.py	/^def _load_map_rerank_chain($/;"	f
+_load_map_rerank_chain	langchain/chains/question_answering/__init__.py	/^def _load_map_rerank_chain($/;"	f
+_load_prompt	langchain/prompts/loading.py	/^def _load_prompt(config: dict) -> PromptTemplate:$/;"	f
+_load_prompt_from_file	langchain/prompts/loading.py	/^def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:$/;"	f
+_load_refine_chain	langchain/chains/qa_with_sources/loading.py	/^def _load_refine_chain($/;"	f
+_load_refine_chain	langchain/chains/question_answering/__init__.py	/^def _load_refine_chain($/;"	f
+_load_refine_chain	langchain/chains/summarize/__init__.py	/^def _load_refine_chain($/;"	f
+_load_stuff_chain	langchain/chains/qa_with_sources/loading.py	/^def _load_stuff_chain($/;"	f
+_load_stuff_chain	langchain/chains/question_answering/__init__.py	/^def _load_stuff_chain($/;"	f
+_load_stuff_chain	langchain/chains/summarize/__init__.py	/^def _load_stuff_chain($/;"	f
+_load_template	langchain/prompts/loading.py	/^def _load_template(var_name: str, config: dict) -> dict:$/;"	f
+_lock	langchain/callbacks/shared.py	/^    _lock = threading.Lock()$/;"	v	class:Singleton
+_merge_splits	langchain/text_splitter.py	/^    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:$/;"	m	class:TextSplitter
+_moderate	langchain/chains/moderation.py	/^    def _moderate(self, text: str, results: dict) -> str:$/;"	m	class:OpenAIModerationChain
+_prepare_for_new_call	langchain/agents/react/base.py	/^    def _prepare_for_new_call(self) -> None:$/;"	m	class:ReActDocstoreAgent
+_return	langchain/agents/agent.py	/^    def _return(self, output: AgentFinish, intermediate_steps: list) -> Dict[str, Any]:$/;"	m	class:AgentExecutor
+_should_continue	langchain/agents/agent.py	/^    def _should_continue(self, iterations: int) -> bool:$/;"	m	class:AgentExecutor
+_split_list_of_docs	langchain/chains/combine_documents/map_reduce.py	/^def _split_list_of_docs($/;"	f
+_stop	langchain/agents/agent.py	/^    def _stop(self) -> List[str]:$/;"	m	class:Agent
+_stop	langchain/agents/react/base.py	/^    def _stop(self) -> List[str]:$/;"	m	class:ReActDocstoreAgent
+_test_callback_manager	tests/unit_tests/callbacks/test_callback_manager.py	/^def _test_callback_manager($/;"	f
+_tiktoken_encoder	langchain/text_splitter.py	/^        def _tiktoken_encoder(text: str) -> int:$/;"	f	function:TextSplitter.from_tiktoken_encoder
+_validate_inputs	langchain/chains/base.py	/^    def _validate_inputs(self, inputs: Dict[str, str]) -> None:$/;"	m	class:Chain
+_validate_outputs	langchain/chains/base.py	/^    def _validate_outputs(self, outputs: Dict[str, str]) -> None:$/;"	m	class:Chain
+_validate_tools	langchain/agents/agent.py	/^    def _validate_tools(cls, tools: List[Tool]) -> None:$/;"	m	class:Agent
+_validate_tools	langchain/agents/mrkl/base.py	/^    def _validate_tools(cls, tools: List[Tool]) -> None:$/;"	m	class:ZeroShotAgent
+_validate_tools	langchain/agents/react/base.py	/^    def _validate_tools(cls, tools: List[Tool]) -> None:$/;"	m	class:ReActDocstoreAgent
+_validate_tools	langchain/agents/react/base.py	/^    def _validate_tools(cls, tools: List[Tool]) -> None:$/;"	m	class:ReActTextWorldAgent
+_validate_tools	langchain/agents/self_ask_with_search/base.py	/^    def _validate_tools(cls, tools: List[Tool]) -> None:$/;"	m	class:SelfAskWithSearchAgent
+add	langchain/docstore/base.py	/^    def add(self, texts: Dict[str, Document]) -> None:$/;"	m	class:AddableMixin
+add	langchain/docstore/in_memory.py	/^    def add(self, texts: Dict[str, Document]) -> None:$/;"	m	class:InMemoryDocstore
+add_example	langchain/prompts/example_selector/base.py	/^    def add_example(self, example: Dict[str, str]) -> Any:$/;"	m	class:BaseExampleSelector
+add_example	langchain/prompts/example_selector/length_based.py	/^    def add_example(self, example: Dict[str, str]) -> None:$/;"	m	class:LengthBasedExampleSelector
+add_example	langchain/prompts/example_selector/semantic_similarity.py	/^    def add_example(self, example: Dict[str, str]) -> str:$/;"	m	class:SemanticSimilarityExampleSelector
+add_handler	langchain/callbacks/base.py	/^    def add_handler(self, callback: BaseCallbackHandler) -> None:$/;"	m	class:BaseCallbackManager
+add_handler	langchain/callbacks/base.py	/^    def add_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:CallbackManager
+add_handler	langchain/callbacks/shared.py	/^    def add_handler(self, callback: BaseCallbackHandler) -> None:$/;"	m	class:SharedCallbackManager
+add_texts	langchain/vectorstores/base.py	/^    def add_texts($/;"	m	class:VectorStore
+add_texts	langchain/vectorstores/elastic_vector_search.py	/^    def add_texts($/;"	m	class:ElasticVectorSearch
+add_texts	langchain/vectorstores/faiss.py	/^    def add_texts($/;"	m	class:FAISS
+add_texts	langchain/vectorstores/pinecone.py	/^    def add_texts($/;"	m	class:Pinecone
+add_texts	langchain/vectorstores/qdrant.py	/^    def add_texts($/;"	m	class:Qdrant
+add_texts	langchain/vectorstores/weaviate.py	/^    def add_texts($/;"	m	class:Weaviate
+add_to_hash_tree	langchain/chains/natbot/crawler.py	/^        def add_to_hash_tree(hash_tree, tag, node_id, node_name, parent_id):$/;"	f	function:Crawler.crawl
+always_verbose	langchain/callbacks/base.py	/^    def always_verbose(self) -> bool:$/;"	m	class:BaseCallbackHandler
+always_verbose	langchain/callbacks/openai_info.py	/^    def always_verbose(self) -> bool:$/;"	m	class:OpenAICallbackHandler
+apply	langchain/chains/base.py	/^    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:$/;"	m	class:Chain
+apply	langchain/chains/llm.py	/^    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:$/;"	m	class:LLMChain
+apply_and_parse	langchain/chains/llm.py	/^    def apply_and_parse($/;"	m	class:LLMChain
+arbitrary_types_allowed	langchain/chains/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:Chain.Config
+arbitrary_types_allowed	langchain/chains/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:Memory.Config
+arbitrary_types_allowed	langchain/chains/combine_documents/map_reduce.py	/^        arbitrary_types_allowed = True$/;"	v	class:MapReduceDocumentsChain.Config
+arbitrary_types_allowed	langchain/chains/combine_documents/map_rerank.py	/^        arbitrary_types_allowed = True$/;"	v	class:MapRerankDocumentsChain.Config
+arbitrary_types_allowed	langchain/chains/combine_documents/refine.py	/^        arbitrary_types_allowed = True$/;"	v	class:RefineDocumentsChain.Config
+arbitrary_types_allowed	langchain/chains/combine_documents/stuff.py	/^        arbitrary_types_allowed = True$/;"	v	class:StuffDocumentsChain.Config
+arbitrary_types_allowed	langchain/chains/conversation/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:ConversationChain.Config
+arbitrary_types_allowed	langchain/chains/hyde/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:HypotheticalDocumentEmbedder.Config
+arbitrary_types_allowed	langchain/chains/llm.py	/^        arbitrary_types_allowed = True$/;"	v	class:LLMChain.Config
+arbitrary_types_allowed	langchain/chains/llm_bash/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:LLMBashChain.Config
+arbitrary_types_allowed	langchain/chains/llm_checker/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:LLMCheckerChain.Config
+arbitrary_types_allowed	langchain/chains/llm_math/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:LLMMathChain.Config
+arbitrary_types_allowed	langchain/chains/llm_requests.py	/^        arbitrary_types_allowed = True$/;"	v	class:LLMRequestsChain.Config
+arbitrary_types_allowed	langchain/chains/mapreduce.py	/^        arbitrary_types_allowed = True$/;"	v	class:MapReduceChain.Config
+arbitrary_types_allowed	langchain/chains/natbot/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:NatBotChain.Config
+arbitrary_types_allowed	langchain/chains/pal/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:PALChain.Config
+arbitrary_types_allowed	langchain/chains/qa_with_sources/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:BaseQAWithSourcesChain.Config
+arbitrary_types_allowed	langchain/chains/sequential.py	/^        arbitrary_types_allowed = True$/;"	v	class:SequentialChain.Config
+arbitrary_types_allowed	langchain/chains/sequential.py	/^        arbitrary_types_allowed = True$/;"	v	class:SimpleSequentialChain.Config
+arbitrary_types_allowed	langchain/chains/sql_database/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:SQLDatabaseChain.Config
+arbitrary_types_allowed	langchain/chains/vector_db_qa/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:VectorDBQA.Config
+arbitrary_types_allowed	langchain/llms/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:BaseLLM.Config
+arbitrary_types_allowed	langchain/prompts/base.py	/^        arbitrary_types_allowed = True$/;"	v	class:BasePromptTemplate.Config
+arbitrary_types_allowed	langchain/prompts/example_selector/semantic_similarity.py	/^        arbitrary_types_allowed = True$/;"	v	class:SemanticSimilarityExampleSelector.Config
+arbitrary_types_allowed	langchain/prompts/few_shot.py	/^        arbitrary_types_allowed = True$/;"	v	class:FewShotPromptTemplate.Config
+arguana	langchain/chains/hyde/prompts.py	/^arguana = PromptTemplate(template=arguana_template, input_variables=["PASSAGE"])$/;"	v
+assert_llm_equality	tests/integration_tests/llms/utils.py	/^def assert_llm_equality(llm: BaseLLM, loaded_llm: BaseLLM) -> None:$/;"	f
+author	docs/conf.py	/^author = "Harrison Chase"$/;"	v
+autodoc_pydantic_config_members	docs/conf.py	/^autodoc_pydantic_config_members = False$/;"	v
+autodoc_pydantic_field_list_validators	docs/conf.py	/^autodoc_pydantic_field_list_validators = False$/;"	v
+autodoc_pydantic_model_members	docs/conf.py	/^autodoc_pydantic_model_members = False$/;"	v
+autodoc_pydantic_model_show_config_summary	docs/conf.py	/^autodoc_pydantic_model_show_config_summary = False$/;"	v
+autodoc_pydantic_model_show_field_summary	docs/conf.py	/^autodoc_pydantic_model_show_field_summary = False$/;"	v
+autodoc_pydantic_model_show_json	docs/conf.py	/^autodoc_pydantic_model_show_json = False$/;"	v
+autodoc_pydantic_model_show_validator_members	docs/conf.py	/^autodoc_pydantic_model_show_validator_members = False$/;"	v
+autodoc_pydantic_model_undoc_members	docs/conf.py	/^autodoc_pydantic_model_undoc_members = False$/;"	v
+black_listed_elements	langchain/chains/natbot/crawler.py	/^black_listed_elements = {$/;"	v
+browser_content	docs/modules/agents/implementations/natbot.py	/^            browser_content = "\\n".join(_crawler.crawl())$/;"	v
+build_extra	langchain/llms/openai.py	/^    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:$/;"	m	class:BaseOpenAI
+calculate_example_text_lengths	langchain/prompts/example_selector/length_based.py	/^    def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:$/;"	m	class:LengthBasedExampleSelector
+change_directory	tests/unit_tests/prompts/test_loading.py	/^def change_directory() -> Iterator:$/;"	f
+check_examples_and_selector	langchain/prompts/few_shot.py	/^    def check_examples_and_selector(cls, values: Dict) -> Dict:$/;"	m	class:FewShotPromptTemplate
+check_unused_args	langchain/formatting.py	/^    def check_unused_args($/;"	m	class:StrictFormatter
+check_valid_template	langchain/prompts/base.py	/^def check_valid_template($/;"	f
+clear	langchain/chains/base.py	/^    def clear(self) -> None:$/;"	m	class:Memory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:CombinedMemory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:ConversationBufferMemory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:ConversationBufferWindowMemory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:ConversationEntityMemory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:ConversationSummaryBufferMemory
+clear	langchain/chains/conversation/memory.py	/^    def clear(self) -> None:$/;"	m	class:ConversationSummaryMemory
+clear	tests/unit_tests/chains/test_base.py	/^    def clear(self) -> None:$/;"	m	class:FakeMemory
+click	langchain/chains/natbot/crawler.py	/^    def click(self, id):$/;"	m	class:Crawler
+combine_docs	langchain/chains/combine_documents/base.py	/^    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	m	class:BaseCombineDocumentsChain
+combine_docs	langchain/chains/combine_documents/map_reduce.py	/^    def combine_docs($/;"	m	class:MapReduceDocumentsChain
+combine_docs	langchain/chains/combine_documents/map_rerank.py	/^    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	m	class:MapRerankDocumentsChain
+combine_docs	langchain/chains/combine_documents/refine.py	/^    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	m	class:RefineDocumentsChain
+combine_docs	langchain/chains/combine_documents/stuff.py	/^    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:$/;"	m	class:StuffDocumentsChain
+combine_embeddings	langchain/chains/hyde/base.py	/^    def combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:$/;"	m	class:HypotheticalDocumentEmbedder
+command	docs/modules/agents/implementations/natbot.py	/^            command = input()$/;"	v
+company	tests/unit_tests/test_sql_database.py	/^company = Table($/;"	v
+company	tests/unit_tests/test_sql_database_schema.py	/^company = Table($/;"	v
+compare	langchain/model_laboratory.py	/^    def compare(self, text: str) -> None:$/;"	m	class:ModelLaboratory
+convert_name	langchain/chains/natbot/crawler.py	/^        def convert_name(node_name, has_click_handler):$/;"	f	function:Crawler.crawl
+copyright	docs/conf.py	/^copyright = "2022, Harrison Chase"$/;"	v
+cosine_similarity	langchain/vectorstores/utils.py	/^def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:$/;"	f
+crawl	langchain/chains/natbot/crawler.py	/^    def crawl(self):$/;"	m	class:Crawler
+create_documents	langchain/text_splitter.py	/^    def create_documents($/;"	m	class:TextSplitter
+create_prompt	langchain/agents/agent.py	/^    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:$/;"	m	class:Agent
+create_prompt	langchain/agents/conversational/base.py	/^    def create_prompt($/;"	m	class:ConversationalAgent
+create_prompt	langchain/agents/mrkl/base.py	/^    def create_prompt($/;"	m	class:ZeroShotAgent
+create_prompt	langchain/agents/react/base.py	/^    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:$/;"	m	class:ReActDocstoreAgent
+create_prompt	langchain/agents/react/base.py	/^    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:$/;"	m	class:ReActTextWorldAgent
+create_prompt	langchain/agents/self_ask_with_search/base.py	/^    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:$/;"	m	class:SelfAskWithSearchAgent
+data	docs/conf.py	/^    data = toml.load(f)$/;"	v
+dbpedia_entity	langchain/chains/hyde/prompts.py	/^dbpedia_entity = PromptTemplate($/;"	v
+default_factory	langchain/chains/base.py	/^        default_factory=_get_verbosity$/;"	v	class:Chain
+default_factory	langchain/chains/combine_documents/refine.py	/^        default_factory=_get_default_document_prompt$/;"	v	class:RefineDocumentsChain
+default_factory	langchain/chains/combine_documents/stuff.py	/^        default_factory=_get_default_document_prompt$/;"	v	class:StuffDocumentsChain
+dependable_faiss_import	langchain/vectorstores/faiss.py	/^def dependable_faiss_import() -> Any:$/;"	f
+dialect	langchain/sql_database.py	/^    def dialect(self) -> str:$/;"	m	class:SQLDatabase
+dict	langchain/chains/base.py	/^    def dict(self, **kwargs: Any) -> Dict:$/;"	m	class:Chain
+dict	langchain/llms/base.py	/^    def dict(self, **kwargs: Any) -> Dict:$/;"	m	class:BaseLLM
+dict	langchain/prompts/few_shot.py	/^    def dict(self, **kwargs: Any) -> Dict:$/;"	m	class:FewShotPromptTemplate
+dummy_transform	tests/unit_tests/chains/test_transform.py	/^def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:$/;"	f
+embed_documents	langchain/chains/hyde/base.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:HypotheticalDocumentEmbedder
+embed_documents	langchain/embeddings/base.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:Embeddings
+embed_documents	langchain/embeddings/cohere.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:CohereEmbeddings
+embed_documents	langchain/embeddings/huggingface.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:HuggingFaceEmbeddings
+embed_documents	langchain/embeddings/huggingface_hub.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:HuggingFaceHubEmbeddings
+embed_documents	langchain/embeddings/openai.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:OpenAIEmbeddings
+embed_documents	tests/integration_tests/vectorstores/test_elasticsearch.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:FakeEmbeddings
+embed_documents	tests/integration_tests/vectorstores/test_faiss.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:FakeEmbeddings
+embed_documents	tests/integration_tests/vectorstores/test_qdrant.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:FakeEmbeddings
+embed_documents	tests/unit_tests/chains/test_hyde.py	/^    def embed_documents(self, texts: List[str]) -> List[List[float]]:$/;"	m	class:FakeEmbeddings
+embed_query	langchain/chains/hyde/base.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:HypotheticalDocumentEmbedder
+embed_query	langchain/embeddings/base.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:Embeddings
+embed_query	langchain/embeddings/cohere.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:CohereEmbeddings
+embed_query	langchain/embeddings/huggingface.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:HuggingFaceEmbeddings
+embed_query	langchain/embeddings/huggingface_hub.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:HuggingFaceHubEmbeddings
+embed_query	langchain/embeddings/openai.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:OpenAIEmbeddings
+embed_query	tests/integration_tests/vectorstores/test_elasticsearch.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:FakeEmbeddings
+embed_query	tests/integration_tests/vectorstores/test_faiss.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:FakeEmbeddings
+embed_query	tests/integration_tests/vectorstores/test_qdrant.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:FakeEmbeddings
+embed_query	tests/unit_tests/chains/test_hyde.py	/^    def embed_query(self, text: str) -> List[float]:$/;"	m	class:FakeEmbeddings
+end	docs/make.bat	/^:end$/;"	l
+enforce_stop_tokens	langchain/llms/utils.py	/^def enforce_stop_tokens(text: str, stop: List[str]) -> str:$/;"	f
+enter	langchain/chains/natbot/crawler.py	/^    def enter(self):$/;"	m	class:Crawler
+evaluate	langchain/evaluation/qa/eval_chain.py	/^    def evaluate($/;"	m	class:QAEvalChain
+exclude_patterns	docs/conf.py	/^exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]$/;"	v
+execute	langchain/chains/natbot/base.py	/^    def execute(self, url: str, browser_content: str) -> str:$/;"	m	class:NatBotChain
+extensions	docs/conf.py	/^extensions = [$/;"	v
+extra	langchain/chains/base.py	/^        extra = Extra.forbid$/;"	v	class:Memory.Config
+extra	langchain/chains/combine_documents/map_reduce.py	/^        extra = Extra.forbid$/;"	v	class:MapReduceDocumentsChain.Config
+extra	langchain/chains/combine_documents/map_rerank.py	/^        extra = Extra.forbid$/;"	v	class:MapRerankDocumentsChain.Config
+extra	langchain/chains/combine_documents/refine.py	/^        extra = Extra.forbid$/;"	v	class:RefineDocumentsChain.Config
+extra	langchain/chains/combine_documents/stuff.py	/^        extra = Extra.forbid$/;"	v	class:StuffDocumentsChain.Config
+extra	langchain/chains/conversation/base.py	/^        extra = Extra.forbid$/;"	v	class:ConversationChain.Config
+extra	langchain/chains/hyde/base.py	/^        extra = Extra.forbid$/;"	v	class:HypotheticalDocumentEmbedder.Config
+extra	langchain/chains/llm.py	/^        extra = Extra.forbid$/;"	v	class:LLMChain.Config
+extra	langchain/chains/llm_bash/base.py	/^        extra = Extra.forbid$/;"	v	class:LLMBashChain.Config
+extra	langchain/chains/llm_checker/base.py	/^        extra = Extra.forbid$/;"	v	class:LLMCheckerChain.Config
+extra	langchain/chains/llm_math/base.py	/^        extra = Extra.forbid$/;"	v	class:LLMMathChain.Config
+extra	langchain/chains/llm_requests.py	/^        extra = Extra.forbid$/;"	v	class:LLMRequestsChain.Config
+extra	langchain/chains/mapreduce.py	/^        extra = Extra.forbid$/;"	v	class:MapReduceChain.Config
+extra	langchain/chains/natbot/base.py	/^        extra = Extra.forbid$/;"	v	class:NatBotChain.Config
+extra	langchain/chains/pal/base.py	/^        extra = Extra.forbid$/;"	v	class:PALChain.Config
+extra	langchain/chains/qa_with_sources/base.py	/^        extra = Extra.forbid$/;"	v	class:BaseQAWithSourcesChain.Config
+extra	langchain/chains/sequential.py	/^        extra = Extra.forbid$/;"	v	class:SequentialChain.Config
+extra	langchain/chains/sequential.py	/^        extra = Extra.forbid$/;"	v	class:SimpleSequentialChain.Config
+extra	langchain/chains/sql_database/base.py	/^        extra = Extra.forbid$/;"	v	class:SQLDatabaseChain.Config
+extra	langchain/chains/vector_db_qa/base.py	/^        extra = Extra.forbid$/;"	v	class:VectorDBQA.Config
+extra	langchain/embeddings/cohere.py	/^        extra = Extra.forbid$/;"	v	class:CohereEmbeddings.Config
+extra	langchain/embeddings/huggingface.py	/^        extra = Extra.forbid$/;"	v	class:HuggingFaceEmbeddings.Config
+extra	langchain/embeddings/huggingface_hub.py	/^        extra = Extra.forbid$/;"	v	class:HuggingFaceHubEmbeddings.Config
+extra	langchain/embeddings/openai.py	/^        extra = Extra.forbid$/;"	v	class:OpenAIEmbeddings.Config
+extra	langchain/llms/ai21.py	/^        extra = Extra.forbid$/;"	v	class:AI21.Config
+extra	langchain/llms/base.py	/^        extra = Extra.forbid$/;"	v	class:BaseLLM.Config
+extra	langchain/llms/cohere.py	/^        extra = Extra.forbid$/;"	v	class:Cohere.Config
+extra	langchain/llms/huggingface_hub.py	/^        extra = Extra.forbid$/;"	v	class:HuggingFaceHub.Config
+extra	langchain/llms/huggingface_pipeline.py	/^        extra = Extra.forbid$/;"	v	class:HuggingFacePipeline.Config
+extra	langchain/llms/manifest.py	/^        extra = Extra.forbid$/;"	v	class:ManifestWrapper.Config
+extra	langchain/llms/nlpcloud.py	/^        extra = Extra.forbid$/;"	v	class:NLPCloud.Config
+extra	langchain/llms/openai.py	/^        extra = Extra.ignore$/;"	v	class:BaseOpenAI.Config
+extra	langchain/prompts/base.py	/^        extra = Extra.forbid$/;"	v	class:BasePromptTemplate.Config
+extra	langchain/prompts/example_selector/semantic_similarity.py	/^        extra = Extra.forbid$/;"	v	class:SemanticSimilarityExampleSelector.Config
+extra	langchain/prompts/few_shot.py	/^        extra = Extra.forbid$/;"	v	class:FewShotPromptTemplate.Config
+extra	langchain/prompts/prompt.py	/^        extra = Extra.forbid$/;"	v	class:PromptTemplate.Config
+extra	langchain/serpapi.py	/^        extra = Extra.forbid$/;"	v	class:SerpAPIWrapper.Config
+extra	langchain/utilities/bing_search.py	/^        extra = Extra.forbid$/;"	v	class:BingSearchAPIWrapper.Config
+extra	langchain/utilities/google_search.py	/^        extra = Extra.forbid$/;"	v	class:GoogleSearchAPIWrapper.Config
+extra	langchain/utilities/wolfram_alpha.py	/^        extra = Extra.forbid$/;"	v	class:WolframAlphaAPIWrapper.Config
+fake_llm_api_chain	tests/unit_tests/chains/test_api.py	/^def fake_llm_api_chain(test_api_data: dict) -> APIChain:$/;"	f
+fake_llm_bash_chain	tests/unit_tests/chains/test_llm_bash.py	/^def fake_llm_bash_chain() -> LLMBashChain:$/;"	f
+fake_llm_chain	tests/unit_tests/chains/test_llm.py	/^def fake_llm_chain() -> LLMChain:$/;"	f
+fake_llm_checker_chain	tests/unit_tests/chains/test_llm_checker.py	/^def fake_llm_checker_chain() -> LLMCheckerChain:$/;"	f
+fake_llm_math_chain	tests/unit_tests/chains/test_llm_math.py	/^def fake_llm_math_chain() -> LLMMathChain:$/;"	f
+find_attributes	langchain/chains/natbot/crawler.py	/^        def find_attributes(attributes, keys):$/;"	f	function:Crawler.crawl
+finish_tool_name	langchain/agents/agent.py	/^    def finish_tool_name(self) -> str:$/;"	m	class:Agent
+finish_tool_name	langchain/agents/conversational/base.py	/^    def finish_tool_name(self) -> str:$/;"	m	class:ConversationalAgent
+finish_tool_name	langchain/agents/react/base.py	/^    def finish_tool_name(self) -> str:$/;"	m	class:ReActDocstoreAgent
+fiqa	langchain/chains/hyde/prompts.py	/^fiqa = PromptTemplate(template=fiqa_template, input_variables=["QUESTION"])$/;"	v
+format	langchain/prompts/base.py	/^    def format(self, **kwargs: Any) -> str:$/;"	m	class:BasePromptTemplate
+format	langchain/prompts/few_shot.py	/^    def format(self, **kwargs: Any) -> str:$/;"	m	class:FewShotPromptTemplate
+format	langchain/prompts/prompt.py	/^    def format(self, **kwargs: Any) -> str:$/;"	m	class:PromptTemplate
+formatter	langchain/formatting.py	/^formatter = StrictFormatter()$/;"	v
+from_agent_and_tools	langchain/agents/agent.py	/^    def from_agent_and_tools($/;"	m	class:AgentExecutor
+from_chain_type	langchain/chains/qa_with_sources/base.py	/^    def from_chain_type($/;"	m	class:BaseQAWithSourcesChain
+from_chain_type	langchain/chains/vector_db_qa/base.py	/^    def from_chain_type($/;"	m	class:VectorDBQA
+from_chains	langchain/agents/mrkl/base.py	/^    def from_chains($/;"	m	class:MRKLChain
+from_colored_object_prompt	langchain/chains/pal/base.py	/^    def from_colored_object_prompt(cls, llm: BaseLLM, **kwargs: Any) -> PALChain:$/;"	m	class:PALChain
+from_default	langchain/chains/natbot/base.py	/^    def from_default(cls, objective: str) -> NatBotChain:$/;"	m	class:NatBotChain
+from_documents	langchain/vectorstores/base.py	/^    def from_documents($/;"	m	class:VectorStore
+from_examples	langchain/prompts/example_selector/semantic_similarity.py	/^    def from_examples($/;"	m	class:MaxMarginalRelevanceExampleSelector
+from_examples	langchain/prompts/example_selector/semantic_similarity.py	/^    def from_examples($/;"	m	class:SemanticSimilarityExampleSelector
+from_examples	langchain/prompts/prompt.py	/^    def from_examples($/;"	m	class:PromptTemplate
+from_existing_index	langchain/vectorstores/pinecone.py	/^    def from_existing_index($/;"	m	class:Pinecone
+from_file	langchain/prompts/prompt.py	/^    def from_file($/;"	m	class:PromptTemplate
+from_huggingface_tokenizer	langchain/text_splitter.py	/^    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:$/;"	m	class:TextSplitter
+from_llm	langchain/chains/hyde/base.py	/^    def from_llm($/;"	m	class:HypotheticalDocumentEmbedder
+from_llm	langchain/chains/qa_with_sources/base.py	/^    def from_llm($/;"	m	class:BaseQAWithSourcesChain
+from_llm	langchain/chains/sql_database/base.py	/^    def from_llm($/;"	m	class:SQLDatabaseSequentialChain
+from_llm	langchain/chains/vector_db_qa/base.py	/^    def from_llm($/;"	m	class:VectorDBQA
+from_llm	langchain/evaluation/qa/eval_chain.py	/^    def from_llm($/;"	m	class:QAEvalChain
+from_llm	langchain/evaluation/qa/generate_chain.py	/^    def from_llm(cls, llm: BaseLLM, **kwargs: Any) -> QAGenerateChain:$/;"	m	class:QAGenerateChain
+from_llm_and_api_docs	langchain/chains/api/base.py	/^    def from_llm_and_api_docs($/;"	m	class:APIChain
+from_llm_and_tools	langchain/agents/agent.py	/^    def from_llm_and_tools($/;"	m	class:Agent
+from_llm_and_tools	langchain/agents/conversational/base.py	/^    def from_llm_and_tools($/;"	m	class:ConversationalAgent
+from_llms	langchain/model_laboratory.py	/^    def from_llms($/;"	m	class:ModelLaboratory
+from_math_prompt	langchain/chains/pal/base.py	/^    def from_math_prompt(cls, llm: BaseLLM, **kwargs: Any) -> PALChain:$/;"	m	class:PALChain
+from_model_id	langchain/llms/huggingface_pipeline.py	/^    def from_model_id($/;"	m	class:HuggingFacePipeline
+from_params	langchain/chains/mapreduce.py	/^    def from_params($/;"	m	class:MapReduceChain
+from_texts	langchain/vectorstores/base.py	/^    def from_texts($/;"	m	class:VectorStore
+from_texts	langchain/vectorstores/elastic_vector_search.py	/^    def from_texts($/;"	m	class:ElasticVectorSearch
+from_texts	langchain/vectorstores/faiss.py	/^    def from_texts($/;"	m	class:FAISS
+from_texts	langchain/vectorstores/pinecone.py	/^    def from_texts($/;"	m	class:Pinecone
+from_texts	langchain/vectorstores/qdrant.py	/^    def from_texts($/;"	m	class:Qdrant
+from_texts	langchain/vectorstores/weaviate.py	/^    def from_texts($/;"	m	class:Weaviate
+from_tiktoken_encoder	langchain/text_splitter.py	/^    def from_tiktoken_encoder($/;"	m	class:TextSplitter
+from_uri	langchain/sql_database.py	/^    def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:$/;"	m	class:SQLDatabase
+generate	langchain/chains/llm.py	/^    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:$/;"	m	class:LLMChain
+generate	langchain/llms/base.py	/^    def generate($/;"	m	class:BaseLLM
+generate_example	langchain/example_generator.py	/^def generate_example($/;"	f
+get_action_and_input	langchain/agents/mrkl/base.py	/^def get_action_and_input(llm_output: str) -> Tuple[str, str]:$/;"	f
+get_all_tool_names	langchain/agents/load_tools.py	/^def get_all_tool_names() -> List[str]:$/;"	f
+get_callback_manager	langchain/callbacks/__init__.py	/^def get_callback_manager() -> BaseCallbackManager:$/;"	f
+get_color_mapping	langchain/input.py	/^def get_color_mapping($/;"	f
+get_colored_text	langchain/input.py	/^def get_colored_text(text: str, color: str) -> str:$/;"	f
+get_default_document_variable_name	langchain/chains/combine_documents/map_reduce.py	/^    def get_default_document_variable_name(cls, values: Dict) -> Dict:$/;"	m	class:MapReduceDocumentsChain
+get_default_document_variable_name	langchain/chains/combine_documents/map_rerank.py	/^    def get_default_document_variable_name(cls, values: Dict) -> Dict:$/;"	m	class:MapRerankDocumentsChain
+get_default_document_variable_name	langchain/chains/combine_documents/refine.py	/^    def get_default_document_variable_name(cls, values: Dict) -> Dict:$/;"	m	class:RefineDocumentsChain
+get_default_document_variable_name	langchain/chains/combine_documents/stuff.py	/^    def get_default_document_variable_name(cls, values: Dict) -> Dict:$/;"	m	class:StuffDocumentsChain
+get_from_dict_or_env	langchain/utils.py	/^def get_from_dict_or_env($/;"	f
+get_model_names	langchain/embeddings/openai.py	/^    def get_model_names(cls, values: Dict) -> Dict:$/;"	m	class:OpenAIEmbeddings
+get_num_tokens	langchain/llms/base.py	/^    def get_num_tokens(self, text: str) -> int:$/;"	m	class:BaseLLM
+get_num_tokens	langchain/llms/openai.py	/^    def get_num_tokens(self, text: str) -> int:$/;"	m	class:BaseOpenAI
+get_num_tokens_list	langchain/chains/conversation/memory.py	/^    def get_num_tokens_list(self, arr: List[str]) -> List[int]:$/;"	m	class:ConversationSummaryBufferMemory
+get_openai_callback	langchain/callbacks/__init__.py	/^def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:$/;"	f
+get_return_intermediate_steps	langchain/chains/combine_documents/map_reduce.py	/^    def get_return_intermediate_steps(cls, values: Dict) -> Dict:$/;"	m	class:MapReduceDocumentsChain
+get_return_intermediate_steps	langchain/chains/combine_documents/refine.py	/^    def get_return_intermediate_steps(cls, values: Dict) -> Dict:$/;"	m	class:RefineDocumentsChain
+get_table_info	langchain/sql_database.py	/^    def get_table_info(self, table_names: Optional[List[str]] = None) -> str:$/;"	m	class:SQLDatabase
+get_table_names	langchain/sql_database.py	/^    def get_table_names(self) -> Iterable[str]:$/;"	m	class:SQLDatabase
+go_to_page	langchain/chains/natbot/crawler.py	/^    def go_to_page(self, url):$/;"	m	class:Crawler
+help	docs/make.bat	/^:help$/;"	l
+html_context	docs/conf.py	/^html_context = {$/;"	v
+html_css_files	docs/conf.py	/^html_css_files = [$/;"	v
+html_static_path	docs/conf.py	/^html_static_path = ["_static"]$/;"	v
+html_theme	docs/conf.py	/^html_theme = "sphinx_book_theme"$/;"	v
+html_theme_options	docs/conf.py	/^html_theme_options = {$/;"	v
+html_title	docs/conf.py	/^html_title = project + " " + version$/;"	v
+i	docs/modules/agents/implementations/natbot.py	/^    i = input()$/;"	v
+id	docs/modules/agents/implementations/natbot.py	/^                id = input("id:")$/;"	v
+id	tests/unit_tests/llms/test_base.py	/^        id = Column(Integer, Sequence("cache_id"), primary_key=True)$/;"	v	class:test_custom_caching.FulltextLLMCache
+idx	langchain/cache.py	/^    idx = Column(Integer, primary_key=True)$/;"	v	class:FullLLMCache
+idx	tests/unit_tests/llms/test_base.py	/^        idx = Column(Integer)$/;"	v	class:test_custom_caching.FulltextLLMCache
+initialize_agent	langchain/agents/loading.py	/^def initialize_agent($/;"	f
+input_keys	langchain/agents/agent.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:Agent
+input_keys	langchain/agents/agent.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:AgentExecutor
+input_keys	langchain/chains/api/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:APIChain
+input_keys	langchain/chains/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:Chain
+input_keys	langchain/chains/combine_documents/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:BaseCombineDocumentsChain
+input_keys	langchain/chains/conversation/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:ConversationChain
+input_keys	langchain/chains/hyde/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:HypotheticalDocumentEmbedder
+input_keys	langchain/chains/llm.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:LLMChain
+input_keys	langchain/chains/llm_bash/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:LLMBashChain
+input_keys	langchain/chains/llm_checker/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:LLMCheckerChain
+input_keys	langchain/chains/llm_math/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:LLMMathChain
+input_keys	langchain/chains/llm_requests.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:LLMRequestsChain
+input_keys	langchain/chains/mapreduce.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:MapReduceChain
+input_keys	langchain/chains/moderation.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:OpenAIModerationChain
+input_keys	langchain/chains/natbot/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:NatBotChain
+input_keys	langchain/chains/pal/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:PALChain
+input_keys	langchain/chains/qa_with_sources/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:BaseQAWithSourcesChain
+input_keys	langchain/chains/qa_with_sources/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:QAWithSourcesChain
+input_keys	langchain/chains/sequential.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SequentialChain
+input_keys	langchain/chains/sequential.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SimpleSequentialChain
+input_keys	langchain/chains/sql_database/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseChain
+input_keys	langchain/chains/sql_database/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseSequentialChain
+input_keys	langchain/chains/transform.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:TransformChain
+input_keys	langchain/chains/vector_db_qa/base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:VectorDBQA
+input_keys	tests/unit_tests/chains/test_base.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:FakeChain
+input_keys	tests/unit_tests/chains/test_sequential.py	/^    def input_keys(self) -> List[str]:$/;"	m	class:FakeChain
+input_variables	langchain/chains/api/prompt.py	/^    input_variables=["api_docs", "question", "api_url", "api_response"],$/;"	v
+input_variables	langchain/chains/api/prompt.py	/^    input_variables=[$/;"	v
+input_variables	langchain/chains/conversation/prompt.py	/^    input_variables=["entities", "history", "input"],$/;"	v
+input_variables	langchain/chains/conversation/prompt.py	/^    input_variables=["entity", "summary", "history", "input"],$/;"	v
+input_variables	langchain/chains/llm_checker/prompt.py	/^    input_variables=["checked_assertions", "question"],$/;"	v
+input_variables	langchain/chains/natbot/prompt.py	/^    input_variables=["browser_content", "url", "previous_command", "objective"],$/;"	v
+input_variables	langchain/chains/qa_with_sources/map_reduce_prompt.py	/^    input_variables=["page_content", "source"],$/;"	v
+input_variables	langchain/chains/qa_with_sources/refine_prompts.py	/^    input_variables=["page_content", "source"],$/;"	v
+input_variables	langchain/chains/qa_with_sources/refine_prompts.py	/^    input_variables=["question", "existing_answer", "context_str"],$/;"	v
+input_variables	langchain/chains/qa_with_sources/stuff_prompt.py	/^    input_variables=["page_content", "source"],$/;"	v
+input_variables	langchain/chains/question_answering/map_rerank_prompt.py	/^    input_variables=["context", "question"],$/;"	v
+input_variables	langchain/chains/question_answering/refine_prompts.py	/^    input_variables=["question", "existing_answer", "context_str"],$/;"	v
+input_variables	langchain/chains/sql_database/prompt.py	/^    input_variables=["input", "table_info", "dialect", "top_k"],$/;"	v
+input_variables	langchain/chains/sql_database/prompt.py	/^    input_variables=["query", "table_names"],$/;"	v
+input_variables	langchain/chains/summarize/refine_prompts.py	/^    input_variables=["existing_answer", "text"],$/;"	v
+jinja2_formatter	langchain/prompts/base.py	/^def jinja2_formatter(template: str, **kwargs: Any) -> str:$/;"	f
+llm	langchain/cache.py	/^    llm = Column(String, primary_key=True)$/;"	v	class:FullLLMCache
+llm	tests/unit_tests/llms/test_base.py	/^        llm = Column(String, nullable=False)$/;"	v	class:test_custom_caching.FulltextLLMCache
+llm_command	docs/modules/agents/implementations/natbot.py	/^            llm_command = nat_bot_chain.execute(_crawler.page.url, browser_content)$/;"	v
+llm_output	tests/unit_tests/llms/test_base.py	/^        llm_output=None,$/;"	v	class:test_custom_caching.FulltextLLMCache
+llm_prefix	langchain/agents/agent.py	/^    def llm_prefix(self) -> str:$/;"	m	class:Agent
+llm_prefix	langchain/agents/conversational/base.py	/^    def llm_prefix(self) -> str:$/;"	m	class:ConversationalAgent
+llm_prefix	langchain/agents/mrkl/base.py	/^    def llm_prefix(self) -> str:$/;"	m	class:ZeroShotAgent
+llm_prefix	langchain/agents/react/base.py	/^    def llm_prefix(self) -> str:$/;"	m	class:ReActDocstoreAgent
+llm_prefix	langchain/agents/self_ask_with_search/base.py	/^    def llm_prefix(self) -> str:$/;"	m	class:SelfAskWithSearchAgent
+load_chain	langchain/chains/loading.py	/^def load_chain(file: Union[str, Path]) -> Chain:$/;"	f
+load_chain_from_config	langchain/chains/loading.py	/^def load_chain_from_config(config: dict) -> Chain:$/;"	f
+load_combine_documents_chain	langchain/chains/vector_db_qa/base.py	/^    def load_combine_documents_chain(cls, values: Dict) -> Dict:$/;"	m	class:VectorDBQA
+load_llm	langchain/llms/loading.py	/^def load_llm(file: Union[str, Path]) -> BaseLLM:$/;"	f
+load_llm_from_config	langchain/llms/loading.py	/^def load_llm_from_config(config: dict) -> BaseLLM:$/;"	f
+load_local	langchain/vectorstores/faiss.py	/^    def load_local(self, path: str) -> None:$/;"	m	class:FAISS
+load_memory_variables	langchain/chains/base.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:Memory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:$/;"	m	class:ConversationEntityMemory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:CombinedMemory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:ConversationBufferMemory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:ConversationBufferWindowMemory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:ConversationSummaryBufferMemory
+load_memory_variables	langchain/chains/conversation/memory.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:ConversationSummaryMemory
+load_memory_variables	tests/unit_tests/chains/test_base.py	/^    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:$/;"	m	class:FakeMemory
+load_prompt	langchain/prompts/loading.py	/^def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:$/;"	f
+load_prompt_from_config	langchain/prompts/loading.py	/^def load_prompt_from_config(config: dict) -> BasePromptTemplate:$/;"	f
+load_qa_chain	langchain/chains/question_answering/__init__.py	/^def load_qa_chain($/;"	f
+load_qa_with_sources_chain	langchain/chains/qa_with_sources/loading.py	/^def load_qa_with_sources_chain($/;"	f
+load_summarize_chain	langchain/chains/summarize/__init__.py	/^def load_summarize_chain($/;"	f
+load_tools	langchain/agents/load_tools.py	/^def load_tools($/;"	f
+logger	langchain/agents/agent.py	/^logger = logging.getLogger()$/;"	v
+logger	langchain/llms/openai.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	langchain/text_splitter.py	/^logger = logging.getLogger()$/;"	v
+lookup	langchain/agents/react/base.py	/^    def lookup(self, term: str) -> str:$/;"	m	class:DocstoreExplorer
+lookup	langchain/cache.py	/^    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:$/;"	m	class:BaseCache
+lookup	langchain/cache.py	/^    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:$/;"	m	class:InMemoryCache
+lookup	langchain/cache.py	/^    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:$/;"	m	class:RedisCache
+lookup	langchain/cache.py	/^    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:$/;"	m	class:SQLAlchemyCache
+lookup	langchain/docstore/document.py	/^    def lookup(self, string: str) -> str:$/;"	m	class:Document
+lookup_index	langchain/docstore/document.py	/^    lookup_index = 0$/;"	v	class:Document
+max_marginal_relevance_search	langchain/vectorstores/base.py	/^    def max_marginal_relevance_search($/;"	m	class:VectorStore
+max_marginal_relevance_search	langchain/vectorstores/faiss.py	/^    def max_marginal_relevance_search($/;"	m	class:FAISS
+max_marginal_relevance_search	langchain/vectorstores/qdrant.py	/^    def max_marginal_relevance_search($/;"	m	class:Qdrant
+max_tokens_for_prompt	langchain/llms/openai.py	/^    def max_tokens_for_prompt(self, prompt: str) -> int:$/;"	m	class:BaseOpenAI
+maximal_marginal_relevance	langchain/vectorstores/utils.py	/^def maximal_marginal_relevance($/;"	f
+memory_variables	langchain/chains/base.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:Memory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:CombinedMemory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:ConversationBufferMemory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:ConversationBufferWindowMemory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:ConversationEntityMemory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:ConversationSummaryBufferMemory
+memory_variables	langchain/chains/conversation/memory.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:ConversationSummaryMemory
+memory_variables	tests/unit_tests/chains/test_base.py	/^    def memory_variables(self) -> List[str]:$/;"	m	class:FakeMemory
+metadata_obj	tests/integration_tests/chains/test_sql_database.py	/^metadata_obj = MetaData()$/;"	v
+metadata_obj	tests/unit_tests/test_sql_database.py	/^metadata_obj = MetaData()$/;"	v
+metadata_obj	tests/unit_tests/test_sql_database_schema.py	/^metadata_obj = MetaData()$/;"	v
+modelname_to_contextsize	langchain/llms/openai.py	/^    def modelname_to_contextsize(self, modelname: str) -> int:$/;"	m	class:BaseOpenAI
+mr_tydi	langchain/chains/hyde/prompts.py	/^mr_tydi = PromptTemplate(template=mr_tydi_template, input_variables=["QUESTION"])$/;"	v
+myst_enable_extensions	docs/conf.py	/^myst_enable_extensions = ["colon_fence"]$/;"	v
+nat_bot_chain	docs/modules/agents/implementations/natbot.py	/^    nat_bot_chain = NatBotChain.from_default(objective)$/;"	v
+nb_execution_mode	docs/conf.py	/^nb_execution_mode = "off"$/;"	v
+objective	docs/modules/agents/implementations/natbot.py	/^                objective = input("Objective:")$/;"	v
+objective	docs/modules/agents/implementations/natbot.py	/^        objective = i$/;"	v
+objective	docs/modules/agents/implementations/natbot.py	/^    objective = "Make a reservation for 2 at 7pm at bistro vida in menlo park"$/;"	v
+observation_prefix	langchain/agents/agent.py	/^    def observation_prefix(self) -> str:$/;"	m	class:Agent
+observation_prefix	langchain/agents/conversational/base.py	/^    def observation_prefix(self) -> str:$/;"	m	class:ConversationalAgent
+observation_prefix	langchain/agents/mrkl/base.py	/^    def observation_prefix(self) -> str:$/;"	m	class:ZeroShotAgent
+observation_prefix	langchain/agents/react/base.py	/^    def observation_prefix(self) -> str:$/;"	m	class:ReActDocstoreAgent
+observation_prefix	langchain/agents/self_ask_with_search/base.py	/^    def observation_prefix(self) -> str:$/;"	m	class:SelfAskWithSearchAgent
+on_agent_finish	langchain/callbacks/base.py	/^    def on_agent_finish($/;"	m	class:CallbackManager
+on_agent_finish	langchain/callbacks/base.py	/^    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_agent_finish	langchain/callbacks/openai_info.py	/^    def on_agent_finish($/;"	m	class:OpenAICallbackHandler
+on_agent_finish	langchain/callbacks/shared.py	/^    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_agent_finish	langchain/callbacks/stdout.py	/^    def on_agent_finish($/;"	m	class:StdOutCallbackHandler
+on_agent_finish	langchain/callbacks/streamlit.py	/^    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_agent_finish	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_chain_end	langchain/callbacks/base.py	/^    def on_chain_end($/;"	m	class:CallbackManager
+on_chain_end	langchain/callbacks/base.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_chain_end	langchain/callbacks/openai_info.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:OpenAICallbackHandler
+on_chain_end	langchain/callbacks/shared.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_chain_end	langchain/callbacks/stdout.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:StdOutCallbackHandler
+on_chain_end	langchain/callbacks/streamlit.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_chain_end	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_chain_error	langchain/callbacks/base.py	/^    def on_chain_error($/;"	m	class:CallbackManager
+on_chain_error	langchain/callbacks/base.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_chain_error	langchain/callbacks/openai_info.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:OpenAICallbackHandler
+on_chain_error	langchain/callbacks/shared.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_chain_error	langchain/callbacks/stdout.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StdOutCallbackHandler
+on_chain_error	langchain/callbacks/streamlit.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_chain_error	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_chain_start	langchain/callbacks/base.py	/^    def on_chain_start($/;"	m	class:BaseCallbackHandler
+on_chain_start	langchain/callbacks/base.py	/^    def on_chain_start($/;"	m	class:CallbackManager
+on_chain_start	langchain/callbacks/openai_info.py	/^    def on_chain_start($/;"	m	class:OpenAICallbackHandler
+on_chain_start	langchain/callbacks/shared.py	/^    def on_chain_start($/;"	m	class:SharedCallbackManager
+on_chain_start	langchain/callbacks/stdout.py	/^    def on_chain_start($/;"	m	class:StdOutCallbackHandler
+on_chain_start	langchain/callbacks/streamlit.py	/^    def on_chain_start($/;"	m	class:StreamlitCallbackHandler
+on_chain_start	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_chain_start($/;"	m	class:FakeCallbackHandler
+on_llm_end	langchain/callbacks/base.py	/^    def on_llm_end($/;"	m	class:CallbackManager
+on_llm_end	langchain/callbacks/base.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_llm_end	langchain/callbacks/openai_info.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:OpenAICallbackHandler
+on_llm_end	langchain/callbacks/shared.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_llm_end	langchain/callbacks/stdout.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:StdOutCallbackHandler
+on_llm_end	langchain/callbacks/streamlit.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_llm_end	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_llm_error	langchain/callbacks/base.py	/^    def on_llm_error($/;"	m	class:CallbackManager
+on_llm_error	langchain/callbacks/base.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_llm_error	langchain/callbacks/openai_info.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:OpenAICallbackHandler
+on_llm_error	langchain/callbacks/shared.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_llm_error	langchain/callbacks/stdout.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StdOutCallbackHandler
+on_llm_error	langchain/callbacks/streamlit.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_llm_error	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_llm_start	langchain/callbacks/base.py	/^    def on_llm_start($/;"	m	class:BaseCallbackHandler
+on_llm_start	langchain/callbacks/base.py	/^    def on_llm_start($/;"	m	class:CallbackManager
+on_llm_start	langchain/callbacks/openai_info.py	/^    def on_llm_start($/;"	m	class:OpenAICallbackHandler
+on_llm_start	langchain/callbacks/shared.py	/^    def on_llm_start($/;"	m	class:SharedCallbackManager
+on_llm_start	langchain/callbacks/stdout.py	/^    def on_llm_start($/;"	m	class:StdOutCallbackHandler
+on_llm_start	langchain/callbacks/streamlit.py	/^    def on_llm_start($/;"	m	class:StreamlitCallbackHandler
+on_llm_start	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_llm_start($/;"	m	class:FakeCallbackHandler
+on_text	langchain/callbacks/base.py	/^    def on_text(self, text: str, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_text	langchain/callbacks/base.py	/^    def on_text(self, text: str, verbose: bool = False, **kwargs: Any) -> None:$/;"	m	class:CallbackManager
+on_text	langchain/callbacks/openai_info.py	/^    def on_text($/;"	m	class:OpenAICallbackHandler
+on_text	langchain/callbacks/shared.py	/^    def on_text(self, text: str, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_text	langchain/callbacks/stdout.py	/^    def on_text($/;"	m	class:StdOutCallbackHandler
+on_text	langchain/callbacks/streamlit.py	/^    def on_text(self, text: str, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_text	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_text(self, text: str, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_tool_end	langchain/callbacks/base.py	/^    def on_tool_end(self, output: str, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_tool_end	langchain/callbacks/base.py	/^    def on_tool_end(self, output: str, verbose: bool = False, **kwargs: Any) -> None:$/;"	m	class:CallbackManager
+on_tool_end	langchain/callbacks/openai_info.py	/^    def on_tool_end($/;"	m	class:OpenAICallbackHandler
+on_tool_end	langchain/callbacks/shared.py	/^    def on_tool_end(self, output: str, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_tool_end	langchain/callbacks/stdout.py	/^    def on_tool_end($/;"	m	class:StdOutCallbackHandler
+on_tool_end	langchain/callbacks/streamlit.py	/^    def on_tool_end($/;"	m	class:StreamlitCallbackHandler
+on_tool_end	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_tool_end(self, output: str, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_tool_error	langchain/callbacks/base.py	/^    def on_tool_error($/;"	m	class:CallbackManager
+on_tool_error	langchain/callbacks/base.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:BaseCallbackHandler
+on_tool_error	langchain/callbacks/openai_info.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:OpenAICallbackHandler
+on_tool_error	langchain/callbacks/shared.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:SharedCallbackManager
+on_tool_error	langchain/callbacks/stdout.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StdOutCallbackHandler
+on_tool_error	langchain/callbacks/streamlit.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:StreamlitCallbackHandler
+on_tool_error	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:$/;"	m	class:FakeCallbackHandler
+on_tool_start	langchain/callbacks/base.py	/^    def on_tool_start($/;"	m	class:BaseCallbackHandler
+on_tool_start	langchain/callbacks/base.py	/^    def on_tool_start($/;"	m	class:CallbackManager
+on_tool_start	langchain/callbacks/openai_info.py	/^    def on_tool_start($/;"	m	class:OpenAICallbackHandler
+on_tool_start	langchain/callbacks/shared.py	/^    def on_tool_start($/;"	m	class:SharedCallbackManager
+on_tool_start	langchain/callbacks/stdout.py	/^    def on_tool_start($/;"	m	class:StdOutCallbackHandler
+on_tool_start	langchain/callbacks/streamlit.py	/^    def on_tool_start($/;"	m	class:StreamlitCallbackHandler
+on_tool_start	tests/unit_tests/callbacks/fake_callback_handler.py	/^    def on_tool_start($/;"	m	class:FakeCallbackHandler
+output_keys	langchain/agents/agent.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:AgentExecutor
+output_keys	langchain/chains/api/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:APIChain
+output_keys	langchain/chains/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:Chain
+output_keys	langchain/chains/combine_documents/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:BaseCombineDocumentsChain
+output_keys	langchain/chains/combine_documents/map_reduce.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:MapReduceDocumentsChain
+output_keys	langchain/chains/combine_documents/map_rerank.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:MapRerankDocumentsChain
+output_keys	langchain/chains/combine_documents/refine.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:RefineDocumentsChain
+output_keys	langchain/chains/hyde/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:HypotheticalDocumentEmbedder
+output_keys	langchain/chains/llm.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:LLMChain
+output_keys	langchain/chains/llm_bash/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:LLMBashChain
+output_keys	langchain/chains/llm_checker/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:LLMCheckerChain
+output_keys	langchain/chains/llm_math/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:LLMMathChain
+output_keys	langchain/chains/llm_requests.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:LLMRequestsChain
+output_keys	langchain/chains/mapreduce.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:MapReduceChain
+output_keys	langchain/chains/moderation.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:OpenAIModerationChain
+output_keys	langchain/chains/natbot/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:NatBotChain
+output_keys	langchain/chains/pal/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:PALChain
+output_keys	langchain/chains/qa_with_sources/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:BaseQAWithSourcesChain
+output_keys	langchain/chains/question_answering/map_rerank_prompt.py	/^    output_keys=["answer", "score"],$/;"	v
+output_keys	langchain/chains/sequential.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SequentialChain
+output_keys	langchain/chains/sequential.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SimpleSequentialChain
+output_keys	langchain/chains/sql_database/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseChain
+output_keys	langchain/chains/sql_database/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:SQLDatabaseSequentialChain
+output_keys	langchain/chains/transform.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:TransformChain
+output_keys	langchain/chains/vector_db_qa/base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:VectorDBQA
+output_keys	tests/unit_tests/chains/test_base.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:FakeChain
+output_keys	tests/unit_tests/chains/test_sequential.py	/^    def output_keys(self) -> List[str]:$/;"	m	class:FakeChain
+output_parser	langchain/chains/question_answering/map_rerank_prompt.py	/^    output_parser=output_parser,$/;"	v
+output_parser	langchain/chains/question_answering/map_rerank_prompt.py	/^output_parser = RegexParser($/;"	v
+output_parser	langchain/chains/sql_database/prompt.py	/^    output_parser=CommaSeparatedListOutputParser(),$/;"	v
+output_parser	langchain/evaluation/qa/generate_prompt.py	/^output_parser = RegexParser($/;"	v
+paragraphs	langchain/docstore/document.py	/^    def paragraphs(self) -> List[str]:$/;"	m	class:Document
+parse	langchain/prompts/base.py	/^    def parse(self, text: str) -> Dict[str, str]:$/;"	m	class:RegexParser
+parse	langchain/prompts/base.py	/^    def parse(self, text: str) -> List[str]:$/;"	m	class:CommaSeparatedListOutputParser
+parse	langchain/prompts/base.py	/^    def parse(self, text: str) -> List[str]:$/;"	m	class:ListOutputParser
+parse	langchain/prompts/base.py	/^    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:$/;"	m	class:BaseOutputParser
+parse	tests/unit_tests/chains/test_llm.py	/^    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:$/;"	m	class:FakeOutputParser
+plan	langchain/agents/agent.py	/^    def plan($/;"	m	class:Agent
+predict	langchain/chains/llm.py	/^    def predict(self, **kwargs: Any) -> str:$/;"	m	class:LLMChain
+predict_and_parse	langchain/chains/llm.py	/^    def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:$/;"	m	class:LLMChain
+prepare_for_new_call	langchain/agents/agent.py	/^    def prepare_for_new_call(self) -> None:$/;"	m	class:Agent
+print_text	langchain/input.py	/^def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:$/;"	f
+project	docs/conf.py	/^project = "🦜🔗 LangChain"$/;"	v
+prompt	langchain/cache.py	/^    prompt = Column(String, primary_key=True)$/;"	v	class:FullLLMCache
+prompt	tests/unit_tests/llms/test_base.py	/^        prompt = Column(String, nullable=False)$/;"	v	class:test_custom_caching.FulltextLLMCache
+prompt_length	langchain/chains/combine_documents/base.py	/^    def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:$/;"	m	class:BaseCombineDocumentsChain
+prompt_length	langchain/chains/combine_documents/stuff.py	/^    def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:$/;"	m	class:StuffDocumentsChain
+quiet	docs/modules/agents/implementations/natbot.py	/^    quiet = False$/;"	v
+regex	langchain/chains/question_answering/map_rerank_prompt.py	/^    regex=r"(.*?)\\nScore: (.*)",$/;"	v
+regex	langchain/evaluation/qa/generate_prompt.py	/^    regex=r"QUESTION: (.*?)\\nANSWER: (.*)", output_keys=["query", "answer"]$/;"	v
+release	docs/conf.py	/^release = version$/;"	v
+remove_handler	langchain/callbacks/base.py	/^    def remove_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:BaseCallbackManager
+remove_handler	langchain/callbacks/base.py	/^    def remove_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:CallbackManager
+remove_handler	langchain/callbacks/shared.py	/^    def remove_handler(self, callback: BaseCallbackHandler) -> None:$/;"	m	class:SharedCallbackManager
+response	langchain/cache.py	/^    response = Column(String)$/;"	v	class:FullLLMCache
+response	tests/unit_tests/llms/test_base.py	/^        response = Column(String)$/;"	v	class:test_custom_caching.FulltextLLMCache
+return_stopped_response	langchain/agents/agent.py	/^    def return_stopped_response($/;"	m	class:Agent
+run	langchain/chains/base.py	/^    def run(self, *args: str, **kwargs: str) -> str:$/;"	m	class:Chain
+run	langchain/python.py	/^    def run(self, command: str) -> str:$/;"	m	class:PythonREPL
+run	langchain/requests.py	/^    def run(self, url: str) -> str:$/;"	m	class:RequestsWrapper
+run	langchain/serpapi.py	/^    def run(self, query: str) -> str:$/;"	m	class:SerpAPIWrapper
+run	langchain/sql_database.py	/^    def run(self, command: str) -> str:$/;"	m	class:SQLDatabase
+run	langchain/utilities/bash.py	/^    def run(self, commands: Union[str, List[str]]) -> str:$/;"	m	class:BashProcess
+run	langchain/utilities/bing_search.py	/^    def run(self, query: str) -> str:$/;"	m	class:BingSearchAPIWrapper
+run	langchain/utilities/google_search.py	/^    def run(self, query: str) -> str:$/;"	m	class:GoogleSearchAPIWrapper
+run	langchain/utilities/wolfram_alpha.py	/^    def run(self, query: str) -> str:$/;"	m	class:WolframAlphaAPIWrapper
+run	tests/unit_tests/chains/test_api.py	/^    def run(self, url: str) -> str:$/;"	m	class:FakeRequestsChain
+run_cmd	docs/modules/agents/implementations/natbot.py	/^def run_cmd(cmd: str, _crawler: Crawler) -> None:$/;"	f
+save	langchain/chains/base.py	/^    def save(self, file_path: Union[Path, str]) -> None:$/;"	m	class:Chain
+save	langchain/llms/base.py	/^    def save(self, file_path: Union[Path, str]) -> None:$/;"	m	class:BaseLLM
+save	langchain/prompts/base.py	/^    def save(self, file_path: Union[Path, str]) -> None:$/;"	m	class:BasePromptTemplate
+save_context	langchain/chains/base.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:Memory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:CombinedMemory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:ConversationBufferMemory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:ConversationBufferWindowMemory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:ConversationEntityMemory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:ConversationSummaryBufferMemory
+save_context	langchain/chains/conversation/memory.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:ConversationSummaryMemory
+save_context	tests/unit_tests/chains/test_base.py	/^    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:$/;"	m	class:FakeMemory
+save_local	langchain/vectorstores/faiss.py	/^    def save_local(self, path: str) -> None:$/;"	m	class:FAISS
+schema	tests/unit_tests/test_sql_database_schema.py	/^    schema="schema_a",$/;"	v
+schema	tests/unit_tests/test_sql_database_schema.py	/^    schema="schema_b",$/;"	v
+sci_fact	langchain/chains/hyde/prompts.py	/^sci_fact = PromptTemplate(template=sci_fact_template, input_variables=["Claim"])$/;"	v
+scroll	langchain/chains/natbot/crawler.py	/^    def scroll(self, direction):$/;"	m	class:Crawler
+search	langchain/agents/react/base.py	/^    def search(self, term: str) -> str:$/;"	m	class:DocstoreExplorer
+search	langchain/docstore/base.py	/^    def search(self, search: str) -> Union[str, Document]:$/;"	m	class:Docstore
+search	langchain/docstore/in_memory.py	/^    def search(self, search: str) -> Union[str, Document]:$/;"	m	class:InMemoryDocstore
+search	langchain/docstore/wikipedia.py	/^    def search(self, search: str) -> Union[str, Document]:$/;"	m	class:Wikipedia
+search	tests/unit_tests/agents/test_react.py	/^    def search(self, search: str) -> Union[str, Document]:$/;"	m	class:FakeDocstore
+select_examples	langchain/prompts/example_selector/base.py	/^    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:$/;"	m	class:BaseExampleSelector
+select_examples	langchain/prompts/example_selector/length_based.py	/^    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:$/;"	m	class:LengthBasedExampleSelector
+select_examples	langchain/prompts/example_selector/semantic_similarity.py	/^    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:$/;"	m	class:MaxMarginalRelevanceExampleSelector
+select_examples	langchain/prompts/example_selector/semantic_similarity.py	/^    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:$/;"	m	class:SemanticSimilarityExampleSelector
+selector	tests/unit_tests/prompts/test_length_based_example_selector.py	/^def selector() -> LengthBasedExampleSelector:$/;"	f
+set_callback_manager	langchain/chains/base.py	/^    def set_callback_manager($/;"	m	class:Chain
+set_callback_manager	langchain/llms/base.py	/^    def set_callback_manager($/;"	m	class:BaseLLM
+set_default_callback_manager	langchain/callbacks/__init__.py	/^def set_default_callback_manager() -> None:$/;"	f
+set_handler	langchain/callbacks/__init__.py	/^def set_handler(handler: BaseCallbackHandler) -> None:$/;"	f
+set_handler	langchain/callbacks/base.py	/^    def set_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:BaseCallbackManager
+set_handler	langchain/callbacks/base.py	/^    def set_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:CallbackManager
+set_handler	langchain/callbacks/shared.py	/^    def set_handler(self, handler: BaseCallbackHandler) -> None:$/;"	m	class:SharedCallbackManager
+set_verbose	langchain/chains/base.py	/^    def set_verbose(cls, verbose: Optional[bool]) -> bool:$/;"	m	class:Chain
+set_verbose	langchain/llms/base.py	/^    def set_verbose(cls, verbose: Optional[bool]) -> bool:$/;"	m	class:BaseLLM
+similarity_search	langchain/vectorstores/base.py	/^    def similarity_search($/;"	m	class:VectorStore
+similarity_search	langchain/vectorstores/elastic_vector_search.py	/^    def similarity_search($/;"	m	class:ElasticVectorSearch
+similarity_search	langchain/vectorstores/faiss.py	/^    def similarity_search($/;"	m	class:FAISS
+similarity_search	langchain/vectorstores/pinecone.py	/^    def similarity_search($/;"	m	class:Pinecone
+similarity_search	langchain/vectorstores/qdrant.py	/^    def similarity_search($/;"	m	class:Qdrant
+similarity_search	langchain/vectorstores/weaviate.py	/^    def similarity_search($/;"	m	class:Weaviate
+similarity_search_with_score	langchain/vectorstores/faiss.py	/^    def similarity_search_with_score($/;"	m	class:FAISS
+similarity_search_with_score	langchain/vectorstores/pinecone.py	/^    def similarity_search_with_score($/;"	m	class:Pinecone
+similarity_search_with_score	langchain/vectorstores/qdrant.py	/^    def similarity_search_with_score($/;"	m	class:Qdrant
+sorted_values	langchain/prompts/example_selector/semantic_similarity.py	/^def sorted_values(values: Dict[str, str]) -> List[Any]:$/;"	f
+source_suffix	docs/conf.py	/^source_suffix = [".ipynb", ".html", ".md", ".rst"]$/;"	v
+split_text	langchain/text_splitter.py	/^    def split_text(self, text: str) -> List[str]:$/;"	m	class:CharacterTextSplitter
+split_text	langchain/text_splitter.py	/^    def split_text(self, text: str) -> List[str]:$/;"	m	class:NLTKTextSplitter
+split_text	langchain/text_splitter.py	/^    def split_text(self, text: str) -> List[str]:$/;"	m	class:RecursiveCharacterTextSplitter
+split_text	langchain/text_splitter.py	/^    def split_text(self, text: str) -> List[str]:$/;"	m	class:SpacyTextSplitter
+split_text	langchain/text_splitter.py	/^    def split_text(self, text: str) -> List[str]:$/;"	m	class:TextSplitter
+starter_string	langchain/agents/self_ask_with_search/base.py	/^    def starter_string(self) -> str:$/;"	m	class:SelfAskWithSearchAgent
+stream	langchain/llms/openai.py	/^    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:$/;"	m	class:BaseOpenAI
+summary	langchain/docstore/document.py	/^    def summary(self) -> str:$/;"	m	class:Document
+table_info	langchain/sql_database.py	/^    def table_info(self) -> str:$/;"	m	class:SQLDatabase
+template	langchain/chains/api/prompt.py	/^    template=API_RESPONSE_PROMPT_TEMPLATE,$/;"	v
+template	langchain/chains/api/prompt.py	/^    template=API_URL_PROMPT_TEMPLATE,$/;"	v
+template	langchain/chains/conversation/prompt.py	/^    template=_DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE,$/;"	v
+template	langchain/chains/conversation/prompt.py	/^    template=_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE,$/;"	v
+template	langchain/chains/llm_checker/prompt.py	/^    template=_REVISED_ANSWER_TEMPLATE,$/;"	v
+template	langchain/chains/natbot/prompt.py	/^    template=_PROMPT_TEMPLATE,$/;"	v
+template	langchain/chains/pal/colored_object_prompt.py	/^template = ($/;"	v
+template	langchain/chains/pal/math_prompt.py	/^template = ($/;"	v
+template	langchain/chains/qa_with_sources/map_reduce_prompt.py	/^    template="Content: {page_content}\\nSource: {source}",$/;"	v
+template	langchain/chains/qa_with_sources/refine_prompts.py	/^    template="Content: {page_content}\\nSource: {source}",$/;"	v
+template	langchain/chains/qa_with_sources/refine_prompts.py	/^    template=DEFAULT_REFINE_PROMPT_TMPL,$/;"	v
+template	langchain/chains/qa_with_sources/stuff_prompt.py	/^    template="Content: {page_content}\\nSource: {source}",$/;"	v
+template	langchain/chains/question_answering/map_rerank_prompt.py	/^    template=prompt_template,$/;"	v
+template	langchain/chains/question_answering/refine_prompts.py	/^    template=DEFAULT_REFINE_PROMPT_TMPL,$/;"	v
+template	langchain/chains/sql_database/prompt.py	/^    template=_DECIDER_TEMPLATE,$/;"	v
+template	langchain/chains/sql_database/prompt.py	/^    template=_DEFAULT_TEMPLATE,$/;"	v
+template	langchain/chains/summarize/refine_prompts.py	/^    template=REFINE_PROMPT_TMPL,$/;"	v
+template_is_valid	langchain/prompts/few_shot.py	/^    def template_is_valid(cls, values: Dict) -> Dict:$/;"	m	class:FewShotPromptTemplate
+template_is_valid	langchain/prompts/prompt.py	/^    def template_is_valid(cls, values: Dict) -> Dict:$/;"	m	class:PromptTemplate
+templates_path	docs/conf.py	/^templates_path = ["_templates"]$/;"	v
+test__collapse_docs_metadata	tests/unit_tests/chains/test_combine_documents.py	/^def test__collapse_docs_metadata() -> None:$/;"	f
+test__collapse_docs_no_metadata	tests/unit_tests/chains/test_combine_documents.py	/^def test__collapse_docs_no_metadata() -> None:$/;"	f
+test__collapse_docs_one_doc	tests/unit_tests/chains/test_combine_documents.py	/^def test__collapse_docs_one_doc() -> None:$/;"	f
+test__split_list_double_doc	tests/unit_tests/chains/test_combine_documents.py	/^def test__split_list_double_doc() -> None:$/;"	f
+test__split_list_long_pair_doc	tests/unit_tests/chains/test_combine_documents.py	/^def test__split_list_long_pair_doc() -> None:$/;"	f
+test__split_list_long_single_doc	tests/unit_tests/chains/test_combine_documents.py	/^def test__split_list_long_single_doc() -> None:$/;"	f
+test__split_list_single_doc	tests/unit_tests/chains/test_combine_documents.py	/^def test__split_list_single_doc() -> None:$/;"	f
+test__split_list_works_correctly	tests/unit_tests/chains/test_combine_documents.py	/^def test__split_list_works_correctly() -> None:$/;"	f
+test_adding_document	tests/unit_tests/docstore/test_inmemory.py	/^def test_adding_document() -> None:$/;"	f
+test_adding_document_already_exists	tests/unit_tests/docstore/test_inmemory.py	/^def test_adding_document_already_exists() -> None:$/;"	f
+test_agent_bad_action	tests/unit_tests/agents/test_agent.py	/^def test_agent_bad_action() -> None:$/;"	f
+test_agent_stopped_early	tests/unit_tests/agents/test_agent.py	/^def test_agent_stopped_early() -> None:$/;"	f
+test_agent_tool_return_direct	tests/unit_tests/agents/test_agent.py	/^def test_agent_tool_return_direct() -> None:$/;"	f
+test_agent_with_callbacks_global	tests/unit_tests/agents/test_agent.py	/^def test_agent_with_callbacks_global() -> None:$/;"	f
+test_agent_with_callbacks_local	tests/unit_tests/agents/test_agent.py	/^def test_agent_with_callbacks_local() -> None:$/;"	f
+test_agent_with_callbacks_not_verbose	tests/unit_tests/agents/test_agent.py	/^def test_agent_with_callbacks_not_verbose() -> None:$/;"	f
+test_ai21_call	tests/integration_tests/llms/test_ai21.py	/^def test_ai21_call() -> None:$/;"	f
+test_ai21_call_experimental	tests/integration_tests/llms/test_ai21.py	/^def test_ai21_call_experimental() -> None:$/;"	f
+test_api_data	tests/unit_tests/chains/test_api.py	/^def test_api_data() -> dict:$/;"	f
+test_api_question	tests/unit_tests/chains/test_api.py	/^def test_api_question(fake_llm_api_chain: APIChain, test_api_data: dict) -> None:$/;"	f
+test_bad_action_input_line	tests/unit_tests/agents/test_mrkl.py	/^def test_bad_action_input_line() -> None:$/;"	f
+test_bad_action_line	tests/unit_tests/agents/test_mrkl.py	/^def test_bad_action_line() -> None:$/;"	f
+test_bad_inputs	tests/unit_tests/chains/test_base.py	/^def test_bad_inputs() -> None:$/;"	f
+test_bad_outputs	tests/unit_tests/chains/test_base.py	/^def test_bad_outputs() -> None:$/;"	f
+test_caching	tests/unit_tests/llms/test_base.py	/^def test_caching() -> None:$/;"	f
+test_call	tests/integration_tests/test_googlesearch_api.py	/^def test_call() -> None:$/;"	f
+test_call	tests/integration_tests/test_serpapi.py	/^def test_call() -> None:$/;"	f
+test_call	tests/integration_tests/test_wolfram_alpha_api.py	/^def test_call() -> None:$/;"	f
+test_callback_manager	tests/unit_tests/callbacks/test_callback_manager.py	/^def test_callback_manager() -> None:$/;"	f
+test_character_text_splitter	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitter() -> None:$/;"	f
+test_character_text_splitter_empty_doc	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitter_empty_doc() -> None:$/;"	f
+test_character_text_splitter_long	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitter_long() -> None:$/;"	f
+test_character_text_splitter_longer_words	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitter_longer_words() -> None:$/;"	f
+test_character_text_splitter_short_words_first	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitter_short_words_first() -> None:$/;"	f
+test_character_text_splitting_args	tests/unit_tests/test_text_splitter.py	/^def test_character_text_splitting_args() -> None:$/;"	f
+test_clearing_conversation_memory	tests/unit_tests/chains/test_conversation.py	/^def test_clearing_conversation_memory(memory: Memory) -> None:$/;"	f
+test_cohere_call	tests/integration_tests/llms/test_cohere.py	/^def test_cohere_call() -> None:$/;"	f
+test_cohere_embedding_documents	tests/integration_tests/embeddings/test_cohere.py	/^def test_cohere_embedding_documents() -> None:$/;"	f
+test_cohere_embedding_query	tests/integration_tests/embeddings/test_cohere.py	/^def test_cohere_embedding_query() -> None:$/;"	f
+test_colored_object_prompt	tests/integration_tests/chains/test_pal.py	/^def test_colored_object_prompt() -> None:$/;"	f
+test_complex_question	tests/unit_tests/chains/test_llm_math.py	/^def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:$/;"	f
+test_conversation_chain_errors_bad_prompt	tests/unit_tests/chains/test_conversation.py	/^def test_conversation_chain_errors_bad_prompt() -> None:$/;"	f
+test_conversation_chain_errors_bad_variable	tests/unit_tests/chains/test_conversation.py	/^def test_conversation_chain_errors_bad_variable() -> None:$/;"	f
+test_conversation_chain_works	tests/unit_tests/chains/test_conversation.py	/^def test_conversation_chain_works() -> None:$/;"	f
+test_conversation_memory	tests/unit_tests/chains/test_conversation.py	/^def test_conversation_memory(memory: Memory) -> None:$/;"	f
+test_correct_call	tests/unit_tests/chains/test_base.py	/^def test_correct_call() -> None:$/;"	f
+test_create_directory_and_files	tests/unit_tests/test_bash.py	/^def test_create_directory_and_files(tmp_path: Path) -> None:$/;"	f
+test_create_documents	tests/unit_tests/test_text_splitter.py	/^def test_create_documents() -> None:$/;"	f
+test_create_documents_with_metadata	tests/unit_tests/test_text_splitter.py	/^def test_create_documents_with_metadata() -> None:$/;"	f
+test_custom_caching	tests/unit_tests/llms/test_base.py	/^def test_custom_caching() -> None:$/;"	f
+test_document_found	tests/unit_tests/docstore/test_inmemory.py	/^def test_document_found() -> None:$/;"	f
+test_document_lookup	tests/unit_tests/docstore/test_document.py	/^def test_document_lookup() -> None:$/;"	f
+test_document_lookups_dont_exist	tests/unit_tests/docstore/test_document.py	/^def test_document_lookups_dont_exist() -> None:$/;"	f
+test_document_lookups_too_many	tests/unit_tests/docstore/test_document.py	/^def test_document_lookups_too_many() -> None:$/;"	f
+test_document_not_found	tests/unit_tests/docstore/test_inmemory.py	/^def test_document_not_found() -> None:$/;"	f
+test_document_summary	tests/unit_tests/docstore/test_document.py	/^def test_document_summary() -> None:$/;"	f
+test_does_not_allow_args	tests/unit_tests/test_formatting.py	/^def test_does_not_allow_args() -> None:$/;"	f
+test_does_not_allow_extra_kwargs	tests/unit_tests/test_formatting.py	/^def test_does_not_allow_extra_kwargs() -> None:$/;"	f
+test_elasticsearch	tests/integration_tests/vectorstores/test_elasticsearch.py	/^def test_elasticsearch() -> None:$/;"	f
+test_elasticsearch_with_metadatas	tests/integration_tests/vectorstores/test_elasticsearch.py	/^def test_elasticsearch_with_metadatas() -> None:$/;"	f
+test_enforce_stop_tokens	tests/unit_tests/llms/test_utils.py	/^def test_enforce_stop_tokens() -> None:$/;"	f
+test_enforce_stop_tokens_none	tests/unit_tests/llms/test_utils.py	/^def test_enforce_stop_tokens_none() -> None:$/;"	f
+test_error	tests/unit_tests/chains/test_llm_math.py	/^def test_error(fake_llm_math_chain: LLMMathChain) -> None:$/;"	f
+test_faiss	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss() -> None:$/;"	f
+test_faiss_add_texts	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss_add_texts() -> None:$/;"	f
+test_faiss_add_texts_not_supported	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss_add_texts_not_supported() -> None:$/;"	f
+test_faiss_local_save_load	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss_local_save_load() -> None:$/;"	f
+test_faiss_search_not_found	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss_search_not_found() -> None:$/;"	f
+test_faiss_with_metadatas	tests/integration_tests/vectorstores/test_faiss.py	/^def test_faiss_with_metadatas() -> None:$/;"	f
+test_few_shot_functionality	tests/unit_tests/prompts/test_few_shot.py	/^def test_few_shot_functionality() -> None:$/;"	f
+test_from_chains	tests/unit_tests/agents/test_mrkl.py	/^def test_from_chains() -> None:$/;"	f
+test_functionality	tests/unit_tests/test_python.py	/^def test_functionality() -> None:$/;"	f
+test_get_action_and_input	tests/unit_tests/agents/test_mrkl.py	/^def test_get_action_and_input() -> None:$/;"	f
+test_get_action_and_input_whitespace	tests/unit_tests/agents/test_mrkl.py	/^def test_get_action_and_input_whitespace() -> None:$/;"	f
+test_get_final_answer	tests/unit_tests/agents/test_mrkl.py	/^def test_get_final_answer() -> None:$/;"	f
+test_get_final_answer_multiline	tests/unit_tests/agents/test_mrkl.py	/^def test_get_final_answer_multiline() -> None:$/;"	f
+test_get_final_answer_new_line	tests/unit_tests/agents/test_mrkl.py	/^def test_get_final_answer_new_line() -> None:$/;"	f
+test_huggingface_call_error	tests/integration_tests/llms/test_huggingface_hub.py	/^def test_huggingface_call_error() -> None:$/;"	f
+test_huggingface_embedding_documents	tests/integration_tests/embeddings/test_huggingface.py	/^def test_huggingface_embedding_documents() -> None:$/;"	f
+test_huggingface_embedding_query	tests/integration_tests/embeddings/test_huggingface.py	/^def test_huggingface_embedding_query() -> None:$/;"	f
+test_huggingface_pipeline_text2text_generation	tests/integration_tests/llms/test_huggingface_pipeline.py	/^def test_huggingface_pipeline_text2text_generation() -> None:$/;"	f
+test_huggingface_pipeline_text_generation	tests/integration_tests/llms/test_huggingface_pipeline.py	/^def test_huggingface_pipeline_text_generation() -> None:$/;"	f
+test_huggingface_text2text_generation	tests/integration_tests/llms/test_huggingface_hub.py	/^def test_huggingface_text2text_generation() -> None:$/;"	f
+test_huggingface_text_generation	tests/integration_tests/llms/test_huggingface_hub.py	/^def test_huggingface_text_generation() -> None:$/;"	f
+test_huggingface_tokenizer	tests/integration_tests/test_text_splitter.py	/^def test_huggingface_tokenizer() -> None:$/;"	f
+test_huggingface_type_check	tests/integration_tests/test_text_splitter.py	/^def test_huggingface_type_check() -> None:$/;"	f
+test_huggingfacehub_embedding_documents	tests/integration_tests/embeddings/test_huggingface_hub.py	/^def test_huggingfacehub_embedding_documents() -> None:$/;"	f
+test_huggingfacehub_embedding_invalid_repo	tests/integration_tests/embeddings/test_huggingface_hub.py	/^def test_huggingfacehub_embedding_invalid_repo() -> None:$/;"	f
+test_huggingfacehub_embedding_query	tests/integration_tests/embeddings/test_huggingface_hub.py	/^def test_huggingfacehub_embedding_query() -> None:$/;"	f
+test_hyde_from_llm	tests/unit_tests/chains/test_hyde.py	/^def test_hyde_from_llm() -> None:$/;"	f
+test_hyde_from_llm_with_multiple_n	tests/unit_tests/chains/test_hyde.py	/^def test_hyde_from_llm_with_multiple_n() -> None:$/;"	f
+test_ignore_agent	tests/unit_tests/callbacks/test_callback_manager.py	/^def test_ignore_agent() -> None:$/;"	f
+test_ignore_chain	tests/unit_tests/callbacks/test_callback_manager.py	/^def test_ignore_chain() -> None:$/;"	f
+test_ignore_llm	tests/unit_tests/callbacks/test_callback_manager.py	/^def test_ignore_llm() -> None:$/;"	f
+test_incorrect_command	tests/unit_tests/test_bash.py	/^def test_incorrect_command() -> None:$/;"	f
+test_init_with_pipeline	tests/integration_tests/llms/test_huggingface_pipeline.py	/^def test_init_with_pipeline() -> None:$/;"	f
+test_iterative_text_splitter	tests/unit_tests/test_text_splitter.py	/^def test_iterative_text_splitter() -> None:$/;"	f
+test_llm_with_callbacks	tests/unit_tests/llms/test_callbacks.py	/^def test_llm_with_callbacks() -> None:$/;"	f
+test_llm_with_callbacks_not_verbose	tests/unit_tests/llms/test_callbacks.py	/^def test_llm_with_callbacks_not_verbose() -> None:$/;"	f
+test_loading_few_shot_prompt_example_prompt	tests/unit_tests/prompts/test_loading.py	/^def test_loading_few_shot_prompt_example_prompt() -> None:$/;"	f
+test_loading_few_shot_prompt_from_json	tests/unit_tests/prompts/test_loading.py	/^def test_loading_few_shot_prompt_from_json() -> None:$/;"	f
+test_loading_few_shot_prompt_from_yaml	tests/unit_tests/prompts/test_loading.py	/^def test_loading_few_shot_prompt_from_yaml() -> None:$/;"	f
+test_loading_few_shot_prompt_when_examples_in_config	tests/unit_tests/prompts/test_loading.py	/^def test_loading_few_shot_prompt_when_examples_in_config() -> None:$/;"	f
+test_loading_from_JSON	tests/unit_tests/prompts/test_loading.py	/^def test_loading_from_JSON() -> None:$/;"	f
+test_loading_from_YAML	tests/unit_tests/prompts/test_loading.py	/^def test_loading_from_YAML() -> None:$/;"	f
+test_loading_with_template_as_file	tests/unit_tests/prompts/test_loading.py	/^def test_loading_with_template_as_file() -> None:$/;"	f
+test_manifest_wrapper	tests/integration_tests/llms/test_manifest.py	/^def test_manifest_wrapper() -> None:$/;"	f
+test_math_prompt	tests/integration_tests/chains/test_pal.py	/^def test_math_prompt() -> None:$/;"	f
+test_memory_ai_prefix	tests/unit_tests/chains/test_conversation.py	/^def test_memory_ai_prefix() -> None:$/;"	f
+test_memory_human_prefix	tests/unit_tests/chains/test_conversation.py	/^def test_memory_human_prefix() -> None:$/;"	f
+test_missing_inputs	tests/unit_tests/chains/test_llm.py	/^def test_missing_inputs(fake_llm_chain: LLMChain) -> None:$/;"	f
+test_multi_input_errors	tests/unit_tests/chains/test_sequential.py	/^def test_multi_input_errors() -> None:$/;"	f
+test_multi_output_errors	tests/unit_tests/chains/test_sequential.py	/^def test_multi_output_errors() -> None:$/;"	f
+test_multiple_output_keys_error	tests/unit_tests/chains/test_base.py	/^def test_multiple_output_keys_error() -> None:$/;"	f
+test_nlpcloud_call	tests/integration_tests/llms/test_nlpcloud.py	/^def test_nlpcloud_call() -> None:$/;"	f
+test_nltk_text_splitter	tests/integration_tests/test_nlp_text_splitters.py	/^def test_nltk_text_splitter() -> None:$/;"	f
+test_nltk_text_splitting_args	tests/integration_tests/test_nlp_text_splitters.py	/^def test_nltk_text_splitting_args() -> None:$/;"	f
+test_openai_call	tests/integration_tests/llms/test_openai.py	/^def test_openai_call() -> None:$/;"	f
+test_openai_embedding_documents	tests/integration_tests/embeddings/test_openai.py	/^def test_openai_embedding_documents() -> None:$/;"	f
+test_openai_embedding_query	tests/integration_tests/embeddings/test_openai.py	/^def test_openai_embedding_query() -> None:$/;"	f
+test_openai_extra_kwargs	tests/integration_tests/llms/test_openai.py	/^def test_openai_extra_kwargs() -> None:$/;"	f
+test_openai_stop_error	tests/integration_tests/llms/test_openai.py	/^def test_openai_stop_error() -> None:$/;"	f
+test_openai_stop_valid	tests/integration_tests/llms/test_openai.py	/^def test_openai_stop_valid() -> None:$/;"	f
+test_openai_streaming	tests/integration_tests/llms/test_openai.py	/^def test_openai_streaming() -> None:$/;"	f
+test_openai_streaming_error	tests/integration_tests/llms/test_openai.py	/^def test_openai_streaming_error() -> None:$/;"	f
+test_predict_and_parse	tests/unit_tests/chains/test_llm.py	/^def test_predict_and_parse() -> None:$/;"	f
+test_predict_method	tests/unit_tests/chains/test_llm.py	/^def test_predict_method(fake_llm_chain: LLMChain) -> None:$/;"	f
+test_predict_until_observation_normal	tests/unit_tests/agents/test_react.py	/^def test_predict_until_observation_normal() -> None:$/;"	f
+test_predict_until_observation_repeat	tests/unit_tests/agents/test_react.py	/^def test_predict_until_observation_repeat() -> None:$/;"	f
+test_prompt_extra_input_variables	tests/unit_tests/prompts/test_few_shot.py	/^def test_prompt_extra_input_variables() -> None:$/;"	f
+test_prompt_extra_input_variables	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_extra_input_variables() -> None:$/;"	f
+test_prompt_from_examples_valid	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_from_examples_valid() -> None:$/;"	f
+test_prompt_from_file	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_from_file() -> None:$/;"	f
+test_prompt_invalid_template_format	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_invalid_template_format() -> None:$/;"	f
+test_prompt_missing_input_variables	tests/unit_tests/prompts/test_few_shot.py	/^def test_prompt_missing_input_variables() -> None:$/;"	f
+test_prompt_missing_input_variables	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_missing_input_variables() -> None:$/;"	f
+test_prompt_valid	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_valid() -> None:$/;"	f
+test_prompt_wrong_input_variables	tests/unit_tests/prompts/test_prompt.py	/^def test_prompt_wrong_input_variables() -> None:$/;"	f
+test_proper_inputs	tests/unit_tests/chains/test_natbot.py	/^def test_proper_inputs() -> None:$/;"	f
+test_pwd_command	tests/unit_tests/test_bash.py	/^def test_pwd_command() -> None:$/;"	f
+test_python_repl	tests/unit_tests/test_python.py	/^def test_python_repl() -> None:$/;"	f
+test_python_repl_no_previous_variables	tests/unit_tests/test_python.py	/^def test_python_repl_no_previous_variables() -> None:$/;"	f
+test_python_repl_pass_in_locals	tests/unit_tests/test_python.py	/^def test_python_repl_pass_in_locals() -> None:$/;"	f
+test_qdrant	tests/integration_tests/vectorstores/test_qdrant.py	/^def test_qdrant() -> None:$/;"	f
+test_qdrant_max_marginal_relevance_search	tests/integration_tests/vectorstores/test_qdrant.py	/^def test_qdrant_max_marginal_relevance_search() -> None:$/;"	f
+test_qdrant_with_metadatas	tests/integration_tests/vectorstores/test_qdrant.py	/^def test_qdrant_with_metadatas() -> None:$/;"	f
+test_react	tests/integration_tests/chains/test_react.py	/^def test_react() -> None:$/;"	f
+test_react_chain	tests/unit_tests/agents/test_react.py	/^def test_react_chain() -> None:$/;"	f
+test_react_chain_bad_action	tests/unit_tests/agents/test_react.py	/^def test_react_chain_bad_action() -> None:$/;"	f
+test_run_arg_with_memory	tests/unit_tests/chains/test_base.py	/^def test_run_arg_with_memory() -> None:$/;"	f
+test_run_args_and_kwargs_error	tests/unit_tests/chains/test_base.py	/^def test_run_args_and_kwargs_error() -> None:$/;"	f
+test_run_kwargs	tests/unit_tests/chains/test_base.py	/^def test_run_kwargs() -> None:$/;"	f
+test_run_kwargs_error	tests/unit_tests/chains/test_base.py	/^def test_run_kwargs_error() -> None:$/;"	f
+test_run_multiple_args_error	tests/unit_tests/chains/test_base.py	/^def test_run_multiple_args_error() -> None:$/;"	f
+test_run_single_arg	tests/unit_tests/chains/test_base.py	/^def test_run_single_arg() -> None:$/;"	f
+test_run_with_callback	tests/unit_tests/chains/test_base.py	/^def test_run_with_callback() -> None:$/;"	f
+test_run_with_callback_not_verbose	tests/unit_tests/chains/test_base.py	/^def test_run_with_callback_not_verbose() -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_ai21.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_cohere.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_huggingface_hub.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_huggingface_pipeline.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_nlpcloud.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_llm	tests/integration_tests/llms/test_openai.py	/^def test_saving_loading_llm(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_round_trip	tests/unit_tests/llms/test_loading.py	/^def test_saving_loading_round_trip(tmp_path: Path) -> None:$/;"	f
+test_saving_loading_round_trip	tests/unit_tests/prompts/test_loading.py	/^def test_saving_loading_round_trip(tmp_path: Path) -> None:$/;"	f
+test_selector_add_example	tests/unit_tests/prompts/test_length_based_example_selector.py	/^def test_selector_add_example(selector: LengthBasedExampleSelector) -> None:$/;"	f
+test_selector_trims_all_examples	tests/unit_tests/prompts/test_length_based_example_selector.py	/^def test_selector_trims_all_examples($/;"	f
+test_selector_trims_one_example	tests/unit_tests/prompts/test_length_based_example_selector.py	/^def test_selector_trims_one_example(selector: LengthBasedExampleSelector) -> None:$/;"	f
+test_selector_valid	tests/unit_tests/prompts/test_length_based_example_selector.py	/^def test_selector_valid(selector: LengthBasedExampleSelector) -> None:$/;"	f
+test_self_ask_with_search	tests/integration_tests/chains/test_self_ask_with_search.py	/^def test_self_ask_with_search() -> None:$/;"	f
+test_sequential_bad_outputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_bad_outputs() -> None:$/;"	f
+test_sequential_missing_inputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_missing_inputs() -> None:$/;"	f
+test_sequential_overlapping_inputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_overlapping_inputs() -> None:$/;"	f
+test_sequential_usage_multiple_inputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_usage_multiple_inputs() -> None:$/;"	f
+test_sequential_usage_multiple_outputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_usage_multiple_outputs() -> None:$/;"	f
+test_sequential_usage_single_inputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_usage_single_inputs() -> None:$/;"	f
+test_sequential_valid_outputs	tests/unit_tests/chains/test_sequential.py	/^def test_sequential_valid_outputs() -> None:$/;"	f
+test_serialization	tests/unit_tests/chains/test_llm.py	/^def test_serialization(fake_llm_chain: LLMChain) -> None:$/;"	f
+test_shared_callback_manager	tests/unit_tests/callbacks/test_callback_manager.py	/^def test_shared_callback_manager() -> None:$/;"	f
+test_simple_question	tests/unit_tests/chains/test_llm_bash.py	/^def test_simple_question(fake_llm_bash_chain: LLMBashChain) -> None:$/;"	f
+test_simple_question	tests/unit_tests/chains/test_llm_checker.py	/^def test_simple_question(fake_llm_checker_chain: LLMCheckerChain) -> None:$/;"	f
+test_simple_question	tests/unit_tests/chains/test_llm_math.py	/^def test_simple_question(fake_llm_math_chain: LLMMathChain) -> None:$/;"	f
+test_simple_sequential_functionality	tests/unit_tests/chains/test_sequential.py	/^def test_simple_sequential_functionality() -> None:$/;"	f
+test_single_input_correct	tests/unit_tests/chains/test_base.py	/^def test_single_input_correct() -> None:$/;"	f
+test_single_input_error	tests/unit_tests/chains/test_base.py	/^def test_single_input_error() -> None:$/;"	f
+test_sorted_vals	tests/unit_tests/prompts/test_utils.py	/^def test_sorted_vals() -> None:$/;"	f
+test_spacy_text_splitter	tests/integration_tests/test_nlp_text_splitters.py	/^def test_spacy_text_splitter() -> None:$/;"	f
+test_spacy_text_splitting_args	tests/integration_tests/test_nlp_text_splitters.py	/^def test_spacy_text_splitting_args() -> None:$/;"	f
+test_sql_database_run	tests/integration_tests/chains/test_sql_database.py	/^def test_sql_database_run() -> None:$/;"	f
+test_sql_database_run	tests/unit_tests/test_sql_database.py	/^def test_sql_database_run() -> None:$/;"	f
+test_sql_database_run	tests/unit_tests/test_sql_database_schema.py	/^def test_sql_database_run() -> None:$/;"	f
+test_sql_database_run_update	tests/integration_tests/chains/test_sql_database.py	/^def test_sql_database_run_update() -> None:$/;"	f
+test_sql_database_run_update	tests/unit_tests/test_sql_database.py	/^def test_sql_database_run_update() -> None:$/;"	f
+test_suffix_only	tests/unit_tests/prompts/test_few_shot.py	/^def test_suffix_only() -> None:$/;"	f
+test_summary_buffer_memory_buffer_only	tests/integration_tests/chains/test_memory.py	/^def test_summary_buffer_memory_buffer_only() -> None:$/;"	f
+test_summary_buffer_memory_no_buffer_yet	tests/integration_tests/chains/test_memory.py	/^def test_summary_buffer_memory_no_buffer_yet() -> None:$/;"	f
+test_summary_buffer_memory_summary	tests/integration_tests/chains/test_memory.py	/^def test_summary_buffer_memory_summary() -> None:$/;"	f
+test_table_info	tests/unit_tests/test_sql_database.py	/^def test_table_info() -> None:$/;"	f
+test_table_info	tests/unit_tests/test_sql_database_schema.py	/^def test_table_info() -> None:$/;"	f
+test_tranform_chain	tests/unit_tests/chains/test_transform.py	/^def test_tranform_chain() -> None:$/;"	f
+test_transform_chain_bad_inputs	tests/unit_tests/chains/test_transform.py	/^def test_transform_chain_bad_inputs() -> None:$/;"	f
+test_valid_call	tests/unit_tests/chains/test_llm.py	/^def test_valid_call(fake_llm_chain: LLMChain) -> None:$/;"	f
+test_valid_formatting	tests/unit_tests/test_formatting.py	/^def test_valid_formatting() -> None:$/;"	f
+test_variable_key_naming	tests/unit_tests/chains/test_natbot.py	/^def test_variable_key_naming() -> None:$/;"	f
+text	docs/modules/agents/implementations/natbot.py	/^                text = input("text:")$/;"	v
+trec_covid	langchain/chains/hyde/prompts.py	/^trec_covid = PromptTemplate(template=trec_covid_template, input_variables=["QUESTION"])$/;"	v
+trec_news	langchain/chains/hyde/prompts.py	/^trec_news = PromptTemplate(template=trec_news_template, input_variables=["TOPIC"])$/;"	v
+type	langchain/chains/natbot/crawler.py	/^    def type(self, id, text):$/;"	m	class:Crawler
+type_to_loader_dict	langchain/chains/loading.py	/^type_to_loader_dict = {"llm_chain": _load_llm_chain}$/;"	v
+update	langchain/cache.py	/^    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:$/;"	m	class:BaseCache
+update	langchain/cache.py	/^    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:$/;"	m	class:InMemoryCache
+update	langchain/cache.py	/^    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:$/;"	m	class:RedisCache
+update	langchain/cache.py	/^    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:$/;"	m	class:SQLAlchemyCache
+url	docs/modules/agents/implementations/natbot.py	/^                url = input("URL:")$/;"	v
+user	tests/integration_tests/chains/test_sql_database.py	/^user = Table($/;"	v
+user	tests/unit_tests/test_sql_database.py	/^user = Table($/;"	v
+user	tests/unit_tests/test_sql_database_schema.py	/^user = Table($/;"	v
+validate_api_answer_prompt	langchain/chains/api/base.py	/^    def validate_api_answer_prompt(cls, values: Dict) -> Dict:$/;"	m	class:APIChain
+validate_api_request_prompt	langchain/chains/api/base.py	/^    def validate_api_request_prompt(cls, values: Dict) -> Dict:$/;"	m	class:APIChain
+validate_chains	langchain/chains/sequential.py	/^    def validate_chains(cls, values: Dict) -> Dict:$/;"	m	class:SequentialChain
+validate_chains	langchain/chains/sequential.py	/^    def validate_chains(cls, values: Dict) -> Dict:$/;"	m	class:SimpleSequentialChain
+validate_environment	langchain/chains/llm_requests.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:LLMRequestsChain
+validate_environment	langchain/chains/moderation.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:OpenAIModerationChain
+validate_environment	langchain/embeddings/cohere.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:CohereEmbeddings
+validate_environment	langchain/embeddings/huggingface_hub.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:HuggingFaceHubEmbeddings
+validate_environment	langchain/embeddings/openai.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:OpenAIEmbeddings
+validate_environment	langchain/llms/ai21.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:AI21
+validate_environment	langchain/llms/cohere.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:Cohere
+validate_environment	langchain/llms/huggingface_hub.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:HuggingFaceHub
+validate_environment	langchain/llms/manifest.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:ManifestWrapper
+validate_environment	langchain/llms/nlpcloud.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:NLPCloud
+validate_environment	langchain/llms/openai.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:BaseOpenAI
+validate_environment	langchain/serpapi.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:SerpAPIWrapper
+validate_environment	langchain/utilities/bing_search.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:BingSearchAPIWrapper
+validate_environment	langchain/utilities/google_search.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:GoogleSearchAPIWrapper
+validate_environment	langchain/utilities/wolfram_alpha.py	/^    def validate_environment(cls, values: Dict) -> Dict:$/;"	m	class:WolframAlphaAPIWrapper
+validate_llm_output	langchain/chains/combine_documents/map_rerank.py	/^    def validate_llm_output(cls, values: Dict) -> Dict:$/;"	m	class:MapRerankDocumentsChain
+validate_naming	langchain/chains/qa_with_sources/base.py	/^    def validate_naming(cls, values: Dict) -> Dict:$/;"	m	class:BaseQAWithSourcesChain
+validate_prompt	langchain/agents/agent.py	/^    def validate_prompt(cls, values: Dict) -> Dict:$/;"	m	class:Agent
+validate_prompt_input_variables	langchain/chains/conversation/base.py	/^    def validate_prompt_input_variables(cls, values: Dict) -> Dict:$/;"	m	class:ConversationChain
+validate_prompt_input_variables	langchain/chains/conversation/memory.py	/^    def validate_prompt_input_variables(cls, values: Dict) -> Dict:$/;"	m	class:ConversationSummaryBufferMemory
+validate_prompt_input_variables	langchain/chains/conversation/memory.py	/^    def validate_prompt_input_variables(cls, values: Dict) -> Dict:$/;"	m	class:ConversationSummaryMemory
+validate_variable_names	langchain/prompts/base.py	/^    def validate_variable_names(cls, values: Dict) -> Dict:$/;"	m	class:BasePromptTemplate
+version	docs/conf.py	/^version = data["tool"]["poetry"]["version"]$/;"	v
+vformat	langchain/formatting.py	/^    def vformat($/;"	m	class:StrictFormatter
+web_search	langchain/chains/hyde/prompts.py	/^web_search = PromptTemplate(template=web_search_template, input_variables=["QUESTION"])$/;"	v
