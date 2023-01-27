@@ -24,16 +24,16 @@ def test_huggingface_embedding_query() -> None:
 
 def test_huggingface_instructor_embedding_documents() -> None:
     """Test huggingface embeddings."""
-    documents = [["foo bar instruction", "foo bar document", 0]]
-    embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
+    documents = ["foo bar"]
+    embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large", instruction="Represent the text")
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
 
 def test_huggingface_instructor_embedding_query() -> None:
     """Test huggingface embeddings."""
-    query = [["foo bar instruction", "foo bar query", 0]]
-    embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
+    query = "foo bar"
+    embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large", instruction="Represent the text")
     output = embedding.embed_query(query)
     assert len(output[0]) == 768
 
