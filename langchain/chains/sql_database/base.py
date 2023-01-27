@@ -5,16 +5,18 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field
 
+# import other specific exceptions
+from sqlalchemy.exc import InvalidRequestError
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
-#TODO: decide whether this is neccesary
-from exception_handler import ExceptionHandler
 
-class SQLDatabaseChain(Chain, BaseModel):
+
+class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
     """Chain for interacting with SQL Database.
 
     Example:
@@ -35,6 +37,7 @@ class SQLDatabaseChain(Chain, BaseModel):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    max_tries: int = 3
 
     class Config:
         """Configuration for this pydantic object."""
@@ -78,8 +81,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         try:
             result = self.database.run(sql_cmd)
         except Exception as e:
-            handler = ExceptionHandler(e)
-            result = handler.handle(e, llm_chain, llm_inputs)
+            result = self.handle_exception(e)
         self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
         self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
@@ -89,10 +91,34 @@ class SQLDatabaseChain(Chain, BaseModel):
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
 
-    @property
-    def _chain_type(self) -> str:
-        return "sql_database_chain"
+    # TODO: may want to rename this to something more specific once we have more than one exception handler
+    def handle_exception(
+        self,
+        exception: Exception,
+    ) -> str:
+        """
+        Method for handling exceptions for the SQLDatabaseChain class.
 
+        see list of exceptions here:
+        https://docs.sqlalchemy.org/en/20/core/exceptions.html
+
+        key:
+        InvalidRequestError
+        """
+        for i in range(self.max_tries):
+            if isinstance(
+                exception, InvalidRequestError
+            ):  # TODO: handle repitions of this code
+                # TODO: handle other exceptions found using ipnyb
+                try:
+                    return self.llm_chain.predict(**self.llm_inputs)
+                except Exception as e:
+                    exception = e
+        # Use specific exception here (check langchain specific exceptions and general python exceptions)
+        raise Exception("Max tries reached")
+        # raise exception  # find langchain specific exception to raise here
+
+    # TODO: other implementations of handle, including logical errors
 
 class SQLDatabaseSequentialChain(Chain, BaseModel):
     """Chain for querying SQL database that is a sequential chain.
