@@ -27,7 +27,7 @@ def get_from_dict_or_env(
 
 
 
-def retry(ExceptionToCheck: Type[Exception] = Exception, tries: int = 5, delay: float = 0.5, backoff: int = 2, ExceptionToRaise: Type[Exception] =AssertionError) -> Callable:
+def retry(exception_to_check: Type[Exception] = Exception, tries: int = 5, delay: float = 0.5, backoff: int = 2, exception_to_raise: Type[Exception] = AssertionError) -> Callable:
     """Retry calling the decorated function using an exponential backoff.
 
     http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
