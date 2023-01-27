@@ -3,7 +3,10 @@ import logging
 from typing import Any
 
 from langchain.embeddings.cohere import CohereEmbeddings
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain.embeddings.huggingface import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructorEmbeddings,
+)
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 
@@ -12,6 +15,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
+    "HuggingFaceInstructorEmbeddings",
     "CohereEmbeddings",
     "HuggingFaceHubEmbeddings",
 ]
