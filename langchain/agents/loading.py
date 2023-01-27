@@ -101,7 +101,7 @@ def _load_from_hub(path: str, **kwargs: Any) -> Agent:
         file = tmpdirname + "/agent." + suffix
         with open(file, "wb") as f:
             f.write(r.content)
-        return _load_agent_from_file(file)
+        return _load_agent_from_file(file, **kwargs)
 
 
 def _load_agent_from_file(file: Union[str, Path], **kwargs: Any) -> Agent:
