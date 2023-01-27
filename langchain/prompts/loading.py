@@ -9,7 +9,7 @@ from typing import Union
 import requests
 import yaml
 
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 
@@ -69,6 +69,20 @@ def _load_examples(config: dict) -> dict:
     return config
 
 
+def _load_output_parser(config: dict) -> dict:
+    """Load output parser."""
+    if "output_parser" in config:
+        if config["output_parser"] is not None:
+            _config = config["output_parser"]
+            output_parser_type = _config["_type"]
+            if output_parser_type == "regex_parser":
+                output_parser = RegexParser(**_config)
+            else:
+                raise ValueError(f"Unsupported output parser {output_parser_type}")
+            config["output_parser"] = output_parser
+    return config
+
+
 def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     """Load the few shot prompt from the config."""
     # Load the suffix and prefix templates.
@@ -86,6 +100,7 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
     config = _load_examples(config)
+    config = _load_output_parser(config)
     return FewShotPromptTemplate(**config)
 
 
@@ -93,6 +108,7 @@ def _load_prompt(config: dict) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
     config = _load_template("template", config)
+    config = _load_output_parser(config)
     return PromptTemplate(**config)
 
 
