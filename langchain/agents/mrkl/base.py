@@ -7,6 +7,8 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
@@ -91,6 +93,30 @@ class ZeroShotAgent(Agent):
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
+
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLLM,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = PREFIX,
+        suffix: str = SUFFIX,
+        input_variables: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        prompt = cls.create_prompt(
+            tools, prefix=prefix, suffix=suffix, input_variables=input_variables
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:

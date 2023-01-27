@@ -127,7 +127,7 @@ class Agent(BaseModel):
 
     @classmethod
     @abstractmethod
-    def create_prompt(cls, tools: List[Tool], **kwargs: Any) -> BasePromptTemplate:
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod
@@ -141,15 +141,13 @@ class Agent(BaseModel):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        prompt_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        _prompt_kwargs = prompt_kwargs or {}
         llm_chain = LLMChain(
             llm=llm,
-            prompt=cls.create_prompt(tools, **_prompt_kwargs),
+            prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]

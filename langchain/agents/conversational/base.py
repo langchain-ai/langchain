@@ -91,16 +91,22 @@ class ConversationalAgent(Agent):
         llm: BaseLLM,
         tools: List[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = PREFIX,
+        suffix: str = SUFFIX,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
-        prompt_kwargs: Optional[dict] = None,
+        input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
-        _prompt_kwargs = prompt_kwargs or {}
         prompt = cls.create_prompt(
-            tools, ai_prefix=ai_prefix, human_prefix=human_prefix, **_prompt_kwargs
+            tools,
+            ai_prefix=ai_prefix,
+            human_prefix=human_prefix,
+            prefix=prefix,
+            suffix=suffix,
+            input_variables=input_variables,
         )
         llm_chain = LLMChain(
             llm=llm,
