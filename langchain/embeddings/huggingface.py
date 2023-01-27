@@ -7,6 +7,7 @@ from pydantic import BaseModel, Extra
 from langchain.embeddings.base import Embeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+DEFAULT_INSTRUCTION = "Represent the following text:"
 
 class MODEL_TYPE(Enum):
     SENTENCE_TRANSFORMER = 1
@@ -29,6 +30,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     model_type: str = MODEL_TYPE.SENTENCE_TRANSFORMER
+    instruction: str = DEFAULT_INSTRUCTION
     """Model name to use."""
 
     def __init__(self, **kwargs: Any):
@@ -49,7 +51,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             try:
                 from InstructorEmbedding import INSTRUCTOR
                 self.model_type = MODEL_TYPE.INSTRUCTION_EMBEDDING
-                self.client = INSTRUCTOR(self.model_name)
+                self.client = INSTRUCTOR(self.model_name)                    
             except ImportError:
                 raise ValueError(
                     "Could not import InstructorEmbedding python package. "
@@ -72,34 +74,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client.encode(texts)
+
+        if (self.model_type == MODEL_TYPE.INSTRUCTION_EMBEDDING):
+            instruction_pairs = []
+            for text in texts:
+                instruction_pairs.append([self.instruction, text])
+            embeddings = self.client.encode(instruction_pairs)
+        else:
+            embeddings = self.client.encode(texts)
 
         if (self.model_name == DEFAULT_MODEL_NAME):
             return embeddings.tolist()
-
-        return embeddings.tolist()
-
-    ## Embedding instruction-tuned models requires a list of instruction, text pairs.
-    def embed_documents(self, texts: List[List[str]]) -> List[List[float]]:
-        """Compute doc embeddings using a HuggingFace transformer model.
-
-        Args:
-            texts: The list of texts to embed.
-
-        Returns:
-            List of embeddings, one for each text.
-        """
-        if (self.model_type != MODEL_TYPE.INSTRUCTION_EMBEDDING):
-            raise ValueError(
-                    "Erorr: You passed a list of string pairs but did not instantiate an Instruction embedding model. "
-                ) 
-
-        for text_list in texts:
-            for text in text_list:
-                if isinstance(text, str):
-                    text = text.replace("\n", " ")
-
-        embeddings = self.client.encode(texts)
 
         return embeddings.tolist()
 
@@ -112,27 +97,11 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client.encode(text)
-        return embedding.tolist()
 
-    ## Embedding instruction-tuned model queries requires a list of instruction, text pairs.
-    def embed_query(self, texts: List[str]) -> List[float]:
-        """Compute query embeddings using a HuggingFace instructor transformer model.
-
-        Args:
-            texts: The instruction/query pair to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
-        if (self.model_type != MODEL_TYPE.INSTRUCTION_EMBEDDING):
-            raise ValueError(
-                    "Erorr: You passed a string pair but did not instantiate an Instruction embedding model. "
-                ) 
-
-        for text in texts:
-            if isinstance(text, str):
-                text = text.replace("\n", " ")
-
-        embedding = self.client.encode(texts)
+        if (self.model_type == MODEL_TYPE.INSTRUCTION_EMBEDDING):
+            instruction_pair = [self.instruction, text]
+            embedding = self.client.encode(instruction_pair)
+        else:
+            embedding = self.client.encode(text)
+        
         return embedding.tolist()
