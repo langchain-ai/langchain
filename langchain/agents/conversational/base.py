@@ -19,6 +19,11 @@ class ConversationalAgent(Agent):
     ai_prefix: str = "AI"
 
     @property
+    def _agent_type(self) -> str:
+        """Return Identifier of agent type."""
+        return "conversational-react-description"
+
+    @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
         return "Observation: "
@@ -100,4 +105,7 @@ class ConversationalAgent(Agent):
             prompt=prompt,
             callback_manager=callback_manager,
         )
-        return cls(llm_chain=llm_chain, ai_prefix=ai_prefix, **kwargs)
+        tool_names = [tool.name for tool in tools]
+        return cls(
+            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, **kwargs
+        )
