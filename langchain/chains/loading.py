@@ -92,7 +92,7 @@ def _load_from_hub(path: str) -> Chain:
     if r.status_code != 200:
         raise ValueError(f"Could not find file at {full_url}")
     with tempfile.TemporaryDirectory() as tmpdirname:
-        file = tmpdirname + "/prompt." + suffix
+        file = tmpdirname + "/chain." + suffix
         with open(file, "wb") as f:
             f.write(r.content)
         return _load_chain_from_file(file)
