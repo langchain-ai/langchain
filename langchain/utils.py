@@ -33,9 +33,9 @@ def retry(exception_to_check: Type[Exception] = Exception, tries: int = 5, delay
     http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
     original from: http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
 
-    :param ExceptionToCheck: the exception to check. may be a tuple of
+    :param exception_to_check: the exception to check. may be a tuple of
         exceptions to check
-    :type ExceptionToCheck: Exception or tuple
+    :type exception_to_check: Exception or tuple
     :param tries: number of times to try (not retry) before giving up
     :type tries: int
     :param delay: initial delay between retries in seconds
@@ -43,8 +43,8 @@ def retry(exception_to_check: Type[Exception] = Exception, tries: int = 5, delay
     :param backoff: backoff multiplier e.g. value of 2 will double the delay
         each retry
     :type backoff: int
-    :param ExceptionToRaise: exceptions that should be raised instead of retried. may be a tuple.
-    :type ExceptionToRaise: Exception or tuple
+    :param exception_to_raise: exceptions that should be raised instead of retried. may be a tuple.
+    :type exception_to_raise: Exception or tuple
     """
     def deco_retry(f):   # type: ignore
 
@@ -54,9 +54,9 @@ def retry(exception_to_check: Type[Exception] = Exception, tries: int = 5, delay
             while mtries > 1:
                 try:
                     return f(*args, **kwargs)
-                except ExceptionToRaise as e:
+                except exception_to_raise as e:
                     raise e
-                except ExceptionToCheck as e:
+                except exception_to_check as e:
                     logger.warning(f"Exception: {e}")
                     logger.info(f"retrying in {mdelay} seconds")
                     sleep(mdelay)
