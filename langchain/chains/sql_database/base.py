@@ -14,7 +14,7 @@ from langchain.sql_database import SQLDatabase
 #TODO: decide whether this is neccesary
 from exception_handler import ExceptionHandler
 
-class SQLDatabaseChain(Chain, BaseModel, max_tries=3):
+class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
     """Chain for interacting with SQL Database.
 
     Example:
