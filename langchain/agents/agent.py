@@ -33,6 +33,7 @@ class Agent(BaseModel):
     """
 
     llm_chain: LLMChain
+    allowed_tools: List[str]
     return_values: List[str] = ["output"]
 
     @abstractmethod
@@ -149,7 +150,8 @@ class Agent(BaseModel):
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
         )
-        return cls(llm_chain=llm_chain, **kwargs)
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
     def return_stopped_response(
         self,
@@ -261,6 +263,18 @@ class AgentExecutor(Chain, BaseModel):
         return cls(
             agent=agent, tools=tools, callback_manager=callback_manager, **kwargs
         )
+
+    @root_validator()
+    def validate_tools(cls, values: Dict) -> Dict:
+        """Validate that tools are compatible with agent."""
+        agent = values["agent"]
+        tools = values["tools"]
+        if set(agent.allowed_tools) != set([tool.name for tool in tools]):
+            raise ValueError(
+                f"Allowed tools ({agent.allowed_tools}) different than "
+                f"provided tools ({[tool.name for tool in tools]})"
+            )
+        return values
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors."""
