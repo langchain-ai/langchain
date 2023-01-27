@@ -103,12 +103,24 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         return embeddings.tolist()
 
-    ## Embedding instruction-tuned model queries requires a list of instruction, text pairs.
-    def embed_query(self, texts: List[str]) -> List[float]:
+    def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
-
         Args:
             text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        text = text.replace("\n", " ")
+        embedding = self.client.encode(text)
+        return embedding.tolist()
+
+    ## Embedding instruction-tuned model queries requires a list of instruction, text pairs.
+    def embed_query(self, texts: List[str]) -> List[float]:
+        """Compute query embeddings using a HuggingFace instructor transformer model.
+
+        Args:
+            texts: The instruction/query pair to embed.
 
         Returns:
             Embeddings for the text.
