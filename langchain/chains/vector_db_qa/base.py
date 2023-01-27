@@ -29,7 +29,7 @@ class VectorDBQA(Chain, BaseModel):
 
     """
 
-    vectorstore: VectorStore
+    vectorstore: VectorStore = Field(exclude=True)
     """Vector Database to connect to."""
     k: int = 4
     """Number of documents to query for."""
@@ -138,3 +138,8 @@ class VectorDBQA(Chain, BaseModel):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
+
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "vector_db_qa"

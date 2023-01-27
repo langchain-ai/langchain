@@ -18,7 +18,9 @@ class LLMRequestsChain(Chain, BaseModel):
     """Chain that hits a URL and then uses an LLM to parse results."""
 
     llm_chain: LLMChain
-    requests_wrapper: RequestsWrapper = Field(default_factory=RequestsWrapper)
+    requests_wrapper: RequestsWrapper = Field(
+        default_factory=RequestsWrapper, exclude=True
+    )
     text_length: int = 8000
     requests_key: str = "requests_result"  #: :meta private:
     input_key: str = "url"  #: :meta private:
@@ -71,3 +73,7 @@ class LLMRequestsChain(Chain, BaseModel):
         other_keys[self.requests_key] = soup.get_text()[: self.text_length]
         result = self.llm_chain.predict(**other_keys)
         return {self.output_key: result}
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_requests_chain"
