@@ -102,7 +102,7 @@ class SQLDatabase:
     def run(self, command: str) -> str:
         """Execute a SQL command and return a string representing the results.
 
-        If the statement rturns rows, a string of the results is returned.
+        If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.begin() as connection:
