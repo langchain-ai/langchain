@@ -125,6 +125,7 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
 
     # TODO: other implementations of handle, including logical errors
 
+
 class SQLDatabaseSequentialChain(Chain, BaseModel):
     """Chain for querying SQL database that is a sequential chain.
 
