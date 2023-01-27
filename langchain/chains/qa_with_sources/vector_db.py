@@ -13,7 +13,7 @@ from langchain.vectorstores.base import VectorStore
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Question-answering with sources over a vector database."""
 
-    vectorstore: VectorStore
+    vectorstore: VectorStore = Field(exclude=True)
     """Vector Database to connect to."""
     k: int = 4
     """Number of results to return from store"""
@@ -50,3 +50,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
             question, k=self.k, **self.search_kwargs
         )
         return self._reduce_tokens_below_limit(docs)
+
+    @property
+    def _chain_type(self) -> str:
+        return "vector_db_qa_with_sources_chain"
