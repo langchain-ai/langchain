@@ -343,7 +343,7 @@ class AgentExecutor(Chain, BaseModel):
                     observation = tool.func(output.tool_input)
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
-                except Exception as e:
+                except (KeyboardInterrupt, Exception) as e:
                     self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
             else:
