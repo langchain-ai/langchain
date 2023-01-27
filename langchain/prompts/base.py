@@ -135,6 +135,17 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
+    @property
+    @abstractmethod
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of prompt."""
+        prompt_dict = super().dict()
+        prompt_dict["_type"] = self._prompt_type
+        return prompt_dict
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
 
