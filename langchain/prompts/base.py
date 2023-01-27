@@ -75,6 +75,14 @@ class ListOutputParser(BaseOutputParser):
         """Parse the output of an LLM call."""
 
 
+class DictOutputParser(BaseOutputParser):
+    """Class to parse the output of an LLM call to a dict."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Dict[str, str]:
+        """Parse the output of an LLM call."""
+
+
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse out comma separated lists."""
 
