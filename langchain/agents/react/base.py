@@ -108,7 +108,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
-    def create_prompt(cls, tools: List[Tool], **kwargs: Any) -> BasePromptTemplate:
+    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT
 
