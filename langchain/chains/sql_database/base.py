@@ -94,6 +94,8 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
     # TODO: may want to rename this to something more specific once we have more than one exception handler
     def handle_exception(
         self,
+        llm_inputs: Dict[str, Any],
+        llm_chain: LLMChain,
         exception: Exception,
     ) -> str:
         """
@@ -111,7 +113,7 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
             ):  # TODO: handle repitions of this code
                 # TODO: handle other exceptions found using ipnyb
                 try:
-                    return self.llm_chain.predict(**self.llm_inputs)
+                    return llm_chain.predict(**llm_inputs)
                 except Exception as e:
                     exception = e
         # Use specific exception here (check langchain specific exceptions and general python exceptions)
