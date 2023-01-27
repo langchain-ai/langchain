@@ -25,6 +25,7 @@ class ExceptionHandler:
     #TODO: could have multiple methods with this name, or make more specific later
     def handle(self, exception:Exception, llm_chain:LLMChain, 
                 llm_inputs: dict[str,object], max_tries: int = 3) -> str:
+                #TODO: ask about type of llm_inputs -- make sure object works
         if(max_tries == 0):
             #TODO: ask Andy what output is desired here
             raise Exception("Max tries reached")

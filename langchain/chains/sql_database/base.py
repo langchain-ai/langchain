@@ -14,7 +14,7 @@ from langchain.sql_database import SQLDatabase
 #TODO: decide whether this is neccesary
 from exception_handler import ExceptionHandler
 
-class SQLDatabaseChain(Chain, BaseModel):
+class SQLDatabaseChain(Chain, BaseModel, max_tries=3):
     """Chain for interacting with SQL Database.
 
     Example:
@@ -35,6 +35,7 @@ class SQLDatabaseChain(Chain, BaseModel):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    max_tries: int = 3
 
     class Config:
         """Configuration for this pydantic object."""
