@@ -26,7 +26,7 @@ class ExceptionHandler:
     def handle(self, exception:Exception, llm_chain:LLMChain, 
                 llm_inputs: dict[str,object], max_tries: int = 3) -> str:
                 #TODO: ask about type of llm_inputs -- make sure object works
-        if(max_tries == 0):
+        if(max_tries == 0): #will eventaully make this self.max_tries and remove from args/use a for loop
             #TODO: ask Andy what output is desired here
             raise Exception("Max tries reached")
         if isinstance(exception, InvalidRequestError): #could be the same as many others
