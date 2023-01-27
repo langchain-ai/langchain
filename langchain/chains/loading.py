@@ -7,6 +7,7 @@ import yaml
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config
 
@@ -31,8 +32,31 @@ def _load_llm_chain(config: dict) -> LLMChain:
 
     return LLMChain(llm=llm, prompt=prompt, **config)
 
+def _load_stuff_documents_chain(config: dict):
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    else:
+        raise ValueError("One of `llm_chain` or `llm_chain_config` must be present.")
 
-type_to_loader_dict = {"llm_chain": _load_llm_chain}
+    if not isinstance(llm_chain, LLMChain):
+        raise ValueError(f"Expected LLMChain, got {llm_chain}")
+
+    if "document_prompt" in config:
+        prompt_config = config.pop("document_prompt")
+        document_prompt = load_prompt_from_config(prompt_config)
+    elif "document_prompt_path" in config:
+        document_prompt = load_prompt(config.pop("document_prompt_path"))
+    else:
+        raise ValueError("One of `document_prompt` or `document_prompt_path` must be present.")
+
+    return StuffDocumentsChain(llm_chain=llm_chain, document_prompt=document_prompt, **config)
+
+
+
+type_to_loader_dict = {"llm_chain": _load_llm_chain, "stuff_documents_chain": _load_stuff_documents_chain}
 
 
 def load_chain_from_config(config: dict) -> Chain:
