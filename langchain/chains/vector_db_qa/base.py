@@ -29,7 +29,7 @@ class VectorDBQA(Chain, BaseModel):
 
     """
 
-    vectorstore: VectorStore
+    vectorstore: VectorStore = Field(exclude=True)
     """Vector Database to connect to."""
     k: int = 4
     """Number of documents to query for."""

@@ -13,7 +13,7 @@ from langchain.vectorstores.base import VectorStore
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Question-answering with sources over a vector database."""
 
-    vectorstore: VectorStore
+    vectorstore: VectorStore = Field(exclude=True)
     """Vector Database to connect to."""
     k: int = 4
     """Number of results to return from store"""

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -26,7 +26,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
     llm: BaseLLM
     """LLM wrapper to use."""
-    database: SQLDatabase
+    database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
     prompt: BasePromptTemplate = PROMPT
     """Prompt to use to translate natural language to SQL."""

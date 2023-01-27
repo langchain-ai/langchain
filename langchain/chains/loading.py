@@ -1,12 +1,17 @@
 """Functionality for loading chains."""
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Any, Union
 
+import requests
 import yaml
 
+from langchain.chains.api.base import APIChain
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
+from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
@@ -23,6 +28,8 @@ from langchain.chains.sql_database.base import SQLDatabaseChain, SQLDatabaseSequ
 from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config
+
+URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
 
 def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
@@ -316,12 +323,56 @@ def _load_vector_db_qa(config: dict, **kwargs: Any):
     )
 
 
+def _load_api_chain(config: dict, **kwargs: Any):
+    if "api_request_chain" in config:
+        api_request_chain_config = config.pop("api_request_chain")
+        api_request_chain = load_chain_from_config(api_request_chain_config)
+    elif "api_request_chain_path" in config:
+        api_request_chain = load_chain(config.pop("api_request_chain_path"))
+    else:
+        raise ValueError("One of `api_request_chain` or `api_request_chain_path` must be present.")
+    if "api_answer_chain" in config:
+        api_answer_chain_config = config.pop("api_answer_chain")
+        api_answer_chain = load_chain_from_config(api_answer_chain_config)
+    elif "api_answer_chain_path" in config:
+        api_answer_chain = load_chain(config.pop("api_answer_chain_path"))
+    else:
+        raise ValueError("One of `api_answer_chain` or `api_answer_chain_path` must be present.")
+    if "requests_wrapper" in kwargs:
+        requests_wrapper = kwargs.pop("requests_wrapper")
+    else:
+        raise ValueError("`requests_wrapper` must be present.")
+    return APIChain(
+        api_request_chain=api_request_chain,
+        api_answer_chain=api_answer_chain,
+        requests_wrapper=requests_wrapper,
+        **config
+    )
+
+
+def _load_llm_requests_chain(config: dict, **kwargs: Any):
+    if "llm_chain" in config:
+        llm_chain_config = config.pop("llm_chain")
+        llm_chain = load_chain_from_config(llm_chain_config)
+    elif "llm_chain_path" in config:
+        llm_chain = load_chain(config.pop("llm_chain_path"))
+    else:
+        raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
+    if "requests_wrapper" in kwargs:
+        requests_wrapper = kwargs.pop("requests_wrapper")
+        return LLMRequestsChain(llm_chain=llm_chain, requests_wrapper=requests_wrapper, **config)
+    else:
+        return LLMRequestsChain(llm_chain=llm_chain, **config)
+
+
 type_to_loader_dict = {
+    "api_chain": _load_api_chain,
     "hyde_chain": _load_hyde_chain,
     "llm_chain": _load_llm_chain, 
     "llm_bash_chain": _load_llm_bash_chain,
     "llm_checker_chain": _load_llm_checker_chain,
     "llm_math_chain": _load_llm_math_chain,
+    "llm_requests_chain": _load_llm_requests_chain,
     "pal_chain": _load_pal_chain,
     "qa_with_sources_chain": _load_qa_with_sources_chain,
     "stuff_documents_chain": _load_stuff_documents_chain,
@@ -347,7 +398,16 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     return chain_loader(config, **kwargs)
 
 
-def load_chain(file: Union[str, Path], **kwargs: Any) -> Chain:
+def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
+    """Unified method for loading a chain from LangChainHub or local fs."""
+    if isinstance(path, str) and path.startswith("lc://chains"):
+        path = os.path.relpath(path, "lc://chains/")
+        return _load_from_hub(path, **kwargs)
+    else:
+        return _load_chain_from_file(path, **kwargs)
+
+
+def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     """Load chain from file."""
     # Convert file to Path object.
     if isinstance(file, str):
@@ -365,3 +425,19 @@ def load_chain(file: Union[str, Path], **kwargs: Any) -> Chain:
         raise ValueError("File type must be json or yaml")
     # Load the chain from the config now.
     return load_chain_from_config(config, **kwargs)
+
+
+def _load_from_hub(path: str, **kwargs: Any) -> Chain:
+    """Load chain from hub."""
+    suffix = path.split(".")[-1]
+    if suffix not in {"json", "yaml"}:
+        raise ValueError("Unsupported file type.")
+    full_url = URL_BASE + path
+    r = requests.get(full_url)
+    if r.status_code != 200:
+        raise ValueError(f"Could not find file at {full_url}")
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file = tmpdirname + "/chain." + suffix
+        with open(file, "wb") as f:
+            f.write(r.content)
+        return _load_chain_from_file(file, **kwargs)
