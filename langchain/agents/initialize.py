@@ -54,7 +54,9 @@ def initialize_agent(
             llm, tools, callback_manager=callback_manager
         )
     elif agent_path is not None:
-        agent_obj = load_agent(agent_path, callback_manager=callback_manager)
+        agent_obj = load_agent(
+            agent_path, llm=llm, tools=tools, callback_manager=callback_manager
+        )
     else:
         raise ValueError(
             "Somehow both `agent` and `agent_path` are None, "
