@@ -168,3 +168,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             extra_return_dict = {}
         output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)
         return output, extra_return_dict
+
+    @property
+    def _chain_type(self) -> str:
+        return "map_reduce_documents_chain"

@@ -50,3 +50,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
             question, k=self.k, **self.search_kwargs
         )
         return self._reduce_tokens_below_limit(docs)
+
+    @property
+    def _chain_type(self) -> str:
+        return "vector_db_qa_with_sources_chain"

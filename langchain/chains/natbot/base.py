@@ -94,3 +94,7 @@ class NatBotChain(Chain, BaseModel):
             self.input_browser_content_key: browser_content,
         }
         return self(_inputs)[self.output_key]
+
+    @property
+    def _chain_type(self) -> str:
+        return "nat_bot_chain"

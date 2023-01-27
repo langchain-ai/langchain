@@ -83,6 +83,10 @@ class SQLDatabaseChain(Chain, BaseModel):
         final_result = llm_chain.predict(**llm_inputs)
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
+    
+    @property
+    def _chain_type(self) -> str:
+        return "sql_database_chain"
 
 
 class SQLDatabaseSequentialChain(Chain, BaseModel):
@@ -153,3 +157,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
             "table_names_to_use": table_names_to_use,
         }
         return self.sql_chain(new_inputs, return_only_outputs=True)
+
+    @property
+    def _chain_type(self) -> str:
+        return "sql_database_sequential_chain"

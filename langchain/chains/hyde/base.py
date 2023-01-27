@@ -69,3 +69,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):
         prompt = PROMPT_MAP[prompt_key]
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(base_embeddings=base_embeddings, llm_chain=llm_chain)
+
+    @property
+    def _chain_type(self) -> str:
+        return "hyde_chain"

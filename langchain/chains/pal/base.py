@@ -79,3 +79,7 @@ class PALChain(Chain, BaseModel):
             get_answer_expr="print(answer)",
             **kwargs,
         )
+
+    @property
+    def _chain_type(self) -> str:
+        return "pal_chain"

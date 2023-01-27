@@ -73,3 +73,7 @@ class LLMBashChain(Chain, BaseModel):
         else:
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: output}
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_bash_chain"

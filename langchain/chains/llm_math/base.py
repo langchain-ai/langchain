@@ -68,3 +68,7 @@ class LLMMathChain(Chain, BaseModel):
         else:
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: answer}
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_math_chain"

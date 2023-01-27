@@ -138,3 +138,8 @@ class VectorDBQA(Chain, BaseModel):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
+
+    @property
+    def _chain_type(self) -> str:
+        """Return the chain type."""
+        return "vector_db_qa"
