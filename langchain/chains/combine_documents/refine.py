@@ -113,3 +113,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         else:
             extra_return_dict = {}
         return res, extra_return_dict
+
+    @property
+    def _chain_type(self) -> str:
+        return "refine_documents_chain"

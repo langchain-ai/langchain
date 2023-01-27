@@ -1,11 +1,14 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.70"
+version = "0.0.72"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://www.github.com/hwchase17/langchain"
+
+[tool.poetry.scripts]
+langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -31,6 +34,7 @@ weaviate-client = {version = "^3", optional = true}
 google-api-python-client = {version = "2.70.0", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
 qdrant-client = {version = "^0.11.7", optional = true}
+dataclasses-json = "^0.5.7"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -52,6 +56,7 @@ pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.6.6"
 pytest-watcher = "^0.2.6"
+freezegun = "^1.2.2"
 
 [tool.poetry.group.lint.dependencies]
 flake8-docstrings = "^1.6.0"
@@ -59,7 +64,7 @@ black = "^22.10.0"
 isort = "^5.10.1"
 flake8 = "^6.0.0"
 types-toml = "^0.10.8.1"
-types-redis = "^4.3.21.6" 
+types-redis = "^4.3.21.6"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"

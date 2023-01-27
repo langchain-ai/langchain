@@ -111,3 +111,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         if self.return_intermediate_steps:
             extra_info["intermediate_steps"] = results
         return output[self.answer_key], extra_info
+
+    @property
+    def _chain_type(self) -> str:
+        return "map_rerank_documents_chain"

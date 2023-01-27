@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -27,7 +27,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
     llm: BaseLLM
     """LLM wrapper to use."""
-    database: SQLDatabase
+    database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
     prompt: BasePromptTemplate = PROMPT
     """Prompt to use to translate natural language to SQL."""
@@ -88,6 +88,10 @@ class SQLDatabaseChain(Chain, BaseModel):
         final_result = llm_chain.predict(**llm_inputs)
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
+
+    @property
+    def _chain_type(self) -> str:
+        return "sql_database_chain"
 
 
 class SQLDatabaseSequentialChain(Chain, BaseModel):
@@ -158,3 +162,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
             "table_names_to_use": table_names_to_use,
         }
         return self.sql_chain(new_inputs, return_only_outputs=True)
+
+    @property
+    def _chain_type(self) -> str:
+        return "sql_database_sequential_chain"
