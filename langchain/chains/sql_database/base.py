@@ -81,7 +81,7 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
         try:
             result = self.database.run(sql_cmd)
         except Exception as e:
-            result = self.handle_exception(e)
+            result = self.handle_exception(llm_inputs, llm_chain, e)
         self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
         self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
@@ -91,7 +91,9 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
 
-    # TODO: may want to rename this to something more specific once we have more than one exception handler
+    # TODO: may want to rename this to something more specific once we have
+    # more than one exception handler
+
     def handle_exception(
         self,
         llm_inputs: Dict[str, Any],
@@ -116,7 +118,8 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
                     return llm_chain.predict(**llm_inputs)
                 except Exception as e:
                     exception = e
-        # Use specific exception here (check langchain specific exceptions and general python exceptions)
+        # Use specific exception here (check langchain specific exceptions and
+        #  general python exceptions)
         raise Exception("Max tries reached")
         # raise exception  # find langchain specific exception to raise here
 
