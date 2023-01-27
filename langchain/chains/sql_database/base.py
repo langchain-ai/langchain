@@ -83,7 +83,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         final_result = llm_chain.predict(**llm_inputs)
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
         return {self.output_key: final_result}
-    
+
     @property
     def _chain_type(self) -> str:
         return "sql_database_chain"

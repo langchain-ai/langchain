@@ -1,7 +1,7 @@
 """Chain that hits a URL and then uses an LLM to parse results."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -18,7 +18,9 @@ class LLMRequestsChain(Chain, BaseModel):
     """Chain that hits a URL and then uses an LLM to parse results."""
 
     llm_chain: LLMChain
-    requests_wrapper: RequestsWrapper = Field(default_factory=RequestsWrapper, exclude=True)
+    requests_wrapper: RequestsWrapper = Field(
+        default_factory=RequestsWrapper, exclude=True
+    )
     text_length: int = 8000
     requests_key: str = "requests_result"  #: :meta private:
     input_key: str = "url"  #: :meta private:
