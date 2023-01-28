@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping, print_text
 from langchain.llms.base import BaseLLM
@@ -13,14 +13,14 @@ from langchain.prompts.prompt import PromptTemplate
 class ModelLaboratory:
     """Experiment with different models."""
 
-    def __init__(self, chains: Sequence[Chain], names: Optional[List[str]] = None):
+    def __init__(self, chains: Sequence[BaseChain], names: Optional[List[str]] = None):
         """Initialize with chains to experiment with.
 
         Args:
             chains: list of chains to experiment with.
         """
         for chain in chains:
-            if not isinstance(chain, Chain):
+            if not isinstance(chain, BaseChain):
                 raise ValueError(
                     "ModelLaboratory should now be initialized with Chains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "

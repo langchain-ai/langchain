@@ -5,14 +5,14 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 
 
-class NatBotChain(Chain, BaseModel):
+class NatBotChain(BaseChain, BaseModel):
     """Implement an LLM driven browser.
 
     Example:

@@ -12,7 +12,7 @@ from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
 from langchain.llms.base import BaseLLM
@@ -242,7 +242,7 @@ class Agent(BaseModel):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-class AgentExecutor(Chain, BaseModel):
+class AgentExecutor(BaseChain, BaseModel):
     """Consists of an agent using tools."""
 
     agent: Agent

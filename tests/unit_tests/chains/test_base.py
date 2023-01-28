@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.callbacks.base import CallbackManager
-from langchain.chains.base import Chain, Memory
+from langchain.chains.base import BaseChain, Memory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -30,7 +30,7 @@ class FakeMemory(Memory, BaseModel):
         pass
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(BaseChain, BaseModel):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True

@@ -43,7 +43,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class Chain(BaseModel, ABC):
+class BaseChain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None

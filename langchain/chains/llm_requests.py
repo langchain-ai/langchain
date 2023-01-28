@@ -6,7 +6,7 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains import LLMChain
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.requests import RequestsWrapper
 
 DEFAULT_HEADERS = {
@@ -14,7 +14,7 @@ DEFAULT_HEADERS = {
 }
 
 
-class LLMRequestsChain(Chain, BaseModel):
+class LLMRequestsChain(BaseChain, BaseModel):
     """Chain that hits a URL and then uses an LLM to parse results."""
 
     llm_chain: LLMChain

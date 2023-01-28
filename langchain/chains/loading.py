@@ -9,7 +9,7 @@ import requests
 import yaml
 
 from langchain.chains.api.base import APIChain
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
@@ -426,7 +426,7 @@ type_to_loader_dict = {
 }
 
 
-def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
+def load_chain_from_config(config: dict, **kwargs: Any) -> BaseChain:
     """Load chain from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify a chain Type in config")
@@ -439,7 +439,7 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     return chain_loader(config, **kwargs)
 
 
-def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
+def load_chain(path: Union[str, Path], **kwargs: Any) -> BaseChain:
     """Unified method for loading a chain from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://chains"):
         path = os.path.relpath(path, "lc://chains/")
@@ -448,7 +448,7 @@ def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
         return _load_chain_from_file(path, **kwargs)
 
 
-def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
+def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> BaseChain:
     """Load chain from file."""
     # Convert file to Path object.
     if isinstance(file, str):
@@ -468,7 +468,7 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     return load_chain_from_config(config, **kwargs)
 
 
-def _load_from_hub(path: str, **kwargs: Any) -> Chain:
+def _load_from_hub(path: str, **kwargs: Any) -> BaseChain:
     """Load chain from hub."""
     suffix = path.split(".")[-1]
     if suffix not in {"json", "yaml"}:

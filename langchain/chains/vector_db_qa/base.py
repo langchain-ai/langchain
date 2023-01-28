@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -16,7 +16,7 @@ from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
 
 
-class VectorDBQA(Chain, BaseModel):
+class VectorDBQA(BaseChain, BaseModel):
     """Chain for question-answering against a vector database.
 
     Example:

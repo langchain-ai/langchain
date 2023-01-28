@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain.chains.pal.math_prompt import MATH_PROMPT
@@ -17,7 +17,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.python import PythonREPL
 
 
-class PALChain(Chain, BaseModel):
+class PALChain(BaseChain, BaseModel):
     """Implements Program-Aided Language Models."""
 
     llm: BaseLLM

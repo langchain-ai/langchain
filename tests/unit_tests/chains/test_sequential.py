@@ -4,11 +4,11 @@ from typing import Dict, List
 import pytest
 from pydantic import BaseModel
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(BaseChain, BaseModel):
     """Fake Chain for testing purposes."""
 
     input_variables: List[str]

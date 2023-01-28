@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import LLMResult
 
 
-class LLMChain(Chain, BaseModel):
+class LLMChain(BaseChain, BaseModel):
     """Chain to run queries against LLMs.
 
     Example:

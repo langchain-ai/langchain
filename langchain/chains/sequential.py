@@ -4,14 +4,14 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.input import get_color_mapping
 
 
-class SequentialChain(Chain, BaseModel):
+class SequentialChain(BaseChain, BaseModel):
     """Chain where the outputs of one step feed directly into next."""
 
-    chains: List[Chain]
+    chains: List[BaseChain]
     input_variables: List[str]
     output_variables: List[str]  #: :meta private:
     return_all: bool = False
@@ -80,10 +80,10 @@ class SequentialChain(Chain, BaseModel):
         return {k: known_values[k] for k in self.output_variables}
 
 
-class SimpleSequentialChain(Chain, BaseModel):
+class SimpleSequentialChain(BaseChain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
 
-    chains: List[Chain]
+    chains: List[BaseChain]
     strip_outputs: bool = False
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:

@@ -9,14 +9,14 @@ from typing import Dict, List
 import numpy as np
 from pydantic import BaseModel, Extra
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
 from langchain.llms.base import BaseLLM
 
 
-class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):
+class HypotheticalDocumentEmbedder(BaseChain, Embeddings, BaseModel):
     """Generate hypothetical document for query, and then embed that.
 
     Based on https://arxiv.org/abs/2212.10496

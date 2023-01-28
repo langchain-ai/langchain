@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT
 from langchain.llms.base import BaseLLM
@@ -13,7 +13,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 
 
-class SQLDatabaseChain(Chain, BaseModel):
+class SQLDatabaseChain(BaseChain, BaseModel):
     """Chain for interacting with SQL Database.
 
     Example:
@@ -89,7 +89,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         return "sql_database_chain"
 
 
-class SQLDatabaseSequentialChain(Chain, BaseModel):
+class SQLDatabaseSequentialChain(BaseChain, BaseModel):
     """Chain for querying SQL database that is a sequential chain.
 
     The chain is as follows:

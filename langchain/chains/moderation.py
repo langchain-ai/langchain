@@ -3,11 +3,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
-from langchain.chains.base import Chain
+from langchain.chains.base import BaseChain
 from langchain.utils import get_from_dict_or_env
 
 
-class OpenAIModerationChain(Chain, BaseModel):
+class OpenAIModerationChain(BaseChain, BaseModel):
     """Pass input through a moderation endpoint.
 
     To use, you should have the ``openai`` python package installed, and the
