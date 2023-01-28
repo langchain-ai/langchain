@@ -27,7 +27,7 @@ class PALChain(Chain, BaseModel):
     python_globals: Dict[str, Any] = None
     python_locals: Dict[str, Any] = None
     output_key: str = "result"  #: :meta private:
-    code_history: List[str] = None   #: :meta private:
+    code_history: List[str] = []   #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
