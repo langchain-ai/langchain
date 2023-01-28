@@ -37,7 +37,8 @@ class SQLDatabaseChain(Chain, BaseModel):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
-    max_tries: Optional[int] = 1 #: :meta private: #ask what this does
+    max_tries: int = 1  #: :meta private: #ask what this does
+    """Maximum number of times to try to run a query before giving up."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -120,7 +121,7 @@ class SQLDatabaseChain(Chain, BaseModel):
                     exception = e
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
-        raise exception # find langchain specific exception to raise here
+        raise exception  # find langchain specific exception to raise here
 
     # TODO: other implementations of handle, including logical errors
 
@@ -146,8 +147,9 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
         sql_chain = SQLDatabaseChain(
-            llm=llm, database=database, prompt=query_prompt, **kwargs
+            llm=llm, database=database, prompt=query_prompt, max_tries=2, **kwargs
         )
+        print(sql_chain.max_tries)
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )
