@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, Field
 
 # import other specific exceptions
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.exc import InvalidRequestError, OperationalError
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -79,6 +79,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
         sql_cmd = llm_chain.predict(**llm_inputs)
         self.callback_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
+
         try:
             result = self.database.run(sql_cmd)
         except Exception as e:
@@ -111,14 +112,25 @@ class SQLDatabaseChain(Chain, BaseModel):
         InvalidRequestError
         """
         for i in range(self.max_tries):
-            if isinstance(
-                exception, InvalidRequestError
-            ):  # TODO: handle repitions of this code
-                # TODO: handle other exceptions found using ipnyb
+            if isinstance(exception, OperationalError):
+                print("OperationalError")
+                raise exception
+
+                """
+                produced outputs (giving direct SQL commands):
+                wrong number of arguments to function SUM() (or others like AVG)
+                no such table ___
+
+                produced outputs (giving natural language):
+                no such table ___
+                
+                """
                 try:
                     return llm_chain.predict(**llm_inputs)
                 except Exception as e:
                     exception = e
+                # TODO: this is the most common error, so we should handle
+                # it in a more specific way
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
         raise exception  # find langchain specific exception to raise here
@@ -146,7 +158,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
-        #TODO: experiment with chainging max_tries
+        # TODO: experiment with chainging max_tries
         sql_chain = SQLDatabaseChain(
             llm=llm, database=database, prompt=query_prompt, **kwargs
         )
