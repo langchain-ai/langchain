@@ -19,8 +19,8 @@ class FakeListLLM(LLM, BaseModel):
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
-        print(self.i)
-        print(self.responses)
+        print(f"=== Mock Response #{self.i} ===")
+        print(self.responses[self.i])
         return self.responses[self.i]
 
     @property
@@ -92,7 +92,10 @@ def test_agent_with_callbacks_global() -> None:
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
-    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    assert handler.chain_starts == handler.chain_ends == 3
+    assert handler.llm_starts == handler.llm_ends == 2
+    assert handler.tool_starts == handler.tool_ends == 1
     assert handler.starts == 6
     # 1 extra agent end
     assert handler.ends == 7
@@ -130,7 +133,10 @@ def test_agent_with_callbacks_local() -> None:
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
-    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    # 1 top level chain run, 2 LLMChain starts, 2 LLM runs, 1 tool run
+    assert handler.chain_starts == handler.chain_ends == 3
+    assert handler.llm_starts == handler.llm_ends == 2
+    assert handler.tool_starts == handler.tool_ends == 1
     assert handler.starts == 6
     # 1 extra agent end
     assert handler.ends == 7

@@ -2,7 +2,7 @@
 import time
 
 from langchain.chains.natbot.base import NatBotChain
-from langchain.chains.natbot.crawler import Crawler  # type: ignore
+from langchain.chains.natbot.crawler import Crawler
 
 
 def run_cmd(cmd: str, _crawler: Crawler) -> None:

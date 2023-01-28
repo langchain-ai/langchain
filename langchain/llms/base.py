@@ -74,7 +74,7 @@ class BaseLLM(BaseModel, ABC):
             )
             try:
                 output = self._generate(prompts, stop=stop)
-            except Exception as e:
+            except (KeyboardInterrupt, Exception) as e:
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(output, verbose=self.verbose)
@@ -97,7 +97,7 @@ class BaseLLM(BaseModel, ABC):
         )
         try:
             new_results = self._generate(missing_prompts, stop=stop)
-        except Exception as e:
+        except (KeyboardInterrupt, Exception) as e:
             self.callback_manager.on_llm_error(e, verbose=self.verbose)
             raise e
         self.callback_manager.on_llm_end(new_results, verbose=self.verbose)

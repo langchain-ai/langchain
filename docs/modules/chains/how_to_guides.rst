@@ -18,3 +18,7 @@ They are broken up into three categories:
    ./generic_how_to.rst
    ./combine_docs_how_to.rst
    ./utility_how_to.rst
+
+In addition to different types of chains, we also have the following how-to guides for working with chains in general:
+
+`Load From Hub <./generic/from_hub.html>`_: This notebook covers how to load chains from `LangChainHub <https://github.com/hwchase17/langchain-hub>`_.
