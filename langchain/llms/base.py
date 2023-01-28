@@ -92,21 +92,25 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
-        self.callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
-        )
-        try:
-            new_results = self._generate(missing_prompts, stop=stop)
-        except (KeyboardInterrupt, Exception) as e:
-            self.callback_manager.on_llm_error(e, verbose=self.verbose)
-            raise e
-        self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-        for i, result in enumerate(new_results.generations):
-            existing_prompts[missing_prompt_idxs[i]] = result
-            prompt = prompts[missing_prompt_idxs[i]]
-            langchain.llm_cache.update(prompt, llm_string, result)
+        if len(missing_prompts) > 0:
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+            )
+            try:
+                new_results = self._generate(missing_prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            for i, result in enumerate(new_results.generations):
+                existing_prompts[missing_prompt_idxs[i]] = result
+                prompt = prompts[missing_prompt_idxs[i]]
+                langchain.llm_cache.update(prompt, llm_string, result)
+            llm_output = new_results.llm_output
+        else:
+            llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=new_results.llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
