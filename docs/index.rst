@@ -162,6 +162,8 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
+- `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+
 
 .. toctree::
    :maxdepth: 1
