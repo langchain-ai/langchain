@@ -101,18 +101,22 @@ class GoogleSearchAPIWrapper(BaseModel):
         return " ".join(snippets)
 
     def results(self, query: str, num_results: int) -> List[Dict]:
-        """
-        Run query through GoogleSearch and return snippet, title, and link metadata.
-        query - The query to search for.
-        num_results - The number of results to return.
-        snippet - The description of the result.
-        title - The title of the result.
-        link - The link to the result.
+        """Run query through GoogleSearch and return metadata.
+
+        Args:
+            query: The query to search for.
+            num_results: The number of results to return.
+
+        Returns:
+            A list of dictionaries with the following keys:
+                snippet - The description of the result.
+                title - The title of the result.
+                link - The link to the result.
         """
         metadata_results = []
         results = self._google_search_results(query, num=num_results)
         if len(results) == 0:
-            return "No good Google Search Result was found"
+            return [{"Result": "No good Google Search Result was found"}]
         for result in results:
             metadata_result = {
                 "snippet": result["snippet"],
