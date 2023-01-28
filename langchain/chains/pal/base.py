@@ -24,7 +24,10 @@ class PALChain(Chain, BaseModel):
     prompt: BasePromptTemplate
     stop: str = "\n\n"
     get_answer_expr: str = "print(solution())"
+    python_globals: Dict[str, Any] = None
+    python_locals: Dict[str, Any] = None
     output_key: str = "result"  #: :meta private:
+    code_history: List[str] = None   #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -54,7 +57,8 @@ class PALChain(Chain, BaseModel):
         self.callback_manager.on_text(
             code, color="green", end="\n", verbose=self.verbose
         )
-        repl = PythonREPL()
+        self.code_history.append(code)
+        repl = PythonREPL(_globals=self.python_globals, _locals=self.python_locals)
         res = repl.run(code + f"\n{self.get_answer_expr}")
         return {self.output_key: res.strip()}
 
