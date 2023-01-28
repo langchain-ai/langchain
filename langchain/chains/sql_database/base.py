@@ -32,7 +32,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
         :meta private:
         """
-
+        #TODO: I think this messes with the docs, but I'm not sure how to fix it
         self.max_tries = max_tries  # ask what meta private does
         """Maximum number of times to try to run a query before giving up."""
 
@@ -156,10 +156,10 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
         """Load the necessary chains."""
+        #TODO: experiment with chainging max_tries
         sql_chain = SQLDatabaseChain(
-            llm=llm, database=database, prompt=query_prompt, max_tries=2, **kwargs
+            llm=llm, database=database, prompt=query_prompt, **kwargs
         )
-        print(sql_chain.max_tries)
         decider_chain = LLMChain(
             llm=llm, prompt=decider_prompt, output_key="table_names"
         )
