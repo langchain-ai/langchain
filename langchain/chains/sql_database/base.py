@@ -1,7 +1,7 @@
 """Chain for interacting with SQL Database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field
 
@@ -16,7 +16,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.sql_database import SQLDatabase
 
 
-class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
+class SQLDatabaseChain(Chain, BaseModel):
     """Chain for interacting with SQL Database.
 
     Example:
@@ -37,7 +37,7 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
-    max_tries: int = 3
+    max_tries: Optional[int] = 1 #: :meta private: #ask what this does
 
     class Config:
         """Configuration for this pydantic object."""
