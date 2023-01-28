@@ -92,10 +92,10 @@ class HuggingFacePipeline(LLM, BaseModel):
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
-        except ImportError:
+        except ImportError as e:
             raise ValueError(
                 f"Could not load the {task} model due to missing dependencies."
-            )
+            ) from e
 
         if importlib.util.find_spec("torch") is not None:
             import torch
