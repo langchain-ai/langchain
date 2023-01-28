@@ -21,7 +21,7 @@
         os.environ["LANGCHAIN_HANDLER"] = "langchain"
         ```
 
-    2. Full example
+    2. Example with agent (for a more detailed example, [this notebook](tracing/agent_with_tracing.ipynb)):
 
         ```python
         import os
