@@ -27,6 +27,18 @@ class SQLDatabaseChain(Chain, BaseModel):
             db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
     """
 
+    def __init__(self, max_tries: int = 1, **data: Any) -> None:
+        """Initialize the chain.
+
+        :meta private:
+        """
+
+        self.max_tries = max_tries  # ask what meta private does
+        """Maximum number of times to try to run a query before giving up."""
+
+        super().__init__(**data)
+        self.database = self.database
+
     llm: BaseLLM
     """LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
@@ -37,8 +49,6 @@ class SQLDatabaseChain(Chain, BaseModel):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
-    max_tries: int = 1  #: :meta private: #ask what this does
-    """Maximum number of times to try to run a query before giving up."""
 
     class Config:
         """Configuration for this pydantic object."""
