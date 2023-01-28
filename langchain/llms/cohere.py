@@ -1,11 +1,14 @@
 """Wrapper around Cohere APIs."""
-from typing import Any, Dict, List, Mapping, Optional
+import logging
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
+
+logger = logging.getLogger(__name__)
 
 
 class Cohere(LLM, BaseModel):
@@ -46,10 +49,32 @@ class Cohere(LLM, BaseModel):
 
     cohere_api_key: Optional[str] = None
 
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
+
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name not in all_required_field_names:
+                if field_name in extra:
+                    raise ValueError(f"Found {field_name} supplied twice.")
+                logger.warning(
+                    f"""WARNING! {field_name} is not default parameter.
+                    {field_name} was transfered to model_kwargs.
+                    Please confirm that {field_name} is what you intended."""
+                )
+                extra[field_name] = values.pop(field_name)
+        values["model_kwargs"] = extra
+        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -69,9 +94,9 @@ class Cohere(LLM, BaseModel):
         return values
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
-        return {
+        normal_params = {
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
             "k": self.k,
@@ -79,9 +104,10 @@ class Cohere(LLM, BaseModel):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
         }
+        return {**normal_params, **self.model_kwargs}
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
@@ -105,8 +131,14 @@ class Cohere(LLM, BaseModel):
 
                 response = cohere("Tell me a joke.")
         """
+        params = self._default_params
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+
         response = self.client.generate(
-            model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
+            model=self.model, prompt=prompt, stop_sequences=stop, **params
         )
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
