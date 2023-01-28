@@ -15,7 +15,10 @@ class BashProcess:
         if isinstance(commands, str):
             commands = [commands]
         commands = ";".join(commands)
-        output = subprocess.check_output(commands, shell=True).decode()
+        try:
+            output = subprocess.check_output(commands, shell=True).decode()
+        except subprocess.CalledProcessError as error:
+            return str(error)
         if self.strip_newlines:
             output = output.strip()
         return output
