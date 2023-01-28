@@ -33,7 +33,7 @@ class Agent(BaseModel):
     """
 
     llm_chain: LLMChain
-    allowed_tools: List[str]
+    allowed_tools: Optional[List[str]] = None
     return_values: List[str] = ["output"]
 
     @abstractmethod
@@ -269,11 +269,12 @@ class AgentExecutor(Chain, BaseModel):
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
         tools = values["tools"]
-        if set(agent.allowed_tools) != set([tool.name for tool in tools]):
-            raise ValueError(
-                f"Allowed tools ({agent.allowed_tools}) different than "
-                f"provided tools ({[tool.name for tool in tools]})"
-            )
+        if agent.allowed_tools is not None:
+            if set(agent.allowed_tools) != set([tool.name for tool in tools]):
+                raise ValueError(
+                    f"Allowed tools ({agent.allowed_tools}) different than "
+                    f"provided tools ({[tool.name for tool in tools]})"
+                )
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
