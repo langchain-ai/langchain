@@ -46,7 +46,7 @@ def tool(
             assert func.__doc__, "Function must have a docstring"
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
-            description = f"{tool_name}{signature(func)} - {func.__doc__}"
+            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             tool = Tool(
                 name=tool_name,
                 func=func,
