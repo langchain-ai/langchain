@@ -47,8 +47,10 @@ class Agent(BaseModel):
     @property
     def _stop(self) -> List[str]:
         return [f"\n{self.observation_prefix}"]
-    
-    def _remember_thoughts(self, intermediate_steps: List[Tuple[AgentAction, str]]) -> str:
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> str:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -82,7 +84,7 @@ class Agent(BaseModel):
         Returns:
             Action specifying what tool to use.
         """
-        thoughts = self._remember_thoughts(intermediate_steps)
+        thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
 
