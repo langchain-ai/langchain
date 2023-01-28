@@ -120,8 +120,7 @@ class SQLDatabaseChain(Chain, BaseModel, max_tries=1):
                     exception = e
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
-        raise Exception("Max tries reached")
-        # raise exception  # find langchain specific exception to raise here
+        raise exception # find langchain specific exception to raise here
 
     # TODO: other implementations of handle, including logical errors
 
