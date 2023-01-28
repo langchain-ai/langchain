@@ -27,22 +27,12 @@ class SQLDatabaseChain(Chain, BaseModel):
             db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
     """
 
-    def __init__(self, max_tries: int = 1, **data: Any) -> None:
-        """Initialize the chain.
-
-        :meta private:
-        """
-        #TODO: I think this messes with the docs, but I'm not sure how to fix it
-        self.max_tries = max_tries  # ask what meta private does
-        """Maximum number of times to try to run a query before giving up."""
-
-        super().__init__(**data)
-        self.database = self.database
-
     llm: BaseLLM
     """LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
+    max_tries: int = Field(1, ge=1)
+    """Maximum number of times to try to run a query before giving up."""
     prompt: BasePromptTemplate = PROMPT
     """Prompt to use to translate natural language to SQL."""
     top_k: int = 5
