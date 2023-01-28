@@ -120,6 +120,7 @@ class SQLDatabaseChain(Chain, BaseModel):
                 produced outputs (giving direct SQL commands):
                 wrong number of arguments to function SUM() (or others like AVG)
                 no such table ___
+                ambiguous column name: ___
 
                 produced outputs (giving natural language):
                 no such table ___
