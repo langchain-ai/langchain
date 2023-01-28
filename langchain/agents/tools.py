@@ -27,20 +27,18 @@ def tool(
         - Function must be of type (str) -> str
         - Function must have a docstring
 
-    Usage:
-        - Without arguments the function name is used as the tool name, otherwise the name can be specified as an argument.
+    Examples:
+        .. code-block:: python
 
-    ```
-    @tool
-    def search_api(query: str) -> str:
-        # Searches the API for the query.
-        return
+            @tool
+            def search_api(query: str) -> str:
+                # Searches the API for the query.
+                return
 
-    @tool("search", return_direct=True)
-    def search_api(query: str) -> str:
-        # Searches the API for the query.
-        return
-    ```
+            @tool("search", return_direct=True)
+            def search_api(query: str) -> str:
+                # Searches the API for the query.
+                return
     """
 
     def _make_with_name(tool_name: str, return_direct: bool = False) -> Callable:
