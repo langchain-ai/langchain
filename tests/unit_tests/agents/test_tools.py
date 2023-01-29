@@ -57,17 +57,6 @@ def test_unnamed_tool_decorator_return_direct() -> None:
     assert search_api.return_direct
 
 
-def test_too_many_arguments() -> None:
-    """Test error is raised when too many arguments are provided."""
-    # except to throw a value error if theres too many arguments
-    with pytest.raises(AssertionError):
-
-        @tool
-        def search_api(query: str, arg2: str) -> str:
-            """Search the API for the query."""
-            return "API result"
-
-
 def test_missing_docstring() -> None:
     """Test error is raised when docstring is missing."""
     # expect to throw a value error if theres no docstring
