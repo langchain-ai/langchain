@@ -1,6 +1,6 @@
 # flake8: noqa
 PREFIX = """Answer the following questions as best you can. """
-FORMAT_INSTRUCTIONS = """
+FORMAT_INSTRUCTIONS = """\
 You have access to the following tools:
 {tool_strings}
 
