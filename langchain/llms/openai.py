@@ -156,7 +156,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             @retry()
-            def create():
+            def create():  # type: ignore
                 return self.client.create(prompt=_prompts, **params)
             response = create()
             choices.extend(response["choices"])
