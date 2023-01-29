@@ -61,7 +61,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         else:
             return [self.output_key, "intermediate_steps"]
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         input_text = f"{inputs[self.input_key]} \nSQLQuery:"
         self.callback_manager.on_text(input_text, verbose=self.verbose)
@@ -88,7 +88,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         llm_inputs["input"] = input_text
         final_result = llm_chain.predict(**llm_inputs)
         self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
-        chain_result = {self.output_key: final_result}
+        chain_result: Dict[str, Any] = {self.output_key: final_result}
         if self.return_intermediate_steps:
             chain_result["intermediate_steps"] = intermediate_steps
         return chain_result
