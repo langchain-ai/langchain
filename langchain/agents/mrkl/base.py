@@ -88,8 +88,8 @@ class ZeroShotAgent(Agent):
         """
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = FORMAT_INSTRUCTIONS.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        format_instructions = FORMAT_INSTRUCTIONS.format(tool_strings=tool_strings, tool_names=tool_names)
+        template = "\n\n".join([prefix, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
