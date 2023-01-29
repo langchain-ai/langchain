@@ -1,10 +1,6 @@
 # flake8: noqa
-PREFIX = """Answer the following questions as best you can. """
-FORMAT_INSTRUCTIONS = """\
-You have access to the following tools:
-{tool_strings}
-
-Use the following format:
+PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""
+FORMAT_INSTRUCTIONS = """Use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
