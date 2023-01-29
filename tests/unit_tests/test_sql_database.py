@@ -35,6 +35,27 @@ def test_table_info() -> None:
     assert sorted(output.split("\n")) == sorted(expected_output)
 
 
+def test_table_info_w_sample_row() -> None:
+    """Test that table info is constructed properly."""
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj.create_all(engine)
+    stmt = insert(user).values(user_id=13, user_name="Harrison")
+    with engine.begin() as conn:
+        conn.execute(stmt)
+
+    db = SQLDatabase(engine, sample_row_in_table_info=True)
+
+    output = db.table_info
+    expected_output = (
+        "Table 'company' has columns: company_id (INTEGER), "
+        "company_location (VARCHAR).\n"
+        "Table 'user' has columns: user_id (INTEGER), "
+        "user_name (VARCHAR(16)). Here is an example row "
+        "for this table (long strings are truncated): 13 Harrison."
+    )
+    assert sorted(output.split("\n")) == sorted(expected_output.split("\n"))
+
+
 def test_sql_database_run() -> None:
     """Test that commands can be run successfully and returned in correct format."""
     engine = create_engine("sqlite:///:memory:")
