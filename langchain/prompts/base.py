@@ -126,7 +126,7 @@ class BasePromptTemplate(BaseModel, ABC):
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
-        """Validate variable names do not restricted names."""
+        """Validate variable names do not include restricted names."""
         if "stop" in values["input_variables"]:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
