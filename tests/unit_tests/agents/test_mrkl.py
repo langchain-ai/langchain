@@ -100,8 +100,9 @@ def test_from_chains() -> None:
     expected_template = "\n\n".join(
         [
             PREFIX,
-            expected_tools_prompt,
-            FORMAT_INSTRUCTIONS.format(tool_names=expected_tool_names),
+            FORMAT_INSTRUCTIONS.format(
+                tool_strings=expected_tools_prompt, tool_names=expected_tool_names
+            ),
             SUFFIX,
         ]
     )
