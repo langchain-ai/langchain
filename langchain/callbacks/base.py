@@ -1,23 +1,32 @@
 """Base callback handler that can be used to handle callbacks from langchain."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
-
-from pydantic import BaseModel
+from typing import Any, Dict, List, Union
 
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class BaseCallbackHandler(BaseModel, ABC):
+class BaseCallbackHandler(ABC):
     """Base callback handler that can be used to handle callbacks from langchain."""
-
-    ignore_llm: bool = False
-    ignore_chain: bool = False
-    ignore_agent: bool = False
 
     @property
     def always_verbose(self) -> bool:
         """Whether to call verbose callbacks even if verbose is False."""
+        return False
+
+    @property
+    def ignore_llm(self) -> bool:
+        """Whether to ignore LLM callbacks."""
+        return False
+
+    @property
+    def ignore_chain(self) -> bool:
+        """Whether to ignore chain callbacks."""
+        return False
+
+    @property
+    def ignore_agent(self) -> bool:
+        """Whether to ignore agent callbacks."""
         return False
 
     @abstractmethod
@@ -31,7 +40,9 @@ class BaseCallbackHandler(BaseModel, ABC):
         """Run when LLM ends running."""
 
     @abstractmethod
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
 
     @abstractmethod
@@ -45,7 +56,9 @@ class BaseCallbackHandler(BaseModel, ABC):
         """Run when chain ends running."""
 
     @abstractmethod
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
 
     @abstractmethod
@@ -59,7 +72,9 @@ class BaseCallbackHandler(BaseModel, ABC):
         """Run when tool ends running."""
 
     @abstractmethod
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
 
     @abstractmethod
@@ -82,15 +97,21 @@ class BaseCallbackManager(BaseCallbackHandler, ABC):
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
 
-    @abstractmethod
     def set_handler(self, handler: BaseCallbackHandler) -> None:
         """Set handler as the only handler on the callback manager."""
+        self.set_handlers([handler])
+
+    @abstractmethod
+    def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Set handlers as the only handlers on the callback manager."""
 
 
 class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
 
-    handlers: List[BaseCallbackHandler]
+    def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Initialize callback manager."""
+        self.handlers: List[BaseCallbackHandler] = handlers
 
     def on_llm_start(
         self,
@@ -115,7 +136,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_llm_end(response)
 
     def on_llm_error(
-        self, error: Exception, verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when LLM errors."""
         for handler in self.handlers:
@@ -146,7 +170,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_chain_end(outputs)
 
     def on_chain_error(
-        self, error: Exception, verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when chain errors."""
         for handler in self.handlers:
@@ -175,7 +202,10 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_tool_end(output, **kwargs)
 
     def on_tool_error(
-        self, error: Exception, verbose: bool = False, **kwargs: Any
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        verbose: bool = False,
+        **kwargs: Any
     ) -> None:
         """Run when tool errors."""
         for handler in self.handlers:
@@ -206,6 +236,6 @@ class CallbackManager(BaseCallbackManager):
         """Remove a handler from the callback manager."""
         self.handlers.remove(handler)
 
-    def set_handler(self, handler: BaseCallbackHandler) -> None:
-        """Set handler as the only handler on the callback manager."""
-        self.handlers = [handler]
+    def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Set handlers as the only handlers on the callback manager."""
+        self.handlers = handlers

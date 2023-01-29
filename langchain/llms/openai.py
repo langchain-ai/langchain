@@ -257,7 +257,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
-        text-davinci-003: 4,000 tokens
+        text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
         text-ada-001: 2,048 tokens
@@ -276,7 +276,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
         if modelname == "text-davinci-003":
-            return 4000
+            return 4097
         elif modelname == "text-curie-001":
             return 2048
         elif modelname == "text-babbage-001":
@@ -288,7 +288,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         elif modelname == "code-cushman-001":
             return 2048
         else:
-            return 4000
+            return 4097
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.

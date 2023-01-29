@@ -12,15 +12,13 @@ class BashProcess:
 
     def run(self, commands: Union[str, List[str]]) -> str:
         """Run commands and return final output."""
-        outputs = []
         if isinstance(commands, str):
             commands = [commands]
-        for command in commands:
-            try:
-                output = subprocess.check_output(command, shell=True).decode()
-                if self.strip_newlines:
-                    output = output.strip()
-                outputs.append(output)
-            except subprocess.CalledProcessError as error:
-                return str(error)
-        return outputs[-1]
+        commands = ";".join(commands)
+        try:
+            output = subprocess.check_output(commands, shell=True).decode()
+        except subprocess.CalledProcessError as error:
+            return str(error)
+        if self.strip_newlines:
+            output = output.strip()
+        return output

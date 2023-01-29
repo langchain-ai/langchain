@@ -97,3 +97,7 @@ class LLMCheckerChain(Chain, BaseModel):
         )
         output = question_to_checked_assertions_chain({"question": question})
         return {self.output_key: output["revised_statement"]}
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_checker_chain"
