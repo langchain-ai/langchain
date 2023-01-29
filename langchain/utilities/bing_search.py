@@ -54,7 +54,7 @@ class BingSearchAPIWrapper(BaseModel):
             values,
             "bing_search_url",
             "BING_SEARCH_URL",
-            default="https://api.bing.microsoft.com/v7.0/search",
+            # default="https://api.bing.microsoft.com/v7.0/search",
         )
 
         values["bing_search_url"] = bing_search_url
@@ -71,3 +71,30 @@ class BingSearchAPIWrapper(BaseModel):
             snippets.append(result["snippet"])
 
         return " ".join(snippets)
+
+    def results(self, query: str, num_results: int) -> List[Dict]:
+        """Run query through BingSearch and return metadata.
+
+        Args:
+            query: The query to search for.
+            num_results: The number of results to return.
+
+        Returns:
+            A list of dictionaries with the following keys:
+                snippet - The description of the result.
+                title - The title of the result.
+                link - The link to the result.
+        """
+        metadata_results = []
+        results = self._bing_search_results(query, count=num_results)
+        if len(results) == 0:
+            return [{"Result": "No good Bing Search Result was found"}]
+        for result in results:
+            metadata_result = {
+                "snippet": result["snippet"],
+                "title": result["name"],
+                "link": result["url"],
+            }
+            metadata_results.append(metadata_result)
+
+        return metadata_results
