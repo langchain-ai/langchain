@@ -9,3 +9,6 @@ class config:
     # https://beta.openai.com/docs/api-reference/authentication
     # https://beta.openai.com/docs/api-reference/authentication#authentication
     OPENAI_API_KEY : str
+
+    def get_openai_api_key(self):
+        return self.OPENAI_API_KEY
