@@ -1,5 +1,5 @@
 """Util that calls OpenAI's Dall-E Image Generator."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -11,9 +11,10 @@ class DallEAPIWrapper(BaseModel):
 
     Docs for using:
     1. pip install openai
-    2. save your OPENAI_API_KEY in an environment variable 
- 
+    2. save your OPENAI_API_KEY in an environment variable
+
     """
+
     client: Any  #: :meta private:
     openai_api_key: Optional[str] = None
     """number of images to generate"""
@@ -27,13 +28,9 @@ class DallEAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _dalle_image_url(self, prompt: str) -> str:
-        params = {
-            "prompt": prompt,
-            "n": self.n,
-            "size": self.size
-        }
+        params = {"prompt": prompt, "n": self.n, "size": self.size}
         response = self.client.create(**params)
-        return response['data'][0]['url']
+        return response["data"][0]["url"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -56,7 +53,7 @@ class DallEAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run query through OpenAI and parse result."""
         image_url = self._dalle_image_url(query)
-    
+
         if image_url is None or image_url == "":
             # We don't want to return the assumption alone if answer is empty
             return "No image was generated"
