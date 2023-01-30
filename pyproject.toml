@@ -57,6 +57,7 @@ pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.6.6"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
+responses = "^0.22.0"
 
 [tool.poetry.group.lint.dependencies]
 flake8-docstrings = "^1.6.0"
@@ -77,7 +78,6 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
-responses = "^0.22.0"
 
 [tool.poetry.extras]
 llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
