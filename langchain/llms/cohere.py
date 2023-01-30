@@ -122,6 +122,6 @@ class Cohere(LLM, BaseModel):
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
+        if stop is not None or self.stop is not None:
+            text = enforce_stop_tokens(text, params["stop_sequences"])
         return text
