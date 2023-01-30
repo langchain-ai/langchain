@@ -14,6 +14,7 @@ def initialize_agent(
     agent: Optional[str] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
+    agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Load agent given tools and LLM.
@@ -50,8 +51,9 @@ def initialize_agent(
                 f"Valid types are: {AGENT_TO_CLASS.keys()}."
             )
         agent_cls = AGENT_TO_CLASS[agent]
+        agent_kwargs = agent_kwargs or {}
         agent_obj = agent_cls.from_llm_and_tools(
-            llm, tools, callback_manager=callback_manager, **kwargs
+            llm, tools, callback_manager=callback_manager, **agent_kwargs
         )
     elif agent_path is not None:
         agent_obj = load_agent(

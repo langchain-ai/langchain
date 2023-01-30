@@ -214,8 +214,7 @@ def test_agent_with_new_prefix_suffix() -> None:
         tools=tools,
         llm=fake_llm,
         agent="zero-shot-react-description",
-        prefix=prefix,
-        suffix=suffix,
+        agent_kwargs={"prefix": prefix, "suffix": suffix}
     )
 
     # avoids "BasePromptTemplate" has no attribute "template" error
