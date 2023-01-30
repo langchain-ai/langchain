@@ -21,7 +21,7 @@ If we click on the `default` session, we can see that to start we have no traces
 ![](tracing/default_empty.png)
 
 If we now start running chains and agents with tracing enabled, we will see data show up here.
-To so, we can run [this notebook](tracing/agent_with_tracing.ipynb) as an example.
+To do so, we can run [this notebook](tracing/agent_with_tracing.ipynb) as an example.
 After running it, we will see an initial trace show up.
 
 ![](tracing/first_trace.png)
