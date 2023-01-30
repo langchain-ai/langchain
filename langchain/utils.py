@@ -48,7 +48,7 @@ def retry(
     :param backoff: backoff multiplier e.g. value of 2 will double the delay
         each retry
     :type backoff: int
-    :param exception_to_raise: exceptions that should be raised instead of retried. may be a tuple.
+    :param exception_to_raise: exceptions that should be raised instead of retried.
     :type exception_to_raise: Exception or tuple
     """
 
