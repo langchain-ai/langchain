@@ -2,16 +2,16 @@
     https://www.nltk.org/_modules/nltk/translate/bleu_score.html
     https://aclanthology.org/P02-1040.pdf
     """
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
-from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
-from pydantic import BaseModel, validator
+from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu # type: ignore
+from pydantic import BaseModel
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
-def ngram_overlap_score(source: List[str], example: list[str]) -> Any:
+def ngram_overlap_score(source: List[str], example: list[str]) -> float:
     """Computes ngram overlap score (1<= n <=4) of source and example as sentence_bleu score (0<= score <=1).
         Uses sentence_bleu with method1 smoothing function and auto reweighting.
     https://www.nltk.org/_modules/nltk/translate/bleu_score.html
@@ -19,12 +19,13 @@ def ngram_overlap_score(source: List[str], example: list[str]) -> Any:
     """
     hypotheses = source[0].split()
     references = [s.split() for s in example]
-    return sentence_bleu(
+
+    return float(sentence_bleu(
         references,
         hypotheses,
         smoothing_function=SmoothingFunction().method1,
         auto_reweigh=True,
-    )
+    ))
 
 class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     """Select and order examples based on ngram overlap score (sentence_bleu score):
@@ -55,25 +56,21 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
         """
         inputs = list(input_variables.values())
         examples = []
-        print(f"inputs={inputs},type={type(inputs)}")
         k = len(self.examples)
-        score = [0] * k
+        score = [0.0] * k
         first_prompt_template_key = self.example_prompt.input_variables[0]
-        print(f"type={type(first_prompt_template_key)}")
+
         for i in range(k):
             score[i] = ngram_overlap_score(
                 inputs, [self.examples[i][first_prompt_template_key]]           
             )
-        print(score)
 
         while True:
             arg_max = np.argmax(score)
-            if score[arg_max] <= self.threshold:
+            if (score[arg_max] < self.threshold) or abs(score[arg_max] - self.threshold)<1e-9:
                 break
 
             examples.append(self.examples[arg_max])
-            print(examples)
-            score[arg_max] = self.threshold - 1
-            print(score)
+            score[arg_max] = self.threshold - 1.0
 
         return examples
