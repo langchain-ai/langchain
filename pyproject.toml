@@ -77,6 +77,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
+responses = "^0.22.0"
 
 [tool.poetry.extras]
 llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
