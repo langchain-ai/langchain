@@ -35,4 +35,4 @@ def test_huggingface_instructor_embedding_query() -> None:
     query = "foo bar"
     embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large", instruction="Represent the text")
     output = embedding.embed_query(query)
-    assert len(output[0]) == 768
+    assert len(output) == 768
