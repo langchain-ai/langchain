@@ -120,7 +120,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         ]
         # Create the overall template.
         # Format the prefix and suffix if they are prompt templates.
-        if isinstance(self.prefix, PromptTemplate):
+        if isinstance(self.prefix, BasePromptTemplate):
             prefix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.prefix.input_variables
             }
@@ -130,7 +130,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         else:
             prefix = self.prefix
 
-        if isinstance(self.suffix, PromptTemplate):
+        if isinstance(self.suffix, BasePromptTemplate):
             suffix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.suffix.input_variables
             }
