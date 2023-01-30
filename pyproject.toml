@@ -57,6 +57,7 @@ pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.6.6"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
+responses = "^0.22.0"
 
 [tool.poetry.group.lint.dependencies]
 flake8-docstrings = "^1.6.0"
