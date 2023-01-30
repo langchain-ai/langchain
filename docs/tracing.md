@@ -1,7 +1,11 @@
-# LangChain Tracing Instructions
+# Tracing
+
+By enabling tracing in your LangChain runs, you’ll be able to more effectively visualize, step through, and debug your chains and agents.
 
 First, you should install tracing and set up your environment properly.
 You can use either a locally hosted version of this (uses Docker) or a cloud hosted version (in closed alpha).
+If you're interested in using the hosted platform, please fill out the form [here](https://forms.gle/tRCEMSeopZf6TE3b6).
+
 
 - [Locally Hosted Setup](./tracing/local_installation.md)
 - [Cloud Hosted Setup](./tracing/hosted_installation.md)
