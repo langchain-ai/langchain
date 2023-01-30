@@ -9,6 +9,18 @@ DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multili
 
 
 class TensorflowHubEmbeddings(BaseModel, Embeddings):
+    """Wrapper around tensorflow_hub embedding models.
+
+    To use, you should have the ``tensorflow_text`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.embeddings import TensorflowHubEmbeddings
+            url = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
+            tf = TensorflowHubEmbeddings(model_url=url)
+    """
+
     embed: Any  #: :meta private:
     model_url: str = DEFAULT_MODEL_URL
     """Model name to use."""
@@ -18,13 +30,13 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         try:
             import tensorflow_hub
-            import tensorflow_text
+            import tensorflow_text  # noqa
 
             self.embed = tensorflow_hub.load(self.model_url)
         except ImportError:
             raise ValueError(
-                "Could not import tensorflow_hub and/or tensorflow_text python package. "
-                "Please install it with `pip install tensorflow_hub` and `pip install tensorflow_text`."
+                "Could not import tensorflow_text python package."
+                "Please install it with `pip install tensorflow_text`."
             )
 
     class Config:
