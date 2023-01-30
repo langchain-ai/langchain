@@ -100,7 +100,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         if (self.model_type == MODEL_TYPE.INSTRUCTION_EMBEDDING):
             instruction_pair = [self.instruction, text]
-            embedding = self.client.encode(instruction_pair)
+            embedding = self.client.encode([instruction_pair])[0]
         else:
             embedding = self.client.encode(text)
         
