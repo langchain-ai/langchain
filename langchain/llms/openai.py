@@ -155,9 +155,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
+
             @retry()
             def create():  # type: ignore
                 return self.client.create(prompt=_prompts, **params)
+
             response = create()
             choices.extend(response["choices"])
             _keys_to_use = _keys.intersection(response["usage"])
