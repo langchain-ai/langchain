@@ -26,7 +26,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
 
-    suffix: Union[str, PromptTemplate]
+    suffix: Union[str, BasePromptTemplate]
     """A PromptTemplate or prompt template string to put after the examples."""
 
     input_variables: List[str]
@@ -35,7 +35,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: Optional[Union[str, PromptTemplate]] = ""
+    prefix: Optional[Union[str, BasePromptTemplate]] = ""
     """A PromptTemplate or prompt template string to put before the examples."""
 
     template_format: str = "f-string"
@@ -64,15 +64,17 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         input_variables = set(values["input_variables"])
         str_template = ""
 
-        if isinstance(values["prefix"], PromptTemplate):
-            input_variables = input_variables - set(values["prefix"].input_variables)
-        else:
-            str_template += values["prefix"]
+        if "prefix" in values:
+            if isinstance(values["prefix"], BasePromptTemplate):
+                input_variables = input_variables - set(values["prefix"].input_variables)
+            else:
+                str_template += values["prefix"]
 
-        if isinstance(values["suffix"], PromptTemplate):
-            input_variables = input_variables - set(values["suffix"].input_variables)
-        else:
-            str_template += values["suffix"]
+        if "suffix" in values:
+            if isinstance(values["suffix"], BasePromptTemplate):
+                input_variables = input_variables - set(values["suffix"].input_variables)
+            else:
+                str_template += values["suffix"]
 
         check_valid_template(
             str_template,
