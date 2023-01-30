@@ -1,6 +1,6 @@
 # Cloud Hosted Setup
 
-We offer a hosted version of tracing at https://langchainplus.vercel.app/. You can use this to view traces from your run without having to run the server locally.
+We offer a hosted version of tracing at [langchainplus.vercel.app](https://langchainplus.vercel.app/). You can use this to view traces from your run without having to run the server locally.
 
 Note: we are currently only offering this to a limited number of users. The hosted platform is VERY alpha, in active development, and data might be dropped at any time. Don't depend on data being persisted in the system long term and don't log traces that may contain sensitive information. If you're interested in using the hosted platform, please fill out the form [here](https://forms.gle/tRCEMSeopZf6TE3b6).
 

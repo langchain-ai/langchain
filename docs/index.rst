@@ -177,5 +177,6 @@ Additional collection of resources we think may be useful as you develop your ap
    ./glossary.md
    ./gallery.rst
    ./deployments.md
+   ./tracing.md
    Discord <https://discord.gg/6adMQxSpJS>
    Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>
