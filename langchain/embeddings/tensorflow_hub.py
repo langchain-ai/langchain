@@ -35,8 +35,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             self.embed = tensorflow_hub.load(self.model_url)
         except ImportError as e:
             raise ValueError(
-                "Could not import some python packages."
-                "Please install them."
+                "Could not import some python packages." "Please install them."
             ) from e
 
     class Config:
