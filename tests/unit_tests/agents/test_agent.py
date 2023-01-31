@@ -196,3 +196,29 @@ def test_agent_tool_return_direct() -> None:
 
     output = agent.run("when was langchain made")
     assert output == "misalignment"
+
+
+def test_agent_with_new_prefix_suffix() -> None:
+    """Test agent initilization kwargs with new prefix and suffix."""
+    fake_llm = FakeListLLM(
+        responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
+    )
+    tools = [
+        Tool("Search", lambda x: x, "Useful for searching", return_direct=True),
+    ]
+    prefix = "FooBarBaz"
+
+    suffix = "Begin now!\nInput: {input}\nThought: {agent_scratchpad}"
+
+    agent = initialize_agent(
+        tools=tools,
+        llm=fake_llm,
+        agent="zero-shot-react-description",
+        agent_kwargs={"prefix": prefix, "suffix": suffix},
+    )
+
+    # avoids "BasePromptTemplate" has no attribute "template" error
+    assert hasattr(agent.agent.llm_chain.prompt, "template")
+    prompt_str = agent.agent.llm_chain.prompt.template
+    assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
+    assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
