@@ -12,9 +12,9 @@ from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
+from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -129,6 +129,7 @@ def _get_google_search(**kwargs: Any) -> Tool:
         GoogleSearchAPIWrapper(**kwargs).run,
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
+
 
 def _get_dalle_image_generator(**kwargs: Any) -> Tool:
     return Tool(

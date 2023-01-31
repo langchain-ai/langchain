@@ -1,4 +1,4 @@
-"""Integration test for Google Search API Wrapper."""
+"""Integration test for DallE API Wrapper."""
 from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 
 
