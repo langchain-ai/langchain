@@ -75,8 +75,8 @@ class ConversationalAgent(Agent):
         return self.ai_prefix
 
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
-        if f"{self.ai_prefix}: " in llm_output:
-            return self.ai_prefix, llm_output.split(f"{self.ai_prefix}: ")[-1]
+        if f"{self.ai_prefix}:" in llm_output:
+            return self.ai_prefix, llm_output.split(f"{self.ai_prefix}:")[-1].strip()
         regex = r"Action: (.*?)\nAction Input: (.*)"
         match = re.search(regex, llm_output)
         if not match:
