@@ -14,6 +14,7 @@ from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.dalle_image_generator import DallEAPIWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -129,6 +130,13 @@ def _get_google_search(**kwargs: Any) -> Tool:
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
+def _get_dalle_image_generator(**kwargs: Any) -> Tool:
+    return Tool(
+        "Dall-E Image Generator",
+        DallEAPIWrapper(**kwargs).run,
+        "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
+    )
+
 
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
@@ -145,6 +153,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "dalle-image-generator": (_get_dalle_image_generator, ["openai_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key"]),
 }
 
