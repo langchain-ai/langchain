@@ -33,11 +33,11 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             import tensorflow_text  # noqa
 
             self.embed = tensorflow_hub.load(self.model_url)
-        except ImportError:
+        except ImportError as e:
             raise ValueError(
-                "Could not import tensorflow_text python package."
-                "Please install it with `pip install tensorflow_text`."
-            )
+                "Could not import some python packages."
+                "Please install them."
+            ) from e
 
     class Config:
         """Configuration for this pydantic object."""
