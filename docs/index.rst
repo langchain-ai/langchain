@@ -162,7 +162,10 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
+- `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+
 - `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
+
 
 .. toctree::
    :maxdepth: 1
@@ -174,5 +177,6 @@ Additional collection of resources we think may be useful as you develop your ap
    ./glossary.md
    ./gallery.rst
    ./deployments.md
+   ./tracing.md
    Discord <https://discord.gg/6adMQxSpJS>
    Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>
