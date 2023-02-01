@@ -4,7 +4,7 @@ As in https://arxiv.org/pdf/2211.10435.pdf.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -24,8 +24,8 @@ class PALChain(Chain, BaseModel):
     prompt: BasePromptTemplate
     stop: str = "\n\n"
     get_answer_expr: str = "print(solution())"
-    python_globals: Dict[str, Any] = None
-    python_locals: Dict[str, Any] = None
+    python_globals: Optional[Dict[str, Any]] = None
+    python_locals: Optional[Dict[str, Any]] = None
     output_key: str = "result"  #: :meta private:
 
     class Config:
