@@ -24,7 +24,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "large"
     """Model name to use."""
-    
+
     truncate: str = "NONE"
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
@@ -61,7 +61,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.embed(model=self.model, texts=texts, truncate=self.truncate).embeddings
+        embeddings = self.client.embed(
+            model=self.model, texts=texts, truncate=self.truncate
+        ).embeddings
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -73,5 +75,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(model=self.model, texts=[text], truncate=self.truncate).embeddings[0]
+        embedding = self.client.embed(
+            model=self.model, texts=[text], truncate=self.truncate
+        ).embeddings[0]
         return embedding
