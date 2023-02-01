@@ -13,7 +13,7 @@ from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-def ngram_overlap_score(source: List[str], example: list[str]) -> float:
+def ngram_overlap_score(source: List[str], example: List[str]) -> float:
     """Compute ngram overlap score of source and example as sentence_bleu score.
 
     Use sentence_bleu with method1 smoothing function and auto reweighting.
