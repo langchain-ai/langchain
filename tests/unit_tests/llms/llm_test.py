@@ -1,22 +1,34 @@
 import asyncio
 
 from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 
 def generate_serially():
-    llm = OpenAI(temperature=0)
+    llm = OpenAI(temperature=0.9)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
     for _ in range(10):
-        resp = llm.generate(["Hello, how are you?"])
-        # print(resp)
+        resp = chain.run(product="toothpaste")
+        print(resp)
 
 
 async def async_generate(llm):
-    resp = await llm.agenerate(["Hello, how are you?"])
-    # print(resp)
+    prompt = PromptTemplate(
+        input_variables=["product"],
+        template="What is a good name for a company that makes {product}?",
+    )
+    chain = LLMChain(llm=llm, prompt=prompt)
+    resp = await chain.arun(product="toothpaste")
+    print(resp)
 
 
 async def generate_concurrently():
-    llm = OpenAI(temperature=0)
+    llm = OpenAI(temperature=0.9)
     tasks = [async_generate(llm) for _ in range(10)]
     await asyncio.gather(*tasks)
 

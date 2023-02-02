@@ -124,6 +124,22 @@ class LLMChain(Chain, BaseModel):
         """
         return self(kwargs)[self.output_key]
 
+    async def apredict(self, **kwargs: Any) -> str:
+        """Format prompt with kwargs and pass to LLM.
+
+        Args:
+            **kwargs: Keys to pass to prompt template.
+
+        Returns:
+            Completion from LLM.
+
+        Example:
+            .. code-block:: python
+
+                completion = llm.predict(adjective="funny")
+        """
+        return (await self.acall(kwargs))[self.output_key]
+
     def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)
