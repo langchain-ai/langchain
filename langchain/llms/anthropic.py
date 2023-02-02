@@ -104,7 +104,7 @@ class Anthropic(LLM, BaseModel):
         text = response['completion']
         return text
 
-    def stream(self, prompt: str) -> Generator:
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call Anthropic completion_stream and return the resulting generator.
 
         BETA: this is a beta feature while we figure out the right abstraction.
@@ -123,4 +123,4 @@ class Anthropic(LLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        return self.client.completion_stream(prompt=prompt, **self._default_params)
+        return self.client.completion_stream(prompt=prompt, stop_sequences=stop, **self._default_params)
