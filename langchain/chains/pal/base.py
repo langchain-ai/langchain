@@ -4,7 +4,7 @@ As in https://arxiv.org/pdf/2211.10435.pdf.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -24,6 +24,8 @@ class PALChain(Chain, BaseModel):
     prompt: BasePromptTemplate
     stop: str = "\n\n"
     get_answer_expr: str = "print(solution())"
+    python_globals: Optional[Dict[str, Any]] = None
+    python_locals: Optional[Dict[str, Any]] = None
     output_key: str = "result"  #: :meta private:
 
     class Config:
@@ -54,7 +56,7 @@ class PALChain(Chain, BaseModel):
         self.callback_manager.on_text(
             code, color="green", end="\n", verbose=self.verbose
         )
-        repl = PythonREPL()
+        repl = PythonREPL(_globals=self.python_globals, _locals=self.python_locals)
         res = repl.run(code + f"\n{self.get_answer_expr}")
         return {self.output_key: res.strip()}
 
