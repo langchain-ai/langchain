@@ -3,10 +3,11 @@
 from pathlib import Path
 
 import pytest
+import unittest
 
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.loading import load_llm
-## from tests.integration_tests.llms.utils import assert_llm_equality
+from tests.integration_tests.llms.utils import assert_llm_equality
 
 @unittest.skip("This test requires an inference endpoint. Tested with Hugging Face endpoints")
 def test_huggingface_endpoint_text_generation() -> None:
