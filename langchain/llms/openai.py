@@ -1,15 +1,32 @@
 """Wrapper around OpenAI APIs."""
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union, Set
 
 from pydantic import BaseModel, Extra, Field, root_validator
+from tenacity import (
+    after_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
+
+def update_token_usage(keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]) -> None:
+    """Update token usage."""
+    _keys_to_use = keys.intersection(response["usage"])
+    for _key in _keys_to_use:
+        if _key not in token_usage:
+            token_usage[_key] = response["usage"][_key]
+        else:
+            token_usage[_key] += response["usage"][_key]
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -56,6 +73,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -115,6 +134,32 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
+    def completion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
+        import openai
+
+        min_seconds = 4
+        max_seconds = 10
+        # Wait 2^x * 1 second between each retry starting with
+        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+            retry=(
+                retry_if_exception_type(openai.error.Timeout)
+                | retry_if_exception_type(openai.error.APIError)
+                | retry_if_exception_type(openai.error.APIConnectionError)
+                | retry_if_exception_type(openai.error.RateLimitError)
+            ),
+            after=after_log(logger, logging.DEBUG),
+        )
+        def _completion_with_retry(**kwargs: Any) -> Any:
+            return self.client.create(**kwargs)
+
+        return _completion_with_retry(**kwargs)
+
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -141,19 +186,15 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = self.client.create(prompt=_prompts, **params)
+            response = self.completion_with_retry(prompt=_prompts, **params)
             choices.extend(response["choices"])
-            _keys_to_use = _keys.intersection(response["usage"])
-            for _key in _keys_to_use:
-                if _key not in token_usage:
-                    token_usage[_key] = response["usage"][_key]
-                else:
-                    token_usage[_key] += response["usage"][_key]
+            update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
-    async def _async_generate(
+    async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
+        """Call out to OpenAI's endpoint async with k unique prompts."""
         params = self._invocation_params
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
@@ -164,15 +205,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
         for _prompts in sub_prompts:
             response = await self.client.acreate(prompt=_prompts, **params)
             choices.extend(response["choices"])
-            _keys_to_use = _keys.intersection(response["usage"])
-            for _key in _keys_to_use:
-                if _key not in token_usage:
-                    token_usage[_key] = response["usage"][_key]
-                else:
-                    token_usage[_key] += response["usage"][_key]
+            update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
     def get_sub_prompts(self, params, prompts, stop):
+        """Get the sub prompts for llm call."""
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
