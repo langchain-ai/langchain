@@ -132,10 +132,10 @@ class LLMChain(Chain, BaseModel):
     @classmethod
     def from_string(cls, llm: BaseLLM, template: str) -> Chain:
         """Create LLMChain from LLM and template."""
-        input_variables = [
+        input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
-        ]
+        }
         prompt_template = PromptTemplate(
-            input_variables=input_variables, template=template
+            input_variables=list(input_variables), template=template
         )
         return cls(llm=llm, prompt=prompt_template)
