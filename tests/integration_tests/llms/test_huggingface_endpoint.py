@@ -33,6 +33,7 @@ def test_huggingface_endpoint_call_error() -> None:
 
 def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
     """Test saving/loading an HuggingFaceHub LLM."""
-    llm = HuggingFaceEndpoint(endpoint_url="", task="text-generation", model_kwargs={"max_new_tokens": 10})    llm.save(file_path=tmp_path / "hf.yaml")
+    llm = HuggingFaceEndpoint(endpoint_url="", task="text-generation", model_kwargs={"max_new_tokens": 10})
+    llm.save(file_path=tmp_path / "hf.yaml")
     loaded_llm = load_llm(tmp_path / "hf.yaml")
     assert_llm_equality(llm, loaded_llm)
