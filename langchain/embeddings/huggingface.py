@@ -103,11 +103,8 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             from InstructorEmbedding import INSTRUCTOR
 
             self.client = INSTRUCTOR(self.model_name)
-        except ImportError:
-            raise ValueError(
-                "Could not import InstructorEmbedding python package. "
-                "Please install it with `pip install InstructorEmbedding`."
-            )
+        except ImportError as e:
+            raise ValueError("Dependencies for InstructorEmbedding not found.") from e
 
     class Config:
         """Configuration for this pydantic object."""
