@@ -1,5 +1,4 @@
 """Chain that just formats a prompt and calls an LLM."""
-import re
 from string import Formatter
 from typing import Any, Dict, List, Sequence, Union
 
