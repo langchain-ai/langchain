@@ -6,7 +6,11 @@ from pydantic import BaseModel, Extra
 from langchain.embeddings.base import Embeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
-DEFAULT_INSTRUCTION = "Represent the following text:"
+DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
+DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
+DEFAULT_QUERY_INSTRUCTION = (
+    "Represent the question for retrieving supporting documents: "
+)
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
@@ -80,15 +84,17 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import HuggingFaceInstructEmbeddings
-            model_name = TODO
+            model_name = "hkunlp/instructor-large"
             hf = HuggingFaceInstructEmbeddings(model_name=model_name)
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_MODEL_NAME
+    model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
-    instruction: str = DEFAULT_INSTRUCTION
-    """Instruction to use."""
+    embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
+    """Instruction to use for embedding documents."""
+    query_instruction: str = DEFAULT_QUERY_INSTRUCTION
+    """Instruction to use for embedding query."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -119,7 +125,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         """
         instruction_pairs = []
         for text in texts:
-            instruction_pairs.append([self.instruction, text])
+            instruction_pairs.append([self.embed_instruction, text])
         embeddings = self.client.encode(instruction_pairs)
         return embeddings.tolist()
 
@@ -132,6 +138,6 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        instruction_pair = [self.instruction, text]
+        instruction_pair = [self.query_instruction, text]
         embedding = self.client.encode([instruction_pair])[0]
         return embedding.tolist()
