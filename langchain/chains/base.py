@@ -111,7 +111,7 @@ class Chain(BaseModel, ABC):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
 
-    async def _async_call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
         raise NotImplementedError("Async call not supported for this chain type.")
 
@@ -143,7 +143,7 @@ class Chain(BaseModel, ABC):
         self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
         return self.prep_outputs(inputs, outputs, return_only_outputs)
 
-    async def async_call(
+    async def acall(
         self, inputs: Union[Dict[str, Any], Any], return_only_outputs: bool = False
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
@@ -164,7 +164,7 @@ class Chain(BaseModel, ABC):
             verbose=self.verbose,
         )
         try:
-            outputs = await self._async_call(inputs)
+            outputs = await self._acall(inputs)
         except (KeyboardInterrupt, Exception) as e:
             self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
