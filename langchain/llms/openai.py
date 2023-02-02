@@ -115,11 +115,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    async def _async_generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        raise NotImplementedError("Async generation not implemented for OpenAI.")
-
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -139,21 +134,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         """
         # TODO: write a unit test for this
         params = self._invocation_params
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-
-        if params["max_tokens"] == -1:
-            if len(prompts) != 1:
-                raise ValueError(
-                    "max_tokens set to -1 not supported for multiple inputs."
-                )
-            params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
-        sub_prompts = [
-            prompts[i : i + self.batch_size]
-            for i in range(0, len(prompts), self.batch_size)
-        ]
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
         token_usage = {}
         # Get the token usage from the response.
@@ -168,9 +149,50 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     token_usage[_key] = response["usage"][_key]
                 else:
                     token_usage[_key] += response["usage"][_key]
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    async def _async_generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        params = self._invocation_params
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
+        choices = []
+        token_usage = {}
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        for _prompts in sub_prompts:
+            response = await self.client.acreate(prompt=_prompts, **params)
+            choices.extend(response["choices"])
+            _keys_to_use = _keys.intersection(response["usage"])
+            for _key in _keys_to_use:
+                if _key not in token_usage:
+                    token_usage[_key] = response["usage"][_key]
+                else:
+                    token_usage[_key] += response["usage"][_key]
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    def get_sub_prompts(self, params, prompts, stop):
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        if params["max_tokens"] == -1:
+            if len(prompts) != 1:
+                raise ValueError(
+                    "max_tokens set to -1 not supported for multiple inputs."
+                )
+            params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
+        sub_prompts = [
+            prompts[i: i + self.batch_size]
+            for i in range(0, len(prompts), self.batch_size)
+        ]
+        return sub_prompts
+
+    def create_llm_result(self, choices, prompts, token_usage):
         generations = []
         for i, prompt in enumerate(prompts):
-            sub_choices = choices[i * self.n : (i + 1) * self.n]
+            sub_choices = choices[i * self.n: (i + 1) * self.n]
             generations.append(
                 [
                     Generation(
