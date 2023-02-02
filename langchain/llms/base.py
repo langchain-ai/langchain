@@ -69,20 +69,17 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            if self.verbose:
-                self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__}, prompts
-                )
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+            )
             try:
                 output = self._generate(prompts, stop=stop)
-            except Exception as e:
-                if self.verbose:
-                    self.callback_manager.on_llm_error(e)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            if self.verbose:
-                self.callback_manager.on_llm_end(output)
+            self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
-        params = self._llm_dict()
+        params = self.dict()
         params["stop"] = stop
         llm_string = str(sorted([(k, v) for k, v in params.items()]))
         missing_prompts = []
@@ -95,24 +92,25 @@ class BaseLLM(BaseModel, ABC):
             else:
                 missing_prompts.append(prompt)
                 missing_prompt_idxs.append(i)
-        if self.verbose:
+        if len(missing_prompts) > 0:
             self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts
+                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
             )
-        try:
-            new_results = self._generate(missing_prompts, stop=stop)
-        except Exception as e:
-            if self.verbose:
-                self.callback_manager.on_llm_error(e)
-            raise e
-        if self.verbose:
-            self.callback_manager.on_llm_end(new_results)
-        for i, result in enumerate(new_results.generations):
-            existing_prompts[missing_prompt_idxs[i]] = result
-            prompt = prompts[missing_prompt_idxs[i]]
-            langchain.llm_cache.update(prompt, llm_string, result)
+            try:
+                new_results = self._generate(missing_prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            for i, result in enumerate(new_results.generations):
+                existing_prompts[missing_prompt_idxs[i]] = result
+                prompt = prompts[missing_prompt_idxs[i]]
+                langchain.llm_cache.update(prompt, llm_string, result)
+            llm_output = new_results.llm_output
+        else:
+            llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
-        return LLMResult(generations=generations, llm_output=new_results.llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text."""
@@ -154,8 +152,8 @@ class BaseLLM(BaseModel, ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
-    def _llm_dict(self) -> Dict:
-        """Return a dictionary of the prompt."""
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
@@ -181,7 +179,7 @@ class BaseLLM(BaseModel, ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self._llm_dict()
+        prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

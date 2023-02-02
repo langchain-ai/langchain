@@ -48,6 +48,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     search_engine: Any  #: :meta private:
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
+    k: int = 10
 
     class Config:
         """Configuration for this pydantic object."""
@@ -91,10 +92,37 @@ class GoogleSearchAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run query through GoogleSearch and parse result."""
         snippets = []
-        results = self._google_search_results(query, num=10)
+        results = self._google_search_results(query, num=self.k)
         if len(results) == 0:
             return "No good Google Search Result was found"
         for result in results:
             snippets.append(result["snippet"])
 
         return " ".join(snippets)
+
+    def results(self, query: str, num_results: int) -> List[Dict]:
+        """Run query through GoogleSearch and return metadata.
+
+        Args:
+            query: The query to search for.
+            num_results: The number of results to return.
+
+        Returns:
+            A list of dictionaries with the following keys:
+                snippet - The description of the result.
+                title - The title of the result.
+                link - The link to the result.
+        """
+        metadata_results = []
+        results = self._google_search_results(query, num=num_results)
+        if len(results) == 0:
+            return [{"Result": "No good Google Search Result was found"}]
+        for result in results:
+            metadata_result = {
+                "snippet": result["snippet"],
+                "title": result["title"],
+                "link": result["link"],
+            }
+            metadata_results.append(metadata_result)
+
+        return metadata_results

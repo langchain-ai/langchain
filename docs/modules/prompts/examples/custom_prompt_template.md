@@ -7,7 +7,7 @@ Let's suppose we want the LLM to generate English language explanations of a fun
 LangChain provides a set of default prompt templates that can be used to generate prompts for a variety of tasks. However, there may be cases where the default prompt templates do not meet your needs. For example, you may want to create a prompt template with specific dynamic instructions for your language model. In such cases, you can create a custom prompt template.
 
 :::{note}
-Take a look at the current set of default prompt templates [here](../prompt_templates.md).
+Take a look at the current set of default prompt templates [here](../getting_started.md).
 :::
 <!-- TODO(shreya): Add correct link here. -->
 
@@ -34,7 +34,7 @@ Next, we'll create a custom prompt template that takes in the function name as i
 
 ```python
 from langchain.prompts import BasePromptTemplate
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class FunctionExplainerPromptTemplate(BasePromptTemplate, BaseModel):
@@ -54,7 +54,7 @@ class FunctionExplainerPromptTemplate(BasePromptTemplate, BaseModel):
         # Generate the prompt to be sent to the language model
         prompt = f"""
         Given the function name and source code, generate an English language explanation of the function.
-        Function Name: {kwargs["function_name"]}
+        Function Name: {kwargs["function_name"].__name__}
         Source Code:
         {source_code}
         Explanation:

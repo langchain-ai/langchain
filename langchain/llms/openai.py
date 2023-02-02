@@ -182,7 +182,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
             generations=generations, llm_output={"token_usage": token_usage}
         )
 
-    def stream(self, prompt: str) -> Generator:
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
 
         BETA: this is a beta feature while we figure out the right abstraction.
@@ -190,6 +190,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
         Args:
             prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
 
         Returns:
             A generator representing the stream of tokens from OpenAI.
@@ -204,6 +205,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         if params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
         params["stream"] = True
         generator = self.client.create(prompt=prompt, **params)
 
@@ -249,7 +254,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
-        text-davinci-003: 4,000 tokens
+        text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
         text-ada-001: 2,048 tokens
@@ -268,7 +273,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
         if modelname == "text-davinci-003":
-            return 4000
+            return 4097
         elif modelname == "text-curie-001":
             return 2048
         elif modelname == "text-babbage-001":
@@ -280,7 +285,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         elif modelname == "code-cushman-001":
             return 2048
         else:
-            return 4000
+            return 4097
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.

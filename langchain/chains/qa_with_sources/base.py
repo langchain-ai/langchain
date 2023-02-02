@@ -12,6 +12,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.chains.qa_with_sources.loading import load_qa_with_sources_chain
 from langchain.chains.qa_with_sources.map_reduce_prompt import (
     COMBINE_PROMPT,
     EXAMPLE_PROMPT,
@@ -25,7 +26,7 @@ from langchain.prompts.base import BasePromptTemplate
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     """Question answering with sources over documents."""
 
-    combine_document_chain: BaseCombineDocumentsChain
+    combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
@@ -55,9 +56,17 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             document_variable_name="context",
         )
         return cls(
-            combine_document_chain=combine_document_chain,
+            combine_documents_chain=combine_document_chain,
             **kwargs,
         )
+
+    @classmethod
+    def from_chain_type(
+        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+    ) -> BaseQAWithSourcesChain:
+        """Load chain from chain type."""
+        combine_document_chain = load_qa_with_sources_chain(llm, chain_type=chain_type)
+        return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -81,11 +90,11 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         """
         return [self.answer_key, self.sources_answer_key]
 
-    @root_validator()
-    def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
-        """Validate that the combine chain can be constructed."""
-        # Try to construct the combine documents chains.
-
+    @root_validator(pre=True)
+    def validate_naming(cls, values: Dict) -> Dict:
+        """Fix backwards compatability in naming."""
+        if "combine_document_chain" in values:
+            values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
 
     @abstractmethod
@@ -94,7 +103,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = self._get_docs(inputs)
-        answer, _ = self.combine_document_chain.combine_docs(docs, **inputs)
+        answer, _ = self.combine_documents_chain.combine_docs(docs, **inputs)
         if "SOURCES: " in answer:
             answer, sources = answer.split("SOURCES: ")
         else:
@@ -117,3 +126,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)
+
+    @property
+    def _chain_type(self) -> str:
+        return "qa_with_sources_chain"

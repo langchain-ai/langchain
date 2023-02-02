@@ -19,6 +19,14 @@ def test_get_action_and_input() -> None:
     assert action_input == "NBA"
 
 
+def test_get_action_and_input_whitespace() -> None:
+    """Test getting an action from text."""
+    llm_output = "Thought: I need to search for NBA\nAction: Search \nAction Input: NBA"
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Search"
+    assert action_input == "NBA"
+
+
 def test_get_final_answer() -> None:
     """Test getting final answer."""
     llm_output = (
@@ -28,6 +36,21 @@ def test_get_final_answer() -> None:
         "Observation: founded in 1994\n"
         "Thought: I can now answer the question\n"
         "Final Answer: 1994"
+    )
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Final Answer"
+    assert action_input == "1994"
+
+
+def test_get_final_answer_new_line() -> None:
+    """Test getting final answer."""
+    llm_output = (
+        "Thought: I need to search for NBA\n"
+        "Action: Search\n"
+        "Action Input: NBA\n"
+        "Observation: founded in 1994\n"
+        "Thought: I can now answer the question\n"
+        "Final Answer:\n1994"
     )
     action, action_input = get_action_and_input(llm_output)
     assert action == "Final Answer"

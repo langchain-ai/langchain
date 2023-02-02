@@ -9,6 +9,8 @@ The examples here all address certain "how-to" guides for working with LLMs.
 
 `Custom LLM <./examples/custom_llm.html>`_: How to create and use a custom LLM class, in case you have an LLM not from one of the standard providers (including one that you host yourself).
 
+`Token Usage Tracking <./examples/token_usage_tracking.html>`_: How to track the token usage of various chains/agents/LLM calls.
+
 
 .. toctree::
    :maxdepth: 1

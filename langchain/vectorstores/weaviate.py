@@ -71,7 +71,9 @@ class Weaviate(VectorStore):
                 ids.append(_id)
         return ids
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Look up similar documents in weaviate."""
         content = {"concepts": [query]}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)

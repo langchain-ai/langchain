@@ -15,7 +15,12 @@ from langchain.prompts.base import BasePromptTemplate
 
 
 class ReActDocstoreAgent(Agent, BaseModel):
-    """Agent for the ReAct chin."""
+    """Agent for the ReAct chain."""
+
+    @property
+    def _agent_type(self) -> str:
+        """Return Identifier of agent type."""
+        return "react-docstore"
 
     @classmethod
     def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:

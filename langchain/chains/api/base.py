@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
+from langchain.prompts import BasePromptTemplate
 from langchain.requests import RequestsWrapper
 
 
@@ -17,7 +18,7 @@ class APIChain(Chain, BaseModel):
 
     api_request_chain: LLMChain
     api_answer_chain: LLMChain
-    requests_wrapper: RequestsWrapper
+    requests_wrapper: RequestsWrapper = Field(exclude=True)
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -65,11 +66,13 @@ class APIChain(Chain, BaseModel):
         api_url = self.api_request_chain.predict(
             question=question, api_docs=self.api_docs
         )
-        if self.verbose:
-            self.callback_manager.on_text(api_url, color="green", end="\n")
+        self.callback_manager.on_text(
+            api_url, color="green", end="\n", verbose=self.verbose
+        )
         api_response = self.requests_wrapper.run(api_url)
-        if self.verbose:
-            self.callback_manager.on_text(api_response, color="yellow", end="\n")
+        self.callback_manager.on_text(
+            api_response, color="yellow", end="\n", verbose=self.verbose
+        )
         answer = self.api_answer_chain.predict(
             question=question,
             api_docs=self.api_docs,
@@ -80,12 +83,18 @@ class APIChain(Chain, BaseModel):
 
     @classmethod
     def from_llm_and_api_docs(
-        cls, llm: BaseLLM, api_docs: str, headers: Optional[dict] = None, **kwargs: Any
+        cls,
+        llm: BaseLLM,
+        api_docs: str,
+        headers: Optional[dict] = None,
+        api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
+        api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
+        **kwargs: Any,
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
-        get_request_chain = LLMChain(llm=llm, prompt=API_URL_PROMPT)
+        get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
         requests_wrapper = RequestsWrapper(headers=headers)
-        get_answer_chain = LLMChain(llm=llm, prompt=API_RESPONSE_PROMPT)
+        get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
         return cls(
             api_request_chain=get_request_chain,
             api_answer_chain=get_answer_chain,
@@ -93,3 +102,7 @@ class APIChain(Chain, BaseModel):
             api_docs=api_docs,
             **kwargs,
         )
+
+    @property
+    def _chain_type(self) -> str:
+        return "api_chain"

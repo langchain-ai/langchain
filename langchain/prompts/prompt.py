@@ -31,6 +31,11 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
+    @property
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+        return "prompt"
+
     class Config:
         """Configuration for this pydantic object."""
 

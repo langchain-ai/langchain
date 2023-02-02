@@ -48,12 +48,23 @@ def check_valid_template(
         raise ValueError("Invalid prompt schema.")
 
 
-class BaseOutputParser(ABC):
+class BaseOutputParser(BaseModel, ABC):
     """Class to parse the output of an LLM call."""
 
     @abstractmethod
     def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
         """Parse the output of an LLM call."""
+
+    @property
+    def _type(self) -> str:
+        """Return the type key."""
+        raise NotImplementedError
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of output parser."""
+        output_parser_dict = super().dict()
+        output_parser_dict["_type"] = self._type
+        return output_parser_dict
 
 
 class ListOutputParser(BaseOutputParser):
@@ -64,12 +75,25 @@ class ListOutputParser(BaseOutputParser):
         """Parse the output of an LLM call."""
 
 
+class CommaSeparatedListOutputParser(ListOutputParser):
+    """Parse out comma separated lists."""
+
+    def parse(self, text: str) -> List[str]:
+        """Parse the output of an LLM call."""
+        return text.strip().split(", ")
+
+
 class RegexParser(BaseOutputParser, BaseModel):
     """Class to parse the output into a dictionary."""
 
     regex: str
     output_keys: List[str]
     default_output_key: Optional[str] = None
+
+    @property
+    def _type(self) -> str:
+        """Return the type key."""
+        return "regex_parser"
 
     def parse(self, text: str) -> Dict[str, str]:
         """Parse the output of an LLM call."""
@@ -102,7 +126,7 @@ class BasePromptTemplate(BaseModel, ABC):
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
-        """Validate variable names do not restricted names."""
+        """Validate variable names do not include restricted names."""
         if "stop" in values["input_variables"]:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
@@ -127,9 +151,16 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    def _prompt_dict(self) -> Dict:
-        """Return a dictionary of the prompt."""
-        return self.dict()
+    @property
+    @abstractmethod
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of prompt."""
+        prompt_dict = super().dict(**kwargs)
+        prompt_dict["_type"] = self._prompt_type
+        return prompt_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
@@ -152,7 +183,7 @@ class BasePromptTemplate(BaseModel, ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self._prompt_dict()
+        prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:

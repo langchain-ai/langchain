@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -12,6 +12,19 @@ from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
+
+def dependable_faiss_import() -> Any:
+    """Import faiss if available, otherwise raise error."""
+    try:
+        import faiss
+    except ImportError:
+        raise ValueError(
+            "Could not import faiss python package. "
+            "Please it install it with `pip install faiss` "
+            "or `pip install faiss-cpu` (depending on Python version)."
+        )
+    return faiss
 
 
 class FAISS(VectorStore):
@@ -77,7 +90,35 @@ class FAISS(VectorStore):
         self.index_to_docstore_id.update(index_to_id)
         return [_id for _, _id, _ in full_info]
 
-    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+    def similarity_search_with_score(
+        self, query: str, k: int = 4
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        embedding = self.embedding_function(query)
+        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
+        docs = []
+        for j, i in enumerate(indices[0]):
+            if i == -1:
+                # This happens when not enough docs are returned.
+                continue
+            _id = self.index_to_docstore_id[i]
+            doc = self.docstore.search(_id)
+            if not isinstance(doc, Document):
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            docs.append((doc, scores[0][j]))
+        return docs
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -87,19 +128,8 @@ class FAISS(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding_function(query)
-        _, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
-        docs = []
-        for i in indices[0]:
-            if i == -1:
-                # This happens when not enough docs are returned.
-                continue
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append(doc)
-        return docs
+        docs_and_scores = self.similarity_search_with_score(query, k)
+        return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
@@ -157,14 +187,7 @@ class FAISS(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 faiss = FAISS.from_texts(texts, embeddings)
         """
-        try:
-            import faiss
-        except ImportError:
-            raise ValueError(
-                "Could not import faiss python package. "
-                "Please it install it with `pip install faiss` "
-                "or `pip install faiss-cpu` (depending on Python version)."
-            )
+        faiss = dependable_faiss_import()
         embeddings = embedding.embed_documents(texts)
         index = faiss.IndexFlatL2(len(embeddings[0]))
         index.add(np.array(embeddings, dtype=np.float32))
@@ -177,3 +200,21 @@ class FAISS(VectorStore):
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
         return cls(embedding.embed_query, index, docstore, index_to_id)
+
+    def save_local(self, path: str) -> None:
+        """Save FAISS index to disk.
+
+        Args:
+            path: Path to save FAISS index to.
+        """
+        faiss = dependable_faiss_import()
+        faiss.write_index(self.index, path)
+
+    def load_local(self, path: str) -> None:
+        """Load FAISS index from disk.
+
+        Args:
+            path: Path to load FAISS index from.
+        """
+        faiss = dependable_faiss_import()
+        self.index = faiss.read_index(path)

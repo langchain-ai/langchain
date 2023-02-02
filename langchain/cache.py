@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, declarative_base
 
 from langchain.schema import Generation
 
@@ -60,7 +59,7 @@ class SQLAlchemyCache(BaseCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
-        Base.metadata.create_all(self.engine)
+        self.cache_schema.metadata.create_all(self.engine)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""

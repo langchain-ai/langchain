@@ -1,7 +1,10 @@
 """Base interface that all chains should implement."""
+import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import yaml
 from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
@@ -44,7 +47,9 @@ class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
     memory: Optional[Memory] = None
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    callback_manager: BaseCallbackManager = Field(
+        default_factory=get_callback_manager, exclude=True
+    )
     verbose: bool = Field(
         default_factory=_get_verbosity
     )  # Whether to print the response text
@@ -53,6 +58,10 @@ class Chain(BaseModel, ABC):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @property
+    def _chain_type(self) -> str:
+        raise NotImplementedError("Saving not supported for this chain type.")
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(
@@ -134,18 +143,17 @@ class Chain(BaseModel, ABC):
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
         self._validate_inputs(inputs)
-        if self.verbose:
-            self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__}, inputs
-            )
+        self.callback_manager.on_chain_start(
+            {"name": self.__class__.__name__},
+            inputs,
+            verbose=self.verbose,
+        )
         try:
             outputs = self._call(inputs)
-        except Exception as e:
-            if self.verbose:
-                self.callback_manager.on_chain_error(e)
+        except (KeyboardInterrupt, Exception) as e:
+            self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
-        if self.verbose:
-            self.callback_manager.on_chain_end(outputs)
+        self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
         self._validate_outputs(outputs)
         if self.memory is not None:
             self.memory.save_context(inputs, outputs)
@@ -178,3 +186,43 @@ class Chain(BaseModel, ABC):
             f"`run` supported with either positional arguments or keyword arguments"
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of chain."""
+        if self.memory is not None:
+            raise ValueError("Saving of memory is not yet supported.")
+        _dict = super().dict()
+        _dict["_type"] = self._chain_type
+        return _dict
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Save the chain.
+
+        Args:
+            file_path: Path to file to save the chain to.
+
+        Example:
+        .. code-block:: python
+
+            chain.save(file_path="path/chain.yaml")
+        """
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Fetch dictionary to save
+        chain_dict = self.dict()
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(chain_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(chain_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")
