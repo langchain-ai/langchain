@@ -26,7 +26,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
             hf = HuggingFaceEndpoint(endpoint_url="https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud", huggingfacehub_api_token="my-api-key")
     """
 
-    endpoint_url: str = None
+    endpoint_url: str = ""
     """Endpoint URL to use."""
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
@@ -72,7 +72,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.repo_id, "task": self.task},
+            **{"endpoint_url": self.endpoint_url, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
 
@@ -111,10 +111,10 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         }
 
         # send request
-        response = requests.post(self.endpoint_url, headers=headers, json=parameter_payload)
-
-        if "error" in response:
-            raise ValueError(f"Error raised by inference endpoint: {response['error']}")
+        try:
+            response = requests.post(self.endpoint_url, headers=headers, json=parameter_payload)
+        except requests.exceptions.RequestException as e:  # This is the correct syntax
+            raise ValueError(f"Error raised by inference endpoint: {e}")
         if self.task == "text-generation":
             # Text generation return includes the starter text.
             generated_text = response.json()
