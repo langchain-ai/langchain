@@ -6,8 +6,7 @@ https://aclanthology.org/P02-1040.pdf
 from typing import Dict, List
 
 import numpy as np
-from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu  # type: ignore
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
@@ -21,6 +20,11 @@ def ngram_overlap_score(source: List[str], example: List[str]) -> float:
     https://www.nltk.org/_modules/nltk/translate/bleu_score.html
     https://aclanthology.org/P02-1040.pdf
     """
+    from nltk.translate.bleu_score import (  # type: ignore
+        SmoothingFunction,
+        sentence_bleu,
+    )
+
     hypotheses = source[0].split()
     references = [s.split() for s in example]
 
@@ -58,6 +62,21 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     select_examples sorts examples by ngram_overlap_score,
     and excludes examples with no ngram overlap with input.
     """
+
+    @root_validator(pre=True)
+    def check_dependencies(cls, values: Dict) -> Dict:
+        """Check that valid dependencies exist."""
+        try:
+            from nltk.translate.bleu_score import (  # type: ignore
+                SmoothingFunction,
+                sentence_bleu,
+            )
+        except ImportError as e:
+            raise ValueError(
+                "Not all the correct dependencies for this ExampleSelect exist"
+            ) from e
+
+        return values
 
     def add_example(self, example: Dict[str, str]) -> None:
         """Add new example to list."""
