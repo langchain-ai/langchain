@@ -10,7 +10,7 @@ def generate_serially():
 
 
 async def async_generate(llm):
-    resp = await llm.async_generate(["Hello, how are you?"])
+    resp = await llm.agenerate(["Hello, how are you?"])
     # print(resp)
 
 

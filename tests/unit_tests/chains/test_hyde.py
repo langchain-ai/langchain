@@ -33,7 +33,7 @@ class FakeLLM(BaseLLM, BaseModel):
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
-    async def _async_generate(
+    async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])

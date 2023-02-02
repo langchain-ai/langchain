@@ -186,7 +186,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     token_usage[_key] += response["usage"][_key]
         return self.create_llm_result(choices, prompts, token_usage)
 
-    async def _async_generate(
+    async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         params = self._invocation_params
