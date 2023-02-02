@@ -1,5 +1,6 @@
-from langchain.llms import OpenAI
 import asyncio
+
+from langchain.llms import OpenAI
 
 
 def generate_serially():
@@ -22,6 +23,7 @@ async def generate_concurrently():
 
 if __name__ == "__main__":
     import time
+
     s = time.perf_counter()
     asyncio.run(generate_concurrently())
     elapsed = time.perf_counter() - s

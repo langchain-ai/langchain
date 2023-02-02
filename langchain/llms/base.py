@@ -2,7 +2,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union, Tuple
 
 import yaml
 from pydantic import BaseModel, Extra, Field, validator
@@ -17,7 +17,8 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-def get_prompts(params, prompts):
+def get_prompts(params: Dict[str, Any], prompts: List[str]) -> tuple[Dict[int, list], str, list[int], list[str]]:
+    """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
@@ -32,7 +33,10 @@ def get_prompts(params, prompts):
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
-def get_llm_output(existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts):
+def get_llm_output(
+    existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+):
+    """Get the LLM output."""
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -111,7 +115,12 @@ class BaseLLM(BaseModel, ABC):
             return output
         params = self.dict()
         params["stop"] = stop
-        existing_prompts, llm_string, missing_prompt_idxs, missing_prompts = get_prompts(params, prompts)
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             self.callback_manager.on_llm_start(
                 {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
@@ -122,7 +131,9 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-            llm_output = get_llm_output(existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts)
+            llm_output = get_llm_output(
+                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+            )
         else:
             llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
@@ -150,7 +161,12 @@ class BaseLLM(BaseModel, ABC):
             return output
         params = self.dict()
         params["stop"] = stop
-        existing_prompts, llm_string, missing_prompt_idxs, missing_prompts = get_prompts(params, prompts)
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             self.callback_manager.on_llm_start(
                 {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
@@ -161,7 +177,9 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-            llm_output = get_llm_output(existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts)
+            llm_output = get_llm_output(
+                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+            )
         else:
             llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
