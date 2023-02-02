@@ -22,7 +22,6 @@ from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
 __all__ = [
-    "APIChain",
     "ConversationChain",
     "LLMChain",
     "LLMBashChain",
