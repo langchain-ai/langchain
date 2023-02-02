@@ -4,11 +4,17 @@ import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
+from tenacity import (
+    after_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, after_log
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +124,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def completion_with_retry(self, **kwargs: Any):
+    def completion_with_retry(self, **kwargs: Any) -> Any:
         """Use tenacity to retry the completion call."""
         import openai
 
@@ -132,14 +138,14 @@ class BaseOpenAI(BaseLLM, BaseModel):
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
-                    retry_if_exception_type(openai.error.Timeout) |
-                    retry_if_exception_type(openai.error.APIError) |
-                    retry_if_exception_type(openai.error.APIConnectionError) |
-                    retry_if_exception_type(openai.error.RateLimitError)
+                retry_if_exception_type(openai.error.Timeout)
+                | retry_if_exception_type(openai.error.APIError)
+                | retry_if_exception_type(openai.error.APIConnectionError)
+                | retry_if_exception_type(openai.error.RateLimitError)
             ),
-            after=after_log(logger, logging.DEBUG)
+            after=after_log(logger, logging.DEBUG),
         )
-        def _completion_with_retry(**kwargs: Any):
+        def _completion_with_retry(**kwargs: Any) -> Any:
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
