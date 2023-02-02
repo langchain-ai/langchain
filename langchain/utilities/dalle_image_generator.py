@@ -58,5 +58,4 @@ class DallEAPIWrapper(BaseModel):
             # We don't want to return the assumption alone if answer is empty
             return "No image was generated"
         else:
-            print(image_url)
             return image_url
