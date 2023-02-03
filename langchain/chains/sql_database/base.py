@@ -21,7 +21,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
             from langchain import SQLDatabaseChain, OpenAI, SQLDatabase
             db = SQLDatabase(...)
-            db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
+            db_chain = SQLDatabaseChain(llm=OpenAI(), database=db)
     """
 
     llm: BaseLLM

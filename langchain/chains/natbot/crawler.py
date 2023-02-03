@@ -336,7 +336,7 @@ class Crawler:
                 element_node_value = strings[node_value[index]]
                 if (
                     element_node_value == "|"
-                ):  # commonly used as a seperator, does not add much context - lets save ourselves some token space
+                ):  # commonly used as a separator, does not add much context - lets save ourselves some token space
                     continue
             elif (
                 node_name == "input"

@@ -1,4 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
+from string import Formatter
 from typing import Any, Dict, List, Sequence, Union
 
 from pydantic import BaseModel, Extra
@@ -7,6 +8,7 @@ from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult
 
 
@@ -126,3 +128,14 @@ class LLMChain(Chain, BaseModel):
     @property
     def _chain_type(self) -> str:
         return "llm_chain"
+
+    @classmethod
+    def from_string(cls, llm: BaseLLM, template: str) -> Chain:
+        """Create LLMChain from LLM and template."""
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+        prompt_template = PromptTemplate(
+            input_variables=list(input_variables), template=template
+        )
+        return cls(llm=llm, prompt=prompt_template)
