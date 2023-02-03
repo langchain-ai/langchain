@@ -162,7 +162,7 @@ This is one of the simpler types of chains, but understanding how it works will 
 
 `````{dropdown} Agents: Dynamically call chains based on user input
 
-So for the chains we've looked at run in a predetermined order.
+So far the chains we've looked at run in a predetermined order.
 
 Agents no longer do: they use an LLM to determine which actions to take and in what order. An action can either be using a tool and observing its output, or returning to the user.
 
