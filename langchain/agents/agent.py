@@ -481,7 +481,6 @@ class AgentExecutor(Chain, BaseModel):
                 self.callback_manager.on_tool_start(
                     {"name": str(tool.func)[:60] + "..."},
                     output,
-                    color="green",
                     verbose=self.verbose,
                 )
                 try:
@@ -494,7 +493,7 @@ class AgentExecutor(Chain, BaseModel):
                     raise e
             else:
                 self.callback_manager.on_tool_start(
-                    {"name": "N/A"}, output, color="green", verbose=self.verbose
+                    {"name": "N/A"}, output, verbose=self.verbose
                 )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None

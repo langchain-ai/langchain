@@ -66,7 +66,7 @@ def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
 def _get_llm_math(llm: BaseLLM) -> Tool:
     return Tool(
         "Calculator",
-        LLMMathChain(llm=llm).run,
+        LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
         "Useful for when you need to answer questions about math.",
     )
 
@@ -74,7 +74,7 @@ def _get_llm_math(llm: BaseLLM) -> Tool:
 def _get_llm_math_async(llm: BaseLLM) -> Tool:
     return Tool(
         "Calculator (Async)",
-        LLMMathChain(llm=llm).arun,
+        LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
         "Useful for when you need to answer questions about math.",
     )
 
