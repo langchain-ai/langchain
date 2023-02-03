@@ -37,6 +37,7 @@ qdrant-client = {version = "^0.11.7", optional = true}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
 tenacity = "^8.1.0"
+aiohttp = "^3.8.3"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
