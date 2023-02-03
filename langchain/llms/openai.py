@@ -1,7 +1,7 @@
 """Wrapper around OpenAI APIs."""
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union, Set
+from typing import Any, Dict, Generator, List, Mapping, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
@@ -19,7 +19,9 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def update_token_usage(keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]) -> None:
+def update_token_usage(
+    keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
+) -> None:
     """Update token usage."""
     _keys_to_use = keys.intersection(response["usage"])
     for _key in _keys_to_use:
@@ -181,7 +183,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
-        token_usage = {}
+        token_usage: Dict[str, int] = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -198,7 +200,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
-        token_usage = {}
+        token_usage: Dict[str, int] = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -208,7 +210,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
             update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
-    def get_sub_prompts(self, params, prompts, stop):
+    def get_sub_prompts(
+        self,
+        params: Dict[str, Any],
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+    ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
             if "stop" in params:
@@ -221,15 +228,18 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 )
             params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
         sub_prompts = [
-            prompts[i: i + self.batch_size]
+            prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
         return sub_prompts
 
-    def create_llm_result(self, choices, prompts, token_usage):
+    def create_llm_result(
+        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
+    ) -> LLMResult:
+        """Create the LLMResult from the choices and prompts."""
         generations = []
         for i, prompt in enumerate(prompts):
-            sub_choices = choices[i * self.n: (i + 1) * self.n]
+            sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
                 [
                     Generation(
