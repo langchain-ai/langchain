@@ -1,5 +1,4 @@
 """Test ElasticSearch functionality."""
-from typing import List
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch

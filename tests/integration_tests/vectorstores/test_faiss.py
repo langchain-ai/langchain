@@ -1,6 +1,5 @@
 """Test FAISS functionality."""
 import tempfile
-from typing import List
 
 import pytest
 

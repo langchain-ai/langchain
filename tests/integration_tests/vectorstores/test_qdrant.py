@@ -1,6 +1,4 @@
 """Test Qdrant functionality."""
-from typing import List
-
 from langchain.docstore.document import Document
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings

@@ -3,8 +3,8 @@ from typing import List
 
 from langchain.embeddings.base import Embeddings
 
-
 fake_texts = ["foo", "bar", "baz"]
+
 
 class FakeEmbeddings(Embeddings):
     """Fake embeddings functionality for testing."""
