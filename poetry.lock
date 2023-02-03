@@ -25,6 +25,28 @@ files = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.2.0"
+description = "Library for accessing the anthropic API"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+develop = false
+
+[package.dependencies]
+requests = "*"
+tqdm = ">=4.64.0"
+
+[package.extras]
+dev = ["black (>=22.3.0)"]
+
+[package.source]
+type = "git"
+url = "ssh://git@github.com/anthropics/api.git"
+reference = "HEAD"
+resolved_reference = "e8f146dc6d32c1a4998cac11e229e448ee65e1d2"
+
+[[package]]
 name = "anyio"
 version = "3.6.2"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"

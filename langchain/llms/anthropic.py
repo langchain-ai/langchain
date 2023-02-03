@@ -113,7 +113,7 @@ class Anthropic(LLM, BaseModel):
         if instruct_mode:
             # Wrap the prompt so it emulates an instruction following model.
             prompt = f"{anthropic.HUMAN_PROMPT} prompt{anthropic.AI_PROMPT} Sure, here you go:\n"
-         
+
         response = self.client.completion(
             model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
         )
@@ -139,4 +139,5 @@ class Anthropic(LLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        return self.client.completion_stream(prompt=prompt, stop_sequences=stop, **self._default_params)
+        return self.client.completion_stream(model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params)
+
