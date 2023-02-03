@@ -71,6 +71,14 @@ def _get_llm_math(llm: BaseLLM) -> Tool:
     )
 
 
+def _get_llm_math_async(llm: BaseLLM) -> Tool:
+    return Tool(
+        "Calculator (Async)",
+        LLMMathChain(llm=llm).arun,
+        "Useful for when you need to answer questions about math.",
+    )
+
+
 def _get_open_meteo_api(llm: BaseLLM) -> Tool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
@@ -84,6 +92,7 @@ _LLM_TOOLS = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
+    "async-llm-math": _get_llm_math_async,
     "open-meteo-api": _get_open_meteo_api,
 }
 
