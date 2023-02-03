@@ -1,14 +1,17 @@
+import re
+
 import pytest
 
 from langchain.utilities.normalization import normalize_boolean_output
 
-import re
-import pytest
 
 def test_normalize_boolean_output():
     def run_test(input_string, expected_output, true_values=["1"], false_values=["0"]):
-        assert normalize_boolean_output(input_string, true_values, false_values) == expected_output
-    
+        assert (
+            normalize_boolean_output(input_string, true_values, false_values)
+            == expected_output
+        )
+
     run_test("0", False)
     run_test("1", True)
     run_test("\n1\n", True)
