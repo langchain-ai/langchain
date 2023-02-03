@@ -2,7 +2,7 @@
 import asyncio
 from dataclasses import dataclass
 from inspect import signature
-from typing import Any, Callable, Coroutine, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
 
 @dataclass
@@ -13,6 +13,8 @@ class Tool:
     func: Callable[[str], str]
     description: Optional[str] = None
     return_direct: bool = False
+    # If the tool has a coroutine, then we can use this to run it asynchronously
+    coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """Make tools callable by piping through to `func`."""

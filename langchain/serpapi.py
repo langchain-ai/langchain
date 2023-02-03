@@ -4,7 +4,7 @@ Heavily borrowed from https://github.com/ofirpress/self-ask
 """
 import os
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -110,7 +110,7 @@ class SerpAPIWrapper(BaseModel):
     async def arun(self, query: str) -> str:
         """Use aiohttp to run query through SerpAPI and parse result."""
 
-        def construct_url_and_params():
+        def construct_url_and_params() -> Tuple[str, Dict[str, str]]:
             params = self.get_params(query)
             params["source"] = "python"
             if self.serpapi_api_key:
@@ -134,7 +134,8 @@ class SerpAPIWrapper(BaseModel):
             res = search.get_dict()
         return process_response(res)
 
-    def get_params(self, query):
+    def get_params(self, query: str) -> Dict[str, str]:
+        """Get parameters for SerpAPI."""
         _params = {
             "api_key": self.serpapi_api_key,
             "q": query,
@@ -143,6 +144,6 @@ class SerpAPIWrapper(BaseModel):
         return params
 
 
-# For backwards compatability
+# For backwards compatibility
 
 SerpAPIChain = SerpAPIWrapper

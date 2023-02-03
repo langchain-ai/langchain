@@ -1,6 +1,6 @@
 """Chain that just formats a prompt and calls an LLM."""
 from string import Formatter
-from typing import Any, Dict, List, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import BaseModel, Extra
 
@@ -66,7 +66,10 @@ class LLMChain(Chain, BaseModel):
         response = await self.llm.agenerate(prompts, stop=stop)
         return response
 
-    def prep_prompts(self, input_list):
+    def prep_prompts(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[List[str], Optional[List[str]]]:
+        """Prepare prompts from inputs."""
         stop = None
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
@@ -94,7 +97,8 @@ class LLMChain(Chain, BaseModel):
         response = await self.agenerate(input_list)
         return self.create_outputs(response)
 
-    def create_outputs(self, response):
+    def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
+        """Create outputs from response."""
         outputs = []
         for generation in response.generations:
             # Get the text of the top generated string.

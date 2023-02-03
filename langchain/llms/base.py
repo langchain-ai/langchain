@@ -19,30 +19,36 @@ def _get_verbosity() -> bool:
 
 def get_prompts(
     params: Dict[str, Any], prompts: List[str]
-) -> tuple[Dict[int, list], str, list[int], list[str]]:
+) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
     for i, prompt in enumerate(prompts):
-        cache_val = langchain.llm_cache.lookup(prompt, llm_string)
-        if isinstance(cache_val, list):
-            existing_prompts[i] = cache_val
-        else:
-            missing_prompts.append(prompt)
-            missing_prompt_idxs.append(i)
+        if langchain.llm_cache is not None:
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                existing_prompts[i] = cache_val
+            else:
+                missing_prompts.append(prompt)
+                missing_prompt_idxs.append(i)
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
-def get_llm_output(
-    existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
-):
-    """Get the LLM output."""
+def update_cache(
+    existing_prompts: Dict[int, List],
+    llm_string: str,
+    missing_prompt_idxs: List[int],
+    new_results: LLMResult,
+    prompts: List[str],
+) -> Optional[dict]:
+    """Update the cache and get the LLM output."""
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
-        langchain.llm_cache.update(prompt, llm_string, result)
+        if langchain.llm_cache is not None:
+            langchain.llm_cache.update(prompt, llm_string, result)
     llm_output = new_results.llm_output
     return llm_output
 
@@ -133,7 +139,7 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-            llm_output = get_llm_output(
+            llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
         else:
@@ -144,6 +150,7 @@ class BaseLLM(BaseModel, ABC):
     async def agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
         disregard_cache = self.cache is not None and not self.cache
         if langchain.llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
@@ -179,7 +186,7 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-            llm_output = get_llm_output(
+            llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
         else:

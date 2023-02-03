@@ -65,17 +65,10 @@ def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
 
 def _get_llm_math(llm: BaseLLM) -> Tool:
     return Tool(
-        "Calculator",
-        LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
-        "Useful for when you need to answer questions about math.",
-    )
-
-
-def _get_llm_math_async(llm: BaseLLM) -> Tool:
-    return Tool(
-        "Calculator (Async)",
-        LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
-        "Useful for when you need to answer questions about math.",
+        name="Calculator",
+        description="Useful for when you need to answer questions about math.",
+        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
+        coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
     )
 
 
@@ -92,7 +85,6 @@ _LLM_TOOLS = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
-    "async-llm-math": _get_llm_math_async,
     "open-meteo-api": _get_open_meteo_api,
 }
 
@@ -141,17 +133,10 @@ def _get_google_search(**kwargs: Any) -> Tool:
 
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
-        "Search",
-        SerpAPIWrapper(**kwargs).run,
-        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
-def _get_serpapi_async(**kwargs: Any) -> Tool:
-    return Tool(
-        "Search (Async)",
-        SerpAPIWrapper(**kwargs).arun,
-        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        name="Search",
+        description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        func=SerpAPIWrapper(**kwargs).run,
+        coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 
 
@@ -163,7 +148,6 @@ _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key"]),
-    "async-serpapi": (_get_serpapi_async, ["serpapi_api_key"]),
 }
 
 

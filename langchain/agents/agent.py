@@ -98,7 +98,7 @@ class Agent(BaseModel):
         Returns:
             Action specifying what tool to use.
         """
-        full_inputs = self.get_full_inputs(intermediate_steps, kwargs)
+        full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         action = self._get_next_action(full_inputs)
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
@@ -117,13 +117,16 @@ class Agent(BaseModel):
         Returns:
             Action specifying what tool to use.
         """
-        full_inputs = self.get_full_inputs(intermediate_steps, kwargs)
+        full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         action = await self._aget_next_action(full_inputs)
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
 
-    def get_full_inputs(self, intermediate_steps, kwargs):
+    def get_full_inputs(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Create the full inputs for the LLMChain from intermediate steps."""
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
@@ -374,7 +377,6 @@ class AgentExecutor(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
-
         # Make sure that every tool is synchronous (not a coroutine)
         for tool in self.tools:
             if asyncio.iscoroutinefunction(tool.func):
@@ -447,13 +449,11 @@ class AgentExecutor(Chain, BaseModel):
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
-
         # Make sure that every tool is asynchronous (a coroutine)
         for tool in self.tools:
-            if not asyncio.iscoroutinefunction(tool.func):
+            if not asyncio.iscoroutinefunction(tool.coroutine):
                 raise ValueError(
-                    "Tools must be asynchronous for `arun` method. "
-                    "Please use `run` instead."
+                    "The coroutine for the tool must be a coroutine function."
                 )
 
         # Do any preparation necessary when receiving a new input.
@@ -485,7 +485,11 @@ class AgentExecutor(Chain, BaseModel):
                 )
                 try:
                     # We then call the tool on the tool input to get an observation
-                    observation = await tool.func(output.tool_input)
+                    observation = (
+                        await tool.coroutine(output.tool_input)
+                        if tool.coroutine
+                        else tool.func(output.tool_input)
+                    )
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
                 except (KeyboardInterrupt, Exception) as e:

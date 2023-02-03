@@ -183,7 +183,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
-        token_usage = {}
+        token_usage: Dict[str, int] = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -200,7 +200,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
         choices = []
-        token_usage = {}
+        token_usage: Dict[str, int] = {}
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
@@ -210,7 +210,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
             update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
-    def get_sub_prompts(self, params, prompts, stop):
+    def get_sub_prompts(
+        self,
+        params: Dict[str, Any],
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+    ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
             if "stop" in params:
@@ -228,7 +233,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
         ]
         return sub_prompts
 
-    def create_llm_result(self, choices, prompts, token_usage):
+    def create_llm_result(
+        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
+    ) -> LLMResult:
+        """Create the LLMResult from the choices and prompts."""
         generations = []
         for i, prompt in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
