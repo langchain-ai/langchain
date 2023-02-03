@@ -64,7 +64,12 @@ class SQLDatabase:
         return self.get_table_info()
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
-        """Get information about specified tables."""
+        """Get information about specified tables.
+
+        If `sample_rows_in_table_info`, the specified number of sample rows will be
+        appended to each table description. This can increase performance as
+        demonstrated by Rajkumar et al, 2022 (https://arxiv.org/abs/2204.00498).
+        """
         all_table_names = self.get_table_names()
         if table_names is not None:
             missing_tables = set(table_names).difference(all_table_names)
