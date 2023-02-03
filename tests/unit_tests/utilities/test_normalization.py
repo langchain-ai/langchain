@@ -1,12 +1,18 @@
 import re
+from typing import List
 
 import pytest
 
 from langchain.utilities.normalization import normalize_boolean_output
 
 
-def test_normalize_boolean_output():
-    def run_test(input_string, expected_output, true_values=["1"], false_values=["0"]):
+def test_normalize_boolean_output() -> None:
+    def run_test(
+        input_string: str,
+        expected_output: bool,
+        true_values: List[str] = ["1"],
+        false_values: List[str] = ["0"],
+    ) -> None:
         assert (
             normalize_boolean_output(input_string, true_values, false_values)
             == expected_output
