@@ -41,6 +41,9 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
+    validate_template: bool = True
+    """Whether or not to try validating the template."""
+
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
@@ -61,11 +64,12 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
-        check_valid_template(
-            values["prefix"] + values["suffix"],
-            values["template_format"],
-            values["input_variables"],
-        )
+        if values["validate_template"]:
+            check_valid_template(
+                values["prefix"] + values["suffix"],
+                values["template_format"],
+                values["input_variables"],
+            )
         return values
 
     class Config:
