@@ -96,11 +96,6 @@ class Guard:
                 else:
                     return result
             except Exception as e:
-                # if template is in args add restriction to the end of the template
-                if "template" in kwargs:
-                    kwargs["template"] = (
-                        kwargs["template"] + f"the response {self.restrictions[0]}"
-                    )
                 self.retries = self.retries - 1
                 return wrapper(*args, **kwargs)
 
