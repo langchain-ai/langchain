@@ -31,6 +31,9 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
+    validate_template: bool = True
+    """Whether or not to try validating the template."""
+
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
@@ -61,9 +64,10 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
-        check_valid_template(
-            values["template"], values["template_format"], values["input_variables"]
-        )
+        if values["validate_template"]:
+            check_valid_template(
+                values["template"], values["template_format"], values["input_variables"]
+            )
         return values
 
     @classmethod
