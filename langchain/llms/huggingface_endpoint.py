@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace APIs."""
 from typing import Any, Dict, List, Mapping, Optional
-import json, requests
 
+import requests
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
@@ -9,6 +9,7 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 VALID_TASKS = ("text2text-generation", "text-generation")
+
 
 class HuggingFaceEndpoint(LLM, BaseModel):
     """Wrapper around HuggingFaceHub Inference Endpoints.
@@ -23,7 +24,13 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         .. code-block:: python
 
             from langchain import HuggingFaceEndpoint
-            hf = HuggingFaceEndpoint(endpoint_url="https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud", huggingfacehub_api_token="my-api-key")
+            endpoint_url = (
+                "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
+            )
+            hf = HuggingFaceEndpoint(
+                endpoint_url=endpoint_url,
+                huggingfacehub_api_token="my-api-key"
+            )
     """
 
     endpoint_url: str = ""
@@ -49,16 +56,16 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         try:
             from huggingface_hub.hf_api import HfApi
 
-            try: 
+            try:
                 HfApi(
-                endpoint="https://huggingface.co", # Can be a Private Hub endpoint.
-                token=huggingfacehub_api_token
+                    endpoint="https://huggingface.co",  # Can be a Private Hub endpoint.
+                    token=huggingfacehub_api_token,
                 ).whoami()
             except Exception as e:
                 raise ValueError(
                     "Could not authenticate with huggingface_hub. "
                     "Please check your API token."
-                )
+                ) from e
 
         except ImportError:
             raise ValueError(
@@ -99,20 +106,19 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         _model_kwargs = self.model_kwargs or {}
 
         # payload samples
-        parameter_payload = {
-            "inputs": prompt,
-            "parameters" : _model_kwargs
-        }
+        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
 
         # HTTP headers for authorization
-        headers= {
+        headers = {
             "Authorization": f"Bearer {self.huggingfacehub_api_token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         # send request
         try:
-            response = requests.post(self.endpoint_url, headers=headers, json=parameter_payload)
+            response = requests.post(
+                self.endpoint_url, headers=headers, json=parameter_payload
+            )
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             raise ValueError(f"Error raised by inference endpoint: {e}")
         if self.task == "text-generation":
