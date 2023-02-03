@@ -2,11 +2,11 @@
 
 Heavily borrowed from https://github.com/ofirpress/self-ask
 """
-import aiohttp
 import os
 import sys
 from typing import Any, Dict, Optional
 
+import aiohttp
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -109,13 +109,14 @@ class SerpAPIWrapper(BaseModel):
 
     async def arun(self, query: str) -> str:
         """Use aiohttp to run query through SerpAPI and parse result."""
+
         def construct_url_and_params():
             params = self.get_params(query)
-            params['source'] = 'python'
+            params["source"] = "python"
             if self.serpapi_api_key:
-                params['serp_api_key'] = self.serpapi_api_key
-            params['output'] = 'json'
-            url = 'https://serpapi.com/search'
+                params["serp_api_key"] = self.serpapi_api_key
+            params["output"] = "json"
+            url = "https://serpapi.com/search"
             return url, params
 
         async with aiohttp.ClientSession() as session:

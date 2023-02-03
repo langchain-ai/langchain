@@ -2,7 +2,7 @@
 import asyncio
 from dataclasses import dataclass
 from inspect import signature
-from typing import Any, Callable, Optional, Union, Coroutine
+from typing import Any, Callable, Coroutine, Optional, Union
 
 
 @dataclass

@@ -2,7 +2,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, validator
@@ -17,7 +17,9 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-def get_prompts(params: Dict[str, Any], prompts: List[str]) -> tuple[Dict[int, list], str, list[int], list[str]]:
+def get_prompts(
+    params: Dict[str, Any], prompts: List[str]
+) -> tuple[Dict[int, list], str, list[int], list[str]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []

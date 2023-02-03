@@ -1,7 +1,7 @@
 """Wrapper around OpenAI APIs."""
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union, Set
+from typing import Any, Dict, Generator, List, Mapping, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
@@ -19,7 +19,9 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-def update_token_usage(keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]) -> None:
+def update_token_usage(
+    keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
+) -> None:
     """Update token usage."""
     _keys_to_use = keys.intersection(response["usage"])
     for _key in _keys_to_use:
@@ -221,7 +223,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 )
             params["max_tokens"] = self.max_tokens_for_prompt(prompts[0])
         sub_prompts = [
-            prompts[i: i + self.batch_size]
+            prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
         return sub_prompts
@@ -229,7 +231,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def create_llm_result(self, choices, prompts, token_usage):
         generations = []
         for i, prompt in enumerate(prompts):
-            sub_choices = choices[i * self.n: (i + 1) * self.n]
+            sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
                 [
                     Generation(
