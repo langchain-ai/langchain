@@ -1,7 +1,8 @@
 """Interface for tools."""
+import asyncio
 from dataclasses import dataclass
 from inspect import signature
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Coroutine
 
 
 @dataclass
@@ -15,6 +16,8 @@ class Tool:
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """Make tools callable by piping through to `func`."""
+        if asyncio.iscoroutinefunction(self.func):
+            raise TypeError("Coroutine cannot be called directly")
         return self.func(*args, **kwargs)
 
 
