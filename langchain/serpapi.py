@@ -2,6 +2,7 @@
 
 Heavily borrowed from https://github.com/ofirpress/self-ask
 """
+import aiohttp
 import os
 import sys
 from typing import Any, Dict, Optional
@@ -32,6 +33,37 @@ def _get_default_params() -> dict:
         "gl": "us",
         "hl": "en",
     }
+
+
+def process_response(res: dict) -> str:
+    """Process response from SerpAPI."""
+    if "error" in res.keys():
+        raise ValueError(f"Got error from SerpAPI: {res['error']}")
+    if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
+        toret = res["answer_box"]["answer"]
+    elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
+        toret = res["answer_box"]["snippet"]
+    elif (
+        "answer_box" in res.keys()
+        and "snippet_highlighted_words" in res["answer_box"].keys()
+    ):
+        toret = res["answer_box"]["snippet_highlighted_words"][0]
+    elif (
+        "sports_results" in res.keys()
+        and "game_spotlight" in res["sports_results"].keys()
+    ):
+        toret = res["sports_results"]["game_spotlight"]
+    elif (
+        "knowledge_graph" in res.keys()
+        and "description" in res["knowledge_graph"].keys()
+    ):
+        toret = res["knowledge_graph"]["description"]
+    elif "snippet" in res["organic_results"][0].keys():
+        toret = res["organic_results"][0]["snippet"]
+
+    else:
+        toret = "No good search result found"
+    return toret
 
 
 class SerpAPIWrapper(BaseModel):
@@ -75,43 +107,39 @@ class SerpAPIWrapper(BaseModel):
             )
         return values
 
+    async def arun(self, query: str) -> str:
+        """Use aiohttp to run query through SerpAPI and parse result."""
+        def construct_url_and_params():
+            params = self.get_params(query)
+            params['source'] = 'python'
+            if self.serpapi_api_key:
+                params['serp_api_key'] = self.serpapi_api_key
+            params['output'] = 'json'
+            url = 'https://serpapi.com/search'
+            return url, params
+
+        async with aiohttp.ClientSession() as session:
+            url, params = construct_url_and_params()
+            async with session.get(url, params=params) as response:
+                res = await response.json()
+
+        return process_response(res)
+
     def run(self, query: str) -> str:
         """Run query through SerpAPI and parse result."""
+        params = self.get_params(query)
+        with HiddenPrints():
+            search = self.search_engine(params)
+            res = search.get_dict()
+        return process_response(res)
+
+    def get_params(self, query):
         _params = {
             "api_key": self.serpapi_api_key,
             "q": query,
         }
         params = {**self.params, **_params}
-        with HiddenPrints():
-            search = self.search_engine(params)
-            res = search.get_dict()
-        if "error" in res.keys():
-            raise ValueError(f"Got error from SerpAPI: {res['error']}")
-        if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
-            toret = res["answer_box"]["answer"]
-        elif "answer_box" in res.keys() and "snippet" in res["answer_box"].keys():
-            toret = res["answer_box"]["snippet"]
-        elif (
-            "answer_box" in res.keys()
-            and "snippet_highlighted_words" in res["answer_box"].keys()
-        ):
-            toret = res["answer_box"]["snippet_highlighted_words"][0]
-        elif (
-            "sports_results" in res.keys()
-            and "game_spotlight" in res["sports_results"].keys()
-        ):
-            toret = res["sports_results"]["game_spotlight"]
-        elif (
-            "knowledge_graph" in res.keys()
-            and "description" in res["knowledge_graph"].keys()
-        ):
-            toret = res["knowledge_graph"]["description"]
-        elif "snippet" in res["organic_results"][0].keys():
-            toret = res["organic_results"][0]["snippet"]
-
-        else:
-            toret = "No good search result found"
-        return toret
+        return params
 
 
 # For backwards compatability

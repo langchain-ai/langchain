@@ -147,6 +147,14 @@ def _get_serpapi(**kwargs: Any) -> Tool:
     )
 
 
+def _get_serpapi_async(**kwargs: Any) -> Tool:
+    return Tool(
+        "Search (Async)",
+        SerpAPIWrapper(**kwargs).arun,
+        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -155,6 +163,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key"]),
+    "async-serpapi": (_get_serpapi_async, ["serpapi_api_key"]),
 }
 
 
