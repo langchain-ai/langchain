@@ -48,3 +48,7 @@ This uses SerpAPI, a third party search API engine, to interact with Google Sear
 ## Guards
 
 The `@guard` directive can be used to prevent your chain or agent from outputting something you would rather avoid like a racist or off topic response.
+
+## Normalization
+
+The normalization functions (currently just boolean normalization) can take a llm response string and translate it to a standard python type or object.
