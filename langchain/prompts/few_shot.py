@@ -1,5 +1,5 @@
 """Prompt template that contains few shot examples."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -26,8 +26,8 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
 
-    suffix: str
-    """A prompt template string to put after the examples."""
+    suffix: Union[str, BasePromptTemplate]
+    """A PromptTemplate or prompt template string to put after the examples."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
@@ -35,8 +35,8 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: str = ""
-    """A prompt template string to put before the examples."""
+    prefix: Optional[Union[str, BasePromptTemplate]] = ""
+    """A PromptTemplate or prompt template string to put before the examples."""
 
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
@@ -108,7 +108,30 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
             self.example_prompt.format(**example) for example in examples
         ]
         # Create the overall template.
-        pieces = [self.prefix, *example_strings, self.suffix]
+        # Format the prefix and suffix if they are prompt templates.
+        if isinstance(self.prefix, BasePromptTemplate):
+            prefix_kwargs = {
+                k: v for k, v in kwargs.items() if k in self.prefix.input_variables
+            }
+            for k in prefix_kwargs.keys():
+                kwargs.pop(k)
+            prefix = self.prefix.format(**prefix_kwargs)
+        else:
+            prefix = self.prefix
+
+        if isinstance(self.suffix, BasePromptTemplate):
+            suffix_kwargs = {
+                k: v for k, v in kwargs.items() if k in self.suffix.input_variables
+            }
+            for k in suffix_kwargs.keys():
+                kwargs.pop(k)
+            suffix = self.suffix.format(
+                **suffix_kwargs,
+            )
+        else:
+            suffix = self.suffix
+
+        pieces = [prefix, *example_strings, suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
