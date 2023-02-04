@@ -1,6 +1,7 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import os
 import pickle
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
@@ -202,23 +203,37 @@ class FAISS(VectorStore):
         )
         return cls(embedding.embed_query, index, docstore, index_to_id)
 
-    def save_local(self, path: str) -> None:
+    def save_local(self, folder_path: str) -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: .pkl path to save index, docstore, and index_to_docstore_id to.
+            path: folder path to save index, docstore, and index_to_docstore_id to.
         """
-        print(type(self.index), type(self.docstore), type(self.index_to_docstore_id))
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
+
+        # save index separately since it is not picklable
+        faiss = dependable_faiss_import()
+        faiss.write_index(self.index, os.path.join(folder_path, "index.faiss"))
+
+        # save docstore and index_to_docstore_id
         pickle.dump(
-            (self.index, self.docstore, self.index_to_docstore_id), open(path, "wb")
+            (self.docstore, self.index_to_docstore_id),
+            open(os.path.join(folder_path, "index.pkl"), "wb"),
         )
 
-    def load_local(self, path: str) -> None:
-        """Save FAISS index, docstore, and index_to_docstore_id to disk.
+    def load_local(self, folder_path: str) -> None:
+        """Load FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: .pkl path to load index, docstore, and index_to_docstore_id from.
+            path: folder path to load index, docstore, and index_to_docstore_id from.
         """
-        self.index, self.docstore, self.index_to_docstore_id = pickle.load(
-            open(path, "rb")
+
+        # load index separately since it is not picklable
+        faiss = dependable_faiss_import()
+        self.index = faiss.read_index(os.path.join(folder_path, "index.faiss"))
+
+        # load docstore and index_to_docstore_id
+        self.docstore, self.index_to_docstore_id = pickle.load(
+            open(os.path.join(folder_path, "index.pkl"), "rb")
         )
