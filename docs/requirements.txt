@@ -1,4 +1,5 @@
 autodoc_pydantic==1.8.0
+dataclasses_json
 duckdb-engine
 freezegun
 myst_parser
