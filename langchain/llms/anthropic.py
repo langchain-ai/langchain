@@ -1,4 +1,5 @@
 """Wrapper around Anthropic APIs."""
+import importlib
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -22,6 +23,8 @@ class Anthropic(LLM, BaseModel):
     """
 
     client: Any  #: :meta private:
+    HUMAN_PROMPT: str  #: :meta private:
+    AI_PROMPT: str  #: :meta private:
     model: Optional[str] = None
     """Model name to use."""
 
@@ -108,11 +111,11 @@ class Anthropic(LLM, BaseModel):
         if stop is None:
             stop = []
         # Never want model to invent new turns of Human / Assistant dialog.
-        stop.extend([anthropic.HUMAN_PROMPT, anthropic.AI_PROMPT])
+        stop.extend([self.HUMAN_PROMPT, self.AI_PROMPT])
             
         if instruct_mode:
             # Wrap the prompt so it emulates an instruction following model.
-            prompt = f"{anthropic.HUMAN_PROMPT} prompt{anthropic.AI_PROMPT} Sure, here you go:\n"
+            prompt = f"{self.HUMAN_PROMPT} prompt{self.AI_PROMPT} Sure, here you go:\n"
 
         response = self.client.completion(
             model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
