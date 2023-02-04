@@ -83,7 +83,7 @@ class Anthropic(LLM, BaseModel):
         """Return type of llm."""
         return "anthropic"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None, instruct_mode: Boolean = True) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None, instruct_mode: bool = True) -> str:
         """Call out to Anthropic's completion endpoint.
         
         Will by default act like an instruction-following model, by wrapping the prompt with Human: and Assistant:
