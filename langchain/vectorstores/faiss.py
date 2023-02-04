@@ -1,6 +1,7 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import pickle
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -202,19 +203,22 @@ class FAISS(VectorStore):
         return cls(embedding.embed_query, index, docstore, index_to_id)
 
     def save_local(self, path: str) -> None:
-        """Save FAISS index to disk.
+        """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: Path to save FAISS index to.
+            path: .pkl path to save index, docstore, and index_to_docstore_id to.
         """
-        faiss = dependable_faiss_import()
-        faiss.write_index(self.index, path)
+        print(type(self.index), type(self.docstore), type(self.index_to_docstore_id))
+        pickle.dump(
+            (self.index, self.docstore, self.index_to_docstore_id), open(path, "wb")
+        )
 
     def load_local(self, path: str) -> None:
-        """Load FAISS index from disk.
+        """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: Path to load FAISS index from.
+            path: .pkl path to load index, docstore, and index_to_docstore_id from.
         """
-        faiss = dependable_faiss_import()
-        self.index = faiss.read_index(path)
+        self.index, self.docstore, self.index_to_docstore_id = pickle.load(
+            open(path, "rb")
+        )
