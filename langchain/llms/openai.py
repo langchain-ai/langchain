@@ -4,6 +4,13 @@ import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
+from tenacity import (
+    after_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
@@ -56,6 +63,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -115,6 +124,32 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
+    def completion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
+        import openai
+
+        min_seconds = 4
+        max_seconds = 10
+        # Wait 2^x * 1 second between each retry starting with
+        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+            retry=(
+                retry_if_exception_type(openai.error.Timeout)
+                | retry_if_exception_type(openai.error.APIError)
+                | retry_if_exception_type(openai.error.APIConnectionError)
+                | retry_if_exception_type(openai.error.RateLimitError)
+            ),
+            after=after_log(logger, logging.DEBUG),
+        )
+        def _completion_with_retry(**kwargs: Any) -> Any:
+            return self.client.create(**kwargs)
+
+        return _completion_with_retry(**kwargs)
+
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -155,7 +190,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = self.client.create(prompt=_prompts, **params)
+            response = self.completion_with_retry(prompt=_prompts, **params)
             choices.extend(response["choices"])
             _keys_to_use = _keys.intersection(response["usage"])
             for _key in _keys_to_use:
@@ -242,8 +277,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
+        encoder = "gpt2"
+        if self.model_name in ("text-davinci-003", "text-davinci-002"):
+            encoder = "p50k_base"
+        if self.model_name.startswith("code"):
+            encoder = "p50k_base"
         # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding("gpt2")
+        enc = tiktoken.get_encoding(encoder)
 
         # encode the text using the GPT-3 encoder
         tokenized_text = enc.encode(text)
