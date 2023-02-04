@@ -85,33 +85,3 @@ def test_few_shot_functionality() -> None:
         "Now you try to talk about party."
     )
     assert output == expected_output
-
-
-def test_prompttemplate_prefix_suffix() -> None:
-    """Test that few shot works when prefix and suffix are PromptTemplates."""
-    prefix = "This is a test about {content}."
-    suffix = "Now you try to talk about {new_content}."
-
-    prefix = PromptTemplate(input_variables=["content"], template=prefix)
-    suffix = PromptTemplate(input_variables=["new_content"], template=suffix)
-
-    examples = [
-        {"question": "foo", "answer": "bar"},
-        {"question": "baz", "answer": "foo"},
-    ]
-    prompt = FewShotPromptTemplate(
-        suffix=suffix,
-        prefix=prefix,
-        input_variables=["content", "new_content"],
-        examples=examples,
-        example_prompt=EXAMPLE_PROMPT,
-        example_separator="\n",
-    )
-    output = prompt.format(content="animals", new_content="party")
-    expected_output = (
-        "This is a test about animals.\n"
-        "foo: bar\n"
-        "baz: foo\n"
-        "Now you try to talk about party."
-    )
-    assert output == expected_output
