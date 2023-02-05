@@ -62,6 +62,13 @@ class BaseLLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
+        # If string is passed in directly no errors will be raised but outputs will
+        # not make sense.
+        if not isinstance(prompts, list):
+            raise ValueError(
+                "Argument 'prompts' is expected to be of type List[str], received"
+                f" argument of type {type(prompts)}."
+            )
         disregard_cache = self.cache is not None and not self.cache
         if langchain.llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
