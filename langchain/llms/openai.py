@@ -1,7 +1,18 @@
 """Wrapper around OpenAI APIs."""
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
@@ -136,8 +147,9 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def _create_retry_decorator(self):
+    def _create_retry_decorator(self) -> Callable[[Any], Any]:
         import openai
+
         min_seconds = 4
         max_seconds = 10
         # Wait 2^x * 1 second between each retry starting with
@@ -147,12 +159,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
-                    retry_if_exception_type(openai.error.Timeout)
-                    | retry_if_exception_type(openai.error.APIError)
-                    | retry_if_exception_type(openai.error.APIConnectionError)
-                    | retry_if_exception_type(openai.error.RateLimitError)
+                retry_if_exception_type(openai.error.Timeout)
+                | retry_if_exception_type(openai.error.APIError)
+                | retry_if_exception_type(openai.error.APIConnectionError)
+                | retry_if_exception_type(openai.error.RateLimitError)
             ),
-            after=after_log(logger, logging.DEBUG),
+            after=after_log(logger, logging.WARNING),
         )
 
     def completion_with_retry(self, **kwargs: Any) -> Any:
@@ -220,7 +232,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-            response = await self.client.acompletion_with_retry(prompt=_prompts, **params)
+            response = await self.acompletion_with_retry(prompt=_prompts, **params)
             choices.extend(response["choices"])
             update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
