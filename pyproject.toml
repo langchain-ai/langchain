@@ -45,7 +45,7 @@ google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
 pypdf = {version = "^3.4.0", optional = true}
-
+networkx = "^2.6.3"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
