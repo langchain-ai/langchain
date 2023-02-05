@@ -150,7 +150,7 @@ class Chain(BaseModel, ABC):
         )
         try:
             outputs = self._call(inputs)
-        except Exception as e:
+        except (KeyboardInterrupt, Exception) as e:
             self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
         self.callback_manager.on_chain_end(outputs, verbose=self.verbose)

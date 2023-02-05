@@ -12,6 +12,11 @@ from langchain.serpapi import SerpAPIWrapper
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
+    @property
+    def _agent_type(self) -> str:
+        """Return Identifier of agent type."""
+        return "self-ask-with-search"
+
     @classmethod
     def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
         """Prompt does not depend on tools."""

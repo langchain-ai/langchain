@@ -7,6 +7,8 @@ from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
+from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
@@ -38,7 +40,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     if FINAL_ANSWER_ACTION in llm_output:
         return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
     regex = r"Action: (.*?)\nAction Input: (.*)"
-    match = re.search(regex, llm_output)
+    match = re.search(regex, llm_output, re.DOTALL)
     if not match:
         raise ValueError(f"Could not parse LLM output: `{llm_output}`")
     action = match.group(1).strip()
@@ -48,6 +50,11 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
 
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
+
+    @property
+    def _agent_type(self) -> str:
+        """Return Identifier of agent type."""
+        return "zero-shot-react-description"
 
     @property
     def observation_prefix(self) -> str:
@@ -86,6 +93,30 @@ class ZeroShotAgent(Agent):
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
+
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLLM,
+        tools: List[Tool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = PREFIX,
+        suffix: str = SUFFIX,
+        input_variables: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        prompt = cls.create_prompt(
+            tools, prefix=prefix, suffix=suffix, input_variables=input_variables
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:
