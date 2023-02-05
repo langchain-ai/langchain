@@ -83,11 +83,13 @@ class SerpAPIWrapper(BaseModel):
     search_engine: Any  #: :meta private:
     params: dict = Field(default_factory=_get_default_params)
     serpapi_api_key: Optional[str] = None
+    aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -119,9 +121,13 @@ class SerpAPIWrapper(BaseModel):
             url = "https://serpapi.com/search"
             return url, params
 
-        async with aiohttp.ClientSession() as session:
-            url, params = construct_url_and_params()
-            async with session.get(url, params=params) as response:
+        url, params = construct_url_and_params()
+        if not self.aiosession:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as response:
+                    res = await response.json()
+        else:
+            async with self.aiosession.get(url, params=params) as response:
                 res = await response.json()
 
         return process_response(res)

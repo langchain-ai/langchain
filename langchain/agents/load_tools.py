@@ -147,7 +147,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
-    "serpapi": (_get_serpapi, ["serpapi_api_key"]),
+    "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
 }
 
 

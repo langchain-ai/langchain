@@ -488,7 +488,11 @@ class AgentExecutor(Chain, BaseModel):
                     observation = (
                         await tool.coroutine(output.tool_input)
                         if tool.coroutine
-                        else await asyncio.get_event_loop().run_in_executor(None, tool.func, output.tool_input)
+                        # If the tool is not a coroutine, we run it in the executor
+                        # to avoid blocking the event loop.
+                        else await asyncio.get_event_loop().run_in_executor(
+                            None, tool.func, output.tool_input
+                        )
                     )
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
