@@ -136,31 +136,45 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
+    def _create_retry_decorator(self):
         import openai
-
         min_seconds = 4
         max_seconds = 10
         # Wait 2^x * 1 second between each retry starting with
         # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-
-        @retry(
+        return retry(
             reraise=True,
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
             retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
+                    retry_if_exception_type(openai.error.Timeout)
+                    | retry_if_exception_type(openai.error.APIError)
+                    | retry_if_exception_type(openai.error.APIConnectionError)
+                    | retry_if_exception_type(openai.error.RateLimitError)
             ),
             after=after_log(logger, logging.DEBUG),
         )
+
+    def completion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
+
+    async def acompletion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the async completion call."""
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        async def _completion_with_retry(**kwargs: Any) -> Any:
+            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+            return await self.client.acreate(**kwargs)
+
+        return await _completion_with_retry(**kwargs)
 
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -206,7 +220,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
             # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-            response = await self.client.acreate(prompt=_prompts, **params)
+            response = await self.client.acompletion_with_retry(prompt=_prompts, **params)
             choices.extend(response["choices"])
             update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
