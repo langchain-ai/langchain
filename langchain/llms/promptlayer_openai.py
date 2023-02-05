@@ -1,14 +1,19 @@
 import datetime
-from langchain.llms import OpenAI
-from langchain.schema import LLMResult
+from typing import List, Optional
+
 from promptlayer.utils import get_api_key, promptlayer_api_request
 from pydantic import BaseModel
-from typing import List, Optional
+
+from langchain.llms import OpenAI
+from langchain.schema import LLMResult
+
 
 class PromptLayerOpenAI(OpenAI, BaseModel):
     pl_tags: Optional[List[str]]
-    def _generate(self, prompts: List[str], stop: Optional[List[str]] = None
-    ) -> LLMResult: 
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = super()._generate(prompts, stop)
         request_end_time = datetime.datetime.now().timestamp()
