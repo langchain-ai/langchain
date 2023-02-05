@@ -146,6 +146,38 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 
+class TokenTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at tokens."""
+
+    def __init__(self, encoding_name: str = "gpt2", **kwargs: Any):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to for TokenTextSplitter. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3 encoder instance
+        self._tokenizer = tiktoken.get_encoding(encoding_name)
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = []
+        input_ids = self._tokenizer.encode(text)
+        start_idx = 0
+        cur_idx = min(start_idx + self._chunk_size, len(input_ids))
+        chunk_ids = input_ids[start_idx:cur_idx]
+        while start_idx < len(input_ids):
+            splits.append(self._tokenizer.decode(chunk_ids))
+            start_idx += self._chunk_size - self._chunk_overlap
+            cur_idx = min(start_idx + self._chunk_size, len(input_ids))
+            chunk_ids = input_ids[start_idx:cur_idx]
+        return splits
+
+
 class RecursiveCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 

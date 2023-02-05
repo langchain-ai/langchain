@@ -26,7 +26,7 @@ PROMPT = PromptTemplate(
     template=_DEFAULT_TEMPLATE,
 )
 
-_DECIDER_TEMPLATE = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be neccessary to answer this question.
+_DECIDER_TEMPLATE = """Given the below input question and list of potential tables, output a comma separated list of the table names that may be necessary to answer this question.
 
 Question: {query}
 
