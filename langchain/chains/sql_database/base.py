@@ -21,7 +21,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
             from langchain import SQLDatabaseChain, OpenAI, SQLDatabase
             db = SQLDatabase(...)
-            db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
+            db_chain = SQLDatabaseChain(llm=OpenAI(), database=db)
     """
 
     llm: BaseLLM
@@ -35,6 +35,9 @@ class SQLDatabaseChain(Chain, BaseModel):
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     return_intermediate_steps: bool = False
+    """Whether or not to return the intermediate steps along with the final answer."""
+    return_direct: bool = False
+    """Whether or not to return the result of querying the SQL table directly."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -83,11 +86,17 @@ class SQLDatabaseChain(Chain, BaseModel):
         intermediate_steps.append(result)
         self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
-        self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
-        input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
-        llm_inputs["input"] = input_text
-        final_result = llm_chain.predict(**llm_inputs)
-        self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
+        # If return direct, we just set the final result equal to the sql query
+        if self.return_direct:
+            final_result = result
+        else:
+            self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
+            input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
+            llm_inputs["input"] = input_text
+            final_result = llm_chain.predict(**llm_inputs)
+            self.callback_manager.on_text(
+                final_result, color="green", verbose=self.verbose
+            )
         chain_result: Dict[str, Any] = {self.output_key: final_result}
         if self.return_intermediate_steps:
             chain_result["intermediate_steps"] = intermediate_steps

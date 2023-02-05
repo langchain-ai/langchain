@@ -1,26 +1,13 @@
 """Test FAISS functionality."""
 import tempfile
-from typing import List
 
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.docstore.wikipedia import Wikipedia
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.faiss import FAISS
-
-
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings."""
-        return [[i] * 10 for i in range(len(texts))]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return simple embeddings."""
-        return [0] * 10
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_faiss() -> None:

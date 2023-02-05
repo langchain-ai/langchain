@@ -77,6 +77,17 @@ Open Source
 
     +++
 
+    A jupyter notebook demonstrating how you could create a semantic search engine on documents in one of your Google Folders
+
+    ---
+
+    .. link-button:: https://github.com/venuv/langchain_semantic_search
+        :type: url
+        :text: Google Folder Semantic Search
+        :classes: stretched-link btn-lg
+
+    +++
+
     Build a GitHub support bot with GPT3, LangChain, and Python.
 
     ---
@@ -188,6 +199,17 @@ Open Source
     +++
 
     This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
+    
+    ---
+
+    .. link-button:: https://github.com/arc53/docsgpt
+        :type: url
+        :text: DocsGPT
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Answer questions about the documentation of any project    
 
 Misc. Colab Notebooks
 ~~~~~~~~~~~~~~~
