@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.schema import Generation, LLMResult
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 def test_caching() -> None:

@@ -1,6 +1,6 @@
 """Test memory functionality."""
 from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 def test_summary_buffer_memory_no_buffer_yet() -> None:
