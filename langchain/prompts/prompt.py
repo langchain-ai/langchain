@@ -124,7 +124,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
         }
-        return cls(input_variables=list(input_variables), template=template)
+        return cls(input_variables=list(sorted(input_variables)), template=template)
 
 
 # For backwards compatibility.
