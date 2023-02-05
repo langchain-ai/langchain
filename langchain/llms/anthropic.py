@@ -1,5 +1,4 @@
 """Wrapper around Anthropic APIs."""
-import importlib
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -40,6 +39,8 @@ class Anthropic(LLM, BaseModel):
 
     anthropic_api_key: Optional[str] = None
 
+    HUMAN_PROMPT: Optional[str] = None
+    AI_PROMPT: Optional[str] = None
     class Config:
         """Configuration for this pydantic object."""
 
@@ -52,10 +53,7 @@ class Anthropic(LLM, BaseModel):
             values, "anthropic_api_key", "ANTHROPIC_API_KEY"
         )
         try:
-            import importlib
-            global anthropic
-            anthropic = importlib.import_module("anthropic")
-
+            import anthropic
             values["client"] = anthropic.Client(anthropic_api_key)
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
@@ -110,12 +108,14 @@ class Anthropic(LLM, BaseModel):
         """
         if stop is None:
             stop = []
+        if not self.HUMAN_PROMPT or not self.AI_PROMPT:
+            raise NameError("Please ensure the anthropic package is loaded")
         # Never want model to invent new turns of Human / Assistant dialog.
-        stop.extend([anthropic.HUMAN_PROMPT, anthropic.AI_PROMPT])
+        stop.extend([self.HUMAN_PROMPT, self.AI_PROMPT])
             
         if instruct_mode:
             # Wrap the prompt so it emulates an instruction following model.
-            prompt = f"{anthropic.HUMAN_PROMPT} prompt{anthropic.AI_PROMPT} Sure, here you go:\n"
+            prompt = f"{self.HUMAN_PROMPT} prompt{self.AI_PROMPT} Sure, here you go:\n"
 
         response = self.client.completion(
             model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
