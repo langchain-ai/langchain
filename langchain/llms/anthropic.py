@@ -1,4 +1,5 @@
 """Wrapper around Anthropic APIs."""
+import importlib
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -51,7 +52,9 @@ class Anthropic(LLM, BaseModel):
             values, "anthropic_api_key", "ANTHROPIC_API_KEY"
         )
         try:
-            import anthropic
+            import importlib
+            global anthropic
+            anthropic = importlib.import_module("anthropic")
 
             values["client"] = anthropic.Client(anthropic_api_key)
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
