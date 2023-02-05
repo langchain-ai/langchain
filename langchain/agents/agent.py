@@ -451,7 +451,7 @@ class AgentExecutor(Chain, BaseModel):
         """Run text through and get agent response."""
         # Make sure that every tool is asynchronous (a coroutine)
         for tool in self.tools:
-            if not asyncio.iscoroutinefunction(tool.coroutine):
+            if tool.coroutine and not asyncio.iscoroutinefunction(tool.coroutine):
                 raise ValueError(
                     "The coroutine for the tool must be a coroutine function."
                 )
@@ -488,7 +488,7 @@ class AgentExecutor(Chain, BaseModel):
                     observation = (
                         await tool.coroutine(output.tool_input)
                         if tool.coroutine
-                        else tool.func(output.tool_input)
+                        else await asyncio.get_event_loop().run_in_executor(None, tool.func, output.tool_input)
                     )
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct

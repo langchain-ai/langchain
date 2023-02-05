@@ -205,6 +205,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
+            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
             response = await self.client.acreate(prompt=_prompts, **params)
             choices.extend(response["choices"])
             update_token_usage(_keys, response, token_usage)
