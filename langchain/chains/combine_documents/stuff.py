@@ -83,3 +83,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
         return self.llm_chain.predict(**inputs), {}
+
+    @property
+    def _chain_type(self) -> str:
+        return "stuff_documents_chain"

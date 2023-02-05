@@ -7,6 +7,7 @@ from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult
 
 
@@ -126,3 +127,9 @@ class LLMChain(Chain, BaseModel):
     @property
     def _chain_type(self) -> str:
         return "llm_chain"
+
+    @classmethod
+    def from_string(cls, llm: BaseLLM, template: str) -> Chain:
+        """Create LLMChain from LLM and template."""
+        prompt_template = PromptTemplate.from_template(template)
+        return cls(llm=llm, prompt=prompt_template)

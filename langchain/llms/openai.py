@@ -4,6 +4,13 @@ import sys
 from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
+from tenacity import (
+    after_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
@@ -56,6 +63,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -115,6 +124,32 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
+    def completion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
+        import openai
+
+        min_seconds = 4
+        max_seconds = 10
+        # Wait 2^x * 1 second between each retry starting with
+        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+            retry=(
+                retry_if_exception_type(openai.error.Timeout)
+                | retry_if_exception_type(openai.error.APIError)
+                | retry_if_exception_type(openai.error.APIConnectionError)
+                | retry_if_exception_type(openai.error.RateLimitError)
+            ),
+            after=after_log(logger, logging.DEBUG),
+        )
+        def _completion_with_retry(**kwargs: Any) -> Any:
+            return self.client.create(**kwargs)
+
+        return _completion_with_retry(**kwargs)
+
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -155,7 +190,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = self.client.create(prompt=_prompts, **params)
+            response = self.completion_with_retry(prompt=_prompts, **params)
             choices.extend(response["choices"])
             _keys_to_use = _keys.intersection(response["usage"])
             for _key in _keys_to_use:
@@ -182,7 +217,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
             generations=generations, llm_output={"token_usage": token_usage}
         )
 
-    def stream(self, prompt: str) -> Generator:
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
 
         BETA: this is a beta feature while we figure out the right abstraction.
@@ -190,6 +225,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
         Args:
             prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
 
         Returns:
             A generator representing the stream of tokens from OpenAI.
@@ -204,6 +240,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
         params = self._invocation_params
         if params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
         params["stream"] = True
         generator = self.client.create(prompt=prompt, **params)
 
@@ -237,8 +277,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
+        encoder = "gpt2"
+        if self.model_name in ("text-davinci-003", "text-davinci-002"):
+            encoder = "p50k_base"
+        if self.model_name.startswith("code"):
+            encoder = "p50k_base"
         # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding("gpt2")
+        enc = tiktoken.get_encoding(encoder)
 
         # encode the text using the GPT-3 encoder
         tokenized_text = enc.encode(text)
@@ -249,7 +294,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
-        text-davinci-003: 4,000 tokens
+        text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
         text-ada-001: 2,048 tokens
@@ -268,7 +313,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
         if modelname == "text-davinci-003":
-            return 4000
+            return 4097
         elif modelname == "text-curie-001":
             return 2048
         elif modelname == "text-babbage-001":
@@ -280,7 +325,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         elif modelname == "code-cushman-001":
             return 2048
         else:
-            return 4000
+            return 4097
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.

@@ -126,3 +126,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)
+
+    @property
+    def _chain_type(self) -> str:
+        return "qa_with_sources_chain"

@@ -2,6 +2,7 @@
 from langchain.chains.api.base import APIChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.conversation.base import ConversationChain
+from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
@@ -22,7 +23,6 @@ from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
 __all__ = [
-    "APIChain",
     "ConversationChain",
     "LLMChain",
     "LLMBashChain",
@@ -43,4 +43,5 @@ __all__ = [
     "SQLDatabaseSequentialChain",
     "load_chain",
     "AnalyzeDocumentChain",
+    "HypotheticalDocumentEmbedder",
 ]
