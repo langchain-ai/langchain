@@ -28,3 +28,7 @@ This is heavily influenced by James Weaver's [excellent examples](https://huggin
 This repo serves as a template for how deploy a LangChain with [Beam](https://beam.cloud).
 
 It implements a Question Answering app and contains instructions for deploying the app as a serverless REST API.
+
+## [Vercel](https://github.com/homanp/vercel-langchain)
+
+A minimal example on how to run LangChain on Vercel using Flask.
