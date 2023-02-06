@@ -72,6 +72,7 @@ These modules are, in increasing order of complexity:
    ./modules/chains.md
    ./modules/agents.md
    ./modules/memory.md
+   ./modules/guards.md
 
 Use Cases
 ----------
