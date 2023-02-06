@@ -15,6 +15,9 @@ The following use cases require specific installs and api keys:
 - _Hugging Face Hub_
   - Install requirements with `pip install huggingface_hub`
   - Get a Hugging Face Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
+- _PromptLayer_:
+  - Install requirements with `pip install promptlayer` (be sure to be on version 0.1.62 or higher)
+  - Get an API key from [promptlayer.com](http://www.promptlayer.com) and set it using `promptlayer.api_key=<API KEY>`
 - _SerpAPI_:
   - Install requirements with `pip install google-search-results`
   - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
