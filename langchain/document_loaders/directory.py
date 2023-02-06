@@ -1,7 +1,7 @@
 from langchain.document_loaders.base import BaseLoader
 from typing import List
 from langchain.docstore.document import Document
-from langchain.document_loaders.unstructured import UnstructuredLoader
+from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from pathlib import Path
 
 
@@ -16,7 +16,7 @@ class DirectoryLoader(BaseLoader):
         docs = []
         for i in p.glob(self.glob):
             if i.is_file():
-                sub_docs = UnstructuredLoader(str(i)).load()
+                sub_docs = UnstructuredFileLoader(str(i)).load()
                 docs.extend(sub_docs)
         return docs
 
