@@ -7,9 +7,11 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.utilities.normalization import normalize_boolean_output
 
+from difflib import SequenceMatcher
+
 
 class BaseGuard:
-    """The Guard class is a decorator that can be applied to any chain or agent to either throw an error or recursively call the chain or agent when the output of said chain or agent violates the rules of the guard. The BaseGuard alone does nothing but can be subclassed an the resolve_guard function overwritten to create more specific guards.
+    """The Guard class is a decorator that can be applied to any chain or agent to either throw an error or recursively call the chain or agent when the output of said chain or agent violates the rules of the guard. The BaseGuard alone does nothing but can be subclassed and the resolve_guard function overwritten to create more specific guards.
 
     Args:
         retries (int, optional): The number of times the chain or agent should be called recursively if the output violates the restrictions. Defaults to 0.
@@ -84,23 +86,15 @@ class RestrictionGuard(BaseGuard):
 
     Example:
         .. code-block:: python
-
-            from langchain import LLMChain, OpenAI, PromptTemplate
-
             llm = OpenAI(temperature=0.9)
 
-            prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
-            chain = LLMChain(llm=OpenAI(), prompt=prompt)
+            text = "What would be a good company name for a company that makes colorful socks? Give me a name in latin."
 
-            @RestrictionGuard(llm=llm, restrictions=['must not include profanity', 'must not mention race.'], retries=1)
-            def call_chain():
-                return chain.run(adjective="political")
+            @RestrictionGuard(restrictions=['output must be in latin'], llm=llm, retries=0)
+            def sock_idea():
+                return llm(text)
 
-            call_chain()
-
+            sock_idea()
     """
 
     prompt = PromptTemplate(
@@ -235,3 +229,88 @@ class CustomGuard(BaseGuard):
                 "Custom guard function must return either a boolean or a tuple of a boolean and a string."
             )
         return (boolean_output, violation_message)
+
+
+class StringGuard(BaseGuard):
+    """The StringGuard class is a decorator that can be applied to any chain or agent to either throw an error or recursively call the chain or agent when the output of said chain or agent returns a large portion of a protected string (like a prompt.) The primary use of this guard is to prevent the chain or agent from leaking information about its prompt or other sensitive information. This can also be used as a rudimentary filter of other things like profanity, though.
+
+    Args:
+        protected_strings (List[str]): The list of protected_strings to be guarded
+        leniency (float, optional): The percentage of a protected_string that can be leaked before the guard is violated. Defaults to 0.5. For example, if the protected_string is "Tell me a joke" and the leniency is 0.75, then the guard will be violated if the output contains more than 75% of the protected_string. 100% leniency means that the guard will only be violated when the string is returned exactly while 0% leniency means that the guard will always be violated.
+        retries (int, optional): The number of times the chain or agent should be called recursively if the output violates the restrictions. Defaults to 0.
+
+    Raises:
+        Exception: If the output violates the restrictions and the maximum number of retries has been exceeded.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import LLMChain, OpenAI, PromptTemplate
+
+            llm = OpenAI(temperature=0.9)
+
+            prompt_template = "Tell me a {adjective} joke"
+            prompt = PromptTemplate(
+                input_variables=["adjective"], template=prompt_template
+            )
+            chain = LLMChain(llm=OpenAI(), prompt=prompt)
+
+            @StringGuard(protected_strings=[prompt], leniency=0.25 retries=1)
+            def call_chain():
+                return chain.run(adjective="political")
+
+            call_chain()
+
+    """
+
+    def __init__(
+        self, protected_strings: List[str], leniency: float = 0.5, retries: int = 0
+    ) -> None:
+        self.protected_strings = protected_strings
+        self.leniency = leniency
+        self.retries = retries
+
+    def resolve_guard(
+        self, llm_response: str, *args: Any, **kwargs: Any
+    ) -> Tuple[bool, str]:
+        """Function to determine if guard was violated. Checks for string leakage. Uses protected_string and leniency. If the output contains more than leniency * 100% of the protected_string, the guard is violated.
+
+        Args:
+            llm_response (str): the llm_response string to be tested against the guard.
+
+        Returns:
+            tuple:
+                bool: True if guard was violated, False otherwise.
+                str: The message to be displayed when the guard is violated (if guard was violated).
+        """
+
+        def overlap_percent(protected_string, llm_response):
+            protected_string = protected_string.lower()
+            llm_response = llm_response.lower()
+            len_protected, len_llm_response = len(protected_string), len(llm_response)
+            max_overlap = 0
+            for i in range(len_llm_response - len_protected + 1):
+                for n in range(len_protected + 1):
+                    if llm_response[i : i + n] in protected_string:
+                        max_overlap = max(max_overlap, n)
+            overlap_percent = max_overlap / len_protected
+            return overlap_percent
+
+        protected_strings = self.protected_strings
+        leniency = self.leniency
+
+        for protected_string in protected_strings:
+            similarity = overlap_percent(protected_string, llm_response)
+            print(protected_string)
+            print(similarity)
+            if similarity >= leniency:
+                violation_message = (
+                    "Restriction violated. Attempted answer: "
+                    + llm_response
+                    + ". Reasoning: "
+                    + "Leakage of protected string: "
+                    + protected_string
+                    + "."
+                )
+                return (True, violation_message)
+        return (False, "")
