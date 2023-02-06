@@ -41,6 +41,7 @@ class Anthropic(LLM, BaseModel):
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -54,6 +55,7 @@ class Anthropic(LLM, BaseModel):
         )
         try:
             import anthropic
+
             values["client"] = anthropic.Client(anthropic_api_key)
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
@@ -84,9 +86,11 @@ class Anthropic(LLM, BaseModel):
         """Return type of llm."""
         return "anthropic"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None, instruct_mode: bool = True) -> str:
+    def _call(
+        self, prompt: str, stop: Optional[List[str]] = None, instruct_mode: bool = True
+    ) -> str:
         """Call out to Anthropic's completion endpoint.
-        
+
         Will by default act like an instruction-following model, by wrapping the prompt with Human: and Assistant:
         If you want to use for chat or few-shot, pass in instruct_mode=False
 
@@ -102,7 +106,7 @@ class Anthropic(LLM, BaseModel):
             .. code-block:: python
 
                 response = anthropic("Tell me a joke.")
-                
+
                 response = anthropic("\n\nHuman: Tell me a joke.\n\nAssistant:", instruct_mode=False)
 
         """
@@ -112,7 +116,7 @@ class Anthropic(LLM, BaseModel):
             raise NameError("Please ensure the anthropic package is loaded")
         # Never want model to invent new turns of Human / Assistant dialog.
         stop.extend([self.HUMAN_PROMPT, self.AI_PROMPT])
-            
+
         if instruct_mode:
             # Wrap the prompt so it emulates an instruction following model.
             prompt = f"{self.HUMAN_PROMPT} prompt{self.AI_PROMPT} Sure, here you go:\n"
@@ -120,7 +124,7 @@ class Anthropic(LLM, BaseModel):
         response = self.client.completion(
             model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
         )
-        text = response['completion']
+        text = response["completion"]
         return text
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
@@ -142,5 +146,6 @@ class Anthropic(LLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        return self.client.completion_stream(model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params)
-
+        return self.client.completion_stream(
+            model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
+        )
