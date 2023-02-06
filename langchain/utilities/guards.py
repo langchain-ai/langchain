@@ -1,13 +1,12 @@
 """A utilities for guarding the output of a given chain or agent.
 """
 
+from difflib import SequenceMatcher
 from typing import Any, Callable, List, Tuple
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.utilities.normalization import normalize_boolean_output
-
-from difflib import SequenceMatcher
 
 
 class BaseGuard:
@@ -285,7 +284,7 @@ class StringGuard(BaseGuard):
                 str: The message to be displayed when the guard is violated (if guard was violated).
         """
 
-        def overlap_percent(protected_string, llm_response):
+        def overlap_percent(protected_string: str, llm_response: str) -> float:
             protected_string = protected_string.lower()
             llm_response = llm_response.lower()
             len_protected, len_llm_response = len(protected_string), len(llm_response)
