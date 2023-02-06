@@ -301,8 +301,6 @@ class StringGuard(BaseGuard):
 
         for protected_string in protected_strings:
             similarity = overlap_percent(protected_string, llm_response)
-            print(protected_string)
-            print(similarity)
             if similarity >= leniency:
                 violation_message = (
                     "Restriction violated. Attempted answer: "
