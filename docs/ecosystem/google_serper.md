@@ -20,16 +20,40 @@ from langchain.utilities import GoogleSerperAPIWrapper
 You can use it as part of a Self Ask chain:
 
 ```python
-question = "What is the hometown of the reigning men's U.S. Open champion?"
-    chain = SelfAskWithSearchChain(
-        llm=OpenAI(temperature=0),
-        search_chain=GoogleSerperAPIWrapper(),
-        input_key="q",
-        output_key="a",
+from langchain.utilities import GoogleSerperAPIWrapper
+from langchain.llms.openai import OpenAI
+from langchain.agents import initialize_agent, Tool
+
+import os
+os.environ["SERPER_API_KEY"] = ""
+os.environ['OPENAI_API_KEY'] = ""
+
+llm = OpenAI(temperature=0)
+search = GoogleSerperAPIWrapper()
+tools = [
+    Tool(
+        name="Intermediate Answer",
+        func=search.run
     )
-    answer = chain.run(question)
-    final_answer = answer.split("\n")[-1]
-    assert final_answer == "El Palmar, Spain"
+]
+
+self_ask_with_search = initialize_agent(tools, llm, agent="self-ask-with-search", verbose=True)
+self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
+```
+
+#### Output
+```
+Entering new AgentExecutor chain...
+ Yes.
+Follow up: Who is the reigning men's U.S. Open champion?
+Intermediate answer: Current champions Carlos Alcaraz, 2022 men's singles champion.
+Follow up: Where is Carlos Alcaraz from?
+Intermediate answer: El Palmar, Spain
+So the final answer is: El Palmar, Spain
+
+> Finished chain.
+
+'El Palmar, Spain'
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/google_serper.ipynb).
