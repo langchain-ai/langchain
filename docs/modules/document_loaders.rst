@@ -12,8 +12,6 @@ For detailed instructions on how to get set up with Unstructured, see installati
 
 The following sections of documentation are provided:
 
-- `Getting Started <./document_loaders/getting_started.html>`_: An overview of all the functionality LangChain provides for loading documents.
-
 - `Key Concepts <./document_loaders/key_concepts.html>`_: A conceptual guide going over the various concepts related to loading documents.
 
 - `How-To Guides <./document_loaders/how_to_guides.html>`_: A collection of how-to guides. These highlight different types of loaders.
@@ -27,6 +25,5 @@ The following sections of documentation are provided:
    :name: Document Loaders
    :hidden:
 
-   ./document_loaders/getting_started.md
    ./document_loaders/key_concepts.md
    ./document_loaders/how_to_guides.rst
