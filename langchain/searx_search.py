@@ -5,8 +5,8 @@ For Searx API refer to https://docs.searxng.org/index.html
 """
 
 import requests
-from pydantic import BaseModel, PrivateAttr, Extra, Field, validator
-from typing import Optional, List, Dict
+from pydantic import BaseModel, PrivateAttr, Extra, Field, validator, root_validator
+from typing import Optional, List, Dict, Any
 import json
 
 
@@ -32,17 +32,27 @@ class SearxResults(dict):
     def __str__(self) -> str:
         return self._data
 
+    # the following are fields from the json result of Searx we put getter
+    # to silence mypy errors
+    @property
+    def results(self) -> Any:
+        return self.results
 
-class SearxAPIWrapper(BaseModel):
+    @property
+    def answers(self) -> Any:
+        return self.results
+
+
+class SearxSearchWrapper(BaseModel):
     _result: SearxResults = PrivateAttr()
-    host: str = ''
+    host: str = ""
     unsecure: bool = False
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
     k: int = 10
 
 
-    @validator('unsecure', pre=True)
+    @validator("unsecure", pre=True)
     def disable_ssl_warnings(cls, v: bool) -> bool:
         if v:
             # requests.urllib3.disable_warnings()
@@ -54,7 +64,17 @@ class SearxAPIWrapper(BaseModel):
 
         return v
 
-    @validator('host', pre=True, always=True)
+    @root_validator()
+    def validate_params(cls, values: Dict) -> Dict:
+        """Validate that custom searx params are merged with default ones"""
+        user_params = values["params"]
+        default = _get_default_params()
+        values["params"] = {**default, **user_params}
+
+        return values
+
+
+    @validator("host", pre=True, always=True)
     def valid_host_url(cls, host: str) -> str:
         if len(host) == 0:
             raise ValueError("url can not be empty")
@@ -88,7 +108,7 @@ class SearxAPIWrapper(BaseModel):
 
         # only return the content of the results list
         elif len(res.results) > 0:
-            toret = " ".join([r['content'] for r in res.results[:self.k]])
+            toret = "\n\n".join([r['content'] for r in res.results[:self.k]])
         else:
             toret = "No good search result found"
 
@@ -126,6 +146,6 @@ class SearxAPIWrapper(BaseModel):
         return metadata_results
 
 
-if __name__ == "__main__":
-    search = SearxAPIWrapper(host='search.c.gopher', unsecure=True)
-    print(search.run("who is the current president of Bengladesh"))
+# if __name__ == "__main__":
+#     search = SearxSearchWrapper(host='search.c.gopher', unsecure=True)
+#     print(search.run("who is the current president of Bengladesh ?"))
