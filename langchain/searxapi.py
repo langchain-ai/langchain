@@ -1,8 +1,14 @@
-"""Chain that calls SearxAPI. """
+"""Chain that calls SearxAPI.
+
+This is developed based on the SearxNG fork https://github.com/searxng/searxng
+For Searx API refer to https://docs.searxng.org/index.html
+"""
 
 import requests
-from pydantic import BaseModel, Extra, Field, validator
-from typing import Optional
+from pydantic import BaseModel, PrivateAttr, Extra, Field, validator
+from typing import Optional, List, Dict
+import json
+
 
 def _get_default_params() -> dict:
     return {
@@ -12,11 +18,29 @@ def _get_default_params() -> dict:
     }
 
 
+class SearxResults(dict):
+    _data = ''
+
+    def __init__(self, data: str):
+        """
+        Takes a raw result from Searx and make it into a dict like object
+        """
+        json_data = json.loads(data)
+        super().__init__(json_data)
+        self.__dict__ = self
+
+    def __str__(self) -> str:
+        return self._data
+
+
 class SearxAPIWrapper(BaseModel):
+    _result: SearxResults = PrivateAttr()
     host: str = ''
     unsecure: bool = False
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
+    k: int = 10
+
 
     @validator('unsecure', pre=True)
     def disable_ssl_warnings(cls, v: bool) -> bool:
@@ -42,27 +66,66 @@ class SearxAPIWrapper(BaseModel):
         """Configuration for this pydantic object."""
         extra = Extra.forbid
 
-    #TODO: return a dict instead of text
-    def _searx_api_query(self, params: dict) -> dict:
+    def _searx_api_query(self, params: dict) -> SearxResults:
         """actual request to searx API """
-        # print(locals())
-        # print(self.host)
-        return requests.get(self.host, headers=self.headers
+        raw_result = requests.get(self.host, headers=self.headers
                             , params=params,
                             verify=not self.unsecure).text
+        self._result = SearxResults(raw_result)
+        return self._result
+
 
     def run(self, query: str) -> str:
-        """Run query through Searx API and parse result"""
+        """Run query through Searx API and parse results"""
         _params = { 
             "q": query,
        }
         params = {**self.params, **_params}
-
         res = self._searx_api_query(params)
-        return res
 
+        if len(res.answers) > 0:
+            toret = res.answers[0]
+
+        # only return the content of the results list
+        elif len(res.results) > 0:
+            toret = " ".join([r['content'] for r in res.results[:self.k]])
+        else:
+            toret = "No good search result found"
+
+        return toret
+
+    def results(self, query: str, num_results: int) -> List[Dict]:
+        """Run query through Searx API and returns the results with metadata.
+
+            Args:
+                query: The query to search for.
+                num_results: Limit the number of results to return.
+
+            Returns:
+                A list of dictionaries with the following keys:
+                    snippet - The description of the result.
+                    title - The title of the result.
+                    link - The link to the result.
+        """
+        metadata_results = []
+        _params = {
+                "q": query,
+        }
+        params = {**self.params, **_params}
+        results = self._searx_api_query(params).results[:num_results]
+        if len(results) == 0:
+            return [{"Result": "No good Search Result was found"}]
+        for result in results:
+            metadata_result = {
+                "snippet": result["content"],
+                "title": result["title"],
+                "link": result["url"],
+            }
+            metadata_results.append(metadata_result)
+
+        return metadata_results
 
 
 if __name__ == "__main__":
     search = SearxAPIWrapper(host='search.c.gopher', unsecure=True)
-    print(search.run("hello world"))
+    print(search.run("who is the current president of Bengladesh"))
