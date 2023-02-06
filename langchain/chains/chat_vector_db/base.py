@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
-from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
