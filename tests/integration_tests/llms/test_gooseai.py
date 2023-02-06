@@ -1,6 +1,6 @@
 """Test GooseAI API wrapper."""
 
-from langchain.llms.openai import GooseAI
+from langchain.llms.gooseai import GooseAI
 
 def test_gooseai_call() -> None:
     """Test valid call to gooseai."""
@@ -17,7 +17,7 @@ def test_gooseai_call_fairseq() -> None:
 
 
 def test_gooseai_stop_valid() -> None:
-    """Test openai stop logic on valid configuration."""
+    """Test gooseai stop logic on valid configuration."""
     query = "write an ordered list of five items"
     first_llm = GooseAI(stop="3", temperature=0)
     first_output = first_llm(query)
