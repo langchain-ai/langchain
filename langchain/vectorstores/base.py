@@ -27,7 +27,7 @@ class VectorStore(ABC):
 
     @abstractmethod
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: Union[str, List[float]], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
 

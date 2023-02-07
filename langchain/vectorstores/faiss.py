@@ -93,7 +93,7 @@ class FAISS(VectorStore):
         return [_id for _, _id, _ in full_info]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: Union[str, List[float]], k: int = 4
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -104,7 +104,13 @@ class FAISS(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding_function(query)
+        if isinstance(query, str):
+            embedding = self.embedding_function(query)
+        elif isinstance(query, list):
+            embedding = query
+        else:
+            raise ValueError(f"Got unexpected query type {type(query)}")
+        #embedding = self.embedding_function(query)
         scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
         docs = []
         for j, i in enumerate(indices[0]):
@@ -119,7 +125,7 @@ class FAISS(VectorStore):
         return docs
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: Union[str, List[float]], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
