@@ -17,8 +17,15 @@ class SQLDatabase:
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 0,
+        # TODO: deprecate.
+        sample_row_in_table_info: bool = False,
     ):
         """Create engine from database URI."""
+        if sample_row_in_table_info and sample_rows_in_table_info > 0:
+            raise ValueError(
+                "Only one of `sample_row_in_table_info` "
+                "and `sample_rows_in_table_info` should be set"
+            )
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
@@ -41,6 +48,9 @@ class SQLDatabase:
                     f"ignore_tables {missing_tables} not found in database"
                 )
         self._sample_rows_in_table_info = sample_rows_in_table_info
+        # TODO: deprecate
+        if sample_row_in_table_info:
+            self._sample_rows_in_table_info = 1
 
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
