@@ -1,6 +1,8 @@
 """All different types of document loaders."""
 
 from langchain.document_loaders.directory import DirectoryLoader
+from langchain.document_loaders.docx import UnstructuredDocxLoader
+from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
@@ -18,4 +20,6 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredPDFLoader",
     "ObsidianLoader",
+    "UnstructuredDocxLoader",
+    "UnstructuredEmailLoader",
 ]
