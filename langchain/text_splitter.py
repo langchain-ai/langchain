@@ -4,13 +4,12 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from typing import (
+    AbstractSet,
     Any,
     Callable,
+    Collection,
     Iterable,
     List,
-    Optional,
-    AbstractSet,
-    Collection,
     Literal,
     Optional,
     Union,
