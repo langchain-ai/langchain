@@ -44,6 +44,12 @@ class TextSplitter(ABC):
                 documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
         return documents
 
+    def split_documents(self, documents: List[Document]) -> List[Document]:
+        """Split documents."""
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.create_documents(texts, metadatas)
+
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
         text = text.strip()
