@@ -3,6 +3,7 @@
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
+from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
@@ -16,4 +17,5 @@ __all__ = [
     "UnstructuredHTMLLoader",
     "UnstructuredPowerPointLoader",
     "UnstructuredPDFLoader",
+    "ObsidianLoader",
 ]
