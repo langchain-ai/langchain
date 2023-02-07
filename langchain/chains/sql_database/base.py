@@ -131,26 +131,24 @@ class SQLDatabaseChain(Chain, BaseModel):
         InvalidRequestError
         """
         for i in range(self.max_tries):
-            if isinstance(exception, OperationalError):
-                print("OperationalError")
-                raise exception
+            try:
+                return llm_chain.predict(**llm_inputs)
+            except {OperationalError} as e: #full list of exceptions
+                exception = e
+                """just using these print statements for now to see what the errors are"""
+                if isinstance(exception, OperationalError):
+                    print("OperationalError")
+                    """
+                    produced outputs (giving direct SQL commands):
+                    wrong number of arguments to function SUM() (or others like AVG)
+                    no such table ___
+                    ambiguous column name: ___
 
-                """
-                produced outputs (giving direct SQL commands):
-                wrong number of arguments to function SUM() (or others like AVG)
-                no such table ___
-                ambiguous column name: ___
-
-                produced outputs (giving natural language):
-                no such table ___
+                    produced outputs (giving natural language):
+                    no such table ___
                 
-                """
-                try:
-                    return llm_chain.predict(**llm_inputs)
-                except Exception as e:
-                    exception = e
-                # TODO: this is the most common error, so we should handle
-                # it in a more specific way
+                    """
+                continue
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
         raise exception  # find langchain specific exception to raise here
