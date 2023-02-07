@@ -89,10 +89,11 @@ class Anthropic(LLM, BaseModel):
     def _call(
         self, prompt: str, stop: Optional[List[str]] = None, instruct_mode: bool = True
     ) -> str:
-        """Call out to Anthropic's completion endpoint.
+        r"""Call out to Anthropic's completion endpoint.
 
-        Will by default act like an instruction-following model, by wrapping the prompt with Human: and Assistant:
-        If you want to use for chat or few-shot, pass in instruct_mode=False
+        Will by default act like an instruction-following model, by wrapping the prompt
+        with Human: and Assistant: If you want to use for chat or few-shot, pass
+        in instruct_mode=False
 
         Args:
             prompt: The prompt to pass into the model.
@@ -107,7 +108,9 @@ class Anthropic(LLM, BaseModel):
 
                 response = anthropic("Tell me a joke.")
 
-                response = anthropic("\n\nHuman: Tell me a joke.\n\nAssistant:", instruct_mode=False)
+                response = anthropic(
+                "\n\nHuman: Tell me a joke.\n\nAssistant:", instruct_mode=False
+                )
 
         """
         if stop is None:
@@ -135,6 +138,7 @@ class Anthropic(LLM, BaseModel):
 
         Args:
             prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
 
         Returns:
             A generator representing the stream of tokens from Anthropic.
