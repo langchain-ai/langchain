@@ -162,7 +162,7 @@ This is one of the simpler types of chains, but understanding how it works will 
 
 `````{dropdown} Agents: Dynamically call chains based on user input
 
-So for the chains we've looked at run in a predetermined order.
+So far the chains we've looked at run in a predetermined order.
 
 Agents no longer do: they use an LLM to determine which actions to take and in what order. An action can either be using a tool and observing its output, or returning to the user.
 
@@ -179,6 +179,20 @@ In order to load agents, you should understand the following concepts:
 
 **Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools.md).
 
+For this example, you will also need to install the SerpAPI Python package.
+
+```bash
+pip install google-search-results
+```
+
+And set the appropriate environment variables.
+
+```python
+import os
+os.environ["SERPAPI_API_KEY"] = "..."
+```
+
+Now we can get started!
 
 ```python
 from langchain.agents import load_tools

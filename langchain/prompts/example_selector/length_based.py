@@ -51,7 +51,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         examples = []
         while remaining_length > 0 and i < len(self.examples):
             new_length = remaining_length - self.example_text_lengths[i]
-            if i < 0:
+            if new_length < 0:
                 break
             else:
                 examples.append(self.examples[i])

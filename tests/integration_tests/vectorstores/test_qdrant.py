@@ -1,21 +1,7 @@
 """Test Qdrant functionality."""
-from typing import List
-
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
-
-
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings."""
-        return [[1.0] * 9 + [float(i)] for i in range(len(texts))]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return simple embeddings."""
-        return [1.0] * 9 + [0.0]
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_qdrant() -> None:

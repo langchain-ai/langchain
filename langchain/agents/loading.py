@@ -1,11 +1,8 @@
 """Functionality for loading agents."""
 import json
-import os
-import tempfile
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
-import requests
 import yaml
 
 from langchain.agents.agent import Agent
@@ -16,6 +13,7 @@ from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool
 from langchain.chains.loading import load_chain, load_chain_from_config
 from langchain.llms.base import BaseLLM
+from langchain.utilities.loading import try_load_from_hub
 
 AGENT_TO_CLASS = {
     "zero-shot-react-description": ZeroShotAgent,
@@ -81,27 +79,12 @@ def load_agent_from_config(
 
 def load_agent(path: Union[str, Path], **kwargs: Any) -> Agent:
     """Unified method for loading a agent from LangChainHub or local fs."""
-    if isinstance(path, str) and path.startswith("lc://agents"):
-        path = os.path.relpath(path, "lc://agents/")
-        return _load_from_hub(path, **kwargs)
+    if hub_result := try_load_from_hub(
+        path, _load_agent_from_file, "agents", {"json", "yaml"}
+    ):
+        return hub_result
     else:
         return _load_agent_from_file(path, **kwargs)
-
-
-def _load_from_hub(path: str, **kwargs: Any) -> Agent:
-    """Load agent from hub."""
-    suffix = path.split(".")[-1]
-    if suffix not in {"json", "yaml"}:
-        raise ValueError("Unsupported file type.")
-    full_url = URL_BASE + path
-    r = requests.get(full_url)
-    if r.status_code != 200:
-        raise ValueError(f"Could not find file at {full_url}")
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file = tmpdirname + "/agent." + suffix
-        with open(file, "wb") as f:
-            f.write(r.content)
-        return _load_agent_from_file(file, **kwargs)
 
 
 def _load_agent_from_file(file: Union[str, Path], **kwargs: Any) -> Agent:

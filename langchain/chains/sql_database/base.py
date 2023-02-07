@@ -24,7 +24,7 @@ class SQLDatabaseChain(Chain, BaseModel):
 
             from langchain import SQLDatabaseChain, OpenAI, SQLDatabase
             db = SQLDatabase(...)
-            db_chain = SelfAskWithSearchChain(llm=OpenAI(), database=db)
+            db_chain = SQLDatabaseChain(llm=OpenAI(), database=db)
     """
 
     llm: BaseLLM
@@ -39,6 +39,10 @@ class SQLDatabaseChain(Chain, BaseModel):
     """Number of results to return from the query"""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    return_intermediate_steps: bool = False
+    """Whether or not to return the intermediate steps along with the final answer."""
+    return_direct: bool = False
+    """Whether or not to return the result of querying the SQL table directly."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -60,9 +64,12 @@ class SQLDatabaseChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.output_key]
+        if not self.return_intermediate_steps:
+            return [self.output_key]
+        else:
+            return [self.output_key, "intermediate_steps"]
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
         input_text = f"{inputs[self.input_key]} \nSQLQuery:"
         self.callback_manager.on_text(input_text, verbose=self.verbose)
@@ -76,22 +83,34 @@ class SQLDatabaseChain(Chain, BaseModel):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
-
+        intermediate_steps = []
         sql_cmd = llm_chain.predict(**llm_inputs)
+        intermediate_steps.append(sql_cmd)
         self.callback_manager.on_text(sql_cmd, color="green", verbose=self.verbose)
 
         try:
             result = self.database.run(sql_cmd)
         except Exception as e:
             result = self.handle_exception(llm_inputs, llm_chain, e)
+        
+        intermediate_steps.append(result)
         self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
-        self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
-        input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
-        llm_inputs["input"] = input_text
-        final_result = llm_chain.predict(**llm_inputs)
-        self.callback_manager.on_text(final_result, color="green", verbose=self.verbose)
-        return {self.output_key: final_result}
+        # If return direct, we just set the final result equal to the sql query
+        if self.return_direct:
+            final_result = result
+        else:
+            self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
+            input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
+            llm_inputs["input"] = input_text
+            final_result = llm_chain.predict(**llm_inputs)
+            self.callback_manager.on_text(
+                final_result, color="green", verbose=self.verbose
+            )
+        chain_result: Dict[str, Any] = {self.output_key: final_result}
+        if self.return_intermediate_steps:
+            chain_result["intermediate_steps"] = intermediate_steps
+        return chain_result
 
     # TODO: may want to rename this to something more specific once we have
     # more than one exception handler

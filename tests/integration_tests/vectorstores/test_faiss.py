@@ -1,26 +1,13 @@
 """Test FAISS functionality."""
 import tempfile
-from typing import List
 
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.docstore.wikipedia import Wikipedia
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.faiss import FAISS
-
-
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings."""
-        return [[i] * 10 for i in range(len(texts))]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return simple embeddings."""
-        return [0] * 10
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_faiss() -> None:
@@ -98,6 +85,5 @@ def test_faiss_local_save_load() -> None:
 
     with tempfile.NamedTemporaryFile() as temp_file:
         docsearch.save_local(temp_file.name)
-        docsearch.index = None
-        docsearch.load_local(temp_file.name)
-    assert docsearch.index is not None
+        new_docsearch = FAISS.load_local(temp_file.name, FakeEmbeddings())
+    assert new_docsearch.index is not None

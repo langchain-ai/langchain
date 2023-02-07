@@ -4,7 +4,7 @@ As in https://arxiv.org/pdf/2211.10435.pdf.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -24,7 +24,10 @@ class PALChain(Chain, BaseModel):
     prompt: BasePromptTemplate
     stop: str = "\n\n"
     get_answer_expr: str = "print(solution())"
+    python_globals: Optional[Dict[str, Any]] = None
+    python_locals: Optional[Dict[str, Any]] = None
     output_key: str = "result"  #: :meta private:
+    return_intermediate_steps: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -46,7 +49,10 @@ class PALChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.output_key]
+        if not self.return_intermediate_steps:
+            return [self.output_key]
+        else:
+            return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
@@ -54,9 +60,12 @@ class PALChain(Chain, BaseModel):
         self.callback_manager.on_text(
             code, color="green", end="\n", verbose=self.verbose
         )
-        repl = PythonREPL()
+        repl = PythonREPL(_globals=self.python_globals, _locals=self.python_locals)
         res = repl.run(code + f"\n{self.get_answer_expr}")
-        return {self.output_key: res.strip()}
+        output = {self.output_key: res.strip()}
+        if self.return_intermediate_steps:
+            output["intermediate_steps"] = code
+        return output
 
     @classmethod
     def from_math_prompt(cls, llm: BaseLLM, **kwargs: Any) -> PALChain:
