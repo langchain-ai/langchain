@@ -228,6 +228,7 @@ class FAISS(VectorStore):
         Args:
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
+            embeddings: Embeddings to use when generating queries
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
