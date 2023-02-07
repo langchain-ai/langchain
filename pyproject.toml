@@ -32,6 +32,7 @@ tiktoken = {version = "^0", optional = true, python="^3.9"}
 pinecone-client = {version = "^2", optional = true}
 weaviate-client = {version = "^3", optional = true}
 google-api-python-client = {version = "2.70.0", optional = true}
+anthropic = {git = "https://github.com/anthropics/anthropic-sdk-python.git", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
 qdrant-client = {version = "^0.11.7", optional = true}
 dataclasses-json = "^0.5.7"
@@ -82,8 +83,8 @@ jupyter = "^1.0.0"
 playwright = "^1.28.0"
 
 [tool.poetry.extras]
-llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text"]
+llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text"]
 
 [tool.isort]
 profile = "black"
