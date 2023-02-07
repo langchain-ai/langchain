@@ -3,7 +3,18 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    AbstractSet,
+    Collection,
+    Literal,
+    Optional,
+    Union,
+)
 
 from langchain.docstore.document import Document
 
@@ -116,8 +127,8 @@ class TextSplitter(ABC):
     def from_tiktoken_encoder(
         cls,
         encoding_name: str = "gpt2",
-        allowed_special=set(),
-        disallowed_special="all",
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
     ) -> TextSplitter:
         """Text splitter that uses tiktoken encoder to count length."""
@@ -133,7 +144,7 @@ class TextSplitter(ABC):
         # create a GPT-3 encoder instance
         enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str, **kwargs) -> int:
+        def _tiktoken_encoder(text: str, **kwargs: Any) -> int:
             return len(
                 enc.encode(
                     text,
@@ -182,7 +193,10 @@ class TokenTextSplitter(TextSplitter):
         self._tokenizer = tiktoken.get_encoding(encoding_name)
 
     def split_text(
-        self, text: str, allowed_special=set(), disallowed_special="all"
+        self,
+        text: str,
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
     ) -> List[str]:
         """Split incoming text and return chunks."""
         splits = []
