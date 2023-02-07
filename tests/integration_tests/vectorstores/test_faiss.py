@@ -85,6 +85,5 @@ def test_faiss_local_save_load() -> None:
 
     with tempfile.NamedTemporaryFile() as temp_file:
         docsearch.save_local(temp_file.name)
-        docsearch.index = None
-        docsearch.load_local(temp_file.name)
-    assert docsearch.index is not None
+        new_docsearch = FAISS.load_local(temp_file.name, FakeEmbeddings())
+    assert new_docsearch.index is not None
