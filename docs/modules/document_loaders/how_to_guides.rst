@@ -29,6 +29,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
 
+`s3 File <./examples/s3_file.html>`_: A walkthrough of how to load a file from s3.
+
 
 .. toctree::
    :maxdepth: 1
