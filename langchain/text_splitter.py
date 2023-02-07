@@ -17,7 +17,7 @@ class TextSplitter(ABC):
         self,
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
-        length_function: Callable[[str], int] = len,
+        length_function: Callable[[str], int] = len
     ):
         """Create a new TextSplitter."""
         if chunk_overlap > chunk_size:
@@ -114,7 +114,7 @@ class TextSplitter(ABC):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls, encoding_name: str = "gpt2", **kwargs: Any
+        cls, encoding_name: str = "gpt2", allowed_special=set(), disallowed_special="all", **kwargs: Any
     ) -> TextSplitter:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
@@ -125,11 +125,12 @@ class TextSplitter(ABC):
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please it install it with `pip install tiktoken`."
             )
+
         # create a GPT-3 encoder instance
         enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str) -> int:
-            return len(enc.encode(text))
+        def _tiktoken_encoder(text: str, **kwargs) -> int:
+            return len(enc.encode(text, allowed_special=allowed_special, disallowed_special=disallowed_special, **kwargs))
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
@@ -169,10 +170,14 @@ class TokenTextSplitter(TextSplitter):
         # create a GPT-3 encoder instance
         self._tokenizer = tiktoken.get_encoding(encoding_name)
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str, allowed_special=set(), disallowed_special="all") -> List[str]:
         """Split incoming text and return chunks."""
         splits = []
-        input_ids = self._tokenizer.encode(text)
+        input_ids = self._tokenizer.encode(
+            text,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special
+        )
         start_idx = 0
         cur_idx = min(start_idx + self._chunk_size, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
