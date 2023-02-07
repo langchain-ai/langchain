@@ -92,7 +92,7 @@ class SQLDatabaseChain(Chain, BaseModel):
             result = self.database.run(sql_cmd)
         except Exception as e:
             result = self.handle_exception(llm_inputs, llm_chain, e)
-        
+
         intermediate_steps.append(result)
         self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
         self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
@@ -133,7 +133,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         for i in range(self.max_tries):
             try:
                 return llm_chain.predict(**llm_inputs)
-            except {OperationalError} as e: #full list of exceptions
+            except {OperationalError} as e:  # full list of exceptions
                 exception = e
                 """just using these print statements for now to see what the errors are"""
                 if isinstance(exception, OperationalError):
@@ -148,6 +148,10 @@ class SQLDatabaseChain(Chain, BaseModel):
                     no such table ___
                 
                     """
+                """
+                potential functionality: pass error back into LLMChain.predict()
+                to get a new SQL command
+                """
                 continue
         # Use specific exception here (check langchain specific exceptions and
         #  general python exceptions)
