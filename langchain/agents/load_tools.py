@@ -130,12 +130,14 @@ def _get_google_search(**kwargs: Any) -> Tool:
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
+
 def _get_google_serper(**kwargs: Any) -> Tool:
     return Tool(
         "Search",
         GoogleSerperAPIWrapper(**kwargs).run,
         "A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
+
 
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
