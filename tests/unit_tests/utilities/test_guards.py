@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.alignment.guards import CustomGuard, RestrictionGuard, StringGuard
+from langchain.guards import CustomGuard, RestrictionGuard, StringGuard
 from tests.unit_tests.llms.fake_llm import FakeLLM
 from typing import List
 

@@ -59,7 +59,7 @@ These modules are, in increasing order of complexity:
 
 - `Memory <./modules/memory.html>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
-- `Alignment <./modules/alignment.html>`_: Alignment in the context of LLMs is the process of steering a LLM towards a desired behavior or outcome. Langchain provides a set of tools to aid in this process. Currently, the primary tools for alignment are "guards" which aim to prevent unwanted output from reaching the user and unwanted user input from reaching the LLM. Alignment is an active area of research and designing LLMs which are aligned at output time not after output filtering is an open problem.
+- `Gaurds <./modules/guards.html>`_: Guards aim to prevent unwanted output from reaching the user and unwanted user input from reaching the LLM. Guards can be used for everythign from security, to improving user experience by keeping agents on topic, to validating user input before it is passed to your system.
 
 
 .. toctree::
@@ -74,7 +74,7 @@ These modules are, in increasing order of complexity:
    ./modules/chains.md
    ./modules/agents.md
    ./modules/memory.md
-   ./modules/alignment.md
+   ./modules/guards.md
 
 Use Cases
 ----------

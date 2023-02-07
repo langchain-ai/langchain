@@ -176,7 +176,7 @@ class CustomGuard(BaseGuard):
         .. code-block:: python
 
             from langchain import LLMChain, OpenAI, PromptTemplate
-            from langchain.utilities.guards import CustomGuard
+            from langchain.guards import CustomGuard
 
             llm = OpenAI(temperature=0.9)
 

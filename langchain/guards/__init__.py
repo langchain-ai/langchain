@@ -1,5 +1,5 @@
-"""Alignment Module"""
-from langchain.alignment.guards import (
+"""Guard Module"""
+from langchain.guards.guards import (
     BaseGuard,
     CustomGuard,
     RestrictionGuard,
