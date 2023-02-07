@@ -1,4 +1,4 @@
-"""Loader that loads PowerPoint files."""
+"""Loader that loads PDF files."""
 from typing import List
 
 from langchain.docstore.document import Document
@@ -6,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class UnstructuredPDFLoader(BaseLoader):
-    """Loader that uses unstructured to load PowerPoint files."""
+    """Loader that uses unstructured to load PDF files."""
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
