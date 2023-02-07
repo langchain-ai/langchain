@@ -110,7 +110,6 @@ class FAISS(VectorStore):
             embedding = query
         else:
             raise ValueError(f"Got unexpected query type {type(query)}")
-        #embedding = self.embedding_function(query)
         scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
         docs = []
         for j, i in enumerate(indices[0]):
@@ -140,7 +139,7 @@ class FAISS(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: Union[str, List[float]], k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -155,7 +154,12 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+        if isinstance(query, str):
+            embedding = self.embedding_function(query)
+        elif isinstance(query, list):
+            embedding = query
+        else:
+            raise ValueError(f"Got unexpected query type {type(query)}")
         _, indices = self.index.search(np.array([embedding], dtype=np.float32), fetch_k)
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]

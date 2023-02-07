@@ -32,7 +32,7 @@ class VectorStore(ABC):
         """Return docs most similar to query."""
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: Union[str, List[float]], k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
