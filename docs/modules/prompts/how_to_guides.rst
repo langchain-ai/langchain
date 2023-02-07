@@ -19,11 +19,6 @@ The user guide here shows more advanced workflows and how to use the library in 
 
 
 
-
-
-
-
-
 .. toctree::
    :maxdepth: 1
    :glob:

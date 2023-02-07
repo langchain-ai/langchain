@@ -198,17 +198,17 @@ class Pinecone(VectorStore):
             # set end position of batch
             i_end = min(i + batch_size, len(texts))
             # get batch of texts and ids
-            lines_batch = texts[i : i + batch_size]
+            lines_batch = texts[i:i_end]
             # create ids if not provided
             if ids:
-                ids_batch = ids[i : i + batch_size]
+                ids_batch = ids[i:i_end]
             else:
                 ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
             if metadatas:
-                metadata = metadatas[i : i + batch_size]
+                metadata = metadatas[i:i_end]
             else:
                 metadata = [{} for _ in range(i, i_end)]
             for j, line in enumerate(lines_batch):
