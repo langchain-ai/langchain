@@ -11,8 +11,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import pydantic
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -28,7 +27,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
 
-    @pydantic.root_validator
+    @root_validator
     def validate_folder_id_or_document_ids(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
