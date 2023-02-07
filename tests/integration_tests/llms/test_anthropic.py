@@ -5,7 +5,6 @@ from typing import Generator
 
 import pytest
 
-from langchain.llms.loading import load_llm
 from langchain.llms.anthropic import Anthropic
 
 
