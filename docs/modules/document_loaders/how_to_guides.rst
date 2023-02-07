@@ -25,6 +25,9 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Obsidian <./examples/obsidian.html>`_: A walkthrough of how to load data from an Obsidian file dump.
 
+`Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
+
+
 .. toctree::
    :maxdepth: 1
    :glob:

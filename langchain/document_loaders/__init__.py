@@ -10,6 +10,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "ObsidianLoader",
     "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
+    "RoamLoader",
 ]
