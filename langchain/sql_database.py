@@ -16,9 +16,16 @@ class SQLDatabase:
         schema: Optional[str] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 0,
+        # TODO: deprecate.
         sample_row_in_table_info: bool = False,
     ):
         """Create engine from database URI."""
+        if sample_row_in_table_info and sample_rows_in_table_info > 0:
+            raise ValueError(
+                "Only one of `sample_row_in_table_info` "
+                "and `sample_rows_in_table_info` should be set"
+            )
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
@@ -40,7 +47,10 @@ class SQLDatabase:
                 raise ValueError(
                     f"ignore_tables {missing_tables} not found in database"
                 )
-        self._sample_row_in_table_info = sample_row_in_table_info
+        self._sample_rows_in_table_info = sample_rows_in_table_info
+        # TODO: deprecate
+        if sample_row_in_table_info:
+            self._sample_rows_in_table_info = 1
 
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
@@ -64,7 +74,12 @@ class SQLDatabase:
         return self.get_table_info()
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
-        """Get information about specified tables."""
+        """Get information about specified tables.
+
+        If `sample_rows_in_table_info`, the specified number of sample rows will be
+        appended to each table description. This can increase performance as
+        demonstrated by Rajkumar et al, 2022 (https://arxiv.org/abs/2204.00498).
+        """
         all_table_names = self.get_table_names()
         if table_names is not None:
             missing_tables = set(table_names).difference(all_table_names)
@@ -83,15 +98,25 @@ class SQLDatabase:
             column_str = ", ".join(columns)
             table_str = template.format(table_name=table_name, columns=column_str)
 
-            if self._sample_row_in_table_info:
+            if self._sample_rows_in_table_info:
                 row_template = (
-                    " Here is an example row for this table"
-                    " (long strings are truncated): {sample_row}."
+                    " Here is an example of {n_rows} rows from this table "
+                    "(long strings are truncated):\n"
+                    "{sample_rows}"
                 )
-                sample_row = self.run(f"SELECT * FROM '{table_name}' LIMIT 1")
-                if len(eval(sample_row)) > 0:
-                    sample_row = " ".join([str(i)[:100] for i in eval(sample_row)[0]])
-                    table_str += row_template.format(sample_row=sample_row)
+                sample_rows = self.run(
+                    f"SELECT * FROM '{table_name}' LIMIT "
+                    f"{self._sample_rows_in_table_info}"
+                )
+                sample_rows = eval(sample_rows)
+                if len(sample_rows) > 0:
+                    n_rows = len(sample_rows)
+                    sample_rows = "\n".join(
+                        [" ".join([str(i)[:100] for i in row]) for row in sample_rows]
+                    )
+                    table_str += row_template.format(
+                        n_rows=n_rows, sample_rows=sample_rows
+                    )
 
             tables.append(table_str)
         return "\n".join(tables)
