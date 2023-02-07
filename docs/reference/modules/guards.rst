@@ -1,7 +1,7 @@
 Guards
 ===============================
 
-.. automodule:: langchain.utilities.guards
+.. automodule:: langchain.alignment.guards
    :members:
    :undoc-members:
 
