@@ -11,6 +11,7 @@ from langchain.document_loaders.pdf import UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.youtube import YoutubeLoader
@@ -30,4 +31,5 @@ __all__ = [
     "RoamLoader",
     "YoutubeLoader",
     "S3FileLoader",
+    "S3DirectoryLoader",
 ]
