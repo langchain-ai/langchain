@@ -179,6 +179,20 @@ In order to load agents, you should understand the following concepts:
 
 **Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools.md).
 
+For this example, you will also need to install the SerpAPI Python package.
+
+```bash
+pip install google-search-results
+```
+
+And set the appropriate environment variables.
+
+```python
+import os
+os.environ["SERPAPI_API_KEY"] = "..."
+```
+
+Now we can get started!
 
 ```python
 from langchain.agents import load_tools
