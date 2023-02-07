@@ -20,7 +20,7 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 class GoogleDriveLoader(BaseLoader, BaseModel):
-    """Loader that loads Notion directory dump."""
+    """Loader that loads Google Docs from Google Drive."""
 
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
