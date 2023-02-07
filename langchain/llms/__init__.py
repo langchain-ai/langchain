@@ -2,6 +2,7 @@
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
+from langchain.llms.anthropic import Anthropic
 from langchain.llms.base import BaseLLM
 from langchain.llms.cohere import Cohere
 from langchain.llms.gooseai import GooseAI
@@ -11,6 +12,7 @@ from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
 
 __all__ = [
+    "Anthropic",
     "Cohere",
     "GooseAI",
     "NLPCloud",
@@ -23,6 +25,7 @@ __all__ = [
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
+    "anthropic": Anthropic,
     "cohere": Cohere,
     "gooseai": GooseAI,
     "huggingface_hub": HuggingFaceHub,
