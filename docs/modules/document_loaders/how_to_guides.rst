@@ -27,6 +27,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
 
+`YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
+
 
 .. toctree::
    :maxdepth: 1
