@@ -6,7 +6,7 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class GutenbergLoader(BaseLoader):
-    """Loader that uses unstructured to load HTML files."""
+    """Loader that uses urllib to load .txt web files."""
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
