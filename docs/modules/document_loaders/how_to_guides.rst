@@ -37,7 +37,7 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `GCS Directory <./examples/gcs_directory.html>`_: A walkthrough of how to load all files in a directory from Google Cloud Storage (GCS).
 
-`Webreader <./examples/webreader.html>`_: A walkthrough of how to load data from webpages.
+`Webpage <./examples/webpage.html>`_: A walkthrough of how to load data from webpages.
 
 
 .. toctree::
