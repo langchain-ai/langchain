@@ -33,6 +33,11 @@ class FakeLLM(BaseLLM, BaseModel):
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""

@@ -50,11 +50,8 @@ class LLMMathChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
+    def _process_llm_result(self, t: str) -> Dict[str, str]:
         python_executor = PythonREPL()
-        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
-        t = llm_executor.predict(question=inputs[self.input_key], stop=["```output"])
         self.callback_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         if t.startswith("```python"):
@@ -68,6 +65,24 @@ class LLMMathChain(Chain, BaseModel):
         else:
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: answer}
+
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        llm_executor = LLMChain(
+            prompt=self.prompt, llm=self.llm, callback_manager=self.callback_manager
+        )
+        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+        t = llm_executor.predict(question=inputs[self.input_key], stop=["```output"])
+        return self._process_llm_result(t)
+
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        llm_executor = LLMChain(
+            prompt=self.prompt, llm=self.llm, callback_manager=self.callback_manager
+        )
+        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+        t = await llm_executor.apredict(
+            question=inputs[self.input_key], stop=["```output"]
+        )
+        return self._process_llm_result(t)
 
     @property
     def _chain_type(self) -> str:

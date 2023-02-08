@@ -1,11 +1,22 @@
 """Wrapper around OpenAI APIs."""
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
-    after_log,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -17,6 +28,18 @@ from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
+
+def update_token_usage(
+    keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
+) -> None:
+    """Update token usage."""
+    _keys_to_use = keys.intersection(response["usage"])
+    for _key in _keys_to_use:
+        if _key not in token_usage:
+            token_usage[_key] = response["usage"][_key]
+        else:
+            token_usage[_key] += response["usage"][_key]
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -124,16 +147,14 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
+    def _create_retry_decorator(self) -> Callable[[Any], Any]:
         import openai
 
         min_seconds = 4
         max_seconds = 10
         # Wait 2^x * 1 second between each retry starting with
         # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-
-        @retry(
+        return retry(
             reraise=True,
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
@@ -143,12 +164,29 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 | retry_if_exception_type(openai.error.APIConnectionError)
                 | retry_if_exception_type(openai.error.RateLimitError)
             ),
-            after=after_log(logger, logging.DEBUG),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         )
+
+    def completion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
+
+    async def acompletion_with_retry(self, **kwargs: Any) -> Any:
+        """Use tenacity to retry the async completion call."""
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        async def _completion_with_retry(**kwargs: Any) -> Any:
+            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+            return await self.client.acreate(**kwargs)
+
+        return await _completion_with_retry(**kwargs)
 
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -169,11 +207,47 @@ class BaseOpenAI(BaseLLM, BaseModel):
         """
         # TODO: write a unit test for this
         params = self._invocation_params
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
+        choices = []
+        token_usage: Dict[str, int] = {}
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        for _prompts in sub_prompts:
+            response = self.completion_with_retry(prompt=_prompts, **params)
+            choices.extend(response["choices"])
+            update_token_usage(_keys, response, token_usage)
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Call out to OpenAI's endpoint async with k unique prompts."""
+        params = self._invocation_params
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
+        choices = []
+        token_usage: Dict[str, int] = {}
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        for _prompts in sub_prompts:
+            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+            response = await self.acompletion_with_retry(prompt=_prompts, **params)
+            choices.extend(response["choices"])
+            update_token_usage(_keys, response, token_usage)
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    def get_sub_prompts(
+        self,
+        params: Dict[str, Any],
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+    ) -> List[List[str]]:
+        """Get the sub prompts for llm call."""
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
                 raise ValueError(
@@ -184,20 +258,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
             prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
-        choices = []
-        token_usage = {}
-        # Get the token usage from the response.
-        # Includes prompt, completion, and total tokens used.
-        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-        for _prompts in sub_prompts:
-            response = self.completion_with_retry(prompt=_prompts, **params)
-            choices.extend(response["choices"])
-            _keys_to_use = _keys.intersection(response["usage"])
-            for _key in _keys_to_use:
-                if _key not in token_usage:
-                    token_usage[_key] = response["usage"][_key]
-                else:
-                    token_usage[_key] += response["usage"][_key]
+        return sub_prompts
+
+    def create_llm_result(
+        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
+    ) -> LLMResult:
+        """Create the LLMResult from the choices and prompts."""
         generations = []
         for i, prompt in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
