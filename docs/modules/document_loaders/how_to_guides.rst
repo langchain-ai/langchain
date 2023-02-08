@@ -25,6 +25,19 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Obsidian <./examples/obsidian.html>`_: A walkthrough of how to load data from an Obsidian file dump.
 
+`Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
+
+`YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
+
+`s3 File <./examples/s3_file.html>`_: A walkthrough of how to load a file from s3.
+
+`s3 Directory <./examples/s3_directory.html>`_: A walkthrough of how to load all files in a directory from s3.
+
+`GCS File <./examples/gcs_file.html>`_: A walkthrough of how to load a file from Google Cloud Storage (GCS).
+
+`GCS Directory <./examples/gcs_directory.html>`_: A walkthrough of how to load all files in a directory from Google Cloud Storage (GCS).
+
+
 .. toctree::
    :maxdepth: 1
    :glob:

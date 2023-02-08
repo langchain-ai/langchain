@@ -1,4 +1,4 @@
-"""Loader that loads Obsidian directory dump."""
+"""Loader that loads Roam directory dump."""
 from pathlib import Path
 from typing import List
 
@@ -6,8 +6,8 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-class ObsidianLoader(BaseLoader):
-    """Loader that loads Obsidian files from disk."""
+class RoamLoader(BaseLoader):
+    """Loader that loads Roam files from disk."""
 
     def __init__(self, path: str):
         """Initialize with path."""
