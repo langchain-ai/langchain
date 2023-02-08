@@ -44,7 +44,7 @@ def _get_terminal() -> Tool:
 def _get_wsl() -> Tool:
     return Tool(
         "WSL",
-        BashProcess().run,
+        WSLProcess().run,
         "Executes bash commands in a linux system running on Windows Subsystem for Linux (WSL). Input should be valid bash commands, and the output will be any output from running that command.",
     )
     
