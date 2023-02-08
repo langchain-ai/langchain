@@ -9,6 +9,10 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class StdOutCallbackHandler(BaseCallbackHandler):
     """Callback Handler that prints to std out."""
 
+    def __init__(self, color: str = "green") -> None:
+        """Initialize callback handler."""
+        self.color = color
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -50,7 +54,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
-        print_text(action.log, color=color)
+        print_text(action.log, color=color if color else self.color)
 
     def on_tool_end(
         self,
@@ -62,7 +66,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """If not the final action, print out observation."""
         print_text(f"\n{observation_prefix}")
-        print_text(output, color=color)
+        print_text(output, color=color if color else self.color)
         print_text(f"\n{llm_prefix}")
 
     def on_tool_error(
@@ -79,10 +83,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Optional[str],
     ) -> None:
         """Run when agent ends."""
-        print_text(text, color=color, end=end)
+        print_text(text, color=color if color else self.color, end=end)
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Run on agent end."""
-        print_text(finish.log, color=color, end="\n")
+        print_text(finish.log, color=color if self.color else color, end="\n")
