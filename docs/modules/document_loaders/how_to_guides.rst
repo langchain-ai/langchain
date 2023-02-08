@@ -25,6 +25,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Obsidian <./examples/obsidian.html>`_: A walkthrough of how to load data from an Obsidian file dump.
 
+`Gutenberg <./examples/gutenberg.html>`_: A walkthrough of how to load data from a Gutenberg ebook text.
+
 .. toctree::
    :maxdepth: 1
    :glob:

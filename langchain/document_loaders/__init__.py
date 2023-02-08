@@ -11,6 +11,7 @@ from langchain.document_loaders.pdf import UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.gutenberg import GutenbergLoader
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -24,4 +25,5 @@ __all__ = [
     "ObsidianLoader",
     "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
+    "GutenbergLoader",
 ]
