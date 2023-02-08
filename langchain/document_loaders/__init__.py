@@ -6,6 +6,7 @@ from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
+from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
@@ -17,7 +18,6 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.youtube import YoutubeLoader
-from langchain.document_loaders.gutenberg import GutenbergLoader
 
 __all__ = [
     "UnstructuredFileLoader",
