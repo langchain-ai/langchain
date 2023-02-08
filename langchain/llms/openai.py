@@ -16,7 +16,7 @@ from typing import (
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
-    after_log,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -164,7 +164,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 | retry_if_exception_type(openai.error.APIConnectionError)
                 | retry_if_exception_type(openai.error.RateLimitError)
             ),
-            after=after_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         )
 
     def completion_with_retry(self, **kwargs: Any) -> Any:
