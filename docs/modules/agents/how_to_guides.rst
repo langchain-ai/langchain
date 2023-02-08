@@ -17,6 +17,7 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Max Iterations <./examples/max_iterations.html>`_: How to restrict an agent to a certain number of iterations.
 
+`Asynchronous <./examples/async_agent.html>`_: Covering asynchronous functionality.
 
 The next set of examples are all end-to-end agents for specific applications.
 In all examples there is an Agent with a particular set of tools.

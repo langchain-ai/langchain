@@ -21,6 +21,13 @@ def test_incorrect_command() -> None:
     assert output == "Command 'invalid_command' returned non-zero exit status 127."
 
 
+def test_incorrect_command_return_err_output() -> None:
+    """Test optional returning of shell output on incorrect command."""
+    session = BashProcess(return_err_output=True)
+    output = session.run(["invalid_command"])
+    assert output == "/bin/sh: 1: invalid_command: not found\n"
+
+
 def test_create_directory_and_files(tmp_path: Path) -> None:
     """Test creation of a directory and files in a temporary directory."""
     session = BashProcess(strip_newlines=True)
