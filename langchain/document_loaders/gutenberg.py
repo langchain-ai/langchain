@@ -1,4 +1,4 @@
-"""Loader that loads PDF files."""
+"""Loader that loads .txt web files."""
 from typing import List
 
 from langchain.docstore.document import Document
