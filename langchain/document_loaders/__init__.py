@@ -6,6 +6,7 @@ from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
+from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
@@ -36,4 +37,5 @@ __all__ = [
     "S3DirectoryLoader",
     "GCSFileLoader",
     "GCSDirectoryLoader",
+    "GutenbergLoader",
 ]
