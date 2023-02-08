@@ -10,9 +10,12 @@ class GutenbergLoader(BaseLoader):
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
-        assert file_path.startswith("https://www.gutenberg.org"), "file path must start with 'https://www.gutenberg.org'"
-        assert file_path.endswith(".txt"), "file path must end with '.txt'"
-        
+        if not file_path.startswith("https://www.gutenberg.org"):
+            raise ValueError("file path must start with 'https://www.gutenberg.org'")
+
+        if not file_path.endswith(".txt"):
+            raise ValueError("file path must end with '.txt'")
+
         self.file_path = file_path
 
     def load(self) -> List[Document]:
