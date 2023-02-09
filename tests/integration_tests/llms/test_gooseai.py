@@ -2,6 +2,7 @@
 
 from langchain.llms.gooseai import GooseAI
 
+
 def test_gooseai_call() -> None:
     """Test valid call to gooseai."""
     llm = GooseAI(max_tokens=10)

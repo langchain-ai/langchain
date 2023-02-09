@@ -10,6 +10,7 @@ from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
 
+
 class GooseAI(LLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
@@ -23,7 +24,7 @@ class GooseAI(LLM, BaseModel):
         .. code-block:: python
             from langchain import GooseAI
             gooseai = GooseAI(model_name="gpt-neo-20b")
-    
+
     """
 
     client: Any
@@ -94,7 +95,7 @@ class GooseAI(LLM, BaseModel):
                 "Please it install it with `pip install openai`."
             )
         return values
-    
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling GooseAI API."""
