@@ -36,7 +36,7 @@ def set_default_callback_manager() -> None:
         )
 
 
-def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
+def set_tracing_callback_manager(session_name: Optional[str] = None, example_id: Optional[int] = None) -> None:
     """Set tracing callback manager."""
     handler = SharedLangChainTracer()
     callback = get_callback_manager()
@@ -48,6 +48,9 @@ def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
             handler.load_session(session_name)
         except Exception:
             raise ValueError(f"session {session_name} not found")
+
+    if example_id is not None:
+        handler.example_id = example_id
 
 
 @contextmanager

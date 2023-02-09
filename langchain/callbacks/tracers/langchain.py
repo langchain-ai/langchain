@@ -22,10 +22,21 @@ class BaseLangChainTracer(BaseTracer, ABC):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     always_verbose: bool = True
+    _example_id: Optional[int] = None
     _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
     _headers: Dict[str, Any] = {"Content-Type": "application/json"}
     if os.getenv("LANGCHAIN_API_KEY"):
         _headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
+
+    @property
+    def example_id(self) -> Optional[int]:
+        """Return the example_id."""
+        return self._example_id
+
+    @example_id.setter
+    def example_id(self, value: int) -> None:
+        """Set the example_id."""
+        self._example_id = value
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
@@ -35,6 +46,9 @@ class BaseLangChainTracer(BaseTracer, ABC):
             endpoint = f"{self._endpoint}/chain-runs"
         else:
             endpoint = f"{self._endpoint}/tool-runs"
+
+        if self._example_id:
+            run.example_id = self._example_id
 
         try:
             requests.post(
