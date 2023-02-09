@@ -115,7 +115,7 @@ class BasePromptTemplate(BaseModel, ABC):
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
-    output_parser: Optional[BaseOutputParser] = None
+    output_parser: Optional[Union[BaseOutputParser, Callable[[str], Any]]] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
 
     class Config:
@@ -193,3 +193,18 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+    @property
+    def parse_output(self) -> Callable[[str], Any]:
+        """Return a function to parse the output of an LLM call.
+
+        If output_parser is None, then the output is a string.
+        If output_parser is a BaseOutputParser object, then we call output_parser.parse
+        If output_parser is a function, then we call output_parser
+        """
+        if self.output_parser is None:
+            return lambda x: x
+        elif isinstance(self.output_parser, BaseOutputParser):
+            return self.output_parser.parse
+        else:
+            return self.output_parser
