@@ -120,7 +120,7 @@ class GooseAI(LLM, BaseModel):
         """Return type of llm."""
         return "gooseai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]]) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the GooseAI API."""
 
         params = self._default_params
