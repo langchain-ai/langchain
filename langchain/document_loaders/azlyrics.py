@@ -1,4 +1,4 @@
-"""Loader that loads AZLyrics"""
+"""Loader that loads AZLyrics."""
 from typing import List
 
 from langchain.docstore.document import Document

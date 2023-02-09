@@ -1,7 +1,7 @@
-"""Web base loader class"""
+"""Web base loader class."""
 
-from typing import List
 from bs4 import BeautifulSoup
+from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -15,6 +15,7 @@ class WebBaseLoader(BaseLoader):
         self.web_path = web_path
 
     def scrape(self) -> BeautifulSoup:
+        """Scrape data from webpage and return it in BeautifulSoup format."""
         try:
             import requests
         except ImportError:
