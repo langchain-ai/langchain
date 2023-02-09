@@ -17,7 +17,10 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.youtube import YoutubeLoader
-from langchain.document_loaders.webpage import WebpageLoader
+from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.azlyrics import AZLyricsLoader
+from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -37,5 +40,8 @@ __all__ = [
     "S3DirectoryLoader",
     "GCSFileLoader",
     "GCSDirectoryLoader",
-    "WebpageLoader",
+    "WebBaseLoader",
+    "IMSDbLoader",
+    "AZLyricsLoader",
+    "CollegeConfidentialLoader",
 ]
