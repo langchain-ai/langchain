@@ -1,4 +1,3 @@
-
 """Loader that loads IMSDb"""
 from typing import List
 
