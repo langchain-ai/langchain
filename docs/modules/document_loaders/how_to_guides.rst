@@ -39,6 +39,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Gutenberg <./examples/gutenberg.html>`_: A walkthrough of how to load data from a Gutenberg ebook text.
 
+`Online PDF <./examples/online_pdf.html>`_: A walkthrough of how to load data from an online PDF.
+
 .. toctree::
    :maxdepth: 1
    :glob:
