@@ -18,6 +18,7 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.youtube import YoutubeLoader
+from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -38,4 +39,5 @@ __all__ = [
     "GCSFileLoader",
     "GCSDirectoryLoader",
     "GutenbergLoader",
+    "PagedPDFSplitter",
 ]
