@@ -1,13 +1,16 @@
 """Chain to parse / validate the LLM output."""
-import json
-from typing import Any, Callable, Dict
 
-from langchain.chains.llm import LLMChain
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Extra
+
+from langchain.chains.base import Chain
+from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE_CORRECTION = """
 Output: {output}
-Validator function: {validator_name}
+Validator/Parser function: {validator_name}
 Exception failed with error: {error_message}
 
 ---
@@ -22,77 +25,51 @@ PROMPT_CORRECTION = PromptTemplate(
 )
 
 
-def boolean_validator(output: str) -> bool:
-    """Convert string to boolean."""
-    if output.lower() in ("yes", "true", "t", "1"):
-        return True
-    elif output.lower() in ("no", "false", "f", "0"):
-        return False
-    else:
-        raise ValueError("could not convert string to boolean: " + output)
+class LLMCorrectChain(Chain, BaseModel):
+    """Chain that corrects the input if the validator function fails."""
 
+    llm: BaseLLM
+    """LLM wrapper to use."""
+    input_key: str = "text"  #: :meta private:
+    output_key: str = "corrected"  #: :meta private:
 
-def json_validator(output: str) -> Dict[str, Any]:
-    """Convert string to json."""
-    return json.loads(output)
+    class Config:
+        """Configuration for this pydantic object."""
 
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
-VALIDATORS = {
-    "boolean": boolean_validator,
-    "json": json_validator,
-}
+    @property
+    def input_keys(self) -> List[str]:
+        """Expect input key.
 
+        :meta private:
+        """
+        return [self.input_key]
 
-class LLMChainWithValidator(LLMChain):
-    """Chain that accept a validator function.
+    @property
+    def output_keys(self) -> List[str]:
+        """Expect output key.
 
-    It has special parameters to handle errors in the validator function.
-    - `correct_on_error`: If True, the chain will use the output of the validator
-      function to try to correct the input.
-    - `retry`: Number of times to retry the validator function if it fails
-      (done after correcting the input if `correct_on_error` is True)
-    """
-
-    correct_on_error: bool = False
-    retry: int = 0
-    validator: Callable
+        :meta private:
+        """
+        return [self.output_key]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        """
-        Apply validator function to the output of the LLM.
+        from langchain.chains.llm import LLMChain
 
-        If the validator function fails, it will try to correct the input
-        If the validator function fails after correcting the input,
-        it will retry the validator function
-        """
-        for _ in range(1 + self.retry):
-            result = super().apply([inputs])[0]
-            try:
-                result["response"] = self._validate_output(result["response"])
-                return result
-            except Exception as exc:
-                if self.correct_on_error:
-                    try:
-                        result["response"] = self._correct_on_error(result, exc)
-                        return result
-                    except Exception:
-                        continue
-        return {}
-
-    def _validate_output(self, output: str) -> Any:
-        output = output.strip()  # remove spaces and newlines
-        return self.validator(output)
-
-    def _correct_on_error(self, result: Dict[str, str], e: Exception) -> str:
         """Try to correct the input if the validator function fails."""
+        # Small improvement: if the error message contains the whole input, remove it
+        error_message = inputs["error_message"].replace(inputs["text"], "")
         prompt = PROMPT_CORRECTION.format(
-            output=result["response"],
-            validator_name=self.validator.__name__,
-            error_message=str(e),
+            output=inputs["text"],
+            validator_name=inputs["validator_name"],
+            error_message=error_message,
         )
-        response = self.llm.generate(
-            prompts=[prompt],
-        )
-        output = response.generations[0][0].text
-        # apply the validator function to the corrected output
-        return self._validate_output(output)
+        llm_chain = LLMChain.from_string(self.llm, prompt)
+        response = llm_chain(inputs)
+        return {"corrected": response["text"]}
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_correct_chain"

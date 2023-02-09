@@ -116,7 +116,10 @@ class Chain(BaseModel, ABC):
         raise NotImplementedError("Async call not supported for this chain type.")
 
     def __call__(
-        self, inputs: Union[Dict[str, Any], Any], return_only_outputs: bool = False
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        return_only_outputs: bool = False,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """Run the logic of this chain and add to output if desired.
 
@@ -136,7 +139,7 @@ class Chain(BaseModel, ABC):
             verbose=self.verbose,
         )
         try:
-            outputs = self._call(inputs)
+            outputs = self._call(inputs, **kwargs)
         except (KeyboardInterrupt, Exception) as e:
             self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
