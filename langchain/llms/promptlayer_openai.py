@@ -9,11 +9,30 @@ from langchain.schema import LLMResult
 
 
 class PromptLayerOpenAI(OpenAI, BaseModel):
+    """Wrapper around OpenAI large language models.
+
+    To use, you should have the ``openai`` and ``promptlayer`` python 
+    package installed, and the environment variable ``OPENAI_API_KEY`` 
+    and ``PROMPTLAYER_API_KEY`` set with your openAI API key and 
+    promptlayer key respectively.
+
+    All paramaters that can be passed to the OpenAI LLM can also 
+    be passed here. The PromptLayerOpenAI LLM adds an extra 
+    ``pl_tags`` parameter that can be used to tag the request.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import OpenAI
+            openai = OpenAI(model_name="text-davinci-003")
+    """
+
     pl_tags: Optional[List[str]]
 
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
+        """Calls the OpenAI generate and then calls PromptLayer API to log the request"""
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = super()._generate(prompts, stop)
         request_end_time = datetime.datetime.now().timestamp()
