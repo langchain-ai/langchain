@@ -1,18 +1,28 @@
-"""Chain that calls SearxAPI.
+"""Chain that calls Searx meta search API.
 
-This is developed based on the SearxNG fork https://github.com/searxng/searxng
-For Searx API refer to https://docs.searxng.org/index.html
+SearxNG is a privacy-friendly free metasearch engine that aggregates results from multiple search engines
+and databases.
+
+For Searx search API refer to https://docs.searxng.org/dev/search_api.html
+
+This is based on the SearxNG fork https://github.com/searxng/searxng which is
+better maintained than the original Searx project and offers more features.
+
+For a list of public SearxNG instances see https://searx.space/
+
+NOTE: SearxNG instances often have a rate limit, so you might want to use a 
+self hosted instance and disable the rate limiter or use this PR: https://github.com/searxng/searxng/pull/2129 that adds whitelisting to the rate limiter.
 """
 
 import requests
 from pydantic import BaseModel, PrivateAttr, Extra, Field, validator, root_validator
 from typing import Optional, List, Dict, Any
 import json
+from langchain.utils import get_from_dict_or_env
 
 
 def _get_default_params() -> dict:
     return {
-        # "engines": "google",
         "lang": "en",
         "format": "json"
     }
@@ -36,23 +46,50 @@ class SearxResults(dict):
     # to silence mypy errors
     @property
     def results(self) -> Any:
-        return self.results
+        return self.get("results")
 
     @property
     def answers(self) -> Any:
-        return self.results
+        return self.get("answers")
 
 
 class SearxSearchWrapper(BaseModel):
+    """Wrapper for Searx API.
+    
+    To use you need to provide the searx host by passing the named parameter
+    ``searx_host`` or exporting the environment variable ``SEARX_HOST``.
+
+    In some situations you might want to disable SSL verification, for example
+    if you are running searx locally. You can do this by passing the named parameter
+    ``unsecure``. 
+
+    You can also pass the host url scheme as ``http`` to disable SSL.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.searx_search import SearxSearchWrapper
+            searx = SearxSearchWrapper(searx_host="https://searx.example.com")
+
+    Example with SSL disabled:
+        .. code-block:: python
+
+            from langchain.searx_search import SearxSearchWrapper
+            # note the unsecure parameter is not needed if you pass the url scheme as http
+            searx = SearxSearchWrapper(searx_host="http://searx.example.com", unsecure=True)
+
+
+    """
     _result: SearxResults = PrivateAttr()
-    host: str = ""
+    searx_host = ""
     unsecure: bool = False
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
     k: int = 10
 
 
-    @validator("unsecure", pre=True)
+
+    @validator("unsecure")
     def disable_ssl_warnings(cls, v: bool) -> bool:
         if v:
             # requests.urllib3.disable_warnings()
@@ -71,16 +108,16 @@ class SearxSearchWrapper(BaseModel):
         default = _get_default_params()
         values["params"] = {**default, **user_params}
 
+        searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
+        if not searx_host.startswith("http"):
+            print(f"Warning: `searx_host` is missing the url scheme, assuming secure https://{searx_host} ")
+            searx_host = "https://" + searx_host
+        elif searx_host.startswith("http://"):
+            values["unsecure"] = True
+            cls.disable_ssl_warnings(True)
+        values["searx_host"] = searx_host
+
         return values
-
-
-    @validator("host", pre=True, always=True)
-    def valid_host_url(cls, host: str) -> str:
-        if len(host) == 0:
-            raise ValueError("url can not be empty")
-        if not host.startswith("http"):
-            host = "http://" + host
-        return host
 
     class Config:
         """Configuration for this pydantic object."""
@@ -88,19 +125,36 @@ class SearxSearchWrapper(BaseModel):
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """actual request to searx API """
-        raw_result = requests.get(self.host, headers=self.headers
-                            , params=params,
-                            verify=not self.unsecure).text
-        self._result = SearxResults(raw_result)
-        return self._result
+        raw_result = requests.get(self.searx_host, headers=self.headers,
+                                  params=params,
+                                  verify=not self.unsecure).text
+        res = SearxResults(raw_result)
+        self._result = res
+        return res
+
+    def run(self, query: str, **kwargs: Any) -> str:
+        """Run query through Searx API and parse results.
+            You can pass any other params to the searx query API.
+
+        Args:
+            query: The query to search for.
+            **kwargs: any parameters to pass to the searx API.
+
+        Example:
+            This will make a query to the qwant engine:
+
+            .. code-block:: python
+
+                from langchain.searx_search import SearxSearchWrapper
+                searx = SearxSearchWrapper(searx_host="http://my.searx.host")
+                searx.run("what is the weather in France ?", engine="qwant")
 
 
-    def run(self, query: str) -> str:
-        """Run query through Searx API and parse results"""
-        _params = { 
+        """
+        _params = {
             "q": query,
-       }
-        params = {**self.params, **_params}
+               }
+        params = {**self.params, **_params, **kwargs}
         res = self._searx_api_query(params)
 
         if len(res.answers) > 0:
@@ -108,13 +162,13 @@ class SearxSearchWrapper(BaseModel):
 
         # only return the content of the results list
         elif len(res.results) > 0:
-            toret = "\n\n".join([r['content'] for r in res.results[:self.k]])
+            toret = "\n\n".join([r.get('content', 'no result found') for r in res.results[:self.k]])
         else:
             toret = "No good search result found"
 
         return toret
 
-    def results(self, query: str, num_results: int) -> List[Dict]:
+    def results(self, query: str, num_results: int, **kwargs: Any) -> List[Dict]:
         """Run query through Searx API and returns the results with metadata.
 
             Args:
@@ -131,7 +185,7 @@ class SearxSearchWrapper(BaseModel):
         _params = {
                 "q": query,
         }
-        params = {**self.params, **_params}
+        params = {**self.params, **_params, **kwargs}
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
@@ -144,8 +198,3 @@ class SearxSearchWrapper(BaseModel):
             metadata_results.append(metadata_result)
 
         return metadata_results
-
-
-# if __name__ == "__main__":
-#     search = SearxSearchWrapper(host='search.c.gopher', unsecure=True)
-#     print(search.run("who is the current president of Bengladesh ?"))

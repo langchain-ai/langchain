@@ -119,3 +119,11 @@ Below is a list of all supported tools and relevant information:
 - Requires LLM: No
 - Extra Parameters: `google_api_key`, `google_cse_id`
 - For more information on this, see [this page](../../ecosystem/google_search.md)
+
+**searx-search**
+
+- Tool Name: Search
+- Tool Description: A wrapper around SearxNG meta search engine. Input should be a search query. 
+- Notes: SearxNG is easy to deploy self-hosted. It is a good privacy friendly alternative to Google Search. Uses the SearxNG API. 
+- Requires LLM: No
+- Extra Parameters: `searx_host`
