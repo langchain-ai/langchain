@@ -2,7 +2,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, validator
@@ -15,6 +15,42 @@ from langchain.schema import Generation, LLMResult
 
 def _get_verbosity() -> bool:
     return langchain.verbose
+
+
+def get_prompts(
+    params: Dict[str, Any], prompts: List[str]
+) -> Tuple[Dict[int, List], str, List[int], List[str]]:
+    """Get prompts that are already cached."""
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    missing_prompts = []
+    missing_prompt_idxs = []
+    existing_prompts = {}
+    for i, prompt in enumerate(prompts):
+        if langchain.llm_cache is not None:
+            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
+            if isinstance(cache_val, list):
+                existing_prompts[i] = cache_val
+            else:
+                missing_prompts.append(prompt)
+                missing_prompt_idxs.append(i)
+    return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
+
+
+def update_cache(
+    existing_prompts: Dict[int, List],
+    llm_string: str,
+    missing_prompt_idxs: List[int],
+    new_results: LLMResult,
+    prompts: List[str],
+) -> Optional[dict]:
+    """Update the cache and get the LLM output."""
+    for i, result in enumerate(new_results.generations):
+        existing_prompts[missing_prompt_idxs[i]] = result
+        prompt = prompts[missing_prompt_idxs[i]]
+        if langchain.llm_cache is not None:
+            langchain.llm_cache.update(prompt, llm_string, result)
+    llm_output = new_results.llm_output
+    return llm_output
 
 
 class BaseLLM(BaseModel, ABC):
@@ -58,6 +94,12 @@ class BaseLLM(BaseModel, ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
+    @abstractmethod
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompts."""
+
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -88,17 +130,12 @@ class BaseLLM(BaseModel, ABC):
             return output
         params = self.dict()
         params["stop"] = stop
-        llm_string = str(sorted([(k, v) for k, v in params.items()]))
-        missing_prompts = []
-        missing_prompt_idxs = []
-        existing_prompts = {}
-        for i, prompt in enumerate(prompts):
-            cache_val = langchain.llm_cache.lookup(prompt, llm_string)
-            if isinstance(cache_val, list):
-                existing_prompts[i] = cache_val
-            else:
-                missing_prompts.append(prompt)
-                missing_prompt_idxs.append(i)
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             self.callback_manager.on_llm_start(
                 {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
@@ -109,11 +146,56 @@ class BaseLLM(BaseModel, ABC):
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
             self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
-            for i, result in enumerate(new_results.generations):
-                existing_prompts[missing_prompt_idxs[i]] = result
-                prompt = prompts[missing_prompt_idxs[i]]
-                langchain.llm_cache.update(prompt, llm_string, result)
-            llm_output = new_results.llm_output
+            llm_output = update_cache(
+                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+            )
+        else:
+            llm_output = {}
+        generations = [existing_prompts[i] for i in range(len(prompts))]
+        return LLMResult(generations=generations, llm_output=llm_output)
+
+    async def agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+            )
+            try:
+                output = await self._agenerate(prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            return output
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
+        if len(missing_prompts) > 0:
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+            )
+            try:
+                new_results = await self._agenerate(missing_prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            llm_output = update_cache(
+                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+            )
         else:
             llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
@@ -219,3 +301,9 @@ class LLM(BaseLLM):
             text = self._call(prompt, stop=stop)
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Run the LLM on the given prompt and input."""
+        raise NotImplementedError("Async generation not implemented for this LLM.")
