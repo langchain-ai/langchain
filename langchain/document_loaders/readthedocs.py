@@ -19,7 +19,11 @@ class ReadTheDocsLoader(BaseLoader):
 
         def _clean_data(data: str) -> str:
             soup = BeautifulSoup(data)
-            text = soup.find_all("main", {"id": "main-content"})[0].get_text()
+            text = soup.find_all("main", {"id": "main-content"})
+            if len(text) != 0:
+                text = text[0].get_text()
+            else:
+                text = ""
             return "\n".join([t for t in text.split("\n") if t])
 
         docs = []

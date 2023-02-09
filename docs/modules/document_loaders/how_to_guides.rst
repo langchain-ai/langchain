@@ -45,6 +45,7 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `College Confidential <./examples/college_confidential.html>`_: A walkthrough of how to load all text data from College Confidential webpage.
 
+`Gutenberg <./examples/gutenberg.html>`_: A walkthrough of how to load data from a Gutenberg ebook text.
 
 .. toctree::
    :maxdepth: 1
