@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.step import StepOutput
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
@@ -88,7 +89,7 @@ class Agent(BaseModel):
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Given input, decide what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
@@ -103,6 +104,20 @@ class Agent(BaseModel):
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
+
+    def plan_structured(
+        self,
+        intermediate_steps: List[StepOutput],
+        **kwargs: Any,
+    ) -> Union[AgentAction, AgentFinish]:
+        """Given history of actions, decide what to do.
+
+        This differs from `plan` by allowing access to structured outputs from previous
+        runs.
+        """
+        return self.plan(
+            [s.as_intermediate_step() for s in intermediate_steps], **kwargs
+        )
 
     async def aplan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
@@ -249,6 +264,20 @@ class Agent(BaseModel):
                 f"got {early_stopping_method}"
             )
 
+    def return_stopped_response_structured(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: List[StepOutput],
+        **kwargs: Any,
+    ) -> StepOutput:
+        """Like return_stopped_response, but with access to structured outputs."""
+        finish = self.return_stopped_response(
+            early_stopping_method,
+            [s.as_intermediate_step() for s in intermediate_steps],
+            **kwargs,
+        )
+        return StepOutput(decision=finish)
+
     @property
     @abstractmethod
     def _agent_type(self) -> str:
@@ -375,22 +404,33 @@ class AgentExecutor(Chain, BaseModel):
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
 
+    def _return_structured(
+        self,
+        output: StepOutput,
+        intermediate_steps: List[StepOutput],
+    ) -> Dict[str, Any]:
+        """Like self._return, but with access to structured data."""
+        assert isinstance(output.decision, AgentFinish)
+        return self._return(
+            output.decision, [s.as_intermediate_step() for s in intermediate_steps]
+        )
+
     def _take_next_step(
         self,
         name_to_tool_map: Dict[str, Tool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
-        intermediate_steps: List[Tuple[AgentAction, str]],
-    ) -> Union[AgentFinish, Tuple[AgentAction, str]]:
+        intermediate_steps: List[StepOutput],
+    ) -> StepOutput:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = self.agent.plan(intermediate_steps, **inputs)
+        output = self.agent.plan_structured(intermediate_steps, **inputs)
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
-            return output
+            return StepOutput(decision=output)
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
@@ -425,8 +465,9 @@ class AgentExecutor(Chain, BaseModel):
         )
         if return_direct:
             # Set the log to "" because we do not want to log it.
-            return AgentFinish({self.agent.return_values[0]: observation}, "")
-        return output, observation
+            finish = AgentFinish({self.agent.return_values[0]: observation}, "")
+            return StepOutput(decision=finish)
+        return StepOutput(decision=output, observation=observation)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
@@ -446,7 +487,7 @@ class AgentExecutor(Chain, BaseModel):
         color_mapping = get_color_mapping(
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
-        intermediate_steps: List[Tuple[AgentAction, str]] = []
+        intermediate_steps: List[StepOutput] = []
         # Let's start tracking the iterations the agent has gone through
         iterations = 0
         # We now enter the agent loop (until it returns something).
@@ -454,15 +495,15 @@ class AgentExecutor(Chain, BaseModel):
             next_step_output = self._take_next_step(
                 name_to_tool_map, color_mapping, inputs, intermediate_steps
             )
-            if isinstance(next_step_output, AgentFinish):
-                return self._return(next_step_output, intermediate_steps)
+            if next_step_output.is_finish:
+                return self._return_structured(next_step_output, intermediate_steps)
 
             intermediate_steps.append(next_step_output)
             iterations += 1
-        output = self.agent.return_stopped_response(
+        finish = self.agent.return_stopped_response_structured(
             self.early_stopping_method, intermediate_steps, **inputs
         )
-        return self._return(output, intermediate_steps)
+        return self._return_structured(finish, intermediate_steps)
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
