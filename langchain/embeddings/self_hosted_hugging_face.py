@@ -12,18 +12,18 @@ DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
 )
 
-def _embed_documents(model_id: str, instruction_ft: bool = False, *args, **kwargs) -> List[List[float]]:
+def _embed_documents(model_id: str, instruct: bool = False, *args, **kwargs) -> List[List[float]]:
     """Inference function to send to the remote hardware. Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
-    if not instruction_ft:
+    if not instruct:
         import sentence_transformers
 
         client = sentence_transformers.SentenceTransformer(model_id)
     else:
         from InstructorEmbedding import INSTRUCTOR
 
-        client = INSTRUCTOR(self.model_name)
+        client = INSTRUCTOR(model_id)
     import torch
     if torch.cuda.is_available():
         client = client.cuda()
@@ -42,14 +42,14 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import SelfHostedHFEmbeddings
             import runhouse as rh
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            gpu = rh.cluster(name='rh-a10x', instance_type='A100:1')
+            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             hf = SelfHostedHFEmbeddings(model_name=model_name, hardware=gpu)
     """
 
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
-    model_reqs: str = "sentence_transformers"
+    model_reqs: List[str] = ["sentence_transformers"]
     """Requirements to install on hardware to inference the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
@@ -60,7 +60,7 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
         try:
             import runhouse as rh
 
-            self.client = rh.send(fn=_embed_documents).to(hardware, reqs=['./', self.model_reqs])
+            self.client = rh.send(fn=_embed_documents).to(self.hardware, reqs=['pip:./'] + self.model_reqs)
         except ImportError:
             raise ValueError(
                 "Could not import runhouse python package. "
@@ -82,7 +82,7 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client(self.model_name, texts)
+        embeddings = self.client(self.model_name, False, texts)
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -95,7 +95,7 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client.encode(text)
+        embedding = self.client(self.model_name, False, text)
         return embedding.tolist()
 
 
@@ -123,7 +123,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
     """Instruction to use for embedding documents."""
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
     """Instruction to use for embedding query."""
-    model_reqs: str = "InstructorEmbedding"
+    model_reqs: List[str] = ["InstructorEmbedding"]
     """Requirements to install on hardware to inference the model."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -138,7 +138,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         instruction_pairs = []
         for text in texts:
             instruction_pairs.append([self.embed_instruction, text])
-        embeddings = self.client.encode(instruction_pairs)
+        embeddings = self.client(self.model_name, True, instruction_pairs)
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -151,5 +151,5 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             Embeddings for the text.
         """
         instruction_pair = [self.query_instruction, text]
-        embedding = self.client.encode([instruction_pair])[0]
+        embedding = self.client(self.model_name, True, [instruction_pair])[0]
         return embedding.tolist()

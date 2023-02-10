@@ -9,6 +9,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
+from langchain.llms.self_hosted_hf_pipeline import SelfHostedHuggingFacePipeline
 
 __all__ = [
     "Anthropic",
@@ -19,6 +20,7 @@ __all__ = [
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
+    "SelfHostedHuggingFacePipeline",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
