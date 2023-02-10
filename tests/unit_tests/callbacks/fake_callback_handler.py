@@ -44,6 +44,7 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
     chain_ends: int = 0
     llm_starts: int = 0
     llm_ends: int = 0
+    llm_streams: int = 0
     tool_starts: int = 0
     tool_ends: int = 0
     agent_ends: int = 0
@@ -57,7 +58,7 @@ class FakeCallbackHandler(BaseModel, BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
-        pass
+        self.llm_streams += 1
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
