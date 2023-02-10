@@ -1,6 +1,7 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from abc import abstractmethod
@@ -71,6 +72,19 @@ class Agent(BaseModel):
             tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
         )
 
+    async def _aget_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
+        full_output = await self.llm_chain.apredict(**full_inputs)
+        parsed_output = self._extract_tool_and_input(full_output)
+        while parsed_output is None:
+            full_output = self._fix_text(full_output)
+            full_inputs["agent_scratchpad"] += full_output
+            output = await self.llm_chain.apredict(**full_inputs)
+            full_output += output
+            parsed_output = self._extract_tool_and_input(full_output)
+        return AgentAction(
+            tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
+        )
+
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
     ) -> Union[AgentAction, AgentFinish]:
@@ -84,14 +98,39 @@ class Agent(BaseModel):
         Returns:
             Action specifying what tool to use.
         """
-        thoughts = self._construct_scratchpad(intermediate_steps)
-        new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
-        full_inputs = {**kwargs, **new_inputs}
-
+        full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         action = self._get_next_action(full_inputs)
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
+
+    async def aplan(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Union[AgentAction, AgentFinish]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            **kwargs: User inputs.
+
+        Returns:
+            Action specifying what tool to use.
+        """
+        full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
+        action = await self._aget_next_action(full_inputs)
+        if action.tool == self.finish_tool_name:
+            return AgentFinish({"output": action.tool_input}, action.log)
+        return action
+
+    def get_full_inputs(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Create the full inputs for the LLMChain from intermediate steps."""
+        thoughts = self._construct_scratchpad(intermediate_steps)
+        new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
+        full_inputs = {**kwargs, **new_inputs}
+        return full_inputs
 
     def prepare_for_new_call(self) -> None:
         """Prepare the agent for new call, if needed."""
@@ -338,6 +377,14 @@ class AgentExecutor(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
+        # Make sure that every tool is synchronous (not a coroutine)
+        for tool in self.tools:
+            if asyncio.iscoroutinefunction(tool.func):
+                raise ValueError(
+                    "Tools cannot be asynchronous for `run` method. "
+                    "Please use `arun` instead."
+                )
+
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
@@ -377,6 +424,84 @@ class AgentExecutor(Chain, BaseModel):
             else:
                 self.callback_manager.on_tool_start(
                     {"name": "N/A"}, output, color="green", verbose=self.verbose
+                )
+                observation = f"{output.tool} is not a valid tool, try another one."
+                color = None
+                return_direct = False
+            llm_prefix = "" if return_direct else self.agent.llm_prefix
+            self.callback_manager.on_tool_end(
+                observation,
+                color=color,
+                observation_prefix=self.agent.observation_prefix,
+                llm_prefix=llm_prefix,
+                verbose=self.verbose,
+            )
+            intermediate_steps.append((output, observation))
+            if return_direct:
+                # Set the log to "" because we do not want to log it.
+                output = AgentFinish({self.agent.return_values[0]: observation}, "")
+                return self._return(output, intermediate_steps)
+            iterations += 1
+        output = self.agent.return_stopped_response(
+            self.early_stopping_method, intermediate_steps, **inputs
+        )
+        return self._return(output, intermediate_steps)
+
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        """Run text through and get agent response."""
+        # Make sure that every tool is asynchronous (a coroutine)
+        for tool in self.tools:
+            if tool.coroutine and not asyncio.iscoroutinefunction(tool.coroutine):
+                raise ValueError(
+                    "The coroutine for the tool must be a coroutine function."
+                )
+
+        # Do any preparation necessary when receiving a new input.
+        self.agent.prepare_for_new_call()
+        # Construct a mapping of tool name to tool for easy lookup
+        name_to_tool_map = {tool.name: tool for tool in self.tools}
+        # We construct a mapping from each tool to a color, used for logging.
+        color_mapping = get_color_mapping(
+            [tool.name for tool in self.tools], excluded_colors=["green"]
+        )
+        intermediate_steps: List[Tuple[AgentAction, str]] = []
+        # Let's start tracking the iterations the agent has gone through
+        iterations = 0
+        # We now enter the agent loop (until it returns something).
+        while self._should_continue(iterations):
+            # Call the LLM to see what to do.
+            output = await self.agent.aplan(intermediate_steps, **inputs)
+            # If the tool chosen is the finishing tool, then we end and return.
+            if isinstance(output, AgentFinish):
+                return self._return(output, intermediate_steps)
+
+            # Otherwise we lookup the tool
+            if output.tool in name_to_tool_map:
+                tool = name_to_tool_map[output.tool]
+                self.callback_manager.on_tool_start(
+                    {"name": str(tool.func)[:60] + "..."},
+                    output,
+                    verbose=self.verbose,
+                )
+                try:
+                    # We then call the tool on the tool input to get an observation
+                    observation = (
+                        await tool.coroutine(output.tool_input)
+                        if tool.coroutine
+                        # If the tool is not a coroutine, we run it in the executor
+                        # to avoid blocking the event loop.
+                        else await asyncio.get_event_loop().run_in_executor(
+                            None, tool.func, output.tool_input
+                        )
+                    )
+                    color = color_mapping[output.tool]
+                    return_direct = tool.return_direct
+                except (KeyboardInterrupt, Exception) as e:
+                    self.callback_manager.on_tool_error(e, verbose=self.verbose)
+                    raise e
+            else:
+                self.callback_manager.on_tool_start(
+                    {"name": "N/A"}, output, verbose=self.verbose
                 )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None

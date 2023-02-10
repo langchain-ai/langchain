@@ -40,7 +40,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     if FINAL_ANSWER_ACTION in llm_output:
         return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
     regex = r"Action: (.*?)\nAction Input: (.*)"
-    match = re.search(regex, llm_output)
+    match = re.search(regex, llm_output, re.DOTALL)
     if not match:
         raise ValueError(f"Could not parse LLM output: `{llm_output}`")
     action = match.group(1).strip()
@@ -72,6 +72,7 @@ class ZeroShotAgent(Agent):
         tools: List[Tool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
@@ -88,7 +89,7 @@ class ZeroShotAgent(Agent):
         """
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = FORMAT_INSTRUCTIONS.format(tool_names=tool_names)
+        format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
@@ -102,13 +103,18 @@ class ZeroShotAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
-            tools, prefix=prefix, suffix=suffix, input_variables=input_variables
+            tools,
+            prefix=prefix,
+            suffix=suffix,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
         )
         llm_chain = LLMChain(
             llm=llm,

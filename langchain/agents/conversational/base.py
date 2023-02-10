@@ -39,6 +39,7 @@ class ConversationalAgent(Agent):
         tools: List[Tool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
@@ -61,7 +62,7 @@ class ConversationalAgent(Agent):
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = FORMAT_INSTRUCTIONS.format(
+        format_instructions = format_instructions.format(
             tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
         )
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
@@ -93,6 +94,7 @@ class ConversationalAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
@@ -106,6 +108,7 @@ class ConversationalAgent(Agent):
             human_prefix=human_prefix,
             prefix=prefix,
             suffix=suffix,
+            format_instructions=format_instructions,
             input_variables=input_variables,
         )
         llm_chain = LLMChain(
