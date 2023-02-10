@@ -22,7 +22,7 @@ from langchain.chains import (
     VectorDBQAWithSourcesChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
-from langchain.llms import Anthropic, Cohere, HuggingFaceHub, OpenAI
+from langchain.llms import Anthropic, Cohere, HuggingFaceHub, OpenAI, SagemakerEndpoint
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import (
     BasePromptTemplate,
@@ -60,6 +60,7 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",

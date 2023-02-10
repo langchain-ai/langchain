@@ -6,6 +6,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.base import BaseLLM
 from langchain.llms.cohere import Cohere
 from langchain.llms.huggingface_hub import HuggingFaceHub
+from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
@@ -16,6 +17,7 @@ __all__ = [
     "NLPCloud",
     "OpenAI",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
@@ -26,6 +28,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anthropic": Anthropic,
     "cohere": Cohere,
     "huggingface_hub": HuggingFaceHub,
+    "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "huggingface_pipeline": HuggingFacePipeline,
