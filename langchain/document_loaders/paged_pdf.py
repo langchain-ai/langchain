@@ -50,7 +50,7 @@ class PagedPDFSplitter:
                 metadatas.append(dict(key=f"{key} pages {pg}", pages=pg))
                 if metadata is not None:
                     metadatas[-1].update(metadata)
-                split = str(splits[self.chunk_size: self.chunk_overlap])
+                split = str(splits[self.chunk_size - self.chunk_overlap:])
                 pages = [str(i + 1)]
         pdfFileObj.close()
         return splits, metadatas
