@@ -7008,4 +7008,4 @@ llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b190d518d7a99484ccb0aaf0ed43dfaf9c8cc74481b00da9d4fadd9d02c0dda2"
+content-hash = "55ff8e2f70840a299ca72a27468cf18ec732514bdc2aa2ed9e8faf9bc5caa71f"
