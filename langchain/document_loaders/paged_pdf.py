@@ -1,5 +1,5 @@
 """Loads a PDF with pypdf and chunks at character level."""
-from typing import Dict, List, Optional, Tuple
+from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
