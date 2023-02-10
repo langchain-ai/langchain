@@ -31,6 +31,20 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        raise NotImplementedError
+
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
@@ -41,6 +55,24 @@ class VectorStore(ABC):
 
         Args:
             query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        raise NotImplementedError
+
+    def max_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
 
