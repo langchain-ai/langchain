@@ -1,18 +1,14 @@
 """Test huggingface embeddings."""
 import unittest
-from typing import Any
 
 from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 
-
-def get_remote_instance() -> Any:
+def get_remote_instance():
     import runhouse as rh
-
-    return rh.cluster(name="rh-a10x", instance_type="A100:1", use_spot=False)
-
+    return rh.cluster(name='rh-a10x', instance_type='A100:1', use_spot=False)
 
 def test_selfhosted_huggingface_embedding_documents() -> None:
     """Test huggingface embeddings."""
