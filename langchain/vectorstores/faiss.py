@@ -182,7 +182,9 @@ class FAISS(VectorStore):
         _, indices = self.index.search(np.array([embedding], dtype=np.float32), fetch_k)
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
-        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32), embeddings, k=k
+        )
         selected_indices = [indices[0][i] for i in mmr_selected]
         docs = []
         for i in selected_indices:
@@ -210,7 +212,7 @@ class FAISS(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self.embedding_function(query)
-        docs = max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
+        docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
         return docs
 
     @classmethod
