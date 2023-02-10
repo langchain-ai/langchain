@@ -405,7 +405,7 @@ lxml = ["lxml"]
 name = "black"
 version = "23.1.0"
 description = "The uncompromising code formatter."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -3578,7 +3578,7 @@ testing = ["docopt", "pytest (<6.0.0)"]
 name = "pathspec"
 version = "0.11.0"
 description = "Utility library for gitignore style pattern matching of file paths."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -3768,7 +3768,7 @@ files = [
 name = "platformdirs"
 version = "3.0.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -6183,7 +6183,7 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -7008,4 +7008,4 @@ llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "55ff8e2f70840a299ca72a27468cf18ec732514bdc2aa2ed9e8faf9bc5caa71f"
+content-hash = "0e648dc58a87d0c37440cb193b79ddf99adc12f8c6d38be1cf7726210d7b33a1"
