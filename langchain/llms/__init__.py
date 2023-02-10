@@ -13,6 +13,7 @@ from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
+from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
@@ -40,6 +41,7 @@ __all__ = [
     "Petals",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
@@ -64,6 +66,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "modal": Modal,
+    "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "petals": Petals,
