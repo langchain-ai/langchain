@@ -22,11 +22,13 @@ from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.youtube import YoutubeLoader
 
 __all__ = [
     "UnstructuredFileLoader",
+    "UnstructuredURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
     "ReadTheDocsLoader",
