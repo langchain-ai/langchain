@@ -26,6 +26,7 @@ from langchain.document_loaders.youtube import YoutubeLoader
 
 __all__ = [
     "UnstructuredFileLoader",
+    "UnstructuredURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
     "ReadTheDocsLoader",
