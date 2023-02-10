@@ -15,6 +15,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `PDF <./examples/pdf.html>`_: A walkthrough of how to load data from a PDF file.
 
+`Paged PDF <./examples/paged_pdf_splitter.html>`_: A walkthrough of how to load data from a PDF file with a text reader while tracking page numbers.
+
 `PowerPoint <./examples/powerpoint.html>`_: A walkthrough of how to load data from a powerpoint file.
 
 `Email <./examples/email.html>`_: A walkthrough of how to load data from an email (`.eml`) file.
