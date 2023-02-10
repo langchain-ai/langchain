@@ -45,7 +45,6 @@ google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
 pypdf = {version = "^3.4.0", optional = true}
-black = "^23.1.0"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -78,6 +77,7 @@ isort = "^5.10.1"
 flake8 = "^6.0.0"
 types-toml = "^0.10.8.1"
 types-redis = "^4.3.21.6"
+black = "^23.1.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
