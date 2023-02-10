@@ -177,7 +177,13 @@ class CharacterTextSplitter(TextSplitter):
 class TokenTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at tokens."""
 
-    def __init__(self, encoding_name: str = "gpt2", **kwargs: Any):
+    def __init__(
+        self,
+        encoding_name: str = "gpt2",
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         try:
@@ -188,19 +194,22 @@ class TokenTextSplitter(TextSplitter):
                 "This is needed in order to for TokenTextSplitter. "
                 "Please it install it with `pip install tiktoken`."
             )
+        # get special token settings
+        self.allowed_special = allowed_special
+        self.disallowed_special = disallowed_special
         # create a GPT-3 encoder instance
         self._tokenizer = tiktoken.get_encoding(encoding_name)
 
     def split_text(
         self,
         text: str,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
     ) -> List[str]:
         """Split incoming text and return chunks."""
         splits = []
         input_ids = self._tokenizer.encode(
-            text, allowed_special=allowed_special, disallowed_special=disallowed_special
+            text,
+            allowed_special=self.allowed_special,
+            disallowed_special=self.disallowed_special,
         )
         start_idx = 0
         cur_idx = min(start_idx + self._chunk_size, len(input_ids))
