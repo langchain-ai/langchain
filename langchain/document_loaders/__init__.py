@@ -5,6 +5,7 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
+from langchain.document_loaders.everynote import EveryNoteLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
@@ -46,4 +47,5 @@ __all__ = [
     "AZLyricsLoader",
     "CollegeConfidentialLoader",
     "GutenbergLoader",
+    "EveryNoteLoader",
 ]
