@@ -34,7 +34,7 @@ class VectorStore(ABC):
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """Return docs most similar to embedding
+        """Return docs most similar to embedding vector.
 
         Args:
             embedding: Embedding to look up documents similar to.
