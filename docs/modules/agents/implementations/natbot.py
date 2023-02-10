@@ -33,7 +33,6 @@ def run_cmd(cmd: str, _crawler: Crawler) -> None:
 
 
 if __name__ == "__main__":
-
     objective = "Make a reservation for 2 at 7pm at bistro vida in menlo park"
     print("\nWelcome to natbot! What is your objective?")
     i = input()
