@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
+from langchain.agents.memory import AgentMemory, BaseAgentMemory
 from langchain.agents.step import StepOutput
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -106,18 +107,14 @@ class Agent(BaseModel):
         return action
 
     def plan_structured(
-        self,
-        intermediate_steps: List[StepOutput],
-        **kwargs: Any,
+        self, memory: BaseAgentMemory
     ) -> Union[AgentAction, AgentFinish]:
         """Given history of actions, decide what to do.
 
         This differs from `plan` by allowing access to structured outputs from previous
         runs.
         """
-        return self.plan(
-            [s.as_intermediate_step() for s in intermediate_steps], **kwargs
-        )
+        return self.plan(memory.as_intermediate_steps(), **memory.inputs)
 
     async def aplan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
@@ -265,16 +262,13 @@ class Agent(BaseModel):
             )
 
     def return_stopped_response_structured(
-        self,
-        early_stopping_method: str,
-        intermediate_steps: List[StepOutput],
-        **kwargs: Any,
+        self, early_stopping_method: str, memory: BaseAgentMemory
     ) -> StepOutput:
         """Like return_stopped_response, but with access to structured outputs."""
         finish = self.return_stopped_response(
             early_stopping_method,
-            [s.as_intermediate_step() for s in intermediate_steps],
-            **kwargs,
+            memory.as_intermediate_steps(),
+            **memory.inputs,
         )
         return StepOutput(decision=finish)
 
@@ -407,33 +401,25 @@ class AgentExecutor(Chain, BaseModel):
     def _return_structured(
         self,
         output: StepOutput,
-        intermediate_steps: List[StepOutput],
+        memory: BaseAgentMemory,
     ) -> Dict[str, Any]:
         """Like self._return, but with access to structured data."""
         assert isinstance(output.decision, AgentFinish)
-        return self._return(
-            output.decision, [s.as_intermediate_step() for s in intermediate_steps]
-        )
+        return self._return(output.decision, memory.as_intermediate_steps())
 
-    def _take_next_step(
-        self,
-        name_to_tool_map: Dict[str, Tool],
-        color_mapping: Dict[str, str],
-        inputs: Dict[str, str],
-        intermediate_steps: List[StepOutput],
-    ) -> StepOutput:
+    def _take_next_step(self, memory: BaseAgentMemory) -> StepOutput:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = self.agent.plan_structured(intermediate_steps, **inputs)
+        output = self.agent.plan_structured(memory)
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return StepOutput(decision=output)
         # Otherwise we lookup the tool
-        if output.tool in name_to_tool_map:
-            tool = name_to_tool_map[output.tool]
+        if output.tool in self.name_to_tool_map:
+            tool = self.name_to_tool_map[output.tool]
             self.callback_manager.on_tool_start(
                 {"name": str(tool.func)[:60] + "..."},
                 output,
@@ -443,7 +429,7 @@ class AgentExecutor(Chain, BaseModel):
             try:
                 # We then call the tool on the tool input to get an observation
                 observation = tool.func(output.tool_input)
-                color = color_mapping[output.tool]
+                color = self.color_mapping[output.tool]
                 return_direct = tool.return_direct
             except (KeyboardInterrupt, Exception) as e:
                 self.callback_manager.on_tool_error(e, verbose=self.verbose)
@@ -469,6 +455,22 @@ class AgentExecutor(Chain, BaseModel):
             return StepOutput(decision=finish)
         return StepOutput(decision=output, observation=observation)
 
+    @property
+    def name_to_tool_map(self) -> Dict[str, Tool]:
+        """Construct a mapping of tool name to tool for easy lookup."""
+        return {tool.name: tool for tool in self.tools}
+
+    @property
+    def color_mapping(self) -> Dict[str, str]:
+        """We construct a mapping from each tool to a color, used for logging."""
+        return get_color_mapping(
+            [tool.name for tool in self.tools], excluded_colors=["green"]
+        )
+
+    def new_agent_memory(self, inputs: Dict[str, str]) -> BaseAgentMemory:
+        """Initialize new agent memory for a new run."""
+        return AgentMemory(inputs=inputs)
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
         # Make sure that every tool is synchronous (not a coroutine)
@@ -481,29 +483,21 @@ class AgentExecutor(Chain, BaseModel):
 
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
-        # Construct a mapping of tool name to tool for easy lookup
-        name_to_tool_map = {tool.name: tool for tool in self.tools}
-        # We construct a mapping from each tool to a color, used for logging.
-        color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
-        )
-        intermediate_steps: List[StepOutput] = []
+        memory = self.new_agent_memory(inputs)
         # Let's start tracking the iterations the agent has gone through
         iterations = 0
         # We now enter the agent loop (until it returns something).
         while self._should_continue(iterations):
-            next_step_output = self._take_next_step(
-                name_to_tool_map, color_mapping, inputs, intermediate_steps
-            )
+            next_step_output = self._take_next_step(memory)
             if next_step_output.is_finish:
-                return self._return_structured(next_step_output, intermediate_steps)
+                return self._return_structured(next_step_output, memory)
 
-            intermediate_steps.append(next_step_output)
+            memory.add_step(next_step_output)
             iterations += 1
         finish = self.agent.return_stopped_response_structured(
-            self.early_stopping_method, intermediate_steps, **inputs
+            self.early_stopping_method, memory
         )
-        return self._return_structured(finish, intermediate_steps)
+        return self._return_structured(finish, memory)
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
