@@ -45,14 +45,14 @@ class Petals(LLM, BaseModel):
     top_p: float = 0.9
     """The cumulative probability for top-p sampling."""
 
-    top_k: int = None
+    top_k: Optional[int] = None
     """The number of highest probability vocabulary tokens
     to keep for top-k-filtering."""
 
     do_sample: bool = True
     """Whether or not to use sampling; use greedy decoding otherwise."""
 
-    max_length: int = None
+    max_length: Optional[int] = None
     """The maximum length of the sequence to be generated."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
