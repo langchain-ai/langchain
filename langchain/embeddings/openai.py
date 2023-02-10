@@ -75,21 +75,26 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         text = text.replace("\n", " ")
         return self.client.create(input=[text], engine=engine)["data"][0]["embedding"]
 
-    def embed_documents(self, texts: List[str], chunk_size=1000) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], chunk_size: int = 1000
+    ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The maximum number of texts to send to OpenAI at once (max 1000).
+            chunk_size: The maximum number of texts to send to OpenAI at once
+                (max 1000).
 
         Returns:
             List of embeddings, one for each text.
         """
         # handle large batches of texts
         results = []
-        if len(texts) > chunk_size:
-            for i in range(0, len(texts), chunk_size):
-                results += [r['embedding'] for r in self.client.create(input=texts[i : i + chunk_size], engine=self.document_model_name)["data"]]
+        for i in range(0, len(texts), chunk_size):
+            response = self.client.create(
+                input=texts[i : i + chunk_size], engine=self.document_model_name
+            )
+            results += [r["embedding"] for r in response["data"]]
         return results
 
     def embed_query(self, text: str) -> List[float]:
