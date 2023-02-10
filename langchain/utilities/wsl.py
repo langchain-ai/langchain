@@ -15,10 +15,10 @@ class WSLProcess:
         if isinstance(commands, str):
             commands = [commands]
         commands = ";".join(commands)
-        commands = 'wsl.exe ' + commands
+        commands = "wsl.exe " + commands
         try:
             output = subprocess.check_output(commands, shell=True).decode()
-            
+
         except subprocess.CalledProcessError as error:
             return str(error)
         if self.strip_newlines:

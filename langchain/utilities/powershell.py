@@ -15,10 +15,12 @@ class PowerShellProcess:
         if isinstance(commands, str):
             commands = [commands]
         commands = ";".join(commands)
-        
+
         try:
-            output = subprocess.check_output(["powershell.exe", "-Command", commands]).decode()
-            
+            output = subprocess.check_output(
+                ["powershell.exe", "-Command", commands]
+            ).decode()
+
         except subprocess.CalledProcessError as error:
             return str(error)
         if self.strip_newlines:

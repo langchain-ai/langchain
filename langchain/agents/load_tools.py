@@ -12,10 +12,10 @@ from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
-from langchain.utilities.wsl import WSLProcess
-from langchain.utilities.powershell import PowerShellProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.powershell import PowerShellProcess
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.wsl import WSLProcess
 
 
 def _get_python_repl() -> Tool:
@@ -40,20 +40,23 @@ def _get_terminal() -> Tool:
         BashProcess().run,
         "Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
     )
-    
+
+
 def _get_wsl() -> Tool:
     return Tool(
         "WSL",
         WSLProcess().run,
         "Executes bash commands in a linux system running on Windows Subsystem for Linux (WSL). Input should be valid bash commands, and the output will be any output from running that command.",
     )
-    
+
+
 def _get_powershell() -> Tool:
     return Tool(
         "PowerShell",
         PowerShellProcess().run,
         "Executes commands in PowerShell. Input should be valid commands, and the output will be any output from running that command.",
     )
+
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
