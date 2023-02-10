@@ -65,9 +65,10 @@ def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
 
 def _get_llm_math(llm: BaseLLM) -> Tool:
     return Tool(
-        "Calculator",
-        LLMMathChain(llm=llm).run,
-        "Useful for when you need to answer questions about math.",
+        name="Calculator",
+        description="Useful for when you need to answer questions about math.",
+        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
+        coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
     )
 
 
@@ -132,9 +133,10 @@ def _get_google_search(**kwargs: Any) -> Tool:
 
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
-        "Search",
-        SerpAPIWrapper(**kwargs).run,
-        "A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        name="Search",
+        description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        func=SerpAPIWrapper(**kwargs).run,
+        coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 
 
@@ -145,7 +147,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
-    "serpapi": (_get_serpapi, ["serpapi_api_key"]),
+    "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
 }
 
 
