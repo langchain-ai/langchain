@@ -14,42 +14,6 @@ files = [
 
 [[package]]
 name = "aiohttp"
-version = "2.3.10"
-description = "Async http client/server framework (asyncio)"
-category = "main"
-optional = true
-python-versions = ">=3.4.2"
-files = [
-    {file = "aiohttp-2.3.10-cp34-cp34m-macosx_10_10_x86_64.whl", hash = "sha256:834f687b806fbf49cb135b5a208b5c27338e19c219d6e09e9049936e01e8bea8"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-macosx_10_11_x86_64.whl", hash = "sha256:6b8c5a00432b8a5a083792006e8fdfb558b8b10019ce254200855264d3a25895"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-macosx_10_12_x86_64.whl", hash = "sha256:7b407c22b0ab473ffe0a7d3231f2084a8ae80fdb64a31842b88d57d6b7bdab7c"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:14821eb8613bfab9118be3c55afc87bf4cef97689896fa0874c6877b117afbeb"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:8f32a4e157bad9c60ebc38c3bb93fcc907a020b017ddf8f7ab1580390e21940e"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-win32.whl", hash = "sha256:82a9068d9cb15eb2d99ecf39f8d56b4ed9f931a77a3622a0de747465fd2a7b96"},
-    {file = "aiohttp-2.3.10-cp34-cp34m-win_amd64.whl", hash = "sha256:7ac6378ae364d8e5e5260c7224ea4a1965cb6f4719f15d0552349d0b0cc93953"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-macosx_10_10_x86_64.whl", hash = "sha256:5a952d4af7de5f78dfb3206dbc352717890b37d447f0bbd4b5969b3c8bb713af"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-macosx_10_11_x86_64.whl", hash = "sha256:b25c7720c495048ed658086a29925ab485ac7ececf1b346f2b459e5431d85016"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-macosx_10_12_x86_64.whl", hash = "sha256:528b0b811b6260a79222b055664b82093d01f35fe5c82521d8659cb2b28b8044"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:46ace48789865a89992419205024ae451d577876f9919fbb0f22f71189822dea"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:5436ca0ed752bb05a399fc07dc86dc23c756db523a3b7d5da46a457eacf4c4b5"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-win32.whl", hash = "sha256:f5e7d41d924a1d5274060c467539ee0c4f3bab318c1671ad65abd91f6b637baf"},
-    {file = "aiohttp-2.3.10-cp35-cp35m-win_amd64.whl", hash = "sha256:a8c12f3184c7cad8f66cae6c945d2c97e598b0cb7afd655a5b9471475e67f30e"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-macosx_10_10_x86_64.whl", hash = "sha256:756fc336a29c551b02252685f01bc87116bc9b04bbd02c1a6b8a96b3c6ad713b"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-macosx_10_11_x86_64.whl", hash = "sha256:cf790e61c2af0278f39dcedad9a22532bf81fb029c2cd73b1ceba7bea062c908"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-macosx_10_12_x86_64.whl", hash = "sha256:44c9cf24e63576244c13265ef0786b56d6751f5fb722225ecc021d6ecf91b4d2"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:ef1a36a16e72b6689ce0a6c7fc6bd88837d8fef4590b16bd72817644ae1f414d"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:3a4cdb9ca87c099d8ba5eb91cb8f000b60c21f8c1b50c75e04e8777e903bd278"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-win32.whl", hash = "sha256:f72bb19cece43483171264584bbaaf8b97717d9c0f244d1ef4a51df1cdb34085"},
-    {file = "aiohttp-2.3.10-cp36-cp36m-win_amd64.whl", hash = "sha256:c77e29243a79e376a1b51d71a13df4a61bc54fd4d9597ce3790b8d82ec6eb44d"},
-    {file = "aiohttp-2.3.10.tar.gz", hash = "sha256:8adda6583ba438a4c70693374e10b60168663ffa6564c5c75d3c7a9055290964"},
-]
-
-[package.dependencies]
-async-timeout = ">=1.2.0"
-chardet = "*"
-idna-ssl = ">=1.0.0"
-multidict = ">=4.0.0"
-yarl = ">=1.0.0"
 version = "3.8.3"
 description = "Async http client/server framework (asyncio)"
 category = "main"
@@ -664,18 +628,6 @@ files = [
 pycparser = "*"
 
 [[package]]
-name = "chardet"
-version = "5.1.0"
-description = "Universal encoding detector for Python 3"
-category = "main"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "chardet-5.1.0-py3-none-any.whl", hash = "sha256:362777fb014af596ad31334fde1e8c327dfdb076e1960d1694662d46a6917ab9"},
-    {file = "chardet-5.1.0.tar.gz", hash = "sha256:0d62712b956bc154f85fb0a266e2a3c5913c2967e00348701b32411d6def31e5"},
-]
-
-[[package]]
 name = "charset-normalizer"
 version = "2.1.1"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
@@ -707,13 +659,13 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "cohere"
-version = "3.3.3"
+version = "3.4.0"
 description = "A Python library for the Cohere API"
 category = "main"
 optional = true
 python-versions = ">=3.6"
 files = [
-    {file = "cohere-3.3.3.tar.gz", hash = "sha256:b4e2b21540d2612c0cc1b7f5ae2f9d1431d6adfc794ae2c3d0aedd7e6847da9b"},
+    {file = "cohere-3.4.0.tar.gz", hash = "sha256:26ae99fc574bad44c6012aaca32657535f0e4db5cc3afa2a191b951143f8b595"},
 ]
 
 [package.dependencies]
@@ -1953,20 +1905,6 @@ files = [
 ]
 
 [[package]]
-name = "idna-ssl"
-version = "1.1.0"
-description = "Patch ssl.match_hostname for Unicode(idna) domains support"
-category = "main"
-optional = true
-python-versions = "*"
-files = [
-    {file = "idna-ssl-1.1.0.tar.gz", hash = "sha256:a933e3bb13da54383f9e8f35dc4f9cb9eb9b3b78c6b36f311254d6d0d92c6c7c"},
-]
-
-[package.dependencies]
-idna = ">=2.0"
-
-[[package]]
 name = "imagesize"
 version = "1.4.1"
 description = "Getting image size from png/jpeg/jpeg2000/gif file"
@@ -2934,7 +2872,7 @@ name = "multidict"
 version = "6.0.4"
 description = "multidict implementation"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "multidict-6.0.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0b1a97283e0c85772d613878028fec909f003993e1007eafa715b24b377cb9b8"},
@@ -6906,7 +6844,7 @@ name = "yarl"
 version = "1.8.2"
 description = "Yet another URL library"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "yarl-1.8.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:bb81f753c815f6b8e2ddd2eef3c855cf7da193b82396ac013c661aaa6cc6b0a5"},
@@ -7012,4 +6950,4 @@ llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "86376090baadcc2d43a55f3ef39de68c4ae87794bdfb6c68dbc7cd07c62f4c9d"
+content-hash = "b190d518d7a99484ccb0aaf0ed43dfaf9c8cc74481b00da9d4fadd9d02c0dda2"
