@@ -10,11 +10,11 @@ from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
+from langchain.searx_search import SearxSearchWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.searx_search import SearxSearchWrapper
 
 
 def _get_python_repl() -> Tool:
@@ -140,12 +140,14 @@ def _get_serpapi(**kwargs: Any) -> Tool:
         coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 
+
 def _get_searx_search(**kwargs: Any) -> Tool:
     return Tool(
-            "Search",
-            SearxSearchWrapper(**kwargs).run,
-            "A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query."
-            )
+        "Search",
+        SearxSearchWrapper(**kwargs).run,
+        "A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
 
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
@@ -156,7 +158,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "searx-search": (_get_searx_search, ["searx_host", "searx_host"])
+    "searx-search": (_get_searx_search, ["searx_host", "searx_host"]),
 }
 
 
