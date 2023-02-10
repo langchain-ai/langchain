@@ -1,7 +1,8 @@
 """Loads a PDF with pypdf and chunks at character level."""
 from typing import Dict, List, Optional, Tuple
-from langchain.document_loaders.base import BaseLoader
+
 from langchain.docstore.document import Document
+from langchain.document_loaders.base import BaseLoader
 
 
 class PagedPDFSplitter(BaseLoader):
@@ -9,7 +10,6 @@ class PagedPDFSplitter(BaseLoader):
 
     Loader also stores page numbers in metadatas.
     """
-
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
