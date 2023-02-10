@@ -14,6 +14,7 @@ from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
+from langchain.document_loaders.online_pdf import OnlinePDFLoader
 from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 from langchain.document_loaders.pdf import UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
@@ -52,4 +53,5 @@ __all__ = [
     "GutenbergLoader",
     "PagedPDFSplitter",
     "EveryNoteLoader",
+    "OnlinePDFLoader",
 ]
