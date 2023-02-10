@@ -15,8 +15,6 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `PDF <./examples/pdf.html>`_: A walkthrough of how to load data from a PDF file.
 
-`Paged PDF <./examples/paged_pdf_splitter.html>`_: A walkthrough of how to load data from a PDF file with a text reader while tracking page numbers.
-
 `PowerPoint <./examples/powerpoint.html>`_: A walkthrough of how to load data from a powerpoint file.
 
 `Email <./examples/email.html>`_: A walkthrough of how to load data from an email (`.eml`) file.
@@ -28,6 +26,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 `Obsidian <./examples/obsidian.html>`_: A walkthrough of how to load data from an Obsidian file dump.
 
 `Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
+
+`EveryNote <./examples/everynote.html>`_: A walkthrough of how to load data from a EveryNote (`.enex`) file.
 
 `YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
 
