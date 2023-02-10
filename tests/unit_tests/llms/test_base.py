@@ -1,5 +1,6 @@
 """Test base LLM functionality."""
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
