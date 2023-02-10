@@ -36,6 +36,10 @@ class BaseCallbackHandler(ABC):
         """Run when LLM starts running."""
 
     @abstractmethod
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run when LLM generates a new token. Only available when streaming is enabled."""
+
+    @abstractmethod
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
 
@@ -125,6 +129,13 @@ class CallbackManager(BaseCallbackManager):
             if not handler.ignore_llm:
                 if verbose or handler.always_verbose:
                     handler.on_llm_start(serialized, prompts, **kwargs)
+
+    def on_llm_new_token(self, token: str, verbose: bool = False, **kwargs: Any) -> None:
+        """Run when LLM generates a new token."""
+        for handler in self.handlers:
+            if not handler.ignore_llm:
+                if verbose or handler.always_verbose:
+                    handler.on_llm_new_token(token, **kwargs)
 
     def on_llm_end(
         self, response: LLMResult, verbose: bool = False, **kwargs: Any

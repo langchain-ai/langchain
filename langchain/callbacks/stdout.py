@@ -23,6 +23,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Do nothing."""
+        pass
+
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
