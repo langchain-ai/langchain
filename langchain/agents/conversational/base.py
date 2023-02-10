@@ -108,7 +108,7 @@ class ConversationalAgent(Agent):
             human_prefix=human_prefix,
             prefix=prefix,
             suffix=suffix,
-            format_instructions = format_instructions,
+            format_instructions=format_instructions,
             input_variables=input_variables,
         )
         llm_chain = LLMChain(

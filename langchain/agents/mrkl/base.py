@@ -110,7 +110,11 @@ class ZeroShotAgent(Agent):
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
-            tools, prefix=prefix, suffix=suffix, format_instructions=format_instructions, input_variables=input_variables
+            tools,
+            prefix=prefix,
+            suffix=suffix,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
         )
         llm_chain = LLMChain(
             llm=llm,
