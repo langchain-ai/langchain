@@ -19,7 +19,6 @@ class OnlinePDFLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-
         r = requests.get(self.web_path)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/online_file.pdf"
