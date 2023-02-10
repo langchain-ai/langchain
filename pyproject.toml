@@ -37,9 +37,16 @@ qdrant-client = {version = "^0.11.7", optional = true}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
 tenacity = "^8.1.0"
+cohere = {version = "^3", optional = true}
+openai = {version = "^0", optional = true}
+nlpcloud = {version = "^1", optional = true}
+huggingface_hub = {version = "^0", optional = true}
+google-search-results = {version = "^2", optional = true}
+sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
 pypdf = {version = "^3.4.0", optional = true}
 black = "^23.1.0"
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
