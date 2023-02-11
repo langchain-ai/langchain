@@ -8,7 +8,7 @@ from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.embeddings.base import Embeddings
 from langchain.llms.base import BaseLLM
-from langchain.llms.fake_llm import FakeLLM
+from langchain.llms.fake import FakeDictLLM
 from langchain.schema import Generation, LLMResult
 
 
@@ -28,7 +28,7 @@ def test_hyde_from_llm() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(), FakeEmbeddings(), key
+            FakeDictLLM(), FakeEmbeddings(), key
         )
         embedding.embed_query("foo")
 
@@ -37,6 +37,6 @@ def test_hyde_from_llm_with_multiple_n() -> None:
     """Test loading HyDE from all prompts."""
     for key in PROMPT_MAP:
         embedding = HypotheticalDocumentEmbedder.from_llm(
-            FakeLLM(n=8), FakeEmbeddings(), key
+            FakeDictLLM(n=8), FakeEmbeddings(), key
         )
         embedding.embed_query("foo")

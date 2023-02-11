@@ -9,13 +9,13 @@ except ImportError:
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.schema import Generation, LLMResult
-from langchain.llms.fake_llm import FakeLLM
+from langchain.llms.fake import FakeDictLLM
 
 
 def test_caching() -> None:
     """Test caching behavior."""
     langchain.llm_cache = InMemoryCache()
-    llm = FakeLLM()
+    llm = FakeDictLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -53,7 +53,7 @@ def test_custom_caching() -> None:
 
     engine = create_engine("sqlite://")
     langchain.llm_cache = SQLAlchemyCache(engine, FulltextLLMCache)
-    llm = FakeLLM()
+    llm = FakeDictLLM()
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))

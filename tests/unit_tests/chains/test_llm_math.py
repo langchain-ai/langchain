@@ -4,7 +4,7 @@ import pytest
 
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_math.prompt import _PROMPT_TEMPLATE
-from langchain.llms.fake_llm import FakeLLM
+from langchain.llms.fake import FakeDictLLM
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def fake_llm_math_chain() -> LLMMathChain:
         complex_question: "```python\nprint(2**.5)\n```",
         _PROMPT_TEMPLATE.format(question="foo"): "foo",
     }
-    fake_llm = FakeLLM(queries=queries)
+    fake_llm = FakeDictLLM(queries=queries)
     return LLMMathChain(llm=fake_llm, input_key="q", output_key="a")
 
 

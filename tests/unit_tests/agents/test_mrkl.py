@@ -6,7 +6,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.prompts import PromptTemplate
-from langchain.llms.fake_llm import FakeLLM
+from langchain.llms.fake import FakeDictLLM
 
 
 def test_get_action_and_input() -> None:
@@ -94,7 +94,7 @@ def test_from_chains() -> None:
         Tool(name="foo", func=lambda x: "foo", description="foobar1"),
         Tool(name="bar", func=lambda x: "bar", description="foobar2"),
     ]
-    agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
+    agent = ZeroShotAgent.from_llm_and_tools(FakeDictLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"
     expected_tool_names = "foo, bar"
     expected_template = "\n\n".join(

@@ -9,7 +9,7 @@ from langchain.chains.conversation.memory import (
     ConversationSummaryMemory,
 )
 from langchain.prompts.prompt import PromptTemplate
-from langchain.llms.fake_llm import FakeLLM
+from langchain.llms.fake import FakeDictLLM
 
 
 def test_memory_ai_prefix() -> None:
@@ -28,7 +28,7 @@ def test_memory_human_prefix() -> None:
 
 def test_conversation_chain_works() -> None:
     """Test that conversation chain works in basic setting."""
-    llm = FakeLLM()
+    llm = FakeDictLLM()
     prompt = PromptTemplate(input_variables=["foo", "bar"], template="{foo} {bar}")
     memory = ConversationBufferMemory(memory_key="foo")
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="bar")
@@ -37,7 +37,7 @@ def test_conversation_chain_works() -> None:
 
 def test_conversation_chain_errors_bad_prompt() -> None:
     """Test that conversation chain works in basic setting."""
-    llm = FakeLLM()
+    llm = FakeDictLLM()
     prompt = PromptTemplate(input_variables=[], template="nothing here")
     with pytest.raises(ValueError):
         ConversationChain(llm=llm, prompt=prompt)
@@ -45,7 +45,7 @@ def test_conversation_chain_errors_bad_prompt() -> None:
 
 def test_conversation_chain_errors_bad_variable() -> None:
     """Test that conversation chain works in basic setting."""
-    llm = FakeLLM()
+    llm = FakeDictLLM()
     prompt = PromptTemplate(input_variables=["foo"], template="{foo}")
     memory = ConversationBufferMemory(memory_key="foo")
     with pytest.raises(ValueError):
@@ -57,7 +57,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
     [
         ConversationBufferMemory(memory_key="baz"),
         ConversationBufferWindowMemory(memory_key="baz"),
-        ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
+        ConversationSummaryMemory(llm=FakeDictLLM(), memory_key="baz"),
     ],
 )
 def test_conversation_memory(memory: Memory) -> None:
@@ -88,7 +88,7 @@ def test_conversation_memory(memory: Memory) -> None:
     "memory",
     [
         ConversationBufferMemory(memory_key="baz"),
-        ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
+        ConversationSummaryMemory(llm=FakeDictLLM(), memory_key="baz"),
         ConversationBufferWindowMemory(memory_key="baz"),
     ],
 )
