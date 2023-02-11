@@ -1,6 +1,7 @@
 """Prompt schema definition."""
 from __future__ import annotations
 
+from string import Formatter
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -116,6 +117,14 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         with open(template_file, "r") as f:
             template = f.read()
         return cls(input_variables=input_variables, template=template)
+
+    @classmethod
+    def from_template(cls, template: str) -> PromptTemplate:
+        """Load a prompt template from a template."""
+        input_variables = {
+            v for _, v, _, _ in Formatter().parse(template) if v is not None
+        }
+        return cls(input_variables=list(sorted(input_variables)), template=template)
 
 
 # For backwards compatibility.

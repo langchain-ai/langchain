@@ -1,6 +1,10 @@
 """Test base LLM functionality."""
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
-from sqlalchemy.orm import declarative_base
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
