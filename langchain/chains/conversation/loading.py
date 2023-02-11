@@ -23,7 +23,7 @@ def load_memory_from_config(config: dict) -> Memory:
 
 
 def load_memory(file: Union[str, Path]) -> Memory:
-    """Load LLM from file."""
+    """Load Memory from file."""
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)

@@ -38,6 +38,10 @@ class Memory(BaseModel, ABC):
     def clear(self) -> None:
         """Clear memory contents."""
 
+    @property
+    def _memory_type(self) -> str:
+        raise NotImplementedError("Saving not supported for this memory type.")
+
     def dict(self, **kwargs: Any) -> Dict:
         """Return a dictionary of the Memory."""
         _dict = super().dict()
