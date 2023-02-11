@@ -9,7 +9,7 @@ from langchain.chains.conversation.memory import (
     ConversationSummaryMemory,
 )
 from langchain.prompts.prompt import PromptTemplate
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 def test_memory_ai_prefix() -> None:

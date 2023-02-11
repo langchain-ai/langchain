@@ -1,7 +1,7 @@
 """Test LLM callbacks."""
 from langchain.callbacks.base import CallbackManager
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 def test_llm_with_callbacks() -> None:

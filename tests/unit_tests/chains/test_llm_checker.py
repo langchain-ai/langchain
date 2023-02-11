@@ -11,7 +11,7 @@ from langchain.chains.llm_checker.prompt import (
     _LIST_ASSERTIONS_TEMPLATE,
     _REVISED_ANSWER_TEMPLATE,
 )
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 @pytest.fixture

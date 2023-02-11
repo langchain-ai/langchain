@@ -6,26 +6,7 @@ from pydantic import BaseModel
 
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
-
-
-class FakeLLM(LLM, BaseModel):
-    """Fake LLM wrapper for testing purposes."""
-
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Return `foo` if longer than 10000 words, else `bar`."""
-        if len(prompt) > 10000:
-            return "foo"
-        else:
-            return "bar"
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "fake"
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        return {}
+from langchain.llms.fake_llm import FakeLLM
 
 
 def test_proper_inputs() -> None:

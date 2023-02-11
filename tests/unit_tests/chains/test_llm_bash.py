@@ -4,7 +4,7 @@ import pytest
 
 from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 @pytest.fixture

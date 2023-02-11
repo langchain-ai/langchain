@@ -9,7 +9,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain
 from langchain.prompts.base import BaseOutputParser
 from langchain.prompts.prompt import PromptTemplate
-from tests.unit_tests.llms.fake_llm import FakeLLM
+from langchain.llms.fake_llm import FakeLLM
 
 
 class FakeOutputParser(BaseOutputParser):
