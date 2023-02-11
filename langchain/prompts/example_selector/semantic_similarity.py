@@ -57,6 +57,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         embeddings: Embeddings,
         vectorstore_cls: VectorStore,
         k: int = 4,
+        input_keys: Optional[List[str]] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -68,12 +69,16 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
             embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
             k: Number of examples to select
+            input_keys: If provided, the search is based on the input variables instead of all variables.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
-        string_examples = [" ".join(sorted_values(eg)) for eg in examples]
+        if input_keys:
+            string_examples = [" ".join(sorted_values({k: eg[k] for k in input_keys})) for eg in examples]
+        else:
+            string_examples = [" ".join(sorted_values(eg)) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
@@ -113,6 +118,7 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, Bas
         vectorstore_cls: VectorStore,
         k: int = 4,
         fetch_k: int = 20,
+        input_keys: Optional[List[str]] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -124,12 +130,16 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, Bas
             embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
             k: Number of examples to select
+            input_keys: If provided, the search is based on the input variables instead of all variables.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
-        string_examples = [" ".join(sorted_values(eg)) for eg in examples]
+        if input_keys:
+            string_examples = [" ".join(sorted_values({k: eg[k] for k in input_keys})) for eg in examples]
+        else:
+            string_examples = [" ".join(sorted_values(eg)) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
