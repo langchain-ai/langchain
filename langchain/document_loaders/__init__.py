@@ -1,5 +1,6 @@
 """All different types of document loaders."""
 
+from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.directory import DirectoryLoader
@@ -53,5 +54,6 @@ __all__ = [
     "GutenbergLoader",
     "PagedPDFSplitter",
     "EveryNoteLoader",
+    "AirbyteJSONLoader",
     "OnlinePDFLoader",
 ]
