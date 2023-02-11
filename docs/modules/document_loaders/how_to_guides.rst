@@ -47,6 +47,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Gutenberg <./examples/gutenberg.html>`_: A walkthrough of how to load data from a Gutenberg ebook text.
 
+`Airbyte Json <./examples/airbyte_json.html>`_: A walkthrough of how to load data from a local Airbyte JSON file.
+
 .. toctree::
    :maxdepth: 1
    :glob:
