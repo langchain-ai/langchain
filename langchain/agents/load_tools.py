@@ -124,9 +124,14 @@ def _get_wolfram_alpha(**kwargs: Any) -> Tool:
 
 
 def _get_google_search(**kwargs: Any) -> Tool:
+    if "results" in kwargs:
+        num_results = kwargs.pop("return_results")
+        func = lambda input: GoogleSearchAPIWrapper(**kwargs).results(query=input, num_results=results)
+    else: 
+        func = GoogleSearchAPIWrapper(**kwargs).run
     return Tool(
         "Google Search",
-        GoogleSearchAPIWrapper(**kwargs).run,
+        func,
         "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
@@ -146,7 +151,7 @@ _EXTRA_LLM_TOOLS = {
 }
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
-    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-search": (_get_google_search, ["google_api_key", "google_cse_id", "results"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
 }
 
