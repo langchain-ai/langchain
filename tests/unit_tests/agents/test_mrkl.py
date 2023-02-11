@@ -5,8 +5,8 @@ import pytest
 from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
-from langchain.prompts import PromptTemplate
 from langchain.llms.fake import FakeDictLLM
+from langchain.prompts import PromptTemplate
 
 
 def test_get_action_and_input() -> None:

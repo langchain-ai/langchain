@@ -8,8 +8,8 @@ from langchain.chains.conversation.memory import (
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
-from langchain.prompts.prompt import PromptTemplate
 from langchain.llms.fake import FakeDictLLM
+from langchain.prompts.prompt import PromptTemplate
 
 
 def test_memory_ai_prefix() -> None:

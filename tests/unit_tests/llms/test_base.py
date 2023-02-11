@@ -8,8 +8,8 @@ except ImportError:
 
 import langchain
 from langchain.cache import InMemoryCache, SQLAlchemyCache
-from langchain.schema import Generation, LLMResult
 from langchain.llms.fake import FakeDictLLM
+from langchain.schema import Generation, LLMResult
 
 
 def test_caching() -> None:

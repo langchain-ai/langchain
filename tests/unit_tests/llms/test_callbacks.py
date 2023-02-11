@@ -1,13 +1,15 @@
 """Test LLM callbacks."""
 from langchain.callbacks.base import CallbackManager
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from langchain.llms.fake import FakeDictLLM
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_llm_with_callbacks() -> None:
     """Test LLM callbacks."""
     handler = FakeCallbackHandler()
-    llm = FakeDictLLM(callback_manager=CallbackManager(handlers=[handler]), verbose=True)
+    llm = FakeDictLLM(
+        callback_manager=CallbackManager(handlers=[handler]), verbose=True
+    )
     output = llm("foo")
     assert output == "foo"
     assert handler.starts == 1

@@ -1,11 +1,6 @@
 """Test functionality related to natbot."""
 
-from typing import Any, List, Mapping, Optional
-
-from pydantic import BaseModel
-
 from langchain.chains.natbot.base import NatBotChain
-from langchain.llms.base import LLM
 from langchain.llms.fake import FakeDictLLM
 
 

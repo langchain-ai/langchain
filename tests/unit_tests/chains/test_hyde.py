@@ -1,15 +1,12 @@
 """Test HyDE."""
-from typing import List, Optional
+from typing import List
 
 import numpy as np
-from pydantic import BaseModel
 
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.embeddings.base import Embeddings
-from langchain.llms.base import BaseLLM
 from langchain.llms.fake import FakeDictLLM
-from langchain.schema import Generation, LLMResult
 
 
 class FakeEmbeddings(Embeddings):

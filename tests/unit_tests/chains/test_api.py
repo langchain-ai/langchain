@@ -7,8 +7,8 @@ import pytest
 from langchain import LLMChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
-from langchain.requests import RequestsWrapper
 from langchain.llms.fake import FakeDictLLM
+from langchain.requests import RequestsWrapper
 
 
 class FakeRequestsChain(RequestsWrapper):

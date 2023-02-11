@@ -7,9 +7,9 @@ import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain
+from langchain.llms.fake import FakeDictLLM
 from langchain.prompts.base import BaseOutputParser
 from langchain.prompts.prompt import PromptTemplate
-from langchain.llms.fake import FakeDictLLM
 
 
 class FakeOutputParser(BaseOutputParser):
