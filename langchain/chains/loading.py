@@ -25,6 +25,8 @@ from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config
 from langchain.utilities.loading import try_load_from_hub
+from langchain.chains.conversation.base import ConversationChain
+from langchain.chains.conversation.loading import load_memory, load_memory_from_config
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
@@ -48,6 +50,35 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
         raise ValueError("One of `prompt` or `prompt_path` must be present.")
 
     return LLMChain(llm=llm, prompt=prompt, **config)
+
+
+def _load_llm_conversation_chain(config: dict, **kwargs: Any) -> LLMChain:
+    """Load LLM conversation chain from config dict."""
+    if "llm" in config:
+        llm_config = config.pop("llm")
+        llm = load_llm_from_config(llm_config)
+    elif "llm_path" in config:
+        llm = load_llm(config.pop("llm_path"))
+    else:
+        raise ValueError("One of `llm` or `llm_path` must be present.")
+
+    if "prompt" in config:
+        prompt_config = config.pop("prompt")
+        prompt = load_prompt_from_config(prompt_config)
+    elif "prompt_path" in config:
+        prompt = load_prompt(config.pop("prompt_path"))
+    else:
+        raise ValueError("One of `prompt` or `prompt_path` must be present.")
+
+    if "memory" in config:
+        memory_config = config.pop("memory")
+        memory = load_memory_from_config(memory_config)
+    elif "memory_path" in config:
+        memory = load_memory(config.pop("memory_path"))
+    else:
+        raise ValueError("One of `memory` or `memory_path` must be present.")
+
+    return ConversationChain(llm=llm, prompt=prompt, memory=memory, **config)
 
 
 def _load_hyde_chain(config: dict, **kwargs: Any) -> HypotheticalDocumentEmbedder:
@@ -412,6 +443,7 @@ type_to_loader_dict = {
     "llm_checker_chain": _load_llm_checker_chain,
     "llm_math_chain": _load_llm_math_chain,
     "llm_requests_chain": _load_llm_requests_chain,
+    "llm_conversation_chain": _load_llm_conversation_chain,
     "pal_chain": _load_pal_chain,
     "qa_with_sources_chain": _load_qa_with_sources_chain,
     "stuff_documents_chain": _load_stuff_documents_chain,

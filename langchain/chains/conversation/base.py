@@ -58,3 +58,7 @@ class ConversationChain(LLMChain, BaseModel):
                 f"memory, and {input_key} as the normal input key."
             )
         return values
+
+    @property
+    def _chain_type(self) -> str:
+        return "llm_conversation_chain"
