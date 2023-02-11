@@ -125,8 +125,9 @@ def _get_wolfram_alpha(**kwargs: Any) -> Tool:
 
 def _get_google_search(**kwargs: Any) -> Tool:
     if "results" in kwargs:
-        num_results = kwargs.pop("return_results")
-        func = lambda input: GoogleSearchAPIWrapper(**kwargs).results(query=input, num_results=results)
+        num_results = kwargs.pop("results")
+        kwargs['k'] = num_results
+        func = lambda input: GoogleSearchAPIWrapper(**kwargs).results(query=input, num_results=num_results)
     else: 
         func = GoogleSearchAPIWrapper(**kwargs).run
     return Tool(

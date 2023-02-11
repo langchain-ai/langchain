@@ -61,7 +61,10 @@ class GoogleSearchAPIWrapper(BaseModel):
             .list(q=search_term, cx=self.google_cse_id, **kwargs)
             .execute()
         )
-        return res["items"]
+        if "items" not in res:
+            return []
+        else: 
+            return res["items"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -117,7 +120,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         metadata_results = []
         results = self._google_search_results(query, num=num_results)
 
-
+        raise Exception(results)
         if len(results) == 0:
             return [{"Result": "No good Google Search Result was found"}]
         for result in results:
