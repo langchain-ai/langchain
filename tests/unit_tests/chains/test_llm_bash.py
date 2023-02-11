@@ -4,7 +4,7 @@ import pytest
 
 from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE
-from langchain.llms.fake import FakeDictLLM
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def fake_llm_bash_chain() -> LLMBashChain:
     question = "Please write a bash script that prints 'Hello World' to the console."
     prompt = _PROMPT_TEMPLATE.format(question=question)
     queries = {prompt: "```bash\nexpr 1 + 1\n```"}
-    fake_llm = FakeDictLLM(queries=queries)
+    fake_llm = FakeLLM(queries=queries)
     return LLMBashChain(llm=fake_llm, input_key="q", output_key="a")
 
 

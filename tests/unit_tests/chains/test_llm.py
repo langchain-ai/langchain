@@ -7,9 +7,9 @@ import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain
-from langchain.llms.fake import FakeDictLLM
 from langchain.prompts.base import BaseOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 class FakeOutputParser(BaseOutputParser):
@@ -24,10 +24,10 @@ class FakeOutputParser(BaseOutputParser):
 def fake_llm_chain() -> LLMChain:
     """Fake LLM chain for testing purposes."""
     prompt = PromptTemplate(input_variables=["bar"], template="This is a {bar}:")
-    return LLMChain(prompt=prompt, llm=FakeDictLLM(), output_key="text1")
+    return LLMChain(prompt=prompt, llm=FakeLLM(), output_key="text1")
 
 
-@patch("langchain.llms.loading.type_to_cls_dict", {"fake": FakeDictLLM})
+@patch("langchain.llms.loading.type_to_cls_dict", {"fake": FakeLLM})
 def test_serialization(fake_llm_chain: LLMChain) -> None:
     """Test serialization."""
     with TemporaryDirectory() as temp_dir:
@@ -65,7 +65,7 @@ def test_predict_and_parse() -> None:
     prompt = PromptTemplate(
         input_variables=["foo"], template="{foo}", output_parser=FakeOutputParser()
     )
-    llm = FakeDictLLM(queries={"foo": "foo bar"})
+    llm = FakeLLM(queries={"foo": "foo bar"})
     chain = LLMChain(prompt=prompt, llm=llm)
     output = chain.predict_and_parse(foo="foo")
     assert output == ["foo", "bar"]

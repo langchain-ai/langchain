@@ -11,7 +11,7 @@ from langchain.chains.llm_checker.prompt import (
     _LIST_ASSERTIONS_TEMPLATE,
     _REVISED_ANSWER_TEMPLATE,
 )
-from langchain.llms.fake import FakeDictLLM
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def fake_llm_checker_chain() -> LLMCheckerChain:
             question="Which mammal lays the biggest eggs?",
         ): "I still don't know.",
     }
-    fake_llm = FakeDictLLM(queries=queries)
+    fake_llm = FakeLLM(queries=queries)
     return LLMCheckerChain(llm=fake_llm, input_key="q", output_key="a")
 
 

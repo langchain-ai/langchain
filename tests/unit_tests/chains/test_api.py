@@ -7,8 +7,8 @@ import pytest
 from langchain import LLMChain
 from langchain.chains.api.base import APIChain
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
-from langchain.llms.fake import FakeDictLLM
 from langchain.requests import RequestsWrapper
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 class FakeRequestsChain(RequestsWrapper):
@@ -66,7 +66,7 @@ def fake_llm_api_chain(test_api_data: dict) -> APIChain:
         api_response=TEST_API_RESPONSE,
     )
     queries = {api_url_query_prompt: TEST_URL, api_response_prompt: TEST_API_SUMMARY}
-    fake_llm = FakeDictLLM(queries=queries)
+    fake_llm = FakeLLM(queries=queries)
     api_request_chain = LLMChain(llm=fake_llm, prompt=API_URL_PROMPT)
     api_answer_chain = LLMChain(llm=fake_llm, prompt=API_RESPONSE_PROMPT)
     requests_wrapper = FakeRequestsChain(output=TEST_API_RESPONSE)
