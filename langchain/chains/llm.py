@@ -156,6 +156,9 @@ class LLMChain(Chain, BaseModel):
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
         result = self.apply(input_list)
+        return self._parse_result(result)
+
+    def _parse_result(self, result):
         if self.prompt.output_parser is not None:
             new_result = []
             for res in result:
@@ -164,6 +167,13 @@ class LLMChain(Chain, BaseModel):
             return new_result
         else:
             return result
+
+    async def aapply_and_parse(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        """Call apply and then parse the results."""
+        result = await self.aapply(input_list)
+        return self._parse_result(result)
 
     @property
     def _chain_type(self) -> str:
