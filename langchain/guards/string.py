@@ -1,4 +1,4 @@
-
+"""Check whe returns a large portion of a protected string (like a prompt)."""
 from typing import Any, List, Tuple
 
 from langchain.guards.base import BaseGuard
@@ -11,7 +11,7 @@ def _overlap_percent(protected_string: str, llm_response: str) -> float:
     max_overlap = 0
     for i in range(len_llm_response - len_protected + 1):
         for n in range(len_protected + 1):
-            if llm_response[i: i + n] in protected_string:
+            if llm_response[i : i + n] in protected_string:
                 max_overlap = max(max_overlap, n)
     overlap_percent = max_overlap / len_protected
     return overlap_percent
@@ -95,12 +95,8 @@ class StringGuard(BaseGuard):
             similarity = _overlap_percent(protected_string, llm_response)
             if similarity >= leniency:
                 violation_message = (
-                    "Restriction violated. Attempted answer: "
-                    + llm_response
-                    + ". Reasoning: "
-                    + "Leakage of protected string: "
-                    + protected_string
-                    + "."
+                    f"Restriction violated. Attempted answer: {llm_response}. "
+                    f"Reasoning: Leakage of protected string: {protected_string}."
                 )
                 return True, violation_message
         return False, ""

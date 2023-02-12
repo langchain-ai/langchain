@@ -1,17 +1,28 @@
+"""Check if chain or agent violates a provided guard function."""
 from typing import Any, Callable, Tuple
 
 from langchain.guards.base import BaseGuard
 
 
 class CustomGuard(BaseGuard):
-    """The CustomGuard class is a decorator that can be applied to any chain or agent to either throw an error or recursively call the chain or agent when the output of said chain or agent violates a provided guard function
+    """Check if chain or agent violates a provided guard function.
 
     Args:
-        guard_function (func): The function to be used to guard the output of the chain or agent. The function should take the output of the chain or agent as its only argument and return a boolean value where True means the guard has been violated. Optionally, return a tuple where the first element is a boolean value and the second element is a string that will be displayed when the guard is violated. If the string is ommited the default message will be used.
-        retries (int, optional): The number of times the chain or agent should be called recursively if the output violates the restrictions. Defaults to 0.
+        guard_function (func): The function to be used to guard the
+            output of the chain or agent. The function should take
+            the output of the chain or agent as its only argument
+            and return a boolean value where True means the guard
+            has been violated. Optionally, return a tuple where the
+            first element is a boolean value and the second element is
+            a string that will be displayed when the guard is violated.
+            If the string is ommited the default message will be used.
+        retries (int, optional): The number of times the chain or agent
+            should be called recursively if the output violates the
+            restrictions. Defaults to 0.
 
     Raises:
-        Exception: If the output violates the restrictions and the maximum number of retries has been exceeded.
+        Exception: If the output violates the restrictions and the
+            maximum number of retries has been exceeded.
 
     Example:
         .. code-block:: python
@@ -39,15 +50,14 @@ class CustomGuard(BaseGuard):
     """
 
     def __init__(self, guard_function: Callable, retries: int = 0) -> None:
-        """Initialize with guard function and retres."""
-        super().__init__()
+        """Initialize with guard function and retries."""
+        super().__init__(retries=retries)
         self.guard_function = guard_function
-        self.retries = retries
 
     def resolve_guard(
         self, llm_response: str, *args: Any, **kwargs: Any
     ) -> Tuple[bool, str]:
-        """Function to determine if guard was violated. Uses custom guard function.
+        """Determine if guard was violated. Uses custom guard function.
 
         Args:
             llm_response (str): the llm_response string to be tested against the guard.
@@ -66,10 +76,11 @@ class CustomGuard(BaseGuard):
         elif type(response) is bool:
             boolean_output = response
             violation_message = (
-                "Restriction violated. Attempted answer: " + llm_response + "."
+                f"Restriction violated. Attempted answer: {llm_response}."
             )
         else:
             raise Exception(
-                "Custom guard function must return either a boolean or a tuple of a boolean and a string."
+                "Custom guard function must return either a boolean"
+                " or a tuple of a boolean and a string."
             )
         return boolean_output, violation_message

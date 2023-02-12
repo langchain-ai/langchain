@@ -26,8 +26,9 @@ class BaseGuard:
     def resolve_guard(
         self, llm_response: str, *args: Any, **kwargs: Any
     ) -> Tuple[bool, str]:
-        """Function to determine if guard was violated (if response should be blocked)
-        Can be overwritten when subclassing Guard class to expand on guard functionality
+        """Determine if guard was violated (if response should be blocked).
+
+        Can be overwritten when subclassing to expand on guard functionality
 
         Args:
             llm_response (str): the llm_response string to be tested against the guard.
@@ -41,7 +42,7 @@ class BaseGuard:
         return False, ""
 
     def handle_violation(self, message: str, *args: Any, **kwargs: Any) -> Exception:
-        """Function to handle violation of guard.
+        """Handle violation of guard.
 
         Args:
             message (str): the message to be displayed when the guard is violated.
@@ -53,6 +54,7 @@ class BaseGuard:
 
     def __call__(self, func: Callable) -> Callable:
         """Create wrapper to be returned."""
+
         def wrapper(*args: Any, **kwargs: Any) -> Union[str, Exception]:
             """Create wrapper to return."""
             if self.retries < 0:

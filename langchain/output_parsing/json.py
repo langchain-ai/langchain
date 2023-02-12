@@ -1,3 +1,4 @@
+"""Parse json output."""
 import json
 from typing import Dict, List, Union
 

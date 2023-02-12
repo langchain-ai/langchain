@@ -1,3 +1,4 @@
+"""Class to parse the output into a dictionary."""
 import re
 from typing import Dict, List, Optional
 

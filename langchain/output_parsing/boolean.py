@@ -1,5 +1,6 @@
+"""Class to parse output to boolean."""
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import Field, root_validator
 
@@ -7,6 +8,8 @@ from langchain.output_parsing.base import BaseOutputParser
 
 
 class BooleanOutputParser(BaseOutputParser):
+    """Class to parse output to boolean."""
+
     true_values: List[str] = Field(default=["1"])
     false_values: List[str] = Field(default=["0"])
 
@@ -22,7 +25,7 @@ class BooleanOutputParser(BaseOutputParser):
         return values
 
     def parse(self, text: str) -> bool:
-        """Outputs a boolean from a string.
+        """Output a boolean from a string.
 
         Allows a LLM's response to be parsed into a boolean.
         For example, if a LLM returns "1", this function will return True.
