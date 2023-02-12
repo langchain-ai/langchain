@@ -26,7 +26,7 @@ from langchain.utils import get_from_dict_or_env
 
 
 def _get_default_params() -> dict:
-    return {"lang": "en", "format": "json"}
+    return {"language": "en", "format": "json"}
 
 
 class SearxResults(dict):
