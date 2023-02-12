@@ -1,4 +1,4 @@
-"""Chain that calls Searx meta search API.
+"""Chain that calls SearxNG meta search API.
 
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
 multiple search engines and databases.
@@ -116,7 +116,7 @@ class SearxSearchWrapper(BaseModel):
 
         engines = values.get("engines")
         if engines:
-            values["params"]["engines"] = ','.join(engines)
+            values["params"]["engines"] = ",".join(engines)
 
         searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
         if not searx_host.startswith("http"):
@@ -177,7 +177,7 @@ class SearxSearchWrapper(BaseModel):
         params = {**self.params, **_params, **kwargs}
 
         if isinstance(engines, list) and len(engines) > 0:
-            params['engines'] = ','.join(engines)
+            params["engines"] = ",".join(engines)
 
         res = self._searx_api_query(params)
 
@@ -186,15 +186,15 @@ class SearxSearchWrapper(BaseModel):
 
         # only return the content of the results list
         elif len(res.results) > 0:
-            toret = "\n\n".join(
-                [r.get("content", "") for r in res.results[: self.k]]
-            )
+            toret = "\n\n".join([r.get("content", "") for r in res.results[: self.k]])
         else:
             toret = "No good search result found"
 
         return toret
 
-    def results(self, query: str, num_results: int, engines: List[str] = [],  **kwargs: Any) -> List[Dict]:
+    def results(
+        self, query: str, num_results: int, engines: List[str] = [], **kwargs: Any
+    ) -> List[Dict]:
         """Run query through Searx API and returns the results with metadata.
 
         Args:
@@ -217,7 +217,7 @@ class SearxSearchWrapper(BaseModel):
         }
         params = {**self.params, **_params, **kwargs}
         if isinstance(engines, list) and len(engines) > 0:
-            params['engines'] = ','.join(engines)
+            params["engines"] = ",".join(engines)
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]

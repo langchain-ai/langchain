@@ -10,10 +10,10 @@ from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
-from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
