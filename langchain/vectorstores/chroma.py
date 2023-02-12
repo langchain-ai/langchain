@@ -53,7 +53,7 @@ class Chroma(VectorStore):
         else:
             self._collection = self._client.create_collection(
                 name=collection_name,
-                embedding_function=self._embedding_function.embed_documents,
+                embedding_fn=self._embedding_function.embed_documents,
             )
 
     def add_texts(
