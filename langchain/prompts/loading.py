@@ -15,14 +15,16 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/pro
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Get the right type from the config and load it accordingly."""
-    prompt_type = config.pop("_type", "prompt")
-    if prompt_type == "prompt":
-        return _load_prompt(config)
-    elif prompt_type == "few_shot":
-        return _load_few_shot_prompt(config)
-    else:
-        raise ValueError
+    """Load prompt from Config Dict."""
+    if "_type" not in config:
+        raise ValueError("Must specify a prompt Type in config")
+    config_type = config.pop("_type")
+
+    if config_type not in type_to_loader_dict:
+        raise ValueError(f"Loading {config_type} prompt not supported")
+
+    prompt_loader = type_to_loader_dict[config_type]
+    return prompt_loader(config)
 
 
 def _load_template(var_name: str, config: dict) -> dict:
@@ -150,3 +152,10 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.
     return load_prompt_from_config(config)
+
+
+type_to_loader_dict = {
+    "prompt": _load_prompt,
+    "few_shot": _load_few_shot_prompt,
+    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
+}
