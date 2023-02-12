@@ -82,7 +82,8 @@ class SQLDatabase:
         template_prefix = """
             Table data will be described in the following format:
 
-            Table 'table name' has columns: {column1 name: (column1 type, [list of example values for column1]), column2 name: (column2 type, [list of example values for column2], ...)
+            Table 'table name' has columns: {column1 name: (column1 type, [list of example values for column1]),
+            column2 name: (column2 type, [list of example values for column2], ...)
 
             These are the tables you can use, together with their column information:
 
@@ -106,7 +107,9 @@ class SQLDatabase:
                 )
 
                 for e, col in enumerate(columns):
-                    columns[col].append([row[e] for row in sample_rows_ls]) # type: ignore
+                    columns[col].append(
+                        [row[e] for row in sample_rows_ls]  # type: ignore
+                    )
 
                 table_str = f"Table '{table_name}' has columns: " + str(dict(columns))
 
