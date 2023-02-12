@@ -84,7 +84,9 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         # Call predict on the LLM.
         return self.llm_chain.predict(**inputs), {}
 
-    async def acombine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM."""
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
