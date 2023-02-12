@@ -90,6 +90,7 @@ class SearxSearchWrapper(BaseModel):
     unsecure: bool = False
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
+    engines: Optional[List[str]] = []
     k: int = 10
 
     @validator("unsecure")
@@ -112,6 +113,10 @@ class SearxSearchWrapper(BaseModel):
         user_params = values["params"]
         default = _get_default_params()
         values["params"] = {**default, **user_params}
+
+        engines = values.get("engines")
+        if engines:
+            values["params"]["engines"] = ','.join(engines)
 
         searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
         if not searx_host.startswith("http"):
@@ -144,7 +149,7 @@ class SearxSearchWrapper(BaseModel):
         self._result = res
         return res
 
-    def run(self, query: str, **kwargs: Any) -> str:
+    def run(self, query: str, engines: List[str] = [], **kwargs: Any) -> str:
         """Run query through Searx API and parse results.
 
         You can pass any other params to the searx query API.
@@ -162,12 +167,15 @@ class SearxSearchWrapper(BaseModel):
                 searx = SearxSearchWrapper(searx_host="http://my.searx.host")
                 searx.run("what is the weather in France ?", engine="qwant")
 
-
         """
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
+
+        if isinstance(engines, list) and len(engines) > 0:
+            params['engines'] = ','.join(engines)
+
         res = self._searx_api_query(params)
 
         if len(res.answers) > 0:
@@ -183,7 +191,7 @@ class SearxSearchWrapper(BaseModel):
 
         return toret
 
-    def results(self, query: str, num_results: int, **kwargs: Any) -> List[Dict]:
+    def results(self, query: str, num_results: int, engines: List[str] = [],  **kwargs: Any) -> List[Dict]:
         """Run query through Searx API and returns the results with metadata.
 
         Args:
@@ -195,12 +203,18 @@ class SearxSearchWrapper(BaseModel):
                 snippet - The description of the result.
                 title - The title of the result.
                 link - The link to the result.
+                engines - The engines used for the result.
+                category - Searx category of the result.
+
+
         """
         metadata_results = []
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
+        if isinstance(engines, list) and len(engines) > 0:
+            params['engines'] = ','.join(engines)
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
