@@ -82,7 +82,7 @@ class SQLDatabase:
         template_prefix = """
             Table data will be described in the following format so you can understand what the data looks like:
 
-            table name, {column1 name: (column1 type, [list of example values for column1]), column2 name: (column2 type, [list of example values for column2], ...)
+            Table 'table name' has columns: {column1 name: (column1 type, [list of example values for column1]), column2 name: (column2 type, [list of example values for column2], ...)
 
             These are the tables you can use, together with their column information:
 
@@ -95,11 +95,6 @@ class SQLDatabase:
                 columns[f"{column['name']}"].append(str(column["type"]))
 
             if self._sample_rows_in_table_info:
-                row_template = (
-                    " Here is an example of {n_rows} rows from this table "
-                    "(long strings are truncated):\n"
-                    "{sample_rows}"
-                )
                 sample_rows = self.run(
                     f"SELECT * FROM '{table_name}' LIMIT "
                     f"{self._sample_rows_in_table_info}"
@@ -113,7 +108,7 @@ class SQLDatabase:
                 for e, col in enumerate(columns):
                     columns[col].append([row[e] for row in sample_rows_ls]) # type: ignore
 
-                table_str = table_name + ", " + str(dict(columns))
+                table_str = f"Table '{table_name}' has columns: " + str(dict(columns))
 
             tables.append(table_str)
 
