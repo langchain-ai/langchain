@@ -12,7 +12,10 @@ DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
 )
 
-def _embed_documents(model_id: str, instruct: bool = False, *args, **kwargs) -> List[List[float]]:
+
+def _embed_documents(
+    model_id: str, instruct: bool = False, *args: Any, **kwargs: Any
+) -> List[List[float]]:
     """Inference function to send to the remote hardware. Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
@@ -25,9 +28,11 @@ def _embed_documents(model_id: str, instruct: bool = False, *args, **kwargs) -> 
 
         client = INSTRUCTOR(model_id)
     import torch
+
     if torch.cuda.is_available():
         client = client.cuda()
     return client.encode(*args, **kwargs)
+
 
 class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models to perform inference on self-hosted remote hardware.
@@ -60,7 +65,9 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
         try:
             import runhouse as rh
 
-            self.client = rh.send(fn=_embed_documents).to(self.hardware, reqs=['pip:./'] + self.model_reqs)
+            self.client = rh.send(fn=_embed_documents).to(
+                self.hardware, reqs=["pip:./"] + self.model_reqs
+            )
         except ImportError:
             raise ValueError(
                 "Could not import runhouse python package. "
