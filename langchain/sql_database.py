@@ -80,7 +80,7 @@ class SQLDatabase:
             all_table_names = table_names
 
         template_prefix = """
-            Table data will be described in the following format so you can understand what the data looks like:
+            Table data will be described in the following format:
 
             Table 'table name' has columns: {column1 name: (column1 type, [list of example values for column1]), column2 name: (column2 type, [list of example values for column2], ...)
 
