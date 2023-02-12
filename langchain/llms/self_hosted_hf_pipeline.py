@@ -145,7 +145,7 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
     """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model load function."""
-    model_reqs: List[str] = ["transformers"]
+    model_reqs: List[str] = ["transformers", "torch"]
     """Requirements to install on hardware to inference the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
@@ -171,7 +171,7 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
             )
 
         remote_load_fn = rh.send(fn=self.model_load_fn).to(
-            self.hardware, reqs=["./"] + self.model_reqs
+            self.hardware, reqs=["pip:./"] + self.model_reqs
         )
         _load_fn_kwargs = self.load_fn_kwargs or {}
         self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
@@ -199,7 +199,7 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
             model_kwargs=model_kwargs,
             load_fn_kwargs=load_fn_kwargs,
             hardware=hardware,
-            model_reqs=["transformers"] + (model_reqs or []),
+            model_reqs=["transformers", "torch"] + (model_reqs or []),
             **kwargs,
         )
 

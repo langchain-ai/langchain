@@ -15,7 +15,6 @@ def get_remote_instance() -> Any:
 def test_selfhosted_huggingface_pipeline_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
     gpu = get_remote_instance()
-    gpu.restart_grpc_server(resync_rh=True, restart_ray=False)
     llm = SelfHostedHuggingFacePipeline.from_model_id(
         model_id="gpt2",
         task="text-generation",

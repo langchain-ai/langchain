@@ -54,7 +54,7 @@ class SelfHostedHuggingFaceEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
-    model_reqs: List[str] = ["sentence_transformers"]
+    model_reqs: List[str] = ["sentence_transformers", "torch"]
     """Requirements to install on hardware to inference the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
