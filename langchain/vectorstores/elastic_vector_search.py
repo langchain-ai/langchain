@@ -107,7 +107,7 @@ class ElasticVectorSearch(VectorStore):
         return ids
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self, embedding: List[int], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 

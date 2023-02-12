@@ -40,7 +40,7 @@ def test_faiss_vector_sim() -> None:
         }
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
-    query_vec = FakeEmbeddings.embed_query("foo")
+    query_vec = FakeEmbeddings.embed_query(text="foo")
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 

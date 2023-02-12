@@ -21,7 +21,7 @@ def test_elasticsearch_vector_sim() -> None:
     docsearch = ElasticVectorSearch.from_texts(
         texts, FakeEmbeddings(), elasticsearch_url="http://localhost:9200"
     )
-    query_vec = FakeEmbeddings.embed_query("foo")
+    query_vec = FakeEmbeddings.embed_query(test="foo")
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 
