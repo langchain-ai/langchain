@@ -17,7 +17,7 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.online_pdf import OnlinePDFLoader
 from langchain.document_loaders.paged_pdf import PagedPDFSplitter
-from langchain.document_loaders.pdf import UnstructuredPDFLoader
+from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
@@ -58,4 +58,5 @@ __all__ = [
     "EveryNoteLoader",
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
+    "PDFMinerLoader",
 ]
