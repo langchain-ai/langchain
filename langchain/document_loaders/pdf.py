@@ -46,6 +46,7 @@ class PDFMinerLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load file."""
         from pdfminer.high_level import extract_text
+
         text = extract_text(self.file_path)
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
