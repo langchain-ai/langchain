@@ -106,6 +106,26 @@ class ElasticVectorSearch(VectorStore):
         self.client.indices.refresh(index=self.index_name)
         return ids
 
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the embedding vector.
+        """
+        script_query = _default_script_query(embedding)
+        response = self.client.search(index=self.index_name, query=script_query)
+        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
+        documents = [
+            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
+        ]
+        return documents
+
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -119,12 +139,7 @@ class ElasticVectorSearch(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding_function(query)
-        script_query = _default_script_query(embedding)
-        response = self.client.search(index=self.index_name, query=script_query)
-        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
-        documents = [
-            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
-        ]
+        documents = self.similarity_search_by_vector(embedding, k, **kwargs)
         return documents
 
     @classmethod

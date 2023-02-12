@@ -20,6 +20,17 @@ def test_pinecone() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_pinecone_vector_sim() -> None:
+    """Test end to end construction and search by vector."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Pinecone.from_texts(
+        texts, FakeEmbeddings(), index_name="langchain-demo", namespace="test"
+    )
+    query_vec = FakeEmbeddings.embed_query("foo")
+    output = docsearch.similarity_search_by_vector(query_vec, k=1, namespace="test")
+    assert output == [Document(page_content="foo")]
+
+
 def test_pinecone_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

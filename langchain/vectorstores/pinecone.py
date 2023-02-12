@@ -114,6 +114,39 @@ class Pinecone(VectorStore):
             docs.append((Document(page_content=text, metadata=metadata), res["score"]))
         return docs
 
+    def similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 5,
+        filter: Optional[dict] = None,
+        namespace: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return pinecone documents most similar to embedding vector.
+
+        Args:
+            embedding: Embedding vector.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Dictionary of argument(s) to filter on metadata
+            namespace: Namespace to search in. Default will search in '' namespace.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        docs = []
+        results = self._index.query(
+            [embedding],
+            top_k=k,
+            include_metadata=True,
+            namespace=namespace,
+            filter=filter,
+        )
+        for res in results["matches"]:
+            metadata = res["metadata"]
+            text = metadata.pop(self._text_key)
+            docs.append(Document(page_content=text, metadata=metadata))
+        return docs
+
     def similarity_search(
         self,
         query: str,
@@ -134,18 +167,9 @@ class Pinecone(VectorStore):
             List of Documents most similar to the query and score for each
         """
         query_obj = self._embedding_function(query)
-        docs = []
-        results = self._index.query(
-            [query_obj],
-            top_k=k,
-            include_metadata=True,
-            namespace=namespace,
-            filter=filter,
+        docs = self.similarity_search_by_vector(
+            query_obj, k, filter, namespace, **kwargs
         )
-        for res in results["matches"]:
-            metadata = res["metadata"]
-            text = metadata.pop(self._text_key)
-            docs.append(Document(page_content=text, metadata=metadata))
         return docs
 
     @classmethod

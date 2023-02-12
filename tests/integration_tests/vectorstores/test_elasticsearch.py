@@ -15,6 +15,17 @@ def test_elasticsearch() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_elasticsearch_vector_sim() -> None:
+    """Test end to end construction and search by vector."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = ElasticVectorSearch.from_texts(
+        texts, FakeEmbeddings(), elasticsearch_url="http://localhost:9200"
+    )
+    query_vec = FakeEmbeddings.embed_query("foo")
+    output = docsearch.similarity_search_by_vector(query_vec, k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_elasticsearch_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
