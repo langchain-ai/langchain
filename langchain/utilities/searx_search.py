@@ -144,8 +144,11 @@ class SearxSearchWrapper(BaseModel):
             headers=self.headers,
             params=params,
             verify=not self.unsecure,
-        ).text
-        res = SearxResults(raw_result)
+        )
+        # test if http result is ok
+        if not raw_result.ok:
+            raise ValueError("Searx API returned an error: ", raw_result.text)
+        res = SearxResults(raw_result.text)
         self._result = res
         return res
 
@@ -184,7 +187,7 @@ class SearxSearchWrapper(BaseModel):
         # only return the content of the results list
         elif len(res.results) > 0:
             toret = "\n\n".join(
-                [r.get("content", "no result found") for r in res.results[: self.k]]
+                [r.get("content", "") for r in res.results[: self.k]]
             )
         else:
             toret = "No good search result found"
@@ -220,9 +223,11 @@ class SearxSearchWrapper(BaseModel):
             return [{"Result": "No good Search Result was found"}]
         for result in results:
             metadata_result = {
-                "snippet": result["content"],
+                "snippet": result.get("content", ""),
                 "title": result["title"],
                 "link": result["url"],
+                "engines": result["engines"],
+                "category": result["category"],
             }
             metadata_results.append(metadata_result)
 
