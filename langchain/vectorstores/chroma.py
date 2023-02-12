@@ -106,9 +106,12 @@ class Chroma(VectorStore):
                 query_embeddings=[query_embedding], n_results=k, where=filter
             )
 
+        print(results)
+
         docs = [
+            # TODO: Chroma can do batch querying, we shouldn't hard code to the 1st result
             Document(page_content=result[0], metadata=result[1])
-            for result in zip(results.documents, results.metadatas)
+            for result in zip(results["documents"][0], results["metadatas"][0])
         ]
         return docs
 
