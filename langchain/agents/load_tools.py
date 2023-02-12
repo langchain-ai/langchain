@@ -10,7 +10,7 @@ from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
-from langchain.searx_search import SearxSearchWrapper
+from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -143,9 +143,9 @@ def _get_serpapi(**kwargs: Any) -> Tool:
 
 def _get_searx_search(**kwargs: Any) -> Tool:
     return Tool(
-        "Search",
-        SearxSearchWrapper(**kwargs).run,
-        "A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        name="Search",
+        description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        func=SearxSearchWrapper(**kwargs).run,
     )
 
 

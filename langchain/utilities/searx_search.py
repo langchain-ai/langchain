@@ -70,13 +70,13 @@ class SearxSearchWrapper(BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.searx_search import SearxSearchWrapper
+            from langchain.utilities import SearxSearchWrapper
             searx = SearxSearchWrapper(searx_host="https://searx.example.com")
 
     Example with SSL disabled:
         .. code-block:: python
 
-            from langchain.searx_search import SearxSearchWrapper
+            from langchain.utilities import SearxSearchWrapper
             # note the unsecure parameter is not needed if you pass the url scheme as
             # http
             searx = SearxSearchWrapper(searx_host="http://searx.example.com",
@@ -158,7 +158,7 @@ class SearxSearchWrapper(BaseModel):
 
             .. code-block:: python
 
-                from langchain.searx_search import SearxSearchWrapper
+                from langchain.utilities import SearxSearchWrapper
                 searx = SearxSearchWrapper(searx_host="http://my.searx.host")
                 searx.run("what is the weather in France ?", engine="qwant")
 
