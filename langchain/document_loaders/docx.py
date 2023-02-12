@@ -11,4 +11,3 @@ class UnstructuredDocxLoader(UnstructuredFileLoader):
         from unstructured.partition.docx import partition_docx
 
         return partition_docx(filename=self.file_path)
-

@@ -6,6 +6,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 class UnstructuredHTMLLoader(UnstructuredFileLoader):
     """Loader that uses unstructured to load HTML files."""
+
     def _get_elements(self) -> List:
         from unstructured.partition.html import partition_html
 

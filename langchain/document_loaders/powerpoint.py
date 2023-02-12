@@ -1,7 +1,6 @@
 """Loader that loads powerpoint files."""
 from typing import List
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
@@ -12,4 +11,3 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
         from unstructured.partition.pptx import partition_pptx
 
         return partition_pptx(filename=self.file_path)
-

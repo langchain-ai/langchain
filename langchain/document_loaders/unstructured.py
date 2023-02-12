@@ -35,7 +35,9 @@ class UnstructuredFileLoader(BaseLoader):
         elements = self._get_elements()
         metadata = {"source": self.file_path}
         if self.mode == "elements":
-            docs = [Document(page_content=str(el), metadata=metadata) for el in elements]
+            docs = [
+                Document(page_content=str(el), metadata=metadata) for el in elements
+            ]
         elif self.mode == "single":
             text = "\n\n".join([str(el) for el in elements])
             docs = [Document(page_content=text, metadata=metadata)]

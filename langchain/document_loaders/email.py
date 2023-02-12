@@ -11,4 +11,3 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
         from unstructured.partition.email import partition_email
 
         return partition_email(filename=self.file_path)
-
