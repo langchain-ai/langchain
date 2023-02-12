@@ -1,6 +1,8 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
+import ast
+from collections import defaultdict
 from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import create_engine, inspect
@@ -77,15 +79,20 @@ class SQLDatabase:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
-        template = "Table '{table_name}' has columns: {columns}."
+        template_prefix = """
+            Table data will be described in the following format so you can understand what the data looks like:
+
+            table name, {column1 name: (column1 type, [list of example values for column1]), column2 name: (column2 type, [list of example values for column2], ...)
+
+            These are the tables you can use, together with their column information:
+
+            """
 
         tables = []
         for table_name in all_table_names:
-            columns = []
+            columns = defaultdict(list)
             for column in self._inspector.get_columns(table_name, schema=self._schema):
-                columns.append(f"{column['name']} ({str(column['type'])})")
-            column_str = ", ".join(columns)
-            table_str = template.format(table_name=table_name, columns=column_str)
+                columns[f"{column['name']}"].append(str(column["type"]))
 
             if self._sample_rows_in_table_info:
                 row_template = (
@@ -97,18 +104,21 @@ class SQLDatabase:
                     f"SELECT * FROM '{table_name}' LIMIT "
                     f"{self._sample_rows_in_table_info}"
                 )
-                sample_rows = eval(sample_rows)
-                if len(sample_rows) > 0:
-                    n_rows = len(sample_rows)
-                    sample_rows = "\n".join(
-                        [" ".join([str(i)[:100] for i in row]) for row in sample_rows]
-                    )
-                    table_str += row_template.format(
-                        n_rows=n_rows, sample_rows=sample_rows
-                    )
+
+                sample_rows_ls = ast.literal_eval(sample_rows)
+                sample_rows_ls = list(
+                    map(lambda ls: [str(i)[:100] for i in ls], sample_rows_ls)
+                )
+
+                for e, col in enumerate(columns):
+                    columns[col].append([row[e] for row in sample_rows_ls]) # type: ignore
+
+                table_str = table_name + ", " + str(dict(columns))
 
             tables.append(table_str)
-        return "\n".join(tables)
+
+        final_str = template_prefix + "\n".join(tables)
+        return final_str
 
     def run(self, command: str) -> str:
         """Execute a SQL command and return a string representing the results.
