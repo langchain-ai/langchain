@@ -28,6 +28,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.youtube import YoutubeLoader
+from langchain.document_loaders.pdf import PDFMinerLoader
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -58,4 +59,5 @@ __all__ = [
     "EveryNoteLoader",
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
+    "PDFMinerLoader",
 ]
