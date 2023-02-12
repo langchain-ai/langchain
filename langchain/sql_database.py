@@ -76,7 +76,6 @@ class SQLDatabase:
 
         tables = []
         for table_name in all_table_names:
-
             columns = []
             for column in self._inspector.get_columns(table_name, schema=self._schema):
                 columns.append(f"{column['name']} ({str(column['type'])})")
