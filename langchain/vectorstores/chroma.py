@@ -1,9 +1,9 @@
 """Wrapper around ChromaDB embeddings platform."""
 from __future__ import annotations
 
-import uuid
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+import uuid
+from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -13,7 +13,7 @@ logger = logging.getLogger()
 
 
 class Chroma(VectorStore):
-    """ "Wrapper around ChromaDB embeddings platform.
+    """Wrapper around ChromaDB embeddings platform.
 
     To use, you should have the ``chromadb`` python package installed.
 
@@ -28,7 +28,7 @@ class Chroma(VectorStore):
     """
 
     def __init__(
-        self, collection_name: str, embedding_function: Optional[Embeddings]
+        self, collection_name: str, embedding_function: Optional[Embeddings] = None
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -48,12 +48,15 @@ class Chroma(VectorStore):
             self._collection = self._client.get_collection(name=collection_name)
             if embedding_function is not None:
                 logger.warning(
-                    f"Collection {collection_name} already exists, embedding function will not be updated."
+                    f"Collection {collection_name} already exists,"
+                    " embedding function will not be updated."
                 )
         else:
             self._collection = self._client.create_collection(
                 name=collection_name,
-                embedding_fn=self._embedding_function.embed_documents,
+                embedding_fn=self._embedding_function.embed_documents
+                if self._embedding_function is not None
+                else None,
             )
 
     def add_texts(
@@ -67,7 +70,7 @@ class Chroma(VectorStore):
         Args:
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of IDs to add to the vectorstore.
+            ids (Optional[List[str]], optional): Optional list of IDs.
 
         Returns:
             List[str]: List of IDs of the added texts.
@@ -81,7 +84,7 @@ class Chroma(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: Optional[int] = 4,
+        k: int = 4,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -89,13 +92,12 @@ class Chroma(VectorStore):
 
         Args:
             query (str): Query text to search for.
-            k (Optional[int], optional): Number of results to return. Defaults to 4.
-            filter (Optional[Dict[str, str]], optional): Filter results by metadata. Defaults to None.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List[Document]: List of documents most simmilar to the query text.
         """
-
         if self._embedding_function is None:
             results = self._collection.query(
                 query_texts=[query], n_results=k, where=filter
@@ -109,7 +111,8 @@ class Chroma(VectorStore):
         print(results)
 
         docs = [
-            # TODO: Chroma can do batch querying, we shouldn't hard code to the 1st result
+            # TODO: Chroma can do batch querying,
+            # we shouldn't hard code to the 1st result
             Document(page_content=result[0], metadata=result[1])
             for result in zip(results["documents"][0], results["metadatas"][0])
         ]
@@ -118,26 +121,25 @@ class Chroma(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        collection_name: str,
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        collection_name: str = "langchain",
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
 
         Args:
             collection_name (str): Name of the collection to create.
-            documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings], optional): Optiona; embedding function to use. Defaults to None.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas. Defaults to None.
-            ids (Optional[List[str]], optional): Optional list of IDs to add to the vectorstore. Defaults to None.
+            documents (List[Document]): List of documents to add.
+            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
+            metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
+            ids (Optional[List[str]]): List of document IDs. Defaults to None.
 
         Returns:
             Chroma: Chroma vectorstore.
         """
-
         chroma_collection = cls(
             collection_name=collection_name, embedding_function=embedding
         )
@@ -147,10 +149,10 @@ class Chroma(VectorStore):
     @classmethod
     def from_documents(
         cls,
-        collection_name: str,
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
+        collection_name: str = "langchain",
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -158,14 +160,13 @@ class Chroma(VectorStore):
         Args:
             collection_name (str): Name of the collection to create.
             documents (List[Document]): List of documents to add to the vectorstore.
-            embedding (Optional[Embeddings], optional): Optiona; embedding function to use. Defaults to None.
+            embedding (Optional[Embeddings]): Embedding function. Defaults to None.
 
         Returns:
             Chroma: Chroma vectorstore.
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        ids = [doc.id for doc in documents]
         return cls.from_texts(
             collection_name=collection_name,
             texts=texts,
