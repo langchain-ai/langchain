@@ -57,7 +57,9 @@ def _load_stuff_chain(
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    llm_chain = LLMChain(
+        llm=llm, prompt=prompt, verbose=verbose, callback_manager=callback_manager
+    )
     # TODO: document prompt
     return StuffDocumentsChain(
         llm_chain=llm_chain,
