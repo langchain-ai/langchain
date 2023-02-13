@@ -9,7 +9,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class StdOutCallbackHandler(BaseCallbackHandler):
     """Callback Handler that prints to std out."""
 
-    def __init__(self, color: str = "green") -> None:
+    def __init__(self, color: Optional[str] = None) -> None:
         """Initialize callback handler."""
         self.color = color
 
