@@ -3,17 +3,103 @@
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
 multiple search engines and databases.
 
-For Searx search API refer to https://docs.searxng.org/dev/search_api.html
+For the search API refer to https://docs.searxng.org/dev/search_api.html
 
-This is based on the SearxNG fork https://github.com/searxng/searxng which is
+Quick Start
+-----------
+
+
+In order to use this chain you need to provide the searx host. This can be done
+by passing the named parameter :attr:`searx_host <SearxSearchWrapper.searx_host>`
+or exporting the environment variable SEARX_HOST.
+Note: this is the only required parameter.
+
+Then create a searx search instance like this:
+
+    .. code-block:: python
+
+        from langchain.utilities import SearxSearchWrapper
+
+        # when the host starts with `http` SSL is disabled and the connection
+        # is assumed to be on a private network
+        searx_host='http://self.hosted'
+
+        search = SearxSearchWrapper(searx_host=searx_host)
+
+
+You can now use the ``search`` instance to query the searx API.
+
+Searching
+---------
+
+ref to the run method with a custom name
+
+
+Use the :meth:`run() <SearxSearchWrapper.run>` and
+:meth:`results() <SearxSearchWrapper.results>` methods to query the searx API.
+Other methods are are available for convenience.
+
+:class:`SearxResults` is a convenience wrapper around the raw json result.
+
+Example usage of the ``run`` method to make a search:
+
+    .. code-block:: python
+
+        # using google and duckduckgo engines
+        s.run(query="what is the best search engine?")
+
+Engine Parameters
+-----------------
+
+You can pass any `accepted searx search API
+<https://docs.searxng.org/dev/search_api.html>`_ parameters to the
+:py:class:`SearxSearchWrapper` instance.
+
+In the following example we are using the
+:attr:`engines <SearxSearchWrapper.engines>` and the ``language`` parameters:
+
+    .. code-block:: python
+
+        # assuming the searx host is set as above or exported as an env variable
+        s = SearxSearchWrapper(engines=['google', 'bing'],
+                            language='es')
+
+Search Tips
+-----------
+
+Searx offers a special
+`search syntax <https://docs.searxng.org/user/index.html#search-syntax>`_
+that can also be used instead of passing engine parameters.
+
+For example the following query:
+
+    .. code-block:: python
+
+        s = SearxSearchWrapper("langchain library", engines=['github'])
+
+        # can also be written as:
+        s = SearxSearchWrapper("langchain library !github")
+        # or even:
+        s = SearxSearchWrapper("langchain library !gh")
+
+See `SearxNG Configured Engines
+<https://docs.searxng.org/admin/engines/configured_engines.html>`_ and
+`SearxNG Search Syntax <https://docs.searxng.org/user/index.html#id1>`_
+for more details.
+
+Notes
+-----
+This wrapper is based on the SearxNG fork https://github.com/searxng/searxng which is
 better maintained than the original Searx project and offers more features.
 
-For a list of public SearxNG instances see https://searx.space/
+Public searxNG instances often use a rate limiter for API usage, so you might want to
+use a self hosted instance and disable the rate limiter.
 
-NOTE: SearxNG instances often have a rate limit, so you might want to use a self hosted
-instance and disable the rate limiter.
-You can use this PR: https://github.com/searxng/searxng/pull/2129 that adds whitelisting
-to the rate limiter.
+If you are self-hosting an instance you can customize the rate limiter for your
+own network as described `here <https://github.com/searxng/searxng/pull/2129>`_.
+
+
+For a list of public SearxNG instances see https://searx.space/
 """
 
 import json
@@ -63,9 +149,7 @@ class SearxSearchWrapper(BaseModel):
 
     In some situations you might want to disable SSL verification, for example
     if you are running searx locally. You can do this by passing the named parameter
-    ``unsecure``.
-
-    You can also pass the host url scheme as ``http`` to disable SSL.
+    ``unsecure``. You can also pass the host url scheme as ``http`` to disable SSL.
 
     Example:
         .. code-block:: python
@@ -86,7 +170,7 @@ class SearxSearchWrapper(BaseModel):
     """
 
     _result: SearxResults = PrivateAttr()
-    searx_host = ""
+    searx_host: str = ""
     unsecure: bool = False
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
@@ -159,7 +243,8 @@ class SearxSearchWrapper(BaseModel):
 
         Args:
             query: The query to search for.
-            **kwargs: any parameters to pass to the searx API.
+            engines: List of engines to use for the query.
+            **kwargs: extra parameters to pass to the searx API.
 
         Example:
             This will make a query to the qwant engine:
@@ -200,6 +285,8 @@ class SearxSearchWrapper(BaseModel):
         Args:
             query: The query to search for.
             num_results: Limit the number of results to return.
+            engines: List of engines to use for the query.
+            **kwargs: extra parameters to pass to the searx API.
 
         Returns:
             A list of dictionaries with the following keys:

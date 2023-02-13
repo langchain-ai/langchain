@@ -1,6 +1,6 @@
 SearxNG Search
 =============================
 
-.. automodule:: langchain.searx_search
+.. automodule:: langchain.utilities.searx_search
    :members:
    :undoc-members:
