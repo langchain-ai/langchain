@@ -378,9 +378,14 @@ class AgentExecutor(Chain, BaseModel):
     async def _areturn(
         self, output: AgentFinish, intermediate_steps: list
     ) -> Dict[str, Any]:
-        await self.callback_manager.on_agent_finish(
-            output, color="green", verbose=self.verbose
-        )
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_agent_finish(
+                output, color="green", verbose=self.verbose
+            )
+        else:
+            self.callback_manager.on_agent_finish(
+                output, color="green", verbose=self.verbose
+            )
         final_output = output.return_values
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
@@ -467,13 +472,6 @@ class AgentExecutor(Chain, BaseModel):
                     "The coroutine for the tool must be a coroutine function."
                 )
 
-        # Check if callback manager is async or not
-        if not self.callback_manager.is_async:
-            raise ValueError(
-                "The callback manager must be async to use `arun`."
-                "Please use `AsyncCallbackManager` or `run` instead."
-            )
-
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
@@ -496,11 +494,18 @@ class AgentExecutor(Chain, BaseModel):
             # Otherwise we lookup the tool
             if output.tool in name_to_tool_map:
                 tool = name_to_tool_map[output.tool]
-                await self.callback_manager.on_tool_start(
-                    {"name": str(tool.func)[:60] + "..."},
-                    output,
-                    verbose=self.verbose,
-                )
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_tool_start(
+                        {"name": str(tool.func)[:60] + "..."},
+                        output,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_tool_start(
+                        {"name": str(tool.func)[:60] + "..."},
+                        output,
+                        verbose=self.verbose,
+                    )
                 try:
                     # We then call the tool on the tool input to get an observation
                     observation = (
@@ -515,23 +520,42 @@ class AgentExecutor(Chain, BaseModel):
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
                 except (KeyboardInterrupt, Exception) as e:
-                    await self.callback_manager.on_tool_error(e, verbose=self.verbose)
+                    if self.callback_manager.is_async:
+                        await self.callback_manager.on_tool_error(
+                            e, verbose=self.verbose
+                        )
+                    else:
+                        self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
             else:
-                await self.callback_manager.on_tool_start(
-                    {"name": "N/A"}, output, verbose=self.verbose
-                )
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_tool_start(
+                        {"name": "N/A"}, output, verbose=self.verbose
+                    )
+                else:
+                    self.callback_manager.on_tool_start(
+                        {"name": "N/A"}, output, verbose=self.verbose
+                    )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
                 return_direct = False
             llm_prefix = "" if return_direct else self.agent.llm_prefix
-            await self.callback_manager.on_tool_end(
-                observation,
-                color=color,
-                observation_prefix=self.agent.observation_prefix,
-                llm_prefix=llm_prefix,
-                verbose=self.verbose,
-            )
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_tool_end(
+                    observation,
+                    color=color,
+                    observation_prefix=self.agent.observation_prefix,
+                    llm_prefix=llm_prefix,
+                    verbose=self.verbose,
+                )
+            else:
+                self.callback_manager.on_tool_end(
+                    observation,
+                    color=color,
+                    observation_prefix=self.agent.observation_prefix,
+                    llm_prefix=llm_prefix,
+                    verbose=self.verbose,
+                )
             intermediate_steps.append((output, observation))
             if return_direct:
                 # Set the log to "" because we do not want to log it.

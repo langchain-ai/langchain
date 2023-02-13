@@ -158,11 +158,6 @@ class BaseLLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        if not self.callback_manager.is_async:
-            raise ValueError(
-                "The callback manager must be async to use `agenerate`."
-                "Please use `AsyncCallbackManager` or a sync method instead."
-            )
         disregard_cache = self.cache is not None and not self.cache
         if langchain.llm_cache is None or disregard_cache:
             # This happens when langchain.cache is None, but self.cache is True
@@ -170,15 +165,26 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            await self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
-            )
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                )
             try:
                 output = await self._agenerate(prompts, stop=stop)
             except (KeyboardInterrupt, Exception) as e:
-                await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                else:
+                    self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            await self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            else:
+                self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
         params = self.dict()
         params["stop"] = stop
@@ -189,15 +195,32 @@ class BaseLLM(BaseModel, ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
-            await self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
-            )
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__},
+                    missing_prompts,
+                    verbose=self.verbose,
+                )
+            else:
+                self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__},
+                    missing_prompts,
+                    verbose=self.verbose,
+                )
             try:
                 new_results = await self._agenerate(missing_prompts, stop=stop)
             except (KeyboardInterrupt, Exception) as e:
-                await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                else:
+                    self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            await self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_end(
+                    new_results, verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
