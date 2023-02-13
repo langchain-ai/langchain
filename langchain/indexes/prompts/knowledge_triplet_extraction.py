@@ -1,7 +1,8 @@
 # flake8: noqa
 
-from langchain.prompts.prompt import PromptTemplate
 from langchain.graphs.networkx_graph import KG_TRIPLE_DELIMITER
+from langchain.prompts.prompt import PromptTemplate
+
 _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "You are a networked intelligence helping a human track knowledge triples"
     " about all relevant people, things, concepts, etc. and integrating"

@@ -3,12 +3,15 @@
 from typing import List, NamedTuple, Tuple
 
 KG_TRIPLE_DELIMITER = "<|>"
+
+
 class KnowledgeTriple(NamedTuple):
     """A triple in the graph."""
+
     subject: str
     predicate: str
     object_: str
-    
+
     @classmethod
     def from_string(cls, triple_string: str) -> "KnowledgeTriple":
         """Create a KnowledgeTriple from a string."""
@@ -18,7 +21,7 @@ class KnowledgeTriple(NamedTuple):
         return cls(subject, predicate, object_)
 
 
-def _parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
+def parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
     """Parse knowledge triples from the knowledge string."""
     knowledge_str = knowledge_str.strip()
     if not knowledge_str or knowledge_str == "NONE":
@@ -33,12 +36,22 @@ def _parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
         results.append(kg_triple)
     return results
 
+
+def get_entities(entity_str: str) -> List[str]:
+    """Extract entities from entity string."""
+    if entity_str.strip() == "NONE":
+        return []
+    else:
+        return [w.strip() for w in entity_str.split(",")]
+
+
 class NetworkxEntityGraph:
     """Networkx wrapper for entity graph operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create a new graph."""
         import networkx as nx
+
         self._graph = nx.DiGraph()
 
     def add_triple(self, knowledge_triple: KnowledgeTriple) -> None:
@@ -49,26 +62,30 @@ class NetworkxEntityGraph:
             self._graph.add_node(knowledge_triple.subject)
         if not self._graph.has_node(knowledge_triple.object_):
             self._graph.add_node(knowledge_triple.object_)
-        self._graph.add_edge(knowledge_triple.subject, knowledge_triple.object_, relation=knowledge_triple.predicate)
-    
+        self._graph.add_edge(
+            knowledge_triple.subject,
+            knowledge_triple.object_,
+            relation=knowledge_triple.predicate,
+        )
+
     def delete_triple(self, knowledge_triple: KnowledgeTriple) -> None:
         """Delete a triple from the graph."""
         if self._graph.has_edge(knowledge_triple.subject, knowledge_triple.object_):
             self._graph.remove_edge(knowledge_triple.subject, knowledge_triple.object_)
-    
+
     def get_triples(self) -> List[Tuple[str, str, str]]:
         """Get all triples in the graph."""
         return [(u, v, d["relation"]) for u, v, d in self._graph.edges(data=True)]
 
     def get_entity_knowledge(self, entity: str, depth: int = 1) -> List[str]:
         """Get information about an entity."""
-
         import networkx as nx
+
         # TODO: Have more information-specific retrieval methods
         if not self._graph.has_node(entity):
             return []
 
-        results= []
+        results = []
         for src, sink in nx.dfs_edges(self._graph, entity, depth_limit=depth):
             relation = self._graph[src][sink]["relation"]
             results.append(f"{src} {relation} {sink}")
@@ -77,4 +94,3 @@ class NetworkxEntityGraph:
     def clear(self) -> None:
         """Clear the graph."""
         self._graph.clear()
-    

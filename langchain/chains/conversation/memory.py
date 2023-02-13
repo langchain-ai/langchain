@@ -1,16 +1,21 @@
 """Memory modules for conversation prompts."""
 from typing import Any, Dict, List, Optional
-from langchain.graphs.networkx_graph import _parse_triples, NetworkxEntityGraph
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.chains.base import Memory
 from langchain.chains.conversation.prompt import (
+    ENTITY_EXTRACTION_PROMPT,
+    ENTITY_SUMMARIZATION_PROMPT,
+    KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
     SUMMARY_PROMPT,
-KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT, ENTITY_EXTRACTION_PROMPT, ENTITY_SUMMARIZATION_PROMPT
 )
-
 from langchain.chains.llm import LLMChain
+from langchain.graphs.networkx_graph import (
+    NetworkxEntityGraph,
+    get_entities,
+    parse_triples,
+)
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
@@ -386,7 +391,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
 
 class ConversationKGMemory(Memory, BaseModel):
     """Knowledge graph memory for storing conversation memory.
-    
+
     Integrates with external knowledge graph to store and retrieve
     information about knowledge triples in the conversation.
     """
@@ -407,9 +412,6 @@ class ConversationKGMemory(Memory, BaseModel):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        self._get_and_update_kg(inputs)
-        # TODO: Should extract _relevant_ entities from conversation, not just all from
-        # the last utterance. Should also structure prompt better for entity resolution, etc.
         entities = self._get_current_entities(inputs)
         summaries = {}
         for entity in entities:
@@ -417,15 +419,14 @@ class ConversationKGMemory(Memory, BaseModel):
             if knowledge:
                 summaries[entity] = ". ".join(knowledge) + "."
         if summaries:
-            context_str = "Relevant context:\n" + "\n".join(
+            summary_strings = [
                 f"On {entity}: {summary}" for entity, summary in summaries.items()
-            ) + "\n"
+            ]
+            context_str = "\n".join(summary_strings)
         else:
             context_str = ""
-        return {
-            self.memory_key: context_str,
-        }
-    
+        return {self.memory_key: context_str}
+
     @property
     def memory_variables(self) -> List[str]:
         """Will always return list of memory variables.
@@ -439,7 +440,7 @@ class ConversationKGMemory(Memory, BaseModel):
         if self.input_key is None:
             return _get_prompt_input_key(inputs, self.memory_variables)
         return self.input_key
-    
+
     def _get_prompt_output_key(self, outputs: Dict[str, Any]) -> str:
         """Get the output key for the prompt."""
         if self.output_key is None:
@@ -447,7 +448,7 @@ class ConversationKGMemory(Memory, BaseModel):
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
             return list(outputs.keys())[0]
         return self.output_key
-    
+
     def _get_current_entities(self, inputs: Dict[str, Any]) -> List[str]:
         """Get the current entities in the conversation."""
         prompt_input_key = self._get_prompt_input_key(inputs)
@@ -456,12 +457,8 @@ class ConversationKGMemory(Memory, BaseModel):
             history="\n".join(self.buffer[-self.k :]),
             input=inputs[prompt_input_key],
         )
-        return (
-            []
-            if output.strip() == "NONE"
-            else [w.strip() for w in output.split(",")]
-        )
-    
+        return get_entities(output)
+
     def _get_and_update_kg(self, inputs: Dict[str, Any]) -> None:
         """Get and update knowledge graph from the conversation history."""
         chain = LLMChain(llm=self.llm, prompt=self.knowledge_extraction_prompt)
@@ -469,14 +466,15 @@ class ConversationKGMemory(Memory, BaseModel):
         output = chain.predict(
             history="\n".join(self.buffer[-self.k :]),
             input=inputs[prompt_input_key],
-            verbose=True
+            verbose=True,
         )
-        knowledge = _parse_triples(output)
+        knowledge = parse_triples(output)
         for triple in knowledge:
             self.kg.add_triple(triple)
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
+        self._get_and_update_kg(inputs)
         prompt_input_key = self._get_prompt_input_key(inputs)
         output_key = self._get_prompt_output_key(outputs)
         human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
