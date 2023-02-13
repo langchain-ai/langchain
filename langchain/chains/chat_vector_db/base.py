@@ -1,7 +1,6 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-import asyncio
 from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
