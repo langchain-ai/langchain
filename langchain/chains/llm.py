@@ -158,7 +158,9 @@ class LLMChain(Chain, BaseModel):
         result = self.apply(input_list)
         return self._parse_result(result)
 
-    def _parse_result(self, result):
+    def _parse_result(
+        self, result: List[Dict[str, str]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         if self.prompt.output_parser is not None:
             new_result = []
             for res in result:

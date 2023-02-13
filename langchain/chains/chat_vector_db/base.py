@@ -1,6 +1,7 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
@@ -93,7 +94,10 @@ class ChatVectorDBChain(Chain, BaseModel):
             )
         else:
             new_question = question
-        docs = self.vectorstore.similarity_search(new_question, k=4)
+        # Run similarity search in executor to avoid blocking event loop
+        docs = await asyncio.get_event_loop().run_in_executor(
+            None, self.vectorstore.similarity_search, new_question, 4
+        )
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str

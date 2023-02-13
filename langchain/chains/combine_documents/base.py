@@ -44,8 +44,10 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
         """Combine documents into a single string."""
 
     @abstractmethod
-    async def acombine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
-        """Combine documents into a single string."""
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine documents into a single string asynchronously."""
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_key]
