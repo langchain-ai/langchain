@@ -32,14 +32,14 @@ __all__ = [
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
     "anthropic": Anthropic,
-    "cerebriumai": "CerebriumAI",
+    "cerebriumai": CerebriumAI,
     "cohere": Cohere,
-    "forefrontai": "ForefrontAI",
-    "gooseai": "GooseAI",
+    "forefrontai": ForefrontAI,
+    "gooseai": GooseAI,
     "huggingface_hub": HuggingFaceHub,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
-    "petals": "Petals",
+    "petals": Petals,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
 }
