@@ -490,9 +490,7 @@ class AgentExecutor(Chain, BaseModel):
                 return_direct = tool.return_direct
             except (KeyboardInterrupt, Exception) as e:
                 if self.callback_manager.is_async:
-                    await self.callback_manager.on_tool_error(
-                        e, verbose=self.verbose
-                    )
+                    await self.callback_manager.on_tool_error(e, verbose=self.verbose)
                 else:
                     self.callback_manager.on_tool_error(e, verbose=self.verbose)
                 raise e
