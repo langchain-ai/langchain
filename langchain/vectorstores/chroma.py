@@ -108,8 +108,6 @@ class Chroma(VectorStore):
                 query_embeddings=[query_embedding], n_results=k, where=filter
             )
 
-        print(results)
-
         docs = [
             # TODO: Chroma can do batch querying,
             # we shouldn't hard code to the 1st result
