@@ -61,7 +61,7 @@ class LLMChain(Chain, BaseModel):
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
+        prompts, stop = await self.aprep_prompts(input_list)
         response = await self.llm.agenerate(prompts, stop=stop)
         return response
 
@@ -79,6 +79,27 @@ class LLMChain(Chain, BaseModel):
             _colored_text = get_colored_text(prompt, "green")
             _text = "Prompt after formatting:\n" + _colored_text
             self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if "stop" in inputs and inputs["stop"] != stop:
+                raise ValueError(
+                    "If `stop` is present in any inputs, should be present in all."
+                )
+            prompts.append(prompt)
+        return prompts, stop
+
+    async def aprep_prompts(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[List[str], Optional[List[str]]]:
+        """Prepare prompts from inputs."""
+        stop = None
+        if "stop" in input_list[0]:
+            stop = input_list[0]["stop"]
+        prompts = []
+        for inputs in input_list:
+            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            prompt = self.prompt.format(**selected_inputs)
+            _colored_text = get_colored_text(prompt, "green")
+            _text = "Prompt after formatting:\n" + _colored_text
+            await self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
