@@ -94,6 +94,11 @@ class BaseCallbackHandler(ABC):
 class BaseCallbackManager(BaseCallbackHandler, ABC):
     """Base callback manager that can be used to handle callbacks from LangChain."""
 
+    @property
+    def is_async(self) -> bool:
+        """Whether the callback manager is async."""
+        return False
+
     @abstractmethod
     def add_handler(self, callback: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -309,6 +314,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
 class AsyncCallbackManager(BaseCallbackManager):
     """Async callback manager that can be used to handle callbacks from LangChain."""
+
+    @property
+    def is_async(self) -> bool:
+        """Return whether the handler is async."""
+        return True
 
     def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
         """Initialize callback manager."""

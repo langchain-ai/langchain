@@ -375,6 +375,17 @@ class AgentExecutor(Chain, BaseModel):
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
 
+    async def _areturn(
+        self, output: AgentFinish, intermediate_steps: list
+    ) -> Dict[str, Any]:
+        await self.callback_manager.on_agent_finish(
+            output, color="green", verbose=self.verbose
+        )
+        final_output = output.return_values
+        if self.return_intermediate_steps:
+            final_output["intermediate_steps"] = intermediate_steps
+        return final_output
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
         # Make sure that every tool is synchronous (not a coroutine)
@@ -456,6 +467,13 @@ class AgentExecutor(Chain, BaseModel):
                     "The coroutine for the tool must be a coroutine function."
                 )
 
+        # Check if callback manager is async or not
+        if not self.callback_manager.is_async:
+            raise ValueError(
+                "The callback manager must be async to use `arun`."
+                "Please use `AsyncCallbackManager` or `run` instead."
+            )
+
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
@@ -473,12 +491,12 @@ class AgentExecutor(Chain, BaseModel):
             output = await self.agent.aplan(intermediate_steps, **inputs)
             # If the tool chosen is the finishing tool, then we end and return.
             if isinstance(output, AgentFinish):
-                return self._return(output, intermediate_steps)
+                return await self._areturn(output, intermediate_steps)
 
             # Otherwise we lookup the tool
             if output.tool in name_to_tool_map:
                 tool = name_to_tool_map[output.tool]
-                self.callback_manager.on_tool_start(
+                await self.callback_manager.on_tool_start(
                     {"name": str(tool.func)[:60] + "..."},
                     output,
                     verbose=self.verbose,
@@ -497,17 +515,17 @@ class AgentExecutor(Chain, BaseModel):
                     color = color_mapping[output.tool]
                     return_direct = tool.return_direct
                 except (KeyboardInterrupt, Exception) as e:
-                    self.callback_manager.on_tool_error(e, verbose=self.verbose)
+                    await self.callback_manager.on_tool_error(e, verbose=self.verbose)
                     raise e
             else:
-                self.callback_manager.on_tool_start(
+                await self.callback_manager.on_tool_start(
                     {"name": "N/A"}, output, verbose=self.verbose
                 )
                 observation = f"{output.tool} is not a valid tool, try another one."
                 color = None
                 return_direct = False
             llm_prefix = "" if return_direct else self.agent.llm_prefix
-            self.callback_manager.on_tool_end(
+            await self.callback_manager.on_tool_end(
                 observation,
                 color=color,
                 observation_prefix=self.agent.observation_prefix,
@@ -518,9 +536,9 @@ class AgentExecutor(Chain, BaseModel):
             if return_direct:
                 # Set the log to "" because we do not want to log it.
                 output = AgentFinish({self.agent.return_values[0]: observation}, "")
-                return self._return(output, intermediate_steps)
+                return await self._areturn(output, intermediate_steps)
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
-        return self._return(output, intermediate_steps)
+        return await self._areturn(output, intermediate_steps)
