@@ -1,8 +1,8 @@
 """Networkx wrapper for graph operations."""
 
 from typing import List, NamedTuple, Tuple
-import networkx  as nx
 
+KG_TRIPLE_DELIMITER = "<|>"
 class KnowledgeTriple(NamedTuple):
     """A triple in the graph."""
     subject: str
@@ -17,11 +17,28 @@ class KnowledgeTriple(NamedTuple):
         object_ = object_[:-1]
         return cls(subject, predicate, object_)
 
+
+def _parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
+    """Parse knowledge triples from the knowledge string."""
+    knowledge_str = knowledge_str.strip()
+    if not knowledge_str or knowledge_str == "NONE":
+        return []
+    triple_strs = knowledge_str.split(KG_TRIPLE_DELIMITER)
+    results = []
+    for triple_str in triple_strs:
+        try:
+            kg_triple = KnowledgeTriple.from_string(triple_str)
+        except ValueError:
+            continue
+        results.append(kg_triple)
+    return results
+
 class NetworkxEntityGraph:
     """Networkx wrapper for entity graph operations."""
 
     def __init__(self):
         """Create a new graph."""
+        import networkx as nx
         self._graph = nx.DiGraph()
 
     def add_triple(self, knowledge_triple: KnowledgeTriple) -> None:
@@ -45,6 +62,8 @@ class NetworkxEntityGraph:
 
     def get_entity_knowledge(self, entity: str, depth: int = 1) -> List[str]:
         """Get information about an entity."""
+
+        import networkx as nx
         # TODO: Have more information-specific retrieval methods
         if not self._graph.has_node(entity):
             return []
@@ -54,7 +73,6 @@ class NetworkxEntityGraph:
             relation = self._graph[src][sink]["relation"]
             results.append(f"{src} {relation} {sink}")
         return results
-
 
     def clear(self) -> None:
         """Clear the graph."""

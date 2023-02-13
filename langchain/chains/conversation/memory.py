@@ -1,17 +1,15 @@
 """Memory modules for conversation prompts."""
 from typing import Any, Dict, List, Optional
-from langchain.networkx_graph import KnowledgeTriple, NetworkxEntityGraph
+from langchain.graphs.networkx_graph import _parse_triples, NetworkxEntityGraph
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.chains.base import Memory
 from langchain.chains.conversation.prompt import (
-    ENTITY_EXTRACTION_PROMPT,
-    ENTITY_SUMMARIZATION_PROMPT,
-    KG_TRIPLE_DELIMITER,
-    KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
     SUMMARY_PROMPT,
+KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT, ENTITY_EXTRACTION_PROMPT, ENTITY_SUMMARIZATION_PROMPT
 )
+
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
@@ -473,25 +471,9 @@ class ConversationKGMemory(Memory, BaseModel):
             input=inputs[prompt_input_key],
             verbose=True
         )
-        knowledge = self._parse_triples(output)
+        knowledge = _parse_triples(output)
         for triple in knowledge:
             self.kg.add_triple(triple)
-
-    @staticmethod
-    def _parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
-        """Parse knowledge triples from the knowledge string."""
-        knowledge_str = knowledge_str.strip()
-        if not knowledge_str or knowledge_str == "NONE":
-            return []
-        triple_strs = knowledge_str.split(KG_TRIPLE_DELIMITER)
-        results = []
-        for triple_str in triple_strs:
-            try:
-                kg_triple = KnowledgeTriple.from_string(triple_str)
-            except ValueError:
-                continue
-            results.append(kg_triple)
-        return results
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
