@@ -282,9 +282,14 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 async for stream_resp in await self.acompletion_with_retry(
                     prompt=_prompts, **params
                 ):
-                    self.callback_manager.on_llm_new_token(
-                        stream_resp["choices"][0]["text"], verbose=self.verbose
-                    )
+                    if self.callback_manager.is_async:
+                        await self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                        )
+                    else:
+                        self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                        )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:

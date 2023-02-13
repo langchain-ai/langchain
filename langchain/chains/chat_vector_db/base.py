@@ -1,6 +1,7 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
@@ -82,4 +83,23 @@ class ChatVectorDBChain(Chain, BaseModel):
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
+        return {self.output_key: answer}
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        question = inputs["question"]
+        chat_history_str = _get_chat_history(inputs["chat_history"])
+        if chat_history_str:
+            new_question = await self.question_generator.arun(
+                question=question, chat_history=chat_history_str
+            )
+        else:
+            new_question = question
+        # Run similarity search in executor to avoid blocking event loop
+        docs = await asyncio.get_event_loop().run_in_executor(
+            None, self.vectorstore.similarity_search, new_question, 4
+        )
+        new_inputs = inputs.copy()
+        new_inputs["question"] = new_question
+        new_inputs["chat_history"] = chat_history_str
+        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
         return {self.output_key: answer}
