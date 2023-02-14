@@ -1,7 +1,7 @@
+"""PromptLayer wrapper."""
 import datetime
 from typing import List, Optional
 
-from promptlayer.utils import get_api_key, promptlayer_api_request
 from pydantic import BaseModel
 
 from langchain.llms import OpenAI
@@ -16,7 +16,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     and ``PROMPTLAYER_API_KEY`` set with your openAI API key and
     promptlayer key respectively.
 
-    All paramaters that can be passed to the OpenAI LLM can also
+    All parameters that can be passed to the OpenAI LLM can also
     be passed here. The PromptLayerOpenAI LLM adds an extra
     ``pl_tags`` parameter that can be used to tag the request.
 
@@ -32,7 +32,9 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        """Calls the OpenAI generate and then calls PromptLayer API to log the request"""
+        """Call OpenAI generate and then call PromptLayer API to log the request."""
+        from promptlayer.utils import get_api_key, promptlayer_api_request
+
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = super()._generate(prompts, stop)
         request_end_time = datetime.datetime.now().timestamp()
