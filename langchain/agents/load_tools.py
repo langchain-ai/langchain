@@ -21,7 +21,7 @@ def _get_python_repl() -> Tool:
     return DynamicTool(
         name="Python REPL",
         description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
-        _func=PythonREPL().run,
+        dynamic_function=PythonREPL().run,
     )
 
 
@@ -29,7 +29,7 @@ def _get_requests() -> Tool:
     return DynamicTool(
         name="Requests",
         description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
-        _func=RequestsWrapper().run,
+        dynamic_function=RequestsWrapper().run,
     )
 
 
@@ -37,7 +37,7 @@ def _get_terminal() -> Tool:
     return DynamicTool(
         name="Terminal",
         description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
-        _func=BashProcess().run,
+        dynamic_function=BashProcess().run,
     )
 
 
@@ -52,7 +52,7 @@ def _get_pal_math(llm: BaseLLM) -> Tool:
     return DynamicTool(
         name="PAL-MATH",
         description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
-        _func=PALChain.from_math_prompt(llm).run,
+        dynamic_function=PALChain.from_math_prompt(llm).run,
     )
 
 
@@ -60,7 +60,7 @@ def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
     return DynamicTool(
         name="PAL-COLOR-OBJ",
         description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
-        _func=PALChain.from_colored_object_prompt(llm).run,
+        dynamic_function=PALChain.from_colored_object_prompt(llm).run,
     )
 
 
@@ -68,7 +68,9 @@ def _get_llm_math(llm: BaseLLM) -> Tool:
     return DynamicTool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        _func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
+        dynamic_function=LLMMathChain(
+            llm=llm, callback_manager=llm.callback_manager
+        ).run,
         coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
     )
 
@@ -78,7 +80,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> Tool:
     return DynamicTool(
         name="Open Meteo API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
-        _func=chain.run,
+        dynamic_function=chain.run,
     )
 
 
@@ -98,7 +100,7 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     return DynamicTool(
         name="News API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
-        _func=chain.run,
+        dynamic_function=chain.run,
     )
 
 
@@ -112,7 +114,7 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     return DynamicTool(
         name="TMDB API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
-        _func=chain.run,
+        dynamic_function=chain.run,
     )
 
 
@@ -120,7 +122,7 @@ def _get_wolfram_alpha(**kwargs: Any) -> Tool:
     return DynamicTool(
         name="Wolfram Alpha",
         description="A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
-        _func=WolframAlphaAPIWrapper(**kwargs).run,
+        dynamic_function=WolframAlphaAPIWrapper(**kwargs).run,
     )
 
 
@@ -128,7 +130,7 @@ def _get_google_search(**kwargs: Any) -> Tool:
     return DynamicTool(
         name="Google Search",
         description="A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
-        _func=GoogleSearchAPIWrapper(**kwargs).run,
+        dynamic_function=GoogleSearchAPIWrapper(**kwargs).run,
     )
 
 
@@ -136,7 +138,7 @@ def _get_serpapi(**kwargs: Any) -> Tool:
     return DynamicTool(
         name="Search",
         description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        _func=SerpAPIWrapper(**kwargs).run,
+        dynamic_function=SerpAPIWrapper(**kwargs).run,
         coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 

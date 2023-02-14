@@ -91,8 +91,12 @@ def test_bad_action_line() -> None:
 def test_from_chains() -> None:
     """Test initializing from chains."""
     chain_configs = [
-        DynamicTool(name="foo", _func=lambda x: "foo", description="foobar1"),
-        DynamicTool(name="bar", _func=lambda x: "bar", description="foobar2"),
+        DynamicTool(
+            name="foo", dynamic_function=lambda x: "foo", description="foobar1"
+        ),
+        DynamicTool(
+            name="bar", dynamic_function=lambda x: "bar", description="foobar2"
+        ),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"

@@ -192,7 +192,9 @@ class MRKLChain(AgentExecutor):
         """
         tools = [
             DynamicTool(
-                name=c.action_name, _func=c.action, description=c.action_description
+                name=c.action_name,
+                dynamic_function=c.action,
+                description=c.action_description,
             )
             for c in chains
         ]

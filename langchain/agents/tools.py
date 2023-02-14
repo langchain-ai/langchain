@@ -9,11 +9,11 @@ from langchain.tools.tool import Tool
 class DynamicTool(Tool):
     """Dynamically generated tool."""
 
-    _func: Callable
+    dynamic_function: Callable
 
     def func(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
-        return self._func(*args, **kwargs)
+        return self.dynamic_function(*args, **kwargs)
 
 
 def tool(
@@ -47,7 +47,7 @@ def tool(
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             tool = DynamicTool(
                 name=tool_name,
-                func=func,
+                dynamic_function=func,
                 description=description,
                 return_direct=return_direct,
             )

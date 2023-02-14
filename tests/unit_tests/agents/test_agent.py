@@ -44,11 +44,13 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     fake_llm = FakeListLLM(responses=responses)
     tools = [
         DynamicTool(
-            name="Search", _func=lambda x: x, description="Useful for searching"
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
         ),
         DynamicTool(
             name="Lookup",
-            _func=lambda x: x,
+            dynamic_function=lambda x: x,
             description="Useful for looking up things in a table",
         ),
     ]
@@ -87,7 +89,9 @@ def test_agent_with_callbacks_global() -> None:
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
         DynamicTool(
-            name="Search", _func=lambda x: x, description="Useful for searching"
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
         ),
     ]
     agent = initialize_agent(
@@ -128,7 +132,9 @@ def test_agent_with_callbacks_local() -> None:
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
         DynamicTool(
-            name="Search", _func=lambda x: x, description="Useful for searching"
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
         ),
     ]
     agent = initialize_agent(
@@ -171,7 +177,9 @@ def test_agent_with_callbacks_not_verbose() -> None:
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
     tools = [
         DynamicTool(
-            name="Search", _func=lambda x: x, description="Useful for searching"
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
         ),
     ]
     agent = initialize_agent(
@@ -201,7 +209,7 @@ def test_agent_tool_return_direct() -> None:
     tools = [
         DynamicTool(
             name="Search",
-            _func=lambda x: x,
+            dynamic_function=lambda x: x,
             description="Useful for searching",
             return_direct=True,
         ),
@@ -224,7 +232,7 @@ def test_agent_with_new_prefix_suffix() -> None:
     tools = [
         DynamicTool(
             name="Search",
-            _func=lambda x: x,
+            dynamic_function=lambda x: x,
             description="Useful for searching",
             return_direct=True,
         ),

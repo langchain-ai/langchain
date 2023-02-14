@@ -135,8 +135,16 @@ class ReActChain(AgentExecutor):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [
-            DynamicTool(name="Search", _func=docstore_explorer.search),
-            DynamicTool(name="Lookup", _func=docstore_explorer.lookup),
+            DynamicTool(
+                name="Search",
+                dynamic_function=docstore_explorer.search,
+                description="Search for a term in the docstore.",
+            ),
+            DynamicTool(
+                name="Lookup",
+                dynamic_function=docstore_explorer.lookup,
+                description="Lookup a term in the docstore.",
+            ),
         ]
         agent = ReActDocstoreAgent.from_llm_and_tools(llm, tools)
         super().__init__(agent=agent, tools=tools, **kwargs)

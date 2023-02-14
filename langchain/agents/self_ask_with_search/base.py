@@ -81,6 +81,8 @@ class SelfAskWithSearchChain(AgentExecutor):
 
     def __init__(self, llm: BaseLLM, search_chain: SerpAPIWrapper, **kwargs: Any):
         """Initialize with just an LLM and a search chain."""
-        search_tool = DynamicTool(name="Intermediate Answer", _func=search_chain.run)
+        search_tool = DynamicTool(
+            name="Intermediate Answer", dynamic_function=search_chain.run
+        )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)
