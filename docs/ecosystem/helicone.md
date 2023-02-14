@@ -1,6 +1,6 @@
 # Helicone
 
-This page covers how to use the [Helicone](https://huggingface.co) within LangChain.
+This page covers how to use the [Helicone](https://helicone.ai) within LangChain.
 
 ## What is Helicone?
 
