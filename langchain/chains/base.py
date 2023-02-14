@@ -266,7 +266,6 @@ class Chain(BaseModel, ABC):
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of chain."""
-
         _dict = super().dict()
         _dict["_type"] = self._chain_type
         return _dict
