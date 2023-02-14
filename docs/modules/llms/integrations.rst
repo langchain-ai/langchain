@@ -9,6 +9,14 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `Manifest <./integrations/manifest.html>`_: Covers how to utilize the Manifest wrapper.
 
+`Goose AI <./integrations/gooseai_example.html>`_: Covers how to utilize the Goose AI wrapper.
+
+`Cerebrium <./integrations/cerebriumai_example.html>`_: Covers how to utilize the Cerebrium AI wrapper.
+
+`Petals <./integrations/petals_example.html>`_: Covers how to utilize the Petals wrapper.
+
+`Forefront AI <./integrations/forefrontai_example.html>`_: Covers how to utilize the Forefront AI wrapper.
+
 
 .. toctree::
    :maxdepth: 1
