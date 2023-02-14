@@ -22,7 +22,16 @@ from langchain.chains import (
     VectorDBQAWithSourcesChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
-from langchain.llms import Anthropic, Cohere, HuggingFaceHub, OpenAI
+from langchain.llms import (
+    Anthropic,
+    CerebriumAI,
+    Cohere,
+    ForefrontAI,
+    GooseAI,
+    HuggingFaceHub,
+    OpenAI,
+    Petals,
+)
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import (
     BasePromptTemplate,
@@ -51,8 +60,12 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "WolframAlphaAPIWrapper",
     "Anthropic",
+    "CerebriumAI",
     "Cohere",
+    "ForefrontAI",
+    "GooseAI",
     "OpenAI",
+    "Petals",
     "BasePromptTemplate",
     "Prompt",
     "FewShotPromptTemplate",

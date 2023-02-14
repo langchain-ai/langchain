@@ -17,6 +17,12 @@ The examples here are all end-to-end chains for working with documents.
 
 `Vector DB Question Answering with Sources <./combine_docs_examples/vector_db_qa_with_sources.html>`_: A walkthrough of how to use LangChain for question answering (with sources) over a vector database.
 
+`Graph Question Answering <./combine_docs_examples/graph_qa.html>`_: A walkthrough of how to use LangChain for question answering (with sources) over a graph database.
+
+`Chat Vector DB <./combine_docs_examples/chat_vector_db.html>`_: A walkthrough of how to use LangChain as a chatbot over a vector database.
+
+`Analyze Document <./combine_docs_examples/analyze_document.html>`_: A walkthrough of how to use LangChain to analyze long documents.
+
 
 .. toctree::
    :maxdepth: 1
