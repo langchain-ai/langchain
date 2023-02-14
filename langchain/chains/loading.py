@@ -52,7 +52,7 @@ def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
     return LLMChain(llm=llm, prompt=prompt, **config)
 
 
-def _load_llm_conversation_chain(config: dict, **kwargs: Any) -> LLMChain:
+def _load_llm_conversation_chain(config: dict, **kwargs: Any) -> ConversationChain:
     """Load LLM conversation chain from config dict."""
     if "llm" in config:
         llm_config = config.pop("llm")
