@@ -6,7 +6,7 @@ import json
 import logging
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
@@ -179,11 +179,11 @@ class Agent(BaseModel):
 
     @classmethod
     @abstractmethod
-    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[Tool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod
-    def _validate_tools(cls, tools: List[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
         """Validate that appropriate tools are passed in."""
         pass
 
@@ -191,7 +191,7 @@ class Agent(BaseModel):
     def from_llm_and_tools(
         cls,
         llm: BaseLLM,
-        tools: List[Tool],
+        tools: Sequence[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> Agent:
@@ -298,7 +298,7 @@ class AgentExecutor(Chain, BaseModel):
     """Consists of an agent using tools."""
 
     agent: Agent
-    tools: List[Tool]
+    tools: Sequence[Tool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     early_stopping_method: str = "force"
@@ -307,7 +307,7 @@ class AgentExecutor(Chain, BaseModel):
     def from_agent_and_tools(
         cls,
         agent: Agent,
-        tools: List[Tool],
+        tools: Sequence[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:

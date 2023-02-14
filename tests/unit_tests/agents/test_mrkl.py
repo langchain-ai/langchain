@@ -4,7 +4,7 @@ import pytest
 
 from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.agents.tools import Tool
+from langchain.agents.tools import DynamicTool
 from langchain.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -91,8 +91,8 @@ def test_bad_action_line() -> None:
 def test_from_chains() -> None:
     """Test initializing from chains."""
     chain_configs = [
-        Tool(name="foo", func=lambda x: "foo", description="foobar1"),
-        Tool(name="bar", func=lambda x: "bar", description="foobar2"),
+        DynamicTool(name="foo", _func=lambda x: "foo", description="foobar1"),
+        DynamicTool(name="bar", _func=lambda x: "bar", description="foobar2"),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
     expected_tools_prompt = "foo: foobar1\nbar: foobar2"

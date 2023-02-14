@@ -1,13 +1,13 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
-from langchain.agents.tools import Tool
+from langchain.agents.tools import DynamicTool, Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
@@ -23,14 +23,14 @@ class ReActDocstoreAgent(Agent, BaseModel):
         return "react-docstore"
 
     @classmethod
-    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[Tool]) -> BasePromptTemplate:
         """Return default prompt."""
         return WIKI_PROMPT
 
     i: int = 1
 
     @classmethod
-    def _validate_tools(cls, tools: List[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -108,12 +108,12 @@ class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
-    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[Tool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: List[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -135,8 +135,8 @@ class ReActChain(AgentExecutor):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [
-            Tool(name="Search", func=docstore_explorer.search),
-            Tool(name="Lookup", func=docstore_explorer.lookup),
+            DynamicTool(name="Search", _func=docstore_explorer.search),
+            DynamicTool(name="Lookup", _func=docstore_explorer.lookup),
         ]
         agent = ReActDocstoreAgent.from_llm_and_tools(llm, tools)
         super().__init__(agent=agent, tools=tools, **kwargs)

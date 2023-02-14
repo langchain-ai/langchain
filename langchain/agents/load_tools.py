@@ -2,7 +2,7 @@
 """Load tools."""
 from typing import Any, List, Optional
 
-from langchain.agents.tools import Tool
+from langchain.agents.tools import DynamicTool
 from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -11,32 +11,33 @@ from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
+from langchain.tools.tool import Tool
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 def _get_python_repl() -> Tool:
-    return Tool(
-        "Python REPL",
-        PythonREPL().run,
-        "A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
+    return DynamicTool(
+        name="Python REPL",
+        description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
+        _func=PythonREPL().run,
     )
 
 
 def _get_requests() -> Tool:
-    return Tool(
-        "Requests",
-        RequestsWrapper().run,
-        "A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
+    return DynamicTool(
+        name="Requests",
+        description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
+        _func=RequestsWrapper().run,
     )
 
 
 def _get_terminal() -> Tool:
-    return Tool(
-        "Terminal",
-        BashProcess().run,
-        "Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
+    return DynamicTool(
+        name="Terminal",
+        description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
+        _func=BashProcess().run,
     )
 
 
@@ -48,36 +49,36 @@ _BASE_TOOLS = {
 
 
 def _get_pal_math(llm: BaseLLM) -> Tool:
-    return Tool(
-        "PAL-MATH",
-        PALChain.from_math_prompt(llm).run,
-        "A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
+    return DynamicTool(
+        name="PAL-MATH",
+        description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
+        _func=PALChain.from_math_prompt(llm).run,
     )
 
 
 def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
-    return Tool(
-        "PAL-COLOR-OBJ",
-        PALChain.from_colored_object_prompt(llm).run,
-        "A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
+    return DynamicTool(
+        name="PAL-COLOR-OBJ",
+        description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
+        _func=PALChain.from_colored_object_prompt(llm).run,
     )
 
 
 def _get_llm_math(llm: BaseLLM) -> Tool:
-    return Tool(
+    return DynamicTool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
+        _func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
         coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
     )
 
 
 def _get_open_meteo_api(llm: BaseLLM) -> Tool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
-    return Tool(
-        "Open Meteo API",
-        chain.run,
-        "Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
+    return DynamicTool(
+        name="Open Meteo API",
+        description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
+        _func=chain.run,
     )
 
 
@@ -94,10 +95,10 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> Tool:
     chain = APIChain.from_llm_and_api_docs(
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
     )
-    return Tool(
-        "News API",
-        chain.run,
-        "Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
+    return DynamicTool(
+        name="News API",
+        description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
+        _func=chain.run,
     )
 
 
@@ -108,34 +109,34 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
         tmdb_docs.TMDB_DOCS,
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
-    return Tool(
-        "TMDB API",
-        chain.run,
-        "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
+    return DynamicTool(
+        name="TMDB API",
+        description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
+        _func=chain.run,
     )
 
 
 def _get_wolfram_alpha(**kwargs: Any) -> Tool:
-    return Tool(
-        "Wolfram Alpha",
-        WolframAlphaAPIWrapper(**kwargs).run,
-        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+    return DynamicTool(
+        name="Wolfram Alpha",
+        description="A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+        _func=WolframAlphaAPIWrapper(**kwargs).run,
     )
 
 
 def _get_google_search(**kwargs: Any) -> Tool:
-    return Tool(
-        "Google Search",
-        GoogleSearchAPIWrapper(**kwargs).run,
-        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
+    return DynamicTool(
+        name="Google Search",
+        description="A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
+        _func=GoogleSearchAPIWrapper(**kwargs).run,
     )
 
 
 def _get_serpapi(**kwargs: Any) -> Tool:
-    return Tool(
+    return DynamicTool(
         name="Search",
         description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        func=SerpAPIWrapper(**kwargs).run,
+        _func=SerpAPIWrapper(**kwargs).run,
         coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 
