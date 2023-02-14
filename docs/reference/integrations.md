@@ -24,6 +24,9 @@ The following use cases require specific installs and api keys:
 - _CerebriumAI_:
   - Install requirements with `pip install cerebrium`
   - Get a Cerebrium api key and either set it as an environment variable (`CEREBRIUMAI_API_KEY`) or pass it to the LLM constructor as `cerebriumai_api_key`.
+- _PromptLayer_:
+  - Install requirements with `pip install promptlayer` (be sure to be on version 0.1.62 or higher)
+  - Get an API key from [promptlayer.com](http://www.promptlayer.com) and set it using `promptlayer.api_key=<API KEY>`
 - _SerpAPI_:
   - Install requirements with `pip install google-search-results`
   - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.
