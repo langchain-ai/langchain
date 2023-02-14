@@ -83,3 +83,20 @@ class ChatVectorDBChain(Chain, BaseModel):
         new_inputs["chat_history"] = chat_history_str
         answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
         return {self.output_key: answer}
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        question = inputs["question"]
+        chat_history_str = _get_chat_history(inputs["chat_history"])
+        if chat_history_str:
+            new_question = await self.question_generator.arun(
+                question=question, chat_history=chat_history_str
+            )
+        else:
+            new_question = question
+        # TODO: This blocks the event loop, but it's not clear how to avoid it.
+        docs = self.vectorstore.similarity_search(new_question, k=4)
+        new_inputs = inputs.copy()
+        new_inputs["question"] = new_question
+        new_inputs["chat_history"] = chat_history_str
+        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
+        return {self.output_key: answer}
