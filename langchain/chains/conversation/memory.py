@@ -506,6 +506,10 @@ class ConversationKGMemory(Memory, BaseModel):
         new_lines = "\n".join([human.strip(), ai.strip()])
         self.buffer.append(new_lines)
 
+    @property
+    def _memory_type(self) -> str:
+        return "conversation_kg"
+
     def clear(self) -> None:
         """Clear memory contents."""
         return self.kg.clear()
@@ -518,6 +522,7 @@ __all__ = [
     "ConversationSummaryMemory",
     "ConversationEntityMemory",
     "ConversationSummaryBufferMemory",
+    "ConversationKGMemory",
 ]
 
 type_to_cls_dict: Dict[str, Type[Memory]] = {
@@ -527,4 +532,5 @@ type_to_cls_dict: Dict[str, Type[Memory]] = {
     "conversation_summary": ConversationSummaryMemory,
     "conversation_entity": ConversationEntityMemory,
     "conversation_summary_buffer": ConversationSummaryBufferMemory,
+    "conversation_kg": ConversationKGMemory,
 }

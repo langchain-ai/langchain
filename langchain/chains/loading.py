@@ -11,6 +11,8 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.conversation.base import ConversationChain
+from langchain.chains.conversation.loading import load_memory, load_memory_from_config
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -25,8 +27,6 @@ from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config
 from langchain.utilities.loading import try_load_from_hub
-from langchain.chains.conversation.base import ConversationChain
-from langchain.chains.conversation.loading import load_memory, load_memory_from_config
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 

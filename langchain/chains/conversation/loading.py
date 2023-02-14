@@ -5,8 +5,8 @@ from typing import Union
 
 import yaml
 
-from langchain.chains.conversation.memory import type_to_cls_dict
 from langchain.chains.base import Memory
+from langchain.chains.conversation.memory import type_to_cls_dict
 
 
 def load_memory_from_config(config: dict) -> Memory:
