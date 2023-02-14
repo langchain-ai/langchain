@@ -13,6 +13,7 @@ from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
 from langchain.llms.petals import Petals
+from langchain.llms.promptlayer_openai import PromptLayerOpenAI
 
 __all__ = [
     "Anthropic",
@@ -27,6 +28,7 @@ __all__ = [
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
+    "PromptLayerOpenAI",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
