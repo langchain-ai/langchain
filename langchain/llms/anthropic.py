@@ -32,7 +32,7 @@ class Anthropic(LLM, BaseModel):
     """
 
     client: Any  #: :meta private:
-    model: Optional[str] = None
+    model: str = "claude-v1"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
@@ -102,7 +102,7 @@ class Anthropic(LLM, BaseModel):
         if prompt.startswith(self.HUMAN_PROMPT):
             return prompt  # Already wrapped.
         else:
-            return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
+            return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT}"
 
     def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
