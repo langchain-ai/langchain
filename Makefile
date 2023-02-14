@@ -32,6 +32,9 @@ lint:
 test:
 	poetry run pytest tests/unit_tests
 
+tests:
+	poetry run pytest tests/unit_tests
+
 test_watch:
 	poetry run ptw --now . -- tests/unit_tests
 
