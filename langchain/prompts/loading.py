@@ -1,6 +1,7 @@
 """Load prompts from disk."""
 import importlib
 import json
+import logging
 from pathlib import Path
 from typing import Union
 
@@ -12,13 +13,14 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
+logger = logging.getLogger(__file__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
     """Load prompt from Config Dict."""
     if "_type" not in config:
-        raise ValueError("Must specify a prompt Type in config")
-    config_type = config.pop("_type")
+        logger.warning("No `_type` key found, defaulting to `prompt`.")
+    config_type = config.pop("_type", "prompt")
 
     if config_type not in type_to_loader_dict:
         raise ValueError(f"Loading {config_type} prompt not supported")
