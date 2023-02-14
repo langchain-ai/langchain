@@ -21,8 +21,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Print out the prompts."""
         pass
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Print out the token."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
+        """Collect token usage."""
         if response.llm_output is not None:
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
