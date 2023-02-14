@@ -1,8 +1,9 @@
+# flake8: noqa=E501
 """Test SQL database wrapper."""
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
 
-from langchain.sql_database import SQLDatabase
+from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -27,10 +28,10 @@ def test_table_info() -> None:
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
     output = db.table_info
+    output = output[len(_TEMPLATE_PREFIX) :]
     expected_output = (
-        "Table 'company' has columns: company_id (INTEGER), "
-        "company_location (VARCHAR).",
-        "Table 'user' has columns: user_id (INTEGER), user_name (VARCHAR(16)).",
+        "Table 'user' has columns: {'user_id': ['INTEGER'], 'user_name': ['VARCHAR(16)']}",
+        "Table 'company' has columns: {'company_id': ['INTEGER'], 'company_location': ['VARCHAR']}",
     )
     assert sorted(output.split("\n")) == sorted(expected_output)
 
@@ -50,14 +51,12 @@ def test_table_info_w_sample_rows() -> None:
     db = SQLDatabase(engine, sample_rows_in_table_info=2)
 
     output = db.table_info
+    output = output[len(_TEMPLATE_PREFIX) :]
     expected_output = (
-        "Table 'company' has columns: company_id (INTEGER), "
-        "company_location (VARCHAR).\n"
-        "Table 'user' has columns: user_id (INTEGER), "
-        "user_name (VARCHAR(16)). Here is an example of 2 rows "
-        "from this table (long strings are truncated):\n13 Harrison\n14 Chase"
+        "Table 'user' has columns: {'user_id': ['INTEGER', ['13', '14']], 'user_name': ['VARCHAR(16)', ['Harrison', 'Chase']]}",
+        "Table 'company' has columns: {'company_id': ['INTEGER', []], 'company_location': ['VARCHAR', []]}",
     )
-    assert sorted(output.split("\n")) == sorted(expected_output.split("\n"))
+    assert sorted(output.split("\n")) == sorted(expected_output)
 
 
 def test_sql_database_run() -> None:
