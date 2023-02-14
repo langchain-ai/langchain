@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -98,8 +98,27 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             # FYI - this is parallelized and so it is fast.
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
         )
-        typed_results = cast(List[dict], results)
+        return self._process_results(docs, results)
 
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine documents in a map rerank manner.
+
+        Combine by mapping first chain over all documents, then reranking the results.
+        """
+        results = await self.llm_chain.aapply_and_parse(
+            # FYI - this is parallelized and so it is fast.
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+        )
+        return self._process_results(docs, results)
+
+    def _process_results(
+        self,
+        docs: List[Document],
+        results: Sequence[Union[str, List[str], Dict[str, str]]],
+    ) -> Tuple[str, dict]:
+        typed_results = cast(List[dict], results)
         sorted_res = sorted(
             zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
         )
