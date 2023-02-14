@@ -2,7 +2,7 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, Generator
 
 import yaml
 from pydantic import BaseModel, Extra, Field, validator
@@ -100,9 +100,7 @@ class BaseLLM(BaseModel, ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
-    def generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    def generate(self, prompts: List[str], stop: Optional[List[str]] = None) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         # If string is passed in directly no errors will be raised but outputs will
         # not make sense.
@@ -123,6 +121,60 @@ class BaseLLM(BaseModel, ABC):
             )
             try:
                 output = self._generate(prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            return output
+        params = self.dict()
+        params["stop"] = stop
+        (
+            existing_prompts,
+            llm_string,
+            missing_prompt_idxs,
+            missing_prompts,
+        ) = get_prompts(params, prompts)
+        if len(missing_prompts) > 0:
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+            )
+            try:
+                new_results = self._generate(missing_prompts, stop=stop)
+            except (KeyboardInterrupt, Exception) as e:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                raise e
+            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            llm_output = update_cache(
+                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+            )
+        else:
+            llm_output = {}
+        generations = [existing_prompts[i] for i in range(len(prompts))]
+        return LLMResult(generations=generations, llm_output=llm_output)
+
+    def sgenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> Generator:
+        """Run the LLM on the given prompt and input. Returns a streaming response as a generator"""
+        # If string is passed in directly no errors will be raised but outputs will
+        # not make sense.
+        if not isinstance(prompts, list):
+            raise ValueError(
+                "Argument 'prompts' is expected to be of type List[str], received"
+                f" argument of type {type(prompts)}."
+            )
+        disregard_cache = self.cache is not None and not self.cache
+        if langchain.llm_cache is None or disregard_cache:
+            # This happens when langchain.cache is None, but self.cache is True
+            if self.cache is not None and self.cache:
+                raise ValueError(
+                    "Asked to cache, but no cache found at `langchain.cache`."
+                )
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+            )
+            try:
+                output = self._sgenerate(prompts, stop=stop)
             except (KeyboardInterrupt, Exception) as e:
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e

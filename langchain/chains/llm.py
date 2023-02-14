@@ -1,5 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Generator
 
 from pydantic import BaseModel, Extra
 
@@ -8,7 +8,7 @@ from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult
+from langchain.schema import LLMResult, LLMStreamingResult
 
 
 class LLMChain(Chain, BaseModel):
@@ -59,6 +59,12 @@ class LLMChain(Chain, BaseModel):
         response = self.llm.generate(prompts, stop=stop)
         return response
 
+    def sgenerate(self, input_list: List[Dict[str, Any]]) -> LLMStreamingResult:
+        """Generate streaming LLM result from inputs."""
+        prompts, stop = self.prep_prompts(input_list)
+        response: Generator = self.llm.stream(prompts, stop=stop)
+        return response
+
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
@@ -91,6 +97,11 @@ class LLMChain(Chain, BaseModel):
         response = self.generate(input_list)
         return self.create_outputs(response)
 
+    def sapply(self, input_list: List[Dict[str, Any]]) -> Generator:
+        """Utilize the LLM streaming generate method for speed gains."""
+        response: Generator = self.sgenerate(input_list)
+        return self.create_streaming_outputs(response)
+
     async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
         response = await self.agenerate(input_list)
@@ -105,8 +116,15 @@ class LLMChain(Chain, BaseModel):
             outputs.append({self.output_key: response_str})
         return outputs
 
+    def create_streaming_outputs(self, response: LLMStreamingResult) -> Generator:
+        """Create outputs from response."""
+        return {self.output_key: response}
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
+
+    def _scall(self, inputs: Dict[str, Any]) -> Generator:
+        return self.sapply([inputs])
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
@@ -126,6 +144,22 @@ class LLMChain(Chain, BaseModel):
                 completion = llm.predict(adjective="funny")
         """
         return self(kwargs)[self.output_key]
+
+    def spredict(self, **kwargs: Any) -> Generator:
+        """Format prompt with kwargs and pass to LLM.
+
+        Args:
+            **kwargs: Keys to pass to prompt template.
+
+        Returns:
+            Completion from LLM.
+
+        Example:
+            .. code-block:: python
+
+                completion = llm.predict(adjective="funny")
+        """
+        return self.scall(kwargs)
 
     async def apredict(self, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.

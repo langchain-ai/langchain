@@ -60,6 +60,23 @@ def _load_stuff_chain(
     )
 
 
+def _load_stream_chain(
+    llm: BaseLLM,
+    prompt: BasePromptTemplate,
+    document_variable_name: str = "context",
+    verbose: Optional[bool] = None,
+    **kwargs: Any,
+) -> StuffDocumentsChain:
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    return StuffDocumentsChain(
+        llm_chain=llm_chain,
+        document_variable_name=document_variable_name,
+        verbose=verbose,
+        streaming=True,
+        **kwargs,
+    )
+
+
 def _load_map_reduce_chain(
     llm: BaseLLM,
     question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
@@ -154,6 +171,7 @@ def load_qa_chain(
         "map_reduce": _load_map_reduce_chain,
         "refine": _load_refine_chain,
         "map_rerank": _load_map_rerank_chain,
+        "stream": _load_stream_chain,
     }
     if chain_type not in loader_mapping:
         raise ValueError(

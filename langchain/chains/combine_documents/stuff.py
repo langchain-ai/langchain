@@ -27,6 +27,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
+    streaming: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -82,6 +83,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         """Stuff all documents into one prompt and pass to LLM."""
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
+        if self.streaming:
+            return self.llm_chain.spredict(**inputs), {}
         return self.llm_chain.predict(**inputs), {}
 
     @property
