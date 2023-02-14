@@ -8,7 +8,7 @@ from typing import Any, Iterable, List, Optional
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import Engine
 
-_template_prefix = """Table data will be described in the following format:
+_TEMPLATE_PREFIX = """Table data will be described in the following format:
 
 Table 'table name' has columns: {
 column1 name: (column1 type, [list of example values for column1]),
@@ -116,7 +116,7 @@ class SQLDatabase:
             table_str = f"Table '{table_name}' has columns: " + str(dict(columns))
             tables.append(table_str)
 
-        final_str = _template_prefix + "\n".join(tables)
+        final_str = _TEMPLATE_PREFIX + "\n".join(tables)
         return final_str
 
     def run(self, command: str) -> str:
