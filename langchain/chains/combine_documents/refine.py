@@ -84,6 +84,50 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
 
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine by mapping first chain over all, then stuffing into final chain."""
+        inputs = self._construct_initial_inputs(docs, **kwargs)
+        res = self.initial_llm_chain.predict(**inputs)
+        refine_steps = [res]
+        for doc in docs[1:]:
+            base_inputs = self._construct_refine_inputs(doc, res)
+            inputs = {**base_inputs, **kwargs}
+            res = self.refine_llm_chain.predict(**inputs)
+            refine_steps.append(res)
+        return self._construct_result(refine_steps, res)
+
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine by mapping first chain over all, then stuffing into final chain."""
+        inputs = self._construct_initial_inputs(docs, **kwargs)
+        res = await self.initial_llm_chain.apredict(**inputs)
+        refine_steps = [res]
+        for doc in docs[1:]:
+            base_inputs = self._construct_refine_inputs(doc, res)
+            inputs = {**base_inputs, **kwargs}
+            res = await self.refine_llm_chain.apredict(**inputs)
+            refine_steps.append(res)
+        return self._construct_result(refine_steps, res)
+
+    def _construct_result(self, refine_steps: List[str], res: str) -> Tuple[str, dict]:
+        if self.return_intermediate_steps:
+            extra_return_dict = {"intermediate_steps": refine_steps}
+        else:
+            extra_return_dict = {}
+        return res, extra_return_dict
+
+    def _construct_refine_inputs(self, doc: Document, res: str) -> Dict[str, Any]:
+        base_info = {"page_content": doc.page_content}
+        base_info.update(doc.metadata)
+        document_info = {k: base_info[k] for k in self.document_prompt.input_variables}
+        base_inputs = {
+            self.document_variable_name: self.document_prompt.format(**document_info),
+            self.initial_response_name: res,
+        }
+        return base_inputs
+
+    def _construct_initial_inputs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Dict[str, Any]:
         base_info = {"page_content": docs[0].page_content}
         base_info.update(docs[0].metadata)
         document_info = {k: base_info[k] for k in self.document_prompt.input_variables}
@@ -91,28 +135,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             self.document_variable_name: self.document_prompt.format(**document_info)
         }
         inputs = {**base_inputs, **kwargs}
-        res = self.initial_llm_chain.predict(**inputs)
-        refine_steps = [res]
-        for doc in docs[1:]:
-            base_info = {"page_content": doc.page_content}
-            base_info.update(doc.metadata)
-            document_info = {
-                k: base_info[k] for k in self.document_prompt.input_variables
-            }
-            base_inputs = {
-                self.document_variable_name: self.document_prompt.format(
-                    **document_info
-                ),
-                self.initial_response_name: res,
-            }
-            inputs = {**base_inputs, **kwargs}
-            res = self.refine_llm_chain.predict(**inputs)
-            refine_steps.append(res)
-        if self.return_intermediate_steps:
-            extra_return_dict = {"intermediate_steps": refine_steps}
-        else:
-            extra_return_dict = {}
-        return res, extra_return_dict
+        return inputs
 
     @property
     def _chain_type(self) -> str:
