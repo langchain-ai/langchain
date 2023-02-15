@@ -34,6 +34,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     ) -> LLMResult:
         """Call OpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
+
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = super()._generate(prompts, stop)
         request_end_time = datetime.datetime.now().timestamp()
@@ -52,11 +53,12 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 get_api_key(),
             )
         return generated_responses
-    
+
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         from promptlayer.utils import get_api_key, promptlayer_api_request
+
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(prompts, stop)
         request_end_time = datetime.datetime.now().timestamp()
