@@ -15,7 +15,8 @@ def test_openai_embedding_documents_multiple() -> None:
     """Test openai embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
     embedding = OpenAIEmbeddings()
-    output = embedding.embed_documents(documents, chunk_size=2)
+    embedding.embedding_ctx_length = 8191
+    output = embedding.embed_documents(documents, chunk_size=1000)
     assert len(output) == 3
     assert len(output[0]) == 1536
     assert len(output[1]) == 1536
