@@ -10,6 +10,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
+from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 
 __all__ = [
     "Anthropic",
