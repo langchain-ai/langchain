@@ -1,6 +1,7 @@
 """Wrapper around OpenAI embedding models."""
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
@@ -24,7 +25,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     document_model_name: str = "text-embedding-ada-002"
     query_model_name: str = "text-embedding-ada-002"
-    embedding_encording: str = "cl100k_base"
     embedding_ctx_length: int = -1
     openai_api_key: Optional[str] = None
 
@@ -71,29 +71,44 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint."""
-        # replace newlines, which can negatively affect performance.
-        text = text.replace("\n", " ")
-        return self.client.create(input=[text], engine=engine)["data"][0]["embedding"]
-
-    def _truncate_embedding_func(
-        self,
-        texts: List[str],
+    # please refer to
+    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
+    def _get_len_safe_embeddings(
+        self, texts: List[str], *, engine: str, chunk_size: int = 1000
     ) -> List[List[float]]:
-        """Call out to truncate the input text to the maximum allowed length."""
-        results = []
+        embeddings: List[List[float]] = [[] for i in range(len(texts))]
         try:
             import tiktoken
 
-            encoding = tiktoken.get_encoding(self.embedding_encording)
-            tokens = encoding.encode(" ".join(texts))
-            for i in range(0, len(tokens), self.embedding_ctx_length):
+            tokens = []
+            indices = []
+            encoding = tiktoken.model.encoding_for_model(self.document_model_name)
+            for i, text in enumerate(texts):
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
+                token = encoding.encode(text)
+                for j in range(0, len(token), self.embedding_ctx_length):
+                    tokens += [token[j : j + self.embedding_ctx_length]]
+                    indices += [i]
+
+            batched_embeddings = []
+            for i in range(0, len(tokens), chunk_size):
                 response = self.client.create(
-                    input=encoding.decode(tokens[i: i + self.embedding_ctx_length]),
-                    engine=self.document_model_name,
+                    input=tokens[i : i + chunk_size], engine=self.document_model_name
                 )
-                results += [r["embedding"] for r in response["data"]]
+                batched_embeddings += [r["embedding"] for r in response["data"]]
+
+            results: List[List[List[float]]] = [[] for i in range(len(texts))]
+            lens: List[List[int]] = [[] for i in range(len(texts))]
+            for i in range(len(indices)):
+                results[indices[i]].append(batched_embeddings[i])
+                lens[indices[i]].append(len(batched_embeddings[i]))
+
+            for i in range(len(texts)):
+                average = np.average(results[i], axis=0, weights=lens[i])
+                embeddings[i] = (average / np.linalg.norm(average)).tolist()
+
+            return embeddings
 
         except ImportError:
             raise ValueError(
@@ -101,23 +116,36 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "This is needed in order to for OpenAIEmbeddings. "
                 "Please it install it with `pip install tiktoken`."
             )
-        return results
+
+    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
+        """Call out to OpenAI's embedding endpoint."""
+        # replace newlines, which can negatively affect performance.
+        if self.embedding_ctx_length > 0:
+            return self._get_len_safe_embeddings([text], engine=engine)[0]
+        else:
+            text = text.replace("\n", " ")
+            return self.client.create(input=[text], engine=engine)["data"][0][
+                "embedding"
+            ]
 
     def embed_documents(
-        self,
-        texts: List[str],
+        self, texts: List[str], chunk_size: int = 1000
     ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
+            chunk_size: The maximum number of texts to send to OpenAI at once
+                (max 1000).
 
         Returns:
-            List of embeddings generated from the given texts.
+            List of embeddings, one for each text.
         """
         # handle large batches of texts
         if self.embedding_ctx_length > 0:
-            return self._truncate_embedding_func(texts)
+            return self._get_len_safe_embeddings(
+                texts, engine=self.document_model_name, chunk_size=chunk_size
+            )
         else:
             responses = [
                 self._embedding_func(text, engine=self.document_model_name)
