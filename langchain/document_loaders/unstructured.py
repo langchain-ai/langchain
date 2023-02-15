@@ -37,7 +37,7 @@ class UnstructuredFileLoader(BaseLoader):
             docs: List[Document] = list()
             for element in elements:
                 metadata = {"source": self.file_path}
-                # NOTE(robinson) - the attribute check is for backward compatibility
+                # NOTE(MthwRobinson) - the attribute check is for backward compatibility
                 # with unstructured<0.4.9. The metadata attributed was added in 0.4.9.
                 if hasattr(element, "metadata"):
                     metadata.update(element.metadata.to_dict())
