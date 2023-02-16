@@ -27,6 +27,24 @@ def test_faiss() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_faiss_vector_sim() -> None:
+    """Test vector similarity."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    index_to_id = docsearch.index_to_docstore_id
+    expected_docstore = InMemoryDocstore(
+        {
+            index_to_id[0]: Document(page_content="foo"),
+            index_to_id[1]: Document(page_content="bar"),
+            index_to_id[2]: Document(page_content="baz"),
+        }
+    )
+    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.similarity_search_by_vector(query_vec, k=1)
+    assert output == [Document(page_content="foo")]
+
+
 def test_faiss_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

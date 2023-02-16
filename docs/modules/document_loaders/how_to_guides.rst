@@ -27,7 +27,7 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
 
-`EveryNote <./examples/everynote.html>`_: A walkthrough of how to load data from a EveryNote (`.enex`) file.
+`EverNote <./examples/evernote.html>`_: A walkthrough of how to load data from a EverNote (`.enex`) file.
 
 `YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
 

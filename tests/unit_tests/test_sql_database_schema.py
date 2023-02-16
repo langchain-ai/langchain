@@ -16,7 +16,7 @@ from sqlalchemy import (
     schema,
 )
 
-from langchain.sql_database import SQLDatabase
+from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -46,10 +46,11 @@ def test_table_info() -> None:
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine, schema="schema_a")
     output = db.table_info
+    output = output[len(_TEMPLATE_PREFIX) :]
     expected_output = (
-        "Table 'user' has columns: user_id (INTEGER), user_name (VARCHAR).",
+        "Table 'user' has columns: {'user_id': ['INTEGER'], 'user_name': ['VARCHAR']}"
     )
-    assert sorted(output.split("\n")) == sorted(expected_output)
+    assert output == expected_output
 
 
 def test_sql_database_run() -> None:

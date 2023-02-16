@@ -1,4 +1,4 @@
-"""Load documents from Everynote.
+"""Load documents from Evernote.
 
 https://gist.github.com/foxmask/7b29c43a161e001ff04afdb2f181e31c
 """
@@ -52,7 +52,7 @@ def _parse_note(note: List) -> dict:
 
 
 def _parse_note_xml(xml_file: str) -> str:
-    """Parse everynote xml."""
+    """Parse Evernote xml."""
     # Without huge_tree set to True, parser may complain about huge text node
     # Try to recover, because there may be "&nbsp;", which will cause
     # "XMLSyntaxError: Entity 'nbsp' not defined"
@@ -68,15 +68,15 @@ def _parse_note_xml(xml_file: str) -> str:
     return result_string
 
 
-class EveryNoteLoader(BaseLoader):
-    """Loader to load in EverNnote files.."""
+class EverNoteLoader(BaseLoader):
+    """Loader to load in EverNote files.."""
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
         self.file_path = file_path
 
     def load(self) -> List[Document]:
-        """Load document from EveryNote file."""
+        """Load document from EverNote file."""
         text = _parse_note_xml(self.file_path)
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
