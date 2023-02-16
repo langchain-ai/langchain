@@ -19,6 +19,8 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `PromptLayer OpenAI <./integrations/promptlayer_openai.html>`_: Covers how to use `PromptLayer <https://promptlayer.com>`_ with Langchain.
 
+`Anthropic <./integrations/anthropic_example.html>`_: Covers how to use Anthropic models with Langchain.
+
 
 .. toctree::
    :maxdepth: 1

@@ -33,7 +33,7 @@ class Anthropic(LLM, BaseModel):
     """
 
     client: Any  #: :meta private:
-    model: Optional[str] = None
+    model: str = "claude-v1"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
@@ -111,6 +111,7 @@ class Anthropic(LLM, BaseModel):
  
         # As a last resort, wrap the prompt ourselves to emulate instruct-style.
         return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
+
 
     def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
