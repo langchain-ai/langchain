@@ -23,6 +23,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
+from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from langchain.document_loaders.url import UnstructuredURLLoader
@@ -59,4 +60,5 @@ __all__ = [
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "TelegramChatLoader",
 ]
