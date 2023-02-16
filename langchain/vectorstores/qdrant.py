@@ -203,34 +203,28 @@ class Qdrant(VectorStore):
 
         client.upsert(
             collection_name=collection_name,
-            points=rest.Batch(
-                ids=[uuid.uuid4().hex for _ in texts],
-                vectors=embeddings,
-                payloads=cls._build_payloads(texts, metadatas),
-            ),
+            points=[rest.PointStruct(
+                id=uuid.uuid4().hex,
+                vector=embeddings[i],
+                payloads=cls._build_payload(texts[i], metadatas[i]),
+            ) for i in range(len(texts))]
         )
 
         return cls(client, collection_name, embedding.embed_query)
 
     @classmethod
-    def _build_payloads(
-        cls, texts: Iterable[str], metadatas: Optional[List[dict]]
+    def _build_payload(
+        cls, text: str, metadata: Optional[dict]
     ) -> List[dict]:
-        payloads = []
-        for i, text in enumerate(texts):
-            if text is None:
-                raise ValueError(
-                    "At least one of the texts is None. Please remove it before "
-                    "calling .from_texts or .add_texts on Qdrant instance."
-                )
-            payloads.append(
-                {
-                    cls.CONTENT_KEY: text,
-                    cls.METADATA_KEY: metadatas[i] if metadatas is not None else None,
-                }
+        if text is None:
+            raise ValueError(
+                "At least one of the texts is None. Please remove it before "
+                "calling .from_texts or .add_texts on Qdrant instance."
             )
-
-        return payloads
+        return {
+            cls.CONTENT_KEY: text,
+            cls.METADATA_KEY: metadata if metadata is not None else None,
+        }
 
     @classmethod
     def _document_from_scored_point(cls, scored_point: Any) -> Document:
