@@ -1,6 +1,6 @@
 """Wrapper around Anthropic APIs."""
-from typing import Any, Dict, Generator, List, Mapping, Optional
 import re
+from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -108,10 +108,9 @@ class Anthropic(LLM, BaseModel):
         corrected_prompt, n_subs = re.subn(r"^\n*Human:", self.HUMAN_PROMPT, prompt)
         if n_subs == 1:
             return corrected_prompt
- 
+
         # As a last resort, wrap the prompt ourselves to emulate instruct-style.
         return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
-
 
     def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
