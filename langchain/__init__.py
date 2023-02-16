@@ -45,7 +45,7 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.vectorstores import FAISS, ElasticVectorSearch
+from langchain.vectorstores import FAISS, ElasticVectorSearch, OpenSearchVectorSearch
 
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
@@ -91,4 +91,5 @@ __all__ = [
     "PALChain",
     "set_handler",
     "set_tracing_callback_manager",
+    "OpenSearchVectorSearch",
 ]
