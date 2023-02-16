@@ -25,6 +25,9 @@ class Qdrant(VectorStore):
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
 
+    CONTENT_KEY = "page_content"
+    METADATA_KEY = "metadata"
+
     def __init__(self, client: Any, collection_name: str, embedding_function: Callable):
         """Initialize with necessary components."""
         try:
@@ -213,10 +216,16 @@ class Qdrant(VectorStore):
     def _build_payloads(
         cls, texts: Iterable[str], metadatas: Optional[List[dict]]
     ) -> List[dict]:
+        if None in texts:
+            raise ValueError(
+                "At least one of the texts is None. Please remove it before "
+                "calling .from_texts or .add_texts on Qdrant instance."
+            )
+
         return [
             {
-                "page_content": text,
-                "metadata": metadatas[i] if metadatas is not None else None,
+                cls.CONTENT_KEY: text,
+                cls.METADATA_KEY: metadatas[i] if metadatas is not None else None,
             }
             for i, text in enumerate(texts)
         ]
@@ -224,6 +233,6 @@ class Qdrant(VectorStore):
     @classmethod
     def _document_from_scored_point(cls, scored_point: Any) -> Document:
         return Document(
-            page_content=scored_point.payload.get("content"),
-            metadata=scored_point.payload.get("metadata") or {},
+            page_content=scored_point.payload.get(cls.CONTENT_KEY),
+            metadata=scored_point.payload.get(cls.METADATA_KEY) or {},
         )
