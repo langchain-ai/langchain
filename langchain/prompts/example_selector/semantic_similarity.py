@@ -25,7 +25,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     example_keys: Optional[List[str]] = None
     """Optional keys to filter examples to."""
     input_keys: Optional[List[str]] = None
-    """Optional keys to filter input to. If provided, the search is based on 
+    """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
 
     class Config:
