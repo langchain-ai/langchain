@@ -5,10 +5,10 @@ from typing import Any, Callable, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra
 
-from langchain.llms.base import LLM
+from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.utils import enforce_stop_tokens
 
-DEFAULT_MODEL_ID = "EleutherAI/gpt-j-6B"
+DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
@@ -16,8 +16,8 @@ logger = logging.getLogger()
 
 
 def _generate_text(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -> str:
-    """Inference function to send to the remote hardware. Accepts a sentence_transformer model_id and
-    returns a list of embeddings for each document in the batch.
+    """Inference function to send to the remote hardware. Accepts a Hugging Face pipeline (or more likely,
+    a key pointing to such a pipeline on the cluster's object store) and returns generated text.
     """
     response = pipeline(prompt)
     if pipeline.task == "text-generation":
@@ -31,8 +31,6 @@ def _generate_text(pipeline: Any, prompt: str, stop: Optional[List[str]] = None)
             f"currently only {VALID_TASKS} are supported"
         )
     if stop is not None:
-        # This is a bit hacky, but I can't figure out a better way to enforce
-        # stop tokens when making calls to huggingface_hub.
         text = enforce_stop_tokens(text, stop)
     return text
 
@@ -100,7 +98,7 @@ def _load_transformer(
     return pipeline
 
 
-class SelfHostedHuggingFacePipeline(LLM, BaseModel):
+class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
     """Wrapper around HuggingFace Pipeline API to perform inference on self-hosted remote hardware.
     Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
     by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
@@ -112,16 +110,16 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain.llms import SelfHostedHuggingFacePipeline
+            from langchain.llms import SelfHostedHuggingFaceLLM
             import runhouse as rh
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            hf = SelfHostedHuggingFacePipeline.from_model_id(
+            hf = SelfHostedHuggingFaceLLM(
                 model_id="google/flan-t5-large", task="text2text-generation", hardware=gpu
             )
     Example passing fn that generates a pipeline (because the pipeline is not serializable):
         .. code-block:: python
 
-            from langchain.llms import SelfHostedHuggingFacePipeline
+            from langchain.llms import SelfHostedHuggingFaceLLM
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
             import runhouse as rh
 
@@ -130,25 +128,25 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
                 tokenizer = AutoTokenizer.from_pretrained(model_id)
                 model = AutoModelForCausalLM.from_pretrained(model_id)
                 pipe = pipeline(
-                    "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
+                    "text-generation", model=model, tokenizer=tokenizer
                 )
-            hf = SelfHostedHuggingFacePipeline(model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
+            hf = SelfHostedHuggingFaceLLM(model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
     """
 
-    pipeline_ref: Any  #: :meta private:
-    client: Any  #: :meta private:
     model_id: str = DEFAULT_MODEL_ID
-    """Model name to use."""
+    """Hugging Face model_id to load the model."""
+    task: str = DEFAULT_TASK
+    """Hugging Face task for which to use this model (either "text-generation" or "text2text-generation")."""
+    device: int = 0
+    """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
-    model_load_fn: Callable = _load_transformer
-    """Function to load the model remotely on the server."""
-    load_fn_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model load function."""
-    model_reqs: List[str] = ["transformers"]
-    """Requirements to install on hardware to inference the model."""
     hardware: Any
     """Remote hardware to send the inference function to."""
+    model_reqs: List[str] = ["./", "transformers", "torch"]
+    """Requirements to install on hardware to inference the model."""
+    model_load_fn: Callable = _load_transformer
+    """Function to load the model remotely on the server."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -160,48 +158,13 @@ class SelfHostedHuggingFacePipeline(LLM, BaseModel):
         which loads and returns the pipeline. The load function needs to be importable to be imported
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function."""
-        super().__init__(**kwargs)
-        try:
-            import runhouse as rh
-
-        except ImportError:
-            raise ValueError(
-                "Could not import runhouse python package. "
-                "Please install it with `pip install runhouse`."
-            )
-
-        remote_load_fn = rh.send(fn=self.model_load_fn).to(
-            self.hardware, reqs=["./"] + self.model_reqs
-        )
-        _load_fn_kwargs = self.load_fn_kwargs or {}
-        self.pipeline_ref = remote_load_fn.remote(**_load_fn_kwargs)
-
-        self.client = rh.send(fn=_generate_text).to(
-            self.hardware, reqs=["pip:./"] + self.model_reqs
-        )
-
-    @classmethod
-    def from_model_id(
-        cls,
-        model_id: str,
-        task: str,
-        hardware: Any,
-        model_reqs: Optional[List[str]] = None,
-        device: int = 0,
-        model_kwargs: Optional[dict] = None,
-        **kwargs: Any,
-    ) -> LLM:
-        """Construct the pipeline object from model_id and task."""
-
-        load_fn_kwargs = {"model_id": model_id, "task": task, "device": device}
-        return cls(
-            model_id=model_id,
-            model_kwargs=model_kwargs,
-            load_fn_kwargs=load_fn_kwargs,
-            hardware=hardware,
-            model_reqs=["transformers"] + (model_reqs or []),
-            **kwargs,
-        )
+        load_fn_kwargs = {
+            "model_id": kwargs.get("model_id", DEFAULT_MODEL_ID),
+            "task": kwargs.get("task", DEFAULT_TASK),
+            "device": kwargs.get("device", 0),
+            "model_kwargs": kwargs.get("model_kwargs", None),
+        }
+        super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
