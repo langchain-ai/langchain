@@ -216,19 +216,21 @@ class Qdrant(VectorStore):
     def _build_payloads(
         cls, texts: Iterable[str], metadatas: Optional[List[dict]]
     ) -> List[dict]:
-        if None in texts:
-            raise ValueError(
-                "At least one of the texts is None. Please remove it before "
-                "calling .from_texts or .add_texts on Qdrant instance."
+        payloads = []
+        for i, text in enumerate(texts):
+            if text is None:
+                raise ValueError(
+                    "At least one of the texts is None. Please remove it before "
+                    "calling .from_texts or .add_texts on Qdrant instance."
+                )
+            payloads.append(
+                {
+                    cls.CONTENT_KEY: text,
+                    cls.METADATA_KEY: metadatas[i] if metadatas is not None else None,
+                }
             )
 
-        return [
-            {
-                cls.CONTENT_KEY: text,
-                cls.METADATA_KEY: metadatas[i] if metadatas is not None else None,
-            }
-            for i, text in enumerate(texts)
-        ]
+        return payloads
 
     @classmethod
     def _document_from_scored_point(cls, scored_point: Any) -> Document:
