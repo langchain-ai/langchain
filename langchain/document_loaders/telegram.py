@@ -9,7 +9,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_rows(row):
+def concatenate_rows(row: dict) -> str:
     """Combine message information in a readable format ready to be used."""
     date = row["date"]
     sender = row["from"]
