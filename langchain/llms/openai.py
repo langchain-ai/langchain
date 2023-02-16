@@ -42,6 +42,27 @@ def update_token_usage(
             token_usage[_key] += response["usage"][_key]
 
 
+def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
+    """Update response from the stream response."""
+    response["choices"][0]["text"] += stream_response["choices"][0]["text"]
+    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
+        "finish_reason"
+    ]
+    response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
+
+
+def _streaming_response_template() -> Dict[str, Any]:
+    return {
+        "choices": [
+            {
+                "text": "",
+                "finish_reason": None,
+                "logprobs": None,
+            }
+        ]
+    }
+
+
 class BaseOpenAI(BaseLLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
@@ -88,6 +109,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -129,6 +152,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
             )
+        if values["streaming"] and values["n"] > 1:
+            raise ValueError("Cannot stream results when n > 1.")
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
         return values
 
     @property
@@ -163,6 +190,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 | retry_if_exception_type(openai.error.APIError)
                 | retry_if_exception_type(openai.error.APIConnectionError)
                 | retry_if_exception_type(openai.error.RateLimitError)
+                | retry_if_exception_type(openai.error.ServiceUnavailableError)
             ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
@@ -214,9 +242,25 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            response = self.completion_with_retry(prompt=_prompts, **params)
-            choices.extend(response["choices"])
-            update_token_usage(_keys, response, token_usage)
+            if self.streaming:
+                if len(_prompts) > 1:
+                    raise ValueError("Cannot stream results with multiple prompts.")
+                params["stream"] = True
+                response = _streaming_response_template()
+                for stream_resp in self.completion_with_retry(
+                    prompt=_prompts, **params
+                ):
+                    self.callback_manager.on_llm_new_token(
+                        stream_resp["choices"][0]["text"], verbose=self.verbose
+                    )
+                    _update_response(response, stream_resp)
+                choices.extend(response["choices"])
+            else:
+                response = self.completion_with_retry(prompt=_prompts, **params)
+                choices.extend(response["choices"])
+            if not self.streaming:
+                # Can't update token usage if streaming
+                update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
     async def _agenerate(
@@ -231,10 +275,30 @@ class BaseOpenAI(BaseLLM, BaseModel):
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
         for _prompts in sub_prompts:
-            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-            response = await self.acompletion_with_retry(prompt=_prompts, **params)
-            choices.extend(response["choices"])
-            update_token_usage(_keys, response, token_usage)
+            if self.streaming:
+                if len(_prompts) > 1:
+                    raise ValueError("Cannot stream results with multiple prompts.")
+                params["stream"] = True
+                response = _streaming_response_template()
+                async for stream_resp in await self.acompletion_with_retry(
+                    prompt=_prompts, **params
+                ):
+                    if self.callback_manager.is_async:
+                        await self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                        )
+                    else:
+                        self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                        )
+                    _update_response(response, stream_resp)
+                choices.extend(response["choices"])
+            else:
+                response = await self.acompletion_with_retry(prompt=_prompts, **params)
+                choices.extend(response["choices"])
+            if not self.streaming:
+                # Can't update token usage if streaming
+                update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(choices, prompts, token_usage)
 
     def get_sub_prompts(
@@ -303,6 +367,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 for token in generator:
                     yield token
         """
+        params = self.prep_streaming_params(stop)
+        generator = self.client.create(prompt=prompt, **params)
+
+        return generator
+
+    def prep_streaming_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Prepare the params for streaming."""
         params = self._invocation_params
         if params["best_of"] != 1:
             raise ValueError("OpenAI only supports best_of == 1 for streaming")
@@ -311,9 +382,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         params["stream"] = True
-        generator = self.client.create(prompt=prompt, **params)
-
-        return generator
+        return params
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:

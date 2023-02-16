@@ -118,3 +118,58 @@ ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
     input_variables=["entity", "summary", "history", "input"],
     template=_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE,
 )
+
+
+KG_TRIPLE_DELIMITER = "<|>"
+_DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
+    "You are a networked intelligence helping a human track knowledge triples"
+    " about all relevant people, things, concepts, etc. and integrating"
+    " them with your knowledge stored within your weights"
+    " as well as that stored in a knowledge graph."
+    " Extract all of the knowledge triples from the last line of conversation."
+    " A knowledge triple is a clause that contains a subject, a predicate,"
+    " and an object. The subject is the entity being described,"
+    " the predicate is the property of the subject that is being"
+    " described, and the object is the value of the property.\n\n"
+    "EXAMPLE\n"
+    "Conversation history:\n"
+    "Person #1: Did you hear aliens landed in Area 51?\n"
+    "AI: No, I didn't hear that. What do you know about Area 51?\n"
+    "Person #1: It's a secret military base in Nevada.\n"
+    "AI: What do you know about Nevada?\n"
+    "Last line of conversation:\n"
+    "Person #1: It's a state in the US. It's also the number 1 producer of gold in the US.\n\n"
+    f"Output: (Nevada, is a, state){KG_TRIPLE_DELIMITER}(Nevada, is in, US)"
+    f"{KG_TRIPLE_DELIMITER}(Nevada, is the number 1 producer of, gold)\n"
+    "END OF EXAMPLE\n\n"
+    "EXAMPLE\n"
+    "Conversation history:\n"
+    "Person #1: Hello.\n"
+    "AI: Hi! How are you?\n"
+    "Person #1: I'm good. How are you?\n"
+    "AI: I'm good too.\n"
+    "Last line of conversation:\n"
+    "Person #1: I'm going to the store.\n\n"
+    "Output: NONE\n"
+    "END OF EXAMPLE\n\n"
+    "EXAMPLE\n"
+    "Conversation history:\n"
+    "Person #1: What do you know about Descartes?\n"
+    "AI: Descartes was a French philosopher, mathematician, and scientist who lived in the 17th century.\n"
+    "Person #1: The Descartes I'm referring to is a standup comedian and interior designer from Montreal.\n"
+    "AI: Oh yes, He is a comedian and an interior designer. He has been in the industry for 30 years. His favorite food is baked bean pie.\n"
+    "Person #1: Oh huh. I know Descartes likes to drive antique scooters and play the mandolin.\n"
+    "Last line of conversation:\n"
+    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"
+    "END OF EXAMPLE\n\n"
+    "Conversation history (for reference only):\n"
+    "{history}"
+    "\nLast line of conversation (for extraction):\n"
+    "Human: {input}\n\n"
+    "Output:"
+)
+
+KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(
+    input_variables=["history", "input"],
+    template=_DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE,
+)
