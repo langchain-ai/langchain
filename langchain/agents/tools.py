@@ -1,26 +1,19 @@
 """Interface for tools."""
-import asyncio
-from dataclasses import dataclass
+
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Callable, Union
+
+from langchain.tools.tool import Tool
 
 
-@dataclass
-class Tool:
-    """Interface for tools."""
+class DynamicTool(Tool):
+    """Dynamically generated tool."""
 
-    name: str
-    func: Callable[[str], str]
-    description: Optional[str] = None
-    return_direct: bool = False
-    # If the tool has a coroutine, then we can use this to run it asynchronously
-    coroutine: Optional[Callable[[str], Awaitable[str]]] = None
+    dynamic_function: Callable
 
-    def __call__(self, *args: Any, **kwargs: Any) -> str:
-        """Make tools callable by piping through to `func`."""
-        if asyncio.iscoroutinefunction(self.func):
-            raise TypeError("Coroutine cannot be called directly")
-        return self.func(*args, **kwargs)
+    def func(self, *args: Any, **kwargs: Any) -> str:
+        """Use the tool."""
+        return self.dynamic_function(*args, **kwargs)
 
 
 def tool(
@@ -52,9 +45,9 @@ def tool(
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            tool = Tool(
+            tool = DynamicTool(
                 name=tool_name,
-                func=func,
+                dynamic_function=func,
                 description=description,
                 return_direct=return_direct,
             )

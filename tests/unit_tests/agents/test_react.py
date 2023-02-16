@@ -5,7 +5,7 @@ from typing import Any, List, Mapping, Optional, Union
 from pydantic import BaseModel
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
-from langchain.agents.tools import Tool
+from langchain.agents.tools import DynamicTool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import LLM
@@ -58,8 +58,8 @@ def test_predict_until_observation_normal() -> None:
     outputs = ["foo\nAction 1: Search[foo]"]
     fake_llm = FakeListLLM(responses=outputs)
     tools = [
-        Tool("Search", lambda x: x),
-        Tool("Lookup", lambda x: x),
+        DynamicTool(name="Search", dynamic_function=lambda x: x, description="foo"),
+        DynamicTool(name="Lookup", dynamic_function=lambda x: x, description="bar"),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")
@@ -72,8 +72,8 @@ def test_predict_until_observation_repeat() -> None:
     outputs = ["foo", " Search[foo]"]
     fake_llm = FakeListLLM(responses=outputs)
     tools = [
-        Tool("Search", lambda x: x),
-        Tool("Lookup", lambda x: x),
+        DynamicTool(name="Search", dynamic_function=lambda x: x, description="foo"),
+        DynamicTool(name="Lookup", dynamic_function=lambda x: x, description="bar"),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")

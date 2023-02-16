@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
@@ -36,7 +36,7 @@ class ConversationalAgent(Agent):
     @classmethod
     def create_prompt(
         cls,
-        tools: List[Tool],
+        tools: Sequence[Tool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -90,7 +90,7 @@ class ConversationalAgent(Agent):
     def from_llm_and_tools(
         cls,
         llm: BaseLLM,
-        tools: List[Tool],
+        tools: Sequence[Tool],
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,

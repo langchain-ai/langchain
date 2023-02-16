@@ -1,5 +1,5 @@
 """Load agent."""
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
@@ -9,7 +9,7 @@ from langchain.llms.base import BaseLLM
 
 
 def initialize_agent(
-    tools: List[Tool],
+    tools: Sequence[Tool],
     llm: BaseLLM,
     agent: Optional[str] = None,
     callback_manager: Optional[BaseCallbackManager] = None,

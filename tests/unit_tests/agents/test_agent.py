@@ -4,7 +4,8 @@ from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel
 
-from langchain.agents import AgentExecutor, Tool, initialize_agent
+from langchain.agents import AgentExecutor, initialize_agent
+from langchain.agents.tools import DynamicTool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -42,8 +43,16 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
-        Tool("Lookup", lambda x: x, "Useful for looking up things in a table"),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+        ),
+        DynamicTool(
+            name="Lookup",
+            dynamic_function=lambda x: x,
+            description="Useful for looking up things in a table",
+        ),
     ]
     agent = initialize_agent(
         tools, fake_llm, agent="zero-shot-react-description", verbose=True, **kwargs
@@ -79,7 +88,11 @@ def test_agent_with_callbacks_global() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+        ),
     ]
     agent = initialize_agent(
         tools,
@@ -118,7 +131,11 @@ def test_agent_with_callbacks_local() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+        ),
     ]
     agent = initialize_agent(
         tools,
@@ -159,7 +176,11 @@ def test_agent_with_callbacks_not_verbose() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+        ),
     ]
     agent = initialize_agent(
         tools,
@@ -186,7 +207,12 @@ def test_agent_tool_return_direct() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching", return_direct=True),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
     ]
     agent = initialize_agent(
         tools,
@@ -204,7 +230,12 @@ def test_agent_with_new_prefix_suffix() -> None:
         responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
     )
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching", return_direct=True),
+        DynamicTool(
+            name="Search",
+            dynamic_function=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
     ]
     prefix = "FooBarBaz"
 
