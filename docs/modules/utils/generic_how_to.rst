@@ -15,6 +15,8 @@ The utilities listed here are all generic utilities.
 
 `SerpAPI <./examples/serpapi.html>`_: How to use the SerpAPI wrapper to search the web.
 
+`SearxNG Search API <./examples/searx_search.html>`_: Hot to use the SearxNG meta search wrapper to search the web.
+
 `Bing Search <./examples/bing_search.html>`_: How to use the Bing search wrapper to search the web.
 
 `Wolfram Alpha <./examples/wolfram_alpha.html>`_: How to use the Wolfram Alpha wrapper to interact with Wolfram Alpha.

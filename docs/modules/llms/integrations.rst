@@ -17,6 +17,10 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `Forefront AI <./integrations/forefrontai_example.html>`_: Covers how to utilize the Forefront AI wrapper.
 
+`PromptLayer OpenAI <./integrations/promptlayer_openai.html>`_: Covers how to use `PromptLayer <https://promptlayer.com>`_ with Langchain.
+
+`Anthropic <./integrations/anthropic_example.html>`_: Covers how to use Anthropic models with Langchain.
+
 
 .. toctree::
    :maxdepth: 1

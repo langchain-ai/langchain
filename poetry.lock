@@ -149,6 +149,24 @@ files = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.2.2"
+description = "Library for accessing the anthropic API"
+category = "main"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "anthropic-0.2.2-py3-none-any.whl", hash = "sha256:383cdc6a8509b68b103586ce60c80d86557e90940ace2d12d7e4f193458e1e63"},
+    {file = "anthropic-0.2.2.tar.gz", hash = "sha256:3fbe61e37bd5f98f3d65ff3ee97bd64a6084f79a222ccb841dad8ff20c43b25e"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[package.extras]
+dev = ["black (>=22.3.0)", "pytest"]
+
+[[package]]
 name = "anyio"
 version = "3.6.2"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -7021,10 +7039,10 @@ docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker
 testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx"]
-llms = ["cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx"]
+llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "81fa8d3c24ead7311cc06a97fcabfe9a707fb3fc5989caa1569c5ef364cdd508"
+content-hash = "690fdd08a207a73cb343cfdf25f7ae7d4177dc39b704d8655f3a4f26a881c2fc"

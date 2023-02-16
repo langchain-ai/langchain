@@ -1,3 +1,13 @@
 pre {
-    white-space: break-spaces;
+  white-space: break-spaces;
+}
+
+@media (min-width: 1200px) {
+  .container,
+  .container-lg,
+  .container-md,
+  .container-sm,
+  .container-xl {
+    max-width: 2560px !important;
+  }
 }
