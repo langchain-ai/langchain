@@ -120,7 +120,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # replace newlines, which can negatively affect performance.
-        if self.embedding_ctx_length > 0:
+        if hasattr(self, "embedding_ctx_length") and self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
             text = text.replace("\n", " ")
@@ -142,16 +142,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         # handle large batches of texts
-        if self.embedding_ctx_length > 0:
+        if hasattr(self, "embedding_ctx_length") and self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings(
                 texts, engine=self.document_model_name, chunk_size=chunk_size
             )
         else:
-            responses = [
-                self._embedding_func(text, engine=self.document_model_name)
-                for text in texts
-            ]
-            return responses
+            results = []
+            for i in range(0, len(texts), chunk_size):
+                response = self.client.create(
+                    input=texts[i : i + chunk_size], engine=self.document_model_name
+                )
+                results += [r["embedding"] for r in response["data"]]
+            return results
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
