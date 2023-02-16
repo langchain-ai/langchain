@@ -129,6 +129,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Handle a new token for an LLM run."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
         if not self._stack or not isinstance(self._stack[-1], LLMRun):

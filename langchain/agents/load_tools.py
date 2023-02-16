@@ -13,6 +13,7 @@ from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
@@ -131,6 +132,14 @@ def _get_google_search(**kwargs: Any) -> Tool:
     )
 
 
+def _get_google_serper(**kwargs: Any) -> Tool:
+    return Tool(
+        "Search",
+        GoogleSerperAPIWrapper(**kwargs).run,
+        "A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
         name="Search",
@@ -147,6 +156,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
 }
 

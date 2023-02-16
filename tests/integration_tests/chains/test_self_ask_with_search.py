@@ -1,7 +1,7 @@
 """Integration test for self ask with search."""
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.llms.openai import OpenAI
-from langchain.serpapi import SerpAPIWrapper
+from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 
 
 def test_self_ask_with_search() -> None:
@@ -9,7 +9,7 @@ def test_self_ask_with_search() -> None:
     question = "What is the hometown of the reigning men's U.S. Open champion?"
     chain = SelfAskWithSearchChain(
         llm=OpenAI(temperature=0),
-        search_chain=SerpAPIWrapper(),
+        search_chain=GoogleSerperAPIWrapper(),
         input_key="q",
         output_key="a",
     )
