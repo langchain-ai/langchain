@@ -5,6 +5,7 @@ from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "RequestsWrapper",
     "PythonREPL",
     "GoogleSearchAPIWrapper",
+    "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
     "SerpAPIWrapper",
     "BingSearchAPIWrapper",
