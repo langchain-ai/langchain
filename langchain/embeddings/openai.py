@@ -88,13 +88,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 text = text.replace("\n", " ")
                 token = encoding.encode(text)
                 for j in range(0, len(token), self.embedding_ctx_length):
-                    tokens += [token[j : j + self.embedding_ctx_length]]
+                    tokens += [token[j: j + self.embedding_ctx_length]]
                     indices += [i]
 
             batched_embeddings = []
             for i in range(0, len(tokens), chunk_size):
                 response = self.client.create(
-                    input=tokens[i : i + chunk_size], engine=self.document_model_name
+                    input=tokens[i: i + chunk_size], engine=self.document_model_name
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
@@ -147,11 +147,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 texts, engine=self.document_model_name, chunk_size=chunk_size
             )
         else:
-            responses = [
-                self._embedding_func(text, engine=self.document_model_name)
-                for text in texts
-            ]
-            return responses
+            results = []
+            for i in range(0, len(texts), chunk_size):
+                response = self.client.create(
+                    input=texts[i: i +
+                                chunk_size], engine=self.document_model_name
+                )
+                results += [r["embedding"] for r in response["data"]]
+            return results
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
