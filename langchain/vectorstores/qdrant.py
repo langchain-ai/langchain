@@ -224,6 +224,6 @@ class Qdrant(VectorStore):
     @classmethod
     def _document_from_scored_point(cls, scored_point: Any) -> Document:
         return Document(
-            page_content=scored_point.payload.get("page_content"),
+            page_content=scored_point.payload.get("content"),
             metadata=scored_point.payload.get("metadata") or {},
         )
