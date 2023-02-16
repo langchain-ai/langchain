@@ -37,7 +37,9 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     def add_example(self, example: Dict[str, str]) -> str:
         """Add new example to vectorstore."""
         if self.input_keys:
-            string_example = " ".join(sorted_values({key: example[key] for key in self.input_keys}))
+            string_example = " ".join(
+                sorted_values({key: example[key] for key in self.input_keys})
+            )
         else:
             string_example = " ".join(sorted_values(example))
         ids = self.vectorstore.add_texts([string_example], metadatas=[example])
@@ -77,14 +79,18 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
             embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
             k: Number of examples to select
-            input_keys: If provided, the search is based on the input variables instead of all variables.
+            input_keys: If provided, the search is based on the input variables
+                instead of all variables.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
         if input_keys:
-            string_examples = [" ".join(sorted_values({k: eg[k] for k in input_keys})) for eg in examples]
+            string_examples = [
+                " ".join(sorted_values({k: eg[k] for k in input_keys}))
+                for eg in examples
+            ]
         else:
             string_examples = [" ".join(sorted_values(eg)) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
@@ -127,8 +133,8 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, Bas
         embeddings: Embeddings,
         vectorstore_cls: VectorStore,
         k: int = 4,
-        fetch_k: int = 20,
         input_keys: Optional[List[str]] = None,
+        fetch_k: int = 20,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -140,14 +146,18 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, Bas
             embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
             k: Number of examples to select
-            input_keys: If provided, the search is based on the input variables instead of all variables.
+            input_keys: If provided, the search is based on the input variables
+                instead of all variables.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
         if input_keys:
-            string_examples = [" ".join(sorted_values({k: eg[k] for k in input_keys})) for eg in examples]
+            string_examples = [
+                " ".join(sorted_values({k: eg[k] for k in input_keys}))
+                for eg in examples
+            ]
         else:
             string_examples = [" ".join(sorted_values(eg)) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
