@@ -64,7 +64,7 @@ class Chroma(VectorStore):
         else:
             self._collection = self._client.create_collection(
                 name=collection_name,
-                embedding_fn=self._embedding_function.embed_documents
+                embedding_function=self._embedding_function.embed_documents
                 if self._embedding_function is not None
                 else None,
             )
