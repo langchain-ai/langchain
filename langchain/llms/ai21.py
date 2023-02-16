@@ -63,7 +63,7 @@ class AI21(LLM, BaseModel):
     """Adjust the probability of specific tokens being generated."""
 
     ai21_api_key: Optional[str] = None
-        
+
     stop: Optional[List[str]] = None
 
     base_url: Optional[str] = None
