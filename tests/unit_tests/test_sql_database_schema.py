@@ -1,3 +1,4 @@
+# flake8: noqa
 """Test SQL database wrapper with schema support.
 
 Using DuckDB as SQLite does not support schemas.
@@ -16,7 +17,7 @@ from sqlalchemy import (
     schema,
 )
 
-from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
+from langchain.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 
