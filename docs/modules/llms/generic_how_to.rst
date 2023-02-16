@@ -11,6 +11,8 @@ The examples here all address certain "how-to" guides for working with LLMs.
 
 `Token Usage Tracking <./examples/token_usage_tracking.html>`_: How to track the token usage of various chains/agents/LLM calls.
 
+`Fake LLM <./examples/fake_llm.html>`_: How to create and use a fake LLM for testing and debugging purposes.
+
 
 .. toctree::
    :maxdepth: 1
