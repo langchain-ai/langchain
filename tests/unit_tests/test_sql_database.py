@@ -1,8 +1,9 @@
+# flake8: noqa=E501
 """Test SQL database wrapper."""
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
 
-from langchain.sql_database import SQLDatabase
+from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
 
 metadata_obj = MetaData()
 

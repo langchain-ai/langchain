@@ -13,6 +13,8 @@ from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
+from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
@@ -131,6 +133,14 @@ def _get_google_search(**kwargs: Any) -> Tool:
     )
 
 
+def _get_google_serper(**kwargs: Any) -> Tool:
+    return Tool(
+        "Search",
+        GoogleSerperAPIWrapper(**kwargs).run,
+        "A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
+    )
+
+
 def _get_serpapi(**kwargs: Any) -> Tool:
     return Tool(
         name="Search",
@@ -140,14 +150,25 @@ def _get_serpapi(**kwargs: Any) -> Tool:
     )
 
 
+def _get_searx_search(**kwargs: Any) -> Tool:
+    return Tool(
+        name="Search",
+        description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+        func=SearxSearchWrapper(**kwargs).run,
+    )
+
+
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
 }
+
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
+    "searx-search": (_get_searx_search, ["searx_host", "searx_host"]),
 }
 
 

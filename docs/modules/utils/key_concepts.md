@@ -36,3 +36,8 @@ This uses the official Google Search API to look up information on the web.
 
 ## SerpAPI
 This uses SerpAPI, a third party search API engine, to interact with Google Search.
+
+## Searx Search
+This uses the Searx (SearxNG fork) meta search engine API to lookup information
+on the web.  It supports 139 search engines and is easy to self-host
+which makes it a good choice for privacy-conscious users.

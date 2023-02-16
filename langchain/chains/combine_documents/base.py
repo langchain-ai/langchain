@@ -43,11 +43,25 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Combine documents into a single string."""
 
+    @abstractmethod
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine documents into a single string asynchronously."""
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         docs = inputs[self.input_key]
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
         output, extra_return_dict = self.combine_docs(docs, **other_keys)
+        extra_return_dict[self.output_key] = output
+        return extra_return_dict
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        docs = inputs[self.input_key]
+        # Other keys are assumed to be needed for LLM prediction
+        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+        output, extra_return_dict = await self.acombine_docs(docs, **other_keys)
         extra_return_dict[self.output_key] = output
         return extra_return_dict
 

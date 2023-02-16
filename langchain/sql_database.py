@@ -7,6 +7,18 @@ from typing import Any, Iterable, List, Optional
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import Engine
 
+_TEMPLATE_PREFIX = """Table data will be described in the following format:
+
+Table 'table name' has columns: {
+column1 name: (column1 type, [list of example values for column1]),
+column2 name: (column2 type, [list of example values for column2]),
+...
+}
+
+These are the tables you can use, together with their column information:
+
+"""
+
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""

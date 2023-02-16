@@ -77,6 +77,8 @@ Now, you should be able to run the common tasks in the following section.
 
 ## ✅Common Tasks
 
+Type `make` for a list of common tasks.
+
 ### Code Formatting
 
 Formatting for this project is done via a combination of [Black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/).
@@ -116,7 +118,7 @@ Unit tests cover modular logic that does not require calls to outside APIs.
 To run unit tests:
 
 ```bash
-make tests
+make test
 ```
 
 If you add new logic, please add a unit test.

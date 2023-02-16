@@ -18,6 +18,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         for prompt in prompts:
             st.write(prompt)
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Do nothing."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
         pass

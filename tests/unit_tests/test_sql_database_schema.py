@@ -16,7 +16,7 @@ from sqlalchemy import (
     schema,
 )
 
-from langchain.sql_database import SQLDatabase
+from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
 
 metadata_obj = MetaData()
 

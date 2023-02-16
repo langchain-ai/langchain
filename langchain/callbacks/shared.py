@@ -46,6 +46,11 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_llm_end(response, **kwargs)
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run when LLM generates a new token."""
+        with self._lock:
+            self._callback_manager.on_llm_new_token(token, **kwargs)
+
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
