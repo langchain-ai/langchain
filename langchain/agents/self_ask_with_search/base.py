@@ -1,5 +1,5 @@
 """Chain that does self ask with search."""
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.self_ask_with_search.prompt import PROMPT

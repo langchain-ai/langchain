@@ -137,12 +137,12 @@ class ReActChain(AgentExecutor):
         tools = [
             Tool(
                 name="Search",
-                dynamic_function=docstore_explorer.search,
+                function=docstore_explorer.search,
                 description="Search for a term in the docstore.",
             ),
             Tool(
                 name="Lookup",
-                dynamic_function=docstore_explorer.lookup,
+                function=docstore_explorer.lookup,
                 description="Lookup a term in the docstore.",
             ),
         ]

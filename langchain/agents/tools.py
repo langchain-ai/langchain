@@ -6,7 +6,7 @@ from langchain.tools.base import BaseTool
 
 
 class Tool(BaseTool):
-    """Dynamically generated tool."""
+    """Tool that takes in function or coroutine directly."""
 
     function: Callable
     coroutine: Optional[Callable[[str], Awaitable[str]]] = None
@@ -53,7 +53,7 @@ def tool(
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             tool = Tool(
                 name=tool_name,
-                dynamic_function=func,
+                function=func,
                 description=description,
                 return_direct=return_direct,
             )

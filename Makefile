@@ -1,4 +1,4 @@
-.PHONY: all clean format lint test test_watch integration_tests help
+.PHONY: all clean format lint test tests test_watch integration_tests help
 
 all: help
 	
