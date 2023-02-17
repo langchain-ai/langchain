@@ -1,6 +1,6 @@
 """Interface for tools."""
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Awaitable, Callable, Optional, Union
 
 from langchain.tools.base import BaseTool
 
@@ -37,9 +37,7 @@ class InvalidTool(BaseTool):
         return f"{tool_name} is not a valid tool, try another one."
 
 
-def tool(
-    *args: Union[str, Callable], return_direct: bool = False
-) -> Union[Callable, BaseTool]:
+def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
     Requires:
@@ -61,18 +59,18 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable[[str], str]) -> BaseTool:
+        def _make_tool(func: Callable[[str], str]) -> Tool:
             assert func.__doc__, "Function must have a docstring"
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            tool = Tool(
+            tool_ = Tool(
                 name=tool_name,
                 function=func,
                 description=description,
                 return_direct=return_direct,
             )
-            return tool
+            return tool_
 
         return _make_tool
 

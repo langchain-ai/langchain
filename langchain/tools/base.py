@@ -1,10 +1,10 @@
 """Base implementation for tools or skills."""
 
-import asyncio
 from abc import abstractmethod
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field, validator, Extra
+from pydantic import BaseModel, Extra, Field, validator
+
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import AgentAction
@@ -43,68 +43,63 @@ class BaseTool(BaseModel):
     async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
 
-    def __call__(self, *args: Any, **kwargs: Any) -> str:
-        """Make tools callable by piping through to `func`."""
-        if asyncio.iscoroutinefunction(self._run):
-            raise TypeError("Coroutine cannot be called directly")
-        return self._run(*args, **kwargs)
+    def __call__(self, tool_input: str) -> str:
+        """Make tools callable with str input."""
+        agent_action = AgentAction(tool_input=tool_input, tool=self.name, log="")
+        return self.run(agent_action)
 
-    def run(self, action: AgentAction, **kwargs) -> str:
+    def run(
+        self, action: AgentAction, verbose: Optional[bool] = None, **kwargs: Any
+    ) -> str:
         """Run the tool."""
+        if verbose is None:
+            verbose = self.verbose
         self.callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             action,
-            verbose=self.verbose,
+            verbose=verbose,
         )
         try:
             observation = self._run(action.tool_input)
         except (Exception, KeyboardInterrupt) as e:
-            self.callback_manager.on_tool_error(
-                e, verbose=self.verbose
-            )
+            self.callback_manager.on_tool_error(e, verbose=verbose)
             raise e
-        self.callback_manager.on_tool_end(
-            observation,
-            verbose=self.verbose,
-            **kwargs
-        )
+        self.callback_manager.on_tool_end(observation, verbose=verbose, **kwargs)
         return observation
 
-    async def arun(self, action: AgentAction, **kwargs) -> str:
+    async def arun(
+        self, action: AgentAction, verbose: Optional[bool] = None, **kwargs: Any
+    ) -> str:
         """Run the tool asynchronously."""
+        if verbose is None:
+            verbose = self.verbose
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
                 action,
-                verbose=self.verbose,
+                verbose=verbose,
             )
         else:
             self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
                 action,
-                verbose=self.verbose,
+                verbose=verbose,
             )
         try:
             # We then call the tool on the tool input to get an observation
             observation = await self._arun(action.tool_input)
         except (Exception, KeyboardInterrupt) as e:
             if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_error(e, verbose=self.verbose)
+                await self.callback_manager.on_tool_error(e, verbose=verbose)
             else:
-                self.callback_manager.on_tool_error(e, verbose=self.verbose)
+                self.callback_manager.on_tool_error(e, verbose=verbose)
             raise e
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_end(
-                observation,
-                verbose=self.verbose,
-                **kwargs
+                observation, verbose=verbose, **kwargs
             )
         else:
-            self.callback_manager.on_tool_end(
-                observation,
-                verbose=self.verbose,
-                **kwargs
-            )
+            self.callback_manager.on_tool_end(observation, verbose=verbose, **kwargs)
         return observation
 
 

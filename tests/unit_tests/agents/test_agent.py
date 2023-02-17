@@ -92,6 +92,7 @@ def test_agent_with_callbacks_global() -> None:
             name="Search",
             function=lambda x: x,
             description="Useful for searching",
+            callback_manager=manager,
         ),
     ]
     agent = initialize_agent(
@@ -135,6 +136,7 @@ def test_agent_with_callbacks_local() -> None:
             name="Search",
             function=lambda x: x,
             description="Useful for searching",
+            callback_manager=manager,
         ),
     ]
     agent = initialize_agent(

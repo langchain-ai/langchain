@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
-from langchain.agents.tools import Tool
+from langchain.agents.tools import InvalidTool, Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -21,7 +21,6 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
-from langchain.agents.tools import InvalidTool
 
 logger = logging.getLogger()
 
@@ -417,6 +416,7 @@ class AgentExecutor(Chain, BaseModel):
             # We then call the tool on the tool input to get an observation
             observation = tool.run(
                 output,
+                verbose=self.verbose,
                 color=color,
                 llm_prefix=llm_prefix,
                 observation_prefix=self.agent.observation_prefix,
@@ -424,6 +424,7 @@ class AgentExecutor(Chain, BaseModel):
         else:
             observation = InvalidTool().run(
                 output,
+                verbose=self.verbose,
                 color=None,
                 llm_prefix="",
                 observation_prefix=self.agent.observation_prefix,
@@ -459,6 +460,7 @@ class AgentExecutor(Chain, BaseModel):
             # We then call the tool on the tool input to get an observation
             observation = await tool.arun(
                 output,
+                verbose=self.verbose,
                 color=color,
                 llm_prefix=llm_prefix,
                 observation_prefix=self.agent.observation_prefix,
@@ -466,6 +468,7 @@ class AgentExecutor(Chain, BaseModel):
         else:
             observation = await InvalidTool().arun(
                 output,
+                verbose=self.verbose,
                 color=None,
                 llm_prefix="",
                 observation_prefix=self.agent.observation_prefix,
@@ -478,14 +481,6 @@ class AgentExecutor(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
-        # Make sure that every tool is synchronous (not a coroutine)
-        for tool in self.tools:
-            if asyncio.iscoroutinefunction(tool._run):
-                raise ValueError(
-                    "Tools cannot be asynchronous for `run` method. "
-                    "Please use `arun` instead."
-                )
-
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
