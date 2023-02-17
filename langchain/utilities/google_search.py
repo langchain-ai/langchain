@@ -61,7 +61,7 @@ class GoogleSearchAPIWrapper(BaseModel):
             .list(q=search_term, cx=self.google_cse_id, **kwargs)
             .execute()
         )
-        return res["items"]
+        return res.get("items", [])
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
