@@ -6,7 +6,7 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
-from langchain.document_loaders.everynote import EveryNoteLoader
+from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
@@ -20,6 +20,7 @@ from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
@@ -46,6 +47,7 @@ __all__ = [
     "YoutubeLoader",
     "S3FileLoader",
     "TextLoader",
+    "HNLoader",
     "S3DirectoryLoader",
     "GCSFileLoader",
     "GCSDirectoryLoader",
@@ -55,7 +57,7 @@ __all__ = [
     "CollegeConfidentialLoader",
     "GutenbergLoader",
     "PagedPDFSplitter",
-    "EveryNoteLoader",
+    "EverNoteLoader",
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",

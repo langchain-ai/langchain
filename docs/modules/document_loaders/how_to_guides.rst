@@ -31,6 +31,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
 
+`Hacker News <./examples/hn.html>`_: A walkthrough of how to load a Hacker News page.
+
 `s3 File <./examples/s3_file.html>`_: A walkthrough of how to load a file from s3.
 
 `s3 Directory <./examples/s3_directory.html>`_: A walkthrough of how to load all files in a directory from s3.
