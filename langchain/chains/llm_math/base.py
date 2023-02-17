@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes python code to do math."""
+import math  # noqa: F401
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -8,7 +9,6 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
-from langchain.python import PythonREPL
 
 
 class LLMMathChain(Chain, BaseModel):
@@ -51,12 +51,11 @@ class LLMMathChain(Chain, BaseModel):
         return [self.output_key]
 
     def _process_llm_result(self, t: str) -> Dict[str, str]:
-        python_executor = PythonREPL()
         self.callback_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         if t.startswith("```python"):
             code = t[9:-4]
-            output = python_executor.run(code)
+            output = str(eval(code))
             self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
             self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
             answer = "Answer: " + output
