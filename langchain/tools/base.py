@@ -2,9 +2,11 @@
 
 import asyncio
 from abc import abstractmethod
-from typing import Any, List
+from typing import Any, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator, Extra
+from langchain.callbacks import get_callback_manager
+from langchain.callbacks.base import BaseCallbackManager
 
 
 class BaseTool(BaseModel):
@@ -13,6 +15,24 @@ class BaseTool(BaseModel):
     name: str
     description: str
     return_direct: bool = False
+    verbose: bool = False
+    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True, always=True)
+    def set_callback_manager(
+        cls, callback_manager: Optional[BaseCallbackManager]
+    ) -> BaseCallbackManager:
+        """If callback manager is None, set it.
+
+        This allows users to pass in None as callback manager, which is a nice UX.
+        """
+        return callback_manager or get_callback_manager()
 
     @abstractmethod
     def func(self, *args: Any, **kwargs: Any) -> str:
