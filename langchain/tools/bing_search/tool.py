@@ -11,10 +11,10 @@ class BingSearchRun(BaseTool):
     description = "Execute the Bing search API."
     api_wrapper: BingSearchAPIWrapper
 
-    def func(self, query: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def afunc(self, query: str) -> str:
+    async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("BingSearchRun does not support async")

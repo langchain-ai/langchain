@@ -11,10 +11,10 @@ class GoogleSearchRun(BaseTool):
     description = "Execute the Google search API."
     api_wrapper: GoogleSearchAPIWrapper
 
-    def func(self, query: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
 
-    async def afunc(self, query: str) -> str:
+    async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("GoogleSearchRun does not support async")

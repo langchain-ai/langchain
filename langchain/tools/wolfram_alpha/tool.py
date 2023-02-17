@@ -11,10 +11,10 @@ class WolframAlphaQueryRun(BaseTool):
     description = "Query Wolfram Alpha with the given query."
     api_wrapper: WolframAlphaAPIWrapper
 
-    def func(self, query: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the WolframAlpha tool."""
         return self.api_wrapper.run(query)
 
-    async def afunc(self, query: str) -> str:
+    async def _arun(self, query: str) -> str:
         """Use the WolframAlpha tool asynchronously."""
         raise NotImplementedError("WolframAlphaQueryRun does not support async")

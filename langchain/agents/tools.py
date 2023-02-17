@@ -8,18 +8,33 @@ from langchain.tools.base import BaseTool
 class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
-    function: Callable
+    function: Callable[[str], str]
     coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
-    def func(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, tool_input: str) -> str:
         """Use the tool."""
-        return self.function(*args, **kwargs)
+        return self.function(tool_input)
 
-    async def afunc(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            return await self.coroutine(tool_input)
         raise NotImplementedError("Tool does not support async")
+
+
+class InvalidTool(BaseTool):
+    """Tool that is run when invalid tool name is encountered by agent."""
+
+    name = "invalid_tool"
+    description = "Called when tool name is invalid."
+
+    def _run(self, tool_name: str) -> str:
+        """Use the tool."""
+        return f"{tool_name} is not a valid tool, try another one."
+
+    async def _arun(self, tool_name: str) -> str:
+        """Use the tool asynchronously."""
+        return f"{tool_name} is not a valid tool, try another one."
 
 
 def tool(

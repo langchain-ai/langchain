@@ -21,6 +21,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
+from langchain.agents.tools import InvalidTool
 
 logger = logging.getLogger()
 
@@ -410,35 +411,24 @@ class AgentExecutor(Chain, BaseModel):
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
-            self.callback_manager.on_tool_start(
-                {"name": str(tool.func)[:60] + "..."},
+            return_direct = tool.return_direct
+            color = color_mapping[output.tool]
+            llm_prefix = "" if return_direct else self.agent.llm_prefix
+            # We then call the tool on the tool input to get an observation
+            observation = tool.run(
                 output,
-                color="green",
-                verbose=self.verbose,
+                color=color,
+                llm_prefix=llm_prefix,
+                observation_prefix=self.agent.observation_prefix,
             )
-            try:
-                # We then call the tool on the tool input to get an observation
-                observation = tool.func(output.tool_input)
-                color = color_mapping[output.tool]
-                return_direct = tool.return_direct
-            except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_tool_error(e, verbose=self.verbose)
-                raise e
         else:
-            self.callback_manager.on_tool_start(
-                {"name": "N/A"}, output, color="green", verbose=self.verbose
+            observation = InvalidTool().run(
+                output,
+                color=None,
+                llm_prefix="",
+                observation_prefix=self.agent.observation_prefix,
             )
-            observation = f"{output.tool} is not a valid tool, try another one."
-            color = None
             return_direct = False
-        llm_prefix = "" if return_direct else self.agent.llm_prefix
-        self.callback_manager.on_tool_end(
-            observation,
-            color=color,
-            observation_prefix=self.agent.observation_prefix,
-            llm_prefix=llm_prefix,
-            verbose=self.verbose,
-        )
         if return_direct:
             # Set the log to "" because we do not want to log it.
             return AgentFinish({self.agent.return_values[0]: observation}, "")
@@ -463,66 +453,24 @@ class AgentExecutor(Chain, BaseModel):
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_start(
-                    {"name": str(tool.func)[:60] + "..."},
-                    output,
-                    verbose=self.verbose,
-                )
-            else:
-                self.callback_manager.on_tool_start(
-                    {"name": str(tool.func)[:60] + "..."},
-                    output,
-                    verbose=self.verbose,
-                )
-            try:
-                # We then call the tool on the tool input to get an observation
-                observation = (
-                    await tool.afunc(output.tool_input)
-                    if tool.coroutine
-                    # If the tool is not a coroutine, we run it in the executor
-                    # to avoid blocking the event loop.
-                    else await asyncio.get_event_loop().run_in_executor(
-                        None, tool.func, output.tool_input
-                    )
-                )
-                color = color_mapping[output.tool]
-                return_direct = tool.return_direct
-            except (KeyboardInterrupt, Exception) as e:
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_tool_error(e, verbose=self.verbose)
-                else:
-                    self.callback_manager.on_tool_error(e, verbose=self.verbose)
-                raise e
+            return_direct = tool.return_direct
+            color = color_mapping[output.tool]
+            llm_prefix = "" if return_direct else self.agent.llm_prefix
+            # We then call the tool on the tool input to get an observation
+            observation = await tool.arun(
+                output,
+                color=color,
+                llm_prefix=llm_prefix,
+                observation_prefix=self.agent.observation_prefix,
+            )
         else:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_start(
-                    {"name": "N/A"}, output, verbose=self.verbose
-                )
-            else:
-                self.callback_manager.on_tool_start(
-                    {"name": "N/A"}, output, verbose=self.verbose
-                )
-            observation = f"{output.tool} is not a valid tool, try another one."
-            color = None
+            observation = await InvalidTool().arun(
+                output,
+                color=None,
+                llm_prefix="",
+                observation_prefix=self.agent.observation_prefix,
+            )
             return_direct = False
-        llm_prefix = "" if return_direct else self.agent.llm_prefix
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_end(
-                observation,
-                color=color,
-                observation_prefix=self.agent.observation_prefix,
-                llm_prefix=llm_prefix,
-                verbose=self.verbose,
-            )
-        else:
-            self.callback_manager.on_tool_end(
-                observation,
-                color=color,
-                observation_prefix=self.agent.observation_prefix,
-                llm_prefix=llm_prefix,
-                verbose=self.verbose,
-            )
         if return_direct:
             # Set the log to "" because we do not want to log it.
             return AgentFinish({self.agent.return_values[0]: observation}, "")
@@ -532,7 +480,7 @@ class AgentExecutor(Chain, BaseModel):
         """Run text through and get agent response."""
         # Make sure that every tool is synchronous (not a coroutine)
         for tool in self.tools:
-            if asyncio.iscoroutinefunction(tool.func):
+            if asyncio.iscoroutinefunction(tool._run):
                 raise ValueError(
                     "Tools cannot be asynchronous for `run` method. "
                     "Please use `arun` instead."

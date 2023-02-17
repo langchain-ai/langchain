@@ -7,6 +7,7 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Field, validator, Extra
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.schema import AgentAction
 
 
 class BaseTool(BaseModel):
@@ -35,18 +36,76 @@ class BaseTool(BaseModel):
         return callback_manager or get_callback_manager()
 
     @abstractmethod
-    def func(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, tool_input: str) -> str:
         """Use the tool."""
 
     @abstractmethod
-    async def afunc(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
 
     def __call__(self, *args: Any, **kwargs: Any) -> str:
         """Make tools callable by piping through to `func`."""
-        if asyncio.iscoroutinefunction(self.func):
+        if asyncio.iscoroutinefunction(self._run):
             raise TypeError("Coroutine cannot be called directly")
-        return self.func(*args, **kwargs)
+        return self._run(*args, **kwargs)
+
+    def run(self, action: AgentAction, **kwargs) -> str:
+        """Run the tool."""
+        self.callback_manager.on_tool_start(
+            {"name": self.name, "description": self.description},
+            action,
+            verbose=self.verbose,
+        )
+        try:
+            observation = self._run(action.tool_input)
+        except (Exception, KeyboardInterrupt) as e:
+            self.callback_manager.on_tool_error(
+                e, verbose=self.verbose
+            )
+            raise e
+        self.callback_manager.on_tool_end(
+            observation,
+            verbose=self.verbose,
+            **kwargs
+        )
+        return observation
+
+    async def arun(self, action: AgentAction, **kwargs) -> str:
+        """Run the tool asynchronously."""
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_tool_start(
+                {"name": self.name, "description": self.description},
+                action,
+                verbose=self.verbose,
+            )
+        else:
+            self.callback_manager.on_tool_start(
+                {"name": self.name, "description": self.description},
+                action,
+                verbose=self.verbose,
+            )
+        try:
+            # We then call the tool on the tool input to get an observation
+            observation = await self._arun(action.tool_input)
+        except (Exception, KeyboardInterrupt) as e:
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_tool_error(e, verbose=self.verbose)
+            else:
+                self.callback_manager.on_tool_error(e, verbose=self.verbose)
+            raise e
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_tool_end(
+                observation,
+                verbose=self.verbose,
+                **kwargs
+            )
+        else:
+            self.callback_manager.on_tool_end(
+                observation,
+                verbose=self.verbose,
+                **kwargs
+            )
+        return observation
 
 
 class BaseToolkit(BaseModel):
