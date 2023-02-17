@@ -28,7 +28,7 @@ class AI21(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import AI21
+            from langchain.llms import AI21
             ai21 = AI21(model="j1-jumbo")
     """
 
