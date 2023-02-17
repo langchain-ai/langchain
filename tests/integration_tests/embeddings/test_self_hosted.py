@@ -57,14 +57,14 @@ def test_self_hosted_huggingface_instructor_embedding_query() -> None:
     assert len(output) == 768
 
 
-def get_pipeline():
+def get_pipeline() -> Any:
     model_id = "facebook/bart-base"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
     return pipeline("feature-extraction", model=model, tokenizer=tokenizer)
 
 
-def inference_fn(pipeline, prompt):
+def inference_fn(pipeline: Any, prompt: str) -> Any:
     # Return last hidden state of the model
     if isinstance(prompt, list):
         return [emb[0][-1] for emb in pipeline(prompt)]
