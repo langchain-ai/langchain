@@ -478,7 +478,7 @@ class AgentExecutor(Chain, BaseModel):
             try:
                 # We then call the tool on the tool input to get an observation
                 observation = (
-                    await tool.coroutine(output.tool_input)
+                    await tool.afunc(output.tool_input)
                     if tool.coroutine
                     # If the tool is not a coroutine, we run it in the executor
                     # to avoid blocking the event loop.
