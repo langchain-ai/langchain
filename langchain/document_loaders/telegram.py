@@ -28,7 +28,8 @@ class TelegramChatLoader(BaseLoader):
             import pandas as pd
         except ImportError:
             raise ValueError(
-                "pandas is needed for Telegram loader, please install with `pip install pandas`"
+                "pandas is needed for Telegram loader, "
+                "please install with `pip install pandas`"
             )
         p = Path(self.file_path)
 
