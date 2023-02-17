@@ -120,7 +120,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # replace newlines, which can negatively affect performance.
-        if hasattr(self, "embedding_ctx_length") and self.embedding_ctx_length > 0:
+        if self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
             text = text.replace("\n", " ")
@@ -142,7 +142,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         # handle large batches of texts
-        if hasattr(self, "embedding_ctx_length") and self.embedding_ctx_length > 0:
+        if self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings(
                 texts, engine=self.document_model_name, chunk_size=chunk_size
             )
