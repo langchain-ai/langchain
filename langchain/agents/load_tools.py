@@ -3,6 +3,7 @@
 from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -174,13 +175,17 @@ _EXTRA_OPTIONAL_TOOLS = {
 
 
 def load_tools(
-    tool_names: List[str], llm: Optional[BaseLLM] = None, **kwargs: Any
+    tool_names: List[str],
+    llm: Optional[BaseLLM] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
+    **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
 
     Args:
         tool_names: name of tools to load.
         llm: Optional language model, may be needed to initialize certain tools.
+        callback_manager: Optional callback manager. If not provided, default global callback manager will be used.
 
     Returns:
         List of tools.
@@ -192,7 +197,10 @@ def load_tools(
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            tools.append(_LLM_TOOLS[name](llm))
+            tool = _LLM_TOOLS[name](llm)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
@@ -204,12 +212,17 @@ def load_tools(
                     f"provided: {missing_keys}"
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
-            tools.append(_get_llm_tool_func(llm=llm, **sub_kwargs))
+            tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
-            tools.append(_get_tool_func(**sub_kwargs))
-
+            tool = _get_tool_func(**sub_kwargs)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         else:
             raise ValueError(f"Got unknown tool {name}")
     return tools

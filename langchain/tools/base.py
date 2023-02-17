@@ -49,7 +49,12 @@ class BaseTool(BaseModel):
         return self.run(agent_action)
 
     def run(
-        self, action: AgentAction, verbose: Optional[bool] = None, **kwargs: Any
+        self,
+        action: AgentAction,
+        verbose: Optional[bool] = None,
+        start_color: Optional[str] = "green",
+        color: Optional[str] = "green",
+        **kwargs: Any
     ) -> str:
         """Run the tool."""
         if verbose is None:
@@ -58,17 +63,26 @@ class BaseTool(BaseModel):
             {"name": self.name, "description": self.description},
             action,
             verbose=verbose,
+            color=start_color,
+            **kwargs,
         )
         try:
             observation = self._run(action.tool_input)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose)
             raise e
-        self.callback_manager.on_tool_end(observation, verbose=verbose, **kwargs)
+        self.callback_manager.on_tool_end(
+            observation, verbose=verbose, color=color, **kwargs
+        )
         return observation
 
     async def arun(
-        self, action: AgentAction, verbose: Optional[bool] = None, **kwargs: Any
+        self,
+        action: AgentAction,
+        verbose: Optional[bool] = None,
+        start_color: Optional[str] = "green",
+        color: Optional[str] = "green",
+        **kwargs: Any
     ) -> str:
         """Run the tool asynchronously."""
         if verbose is None:
@@ -78,12 +92,16 @@ class BaseTool(BaseModel):
                 {"name": self.name, "description": self.description},
                 action,
                 verbose=verbose,
+                color=start_color,
+                **kwargs,
             )
         else:
             self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
                 action,
                 verbose=verbose,
+                color=start_color,
+                **kwargs,
             )
         try:
             # We then call the tool on the tool input to get an observation
@@ -96,10 +114,12 @@ class BaseTool(BaseModel):
             raise e
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_end(
-                observation, verbose=verbose, **kwargs
+                observation, verbose=verbose, color=color, **kwargs
             )
         else:
-            self.callback_manager.on_tool_end(observation, verbose=verbose, **kwargs)
+            self.callback_manager.on_tool_end(
+                observation, verbose=verbose, color=color, **kwargs
+            )
         return observation
 
 

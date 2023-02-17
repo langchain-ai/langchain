@@ -11,6 +11,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
@@ -69,7 +70,7 @@ class ZeroShotAgent(Agent):
     @classmethod
     def create_prompt(
         cls,
-        tools: Sequence[Tool],
+        tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -99,7 +100,7 @@ class ZeroShotAgent(Agent):
     def from_llm_and_tools(
         cls,
         llm: BaseLLM,
-        tools: Sequence[Tool],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -125,7 +126,7 @@ class ZeroShotAgent(Agent):
         return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         for tool in tools:
             if tool.description is None:
                 raise ValueError(

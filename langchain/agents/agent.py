@@ -1,7 +1,6 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from abc import abstractmethod
@@ -11,7 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, root_validator
 
-from langchain.agents.tools import InvalidTool, Tool
+from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -21,6 +20,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish
+from langchain.tools.base import BaseTool
 
 logger = logging.getLogger()
 
@@ -179,11 +179,11 @@ class Agent(BaseModel):
 
     @classmethod
     @abstractmethod
-    def create_prompt(cls, tools: Sequence[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         """Validate that appropriate tools are passed in."""
         pass
 
@@ -191,7 +191,7 @@ class Agent(BaseModel):
     def from_llm_and_tools(
         cls,
         llm: BaseLLM,
-        tools: Sequence[Tool],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> Agent:
@@ -298,7 +298,7 @@ class AgentExecutor(Chain, BaseModel):
     """Consists of an agent using tools."""
 
     agent: Agent
-    tools: Sequence[Tool]
+    tools: Sequence[BaseTool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     early_stopping_method: str = "force"
@@ -307,7 +307,7 @@ class AgentExecutor(Chain, BaseModel):
     def from_agent_and_tools(
         cls,
         agent: Agent,
-        tools: Sequence[Tool],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:
@@ -393,7 +393,7 @@ class AgentExecutor(Chain, BaseModel):
 
     def _take_next_step(
         self,
-        name_to_tool_map: Dict[str, Tool],
+        name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -437,7 +437,7 @@ class AgentExecutor(Chain, BaseModel):
 
     async def _atake_next_step(
         self,
-        name_to_tool_map: Dict[str, Tool],
+        name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -509,13 +509,6 @@ class AgentExecutor(Chain, BaseModel):
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
-        # Make sure that every tool is asynchronous (a coroutine)
-        for tool in self.tools:
-            if tool.coroutine and not asyncio.iscoroutinefunction(tool.coroutine):
-                raise ValueError(
-                    "The coroutine for the tool must be a coroutine function."
-                )
-
         # Do any preparation necessary when receiving a new input.
         self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup

@@ -7,6 +7,7 @@ from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.serpapi import SerpAPIWrapper
+from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 
 
@@ -19,12 +20,12 @@ class SelfAskWithSearchAgent(Agent):
         return "self-ask-with-search"
 
     @classmethod
-    def create_prompt(cls, tools: Sequence[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Prompt does not depend on tools."""
         return PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -88,7 +89,7 @@ class SelfAskWithSearchChain(AgentExecutor):
     ):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(
-            name="Intermediate Answer", dynamic_function=search_chain.run
+            name="Intermediate Answer", function=search_chain.run, description="Search"
         )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)
