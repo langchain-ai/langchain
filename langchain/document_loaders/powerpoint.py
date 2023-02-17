@@ -18,10 +18,10 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
         # system dependency isn't installed. If it's not installed, we'll just
         # check the file extension
         try:
-            import magic
+            import magic  # noqa: F401
             is_ppt = detect_filetype(self.file_path) == FileType.PPT
         except ImportError:
-            _, extension = os.path.splitext(filename)
+            _, extension = os.path.splitext(self.file_path)
             is_ppt = extension == ".ppt"
 
         if is_ppt and unstructured_version < (0, 4, 11):
