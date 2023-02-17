@@ -96,22 +96,33 @@ class SQLDatabase:
         tables = []
         for table_name in all_table_names:
             columns = []
-            create_table = self.run(
-                (
-                    "SELECT sql FROM sqlite_master WHERE "
-                    f"type='table' AND name='{table_name}'"
-                ),
-                fetch="one",
-            )
+            if self.dialect in ("sqlite", "duckdb"):
+                create_table = self.run(
+                    (
+                        "SELECT sql FROM sqlite_master WHERE "
+                        f"type='table' AND name='{table_name}'"
+                    ),
+                    fetch="one",
+                )
+            else:
+                create_table = self.run(
+                    f"SHOW CREATE TABLE `{table_name}`;",
+                )
 
             for column in self._inspector.get_columns(table_name, schema=self._schema):
                 columns.append(column["name"])
 
             if self._sample_rows_in_table_info:
-                select_star = (
-                    f"SELECT * FROM '{table_name}' LIMIT "
-                    f"{self._sample_rows_in_table_info}"
-                )
+                if self.dialect in ("sqlite", "duckdb"):
+                    select_star = (
+                        f"SELECT * FROM '{table_name}' LIMIT "
+                        f"{self._sample_rows_in_table_info}"
+                    )
+                else:
+                    select_star = (
+                        f"SELECT * FROM `{table_name}` LIMIT "
+                        f"{self._sample_rows_in_table_info}"
+                    )
 
                 sample_rows = self.run(select_star)
 
