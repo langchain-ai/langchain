@@ -32,10 +32,10 @@ class UnstructuredPowerPointLoader(UnstructuredFileLoader):
             )
 
         if is_ppt:
-            from unstructured.partition.pptx import partition_pptx
-
-            return partition_pptx(filename=self.file_path)
-        else:
             from unstructured.partition.ppt import partition_ppt
 
             return partition_ppt(filename=self.file_path)
+        else:
+            from unstructured.partition.pptx import partition_pptx
+
+            return partition_pptx(filename=self.file_path)
