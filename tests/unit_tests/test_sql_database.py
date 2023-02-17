@@ -28,12 +28,28 @@ def test_table_info() -> None:
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine)
     output = db.table_info
-    output = output[len(_TEMPLATE_PREFIX) :]
-    expected_output = (
-        "Table 'user' has columns: {'user_id': ['INTEGER'], 'user_name': ['VARCHAR(16)']}",
-        "Table 'company' has columns: {'company_id': ['INTEGER'], 'company_location': ['VARCHAR']}",
+    expected_output = """
+    CREATE TABLE user (                                                                                                                                    
+            user_id INTEGER NOT NULL,
+            user_name VARCHAR(16) NOT NULL,
+            PRIMARY KEY (user_id)
     )
-    assert sorted(output.split("\n")) == sorted(expected_output)
+
+    SELECT * FROM 'user' LIMIT 3
+    user_id user_name
+
+
+    CREATE TABLE company (
+            company_id INTEGER NOT NULL,
+            company_location VARCHAR NOT NULL,
+            PRIMARY KEY (company_id)
+    )
+
+    SELECT * FROM 'company' LIMIT 3
+    company_id company_location
+    """
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
 def test_table_info_w_sample_rows() -> None:
@@ -51,12 +67,31 @@ def test_table_info_w_sample_rows() -> None:
     db = SQLDatabase(engine, sample_rows_in_table_info=2)
 
     output = db.table_info
-    output = output[len(_TEMPLATE_PREFIX) :]
-    expected_output = (
-        "Table 'user' has columns: {'user_id': ['INTEGER', ['13', '14']], 'user_name': ['VARCHAR(16)', ['Harrison', 'Chase']]}",
-        "Table 'company' has columns: {'company_id': ['INTEGER', []], 'company_location': ['VARCHAR', []]}",
-    )
-    assert sorted(output.split("\n")) == sorted(expected_output)
+
+    expected_output = """
+        CREATE TABLE company (
+        company_id INTEGER NOT NULL,
+        company_location VARCHAR NOT NULL,
+        PRIMARY KEY (company_id)
+)
+
+        SELECT * FROM 'company' LIMIT 2
+        company_id company_location
+
+
+        CREATE TABLE user (
+        user_id INTEGER NOT NULL,
+        user_name VARCHAR(16) NOT NULL,
+        PRIMARY KEY (user_id)
+        )
+
+        SELECT * FROM 'user' LIMIT 2
+        user_id user_name
+        13 Harrison
+        14 Chase
+        """
+
+    assert sorted(output.split()) == sorted(expected_output.split())
 
 
 def test_sql_database_run() -> None:

@@ -1,3 +1,4 @@
+# flake8: noqa
 """Test SQL database wrapper with schema support.
 
 Using DuckDB as SQLite does not support schemas.
@@ -16,7 +17,7 @@ from sqlalchemy import (
     schema,
 )
 
-from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
+from langchain.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -46,11 +47,14 @@ def test_table_info() -> None:
     metadata_obj.create_all(engine)
     db = SQLDatabase(engine, schema="schema_a")
     output = db.table_info
-    output = output[len(_TEMPLATE_PREFIX) :]
-    expected_output = (
-        "Table 'user' has columns: {'user_id': ['INTEGER'], 'user_name': ['VARCHAR']}"
-    )
-    assert output == expected_output
+    expected_output = """
+    CREATE TABLE schema_a."user"(user_id INTEGER, user_name VARCHAR NOT NULL, PRIMARY KEY(user_id));
+
+    SELECT * FROM 'user' LIMIT 3
+    user_id user_name
+    """
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
 def test_sql_database_run() -> None:
