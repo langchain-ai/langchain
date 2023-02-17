@@ -3,7 +3,7 @@ import os
 from typing import List
 
 from unstructured.__version__ import __version__ as __unstructured_version__
-from unstructured.file_utils.filetype import detect_filetype, FileType
+from unstructured.file_utils.filetype import FileType, detect_filetype
 
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
