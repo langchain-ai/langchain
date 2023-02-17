@@ -11,6 +11,7 @@ from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
+from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -20,7 +21,6 @@ from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
-from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader

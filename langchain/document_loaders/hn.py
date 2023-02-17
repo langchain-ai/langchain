@@ -1,15 +1,12 @@
 """Loader that loads HN."""
-from typing import List
-from bs4 import BeautifulSoup as soup
+from typing import Any, List
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
 
 
 class HNLoader(WebBaseLoader):
-    """Loader that loads Hacker News data from either main page results or the comments page."""
-
-    def __init__(self, web_path: str):
-        self.web_path = web_path
+    """Load Hacker News data from either main page results or the comments page."""
 
     def load(self) -> List[Document]:
         """Get important HN webpage information.
@@ -23,16 +20,16 @@ class HNLoader(WebBaseLoader):
             - number of comments
             - rank of the post
         """
-        soup = self.scrape()
-        if ("item" in self.web_path):
-            return self.load_comments(soup)
+        soup_info = self.scrape()
+        if "item" in self.web_path:
+            return self.load_comments(soup_info)
         else:
-            return self.load_results(soup)
+            return self.load_results(soup_info)
 
-    def load_comments(self, soup: soup) -> List[Document]:
+    def load_comments(self, soup_info: Any) -> List[Document]:
         """Load comments from a HN post."""
-        comments = soup.select("tr[class='athing comtr']")
-        title = soup.select_one("tr[id='pagespace']").get("title")
+        comments = soup_info.select("tr[class='athing comtr']")
+        title = soup_info.select_one("tr[id='pagespace']").get("title")
         documents = []
         for comment in comments:
             text = comment.text.strip()
@@ -40,7 +37,7 @@ class HNLoader(WebBaseLoader):
             documents.append(Document(page_content=text, metadata=metadata))
         return documents
 
-    def load_results(self, soup: soup) -> List[Document]:
+    def load_results(self, soup: Any) -> List[Document]:
         """Load items from an HN page."""
         items = soup.select("tr[class='athing']")
         documents = []
@@ -48,8 +45,15 @@ class HNLoader(WebBaseLoader):
             ranking = lineItem.select_one("span[class='rank']").text
             link = lineItem.find("span", {"class": "titleline"}).find("a").get("href")
             title = lineItem.find("span", {"class": "titleline"}).text.strip()
-            metadata = {"source": self.web_path, "title": title,
-                        "link": link, "ranking": ranking}
-            documents.append(Document(page_content=title, link=link,
-                             ranking=ranking, metadata=metadata))
+            metadata = {
+                "source": self.web_path,
+                "title": title,
+                "link": link,
+                "ranking": ranking,
+            }
+            documents.append(
+                Document(
+                    page_content=title, link=link, ranking=ranking, metadata=metadata
+                )
+            )
         return documents
