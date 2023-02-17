@@ -1,24 +1,30 @@
 """Interface for tools."""
-
 from inspect import signature
-from typing import Any, Callable, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
-from langchain.tools.tool import Tool
+from langchain.tools.base import BaseTool
 
 
-class DynamicTool(Tool):
+class Tool(BaseTool):
     """Dynamically generated tool."""
 
-    dynamic_function: Callable
+    function: Callable
+    coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
     def func(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
-        return self.dynamic_function(*args, **kwargs)
+        return self.function(*args, **kwargs)
+
+    async def afunc(self, *args: Any, **kwargs: Any) -> str:
+        """Use the tool asynchronously."""
+        if self.coroutine:
+            return await self.coroutine(*args, **kwargs)
+        raise NotImplementedError("Tool does not support async")
 
 
 def tool(
     *args: Union[str, Callable], return_direct: bool = False
-) -> Union[Callable, Tool]:
+) -> Union[Callable, BaseTool]:
     """Make tools out of functions, can be used with or without arguments.
 
     Requires:
@@ -40,12 +46,12 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable[[str], str]) -> Tool:
+        def _make_tool(func: Callable[[str], str]) -> BaseTool:
             assert func.__doc__, "Function must have a docstring"
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            tool = DynamicTool(
+            tool = Tool(
                 name=tool_name,
                 dynamic_function=func,
                 description=description,
@@ -66,7 +72,7 @@ def tool(
     elif len(args) == 0:
         # if there are no arguments, then we use the function name as the tool name
         # Example usage: @tool(return_direct=True)
-        def _partial(func: Callable[[str], str]) -> Tool:
+        def _partial(func: Callable[[str], str]) -> BaseTool:
             return _make_with_name(func.__name__)(func)
 
         return _partial

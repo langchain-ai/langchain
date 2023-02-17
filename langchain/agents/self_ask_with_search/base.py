@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.self_ask_with_search.prompt import PROMPT
-from langchain.agents.tools import DynamicTool, Tool
+from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.serpapi import SerpAPIWrapper
@@ -87,7 +87,7 @@ class SelfAskWithSearchChain(AgentExecutor):
         **kwargs: Any,
     ):
         """Initialize with just an LLM and a search chain."""
-        search_tool = DynamicTool(
+        search_tool = Tool(
             name="Intermediate Answer", dynamic_function=search_chain.run
         )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])

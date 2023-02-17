@@ -6,7 +6,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
-from langchain.agents.tools import DynamicTool, Tool
+from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
@@ -191,7 +191,7 @@ class MRKLChain(AgentExecutor):
                 mrkl = MRKLChain.from_chains(llm, chains)
         """
         tools = [
-            DynamicTool(
+            Tool(
                 name=c.action_name,
                 dynamic_function=c.action,
                 description=c.action_description,

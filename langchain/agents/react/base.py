@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
-from langchain.agents.tools import DynamicTool, Tool
+from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
@@ -135,12 +135,12 @@ class ReActChain(AgentExecutor):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [
-            DynamicTool(
+            Tool(
                 name="Search",
                 dynamic_function=docstore_explorer.search,
                 description="Search for a term in the docstore.",
             ),
-            DynamicTool(
+            Tool(
                 name="Lookup",
                 dynamic_function=docstore_explorer.lookup,
                 description="Lookup a term in the docstore.",

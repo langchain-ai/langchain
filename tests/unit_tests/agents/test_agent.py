@@ -5,7 +5,7 @@ from typing import Any, List, Mapping, Optional
 from pydantic import BaseModel
 
 from langchain.agents import AgentExecutor, initialize_agent
-from langchain.agents.tools import DynamicTool
+from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -43,12 +43,12 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
         ),
-        DynamicTool(
+        Tool(
             name="Lookup",
             dynamic_function=lambda x: x,
             description="Useful for looking up things in a table",
@@ -88,7 +88,7 @@ def test_agent_with_callbacks_global() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
@@ -131,7 +131,7 @@ def test_agent_with_callbacks_local() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
@@ -176,7 +176,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
@@ -207,7 +207,7 @@ def test_agent_tool_return_direct() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
@@ -230,7 +230,7 @@ def test_agent_with_new_prefix_suffix() -> None:
         responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
     )
     tools = [
-        DynamicTool(
+        Tool(
             name="Search",
             dynamic_function=lambda x: x,
             description="Useful for searching",
