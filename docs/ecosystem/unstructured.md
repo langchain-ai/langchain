@@ -1,7 +1,13 @@
 # Unstructured
 
-This page covers how to use the Unstructured ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Unstructured wrappers.
+This page covers how to use the [`unstructured`](https://github.com/Unstructured-IO/unstructured)
+ecosystem within LangChain. The `unstructured` package from
+[Unstructured.IO](https://www.unstructured.io/) extract clean text from raw source documents like
+PDFs and Word documents.
+
+
+This page is broken into two parts: installation and setup, and then references to specific
+`unstructured` wrappers.
 
 ## Installation and Setup
 - Install the Python SDK with `pip install unstructured[local-inference]`
