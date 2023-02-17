@@ -36,7 +36,7 @@ data loaders available in the `langchain.document_loaders` module.
 ```python
 from langchain.document_loaders import UnstructuredFileLoader
 
-loader = UnstructuredFileLoader("../../state_of_the_union.txt")
+loader = UnstructuredFileLoader("state_of_the_union.txt")
 loader.load()
 ```
 
