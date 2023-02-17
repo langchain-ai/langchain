@@ -47,6 +47,7 @@ sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
+runhouse = {version="^0.0.3", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
