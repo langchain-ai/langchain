@@ -3,8 +3,6 @@ import json
 from pathlib import Path
 from typing import List
 
-import pandas as pd
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -26,6 +24,13 @@ class TelegramChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ValueError(
+                "pandas is needed for Telegram loader, "
+                "please install with `pip install pandas`"
+            )
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
