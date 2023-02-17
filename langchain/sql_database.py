@@ -113,10 +113,16 @@ class SQLDatabase:
                 columns.append(column["name"])
 
             if self._sample_rows_in_table_info:
-                select_star = (
-                    f"SELECT * FROM `{table_name}` LIMIT "
-                    f"{self._sample_rows_in_table_info}"
-                )
+                if self.dialect in ("sqlite", "duckdb"):
+                    select_star = (
+                        f"SELECT * FROM '{table_name}' LIMIT "
+                        f"{self._sample_rows_in_table_info}"
+                    )
+                else:
+                    select_star = (
+                        f"SELECT * FROM `{table_name}` LIMIT "
+                        f"{self._sample_rows_in_table_info}"
+                    )
 
                 sample_rows = self.run(select_star)
 
