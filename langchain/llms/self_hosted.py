@@ -12,12 +12,18 @@ from langchain.llms.utils import enforce_stop_tokens
 logger = logging.getLogger()
 
 
-def _generate_text(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -> str:
+def _generate_text(
+    pipeline: Any,
+    prompt: str,
+    *args: Any,
+    stop: Optional[List[str]] = None,
+    **kwargs: Any,
+) -> str:
     """Inference function to send to the remote hardware. Accepts a pipeline callable (or, more likely,
     a key pointing to the model on the cluster's object store) and returns text predictions for each document
     in the batch.
     """
-    text = pipeline(prompt)
+    text = pipeline(prompt, *args, **kwargs)
     if stop is not None:
         text = enforce_stop_tokens(text, stop)
     return text
@@ -59,14 +65,36 @@ class SelfHostedPipeline(LLM, BaseModel):
 
     To use, you should have the ``runhouse`` python package installed.
 
+    Example for custom pipeline and inference functions:
+        .. code-block:: python
+
+            from langchain.llms import SelfHostedPipeline
+            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+            import runhouse as rh
+
+            def load_pipeline():
+                tokenizer = AutoTokenizer.from_pretrained("gpt2")
+                model = AutoModelForCausalLM.from_pretrained("gpt2")
+                return pipeline(
+                    "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
+                )
+            def inference_fn(pipeline, prompt, stop = None):
+                return pipeline(prompt)[0]["generated_text"]
+
+            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
+            llm = SelfHostedPipeline(
+                model_load_fn=load_pipeline,
+                hardware=gpu,
+                model_reqs=model_reqs, inference_fn=inference_fn
+            )
     Example for <2GB model (can be serialized and sent directly to the server):
         .. code-block:: python
 
-            from langchain.llms import SelfHostedHuggingFacePipeline
+            from langchain.llms import SelfHostedPipeline
             import runhouse as rh
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             my_model = ...
-            hf = SelfHostedPipeline.from_pipeline(
+            llm = SelfHostedPipeline.from_pipeline(
                 pipeline=my_model,
                 hardware=gpu,
                 model_reqs=["./", "torch", "transformers"],
@@ -74,7 +102,7 @@ class SelfHostedPipeline(LLM, BaseModel):
     Example passing model path for larger models:
         .. code-block:: python
 
-            from langchain.llms import SelfHostedHuggingFacePipeline
+            from langchain.llms import SelfHostedPipeline
             import runhouse as rh
             import pickle
             from transformers import pipeline

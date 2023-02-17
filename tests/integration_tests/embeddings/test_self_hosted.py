@@ -2,7 +2,10 @@
 import unittest
 from typing import Any
 
-from langchain.embeddings.self_hosted_hugging_face import (
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+from langchain.embeddings import (
+    SelfHostedEmbeddings,
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
@@ -13,12 +16,11 @@ def get_remote_instance() -> Any:
 
     gpu = rh.cluster(name="rh-a10x", instance_type="A100:1", use_spot=False)
     gpu.install_packages(["pip:./"])
-    # gpu.restart_grpc_server(resync_rh=True)
     return gpu
 
 
-def test_selfhosted_huggingface_embedding_documents() -> None:
-    """Test huggingface embeddings."""
+def test_self_hosted_huggingface_embedding_documents() -> None:
+    """Test self-hosted huggingface embeddings."""
     documents = ["foo bar"]
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceEmbeddings(hardware=gpu)
@@ -27,8 +29,8 @@ def test_selfhosted_huggingface_embedding_documents() -> None:
     assert len(output[0]) == 768
 
 
-def test_selfhosted_huggingface_embedding_query() -> None:
-    """Test huggingface embeddings."""
+def test_self_hosted_huggingface_embedding_query() -> None:
+    """Test self-hosted huggingface embeddings."""
     document = "foo bar"
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceEmbeddings(hardware=gpu)
@@ -36,8 +38,8 @@ def test_selfhosted_huggingface_embedding_query() -> None:
     assert len(output) == 768
 
 
-def test_selfhosted_huggingface_instructor_embedding_documents() -> None:
-    """Test huggingface embeddings."""
+def test_self_hosted_huggingface_instructor_embedding_documents() -> None:
+    """Test self-hosted huggingface instruct embeddings."""
     documents = ["foo bar"]
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu)
@@ -46,10 +48,47 @@ def test_selfhosted_huggingface_instructor_embedding_documents() -> None:
     assert len(output[0]) == 768
 
 
-def test_selfhosted_huggingface_instructor_embedding_query() -> None:
-    """Test huggingface embeddings."""
+def test_self_hosted_huggingface_instructor_embedding_query() -> None:
+    """Test self-hosted huggingface instruct embeddings."""
     query = "foo bar"
     gpu = get_remote_instance()
     embedding = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu)
     output = embedding.embed_query(query)
     assert len(output) == 768
+
+
+def get_pipeline():
+    model_id = "facebook/bart-base"
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id)
+    return pipeline("feature-extraction", model=model, tokenizer=tokenizer)
+
+
+def inference_fn(pipeline, prompt):
+    # Return last hidden state of the model
+    if isinstance(prompt, list):
+        return [emb[0][-1] for emb in pipeline(prompt)]
+    return pipeline(prompt)[0][-1]
+
+
+def test_self_hosted_embedding_documents() -> None:
+    """Test self-hosted huggingface instruct embeddings."""
+    documents = ["foo bar"] * 2
+    gpu = get_remote_instance()
+    embedding = SelfHostedEmbeddings(
+        model_load_fn=get_pipeline, hardware=gpu, inference_fn=inference_fn
+    )
+    output = embedding.embed_documents(documents)
+    assert len(output) == 2
+    assert len(output[0]) == 50265
+
+
+def test_self_hosted_embedding_query() -> None:
+    """Test self-hosted custom embeddings."""
+    query = "foo bar"
+    gpu = get_remote_instance()
+    embedding = SelfHostedEmbeddings(
+        model_load_fn=get_pipeline, hardware=gpu, inference_fn=inference_fn
+    )
+    output = embedding.embed_query(query)
+    assert len(output) == 50265

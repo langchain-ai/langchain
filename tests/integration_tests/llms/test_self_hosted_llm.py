@@ -1,6 +1,6 @@
 """Test HuggingFace Pipeline wrapper."""
 import pickle
-from typing import Any
+from typing import Any, List, Optional
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
@@ -25,7 +25,7 @@ def test_self_hosted_huggingface_pipeline_text_generation() -> None:
         hardware=gpu,
         model_reqs=model_reqs,
     )
-    output = llm("Say foo:")[0]["generated_text"]  # type: ignore
+    output = llm("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -38,7 +38,7 @@ def test_selfhosted_huggingface_pipeline_text2text_generation() -> None:
         hardware=gpu,
         model_reqs=model_reqs,
     )
-    output = llm("Say foo:")[0]["generated_text"]  # type: ignore
+    output = llm("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -52,14 +52,21 @@ def load_pipeline() -> Any:
     return pipe
 
 
+def inference_fn(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -> str:
+    return pipeline(prompt)[0]["generated_text"]
+
+
 def test_init_with_local_pipeline() -> None:
     """Test initialization with a HF pipeline."""
     gpu = get_remote_instance()
     pipeline = load_pipeline()
     llm = SelfHostedPipeline.from_pipeline(
-        pipeline=pipeline, hardware=gpu, model_reqs=model_reqs
+        pipeline=pipeline,
+        hardware=gpu,
+        model_reqs=model_reqs,
+        inference_fn=inference_fn,
     )
-    output = llm("Say foo:")[0]["generated_text"]  # type: ignore
+    output = llm("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -73,9 +80,12 @@ def test_init_with_pipeline_path() -> None:
         gpu, path="models"
     )
     llm = SelfHostedPipeline.from_pipeline(
-        pipeline="models/pipeline.pkl", hardware=gpu, model_reqs=model_reqs
+        pipeline="models/pipeline.pkl",
+        hardware=gpu,
+        model_reqs=model_reqs,
+        inference_fn=inference_fn,
     )
-    output = llm("Say foo:")[0]["generated_text"]  # type: ignore
+    output = llm("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -83,7 +93,10 @@ def test_init_with_pipeline_fn() -> None:
     """Test initialization with a HF pipeline."""
     gpu = get_remote_instance()
     llm = SelfHostedPipeline(
-        model_load_fn=load_pipeline, hardware=gpu, model_reqs=model_reqs
+        model_load_fn=load_pipeline,
+        hardware=gpu,
+        model_reqs=model_reqs,
+        inference_fn=inference_fn,
     )
-    output = llm("Say foo:")[0]["generated_text"]  # type: ignore
+    output = llm("Say foo:")  # type: ignore
     assert isinstance(output, str)

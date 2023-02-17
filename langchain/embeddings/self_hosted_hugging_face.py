@@ -67,15 +67,15 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import SelfHostedHFEmbeddings
+            from langchain.embeddings import SelfHostedHuggingFaceEmbeddings
             import runhouse as rh
             model_name = "sentence-transformers/all-mpnet-base-v2"
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            hf = SelfHostedHFEmbeddings(model_name=model_name, hardware=gpu)
+            hf = SelfHostedHuggingFaceEmbeddings(model_name=model_name, hardware=gpu)
     """
 
     client: Any  #: :meta private:
-    model_name: str = DEFAULT_MODEL_NAME
+    model_id: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     model_reqs: List[str] = ["./", "sentence_transformers", "torch"]
     """Requirements to install on hardware to inference the model."""
@@ -85,15 +85,15 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings, BaseModel):
     """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model load function."""
+    inference_fn: Callable = _embed_documents
+    """Inference function to extract the embeddings."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
-        load_fn_kwargs = {
-            "model_id": kwargs.get("model_name", DEFAULT_MODEL_NAME),
-            "instruct": False,
-            "device": kwargs.get("device", 0),
-            "model_kwargs": kwargs.get("model_kwargs", None),
-        }
+        load_fn_kwargs = kwargs.pop("load_fn_kwargs", {})
+        load_fn_kwargs["model_id"] = load_fn_kwargs.get("model_id", DEFAULT_MODEL_NAME)
+        load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", False)
+        load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
 
@@ -114,7 +114,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             hf = SelfHostedHuggingFaceInstructEmbeddings(model_name=model_name, hardware=gpu)
     """
 
-    model_name: str = DEFAULT_INSTRUCT_MODEL
+    model_id: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
     embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
     """Instruction to use for embedding documents."""
@@ -125,12 +125,12 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
-        load_fn_kwargs = {
-            "model_name": kwargs.get("model_name", DEFAULT_INSTRUCT_MODEL),
-            "instruct": True,
-            "device": kwargs.get("device", 0),
-            "model_kwargs": kwargs.get("model_kwargs", None),
-        }
+        load_fn_kwargs = kwargs.pop("load_fn_kwargs", {})
+        load_fn_kwargs["model_id"] = load_fn_kwargs.get(
+            "model_id", DEFAULT_INSTRUCT_MODEL
+        )
+        load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", True)
+        load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

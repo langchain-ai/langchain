@@ -15,11 +15,17 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 logger = logging.getLogger()
 
 
-def _generate_text(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -> str:
+def _generate_text(
+    pipeline: Any,
+    prompt: str,
+    *args: Any,
+    stop: Optional[List[str]] = None,
+    **kwargs: Any,
+) -> str:
     """Inference function to send to the remote hardware. Accepts a Hugging Face pipeline (or more likely,
     a key pointing to such a pipeline on the cluster's object store) and returns generated text.
     """
-    response = pipeline(prompt)
+    response = pipeline(prompt, *args, **kwargs)
     if pipeline.task == "text-generation":
         # Text generation return includes the starter text.
         text = response[0]["generated_text"][len(prompt) :]
@@ -130,6 +136,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
                 pipe = pipeline(
                     "text-generation", model=model, tokenizer=tokenizer
                 )
+                return pipe
             hf = SelfHostedHuggingFaceLLM(model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
     """
 
@@ -147,6 +154,8 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
     """Requirements to install on hardware to inference the model."""
     model_load_fn: Callable = _load_transformer
     """Function to load the model remotely on the server."""
+    inference_fn: Callable = _generate_text  #: :meta private:
+    """Inference function to send to the remote hardware."""
 
     class Config:
         """Configuration for this pydantic object."""
