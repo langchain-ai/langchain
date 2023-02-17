@@ -20,6 +20,7 @@ from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
@@ -47,6 +48,7 @@ __all__ = [
     "YoutubeLoader",
     "S3FileLoader",
     "TextLoader",
+    "HNLoader",
     "S3DirectoryLoader",
     "GCSFileLoader",
     "GCSDirectoryLoader",
