@@ -65,3 +65,19 @@ def test_missing_docstring() -> None:
         @tool
         def search_api(query: str) -> str:
             return "API result"
+
+
+def test_create_tool_posistional_args() -> None:
+    """Test that positional arguments are allowed."""
+    test_tool = Tool("test_name", lambda x: x, "test_description")
+    assert test_tool("foo") == "foo"
+    assert test_tool.name == "test_name"
+    assert test_tool.description == "test_description"
+
+
+def test_create_tool_keyword_args() -> None:
+    """Test that keyword arguments are allowed."""
+    test_tool = Tool(name="test_name", func=lambda x: x, description="test_description")
+    assert test_tool("foo") == "foo"
+    assert test_tool.name == "test_name"
+    assert test_tool.description == "test_description"

@@ -1,6 +1,6 @@
 """Interface for tools."""
 from inspect import signature
-from typing import Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
 from langchain.tools.base import BaseTool
 
@@ -21,6 +21,15 @@ class Tool(BaseTool):
         if self.coroutine:
             return await self.coroutine(tool_input)
         raise NotImplementedError("Tool does not support async")
+
+    # TODO: this is for backwards compatibility, remove in future
+    def __init__(
+        self, name: str, func: Callable[[str], str], description: str, **kwargs: Any
+    ) -> None:
+        """Initialize tool."""
+        super(Tool, self).__init__(
+            name=name, func=func, description=description, **kwargs
+        )
 
 
 class InvalidTool(BaseTool):
