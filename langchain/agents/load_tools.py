@@ -3,6 +3,7 @@
 from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -11,34 +12,39 @@ from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
+from langchain.tools.base import BaseTool
+from langchain.tools.bing_search.tool import BingSearchRun
+from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
+from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
-def _get_python_repl() -> Tool:
+def _get_python_repl() -> BaseTool:
     return Tool(
-        "Python REPL",
-        PythonREPL().run,
-        "A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
+        name="Python REPL",
+        description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
+        func=PythonREPL().run,
     )
 
 
-def _get_requests() -> Tool:
+def _get_requests() -> BaseTool:
     return Tool(
-        "Requests",
-        RequestsWrapper().run,
-        "A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
+        name="Requests",
+        description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
+        func=RequestsWrapper().run,
     )
 
 
-def _get_terminal() -> Tool:
+def _get_terminal() -> BaseTool:
     return Tool(
-        "Terminal",
-        BashProcess().run,
-        "Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
+        name="Terminal",
+        description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
+        func=BashProcess().run,
     )
 
 
@@ -49,23 +55,23 @@ _BASE_TOOLS = {
 }
 
 
-def _get_pal_math(llm: BaseLLM) -> Tool:
+def _get_pal_math(llm: BaseLLM) -> BaseTool:
     return Tool(
-        "PAL-MATH",
-        PALChain.from_math_prompt(llm).run,
-        "A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
+        name="PAL-MATH",
+        description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
+        func=PALChain.from_math_prompt(llm).run,
     )
 
 
-def _get_pal_colored_objects(llm: BaseLLM) -> Tool:
+def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     return Tool(
-        "PAL-COLOR-OBJ",
-        PALChain.from_colored_object_prompt(llm).run,
-        "A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
+        name="PAL-COLOR-OBJ",
+        description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
+        func=PALChain.from_colored_object_prompt(llm).run,
     )
 
 
-def _get_llm_math(llm: BaseLLM) -> Tool:
+def _get_llm_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
@@ -74,12 +80,12 @@ def _get_llm_math(llm: BaseLLM) -> Tool:
     )
 
 
-def _get_open_meteo_api(llm: BaseLLM) -> Tool:
+def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
-        "Open Meteo API",
-        chain.run,
-        "Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
+        name="Open Meteo API",
+        description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
+        func=chain.run,
     )
 
 
@@ -91,19 +97,19 @@ _LLM_TOOLS = {
 }
 
 
-def _get_news_api(llm: BaseLLM, **kwargs: Any) -> Tool:
+def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
     )
     return Tool(
-        "News API",
-        chain.run,
-        "Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
+        name="News API",
+        description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
+        func=chain.run,
     )
 
 
-def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
+def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -111,37 +117,33 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> Tool:
         headers={"Authorization": f"Bearer {tmdb_bearer_token}"},
     )
     return Tool(
-        "TMDB API",
-        chain.run,
-        "Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
+        name="TMDB API",
+        description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
+        func=chain.run,
     )
 
 
-def _get_wolfram_alpha(**kwargs: Any) -> Tool:
+def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
+    return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
+
+
+def _get_google_search(**kwargs: Any) -> BaseTool:
+    return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+
+
+def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
-        "Wolfram Alpha",
-        WolframAlphaAPIWrapper(**kwargs).run,
-        "A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
+        name="Search",
+        func=GoogleSerperAPIWrapper(**kwargs).run,
+        description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
 
-def _get_google_search(**kwargs: Any) -> Tool:
-    return Tool(
-        "Google Search",
-        GoogleSearchAPIWrapper(**kwargs).run,
-        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
+def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
+    return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
-def _get_google_serper(**kwargs: Any) -> Tool:
-    return Tool(
-        "Search",
-        GoogleSerperAPIWrapper(**kwargs).run,
-        "A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
-
-
-def _get_serpapi(**kwargs: Any) -> Tool:
+def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
         description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
@@ -150,12 +152,16 @@ def _get_serpapi(**kwargs: Any) -> Tool:
     )
 
 
-def _get_searx_search(**kwargs: Any) -> Tool:
+def _get_searx_search(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
         description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
         func=SearxSearchWrapper(**kwargs).run,
     )
+
+
+def _get_bing_search(**kwargs: Any) -> BaseTool:
+    return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
 
 _EXTRA_LLM_TOOLS = {
@@ -166,6 +172,11 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-search-results-json": (
+        _get_google_search_results_json,
+        ["google_api_key", "google_cse_id", "num_results"],
+    ),
+    "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "searx_host"]),
@@ -173,13 +184,17 @@ _EXTRA_OPTIONAL_TOOLS = {
 
 
 def load_tools(
-    tool_names: List[str], llm: Optional[BaseLLM] = None, **kwargs: Any
-) -> List[Tool]:
+    tool_names: List[str],
+    llm: Optional[BaseLLM] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
+    **kwargs: Any,
+) -> List[BaseTool]:
     """Load tools based on their name.
 
     Args:
         tool_names: name of tools to load.
         llm: Optional language model, may be needed to initialize certain tools.
+        callback_manager: Optional callback manager. If not provided, default global callback manager will be used.
 
     Returns:
         List of tools.
@@ -191,7 +206,10 @@ def load_tools(
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            tools.append(_LLM_TOOLS[name](llm))
+            tool = _LLM_TOOLS[name](llm)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         elif name in _EXTRA_LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
@@ -203,12 +221,17 @@ def load_tools(
                     f"provided: {missing_keys}"
                 )
             sub_kwargs = {k: kwargs[k] for k in extra_keys}
-            tools.append(_get_llm_tool_func(llm=llm, **sub_kwargs))
+            tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         elif name in _EXTRA_OPTIONAL_TOOLS:
             _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
             sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
-            tools.append(_get_tool_func(**sub_kwargs))
-
+            tool = _get_tool_func(**sub_kwargs)
+            if callback_manager is not None:
+                tool.callback_manager = callback_manager
+            tools.append(tool)
         else:
             raise ValueError(f"Got unknown tool {name}")
     return tools
