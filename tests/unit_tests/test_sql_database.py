@@ -3,7 +3,7 @@
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
 
-from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
+from langchain.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -29,7 +29,7 @@ def test_table_info() -> None:
     db = SQLDatabase(engine)
     output = db.table_info
     expected_output = """
-    CREATE TABLE user (                                                                                                                                    
+    CREATE TABLE user (
             user_id INTEGER NOT NULL,
             user_name VARCHAR(16) NOT NULL,
             PRIMARY KEY (user_id)
