@@ -89,7 +89,7 @@ class SelfAskWithSearchChain(AgentExecutor):
     ):
         """Initialize with just an LLM and a search chain."""
         search_tool = Tool(
-            name="Intermediate Answer", function=search_chain.run, description="Search"
+            name="Intermediate Answer", func=search_chain.run, description="Search"
         )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)

@@ -194,7 +194,7 @@ class MRKLChain(AgentExecutor):
         tools = [
             Tool(
                 name=c.action_name,
-                dynamic_function=c.action,
+                func=c.action,
                 description=c.action_description,
             )
             for c in chains
