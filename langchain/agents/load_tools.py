@@ -28,7 +28,7 @@ def _get_python_repl() -> BaseTool:
     return Tool(
         name="Python REPL",
         description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
-        function=PythonREPL().run,
+        func=PythonREPL().run,
     )
 
 
@@ -36,7 +36,7 @@ def _get_requests() -> BaseTool:
     return Tool(
         name="Requests",
         description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
-        function=RequestsWrapper().run,
+        func=RequestsWrapper().run,
     )
 
 
@@ -44,7 +44,7 @@ def _get_terminal() -> BaseTool:
     return Tool(
         name="Terminal",
         description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
-        function=BashProcess().run,
+        func=BashProcess().run,
     )
 
 
@@ -59,7 +59,7 @@ def _get_pal_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="PAL-MATH",
         description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
-        function=PALChain.from_math_prompt(llm).run,
+        func=PALChain.from_math_prompt(llm).run,
     )
 
 
@@ -67,7 +67,7 @@ def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="PAL-COLOR-OBJ",
         description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
-        function=PALChain.from_colored_object_prompt(llm).run,
+        func=PALChain.from_colored_object_prompt(llm).run,
     )
 
 
@@ -75,7 +75,7 @@ def _get_llm_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        function=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
+        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
         coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
     )
 
@@ -85,7 +85,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Open Meteo API",
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
-        function=chain.run,
+        func=chain.run,
     )
 
 
@@ -105,7 +105,7 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     return Tool(
         name="News API",
         description="Use this when you want to get information about the top headlines of current news stories. The input should be a question in natural language that this API can answer.",
-        function=chain.run,
+        func=chain.run,
     )
 
 
@@ -119,7 +119,7 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     return Tool(
         name="TMDB API",
         description="Useful for when you want to get information from The Movie Database. The input should be a question in natural language that this API can answer.",
-        function=chain.run,
+        func=chain.run,
     )
 
 
@@ -134,7 +134,7 @@ def _get_google_search(**kwargs: Any) -> BaseTool:
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
-        function=GoogleSerperAPIWrapper(**kwargs).run,
+        func=GoogleSerperAPIWrapper(**kwargs).run,
         description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
@@ -143,7 +143,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
         description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        function=SerpAPIWrapper(**kwargs).run,
+        func=SerpAPIWrapper(**kwargs).run,
         coroutine=SerpAPIWrapper(**kwargs).arun,
     )
 

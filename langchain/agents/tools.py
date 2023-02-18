@@ -8,12 +8,13 @@ from langchain.tools.base import BaseTool
 class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
-    function: Callable[[str], str]
+    description: str = ""
+    func: Callable[[str], str]
     coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
     def _run(self, tool_input: str) -> str:
         """Use the tool."""
-        return self.function(tool_input)
+        return self.func(tool_input)
 
     async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
@@ -66,7 +67,7 @@ def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             tool_ = Tool(
                 name=tool_name,
-                function=func,
+                func=func,
                 description=description,
                 return_direct=return_direct,
             )
