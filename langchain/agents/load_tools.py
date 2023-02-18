@@ -14,7 +14,7 @@ from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.google_search.tool import GoogleSearchRun
+from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -139,6 +139,10 @@ def _get_google_serper(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
+    return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+
+
 def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
@@ -168,6 +172,10 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-search-results-json": (
+        _get_google_search_results_json,
+        ["google_api_key", "google_cse_id", "num_results"],
+    ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
