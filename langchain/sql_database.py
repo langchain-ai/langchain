@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
+from sqlalchemy.exc import ProgrammingError
+
 from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.schema import CreateTable
@@ -15,6 +17,7 @@ class SQLDatabase:
         self,
         engine: Engine,
         schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
@@ -46,6 +49,9 @@ class SQLDatabase:
             raise TypeError("sample_rows_in_table_info must be an integer")
 
         self._sample_rows_in_table_info = sample_rows_in_table_info
+
+        self._metadata = metadata or MetaData()
+        self._metadata.reflect(bind=self._engine)
 
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
@@ -84,15 +90,12 @@ class SQLDatabase:
             if missing_tables:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
-
-        tables = []
-        meta = MetaData()
-        meta.reflect(bind=self._engine)
-
+        
         meta_tables = [
-            tbl for tbl in meta.sorted_tables if tbl.name in set(all_table_names)
+            tbl for tbl in self._metadata.sorted_tables if tbl.name in set(all_table_names)
         ]
 
+        tables = []
         for table in meta_tables:
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
@@ -112,13 +115,19 @@ class SQLDatabase:
                 with self._engine.connect() as connection:
                     sample_rows = connection.execute(command)
 
-                # shorten values in the smaple rows
-                sample_rows = list(
-                    map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
-                )
+                try:
+                    # shorten values in the smaple rows
+                    sample_rows = list(
+                        map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
+                    )
 
-                # save the sample rows in string format
-                sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
+                    # save the sample rows in string format
+                    sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
+
+                # in some dialects when there are no rows in the table a 
+                # 'ProgrammingError' is returned
+                except ProgrammingError:
+                    sample_rows_str = ""
 
                 # build final info for table
                 tables.append(
