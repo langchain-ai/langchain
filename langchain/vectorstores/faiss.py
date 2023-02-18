@@ -189,6 +189,9 @@ class FAISS(VectorStore):
         docs = []
         for i in selected_indices:
             _id = self.index_to_docstore_id[i]
+            if _id == -1:
+                # This happens when not enough docs are returned.
+                continue
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")

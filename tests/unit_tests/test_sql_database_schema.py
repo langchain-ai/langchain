@@ -45,12 +45,17 @@ def test_table_info() -> None:
     """Test that table info is constructed properly."""
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)
-    db = SQLDatabase(engine, schema="schema_a")
+
+    db = SQLDatabase(engine, schema="schema_a", metadata=metadata_obj)
     output = db.table_info
     expected_output = """
-    CREATE TABLE schema_a."user"(user_id INTEGER, user_name VARCHAR NOT NULL, PRIMARY KEY(user_id));
+    CREATE TABLE schema_a."user" (
+        user_id INTEGER NOT NULL, 
+        user_name VARCHAR NOT NULL, 
+        PRIMARY KEY (user_id)
+    )
 
-    SELECT * FROM 'user' LIMIT 3
+    SELECT * FROM 'user' LIMIT 3;
     user_id user_name
     """
 
