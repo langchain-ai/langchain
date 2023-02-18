@@ -1,4 +1,5 @@
 """Wrapper around Anthropic APIs."""
+import re
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -32,7 +33,7 @@ class Anthropic(LLM, BaseModel):
     """
 
     client: Any  #: :meta private:
-    model: Optional[str] = None
+    model: str = "claude-v1"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
@@ -99,10 +100,17 @@ class Anthropic(LLM, BaseModel):
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
+
         if prompt.startswith(self.HUMAN_PROMPT):
             return prompt  # Already wrapped.
-        else:
-            return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
+
+        # Guard against common errors in specifying wrong number of newlines.
+        corrected_prompt, n_subs = re.subn(r"^\n*Human:", self.HUMAN_PROMPT, prompt)
+        if n_subs == 1:
+            return corrected_prompt
+
+        # As a last resort, wrap the prompt ourselves to emulate instruct-style.
+        return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
 
     def _get_anthropic_stop(self, stop: Optional[List[str]] = None) -> List[str]:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:

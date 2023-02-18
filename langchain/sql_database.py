@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast
-from collections import defaultdict
 from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import create_engine, inspect
@@ -30,7 +29,7 @@ class SQLDatabase:
         schema: Optional[str] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
-        sample_rows_in_table_info: int = 0,
+        sample_rows_in_table_info: int = 3,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -80,9 +79,12 @@ class SQLDatabase:
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
 
+        Follows best practices as specified in: Rajkumar et al, 2022
+        (https://arxiv.org/abs/2204.00498)
+
         If `sample_rows_in_table_info`, the specified number of sample rows will be
         appended to each table description. This can increase performance as
-        demonstrated by Rajkumar et al, 2022 (https://arxiv.org/abs/2204.00498).
+        demonstrated in the paper.
         """
         all_table_names = self.get_table_names()
         if table_names is not None:
@@ -93,33 +95,51 @@ class SQLDatabase:
 
         tables = []
         for table_name in all_table_names:
-            columns = defaultdict(list)
+            columns = []
+            create_table = self.run(
+                (
+                    "SELECT sql FROM sqlite_master WHERE "
+                    f"type='table' AND name='{table_name}'"
+                ),
+                fetch="one",
+            )
+
             for column in self._inspector.get_columns(table_name, schema=self._schema):
-                columns[f"{column['name']}"].append(str(column["type"]))
+                columns.append(column["name"])
 
             if self._sample_rows_in_table_info:
-                sample_rows = self.run(
+                select_star = (
                     f"SELECT * FROM '{table_name}' LIMIT "
                     f"{self._sample_rows_in_table_info}"
                 )
+
+                sample_rows = self.run(select_star)
 
                 sample_rows_ls = ast.literal_eval(sample_rows)
                 sample_rows_ls = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows_ls)
                 )
 
-                for e, col in enumerate(columns):
-                    columns[col].append(
-                        [row[e] for row in sample_rows_ls]  # type: ignore
-                    )
+                columns_str = " ".join(columns)
+                sample_rows_str = "\n".join([" ".join(row) for row in sample_rows_ls])
 
-            table_str = f"Table '{table_name}' has columns: " + str(dict(columns))
-            tables.append(table_str)
+                tables.append(
+                    create_table
+                    + "\n\n"
+                    + select_star
+                    + "\n"
+                    + columns_str
+                    + "\n"
+                    + sample_rows_str
+                )
 
-        final_str = _TEMPLATE_PREFIX + "\n".join(tables)
+            else:
+                tables.append(create_table)
+
+        final_str = "\n\n\n".join(tables)
         return final_str
 
-    def run(self, command: str) -> str:
+    def run(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -130,6 +150,11 @@ class SQLDatabase:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.exec_driver_sql(command)
             if cursor.returns_rows:
-                result = cursor.fetchall()
+                if fetch == "all":
+                    result = cursor.fetchall()
+                elif fetch == "one":
+                    result = cursor.fetchone()[0]
+                else:
+                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return str(result)
         return ""
