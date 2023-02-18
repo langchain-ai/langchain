@@ -45,12 +45,12 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
         ),
         Tool(
             name="Lookup",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for looking up things in a table",
         ),
     ]
@@ -90,7 +90,7 @@ def test_agent_with_callbacks_global() -> None:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
             callback_manager=manager,
         ),
@@ -134,7 +134,7 @@ def test_agent_with_callbacks_local() -> None:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
             callback_manager=manager,
         ),
@@ -180,7 +180,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
         ),
     ]
@@ -211,7 +211,7 @@ def test_agent_tool_return_direct() -> None:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
         ),
@@ -234,7 +234,7 @@ def test_agent_with_new_prefix_suffix() -> None:
     tools = [
         Tool(
             name="Search",
-            function=lambda x: x,
+            func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
         ),
