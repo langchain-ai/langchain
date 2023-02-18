@@ -21,8 +21,8 @@ class PythonREPL:
 
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO()
+        # old_stdout = sys.stdout
+        # sys.stdout = mystdout = StringIO()
         try:
             _print_ = PrintCollector
             _getattr_ = getattr
@@ -43,10 +43,11 @@ class PythonREPL:
 
             exec(byte_code, globals, locals)
 
+            output = str(locals["result"])
             # exec(command, self._globals, self._locals)
-            sys.stdout = old_stdout
-            output = mystdout.getvalue()
+            # sys.stdout = old_stdout
+            # output = mystdout.getvalue()
         except Exception as e:
-            sys.stdout = old_stdout
+            # sys.stdout = old_stdout
             output = str(e)
         return output
