@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy.exc import ProgrammingError
-
 from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.schema import CreateTable
 
 
@@ -90,9 +89,11 @@ class SQLDatabase:
             if missing_tables:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
-        
+
         meta_tables = [
-            tbl for tbl in self._metadata.sorted_tables if tbl.name in set(all_table_names)
+            tbl
+            for tbl in self._metadata.sorted_tables
+            if tbl.name in set(all_table_names)
         ]
 
         tables = []
@@ -105,8 +106,10 @@ class SQLDatabase:
                 command = select(table).limit(self._sample_rows_in_table_info)
 
                 # save the command in string format
-                select_star = (f"SELECT * FROM '{table.name}' LIMIT "
-                               f"{self._sample_rows_in_table_info}")
+                select_star = (
+                    f"SELECT * FROM '{table.name}' LIMIT "
+                    f"{self._sample_rows_in_table_info}"
+                )
 
                 # save the columns in string format
                 columns_str = " ".join([col.name for col in table.columns])
@@ -124,7 +127,7 @@ class SQLDatabase:
                     # save the sample rows in string format
                     sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
 
-                # in some dialects when there are no rows in the table a 
+                # in some dialects when there are no rows in the table a
                 # 'ProgrammingError' is returned
                 except ProgrammingError:
                     sample_rows_str = ""
