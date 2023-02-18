@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import create_engine, inspect, MetaData, select
+from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.schema import CreateTable
+
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
@@ -84,32 +85,35 @@ class SQLDatabase:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
+        print(all_table_names)
+
         tables = []
         meta = MetaData()
         meta.reflect(bind=self._engine)
 
-        meta_tables = [tbl for tbl in meta.sorted_tables if tbl.name in set(all_table_names)]
+        meta_tables = [
+            tbl for tbl in meta.sorted_tables if tbl.name in set(all_table_names)
+        ]
 
         for table in meta_tables:
-
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
 
             if self._sample_rows_in_table_info:
-                
                 # build the select command
                 command = select(table).limit(self._sample_rows_in_table_info)
 
                 # save the command in string format
-                select_star = f"SELECT * FROM {table.name} LIMIT {self._sample_rows_in_table_info}"
+                select_star = (f"SELECT * FROM '{table.name}' LIMIT "
+                               f"{self._sample_rows_in_table_info}")
 
-                # save the columns in string format 
+                # save the columns in string format
                 columns_str = " ".join([col.name for col in table.columns])
 
                 # get the sample rows
                 with self._engine.connect() as connection:
                     sample_rows = connection.execute(command, limit=2)
-                
+
                 # shorten values in the smaple rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
@@ -121,9 +125,8 @@ class SQLDatabase:
                 # build final info for table
                 tables.append(
                     create_table
-                    + "\n\n"
                     + select_star
-                    + "\n"
+                    + ";\n"
                     + columns_str
                     + "\n"
                     + sample_rows_str
@@ -132,7 +135,7 @@ class SQLDatabase:
             else:
                 tables.append(create_table)
 
-        final_str = "\n\n\n".join(tables)
+        final_str = "\n\n".join(tables)
         return final_str
 
     def run(self, command: str, fetch: str = "all") -> str:
