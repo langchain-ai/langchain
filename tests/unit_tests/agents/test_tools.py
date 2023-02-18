@@ -2,6 +2,7 @@
 import pytest
 
 from langchain.agents.tools import Tool, tool
+from langchain.schema import AgentAction
 
 
 def test_unnamed_decorator() -> None:
@@ -81,3 +82,26 @@ def test_create_tool_keyword_args() -> None:
     assert test_tool("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
+
+
+@pytest.mark.asyncio
+async def test_create_async_tool() -> None:
+    """Test that async tools are allowed."""
+
+    async def _test_func(x: str) -> str:
+        return x
+
+    test_tool = Tool(
+        name="test_name",
+        func=lambda x: x,
+        description="test_description",
+        coroutine=_test_func,
+    )
+    assert test_tool("foo") == "foo"
+    assert test_tool.name == "test_name"
+    assert test_tool.description == "test_description"
+    assert test_tool.coroutine is not None
+    assert (
+        await test_tool.arun(AgentAction(tool_input="foo", tool="test_name", log=""))
+        == "foo"
+    )
