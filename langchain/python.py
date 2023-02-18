@@ -33,13 +33,15 @@ class PythonREPL:
                 "dict": dict,
                 "_print_": _print_,
                 "_getattr_": _getattr_,
-                "_getitem_": default_guarded_getitem
+                "_getitem_": default_guarded_getitem,
                 }
-            globals = globals.update(self._globals)
+            globals = {**globals, **self._globals}
+
+            locals = {**{"result": None}, **self._locals}
 
             byte_code = compile_restricted(command, filename='<inline code>', mode='exec')
 
-            exec(byte_code, globals, self._locals)
+            exec(byte_code, globals, locals)
 
             # exec(command, self._globals, self._locals)
             sys.stdout = old_stdout

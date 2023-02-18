@@ -9,6 +9,8 @@ from langchain.chains.llm_math.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.python import PythonREPL
+import sympy
+import numpy
 
 
 class LLMMathChain(Chain, BaseModel):
@@ -51,7 +53,8 @@ class LLMMathChain(Chain, BaseModel):
         return [self.output_key]
 
     def _process_llm_result(self, t: str) -> Dict[str, str]:
-        python_executor = PythonREPL()
+        _globals = {"numpy": numpy, "sympy": sympy}
+        python_executor = PythonREPL(_globals)
         self.callback_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         if t.startswith("```python"):
