@@ -13,7 +13,11 @@ from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.serpapi import SerpAPIWrapper
 from langchain.tools.base import BaseTool
+from langchain.tools.bing_search.tool import BingSearchRun
+from langchain.tools.google_search.tool import GoogleSearchRun
+from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
+from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
@@ -120,19 +124,11 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
 
 
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Wolfram Alpha",
-        description="A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math, Science, Technology, Culture, Society and Everyday Life. Input should be a search query.",
-        function=WolframAlphaAPIWrapper(**kwargs).run,
-    )
+    return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
 
 def _get_google_search(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Google Search",
-        description="A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query.",
-        function=GoogleSearchAPIWrapper(**kwargs).run,
-    )
+    return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
@@ -160,6 +156,10 @@ def _get_searx_search(**kwargs: Any) -> BaseTool:
     )
 
 
+def _get_bing_search(**kwargs: Any) -> BaseTool:
+    return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
+
+
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -168,6 +168,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "searx_host"]),
