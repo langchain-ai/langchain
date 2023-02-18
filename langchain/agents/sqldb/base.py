@@ -104,20 +104,20 @@ class ListTablesSqlDbTool(BaseSQLDBTool, BaseTool):
 class QueryCheckerTool(BaseSQLDBTool, BaseTool):
     """Use an LLM to check if a query is correct."""
 
-    template = """{query}
-    Double check the {dialect} query above for common mistakes, including:
-     - Using NOT IN with NULL values
-     - Using UNION when UNION ALL should have been used
-     - Using BETWEEN for exclusive ranges
-     - Data type mismatch in predicates
-     - Properly quoting identifiers
-     - Using the correct number of arguments for functions
-     - Using the correct number of arguments for operators
-     - Using the correct number of arguments for CASE
-     - Casting to the correct data type
-     - Using the proper columns for joins
+    template = """
+{query}
+Double check the {dialect} query above for common mistakes, including:
+- Using NOT IN with NULL values
+- Using UNION when UNION ALL should have been used
+- Using BETWEEN for exclusive ranges
+- Data type mismatch in predicates
+- Properly quoting identifiers
+- Using the correct number of arguments for functions
+- Using the correct number of arguments for operators
+- Casting to the correct data type
+- Using the proper columns for joins
 
-     Rewrite the query above if there are any mistakes. If it looks good as it is, just reproduce the original query."""
+Rewrite the query above if there are any mistakes. If it looks good as it is, just reproduce the original query."""
     llm_chain: LLMChain = LLMChain(
         llm=OpenAI(temperature=0),
         prompt=PromptTemplate(template=template, input_variables=["query", "dialect"]),
