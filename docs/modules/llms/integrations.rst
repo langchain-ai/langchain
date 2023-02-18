@@ -3,6 +3,12 @@ Integrations
 
 The examples here are all "how-to" guides for how to integrate with various LLM providers.
 
+`OpenAI <./integrations/openai.html>`_: Covers how to connect to OpenAI models.
+
+`Cohere <./integrations/cohere.html>`_: Covers how to connect to Cohere models.
+
+`AI21 <./integrations/ai21.html>`_: Covers how to connect to AI21 models.
+
 `Huggingface Hub <./integrations/huggingface_hub.html>`_: Covers how to connect to LLMs hosted on HuggingFace Hub.
 
 `Azure OpenAI <./integrations/azure_openai_example.html>`_: Covers how to connect to Azure-hosted OpenAI Models.
