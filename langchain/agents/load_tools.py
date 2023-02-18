@@ -138,6 +138,17 @@ def _get_google_serper(**kwargs: Any) -> BaseTool:
         description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
 
+def _get_google_search_results_json(**kwargs: Any) -> Tool:
+    num_results = kwargs.pop("num_results")
+    kwargs['k'] = num_results
+    func = lambda input: GoogleSearchAPIWrapper(**kwargs).results(query=input, num_results=num_results)    
+
+    return Tool(
+        "Google Search Results JSON",
+        func,
+        "A wrapper around Google Search. Useful for when you need to answer questions about current events. Input should be a search query. Output is a JSON array of the query results",
+    )
+
 
 def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
@@ -168,6 +179,7 @@ _EXTRA_LLM_TOOLS = {
 _EXTRA_OPTIONAL_TOOLS = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
+    "google-search-results-json": (_get_google_search_results_json, ["google_api_key", "google_cse_id", "num_results"]),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
