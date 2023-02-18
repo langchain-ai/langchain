@@ -1,4 +1,4 @@
-.PHONY: all clean format lint test tests test_watch integration_tests help
+.PHONY: all clean format lint tests test_watch integration_tests help
 
 all: help
 	
@@ -28,9 +28,6 @@ lint:
 	poetry run black . --check
 	poetry run isort . --check
 	poetry run flake8 .
-
-test:
-	poetry run pytest tests/unit_tests
 
 tests:
 	poetry run pytest tests/unit_tests
