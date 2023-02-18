@@ -133,7 +133,7 @@ def _get_google_search(**kwargs: Any) -> BaseTool:
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Search",
+        name="Serper Search",
         func=GoogleSerperAPIWrapper(**kwargs).run,
         description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
     )
@@ -154,7 +154,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 def _get_searx_search(**kwargs: Any) -> BaseTool:
     return Tool(
-        name="Search",
+        name="SearX Search",
         description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
         func=SearxSearchWrapper(**kwargs).run,
     )

@@ -7,8 +7,13 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 class WolframAlphaQueryRun(BaseTool):
     """Tool that adds the capability to query using the Wolfram Alpha SDK."""
 
-    name = "query_wolfram_alpha"
-    description = "Query Wolfram Alpha with the given query."
+    name = "Wolfram Alpha"
+    description = (
+        "A wrapper around Wolfram Alpha. "
+        "Useful for when you need to answer questions about Math, "
+        "Science, Technology, Culture, Society and Everyday Life. "
+        "Input should be a search query."
+    )
     api_wrapper: WolframAlphaAPIWrapper
 
     def _run(self, query: str) -> str:
