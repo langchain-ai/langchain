@@ -114,15 +114,14 @@ class SQLDatabase:
                 # save the columns in string format
                 columns_str = " ".join([col.name for col in table.columns])
 
-                # get the sample rows
-                with self._engine.connect() as connection:
-                    sample_rows = connection.execute(command)
-
                 try:
-                    # shorten values in the smaple rows
-                    sample_rows = list(
-                        map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
-                    )
+                    # get the sample rows
+                    with self._engine.connect() as connection:
+                        sample_rows = connection.execute(command)
+                        # shorten values in the sample rows
+                        sample_rows = list(
+                            map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
+                        )
 
                     # save the sample rows in string format
                     sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
