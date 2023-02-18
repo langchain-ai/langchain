@@ -50,7 +50,7 @@ def test_table_info() -> None:
     expected_output = """
     CREATE TABLE schema_a."user"(user_id INTEGER, user_name VARCHAR NOT NULL, PRIMARY KEY(user_id));
 
-    SELECT * FROM 'user' LIMIT 3
+    SELECT * FROM 'user' LIMIT 3;
     user_id user_name
     """
 

@@ -85,8 +85,6 @@ class SQLDatabase:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
-        print(all_table_names)
-
         tables = []
         meta = MetaData()
         meta.reflect(bind=self._engine)
@@ -112,7 +110,7 @@ class SQLDatabase:
 
                 # get the sample rows
                 with self._engine.connect() as connection:
-                    sample_rows = connection.execute(command, limit=2)
+                    sample_rows = connection.execute(command)
 
                 # shorten values in the smaple rows
                 sample_rows = list(
