@@ -3,7 +3,7 @@
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
 
-from langchain.sql_database import _TEMPLATE_PREFIX, SQLDatabase
+from langchain.sql_database import SQLDatabase
 
 metadata_obj = MetaData()
 
@@ -29,13 +29,13 @@ def test_table_info() -> None:
     db = SQLDatabase(engine)
     output = db.table_info
     expected_output = """
-    CREATE TABLE user (                                                                                                                                    
+    CREATE TABLE user (
             user_id INTEGER NOT NULL,
             user_name VARCHAR(16) NOT NULL,
             PRIMARY KEY (user_id)
     )
 
-    SELECT * FROM 'user' LIMIT 3
+    SELECT * FROM 'user' LIMIT 3;
     user_id user_name
 
 
@@ -45,7 +45,7 @@ def test_table_info() -> None:
             PRIMARY KEY (company_id)
     )
 
-    SELECT * FROM 'company' LIMIT 3
+    SELECT * FROM 'company' LIMIT 3;
     company_id company_location
     """
 
@@ -75,7 +75,7 @@ def test_table_info_w_sample_rows() -> None:
         PRIMARY KEY (company_id)
 )
 
-        SELECT * FROM 'company' LIMIT 2
+        SELECT * FROM 'company' LIMIT 2;
         company_id company_location
 
 
@@ -85,7 +85,7 @@ def test_table_info_w_sample_rows() -> None:
         PRIMARY KEY (user_id)
         )
 
-        SELECT * FROM 'user' LIMIT 2
+        SELECT * FROM 'user' LIMIT 2;
         user_id user_name
         13 Harrison
         14 Chase
