@@ -1,1 +1,1 @@
-"""WOlfram Alpha API toolkit."""
+"""Wolfram Alpha API toolkit."""
