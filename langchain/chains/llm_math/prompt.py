@@ -43,9 +43,9 @@ x = sympy.Symbol('x')
 result = sympy.factor((x-1)**2 - (x**2 - x))
 ```
 ```output
-1−x
+1-x
 ```
-Answer: 1−x
+Answer: 1-x
 
 Question: {question}
 """
