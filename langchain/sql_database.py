@@ -101,7 +101,7 @@ class SQLDatabase:
                 command = select(table).limit(self._sample_rows_in_table_info)
 
                 # save the command in string format
-                select_star = str(command.compile(compile_kwargs={"literal_binds": True}))
+                select_star = f"SELECT * FROM {table.name} LIMIT {self._sample_rows_in_table_info}"
 
                 # save the columns in string format 
                 columns_str = " ".join([col.name for col in table.columns])
