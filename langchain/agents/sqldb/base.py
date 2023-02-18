@@ -1,3 +1,5 @@
+import os
+os.environ["LANGCHAIN_HANDLER"] = "langchain"
 from langchain.tools.base import BaseTool, BaseToolkit
 import sqlalchemy
 from sqlalchemy import create_engine
@@ -34,11 +36,9 @@ class BaseSQLDBTool(BaseModel):
     @root_validator
     def validate_engine_metadata(cls, values: dict) -> dict:
         """Create the engine and metadata."""
-        if "engine" not in values:
-            values["engine"] = create_engine(values["settings"].SQLALCHEMY_DATABASE_URI)
-        if "metadata" not in values:
-            values["metadata"] = sqlalchemy.MetaData()
-            values["metadata"].reflect(values["engine"])
+        values["engine"] = create_engine(values["settings"].SQLALCHEMY_DATABASE_URI)
+        values["metadata"] = sqlalchemy.MetaData()
+        values["metadata"].reflect(values["engine"])
         return values
 
 
@@ -52,12 +52,12 @@ class QuerySqlDbTool(BaseSQLDBTool, BaseTool):
     """
     limit: int = 50
 
-    def func(self, query: str) -> str:
+    def _run(self, query: str) -> str:
         """Execute the query, return the results or an error message."""
         result = ""
         try:
             with self.engine.connect() as conn:
-                cursor = conn.execute(text(query).limit(self.limit))
+                cursor = conn.execute(text(query))
                 for r in cursor:
                     result += str(r) + "\n"
                 return result
@@ -65,7 +65,7 @@ class QuerySqlDbTool(BaseSQLDBTool, BaseTool):
             """Format the error message."""
             return f"Error: {e}"
 
-    async def afunc(self, query: str) -> str:
+    async def _arun(self, query: str) -> str:
         raise NotImplementedError("QuerySqlDbTool does not support async")
 
 
@@ -77,11 +77,13 @@ class SchemaSqlDbTool(BaseSQLDBTool, BaseTool):
     Input to this tool is a table name, output is the schema for that table. Be SURE that the table actually exists by calling list_tables_sql_db first!
     """
 
-    def func(self, table_name: str) -> str:
+    def _run(self, table_name: str) -> str:
         """Get the schema for a specific table."""
+        if table_name not in self.metadata.tables:
+            return f"Error: {table_name} does not exist in the database. Try again."
         return self.metadata.tables[table_name].__repr__()
 
-    async def afunc(self, table_name: str) -> str:
+    async def _arun(self, table_name: str) -> str:
         raise NotImplementedError("SchemaSqlDbTool does not support async")
 
 
@@ -91,11 +93,11 @@ class ListTablesSqlDbTool(BaseSQLDBTool, BaseTool):
     name = "list_tables_sql_db"
     description = "Input is an empty string, output is a list of tables in the database."
 
-    def func(self) -> str:
+    def _run(self, tool_input: str ="") -> str:
         """Get the schema for a specific table."""
         return "\n".join(self.metadata.tables.keys())
 
-    async def afunc(self) -> str:
+    async def _arun(self, tool_input: str = "") -> str:
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
 
 
@@ -121,13 +123,13 @@ class QueryCheckerTool(BaseSQLDBTool, BaseTool):
         prompt=PromptTemplate(template=template, input_variables=["query", "dialect"]),
     )
     name = "query_checker_sql_db"
-    description = "Use this tool to double check if your query is correct before executing it."
+    description = "Use this tool to double check if your query is correct before executing it. Always use this tool before executing a query with query_sql_db!"
 
-    def func(self, query: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the LLM to check the query."""
         return self.llm_chain.predict(query=query, dialect=self.dialect)
 
-    async def afunc(self, query: str) -> str:
+    async def _arun(self, query: str) -> str:
         return await self.llm_chain.apredict(query=query, dialect=self.dialect)
 
 
@@ -141,20 +143,25 @@ class SQLDBToolkit(BaseToolkit):
 
 if __name__ == "__main__":
     from langchain.agents import ZeroShotAgent, AgentExecutor
-    import os
 
-    prefix = """You are an agent designed to interact with a SQL database.
-    Your goal is to return a final answer by interacting with the SQL database.
-    You have access to a toolkit that contains tools for interacting with the database.
-    You can use the tools to query the database, get the schema for a table, and check if a query is correct, and get the tables in the database.
-    Only use the below tools. Only use the information returned by the below tools to construct your final answer.
-    You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+    prefix = """
+You are an agent designed to interact with a SQL database.
+Your goal is to return a final answer by interacting with the SQL database.
+You have access to a toolkit that contains tools for interacting with the database.
+You can use the tools to query the database, get the schema for a table, and check if a query is correct, and get the tables in the database.
+Only use the below tools. Only use the information returned by the below tools to construct your final answer.
+You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+    
+DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+
+If the question does not seem related to the database, just return "I don't know" as the answer.
     """
-    suffix = """Begin!"
+    suffix = """
+Begin!"
 
-    Question: {input}
-    Thought: I should look at the tables in the database to see what I can query.
-    {agent_scratchpad}"""
+Question: {input}
+Thought: I should look at the tables in the database to see what I can query.
+{agent_scratchpad}"""
 
     tools = SQLDBToolkit().get_tools()
     os.environ["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:postgres@localhost:5432/postgres"
@@ -169,5 +176,5 @@ if __name__ == "__main__":
     llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names)
     agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
-    agent_executor.run("How many users are there?")
+    agent_executor.run("How many tools runs did user 1 make today?")
 
