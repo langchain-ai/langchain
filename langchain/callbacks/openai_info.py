@@ -1,5 +1,5 @@
 """Callback Handler that prints to std out."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -21,15 +21,21 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Print out the prompts."""
         pass
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Print out the token."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
+        """Collect token usage."""
         if response.llm_output is not None:
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
                 if "total_tokens" in token_usage:
                     self.total_tokens += token_usage["total_tokens"]
 
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 
@@ -43,7 +49,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain."""
         pass
 
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 
@@ -68,7 +76,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """If not the final action, print out observation."""
         pass
 
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Do nothing."""
         pass
 

@@ -12,9 +12,21 @@ The following use cases require specific installs and api keys:
 - _Cohere_:
   - Install requirements with `pip install cohere`
   - Get a Cohere api key and either set it as an environment variable (`COHERE_API_KEY`) or pass it to the LLM constructor as `cohere_api_key`.
+- _GooseAI_:
+  - Install requirements with `pip install openai`
+  - Get an GooseAI api key and either set it as an environment variable (`GOOSEAI_API_KEY`) or pass it to the LLM constructor as `gooseai_api_key`.
 - _Hugging Face Hub_
   - Install requirements with `pip install huggingface_hub`
   - Get a Hugging Face Hub api token and either set it as an environment variable (`HUGGINGFACEHUB_API_TOKEN`) or pass it to the LLM constructor as `huggingfacehub_api_token`.
+- _Petals_:
+  - Install requirements with `pip install petals`
+  - Get an GooseAI api key and either set it as an environment variable (`HUGGINGFACE_API_KEY`) or pass it to the LLM constructor as `huggingface_api_key`.
+- _CerebriumAI_:
+  - Install requirements with `pip install cerebrium`
+  - Get a Cerebrium api key and either set it as an environment variable (`CEREBRIUMAI_API_KEY`) or pass it to the LLM constructor as `cerebriumai_api_key`.
+- _PromptLayer_:
+  - Install requirements with `pip install promptlayer` (be sure to be on version 0.1.62 or higher)
+  - Get an API key from [promptlayer.com](http://www.promptlayer.com) and set it using `promptlayer.api_key=<API KEY>`
 - _SerpAPI_:
   - Install requirements with `pip install google-search-results`
   - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`) or pass it to the LLM constructor as `serpapi_api_key`.

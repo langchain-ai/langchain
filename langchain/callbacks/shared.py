@@ -1,7 +1,7 @@
 """A shared CallbackManager."""
 
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -46,7 +46,14 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_llm_end(response, **kwargs)
 
-    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run when LLM generates a new token."""
+        with self._lock:
+            self._callback_manager.on_llm_new_token(token, **kwargs)
+
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
         with self._lock:
             self._callback_manager.on_llm_error(error, **kwargs)
@@ -63,7 +70,9 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_chain_end(outputs, **kwargs)
 
-    def on_chain_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
         with self._lock:
             self._callback_manager.on_chain_error(error, **kwargs)
@@ -80,7 +89,9 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_tool_end(output, **kwargs)
 
-    def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
         with self._lock:
             self._callback_manager.on_tool_error(error, **kwargs)
@@ -105,7 +116,7 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.remove_handler(callback)
 
-    def set_handler(self, handler: BaseCallbackHandler) -> None:
-        """Set handler as the only handler on the callback manager."""
+    def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Set handlers as the only handlers on the callback manager."""
         with self._lock:
-            self._callback_manager.handlers = [handler]
+            self._callback_manager.handlers = handlers

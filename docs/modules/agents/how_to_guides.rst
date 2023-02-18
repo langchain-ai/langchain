@@ -3,6 +3,8 @@ How-To Guides
 
 The first category of how-to guides here cover specific parts of working with agents.
 
+`Load From Hub <./examples/load_from_hub.html>`_: This notebook covers how to load agents from `LangChainHub <https://github.com/hwchase17/langchain-hub>`_.
+
 `Custom Tools <./examples/custom_tools.html>`_: How to create custom tools that an agent can use.
 
 `Intermediate Steps <./examples/intermediate_steps.html>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
@@ -15,6 +17,7 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Max Iterations <./examples/max_iterations.html>`_: How to restrict an agent to a certain number of iterations.
 
+`Asynchronous <./examples/async_agent.html>`_: Covering asynchronous functionality.
 
 The next set of examples are all end-to-end agents for specific applications.
 In all examples there is an Agent with a particular set of tools.

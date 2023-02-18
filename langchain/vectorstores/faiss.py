@@ -1,7 +1,9 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import pickle
 import uuid
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -90,6 +92,31 @@ class FAISS(VectorStore):
         self.index_to_docstore_id.update(index_to_id)
         return [_id for _, _id, _ in full_info]
 
+    def similarity_search_with_score_by_vector(
+        self, embedding: List[float], k: int = 4
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
+        docs = []
+        for j, i in enumerate(indices[0]):
+            if i == -1:
+                # This happens when not enough docs are returned.
+                continue
+            _id = self.index_to_docstore_id[i]
+            doc = self.docstore.search(_id)
+            if not isinstance(doc, Document):
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            docs.append((doc, scores[0][j]))
+        return docs
+
     def similarity_search_with_score(
         self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
@@ -103,18 +130,23 @@ class FAISS(VectorStore):
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding_function(query)
-        scores, indices = self.index.search(np.array([embedding], dtype=np.float32), k)
-        docs = []
-        for j, i in enumerate(indices[0]):
-            if i == -1:
-                # This happens when not enough docs are returned.
-                continue
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append((doc, scores[0][j]))
+        docs = self.similarity_search_with_score_by_vector(embedding, k)
         return docs
+
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the embedding.
+        """
+        docs_and_scores = self.similarity_search_with_score_by_vector(embedding, k)
+        return [doc for doc, _ in docs_and_scores]
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -130,6 +162,41 @@ class FAISS(VectorStore):
         """
         docs_and_scores = self.similarity_search_with_score(query, k)
         return [doc for doc, _ in docs_and_scores]
+
+    def max_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        _, indices = self.index.search(np.array([embedding], dtype=np.float32), fetch_k)
+        # -1 happens when not enough docs are returned.
+        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32), embeddings, k=k
+        )
+        selected_indices = [indices[0][i] for i in mmr_selected]
+        docs = []
+        for i in selected_indices:
+            _id = self.index_to_docstore_id[i]
+            if _id == -1:
+                # This happens when not enough docs are returned.
+                continue
+            doc = self.docstore.search(_id)
+            if not isinstance(doc, Document):
+                raise ValueError(f"Could not find document for id {_id}, got {doc}")
+            docs.append(doc)
+        return docs
 
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
@@ -148,18 +215,7 @@ class FAISS(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self.embedding_function(query)
-        _, indices = self.index.search(np.array([embedding], dtype=np.float32), fetch_k)
-        # -1 happens when not enough docs are returned.
-        embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
-        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
-        selected_indices = [indices[0][i] for i in mmr_selected]
-        docs = []
-        for i in selected_indices:
-            _id = self.index_to_docstore_id[i]
-            doc = self.docstore.search(_id)
-            if not isinstance(doc, Document):
-                raise ValueError(f"Could not find document for id {_id}, got {doc}")
-            docs.append(doc)
+        docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
         return docs
 
     @classmethod
@@ -201,20 +257,39 @@ class FAISS(VectorStore):
         )
         return cls(embedding.embed_query, index, docstore, index_to_id)
 
-    def save_local(self, path: str) -> None:
-        """Save FAISS index to disk.
+    def save_local(self, folder_path: str) -> None:
+        """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: Path to save FAISS index to.
+            folder_path: folder path to save index, docstore,
+                and index_to_docstore_id to.
         """
-        faiss = dependable_faiss_import()
-        faiss.write_index(self.index, path)
+        path = Path(folder_path)
+        path.mkdir(exist_ok=True, parents=True)
 
-    def load_local(self, path: str) -> None:
-        """Load FAISS index from disk.
+        # save index separately since it is not picklable
+        faiss = dependable_faiss_import()
+        faiss.write_index(self.index, str(path / "index.faiss"))
+
+        # save docstore and index_to_docstore_id
+        with open(path / "index.pkl", "wb") as f:
+            pickle.dump((self.docstore, self.index_to_docstore_id), f)
+
+    @classmethod
+    def load_local(cls, folder_path: str, embeddings: Embeddings) -> FAISS:
+        """Load FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
-            path: Path to load FAISS index from.
+            folder_path: folder path to load index, docstore,
+                and index_to_docstore_id from.
+            embeddings: Embeddings to use when generating queries
         """
+        path = Path(folder_path)
+        # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        self.index = faiss.read_index(path)
+        index = faiss.read_index(str(path / "index.faiss"))
+
+        # load docstore and index_to_docstore_id
+        with open(path / "index.pkl", "rb") as f:
+            docstore, index_to_docstore_id = pickle.load(f)
+        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)

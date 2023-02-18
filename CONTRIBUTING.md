@@ -47,7 +47,7 @@ good code into the codebase.
 ### 🏭Release process
 
 As of now, LangChain has an ad hoc release process: releases are cut with high frequency via by
-a developer and published to [PyPI](https://pypi.org/project/ruff/).
+a developer and published to [PyPI](https://pypi.org/project/langchain/).
 
 LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
 even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4).
@@ -76,6 +76,8 @@ This will install all requirements for running the package, examples, linting, f
 Now, you should be able to run the common tasks in the following section.
 
 ## ✅Common Tasks
+
+Type `make` for a list of common tasks.
 
 ### Code Formatting
 
@@ -116,7 +118,7 @@ Unit tests cover modular logic that does not require calls to outside APIs.
 To run unit tests:
 
 ```bash
-make tests
+make test
 ```
 
 If you add new logic, please add a unit test.

@@ -3,7 +3,17 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, List, Optional
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Collection,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 from langchain.docstore.document import Document
 
@@ -43,6 +53,12 @@ class TextSplitter(ABC):
             for chunk in self.split_text(text):
                 documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
         return documents
+
+    def split_documents(self, documents: List[Document]) -> List[Document]:
+        """Split documents."""
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.create_documents(texts, metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
@@ -108,7 +124,11 @@ class TextSplitter(ABC):
 
     @classmethod
     def from_tiktoken_encoder(
-        cls, encoding_name: str = "gpt2", **kwargs: Any
+        cls,
+        encoding_name: str = "gpt2",
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
     ) -> TextSplitter:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
@@ -119,11 +139,19 @@ class TextSplitter(ABC):
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please it install it with `pip install tiktoken`."
             )
+
         # create a GPT-3 encoder instance
         enc = tiktoken.get_encoding(encoding_name)
 
-        def _tiktoken_encoder(text: str) -> int:
-            return len(enc.encode(text))
+        def _tiktoken_encoder(text: str, **kwargs: Any) -> int:
+            return len(
+                enc.encode(
+                    text,
+                    allowed_special=allowed_special,
+                    disallowed_special=disallowed_special,
+                    **kwargs,
+                )
+            )
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
@@ -144,6 +172,50 @@ class CharacterTextSplitter(TextSplitter):
         else:
             splits = list(text)
         return self._merge_splits(splits, self._separator)
+
+
+class TokenTextSplitter(TextSplitter):
+    """Implementation of splitting text that looks at tokens."""
+
+    def __init__(
+        self,
+        encoding_name: str = "gpt2",
+        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
+        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        **kwargs: Any,
+    ):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to for TokenTextSplitter. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3 encoder instance
+        self._tokenizer = tiktoken.get_encoding(encoding_name)
+        self._allowed_special = allowed_special
+        self._disallowed_special = disallowed_special
+
+    def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks."""
+        splits = []
+        input_ids = self._tokenizer.encode(
+            text,
+            allowed_special=self._allowed_special,
+            disallowed_special=self._disallowed_special,
+        )
+        start_idx = 0
+        cur_idx = min(start_idx + self._chunk_size, len(input_ids))
+        chunk_ids = input_ids[start_idx:cur_idx]
+        while start_idx < len(input_ids):
+            splits.append(self._tokenizer.decode(chunk_ids))
+            start_idx += self._chunk_size - self._chunk_overlap
+            cur_idx = min(start_idx + self._chunk_size, len(input_ids))
+            chunk_ids = input_ids[start_idx:cur_idx]
+        return splits
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):

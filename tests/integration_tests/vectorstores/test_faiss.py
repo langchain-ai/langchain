@@ -1,26 +1,13 @@
 """Test FAISS functionality."""
 import tempfile
-from typing import List
 
 import pytest
 
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.docstore.wikipedia import Wikipedia
-from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.faiss import FAISS
-
-
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings."""
-        return [[i] * 10 for i in range(len(texts))]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return simple embeddings."""
-        return [0] * 10
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_faiss() -> None:
@@ -37,6 +24,24 @@ def test_faiss() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+def test_faiss_vector_sim() -> None:
+    """Test vector similarity."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = FAISS.from_texts(texts, FakeEmbeddings())
+    index_to_id = docsearch.index_to_docstore_id
+    expected_docstore = InMemoryDocstore(
+        {
+            index_to_id[0]: Document(page_content="foo"),
+            index_to_id[1]: Document(page_content="bar"),
+            index_to_id[2]: Document(page_content="baz"),
+        }
+    )
+    assert docsearch.docstore.__dict__ == expected_docstore.__dict__
+    query_vec = FakeEmbeddings().embed_query(text="foo")
+    output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 
 
@@ -98,6 +103,5 @@ def test_faiss_local_save_load() -> None:
 
     with tempfile.NamedTemporaryFile() as temp_file:
         docsearch.save_local(temp_file.name)
-        docsearch.index = None
-        docsearch.load_local(temp_file.name)
-    assert docsearch.index is not None
+        new_docsearch = FAISS.load_local(temp_file.name, FakeEmbeddings())
+    assert new_docsearch.index is not None

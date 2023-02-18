@@ -51,6 +51,8 @@ These modules are, in increasing order of complexity:
 
 - `LLMs <./modules/llms.html>`_: This includes a generic interface for all LLMs, and common utilities for working with LLMs.
 
+- `Document Loaders <./modules/document_loaders.html>`_: This includes a standard interface for loading documents, as well as specific integrations to all types of text data sources.
+
 - `Utils <./modules/utils.html>`_: Language models are often more powerful when interacting with other sources of knowledge or computation. This can include Python REPLs, embeddings, search engines, and more. LangChain provides a large collection of common utils to use in your application.
 
 - `Chains <./modules/chains.html>`_: Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
@@ -68,6 +70,7 @@ These modules are, in increasing order of complexity:
 
    ./modules/prompts.md
    ./modules/llms.md
+   ./modules/document_loaders.md
    ./modules/utils.md
    ./modules/chains.md
    ./modules/agents.md
@@ -162,6 +165,10 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
+- `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
+
+- `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
+
 
 .. toctree::
    :maxdepth: 1
@@ -173,3 +180,6 @@ Additional collection of resources we think may be useful as you develop your ap
    ./glossary.md
    ./gallery.rst
    ./deployments.md
+   ./tracing.md
+   Discord <https://discord.gg/6adMQxSpJS>
+   Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>

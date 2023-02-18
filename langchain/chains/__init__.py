@@ -1,6 +1,9 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
+from langchain.chains.chat_vector_db.base import ChatVectorDBChain
+from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.conversation.base import ConversationChain
+from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -22,7 +25,6 @@ from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 
 __all__ = [
-    "APIChain",
     "ConversationChain",
     "LLMChain",
     "LLMBashChain",
@@ -42,5 +44,8 @@ __all__ = [
     "OpenAIModerationChain",
     "SQLDatabaseSequentialChain",
     "load_chain",
+    "AnalyzeDocumentChain",
     "HypotheticalDocumentEmbedder",
+    "ChatVectorDBChain",
+    "GraphQAChain",
 ]
