@@ -1,4 +1,4 @@
-"""Test Self-hosted HuggingFace Pipelines."""
+"""Test Self-hosted LLMs."""
 import pickle
 from typing import Any, List, Optional
 
