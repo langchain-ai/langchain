@@ -67,12 +67,26 @@ Critique:""",
     input_variables=["input_prompt", "output_from_model", "critique_request"],
 )
 
-REVISION_PROMPT = deepcopy(CRITIQUE_PROMPT)
+REVISION_PROMPT = FewShotPromptTemplate(
+    example_prompt=critique_example,
+    examples=examples,
+    prefix="Below is conservation between a human and an AI model.",
+    suffix="""Human: {input_prompt}
+Model: {output_from_model}
 
-REVISION_PROMPT.suffix += """ {critique}
+Critique Request: {critique_request}
+
+Critique: {critique}
 
 Revision Request: {revision_request}
 
-Revision:"""
-
-REVISION_PROMPT.input_variables += ["critique", "revision_request"]
+Revision:""",
+    example_separator="\n === \n",
+    input_variables=[
+        "input_prompt",
+        "output_from_model",
+        "critique_request",
+        "critique",
+        "revision_request",
+    ],
+)
