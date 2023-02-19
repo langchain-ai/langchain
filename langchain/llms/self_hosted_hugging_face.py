@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace Pipeline API to perform inference on self-hosted remote hardware."""
+"""Wrapper around HuggingFace Pipeline API to run on self-hosted remote hardware."""
 import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional
@@ -22,8 +22,11 @@ def _generate_text(
     stop: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> str:
-    """Inference function to send to the remote hardware. Accepts a Hugging Face pipeline (or more likely,
-    a key pointing to such a pipeline on the cluster's object store) and returns generated text.
+    """Inference function to send to the remote hardware.
+
+    Accepts a Hugging Face pipeline (or more likely,
+    a key pointing to such a pipeline on the cluster's object store)
+    and returns generated text.
     """
     response = pipeline(prompt, *args, **kwargs)
     if pipeline.task == "text-generation":
@@ -47,8 +50,9 @@ def _load_transformer(
     device: int = 0,
     model_kwargs: Optional[dict] = None,
 ) -> Any:
-    """Inference function to send to the remote hardware. Accepts a huggingface model_id and
-    returns a pipeline for the task.
+    """Inference function to send to the remote hardware.
+
+    Accepts a huggingface model_id and returns a pipeline for the task.
     """
     from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer
     from transformers import pipeline as hf_pipeline
@@ -105,9 +109,12 @@ def _load_transformer(
 
 
 class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
-    """Wrapper around HuggingFace Pipeline API to perform inference on self-hosted remote hardware.
-    Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
-    by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
+    """Wrapper around HuggingFace Pipeline API to run on self-hosted remote hardware.
+
+    Supported hardware includes auto-launched instances on AWS, GCP, Azure,
+    and Lambda, as well as servers specified
+    by IP address and SSH credentials (such as on-prem, or another cloud
+    like Paperspace, Coreweave, etc.).
 
     To use, you should have the ``runhouse`` python package installed.
 
@@ -120,9 +127,10 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
             import runhouse as rh
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             hf = SelfHostedHuggingFaceLLM(
-                model_id="google/flan-t5-large", task="text2text-generation", hardware=gpu
+                model_id="google/flan-t5-large", task="text2text-generation",
+                hardware=gpu
             )
-    Example passing fn that generates a pipeline (because the pipeline is not serializable):
+    Example passing fn that generates a pipeline (bc the pipeline is not serializable):
         .. code-block:: python
 
             from langchain.llms import SelfHostedHuggingFaceLLM
@@ -137,13 +145,14 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
                     "text-generation", model=model, tokenizer=tokenizer
                 )
                 return pipe
-            hf = SelfHostedHuggingFaceLLM(model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
+            hf = SelfHostedHuggingFaceLLM(
+                model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
     """
 
     model_id: str = DEFAULT_MODEL_ID
     """Hugging Face model_id to load the model."""
     task: str = DEFAULT_TASK
-    """Hugging Face task for which to use this model (either "text-generation" or "text2text-generation")."""
+    """Hugging Face task (either "text-generation" or "text2text-generation")."""
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
@@ -163,10 +172,12 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
         extra = Extra.forbid
 
     def __init__(self, **kwargs: Any):
-        """Construct the pipeline remotely using an auxiliary function sent to the server
-        which loads and returns the pipeline. The load function needs to be importable to be imported
+        """Construct the pipeline remotely using an auxiliary function.
+
+        The load function needs to be importable to be imported
         and run on the server, i.e. in a module and not a REPL or closure.
-        Then, initialize the remote inference function."""
+        Then, initialize the remote inference function.
+        """
         load_fn_kwargs = {
             "model_id": kwargs.get("model_id", DEFAULT_MODEL_ID),
             "task": kwargs.get("task", DEFAULT_TASK),

@@ -1,5 +1,4 @@
 """Test self-hosted embeddings."""
-import unittest
 from typing import Any
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
@@ -12,6 +11,7 @@ from langchain.embeddings import (
 
 
 def get_remote_instance() -> Any:
+    """Get remote instance for testing."""
     import runhouse as rh
 
     gpu = rh.cluster(name="rh-a10x", instance_type="A100:1", use_spot=False)
@@ -58,6 +58,7 @@ def test_self_hosted_huggingface_instructor_embedding_query() -> None:
 
 
 def get_pipeline() -> Any:
+    """Get pipeline for testing."""
     model_id = "facebook/bart-base"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
@@ -65,6 +66,7 @@ def get_pipeline() -> Any:
 
 
 def inference_fn(pipeline: Any, prompt: str) -> Any:
+    """Inference function for testing."""
     # Return last hidden state of the model
     if isinstance(prompt, list):
         return [emb[0][-1] for emb in pipeline(prompt)]

@@ -1,4 +1,4 @@
-"""General-purpose tool for performing model inference on self-hosted remote hardware."""
+"""Run model inference on self-hosted remote hardware."""
 import importlib.util
 import logging
 import pickle
@@ -19,8 +19,11 @@ def _generate_text(
     stop: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> str:
-    """Inference function to send to the remote hardware. Accepts a pipeline callable (or, more likely,
-    a key pointing to the model on the cluster's object store) and returns text predictions for each document
+    """Inference function to send to the remote hardware.
+
+    Accepts a pipeline callable (or, more likely,
+    a key pointing to the model on the cluster's object store)
+    and returns text predictions for each document
     in the batch.
     """
     text = pipeline(prompt, *args, **kwargs)
@@ -30,7 +33,7 @@ def _generate_text(
 
 
 def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
-    """Helper function to send a pipeline to a device on the cluster."""
+    """Send a pipeline to a device on the cluster."""
     if isinstance(pipeline, str):
         with open(pipeline, "rb") as f:
             pipeline = pickle.load(f)
@@ -59,9 +62,12 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
 
 
 class SelfHostedPipeline(LLM, BaseModel):
-    """General-purpose tool for performing model inference on self-hosted remote hardware.
-    Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
-    by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
+    """Run model inference on self-hosted remote hardware.
+
+    Supported hardware includes auto-launched instances on AWS, GCP, Azure,
+    and Lambda, as well as servers specified
+    by IP address and SSH credentials (such as on-prem, or another
+    cloud like Paperspace, Coreweave, etc.).
 
     To use, you should have the ``runhouse`` python package installed.
 
@@ -76,7 +82,8 @@ class SelfHostedPipeline(LLM, BaseModel):
                 tokenizer = AutoTokenizer.from_pretrained("gpt2")
                 model = AutoModelForCausalLM.from_pretrained("gpt2")
                 return pipeline(
-                    "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
+                    "text-generation", model=model, tokenizer=tokenizer,
+                    max_new_tokens=10
                 )
             def inference_fn(pipeline, prompt, stop = None):
                 return pipeline(prompt)[0]["generated_text"]
@@ -108,7 +115,8 @@ class SelfHostedPipeline(LLM, BaseModel):
             from transformers import pipeline
 
             generator = pipeline(model="gpt2")
-            rh.blob(pickle.dumps(generator), path="models/pipeline.pkl").save().to(gpu, path="models")
+            rh.blob(pickle.dumps(generator), path="models/pipeline.pkl"
+                ).save().to(gpu, path="models")
             llm = SelfHostedPipeline.from_pipeline(
                 pipeline="models/pipeline.pkl",
                 hardware=gpu,
@@ -135,10 +143,12 @@ class SelfHostedPipeline(LLM, BaseModel):
         extra = Extra.forbid
 
     def __init__(self, **kwargs: Any):
-        """Construct the pipeline remotely using an auxiliary function sent to the server
-        which loads and returns the pipeline. The load function must be in global scope to be imported
+        """Init the pipeline with an auxiliary function.
+
+        The load function must be in global scope to be imported
         and run on the server, i.e. in a module and not a REPL or closure.
-        Then, initialize the remote inference function."""
+        Then, initialize the remote inference function.
+        """
         super().__init__(**kwargs)
         try:
             import runhouse as rh
@@ -168,13 +178,13 @@ class SelfHostedPipeline(LLM, BaseModel):
         device: int = 0,
         **kwargs: Any,
     ) -> LLM:
-        """Construct the SelfHostedPipeline from a local callable pipeline object or a path string
-        pointing to a serialized pipeline in the cluster's filesystem."""
-
+        """Init the SelfHostedPipeline from a pipeline object or string."""
         if not isinstance(pipeline, str):
             logger.warning(
-                "Serializing pipeline to send to remote hardware. Note, it can be quite slow"
-                "to serialize and send large models with each execution. Consider sending the pipeline"
+                "Serializing pipeline to send to remote hardware. "
+                "Note, it can be quite slow"
+                "to serialize and send large models with each execution. "
+                "Consider sending the pipeline"
                 "to the cluster and passing the path to the pipeline instead."
             )
 

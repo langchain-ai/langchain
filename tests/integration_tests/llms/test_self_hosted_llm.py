@@ -10,6 +10,7 @@ model_reqs = ["pip:./", "transformers", "torch"]
 
 
 def get_remote_instance() -> Any:
+    """Get remote instance for testing."""
     import runhouse as rh
 
     return rh.cluster(name="rh-a10x", instance_type="A100:1", use_spot=False)
@@ -43,6 +44,7 @@ def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
 
 
 def load_pipeline() -> Any:
+    """Load pipeline for testing."""
     model_id = "gpt2"
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
@@ -53,6 +55,7 @@ def load_pipeline() -> Any:
 
 
 def inference_fn(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -> str:
+    """Inference function for testing."""
     return pipeline(prompt)[0]["generated_text"]
 
 

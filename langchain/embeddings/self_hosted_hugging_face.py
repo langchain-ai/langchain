@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace embedding models to perform inference on a self-hosted remote hardware."""
+"""Wrapper around HuggingFace embedding models for self-hosted remote hardware."""
 import importlib
 import logging
 from typing import Any, Callable, List, Optional
@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 def _embed_documents(client: Any, *args: Any, **kwargs: Any) -> List[List[float]]:
-    """Inference function to send to the remote hardware. Accepts a sentence_transformer model_id and
+    """Inference function to send to the remote hardware.
+
+    Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
     return client.encode(*args, **kwargs)
@@ -58,9 +60,12 @@ def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0)
 
 
 class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings, BaseModel):
-    """Wrapper around sentence_transformers embedding models to perform inference on self-hosted remote hardware.
-    Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
-    by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
+    """Runs sentence_transformers embedding models on self-hosted remote hardware.
+
+    Supported hardware includes auto-launched instances on AWS, GCP, Azure,
+    and Lambda, as well as servers specified
+    by IP address and SSH credentials (such as on-prem, or another cloud
+    like Paperspace, Coreweave, etc.).
 
     To use, you should have the ``runhouse`` python package installed.
 
@@ -98,9 +103,12 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings, BaseModel):
 
 
 class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
-    """Wrapper around InstructorEmbedding embedding models to perform inference on self-hosted remote hardware.
-    Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
-    by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
+    """Runs InstructorEmbedding embedding models on self-hosted remote hardware.
+
+    Supported hardware includes auto-launched instances on AWS, GCP, Azure,
+    and Lambda, as well as servers specified
+    by IP address and SSH credentials (such as on-prem, or another
+    cloud like Paperspace, Coreweave, etc.).
 
     To use, you should have the ``runhouse`` python package installed.
 
@@ -111,7 +119,8 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             import runhouse as rh
             model_name = "hkunlp/instructor-large"
             gpu = rh.cluster(name='rh-a10x', instance_type='A100:1')
-            hf = SelfHostedHuggingFaceInstructEmbeddings(model_name=model_name, hardware=gpu)
+            hf = SelfHostedHuggingFaceInstructEmbeddings(
+                model_name=model_name, hardware=gpu)
     """
 
     model_id: str = DEFAULT_INSTRUCT_MODEL

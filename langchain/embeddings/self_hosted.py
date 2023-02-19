@@ -1,4 +1,4 @@
-"""General-purpose tool for running custom embedding models on self-hosted remote hardware."""
+"""Running custom embedding models on self-hosted remote hardware."""
 from typing import Any, Callable, List
 
 from pydantic import BaseModel, Extra
@@ -8,16 +8,21 @@ from langchain.llms import SelfHostedPipeline
 
 
 def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[float]]:
-    """Inference function to send to the remote hardware. Accepts a sentence_transformer model_id and
+    """Inference function to send to the remote hardware.
+
+    Accepts a sentence_transformer model_id and
     returns a list of embeddings for each document in the batch.
     """
     return pipeline(*args, **kwargs)
 
 
 class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings, BaseModel):
-    """General-purpose tool for running custom embedding models on self-hosted remote hardware.
-    Supported hardware includes auto-launched instances on AWS, GCP, Azure, and Lambda, as well as servers specified
-    by IP address and SSH credentials (such as on-prem, or another cloud like Paperspace, Coreweave, etc.).
+    """Runs custom embedding models on self-hosted remote hardware.
+
+    Supported hardware includes auto-launched instances on AWS, GCP, Azure,
+    and Lambda, as well as servers specified
+    by IP address and SSH credentials (such as on-prem, or another
+    cloud like Paperspace, Coreweave, etc.).
 
     To use, you should have the ``runhouse`` python package installed.
 
@@ -48,7 +53,8 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings, BaseModel):
 
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             pipeline = pipeline(model="bert-base-uncased", task="feature-extraction")
-            rh.blob(pickle.dumps(pipeline), path="models/pipeline.pkl").save().to(gpu, path="models")
+            rh.blob(pickle.dumps(pipeline),
+                path="models/pipeline.pkl").save().to(gpu, path="models")
             embeddings = SelfHostedHFEmbeddings.from_pipeline(
                 pipeline="models/pipeline.pkl",
                 hardware=gpu,
