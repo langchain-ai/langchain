@@ -57,7 +57,7 @@ If you have a Twitter account you would like us to mention, please let us know i
 
 ## 🚀Quick Start
 
-This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding.
+This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Check out Poetry's [documentation on how to install it](https://python-poetry.org/docs/#installation) on your system before proceeding. If you're using Github Codespaces, everything you need will be automatically installed.
 
 ❗Note: If you use `Conda` or `Pyenv` as your environment / package manager, avoid dependency conflicts by doing the following first:
 1. *Before installing Poetry*, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
@@ -147,6 +147,13 @@ Launch a notebook:
 
 ```bash
 poetry run jupyter notebook
+```
+
+If you're using Codespaces:
+- For whatever reason Jupyter notebook doesn't work, so use JupyterLab
+- More info here: https://code.visualstudio.com/docs/datascience/notebooks-web
+```bash
+poetry run jupyter lab  --NotebookApp.allow_origin='*' --NotebookApp.ip='0.0.0.0'
 ```
 
 When you run `poetry install`, the `langchain` package is installed as editable in the virtualenv, so your new logic can be imported into the notebook.
