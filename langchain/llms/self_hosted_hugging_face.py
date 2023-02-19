@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace Pipeline APIs."""
+"""Wrapper around HuggingFace Pipeline API to perform inference on self-hosted remote hardware."""
 import importlib.util
 import logging
 from typing import Any, Callable, List, Mapping, Optional

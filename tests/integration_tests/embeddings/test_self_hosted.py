@@ -1,4 +1,4 @@
-"""Test huggingface embeddings."""
+"""Test self-hosted embeddings."""
 import unittest
 from typing import Any
 

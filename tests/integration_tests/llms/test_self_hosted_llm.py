@@ -1,4 +1,4 @@
-"""Test HuggingFace Pipeline wrapper."""
+"""Test Self-hosted HuggingFace Pipelines."""
 import pickle
 from typing import Any, List, Optional
 
@@ -16,7 +16,7 @@ def get_remote_instance() -> Any:
 
 
 def test_self_hosted_huggingface_pipeline_text_generation() -> None:
-    """Test valid call to HuggingFace text generation model."""
+    """Test valid call to self-hosted HuggingFace text generation model."""
     gpu = get_remote_instance()
     llm = SelfHostedHuggingFaceLLM(
         model_id="gpt2",
@@ -29,8 +29,8 @@ def test_self_hosted_huggingface_pipeline_text_generation() -> None:
     assert isinstance(output, str)
 
 
-def test_selfhosted_huggingface_pipeline_text2text_generation() -> None:
-    """Test valid call to HuggingFace text2text generation model."""
+def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
+    """Test valid call to self-hosted HuggingFace text2text generation model."""
     gpu = get_remote_instance()
     llm = SelfHostedHuggingFaceLLM(
         model_id="google/flan-t5-small",
@@ -57,7 +57,7 @@ def inference_fn(pipeline: Any, prompt: str, stop: Optional[List[str]] = None) -
 
 
 def test_init_with_local_pipeline() -> None:
-    """Test initialization with a HF pipeline."""
+    """Test initialization with a self-hosted HF pipeline."""
     gpu = get_remote_instance()
     pipeline = load_pipeline()
     llm = SelfHostedPipeline.from_pipeline(
@@ -71,7 +71,7 @@ def test_init_with_local_pipeline() -> None:
 
 
 def test_init_with_pipeline_path() -> None:
-    """Test initialization with a HF pipeline."""
+    """Test initialization with a self-hosted HF pipeline."""
     gpu = get_remote_instance()
     pipeline = load_pipeline()
     import runhouse as rh
@@ -90,7 +90,7 @@ def test_init_with_pipeline_path() -> None:
 
 
 def test_init_with_pipeline_fn() -> None:
-    """Test initialization with a HF pipeline."""
+    """Test initialization with a self-hosted HF pipeline."""
     gpu = get_remote_instance()
     llm = SelfHostedPipeline(
         model_load_fn=load_pipeline,

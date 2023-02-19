@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace embedding models to perform inference on a self-hosted remote hardware."""
+"""General-purpose tool for running custom embedding models on self-hosted remote hardware."""
 from typing import Any, Callable, List
 
 from pydantic import BaseModel, Extra

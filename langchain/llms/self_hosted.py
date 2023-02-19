@@ -1,4 +1,4 @@
-"""Wrapper around HuggingFace Pipeline APIs."""
+"""General-purpose tool for performing model inference on self-hosted remote hardware."""
 import importlib.util
 import logging
 import pickle
