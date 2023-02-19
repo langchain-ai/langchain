@@ -6,7 +6,7 @@ from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain.prompts.prompt import BasePromptTemplate
 
 
 class ConstitutionalChain(Chain):
@@ -15,7 +15,8 @@ class ConstitutionalChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain import ConstitutionalChain, OpenAI, LLMChain
+            from langchain.llms import OpenAI
+            from langchian.chains import LLMChain, ConstitutionalChain
 
             qa_prompt = PromptTemplate(
                 template="Q: {question} A:",
@@ -23,7 +24,7 @@ class ConstitutionalChain(Chain):
             )
             qa_chain = LLMChain(llm=OpenAI(), prompt=qa_prompt)
 
-            constitutional_chain = ConstitutionalChain(
+            constitutional_chain = ConstitutionalChain.from_llm(
                 chain=qa_chain,
                 constitutional_principles=[
                     ConstitutionalPrinciple(
@@ -40,15 +41,14 @@ class ConstitutionalChain(Chain):
     constitutional_principles: List[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
-    llm: BaseLLM
 
     @classmethod
     def from_llm(
         cls,
         llm: BaseLLM,
         chain: LLMChain,
-        critique_prompt: FewShotPromptTemplate = CRITIQUE_PROMPT,
-        revision_prompt: FewShotPromptTemplate = REVISION_PROMPT,
+        critique_prompt: BasePromptTemplate = CRITIQUE_PROMPT,
+        revision_prompt: BasePromptTemplate = REVISION_PROMPT,
         **kwargs: Any,
     ) -> "ConstitutionalChain":
         """Create a chain from an LLM."""
@@ -58,7 +58,6 @@ class ConstitutionalChain(Chain):
             chain=chain,
             critique_chain=critique_chain,
             revision_chain=revision_chain,
-            llm=llm,
             **kwargs,
         )
 
@@ -83,13 +82,19 @@ class ConstitutionalChain(Chain):
         )
 
         for constitutional_principle in self.constitutional_principles:
+            # Do critique
+
+            raw_critique = self.critique_chain.run(
+                input_prompt=input_prompt,
+                output_from_model=response,
+                critique_request=constitutional_principle.critique_request,
+            )
             critique = self._parse_critique(
-                self.critique_chain.run(
-                    input_prompt=input_prompt,
-                    output_from_model=response,
-                    critique_request=constitutional_principle.critique_request,
-                )
+                output_string=raw_critique,
             ).strip()
+
+            # Do revision
+
             revision = self.revision_chain.run(
                 input_prompt=input_prompt,
                 output_from_model=response,
