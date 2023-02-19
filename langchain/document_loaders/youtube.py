@@ -21,7 +21,7 @@ class YoutubeLoader(BaseLoader):
         video_id = youtube_url.split("youtube.com/watch?v=")[-1]
         return cls(video_id, **kwargs)
 
-    def load(self,  add_video_infor: bool=False) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load documents."""
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
