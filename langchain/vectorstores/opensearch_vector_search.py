@@ -48,12 +48,52 @@ def _get_opensearch_client(opensearch_url: str) -> Any:
     return client
 
 
+def _validate_embeddings_and_bulk_size(embeddings_length: int, bulk_size: int) -> None:
+    """Validate Embeddings Length and Bulk Size."""
+    if embeddings_length == 0:
+        raise RuntimeError("Embeddings size is zero")
+    if bulk_size < embeddings_length:
+        raise RuntimeError(
+            f"The embeddings count, {embeddings_length} is more than the "
+            f"[bulk_size], {bulk_size}. Increase the value of [bulk_size]."
+        )
+
+
+def _bulk_ingest_embeddings(
+    client: Any,
+    index_name: str,
+    embeddings: List[List[float]],
+    texts: Iterable[str],
+    metadatas: Optional[List[dict]] = None,
+) -> List[str]:
+    """Bulk Ingest Embeddings into given index."""
+    bulk = _import_bulk()
+    requests = []
+    ids = []
+    for i, text in enumerate(texts):
+        metadata = metadatas[i] if metadatas else {}
+        _id = str(uuid.uuid4())
+        request = {
+            "_op_type": "index",
+            "_index": index_name,
+            "vector_field": embeddings[i],
+            "text": text,
+            "metadata": metadata,
+            "_id": _id,
+        }
+        requests.append(request)
+        ids.append(_id)
+    bulk(client, requests)
+    client.indices.refresh(index=index_name)
+    return ids
+
+
 def _default_scripting_text_mapping(dim: int) -> Dict:
     """For Painless Scripting or Script Scoring,the default mapping to create index."""
     return {
         "mappings": {
             "properties": {
-                "vector": {"type": "knn_vector", "dimension": dim},
+                "vector_field": {"type": "knn_vector", "dimension": dim},
             }
         }
     }
@@ -72,7 +112,7 @@ def _default_text_mapping(
         "settings": {"index": {"knn": True, "knn.algo_param.ef_search": ef_search}},
         "mappings": {
             "properties": {
-                "vector": {
+                "vector_field": {
                     "type": "knn_vector",
                     "dimension": dim,
                     "method": {
@@ -88,12 +128,12 @@ def _default_text_mapping(
 
 
 def _default_approximate_search_query(
-    query_vector: List[float], size: int = 10000, k: int = 4
+    query_vector: List[float], size: int = 4, k: int = 4
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
         "size": size,
-        "query": {"knn": {"vector": {"vector": query_vector, "k": k}}},
+        "query": {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
     }
 
 
@@ -111,7 +151,7 @@ def _default_script_query(
                     "source": "knn_score",
                     "lang": "knn",
                     "params": {
-                        "field": "vector",
+                        "field": "vector_field",
                         "query_value": query_vector,
                         "space_type": space_type,
                     },
@@ -124,7 +164,7 @@ def _default_script_query(
 def __get_painless_scripting_source(space_type: str, query_vector: List[float]) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + " + space_type + "(" + str(query_vector) + ", doc['vector']))"
+        "(1.0 + " + space_type + "(" + str(query_vector) + ", doc['vector_field']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
@@ -146,7 +186,7 @@ def _default_painless_scripting_query(
                 "script": {
                     "source": source,
                     "params": {
-                        "field": "vector",
+                        "field": "vector_field",
                         "query_value": query_vector,
                     },
                 },
@@ -189,37 +229,25 @@ class OpenSearchVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        refresh_index: bool = True,
+        bulk_size: int = 500,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            bulk_size: Bulk API request count; Default: 500
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        bulk = _import_bulk()
-        requests = []
-        ids = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            _id = str(uuid.uuid4())
-            request = {
-                "_op_type": "index",
-                "_index": self.index_name,
-                "vector": self.embedding_function.embed_documents(list(text))[0],
-                "text": text,
-                "metadata": metadata,
-                "_id": _id,
-            }
-            ids.append(_id)
-            requests.append(request)
-        bulk(self.client, requests)
-        if refresh_index:
-            self.client.indices.refresh(index=self.index_name)
-        return ids
+        embeddings = [
+            self.embedding_function.embed_documents(list(text))[0] for text in texts
+        ]
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
+        return _bulk_ingest_embeddings(
+            self.client, self.index_name, embeddings, texts, metadatas
+        )
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -238,7 +266,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         Optional Args for Approximate Search:
             search_type: "approximate_search"; default: "approximate_search"
-            size: number of results the query actually returns; default: 10000
+            size: number of results the query actually returns; default: 4
 
         Optional Args for Script Scoring Search:
             search_type: "script_scoring"; default: "approximate_search"
@@ -259,7 +287,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         if search_type == "approximate_search":
-            size = _get_kwargs_value(kwargs, "size", 10000)
+            size = _get_kwargs_value(kwargs, "size", 4)
             search_query = _default_approximate_search_query(embedding, size, k)
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
@@ -287,6 +315,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        bulk_size: int = 500,
         **kwargs: Any,
     ) -> OpenSearchVectorSearch:
         """Construct OpenSearchVectorSearch wrapper from raw documents.
@@ -329,12 +358,11 @@ class OpenSearchVectorSearch(VectorStore):
         opensearch_url = get_from_dict_or_env(
             kwargs, "opensearch_url", "OPENSEARCH_URL"
         )
-        bulk = _import_bulk()
         client = _get_opensearch_client(opensearch_url)
-        index_name = uuid.uuid4().hex
         embeddings = embedding.embed_documents(texts)
+        _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
-
+        index_name = uuid.uuid4().hex
         is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")
@@ -350,17 +378,5 @@ class OpenSearchVectorSearch(VectorStore):
             mapping = _default_scripting_text_mapping(dim)
 
         client.indices.create(index=index_name, body=mapping)
-        requests = []
-        for i, text in enumerate(texts):
-            metadata = metadatas[i] if metadatas else {}
-            request = {
-                "_op_type": "index",
-                "_index": index_name,
-                "vector": embeddings[i],
-                "text": text,
-                "metadata": metadata,
-            }
-            requests.append(request)
-        bulk(client, requests)
-        client.indices.refresh(index=index_name)
+        _bulk_ingest_embeddings(client, index_name, embeddings, texts, metadatas)
         return cls(opensearch_url, index_name, embedding)

@@ -43,7 +43,7 @@ def test_add_text() -> None:
     docsearch = OpenSearchVectorSearch.from_texts(
         texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
     )
-    docids = OpenSearchVectorSearch.add_texts(docsearch, text_input, metadatas, True)
+    docids = OpenSearchVectorSearch.add_texts(docsearch, text_input, metadatas)
     assert len(docids) == len(text_input)
 
 
@@ -72,7 +72,7 @@ def test_add_text_script_scoring() -> None:
         opensearch_url=DEFAULT_OPENSEARCH_URL,
         is_appx_search=False,
     )
-    OpenSearchVectorSearch.add_texts(docsearch, texts, metadatas, True)
+    OpenSearchVectorSearch.add_texts(docsearch, texts, metadatas)
     output = docsearch.similarity_search(
         "add", k=1, search_type=SCRIPT_SCORING_SEARCH, space_type="innerproduct"
     )
@@ -104,7 +104,7 @@ def test_add_text_painless_scripting() -> None:
         opensearch_url=DEFAULT_OPENSEARCH_URL,
         is_appx_search=False,
     )
-    OpenSearchVectorSearch.add_texts(docsearch, texts, metadatas, True)
+    OpenSearchVectorSearch.add_texts(docsearch, texts, metadatas)
     output = docsearch.similarity_search(
         "add", k=1, search_type=PAINLESS_SCRIPTING_SEARCH, space_type="cosineSimilarity"
     )
@@ -118,3 +118,11 @@ def test_opensearch_invalid_search_type() -> None:
     )
     with pytest.raises(ValueError):
         docsearch.similarity_search("foo", k=1, search_type="invalid_search_type")
+
+
+def test_opensearch_embedding_size_zero() -> None:
+    """Test to validate indexing when embedding size is zero."""
+    with pytest.raises(RuntimeError):
+        OpenSearchVectorSearch.from_texts(
+            [], FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
+        )
