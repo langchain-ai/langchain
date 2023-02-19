@@ -1,45 +1,32 @@
-import os
-os.environ["LANGCHAIN_HANDLER"] = "langchain"
-from langchain.tools.base import BaseTool, BaseToolkit
+import string
+from typing import Any, List, Optional, Sequence
+
 import sqlalchemy
-from sqlalchemy import create_engine
-from pydantic import BaseModel, BaseSettings, validator, root_validator
-from sqlalchemy import text
-from typing import Any, List
+from pydantic import BaseModel, BaseSettings, Field, root_validator, validator
+from sqlalchemy import create_engine, text
+
+from langchain import PromptTemplate
+from langchain.agents import ZeroShotAgent
+from langchain.agents.mrkl.base import create_zero_shot_prompt
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.agents.sqldb.prompt import PREFIX, SUFFIX
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms import OpenAI
-from langchain import PromptTemplate
-
-
-class SQLDBSettings(BaseSettings):
-    """Settings for SQLDBTool."""
-    SQLALCHEMY_DATABASE_URI: str = "postgresql+pg8000://postgres:postgres@localhost:5432/postgres"
+from langchain.llms.base import BaseLLM
+from langchain.sql_database import SQLDatabase
+from langchain.tools.base import BaseTool, BaseToolkit
 
 
 class BaseSQLDBTool(BaseModel):
     """Implement a tool for interacting with a SQL database."""
 
-    dialect: str = "postgresql"
-    settings: SQLDBSettings = SQLDBSettings()
-    engine: Any
-    metadata: Any
+    db: SQLDatabase = Field(exclude=True)
 
     class Config:
+        """Configuration for this pydantic object."""
+
         arbitrary_types_allowed = True
-
-    @validator("dialect")
-    def validate_dialect_sqlite_postgresql_mysql(cls, v: str) -> str:
-        if v not in ["sqlite", "postgresql", "mysql"]:
-            raise ValueError("dialect must be one of sqlite, postgresql, mysql")
-        return v
-
-    @root_validator
-    def validate_engine_metadata(cls, values: dict) -> dict:
-        """Create the engine and metadata."""
-        values["engine"] = create_engine(values["settings"].SQLALCHEMY_DATABASE_URI)
-        values["metadata"] = sqlalchemy.MetaData()
-        values["metadata"].reflect(values["engine"])
-        return values
 
 
 class QuerySqlDbTool(BaseSQLDBTool, BaseTool):
@@ -48,22 +35,12 @@ class QuerySqlDbTool(BaseSQLDBTool, BaseTool):
     name = "query_sql_db"
     description = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
-    If the query is not correct, an error message will be returned. If an error is returned, rewrite the query and try again!
+    If the query is not correct, an error message will be returned. If an error is returned, rewrite the query, check the query, and try again.
     """
-    limit: int = 50
 
     def _run(self, query: str) -> str:
         """Execute the query, return the results or an error message."""
-        result = ""
-        try:
-            with self.engine.connect() as conn:
-                cursor = conn.execute(text(query))
-                for r in cursor:
-                    result += str(r) + "\n"
-                return result
-        except Exception as e:
-            """Format the error message."""
-            return f"Error: {e}"
+        return self.db.run_no_throw(query)
 
     async def _arun(self, query: str) -> str:
         raise NotImplementedError("QuerySqlDbTool does not support async")
@@ -74,14 +51,14 @@ class SchemaSqlDbTool(BaseSQLDBTool, BaseTool):
 
     name = "schema_sql_db"
     description = """
-    Input to this tool is a table name, output is the schema for that table. Be SURE that the table actually exists by calling list_tables_sql_db first!
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables. Be SURE that the tables actually exist by calling list_tables_sql_db first!
+    
+    Example Input: "table1, table2, table3"
     """
 
-    def _run(self, table_name: str) -> str:
-        """Get the schema for a specific table."""
-        if table_name not in self.metadata.tables:
-            return f"Error: {table_name} does not exist in the database. Try again."
-        return self.metadata.tables[table_name].__repr__()
+    def _run(self, table_names: str) -> str:
+        """Get the schema for tables in a comma-separated list."""
+        return self.db.get_table_info(table_names.split(", "))
 
     async def _arun(self, table_name: str) -> str:
         raise NotImplementedError("SchemaSqlDbTool does not support async")
@@ -91,11 +68,11 @@ class ListTablesSqlDbTool(BaseSQLDBTool, BaseTool):
     """Tool for getting metadata about a SQL database."""
 
     name = "list_tables_sql_db"
-    description = "Input is an empty string, output is a list of tables in the database."
+    description = "Input is an empty string, output is a comma separated list of tables in the database."
 
-    def _run(self, tool_input: str ="") -> str:
+    def _run(self, tool_input: str = "") -> str:
         """Get the schema for a specific table."""
-        return "\n".join(self.metadata.tables.keys())
+        return ", ".join(self.db.get_table_names())
 
     async def _arun(self, tool_input: str = "") -> str:
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
@@ -127,54 +104,115 @@ Rewrite the query above if there are any mistakes. If it looks good as it is, ju
 
     def _run(self, query: str) -> str:
         """Use the LLM to check the query."""
-        return self.llm_chain.predict(query=query, dialect=self.dialect)
+        return self.llm_chain.predict(query=query, dialect=self.db.dialect)
 
     async def _arun(self, query: str) -> str:
-        return await self.llm_chain.apredict(query=query, dialect=self.dialect)
+        return await self.llm_chain.apredict(query=query, dialect=self.db.dialect)
 
 
 class SQLDBToolkit(BaseToolkit):
     """Toolkit for interacting with SQL databases."""
 
+    db: SQLDatabase = Field(exclude=True)
+
+    @property
+    def dialect(self) -> str:
+        """Return string representation of dialect to use."""
+        return self.db.dialect
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [QuerySqlDbTool(), SchemaSqlDbTool(), ListTablesSqlDbTool(), QueryCheckerTool()]
+        return [
+            QuerySqlDbTool(db=self.db),
+            SchemaSqlDbTool(db=self.db),
+            ListTablesSqlDbTool(db=self.db),
+            QueryCheckerTool(db=self.db),
+        ]
+
+
+class SqlDatabaseAgent(ZeroShotAgent):
+    @classmethod
+    def create_prompt(
+        cls,
+        tools: Sequence[BaseTool],
+        dialect: str = "sqlite",
+        top_k: int = 10,
+        prefix: str = PREFIX,
+        suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
+        input_variables: Optional[List[str]] = None,
+    ) -> PromptTemplate:
+        """Create prompt in the style of the zero shot agent.
+
+        Args:
+            tools: List of tools the agent will have access to, used to format the
+                prompt.
+            dialect: The dialect of the SQL database.
+            top_k: The number of results to return.
+            prefix: String to put before the list of tools.
+            suffix: String to put after the list of tools.
+            format_instructions: Instructions to put before the list of tools.
+            input_variables: List of input variables the final prompt will expect.
+
+        Returns:
+            A PromptTemplate with the template assembled from the pieces here.
+        """
+        prefix = string.Formatter().format(prefix, dialect=dialect, top_k=top_k)
+        return create_zero_shot_prompt(
+            format_instructions, input_variables, prefix, suffix, tools
+        )
+
+    @classmethod
+    def from_llm_and_toolkit(
+        cls,
+        llm: BaseLLM,
+        toolkit: SQLDBToolkit,
+        callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = PREFIX,
+        suffix: str = SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
+        input_variables: Optional[List[str]] = None,
+        top_k: int = 10,
+        **kwargs: Any,
+    ):
+        """Create an agent from an LLM, database, and tools."""
+        tools = toolkit.get_tools()
+        prompt = cls.create_prompt(
+            tools,
+            dialect=db.dialect,
+            top_k=top_k,
+            prefix=prefix,
+            suffix=suffix,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
 
 
 if __name__ == "__main__":
-    from langchain.agents import ZeroShotAgent, AgentExecutor
+    from langchain.agents import AgentExecutor, ZeroShotAgent
 
-    prefix = """
-You are an agent designed to interact with a SQL database.
-Your goal is to return a final answer by interacting with the SQL database.
-You have access to a toolkit that contains tools for interacting with the database.
-You can use the tools to query the database, get the schema for a table, and check if a query is correct, and get the tables in the database.
-Only use the below tools. Only use the information returned by the below tools to construct your final answer.
-You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
-    
-DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
-
-If the question does not seem related to the database, just return "I don't know" as the answer.
-    """
-    suffix = """
-Begin!"
-
-Question: {input}
-Thought: I should look at the tables in the database to see what I can query.
-{agent_scratchpad}"""
-
-    tools = SQLDBToolkit().get_tools()
-    os.environ["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://postgres:postgres@localhost:5432/postgres"
-
-    prompt = ZeroShotAgent.create_prompt(
-        tools,
-        prefix=prefix,
-        suffix=suffix,
-        input_variables=["input", "agent_scratchpad"]
+    db = SQLDatabase.from_uri(
+        "postgresql+pg8000://postgres:postgres@localhost:5432/postgres"
     )
-    tool_names = [tool.name for tool in tools]
-    llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names)
-    agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
-    agent_executor.run("How many tools runs did user 1 make today?")
+    toolkit = SQLDBToolkit(db=db)
 
+    agent = SqlDatabaseAgent.from_llm_and_toolkit(
+        llm=OpenAI(temperature=0),
+        toolkit=toolkit,
+    )
+    agent_executor = AgentExecutor.from_agent_and_tools(
+        agent=agent, tools=toolkit.get_tools(), verbose=True
+    )
+    agent_executor.run("How many tools runs and llm runs did user 1 make today?")

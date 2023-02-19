@@ -49,6 +49,19 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
+def create_zero_shot_prompt(
+    format_instructions, input_variables, prefix, suffix, tools
+):
+    """Create prompt in the style of the zero shot agent."""
+    tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+    tool_names = ", ".join([tool.name for tool in tools])
+    format_instructions = format_instructions.format(tool_names=tool_names)
+    template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+    if input_variables is None:
+        input_variables = ["input", "agent_scratchpad"]
+    return PromptTemplate(template=template, input_variables=input_variables)
+
+
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
@@ -88,13 +101,9 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
-        tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
-        if input_variables is None:
-            input_variables = ["input", "agent_scratchpad"]
-        return PromptTemplate(template=template, input_variables=input_variables)
+        return create_zero_shot_prompt(
+            format_instructions, input_variables, prefix, suffix, tools
+        )
 
     @classmethod
     def from_llm_and_tools(

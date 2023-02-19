@@ -5,7 +5,7 @@ from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
 
@@ -166,3 +166,17 @@ class SQLDatabase:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return str(result)
         return ""
+
+    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+
+        If the statement throws an error, the error message is returned.
+        """
+        try:
+            return self.run(command, fetch)
+        except SQLAlchemyError as e:
+            """Format the error message"""
+            return f"Error: {e}"
