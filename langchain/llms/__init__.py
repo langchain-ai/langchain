@@ -14,6 +14,8 @@ from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI
 from langchain.llms.petals import Petals
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI
+from langchain.llms.self_hosted import SelfHostedPipeline
+from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 
 __all__ = [
     "Anthropic",
@@ -28,6 +30,8 @@ __all__ = [
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
+    "SelfHostedPipeline",
+    "SelfHostedHuggingFaceLLM",
     "PromptLayerOpenAI",
 ]
 
@@ -44,4 +48,6 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "petals": Petals,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
+    "self_hosted": SelfHostedPipeline,
+    "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
 }
