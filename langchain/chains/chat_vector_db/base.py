@@ -32,6 +32,7 @@ class ChatVectorDBChain(Chain, BaseModel):
     question_generator: LLMChain
     output_key: str = "answer"
     return_source_documents: bool = False
+    k: int = 4
     """Return the source documents."""
 
     @property
@@ -88,7 +89,7 @@ class ChatVectorDBChain(Chain, BaseModel):
             )
         else:
             new_question = question
-        docs = self.vectorstore.similarity_search(new_question, k=4, **vectordbkwargs)
+        docs = self.vectorstore.similarity_search(new_question, k=self.k, **vectordbkwargs)
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
