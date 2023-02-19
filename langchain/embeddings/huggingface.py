@@ -78,7 +78,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the ``sentence_transformers``
+    and ``InstructorEmbedding`` python package installed.
 
     Example:
         .. code-block:: python

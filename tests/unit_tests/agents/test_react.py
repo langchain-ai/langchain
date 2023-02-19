@@ -58,8 +58,8 @@ def test_predict_until_observation_normal() -> None:
     outputs = ["foo\nAction 1: Search[foo]"]
     fake_llm = FakeListLLM(responses=outputs)
     tools = [
-        Tool("Search", lambda x: x),
-        Tool("Lookup", lambda x: x),
+        Tool(name="Search", func=lambda x: x, description="foo"),
+        Tool(name="Lookup", func=lambda x: x, description="bar"),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")
@@ -72,8 +72,8 @@ def test_predict_until_observation_repeat() -> None:
     outputs = ["foo", " Search[foo]"]
     fake_llm = FakeListLLM(responses=outputs)
     tools = [
-        Tool("Search", lambda x: x),
-        Tool("Lookup", lambda x: x),
+        Tool(name="Search", func=lambda x: x, description="foo"),
+        Tool(name="Lookup", func=lambda x: x, description="bar"),
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")

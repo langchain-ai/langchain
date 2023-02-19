@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.schema import CreateTable
 
 
 class SQLDatabase:
@@ -14,43 +16,41 @@ class SQLDatabase:
         self,
         engine: Engine,
         schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
-        sample_rows_in_table_info: int = 0,
-        # TODO: deprecate.
-        sample_row_in_table_info: bool = False,
+        sample_rows_in_table_info: int = 3,
     ):
         """Create engine from database URI."""
-        if sample_row_in_table_info and sample_rows_in_table_info > 0:
-            raise ValueError(
-                "Only one of `sample_row_in_table_info` "
-                "and `sample_rows_in_table_info` should be set"
-            )
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
         self._inspector = inspect(self._engine)
-        self._all_tables = self._inspector.get_table_names(schema=schema)
-        self._include_tables = include_tables or []
+        self._all_tables = set(self._inspector.get_table_names(schema=schema))
+        self._include_tables = set(include_tables) if include_tables else set()
         if self._include_tables:
-            missing_tables = set(self._include_tables).difference(self._all_tables)
+            missing_tables = self._include_tables - self._all_tables
             if missing_tables:
                 raise ValueError(
                     f"include_tables {missing_tables} not found in database"
                 )
-        self._ignore_tables = ignore_tables or []
+        self._ignore_tables = set(ignore_tables) if ignore_tables else set()
         if self._ignore_tables:
-            missing_tables = set(self._ignore_tables).difference(self._all_tables)
+            missing_tables = self._ignore_tables - self._all_tables
             if missing_tables:
                 raise ValueError(
                     f"ignore_tables {missing_tables} not found in database"
                 )
+
+        if not isinstance(sample_rows_in_table_info, int):
+            raise TypeError("sample_rows_in_table_info must be an integer")
+
         self._sample_rows_in_table_info = sample_rows_in_table_info
-        # TODO: deprecate
-        if sample_row_in_table_info:
-            self._sample_rows_in_table_info = 1
+
+        self._metadata = metadata or MetaData()
+        self._metadata.reflect(bind=self._engine)
 
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
@@ -66,7 +66,7 @@ class SQLDatabase:
         """Get names of tables available."""
         if self._include_tables:
             return self._include_tables
-        return set(self._all_tables) - set(self._ignore_tables)
+        return self._all_tables - self._ignore_tables
 
     @property
     def table_info(self) -> str:
@@ -76,9 +76,12 @@ class SQLDatabase:
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get information about specified tables.
 
+        Follows best practices as specified in: Rajkumar et al, 2022
+        (https://arxiv.org/abs/2204.00498)
+
         If `sample_rows_in_table_info`, the specified number of sample rows will be
         appended to each table description. This can increase performance as
-        demonstrated by Rajkumar et al, 2022 (https://arxiv.org/abs/2204.00498).
+        demonstrated in the paper.
         """
         all_table_names = self.get_table_names()
         if table_names is not None:
@@ -87,41 +90,64 @@ class SQLDatabase:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
 
-        template = "Table '{table_name}' has columns: {columns}."
+        meta_tables = [
+            tbl
+            for tbl in self._metadata.sorted_tables
+            if tbl.name in set(all_table_names)
+        ]
 
         tables = []
-        for table_name in all_table_names:
-
-            columns = []
-            for column in self._inspector.get_columns(table_name, schema=self._schema):
-                columns.append(f"{column['name']} ({str(column['type'])})")
-            column_str = ", ".join(columns)
-            table_str = template.format(table_name=table_name, columns=column_str)
+        for table in meta_tables:
+            # add create table command
+            create_table = str(CreateTable(table).compile(self._engine))
 
             if self._sample_rows_in_table_info:
-                row_template = (
-                    " Here is an example of {n_rows} rows from this table "
-                    "(long strings are truncated):\n"
-                    "{sample_rows}"
-                )
-                sample_rows = self.run(
-                    f"SELECT * FROM '{table_name}' LIMIT "
+                # build the select command
+                command = select(table).limit(self._sample_rows_in_table_info)
+
+                # save the command in string format
+                select_star = (
+                    f"SELECT * FROM '{table.name}' LIMIT "
                     f"{self._sample_rows_in_table_info}"
                 )
-                sample_rows = eval(sample_rows)
-                if len(sample_rows) > 0:
-                    n_rows = len(sample_rows)
-                    sample_rows = "\n".join(
-                        [" ".join([str(i)[:100] for i in row]) for row in sample_rows]
-                    )
-                    table_str += row_template.format(
-                        n_rows=n_rows, sample_rows=sample_rows
-                    )
 
-            tables.append(table_str)
-        return "\n".join(tables)
+                # save the columns in string format
+                columns_str = " ".join([col.name for col in table.columns])
 
-    def run(self, command: str) -> str:
+                try:
+                    # get the sample rows
+                    with self._engine.connect() as connection:
+                        sample_rows = connection.execute(command)
+                        # shorten values in the sample rows
+                        sample_rows = list(
+                            map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
+                        )
+
+                    # save the sample rows in string format
+                    sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
+
+                # in some dialects when there are no rows in the table a
+                # 'ProgrammingError' is returned
+                except ProgrammingError:
+                    sample_rows_str = ""
+
+                # build final info for table
+                tables.append(
+                    create_table
+                    + select_star
+                    + ";\n"
+                    + columns_str
+                    + "\n"
+                    + sample_rows_str
+                )
+
+            else:
+                tables.append(create_table)
+
+        final_str = "\n\n".join(tables)
+        return final_str
+
+    def run(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -132,6 +158,11 @@ class SQLDatabase:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
             cursor = connection.exec_driver_sql(command)
             if cursor.returns_rows:
-                result = cursor.fetchall()
+                if fetch == "all":
+                    result = cursor.fetchall()
+                elif fetch == "one":
+                    result = cursor.fetchone()[0]
+                else:
+                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return str(result)
         return ""

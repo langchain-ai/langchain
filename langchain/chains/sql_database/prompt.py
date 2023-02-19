@@ -15,7 +15,7 @@ SQLQuery: "SQL Query to run"
 SQLResult: "Result of the SQLQuery"
 Answer: "Final answer here"
 
-Only use the following tables:
+Only use the tables listed below.
 
 {table_info}
 
