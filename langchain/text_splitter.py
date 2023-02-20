@@ -340,3 +340,22 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
             "",
         ]
         super().__init__(separators=separators, **kwargs)
+
+
+class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Python syntax."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a MarkdownTextSplitter."""
+        separators = [
+            # First, try to split along class definitions
+            "\nclass ",
+            "\ndef ",
+            "\n\tdef ",
+            # Now split by the normal type of lines
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
