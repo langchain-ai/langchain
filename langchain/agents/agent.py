@@ -407,6 +407,7 @@ class AgentExecutor(Chain, BaseModel):
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
+        self.callback_manager.on_agent_action(output, verbose=self.verbose, color="green")
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
@@ -415,7 +416,7 @@ class AgentExecutor(Chain, BaseModel):
             llm_prefix = "" if return_direct else self.agent.llm_prefix
             # We then call the tool on the tool input to get an observation
             observation = tool.run(
-                output,
+                output.tool_input,
                 verbose=self.verbose,
                 color=color,
                 llm_prefix=llm_prefix,
@@ -423,7 +424,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = InvalidTool().run(
-                output,
+                output.tool_input,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",
@@ -451,6 +452,7 @@ class AgentExecutor(Chain, BaseModel):
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
+        self.callback_manager.on_agent_action(output, verbose=self.verbose, color="green")
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
@@ -459,7 +461,7 @@ class AgentExecutor(Chain, BaseModel):
             llm_prefix = "" if return_direct else self.agent.llm_prefix
             # We then call the tool on the tool input to get an observation
             observation = await tool.arun(
-                output,
+                output.tool_input,
                 verbose=self.verbose,
                 color=color,
                 llm_prefix=llm_prefix,
@@ -467,7 +469,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = await InvalidTool().arun(
-                output,
+                output.tool_input,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",
