@@ -1,7 +1,7 @@
 """Chain for question-answering against a vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -120,10 +120,17 @@ class VectorDBQA(Chain, BaseModel):
 
     @classmethod
     def from_chain_type(
-        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+        cls,
+        llm: BaseLLM,
+        chain_type: str = "stuff",
+        chain_type_kwargs: Optional[dict] = None,
+        **kwargs: Any,
     ) -> VectorDBQA:
         """Load chain from chain type."""
-        combine_documents_chain = load_qa_chain(llm, chain_type=chain_type)
+        _chain_type_kwargs = chain_type_kwargs or {}
+        combine_documents_chain = load_qa_chain(
+            llm, chain_type=chain_type, **_chain_type_kwargs
+        )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
