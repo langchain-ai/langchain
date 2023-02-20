@@ -44,6 +44,10 @@ def test_faiss_vector_sim() -> None:
     output = docsearch.similarity_search_by_vector(query_vec, k=1)
     assert output == [Document(page_content="foo")]
 
+    # make sure we can have k > docstore size
+    output = docsearch.max_marginal_relevance_search_by_vector(query_vec, k=10)
+    assert len(output) == len(texts)
+
 
 def test_faiss_with_metadatas() -> None:
     """Test end to end construction and search."""
