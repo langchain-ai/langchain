@@ -17,3 +17,5 @@ They are split into two categories:
 
    ./generic_how_to.rst
    ./integrations.rst
+   ./async_llm.ipynb
+   ./streaming_llm.ipynb

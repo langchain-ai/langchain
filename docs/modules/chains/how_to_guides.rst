@@ -19,6 +19,7 @@ They are broken up into four categories:
    ./generic_how_to.rst
    ./combine_docs_how_to.rst
    ./utility_how_to.rst
+   ./async_chain.ipynb
 
 In addition to different types of chains, we also have the following how-to guides for working with chains in general:
 
