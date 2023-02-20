@@ -38,7 +38,7 @@ In the below guides, we cover different types of vectorstores and how to use the
 
 `FAISS <./vectorstore_examples/faiss.html>`_: A walkthrough of how to use the FAISS vectorstore wrapper.
 
-`Elasic Search <./vectorstore_examples/elasticsearch.html>`_: A walkthrough of how to use the ElasticSearch wrapper.
+`Elastic Search <./vectorstore_examples/elasticsearch.html>`_: A walkthrough of how to use the ElasticSearch wrapper.
 
 `Milvus <./vectorstore_examples/milvus.html>`_: A walkthrough of how to use the Milvus vectorstore wrapper.
 
@@ -46,7 +46,7 @@ In the below guides, we cover different types of vectorstores and how to use the
 
 `Qdrant <./vectorstore_examples/qdrant.html>`_: A walkthrough of how to use the Qdrant vectorstore wrapper.
 
-`Weaviate <./vectorstore_examples/Weaviate.html>`_: A walkthrough of how to use the Weaviate vectorstore wrapper.
+`Weaviate <./vectorstore_examples/weaviate.html>`_: A walkthrough of how to use the Weaviate vectorstore wrapper.
 
 
 .. toctree::
