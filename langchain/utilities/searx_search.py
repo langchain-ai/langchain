@@ -304,7 +304,6 @@ class SearxSearchWrapper(BaseModel):
 
 
         """
-        metadata_results = []
         _params = {
             "q": query,
         }
@@ -314,14 +313,14 @@ class SearxSearchWrapper(BaseModel):
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
-        for result in results:
-            metadata_result = {
+
+        return [
+            {
                 "snippet": result.get("content", ""),
                 "title": result["title"],
                 "link": result["url"],
                 "engines": result["engines"],
                 "category": result["category"],
             }
-            metadata_results.append(metadata_result)
-
-        return metadata_results
+            for result in results
+        ]
