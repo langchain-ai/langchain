@@ -47,6 +47,7 @@ extensions = [
     "myst_nb",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
+    "sphinx_rtd_dark_mode"
 ]
 source_suffix = [".ipynb", ".html", ".md", ".rst"]
 
@@ -103,3 +104,6 @@ html_css_files = [
 ]
 nb_execution_mode = "off"
 myst_enable_extensions = ["colon_fence"]
+
+# user starts in light mode (dark theme extension provided with "sphinx_rtd_dark_mode")
+default_dark_mode = False
