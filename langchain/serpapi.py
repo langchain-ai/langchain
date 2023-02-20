@@ -32,7 +32,7 @@ def _get_default_params() -> dict:
         "google_domain": "google.com",
         "gl": "us",
         "hl": "en",
-        "num": 3,
+        "num": 1,
     }
 
 
