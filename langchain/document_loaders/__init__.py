@@ -12,6 +12,7 @@ from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
+from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -50,6 +51,7 @@ __all__ = [
     "S3FileLoader",
     "TextLoader",
     "HNLoader",
+    "GitbookLoader",
     "S3DirectoryLoader",
     "GCSFileLoader",
     "GCSDirectoryLoader",
