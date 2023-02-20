@@ -2,18 +2,19 @@
 import os
 from typing import List
 
-from unstructured.__version__ import __version__ as __unstructured_version__
-from unstructured.file_utils.filetype import FileType, detect_filetype
-
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
-
-unstructured_version = tuple([int(x) for x in __unstructured_version__.split(".")])
 
 
 class UnstructuredPowerPointLoader(UnstructuredFileLoader):
     """Loader that uses unstructured to load powerpoint files."""
 
     def _get_elements(self) -> List:
+        from unstructured.__version__ import __version__ as __unstructured_version__
+        from unstructured.file_utils.filetype import FileType, detect_filetype
+
+        unstructured_version = tuple(
+            [int(x) for x in __unstructured_version__.split(".")]
+        )
         # NOTE(MthwRobinson) - magic will raise an import error if the libmagic
         # system dependency isn't installed. If it's not installed, we'll just
         # check the file extension
