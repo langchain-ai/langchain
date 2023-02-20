@@ -1,25 +1,27 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
 import json
-from typing import Any, List, Dict, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
+
 class SagemakerEndpoint(LLM, BaseModel):
     """Wrapper around custom Sagemaker Inference Endpoints.
-    To use, you must supply the endpoint name from your deployed 
+
+    To use, you must supply the endpoint name from your deployed
     Sagemaker model & the region where it is deployed.
 
-    To authenticate, the AWS client uses the following methods to 
+    To authenticate, the AWS client uses the following methods to
     automatically load credentials:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
 
-    If a specific credential profile should be used, you must pass 
+    If a specific credential profile should be used, you must pass
     the name of the profile from the ~/.aws/credentials file that is to be used.
 
-    Make sure the credentials / roles used have the required policies to 
+    Make sure the credentials / roles used have the required policies to
     access the Sagemaker endpoint.
     See: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
     """
@@ -44,21 +46,47 @@ class SagemakerEndpoint(LLM, BaseModel):
                 credentials_profile_name=credentials_profile_name
             )
     """
+    client: Any  #: :meta private:
 
     endpoint_name: str = ""
-    """The name of the endpoint from the deployed Sagemaker model. 
+    """The name of the endpoint from the deployed Sagemaker model.
     Must be unique within an AWS Region."""
+
     region_name: str = ""
     """The aws region where the Sagemaker model is deployed, eg. `us-west-2`."""
-    model_kwargs: Optional[dict] = None
-    """Key word arguments to pass to the model."""
+
     credentials_profile_name: Optional[str] = None
-    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which 
+    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
     has either access keys or role information specified.
-    If not specified, the default credential profile or, if on an EC2 instance, 
+    If not specified, the default credential profile or, if on an EC2 instance,
     credentials from IMDS will be used.
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
+
+    content_type: Optional[str] = "application/json"
+    """The MIME type of the input data in the request body to be used in the header
+    for the request to the Sagemaker invoke_endpoint API.
+    Defaults to "application/json"."""
+
+    model_input_transform_fn: Callable[[str, Dict], bytes]
+    """
+    Function which takes the prompt (str) and model_kwargs (dict) and transforms
+    the input to the format which the model can accept as the request Body.
+    Should return bytes or seekable file-like object in the format specified in the
+    content_type request header.
+    """
+
+    """
+    Example:
+        .. code-block:: python
+
+            def model_input_transform_fn(prompt, model_kwargs):
+                parameter_payload = {"inputs": prompt, "parameters": model_kwargs}
+                return json.dumps(parameter_payload).encode("utf-8")
+    """
+
+    model_kwargs: Optional[Dict] = None
+    """Key word arguments to pass to the model."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -72,18 +100,23 @@ class SagemakerEndpoint(LLM, BaseModel):
             import boto3
 
             try:
-                
                 if values["credentials_profile_name"] is not None:
-                    session = boto3.Session(profile_name=values["credentials_profile_name"])
+                    session = boto3.Session(
+                        profile_name=values["credentials_profile_name"]
+                    )
                 else:
                     # use default credentials
                     session = boto3.Session()
-                
+
+                values["client"] = session.client(
+                    "sagemaker-runtime", region_name=values["region_name"]
+                )
+
             except Exception as e:
                 raise ValueError(
-                    "Could not load credentials to authenticate with AWS client, error. "
-                    "Please check that credentials in the specified profile name are valid. "
-                    "https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html"
+                    "Could not load credentials to authenticate with AWS client. "
+                    "Please check that credentials in the specified "
+                    "profile name are valid."
                 ) from e
 
         except ImportError:
@@ -122,29 +155,16 @@ class SagemakerEndpoint(LLM, BaseModel):
 
                 response = se("Tell me a joke.")
         """
-
-        import boto3
-
-        if self.credentials_profile_name is not None:
-            session = boto3.Session(profile_name=self.credentials_profile_name)
-        else:
-            # use default credentials
-            session = boto3.Session()
-
-        sagemaker_runtime = session.client("sagemaker-runtime", region_name=self.region_name)
-
         _model_kwargs = self.model_kwargs or {}
-
-        parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
-
-        input_en = json.dumps(parameter_payload).encode("utf-8")
+        if self.model_input_transform_fn is None:
+            raise NotImplementedError("model_input_transform_fn not implemented")
 
         # send request
         try:
-            response = sagemaker_runtime.invoke_endpoint(
+            response = self.client.invoke_endpoint(
                 EndpointName=self.endpoint_name,
-                Body=input_en,
-                ContentType="application/json",
+                Body=self.model_input_transform_fn(prompt, _model_kwargs),
+                ContentType=self.content_type,
             )
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
