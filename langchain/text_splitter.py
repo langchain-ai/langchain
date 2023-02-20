@@ -313,23 +313,30 @@ class SpacyTextSplitter(TextSplitter):
 
 class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Markdown-formatted headings, code blocks, or horizontal rules."""
-    
-    def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
+
+    def __init__(self, **kwargs: Any):
         """Initialize a MarkdownTextSplitter."""
-        super().__init__(**kwargs)
-        self._separators = separators or [
+        separators = [
             # First, try to split along Markdown headings (starting with level 2)
-            "\n## ", "\n### ", "\n#### ", "\n##### ", "\n###### ",
+            "\n## ",
+            "\n### ",
+            "\n#### ",
+            "\n##### ",
+            "\n###### ",
             # Note the alternative syntax for headings (below) is not handled here
             # Heading level 2
             # ---------------
-
             # End of code block
             "```\n\n",
-
             # Horizontal lines
-            "\n\n***\n\n", "\n\n---\n\n", "\n\n___\n\n",
-            # Note that this splitter doesn't handle horizontal lines defined by *three or more* of ***, ---, or ___, but this is not handled
-
-            "\n\n", "\n", " ", ""
+            "\n\n***\n\n",
+            "\n\n---\n\n",
+            "\n\n___\n\n",
+            # Note that this splitter doesn't handle horizontal lines defined
+            # by *three or more* of ***, ---, or ___, but this is not handled
+            "\n\n",
+            "\n",
+            " ",
+            "",
         ]
+        super().__init__(separators=separators, **kwargs)
