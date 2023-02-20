@@ -1,5 +1,5 @@
 """Web base loader class."""
-from typing import Any, List
+from typing import Any, List, Optional
 
 import requests
 
@@ -14,7 +14,7 @@ class WebBaseLoader(BaseLoader):
         """Initialize with webpage path."""
         self.web_path = web_path
 
-    def scrape(self, custom_web_path: str = None) -> Any:
+    def scrape(self, custom_web_path: Optional[str] = None) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
         from bs4 import BeautifulSoup
         url = custom_web_path if custom_web_path else self.web_path

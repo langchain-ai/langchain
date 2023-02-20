@@ -1,5 +1,5 @@
 """Loader that loads GitBook."""
-from typing import Any, List
+from typing import Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -7,7 +7,7 @@ from langchain.document_loaders.web_base import WebBaseLoader
 class GitbookLoader(WebBaseLoader):
     """Load GitBook data from either a single page or all (relative) paths in the navbar."""
 
-    def load(self, custom_web_path:str = None) -> List[Document]:
+    def load(self, custom_web_path: Optional[str] = None) -> List[Document]:
         """Fetch text from one single GitBook page"""
         soup_info = self.scrape(custom_web_path)
         url = custom_web_path if custom_web_path else self.web_path
@@ -23,10 +23,10 @@ class GitbookLoader(WebBaseLoader):
         for path in relative_paths:
             url = self.web_path + path
             print(f"Fetching text from {url}")
-            documents.append(self.load(url))
+            documents += self.load(url)
         return documents
 
-    def _get_document(self, soup: Any, custom_url: str = None) -> Document:
+    def _get_document(self, soup: Any, custom_url: Optional[str] = None) -> Document:
         """Fetch content from page and return Document"""
         page_content_raw = soup.find("main")
         content = page_content_raw.get_text(separator='\n').strip()
