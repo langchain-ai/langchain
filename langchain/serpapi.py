@@ -32,6 +32,7 @@ def _get_default_params() -> dict:
         "google_domain": "google.com",
         "gl": "us",
         "hl": "en",
+        "num": 3,
     }
 
 
@@ -49,6 +50,10 @@ def process_response(res: dict) -> str:
     ):
         toret = res["answer_box"]["snippet_highlighted_words"][0]
     elif (
+        "answer_box" in res.keys() and "currency_converter" in res["answer_box"].keys()
+    ):
+        toret = res["answer_box"]["result"] + " " + res["answer_box"]["currency"]
+    elif (
         "sports_results" in res.keys()
         and "game_spotlight" in res["sports_results"].keys()
     ):
@@ -59,7 +64,9 @@ def process_response(res: dict) -> str:
     ):
         toret = res["knowledge_graph"]["description"]
     elif "snippet" in res["organic_results"][0].keys():
-        toret = res["organic_results"][0]["snippet"]
+        toret = ""
+        for snippet in res["organic_results"]:
+            toret += snippet["snippet"] + " "
 
     else:
         toret = "No good search result found"
