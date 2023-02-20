@@ -312,7 +312,7 @@ class SpacyTextSplitter(TextSplitter):
 
 
 class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
-    """Attempts to split the text along Markdown-formatted headings, code blocks, or horizontal rules."""
+    """Attempts to split the text along Markdown-formatted headings."""
 
     def __init__(self, **kwargs: Any):
         """Initialize a MarkdownTextSplitter."""
