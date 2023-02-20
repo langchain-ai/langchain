@@ -92,6 +92,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Run when agent ends."""
         pass
 
+    def on_agent_action(self, action: AgentAction, **kwargs) -> Any:
+        """Run on agent action."""
+        pass
+
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
