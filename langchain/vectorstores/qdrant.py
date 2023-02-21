@@ -221,7 +221,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        client: Optional[qdrant_client.QdrantClient] = None,
+        client: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
         **kwargs: Any,
