@@ -104,7 +104,7 @@ class SerpAPIWrapper(BaseModel):
         return self._process_response(self.results(query))
 
     def results(self, query: str) -> dict:
-        """Run query through SerpAPI and return the raw result"""
+        """Run query through SerpAPI and return the raw result."""
         params = self.get_params(query)
         with HiddenPrints():
             search = self.search_engine(params)
@@ -123,7 +123,6 @@ class SerpAPIWrapper(BaseModel):
     @staticmethod
     def _process_response(res: dict) -> str:
         """Process response from SerpAPI."""
-
         if "error" in res.keys():
             raise ValueError(f"Got error from SerpAPI: {res['error']}")
         if "answer_box" in res.keys() and "answer" in res["answer_box"].keys():
