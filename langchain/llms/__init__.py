@@ -8,6 +8,7 @@ from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
+from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.nlpcloud import NLPCloud
@@ -26,6 +27,7 @@ __all__ = [
     "NLPCloud",
     "OpenAI",
     "Petals",
+    "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "HuggingFacePipeline",
     "AI21",
@@ -43,6 +45,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "forefrontai": ForefrontAI,
     "gooseai": GooseAI,
     "huggingface_hub": HuggingFaceHub,
+    "huggingface_endpoint": HuggingFaceEndpoint,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "petals": Petals,
