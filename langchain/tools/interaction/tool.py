@@ -9,8 +9,9 @@ class StdInInquireTool(BaseTool):
 
     name: str = "Inquire"
     description: str = (
-        "useful if you do not have enough information to effectively use other tools."
-        " Input is best as a clarifying question (to disambiguate) or a request for more context."
+        "useful if you do not have enough information to"
+        " effectively use other tools. Input is best as a clarifying"
+        " question (to disambiguate) or a request for more context."
     )
 
     def _run(self, prompt: str) -> str:
