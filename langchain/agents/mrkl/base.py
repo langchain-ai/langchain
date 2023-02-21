@@ -50,8 +50,12 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
 
 
 def create_zero_shot_prompt(
-    format_instructions, input_variables, prefix, suffix, tools
-):
+    tools: Sequence[BaseTool],
+    prefix: str,
+    suffix: str,
+    format_instructions: str,
+    input_variables: Optional[List[str]] = None,
+) -> PromptTemplate:
     """Create prompt in the style of the zero shot agent."""
     tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
     tool_names = ", ".join([tool.name for tool in tools])
@@ -102,7 +106,7 @@ class ZeroShotAgent(Agent):
             A PromptTemplate with the template assembled from the pieces here.
         """
         return create_zero_shot_prompt(
-            format_instructions, input_variables, prefix, suffix, tools
+            tools, prefix, suffix, format_instructions, input_variables
         )
 
     @classmethod

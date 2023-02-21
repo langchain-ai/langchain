@@ -1,3 +1,4 @@
+# flake8: noqa
 QUERY_CHECKER = """
 {query}
 Double check the {dialect} query above for common mistakes, including:

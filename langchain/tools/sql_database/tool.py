@@ -1,5 +1,6 @@
+# flake8: noqa
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
@@ -14,10 +15,13 @@ class BaseSQLDatabaseTool(BaseModel):
 
     db: SQLDatabase = Field(exclude=True)
 
-    class Config:
+    # Override BaseTool.Config to appease mypy
+    # See https://github.com/pydantic/pydantic/issues/4173
+    class Config(BaseTool.Config):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+        extra = Extra.forbid
 
 
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
@@ -26,7 +30,8 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     name = "query_sql_db"
     description = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
-    If the query is not correct, an error message will be returned. If an error is returned, rewrite the query, check the query, and try again.
+    If the query is not correct, an error message will be returned. 
+    If an error is returned, rewrite the query, check the query, and try again.
     """
 
     def _run(self, query: str) -> str:
@@ -42,7 +47,8 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name = "schema_sql_db"
     description = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables. Be sure that the tables actually exist by calling list_tables_sql_db first!
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
+    Be sure that the tables actually exist by calling list_tables_sql_db first!
     
     Example Input: "table1, table2, table3"
     """
@@ -83,10 +89,13 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
         )
     )
     name = "query_checker_sql_db"
-    description = "Use this tool to double check if your query is correct before executing it. Always use this tool before executing a query with query_sql_db!"
+    description = """
+    Use this tool to double check if your query is correct before executing it.
+    Always use this tool before executing a query with query_sql_db!
+    """
 
     @validator("llm_chain")
-    def validate_llm_chain_input_variables(cls, llm_chain):
+    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
         if llm_chain.prompt.input_variables != ["query", "dialect"]:
             raise ValueError(

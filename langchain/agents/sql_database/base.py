@@ -2,6 +2,7 @@
 import string
 from typing import Any, List, Optional, Sequence
 
+from langchain.agents.agent import Agent
 from langchain.agents.mrkl.base import ZeroShotAgent, create_zero_shot_prompt
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.agents.sql_database.prompt import PREFIX, SUFFIX
@@ -13,16 +14,18 @@ from langchain.tools.base import BaseTool
 
 
 class SQLDatabaseAgent(ZeroShotAgent):
+    """Agent for interacting with a SQL database."""
+
     @classmethod
     def create_prompt(
         cls,
         tools: Sequence[BaseTool],
-        dialect: str = "sqlite",
-        top_k: int = 10,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
+        dialect: str = "sqlite",
+        top_k: int = 10,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
 
@@ -41,7 +44,7 @@ class SQLDatabaseAgent(ZeroShotAgent):
         """
         prefix = string.Formatter().format(prefix, dialect=dialect, top_k=top_k)
         return create_zero_shot_prompt(
-            format_instructions, input_variables, prefix, suffix, tools
+            tools, prefix, suffix, format_instructions, input_variables
         )
 
     @classmethod
@@ -49,15 +52,15 @@ class SQLDatabaseAgent(ZeroShotAgent):
         cls,
         llm: BaseLLM,
         tools: Sequence[BaseTool],
-        dialect: str = "sqlite",
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
+        dialect: str = "sqlite",
         top_k: int = 10,
         **kwargs: Any,
-    ):
+    ) -> Agent:
         """Create an agent from an LLM, database, and tools."""
         prompt = cls.create_prompt(
             tools,
