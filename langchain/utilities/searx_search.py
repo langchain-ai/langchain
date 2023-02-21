@@ -32,9 +32,6 @@ You can now use the ``search`` instance to query the searx API.
 Searching
 ---------
 
-ref to the run method with a custom name
-
-
 Use the :meth:`run() <SearxSearchWrapper.run>` and
 :meth:`results() <SearxSearchWrapper.results>` methods to query the searx API.
 Other methods are are available for convenience.
@@ -45,7 +42,6 @@ Example usage of the ``run`` method to make a search:
 
     .. code-block:: python
 
-        # using google and duckduckgo engines
         s.run(query="what is the best search engine?")
 
 Engine Parameters
@@ -284,21 +280,30 @@ class SearxSearchWrapper(BaseModel):
 
         Args:
             query: The query to search for.
+
             num_results: Limit the number of results to return.
+
             engines: List of engines to use for the query.
+
             **kwargs: extra parameters to pass to the searx API.
 
         Returns:
-            A list of dictionaries with the following keys:
-                snippet - The description of the result.
-                title - The title of the result.
-                link - The link to the result.
-                engines - The engines used for the result.
-                category - Searx category of the result.
+            Dict with the following keys:
+
+            {
+                snippet:  The description of the result.
+
+                title:  The title of the result.
+
+                link: The link to the result.
+
+                engines: The engines used for the result.
+
+                category: Searx category of the result.
+            }
 
 
         """
-        metadata_results = []
         _params = {
             "q": query,
         }
@@ -308,14 +313,14 @@ class SearxSearchWrapper(BaseModel):
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
-        for result in results:
-            metadata_result = {
+
+        return [
+            {
                 "snippet": result.get("content", ""),
                 "title": result["title"],
                 "link": result["url"],
                 "engines": result["engines"],
                 "category": result["category"],
             }
-            metadata_results.append(metadata_result)
-
-        return metadata_results
+            for result in results
+        ]

@@ -17,4 +17,4 @@ To import this vectorstore:
 from langchain.vectorstores import Chroma
 ```
 
-For a more detailed walkthrough of the Chroma wrapper, see [this notebook](../modules/utils/combine_docs_examples/vectorstores.ipynb)
+For a more detailed walkthrough of the Chroma wrapper, see [this notebook](../modules/indexes/examples/vectorstores.ipynb)

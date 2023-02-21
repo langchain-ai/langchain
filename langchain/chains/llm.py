@@ -124,12 +124,11 @@ class LLMChain(Chain, BaseModel):
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
-        outputs = []
-        for generation in response.generations:
+        return [
             # Get the text of the top generated string.
-            response_str = generation[0].text
-            outputs.append({self.output_key: response_str})
-        return outputs
+            {self.output_key: generation[0].text}
+            for generation in response.generations
+        ]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
@@ -188,11 +187,9 @@ class LLMChain(Chain, BaseModel):
         self, result: List[Dict[str, str]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         if self.prompt.output_parser is not None:
-            new_result = []
-            for res in result:
-                text = res[self.output_key]
-                new_result.append(self.prompt.output_parser.parse(text))
-            return new_result
+            return [
+                self.prompt.output_parser.parse(res[self.output_key]) for res in result
+            ]
         else:
             return result
 

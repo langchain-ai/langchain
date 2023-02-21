@@ -3553,6 +3553,29 @@ embeddings = ["matplotlib", "numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "
 wandb = ["numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)", "wandb"]
 
 [[package]]
+name = "opensearch-py"
+version = "2.1.1"
+description = "Python low-level client for OpenSearch"
+category = "main"
+optional = true
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
+files = [
+    {file = "opensearch-py-2.1.1.tar.gz", hash = "sha256:dd54a50c6771bc2582741bfdcf629b8d7eed409ae7fc2722249e53f9a10de0d8"},
+    {file = "opensearch_py-2.1.1-py2.py3-none-any.whl", hash = "sha256:3e7085bf25487979581416f4ab195c2fe62e90f1f07f393091f8233cbea032eb"},
+]
+
+[package.dependencies]
+certifi = "*"
+requests = ">=2.4.0,<3.0.0"
+urllib3 = ">=1.21.1,<2"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)"]
+develop = ["black", "botocore", "coverage", "jinja2", "mock", "myst-parser", "pytest", "pytest-cov", "pyyaml", "requests (>=2.0.0,<3.0.0)", "sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
+docs = ["myst-parser", "sphinx", "sphinx-copybutton", "sphinx-rtd-theme"]
+kerberos = ["requests-kerberos"]
+
+[[package]]
 name = "opt-einsum"
 version = "3.3.0"
 description = "Optimizing numpys einsum function"
@@ -7039,10 +7062,10 @@ docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker
 testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx"]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "690fdd08a207a73cb343cfdf25f7ae7d4177dc39b704d8655f3a4f26a881c2fc"
+content-hash = "7997201f64373247d8799baed84a5ad11ab3d92e26cc2114b26e734cfb9664a4"
