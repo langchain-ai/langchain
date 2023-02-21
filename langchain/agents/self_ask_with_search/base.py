@@ -6,9 +6,9 @@ from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
-from langchain.serpapi import SerpAPIWrapper
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.serpapi import SerpAPIWrapper
 
 
 class SelfAskWithSearchAgent(Agent):
