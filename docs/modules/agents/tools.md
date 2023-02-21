@@ -119,3 +119,20 @@ Below is a list of all supported tools and relevant information:
 - Requires LLM: No
 - Extra Parameters: `google_api_key`, `google_cse_id`
 - For more information on this, see [this page](../../ecosystem/google_search.md)
+
+**searx-search**
+
+- Tool Name: Search
+- Tool Description: A wrapper around SearxNG meta search engine. Input should be a search query. 
+- Notes: SearxNG is easy to deploy self-hosted. It is a good privacy friendly alternative to Google Search. Uses the SearxNG API. 
+- Requires LLM: No
+- Extra Parameters: `searx_host`
+
+**google-serper**
+
+- Tool Name: Search
+- Tool Description: A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.
+- Notes: Calls the [serper.dev](https://serper.dev) Google Search API and then parses results.
+- Requires LLM: No
+- Extra Parameters: `serper_api_key`
+- For more information on this, see [this page](../../ecosystem/google_serper.md)

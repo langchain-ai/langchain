@@ -1,8 +1,7 @@
 """Web base loader class."""
-from typing import List
+from typing import Any, List, Optional
 
 import requests
-from bs4 import BeautifulSoup
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -15,9 +14,12 @@ class WebBaseLoader(BaseLoader):
         """Initialize with webpage path."""
         self.web_path = web_path
 
-    def scrape(self) -> BeautifulSoup:
+    def scrape(self, custom_web_path: Optional[str] = None) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
-        html_doc = requests.get(self.web_path)
+        from bs4 import BeautifulSoup
+
+        url = custom_web_path if custom_web_path else self.web_path
+        html_doc = requests.get(url)
         soup = BeautifulSoup(html_doc.text, "html.parser")
         return soup
 

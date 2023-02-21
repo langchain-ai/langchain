@@ -25,12 +25,12 @@ class PagedPDFSplitter(BaseLoader):
         """Load given path as pages."""
         import pypdf
 
-        pdf_file_obj = open(self._file_path, "rb")
-        pdf_reader = pypdf.PdfReader(pdf_file_obj)
-        docs = []
-        for i, page in enumerate(pdf_reader.pages):
-            text = page.extract_text()
-            metadata = {"source": self._file_path, "page": i}
-            docs.append(Document(page_content=text, metadata=metadata))
-        pdf_file_obj.close()
-        return docs
+        with open(self._file_path, "rb") as pdf_file_obj:
+            pdf_reader = pypdf.PdfReader(pdf_file_obj)
+            return [
+                Document(
+                    page_content=page.extract_text(),
+                    metadata={"source": self._file_path, "page": i},
+                )
+                for i, page in enumerate(pdf_reader.pages)
+            ]

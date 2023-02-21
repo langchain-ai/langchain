@@ -48,13 +48,13 @@ class QAEvalChain(LLMChain):
         prediction_key: str = "result",
     ) -> List[dict]:
         """Evaluate question answering examples and predictions."""
-        inputs = []
-        for i, example in enumerate(examples):
-            _input = {
+        inputs = [
+            {
                 "query": example[question_key],
                 "answer": example[answer_key],
                 "result": predictions[i][prediction_key],
             }
-            inputs.append(_input)
+            for i, example in enumerate(examples)
+        ]
 
         return self.apply(inputs)

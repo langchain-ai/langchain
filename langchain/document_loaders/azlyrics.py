@@ -8,10 +8,6 @@ from langchain.document_loaders.web_base import WebBaseLoader
 class AZLyricsLoader(WebBaseLoader):
     """Loader that loads AZLyrics webpages."""
 
-    def __init__(self, web_path: str):
-        """Initialize with webpage path."""
-        self.web_path = web_path
-
     def load(self) -> List[Document]:
         """Load webpage."""
         soup = self.scrape()

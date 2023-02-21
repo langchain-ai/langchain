@@ -1,19 +1,5 @@
 # Key Concepts
 
-## Text Splitter
-This class is responsible for splitting long pieces of text into smaller components.
-It contains different ways for splitting text (on characters, using Spacy, etc)
-as well as different ways for measuring length (token based, character based, etc).
-
-## Embeddings
-These classes are very similar to the LLM classes in that they are wrappers around models, 
-but rather than return a string they return an embedding (list of floats). These are particularly useful when 
-implementing semantic search functionality. They expose separate methods for embedding queries versus embedding documents.
-
-## Vectorstores
-These are datastores that store embeddings of documents in vector form.
-They expose a method for passing in a string and finding similar documents.
-
 ## Python REPL
 Sometimes, for complex calculations, rather than have an LLM generate the answer directly, 
 it can be better to have the LLM generate code to calculate the answer, and then run that code to get the answer. 
@@ -36,3 +22,8 @@ This uses the official Google Search API to look up information on the web.
 
 ## SerpAPI
 This uses SerpAPI, a third party search API engine, to interact with Google Search.
+
+## Searx Search
+This uses the Searx (SearxNG fork) meta search engine API to lookup information
+on the web.  It supports 139 search engines and is easy to self-host
+which makes it a good choice for privacy-conscious users.
