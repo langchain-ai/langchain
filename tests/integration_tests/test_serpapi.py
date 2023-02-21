@@ -1,5 +1,5 @@
 """Integration test for SerpAPI."""
-from langchain.serpapi import SerpAPIWrapper
+from langchain.utilities import SerpAPIWrapper
 
 
 def test_call() -> None:
