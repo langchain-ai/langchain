@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional
-from pathlib import Path
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
@@ -74,6 +74,7 @@ class Chroma(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -86,33 +87,6 @@ class Chroma(VectorStore):
             List[str]: List of IDs of the added texts.
         """
         # TODO: Handle the case where the user doesn't provide ids on the Collection
-        if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
-        embeddings = None
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
-        self._collection.add(
-            metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
-        )
-        return ids
-
-    def add_documents(
-        self,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
-    ) -> List[str]:
-        """Run more documents through the embeddings and add to the vectorstore.
-
-        Args:
-            documents (List[Document]: Documents to add to the vectorstore.
-        
-
-        Returns:
-            List[str]: List of IDs of the added texts.
-        """
-        # TODO: Handle the case where the user doesn't provide ids on the Collection
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         embeddings = None

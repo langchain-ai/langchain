@@ -51,7 +51,10 @@ class Weaviate(VectorStore):
             self._query_attrs.extend(attributes)
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Upload texts with metadata (properties) to Weaviate."""
         from weaviate.util import get_valid_uuid
