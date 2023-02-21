@@ -230,6 +230,7 @@ class OpenSearchVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         bulk_size: int = 500,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
