@@ -27,9 +27,11 @@ class Chroma(VectorStore):
                 vectorstore = Chroma("langchain_store", embeddings.embed_query)
     """
 
+    _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+
     def __init__(
         self,
-        collection_name: str,
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
     ) -> None:
@@ -155,7 +157,7 @@ class Chroma(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = "langchain",
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Chroma:
@@ -189,7 +191,7 @@ class Chroma(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = "langchain",
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Chroma:
