@@ -188,10 +188,10 @@ class FAISS(VectorStore):
         selected_indices = [indices[0][i] for i in mmr_selected]
         docs = []
         for i in selected_indices:
-            _id = self.index_to_docstore_id[i]
-            if _id == -1:
+            if i == -1:
                 # This happens when not enough docs are returned.
                 continue
+            _id = self.index_to_docstore_id[i]
             doc = self.docstore.search(_id)
             if not isinstance(doc, Document):
                 raise ValueError(f"Could not find document for id {_id}, got {doc}")

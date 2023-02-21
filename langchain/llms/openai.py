@@ -329,7 +329,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
-        for i, prompt in enumerate(prompts):
+        for i, _ in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
                 [
