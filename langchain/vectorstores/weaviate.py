@@ -79,6 +79,8 @@ class Weaviate(VectorStore):
     ) -> List[Document]:
         """Look up similar documents in weaviate."""
         content = {"concepts": [query]}
+        if kwargs.get("certainty") and isinstance(kwargs.get("certainty"), float):
+            content["certainty"] = kwargs.get("certainty")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_text(content).with_limit(k).do()
         docs = []
