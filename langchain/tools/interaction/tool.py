@@ -16,7 +16,7 @@ class StdInInquireTool(BaseTool):
 
     def _run(self, prompt: str) -> str:
         """Prompt the user for more input."""
-        return input(f"\n" + prompt)
+        return input(f"\n{prompt}")
 
     async def _arun(self, query: str) -> str:
         raise NotImplementedError(f"{self.__class__.__name__} does not support async")
