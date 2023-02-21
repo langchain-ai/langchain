@@ -13,6 +13,7 @@ from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
+from langchain.tools.datetime import DateTimeTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
@@ -48,10 +49,15 @@ def _get_terminal() -> BaseTool:
     )
 
 
+def _get_datetime() -> BaseTool:
+    return DateTimeTool()
+
+
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
     "requests": _get_requests,
     "terminal": _get_terminal,
+    "datetime": _get_datetime,
 }
 
 
