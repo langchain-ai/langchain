@@ -109,8 +109,10 @@ def test_agent_with_callbacks_global() -> None:
     # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
     assert handler.chain_starts == handler.chain_ends == 3
     assert handler.llm_starts == handler.llm_ends == 2
-    assert handler.tool_starts == handler.tool_ends == 1
-    assert handler.starts == 6
+    assert handler.tool_starts == 2
+    assert handler.tool_ends == 1
+    # 1 extra agent action
+    assert handler.starts == 7
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
@@ -155,8 +157,10 @@ def test_agent_with_callbacks_local() -> None:
     # 1 top level chain run, 2 LLMChain starts, 2 LLM runs, 1 tool run
     assert handler.chain_starts == handler.chain_ends == 3
     assert handler.llm_starts == handler.llm_ends == 2
-    assert handler.tool_starts == handler.tool_ends == 1
-    assert handler.starts == 6
+    assert handler.tool_starts == 2
+    assert handler.tool_ends == 1
+    # 1 extra agent action
+    assert handler.starts == 7
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0

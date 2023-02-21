@@ -52,10 +52,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
         # st.write requires two spaces before a newline to render it
         st.markdown(action.log.replace("\n", "  \n"))
 
