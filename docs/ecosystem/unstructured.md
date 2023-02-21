@@ -10,7 +10,7 @@ This page is broken into two parts: installation and setup, and then references 
 `unstructured` wrappers.
 
 ## Installation and Setup
-- Install the Python SDK with `pip install unstructured[local-inference]`
+- Install the Python SDK with `pip install "unstructured[local-inference]"`
 - Install the following system dependencies if they are not already available on your system.
   Depending on what document types you're parsing, you may not need all of these.
     - `libmagic-dev`
