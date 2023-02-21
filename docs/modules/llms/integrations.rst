@@ -27,6 +27,8 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `Anthropic <./integrations/anthropic_example.html>`_: Covers how to use Anthropic models with Langchain.
 
+`DeepInfra <./integrations/deepinfra_example.html>`_: Covers how to utilize the DeepInfra wrapper.
+
 `Self-Hosted Models (via Runhouse) <./integrations/self_hosted_examples.html>`_: Covers how to run models on existing or on-demand remote compute with Langchain.
 
 
