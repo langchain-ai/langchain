@@ -11,7 +11,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseTool, BaseToolkit
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 

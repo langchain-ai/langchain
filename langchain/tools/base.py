@@ -1,5 +1,6 @@
 """Base implementation for tools or skills."""
 
+import re
 from abc import abstractmethod
 from typing import Any, List, Optional
 
@@ -54,7 +55,7 @@ class BaseTool(BaseModel):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Run the tool."""
         if verbose is None:
@@ -82,7 +83,7 @@ class BaseTool(BaseModel):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Run the tool asynchronously."""
         if verbose is None:
@@ -123,9 +124,35 @@ class BaseTool(BaseModel):
         return observation
 
 
+def get_tool(llm_output: str) -> Optional[str]:
+    """Parse out the action and input from the LLM output.
+
+    Note: if you're specifying a custom prompt for the ZeroShotAgent,
+    you will need to ensure that it meets the following Regex requirements.
+    The string starting with "Tool:".
+    """
+    regex = r"Tool: (.*?)\n"
+    match = re.search(regex, llm_output, re.DOTALL)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
 class BaseToolkit(BaseModel):
     """Class responsible for defining a collection of related tools."""
 
     @abstractmethod
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+
+    def list_tools(self) -> List[str]:
+        """List the tools in the toolkit."""
+        return [tool.name for tool in self.get_tools()]
+
+    def recommend_tool(self, query: str) -> Optional[BaseTool]:
+        """Recommend a tool based on the query."""
+        tool_tag = get_tool(query)
+        for tool in self.get_tools():
+            if tool.name == tool_tag:
+                return tool
+        return None
