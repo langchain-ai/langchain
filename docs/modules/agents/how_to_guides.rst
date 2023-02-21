@@ -47,6 +47,11 @@ In all examples there is an Agent with a particular set of tools.
 - `Paper <https://arxiv.org/pdf/2210.03629.pdf>`_
 - `Example Notebook <./implementations/react.html>`_
 
+**SQLDatabase**
+- **Tools used**: See `langchain.tools.sql_database.toolkit`
+- **Agent used**: `zero-shot-react-description`
+- `Example Notebook <./implementations/sql_database.html>`_
+
 
 
 .. toctree::
