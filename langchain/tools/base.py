@@ -7,7 +7,6 @@ from pydantic import BaseModel, Extra, Field, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import AgentAction
 
 
 class BaseTool(BaseModel):

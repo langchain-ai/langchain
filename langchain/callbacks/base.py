@@ -87,7 +87,7 @@ class BaseCallbackHandler(ABC):
         """Run on arbitrary text."""
 
     @abstractmethod
-    def on_agent_action(self, action: AgentAction, **kwargs) -> Any:
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
 
     @abstractmethod
@@ -218,10 +218,7 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_tool_start(serialized, input_str, **kwargs)
 
     def on_agent_action(
-        self,
-        action: AgentAction,
-        verbose: bool = False,
-        **kwargs: Any
+        self, action: AgentAction, verbose: bool = False, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         for handler in self.handlers:
@@ -534,10 +531,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     )
 
     async def on_agent_action(
-        self,
-        action: AgentAction,
-        verbose: bool = False,
-        **kwargs: Any
+        self, action: AgentAction, verbose: bool = False, **kwargs: Any
     ) -> None:
         """Run on agent action."""
         for handler in self.handlers:
