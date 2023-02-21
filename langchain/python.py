@@ -1,5 +1,6 @@
 """Mock Python REPL."""
 import sys
+from typing import Any
 from io import StringIO
 from typing import Dict, Optional
 from RestrictedPython import compile_restricted, utility_builtins, safe_builtins, limited_builtins
@@ -7,7 +8,7 @@ from RestrictedPython.PrintCollector import PrintCollector
 _print_ = PrintCollector
 _getattr_ = getattr
 
-def default_guarded_getitem(ob, index):
+def default_guarded_getitem(ob: Any, index: int) -> Any:
     return ob[index]
 
 class PythonREPL:
