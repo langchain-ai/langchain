@@ -7,6 +7,7 @@ from pydantic import BaseModel, validator
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
+
 def _get_length_based(text: str) -> int:
     return len(re.split("\n| ", text))
 
