@@ -147,73 +147,146 @@ class Qdrant(VectorStore):
         mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
         return [self._document_from_scored_point(results[i]) for i in mmr_selected]
 
+    # @classmethod
+    # def from_texts(
+    #     cls,
+    #     texts: List[str],
+    #     embedding: Embeddings,
+    #     metadatas: Optional[List[dict]] = None,
+    #     **kwargs: Any,
+    # ) -> "Qdrant":
+    #     """Construct Qdrant wrapper from raw documents.
+
+    #     This is a user friendly interface that:
+    #         1. Embeds documents.
+    #         2. Creates an in memory docstore
+    #         3. Initializes the Qdrant database
+
+    #     This is intended to be a quick way to get started.
+
+    #     Example:
+    #         .. code-block:: python
+
+    #             from langchain import Qdrant
+    #             from langchain.embeddings import OpenAIEmbeddings
+    #             embeddings = OpenAIEmbeddings()
+    #             qdrant = Qdrant.from_texts(texts, embeddings)
+    #     """
+    #     try:
+    #         import qdrant_client
+    #     except ImportError:
+    #         raise ValueError(
+    #             "Could not import qdrant-client python package. "
+    #             "Please it install it with `pip install qdrant-client`."
+    #         )
+
+    #     from qdrant_client.http import models as rest
+
+    #     # Just do a single quick embedding to get vector size
+    #     partial_embeddings = embedding.embed_documents(texts[:1])
+    #     vector_size = len(partial_embeddings[0])
+
+    #     qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
+    #     kwargs.pop("host")
+    #     collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
+    #     distance_func = kwargs.pop("distance_func", "Cosine").upper()
+
+    #     client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
+
+    #     client.recreate_collection(
+    #         collection_name=collection_name,
+    #         vectors_config=rest.VectorParams(
+    #             size=vector_size,
+    #             distance=rest.Distance[distance_func],
+    #         ),
+    #     )
+
+    #     # Now generate the embeddings for all the texts
+    #     embeddings = embedding.embed_documents(texts)
+
+    #     client.upsert(
+    #         collection_name=collection_name,
+    #         points=rest.Batch(
+    #             ids=[uuid.uuid4().hex for _ in texts],
+    #             vectors=embeddings,
+    #             payloads=cls._build_payloads(texts, metadatas),
+    #         ),
+    #     )
+
+    #     return cls(client, collection_name, embedding.embed_query)
+
     @classmethod
     def from_texts(
         cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        client: Optional[qdrant_client.QdrantClient] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
         **kwargs: Any,
     ) -> "Qdrant":
         """Construct Qdrant wrapper from raw documents.
-
         This is a user friendly interface that:
             1. Embeds documents.
             2. Creates an in memory docstore
             3. Initializes the Qdrant database
-
         This is intended to be a quick way to get started.
-
         Example:
             .. code-block:: python
-
                 from langchain import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings)
         """
-        try:
-            import qdrant_client
-        except ImportError:
-            raise ValueError(
-                "Could not import qdrant-client python package. "
-                "Please it install it with `pip install qdrant-client`."
+        if client is None:
+            try:
+                import qdrant_client
+            except ImportError:
+                raise ValueError(
+                    "Could not import qdrant-client python package. "
+                    "Please it install it with `pip install qdrant-client`."
+                )
+
+            from qdrant_client.http import models as rest
+
+            # Just do a single quick embedding to get vector size
+            partial_embeddings = embedding.embed_documents(texts[:1])
+            vector_size = len(partial_embeddings[0])
+
+            qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
+            kwargs.pop("host")
+            if collection_name is None:
+                collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
+            distance_func = kwargs.pop("distance_func", distance_func).upper()
+
+            client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
+
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=rest.VectorParams(
+                    size=vector_size,
+                    distance=rest.Distance[distance_func],
+                ),
             )
 
-        from qdrant_client.http import models as rest
+            # Now generate the embeddings for all the texts
+            embeddings = embedding.embed_documents(texts)
 
-        # Just do a single quick embedding to get vector size
-        partial_embeddings = embedding.embed_documents(texts[:1])
-        vector_size = len(partial_embeddings[0])
-
-        qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
-        kwargs.pop("host")
-        collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
-        distance_func = kwargs.pop("distance_func", "Cosine").upper()
-
-        client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
-
-        client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=rest.VectorParams(
-                size=vector_size,
-                distance=rest.Distance[distance_func],
-            ),
-        )
-
-        # Now generate the embeddings for all the texts
-        embeddings = embedding.embed_documents(texts)
-
-        client.upsert(
-            collection_name=collection_name,
-            points=rest.Batch(
-                ids=[uuid.uuid4().hex for _ in texts],
-                vectors=embeddings,
-                payloads=cls._build_payloads(texts, metadatas),
-            ),
-        )
+            client.upsert(
+                collection_name=collection_name,
+                points=rest.Batch(
+                    ids=[uuid.uuid4().hex for _ in texts],
+                    vectors=embeddings,
+                    payloads=cls._build_payloads(texts, metadatas),
+                ),
+            )
+        else:
+            if collection_name is None:
+                collection_name = uuid.uuid4().hex
 
         return cls(client, collection_name, embedding.embed_query)
+
 
     @classmethod
     def _build_payloads(
