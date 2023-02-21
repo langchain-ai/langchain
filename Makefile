@@ -27,7 +27,7 @@ lint:
 	poetry run mypy .
 	poetry run black . --check
 	poetry run isort . --check
-	poetry run flake8 .
+	poetry run ruff .
 
 test:
 	poetry run pytest tests/unit_tests
