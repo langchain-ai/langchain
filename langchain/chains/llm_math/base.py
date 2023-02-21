@@ -1,6 +1,8 @@
 """Chain that interprets a prompt and executes python code to do math."""
 from typing import Dict, List
 
+import numpy
+import sympy
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
@@ -9,8 +11,6 @@ from langchain.chains.llm_math.prompt import PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.python import PythonREPL
-import sympy
-import numpy
 
 
 class LLMMathChain(Chain, BaseModel):
