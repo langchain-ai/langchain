@@ -1,8 +1,11 @@
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
-from langchain import LLMChain, OpenAI, PromptTemplate, SQLDatabase
-from langchain.tools import BaseTool
+from langchain.chains.llm import LLMChain
+from langchain.llms.openai import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.sql_database import SQLDatabase
+from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 
@@ -39,14 +42,14 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     name = "schema_sql_db"
     description = """
-    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables. Be SURE that the tables actually exist by calling list_tables_sql_db first!
+    Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables. Be sure that the tables actually exist by calling list_tables_sql_db first!
     
     Example Input: "table1, table2, table3"
     """
 
     def _run(self, table_names: str) -> str:
         """Get the schema for tables in a comma-separated list."""
-        return self.db.get_table_info(table_names.split(", "))
+        return self.db.get_table_info_no_throw(table_names.split(", "))
 
     async def _arun(self, table_name: str) -> str:
         raise NotImplementedError("SchemaSqlDbTool does not support async")
@@ -71,12 +74,25 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
-    llm_chain: LLMChain = LLMChain(
-        llm=OpenAI(temperature=0),
-        prompt=PromptTemplate(template=template, input_variables=["query", "dialect"]),
+    llm_chain: LLMChain = Field(
+        default_factory=lambda: LLMChain(
+            llm=OpenAI(temperature=0),
+            prompt=PromptTemplate(
+                template=QUERY_CHECKER, input_variables=["query", "dialect"]
+            ),
+        )
     )
     name = "query_checker_sql_db"
     description = "Use this tool to double check if your query is correct before executing it. Always use this tool before executing a query with query_sql_db!"
+
+    @validator("llm_chain")
+    def validate_llm_chain_input_variables(cls, llm_chain):
+        """Make sure the LLM chain has the correct input variables."""
+        if llm_chain.prompt.input_variables != ["query", "dialect"]:
+            raise ValueError(
+                "LLM chain for QueryCheckerTool must have input variables ['query', 'dialect']"
+            )
+        return llm_chain
 
     def _run(self, query: str) -> str:
         """Use the LLM to check the query."""
