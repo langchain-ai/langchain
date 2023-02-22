@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -10,12 +9,16 @@ from pydantic import BaseModel
 from langchain.tools.base import BaseTool
 
 
-def _parse_input(text: str) -> List[Union[str, int]]:
-    """Parse the comma-separated input into a list of strings and ints."""
-    items = text.split(",")
-    items = [i.strip() for i in items]
-    items = [int(i) if i.isdigit() else i for i in items]
-    return items
+import re
+
+
+def _parse_input(text) -> List[Union[str, int]]:
+    """Parse input of the form data["key1"][0]["key2"] into a list of keys."""
+    _res = re.findall(r'\[.*?]', text)
+    # strip the brackets and quotes, convert to int if possible
+    res = [i[1:-1].replace('"', '') for i in _res]
+    res = [int(i) if i.isdigit() else i for i in res]
+    return res
 
 
 class JsonSpec(BaseModel):
@@ -36,7 +39,7 @@ class JsonSpec(BaseModel):
         """Return the keys of the dict at the given path.
 
         Args:
-            text: Comma-separated path to the dict.
+            text: Python representation of the path to the dict (e.g. data["key1"][0]["key2"]).
         """
         try:
             items = _parse_input(text)
@@ -56,7 +59,7 @@ class JsonSpec(BaseModel):
         """Return the value of the dict at the given path.
 
         Args:
-            text: Comma-separated path to the dict.
+            text: Python representation of the path to the dict (e.g. data["key1"][0]["key2"]).
         """
         try:
             items = _parse_input(text)

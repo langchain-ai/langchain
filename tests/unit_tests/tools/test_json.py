@@ -15,20 +15,21 @@ def test_json_spec_from_file(tmp_path: Path) -> None:
 def test_json_spec_keys() -> None:
     """Test JsonSpec can return keys of a dict at given path."""
     spec = JsonSpec(dict_={"foo": "bar", "baz": {"test": {"foo": [1, 2, 3]}}})
-    assert spec.keys("") == "['foo', 'baz']"
-    assert "ValueError" in spec.keys("foo")
-    assert spec.keys("baz") == "['test']"
-    assert spec.keys("baz,test") == "['foo']"
-    assert "ValueError" in spec.keys("baz,test,foo")
+    assert spec.keys("data") == "['foo', 'baz']"
+    assert "ValueError" in spec.keys("data[\"foo\"]")
+    assert spec.keys("data[\"baz\"]") == "['test']"
+    assert spec.keys("data[\"baz\"][\"test\"]") == "['foo']"
+    assert "ValueError" in spec.keys("data[\"baz\"][\"test\"][\"foo\"]")
 
 
 def test_json_spec_value() -> None:
     """Test JsonSpec can return value of a dict at given path."""
     spec = JsonSpec(dict_={"foo": "bar", "baz": {"test": {"foo": [1, 2, 3]}}})
-    assert spec.value("foo") == "bar"
-    assert spec.value("baz") == "{'test': {'foo': [1, 2, 3]}}"
-    assert spec.value("baz,test") == "{'foo': [1, 2, 3]}"
-    assert spec.value("baz,test,foo") == "[1, 2, 3]"
+    assert spec.value("data") == "{'foo': 'bar', 'baz': {'test': {'foo': [1, 2, 3]}}}"
+    assert spec.value("data[\"foo\"]") == "bar"
+    assert spec.value("data[\"baz\"]") == "{'test': {'foo': [1, 2, 3]}}"
+    assert spec.value("data[\"baz\"][\"test\"]") == "{'foo': [1, 2, 3]}"
+    assert spec.value("data[\"baz\"][\"test\"][\"foo\"]") == "[1, 2, 3]"
 
 
 def test_json_spec_value_max_length() -> None:
@@ -36,13 +37,13 @@ def test_json_spec_value_max_length() -> None:
     spec = JsonSpec(
         dict_={"foo": "bar", "baz": {"test": {"foo": [1, 2, 3]}}}, max_value_length=5
     )
-    assert spec.value("foo") == "bar"
+    assert spec.value("data[\"foo\"]") == "bar"
     assert (
-        spec.value("baz")
+        spec.value("data[\"baz\"]")
         == "Value is a large dictionary, should explore its keys directly"
     )
     assert (
-        spec.value("baz,test")
+        spec.value("data[\"baz\"][\"test\"]")
         == "Value is a large dictionary, should explore its keys directly"
     )
-    assert spec.value("baz,test,foo") == "[1, 2..."
+    assert spec.value("data[\"baz\"][\"test\"][\"foo\"]") == "[1, 2..."
