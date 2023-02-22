@@ -14,6 +14,7 @@ from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.requests.tool import RequestsGetTool
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -33,11 +34,7 @@ def _get_python_repl() -> BaseTool:
 
 
 def _get_requests() -> BaseTool:
-    return Tool(
-        name="Requests",
-        description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
-        func=RequestsWrapper().run,
-    )
+    return RequestsGetTool(requests_wrapper=RequestsWrapper())
 
 
 def _get_terminal() -> BaseTool:
