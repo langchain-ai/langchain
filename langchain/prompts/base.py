@@ -151,6 +151,10 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
+    @abstractmethod
+    def pformat(self, **kwargs: Any) -> None:
+        """Apply partial formatting to the prompt with the inputs, in place."""
+
     @property
     @abstractmethod
     def _prompt_type(self) -> str:

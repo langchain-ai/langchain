@@ -133,6 +133,12 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
+    def pformat(self, **kwargs: Any) -> None:
+        """Apply partial formatting to the prompt with the inputs, in place."""
+        raise NotImplementedError(
+            "pformat is not currently implemented for FewShotPromptWithTemplates"
+        )
+
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""

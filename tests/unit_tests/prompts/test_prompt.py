@@ -102,9 +102,57 @@ def test_prompt_invalid_template_format() -> None:
         )
 
 
+def test_no_input_variables() -> None:
+    """Test prompt template with no input variables."""
+    template = "This is a test."
+    input_variables: list = []
+    prompt = PromptTemplate(input_variables=input_variables, template=template)
+    assert prompt.format() == template
+
+
 def test_prompt_from_file() -> None:
     """Test prompt can be successfully constructed from a file."""
     template_file = "tests/unit_tests/data/prompt_file.txt"
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+
+
+def test_pformat() -> None:
+    """Test prompt can be partially formatted."""
+    template = "This is a {foo} {bar} {baz} test."
+    input_variables = ["foo", "bar", "baz"]
+    prompt = PromptTemplate(input_variables=input_variables, template=template)
+
+    prompt.pformat(foo="foo")
+    assert prompt.template == "This is a foo {bar} {baz} test."
+    assert sorted(prompt.input_variables) == ["bar", "baz"]
+
+    prompt.pformat(bar="bar")
+    assert prompt.template == "This is a foo bar {baz} test."
+    assert prompt.input_variables == ["baz"]
+
+    prompt.pformat(baz="baz")
+    assert prompt.template == "This is a foo bar baz test."
+    assert prompt.input_variables == []
+
+
+def test_pformat_jinja2() -> None:
+    """Test prompt can be partially formatted."""
+    template = "This is a {{foo}} {{bar}} {{baz}} test."
+    input_variables = ["foo", "bar", "baz"]
+    prompt = PromptTemplate(
+        input_variables=input_variables, template=template, template_format="jinja2"
+    )
+
+    prompt.pformat(foo="foo")
+    assert prompt.template == "This is a foo {{bar}} {{baz}} test."
+    assert sorted(prompt.input_variables) == ["bar", "baz"]
+
+    prompt.pformat(bar="bar")
+    assert prompt.template == "This is a foo bar {{baz}} test."
+    assert prompt.input_variables == ["baz"]
+
+    prompt.pformat(baz="baz")
+    assert prompt.template == "This is a foo bar baz test."
+    assert prompt.input_variables == []

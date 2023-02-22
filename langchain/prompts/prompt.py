@@ -62,6 +62,17 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         """
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
+    def pformat(self, **kwargs: Any) -> None:
+        """Apply partial formatting to the prompt with the inputs, in place."""
+        missing_variables = set(self.input_variables) - set(kwargs.keys())
+        for var in missing_variables:
+            if self.template_format == "f-string":
+                kwargs[var] = "{" + var + "}"
+            elif self.template_format == "jinja2":
+                kwargs[var] = "{{" + var + "}}"
+        self.template = self.format(**kwargs)
+        self.input_variables = list(missing_variables)
+
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
