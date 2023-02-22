@@ -9,16 +9,11 @@ import re
 
 
 def _parse_input(text: str) -> List[Union[str, int]]:
-    _res = re.findall(r'\[.*?]', text)
-    res = []
-    for r in _res:
-        val = r[1:-1]
-        if val[0] != '"':
-            val = int(val)
-        else:
-            val = val[1:-1]
-        res.append(val)
-    return res
+    """Parse the comma-separated input into a list of strings and ints."""
+    items = text.split(",")
+    items = [i.strip() for i in items]
+    items = [int(i) if i.isdigit() else i for i in items]
+    return items
 
 
 class JsonSpec(BaseModel):
@@ -35,20 +30,35 @@ class JsonSpec(BaseModel):
         dict_ = json.loads(path.read_text())
         return cls(dict_=dict_)
 
-    def keys(self, text: str):
+    def keys(self, text: str) -> str:
+        """Return the keys of the dict at the given path.
+
+        Args:
+            text: Comma-separated path to the dict.
+        """
         try:
             items = _parse_input(text)
-            val = self.dict
+            val = self.dict_
             for i in items:
-                val = val[i]
-            return str(val.keys())
+                if i:
+                    val = val[i]
+            if not isinstance(val, dict):
+                raise ValueError(
+                    f"Value at path `{text}` is not a dict, use `value` instead to get its value directly."
+                )
+            return str(list(val.keys()))
         except Exception as e:
             return repr(e)
 
-    def value(self, text: str):
+    def value(self, text: str) -> str:
+        """Return the value of the dict at the given path.
+
+        Args:
+            text: Comma-separated path to the dict.
+        """
         try:
             items = _parse_input(text)
-            val = self.dict
+            val = self.dict_
             for i in items:
                 val = val[i]
 
@@ -56,7 +66,7 @@ class JsonSpec(BaseModel):
                 return "Value is a large dictionary, should explore its keys directly"
             val = str(val)
             if len(val) > self.max_value_length:
-                val = val[self.max_value_length] + "..."
+                val = val[:self.max_value_length] + "..."
             return val
         except Exception as e:
             return repr(e)
