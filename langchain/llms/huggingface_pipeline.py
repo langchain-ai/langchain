@@ -13,106 +13,6 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 
 logger = logging.getLogger()
 
-class HuggingFaceTokenProcessor:
-    '''A LogitsProcessor to handle stop sequences and streaming.'''
-
-    def __init__(self, llm, tokenizer, stop, eos_token_id, generation_offset):
-        self.llm = llm
-        self.tokenizer = tokenizer
-        self.stop = stop
-        self.eos_token_id = eos_token_id
-        self.generation_offset = generation_offset
-        self.pre_lens = None
-        self.cur_seqs = None
-        self.stop_lens = None
-
-    def generate(self, *params, **kwparams):
-        # call pipeline which will then pass token ids to _logits_processor
-        outputs = self.llm.pipeline(
-            *params,
-            logits_processor = [self._logits_processor],
-            **kwparams
-        )
-        # trim output
-        batchsize = len(outputs)
-        seqs = [
-            outputs[batch_idx]["generated_text"][self.generation_offset :][: self.stop_lens[batch_idx]]
-            for batch_idx in range(batchsize)
-        ]
-        # process any terminating token, which isn't passed to a logits_processor
-        self._update_seqs(seqs)
-        # stream the last delayed token
-        self._finish_seqs()
-        return seqs
-
-    def _logits_processor(self, input_ids, logits):
-        '''Decodes the latest input_ids and hands them off to _update_seqs to process.'''
-        # for now this unneccessarily re-decodes the same starting logits repeatedly
-        seqs = [
-            seq[self.generation_offset:]
-            for seq in self.tokenizer.batch_decode(input_ids)
-        ]
-        return self._update_seqs(seqs, logits)
-
-    def _update_seqs(self, new_seqs, logits=None):
-        '''Performs streaming and processes stop tokens.
-           Tokens are streamed with a 1-token delay to ensure the decoder has trailing context.
-           Sequences are ended by causing generation of eos_token_id.'''
-        batchsize = len(new_seqs)
-        if self.cur_seqs is None:
-            # init data now we know the batchsize
-            # data is parallel lists for now
-            self.pre_lens = [0] * batchsize
-            self.cur_seqs = [''] * batchsize
-            self.stop_lens = [None] * batchsize
-        # update information on delayed tokens
-        pre_pre_lens = self.pre_lens
-        self.pre_lens = [len(pre_seq) for pre_seq in self.cur_seqs]
-        self.cur_seqs = new_seqs
-
-        for batch_idx in range(len(self.cur_seqs)):
-            # data for each batch index
-            pre_pre_len = pre_pre_lens[batch_idx]
-            pre_len = self.pre_lens[batch_idx]
-            seq = self.cur_seqs[batch_idx]
-            stop_len = self.stop_lens[batch_idx]
-
-            # stream
-            if self.llm.streaming and pre_pre_lens:
-                token = seq[: stop_len][pre_pre_len : pre_len]
-                if len(token):
-                    self.llm.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.llm.verbose,
-                        batch_idx=batch_idx
-                    )
-
-            # stop
-            if self.stop is not None and logits is not None:
-                for stop in self.stop:
-                    start_offset = max(0, pre_pre_len - (len(stop) - 1))
-                    found_offset = seq.find(stop, start_offset)
-                    if found_offset >= 0:
-                        logits[batch_idx][self.eos_token_id] = float('inf')
-                        self.stop_lens[batch_idx] = found_offset
-
-        return logits
-
-    def _finish_seqs(self):
-        '''Streams out the last delayed token.'''
-        if self.llm.streaming and self.pre_lens:
-            for batch_idx in range(len(self.cur_seqs)):
-                seq = self.cur_seqs[batch_idx]
-                pre_len = self.pre_lens[batch_idx]
-                stop_len = self.stop_lens[batch_idx]
-                token = seq[pre_len : stop_len]
-                if len(token):
-                    self.llm.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.llm.verbose,
-                        batch_idx=batch_idx
-                    )
-
 
 class HuggingFacePipeline(LLM, BaseModel):
     """Wrapper around HuggingFace Pipeline API.
@@ -271,3 +171,116 @@ class HuggingFacePipeline(LLM, BaseModel):
         )
 
         return token_processor.generate(prompt)[0]
+
+
+class HuggingFaceTokenProcessor:
+    """A LogitsProcessor to handle stop sequences and streaming."""
+
+    def __init__(
+        self,
+        llm: HuggingFacePipeline,
+        tokenizer: Any,
+        stop: Optional[List[str]],
+        eos_token_id: int,
+        generation_offset: int,
+    ):
+        """Initialize the processor for a single call to .generate()."""
+        self.llm = llm
+        self.tokenizer = tokenizer
+        self.stop = stop
+        self.eos_token_id = eos_token_id
+        self.generation_offset = generation_offset
+        self.pre_lens: Optional[List[int]] = None
+        self.cur_seqs: Optional[List[str]] = None
+        self.stop_lens: Optional[List[Optional[int]]] = None
+
+    def generate(self, *params: Any, **kwparams: Any) -> List[str]:
+        """Wrap llm pipeline, performing streaming and stop processing."""
+        # call pipeline which will then pass token ids to _logits_processor
+        outputs = self.llm.pipeline(
+            *params, logits_processor=[self._logits_processor], **kwparams
+        )
+        # trim output
+        batchsize = len(outputs)
+        seqs = [
+            outputs[batch_idx]["generated_text"][self.generation_offset :][
+                : self.stop_lens and self.stop_lens[batch_idx] or None
+            ]
+            for batch_idx in range(batchsize)
+        ]
+        # process any terminating token, which isn't passed to a logits_processor
+        self._update_seqs(seqs)
+        # stream the last delayed token
+        self._finish_seqs()
+        return seqs
+
+    def _logits_processor(self, input_ids: Any, logits: Any) -> Any:
+        """Decode the latest input_ids and hand them off to _update_seqs to process."""
+        # for now this unneccessarily re-decodes the same starting logits repeatedly
+        seqs = [
+            seq[self.generation_offset :]
+            for seq in self.tokenizer.batch_decode(input_ids)
+        ]
+        return self._update_seqs(seqs, logits)
+
+    def _update_seqs(self, new_seqs: List[str], logits: Optional[Any] = None) -> Any:
+        """Perform streaming and process stop tokens.
+
+        Tokens are streamed with a 1-token delay so the decoder has trailing context.
+        Sequences are ended by causing generation of eos_token_id.
+        """
+        batchsize = len(new_seqs)
+        if self.cur_seqs is None:
+            # init data now we know the batchsize
+            # data is parallel lists for now
+            self.pre_lens = [0] * batchsize
+            self.cur_seqs = [""] * batchsize
+            self.stop_lens = [None] * batchsize
+        # update information on delayed tokens
+        assert self.pre_lens is not None
+        assert self.cur_seqs is not None
+        assert self.stop_lens is not None
+        pre_pre_lens = self.pre_lens
+        self.pre_lens = [len(pre_seq) for pre_seq in self.cur_seqs]
+        self.cur_seqs = new_seqs
+
+        for batch_idx in range(len(self.cur_seqs)):
+            # data for each batch index
+            pre_pre_len = pre_pre_lens[batch_idx]
+            pre_len = self.pre_lens[batch_idx]
+            seq = self.cur_seqs[batch_idx]
+            stop_len = self.stop_lens[batch_idx]
+
+            # stream
+            if self.llm.streaming and pre_pre_lens:
+                token = seq[:stop_len][pre_pre_len:pre_len]
+                if len(token):
+                    self.llm.callback_manager.on_llm_new_token(
+                        token, verbose=self.llm.verbose, batch_idx=batch_idx
+                    )
+
+            # stop
+            if self.stop is not None and logits is not None:
+                for stop in self.stop:
+                    start_offset = max(0, pre_pre_len - (len(stop) - 1))
+                    found_offset = seq.find(stop, start_offset)
+                    if found_offset >= 0:
+                        logits[batch_idx][self.eos_token_id] = float("inf")
+                        self.stop_lens[batch_idx] = found_offset
+
+        return logits
+
+    def _finish_seqs(self) -> None:
+        """Streams out the last delayed token."""
+        if self.llm.streaming and self.pre_lens:
+            assert self.cur_seqs is not None
+            assert self.stop_lens is not None
+            for batch_idx in range(len(self.cur_seqs)):
+                seq = self.cur_seqs[batch_idx]
+                pre_len = self.pre_lens[batch_idx]
+                stop_len = self.stop_lens[batch_idx]
+                token = seq[pre_len:stop_len]
+                if len(token):
+                    self.llm.callback_manager.on_llm_new_token(
+                        token, verbose=self.llm.verbose, batch_idx=batch_idx
+                    )

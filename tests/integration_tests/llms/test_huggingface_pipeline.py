@@ -51,6 +51,7 @@ def test_init_with_pipeline() -> None:
     output = llm("Say foo:")
     assert isinstance(output, str)
 
+
 def test_pipeline_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
@@ -65,6 +66,7 @@ def test_pipeline_streaming_callback() -> None:
     )
     llm("This sentence has 100 words:")
     assert callback_handler.llm_streams == 10
+
 
 def test_stop() -> None:
     """Test stop logic."""
