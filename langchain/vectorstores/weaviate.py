@@ -1,7 +1,7 @@
 """Wrapper around weaviate vector database."""
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Dict
 from uuid import uuid4
 
 from langchain.docstore.document import Document
@@ -78,9 +78,9 @@ class Weaviate(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Look up similar documents in weaviate."""
-        content = {"concepts": [query]}
-        if kwargs.get("certainty") and isinstance(kwargs.get("certainty"), float):
-            content["certainty"] = kwargs.get("certainty")
+        content: Dict[str, Any] = {"concepts": [query]}
+        if kwargs.get("search_distance"):
+            content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_text(content).with_limit(k).do()
         docs = []
