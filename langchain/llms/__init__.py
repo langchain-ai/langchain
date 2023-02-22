@@ -2,6 +2,7 @@
 from typing import Dict, Type
 
 from langchain.llms.ai21 import AI21
+from langchain.llms.aleph_alpha import AlephAlpha
 from langchain.llms.anthropic import Anthropic
 from langchain.llms.base import BaseLLM
 from langchain.llms.cerebriumai import CerebriumAI
@@ -20,6 +21,7 @@ from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 
 __all__ = [
     "Anthropic",
+    "AlephAlpha",
     "CerebriumAI",
     "Cohere",
     "ForefrontAI",
@@ -39,6 +41,7 @@ __all__ = [
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "ai21": AI21,
+    "aleph_alpha": AlephAlpha,
     "anthropic": Anthropic,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
