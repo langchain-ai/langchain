@@ -1,11 +1,13 @@
 from __future__ import annotations
-from pydantic import BaseModel
+
+import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Union
-import json
-from langchain.tools.base import BaseTool
 
-import re
+from pydantic import BaseModel
+
+from langchain.tools.base import BaseTool
 
 
 def _parse_input(text: str) -> List[Union[str, int]]:
@@ -66,7 +68,7 @@ class JsonSpec(BaseModel):
                 return "Value is a large dictionary, should explore its keys directly"
             val = str(val)
             if len(val) > self.max_value_length:
-                val = val[:self.max_value_length] + "..."
+                val = val[: self.max_value_length] + "..."
             return val
         except Exception as e:
             return repr(e)
