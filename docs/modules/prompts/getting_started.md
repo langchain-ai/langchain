@@ -73,12 +73,39 @@ multiple_input_prompt.format(adjective="funny", content="chickens")
 You can create custom prompt templates that format the prompt in any way you want. For more information, see [Custom Prompt Templates](examples/custom_prompt_template.ipynb).
 
 
-<!-- TODO(shreya): Add link to Jinja -->
 
-:::{note}
-Currently, the template should be formatted as a Python f-string. We also support Jinja2 templates (see [Using Jinja templates](examples/custom_prompt_template.ipynb)). In the future, we will support more templating languages such as Mako.
-:::
+Currently, the default template format is Python f-string. We also support [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/) templates (see example below). In the future, we will support more templating languages such as Mako.
 
+```python
+from langchain import PromptTemplate
+
+multiple_input_prompt = PromptTemplate(
+    input_variables=["adjective", "content"], 
+    template="Tell me a {{ adjective }} joke about {{ content }}.",
+    template_format="jinja2",
+)
+
+multiple_input_prompt.format(adjective="funny", content="chickens")
+# -> "Tell me a funny joke about chickens."
+```
+
+You can also apply partial formatting to a `PromptTemplate` object:
+
+```python
+from langchain import PromptTemplate
+
+multiple_input_prompt = PromptTemplate(
+    input_variables=["adjective", "content"], 
+    template="Tell me a {adjective} joke about {content}.",
+)
+
+# Format the prompt with only the adjective
+multiple_input_prompt.pformat(adjective="funny")
+
+# Format the prompt with the content
+multiple_input_prompt.format(content="chickens")
+# -> "Tell me a funny joke about chickens."
+```
 
 ## Load a prompt template from LangChainHub
 
