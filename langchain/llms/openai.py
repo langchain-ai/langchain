@@ -57,7 +57,7 @@ def _streaming_response_template() -> Dict[str, Any]:
             {
                 "text": "",
                 "finish_reason": None,
-                "logprobs": None,
+                "logprobs": 1,
             }
         ]
     }
@@ -251,7 +251,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     prompt=_prompts, **params
                 ):
                     self.callback_manager.on_llm_new_token(
-                        stream_resp["choices"][0]["text"], verbose=self.verbose
+                        stream_resp["choices"][0]["text"], verbose=self.verbose, logprobs=stream_resp["choices"][0]["logprobs"]
                     )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
@@ -285,11 +285,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 ):
                     if self.callback_manager.is_async:
                         await self.callback_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                            stream_resp["choices"][0]["text"], verbose=self.verbose, logprobs=stream_resp["choices"][0]["logprobs"]
                         )
                     else:
                         self.callback_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                            stream_resp["choices"][0]["text"], verbose=self.verbose, logprobs=stream_resp["choices"][0]["logprobs"]
                         )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
