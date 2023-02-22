@@ -154,8 +154,6 @@ class Qdrant(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         client: Optional[str] = None,
-        collection_name: Optional[str] = None,
-        distance_func: str = "Cosine",
         **kwargs: Any,
     ) -> "Qdrant":
         """Construct Qdrant wrapper from raw documents.
