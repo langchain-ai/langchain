@@ -50,7 +50,13 @@ class NetworkxEntityGraph:
 
     def __init__(self) -> None:
         """Create a new graph."""
-        import networkx as nx
+        try:
+            import networkx as nx
+        except ImportError:
+            raise ValueError(
+                "Could not import networkx python package. "
+                "Please it install it with `pip install networkx`."
+            )
 
         self._graph = nx.DiGraph()
 

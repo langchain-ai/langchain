@@ -463,5 +463,12 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
             config = yaml.safe_load(f)
     else:
         raise ValueError("File type must be json or yaml")
+
+    # Override default 'verbose' and 'memory' for the chain
+    if "verbose" in kwargs:
+        config["verbose"] = kwargs.pop("verbose")
+    if "memory" in kwargs:
+        config["memory"] = kwargs.pop("memory")
+
     # Load the chain from the config now.
     return load_chain_from_config(config, **kwargs)

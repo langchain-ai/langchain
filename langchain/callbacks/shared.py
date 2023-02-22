@@ -78,11 +78,16 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
             self._callback_manager.on_chain_error(error, **kwargs)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         with self._lock:
-            self._callback_manager.on_tool_start(serialized, action, **kwargs)
+            self._callback_manager.on_tool_start(serialized, input_str, **kwargs)
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+        with self._lock:
+            self._callback_manager.on_agent_action(action, **kwargs)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""

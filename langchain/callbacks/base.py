@@ -68,7 +68,7 @@ class BaseCallbackHandler(ABC):
 
     @abstractmethod
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
         """Run when tool starts running."""
 
@@ -85,6 +85,10 @@ class BaseCallbackHandler(ABC):
     @abstractmethod
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run on arbitrary text."""
+
+    @abstractmethod
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
 
     @abstractmethod
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
@@ -203,7 +207,7 @@ class CallbackManager(BaseCallbackManager):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
+        input_str: str,
         verbose: bool = False,
         **kwargs: Any
     ) -> None:
@@ -211,7 +215,16 @@ class CallbackManager(BaseCallbackManager):
         for handler in self.handlers:
             if not handler.ignore_agent:
                 if verbose or handler.always_verbose:
-                    handler.on_tool_start(serialized, action, **kwargs)
+                    handler.on_tool_start(serialized, input_str, **kwargs)
+
+    def on_agent_action(
+        self, action: AgentAction, verbose: bool = False, **kwargs: Any
+    ) -> None:
+        """Run when tool starts running."""
+        for handler in self.handlers:
+            if not handler.ignore_agent:
+                if verbose or handler.always_verbose:
+                    handler.on_agent_action(action, **kwargs)
 
     def on_tool_end(self, output: str, verbose: bool = False, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -293,7 +306,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when chain errors."""
 
     async def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
 
@@ -307,6 +320,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""
+
+    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
+        """Run on agent action."""
 
     async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run on agent end."""
@@ -452,7 +468,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     async def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
+        input_str: str,
         verbose: bool = False,
         **kwargs: Any
     ) -> None:
@@ -461,12 +477,12 @@ class AsyncCallbackManager(BaseCallbackManager):
             if not handler.ignore_agent:
                 if verbose or handler.always_verbose:
                     if asyncio.iscoroutinefunction(handler.on_tool_start):
-                        await handler.on_tool_start(serialized, action, **kwargs)
+                        await handler.on_tool_start(serialized, input_str, **kwargs)
                     else:
                         await asyncio.get_event_loop().run_in_executor(
                             None,
                             functools.partial(
-                                handler.on_tool_start, serialized, action, **kwargs
+                                handler.on_tool_start, serialized, input_str, **kwargs
                             ),
                         )
 
@@ -513,6 +529,23 @@ class AsyncCallbackManager(BaseCallbackManager):
                     await asyncio.get_event_loop().run_in_executor(
                         None, functools.partial(handler.on_text, text, **kwargs)
                     )
+
+    async def on_agent_action(
+        self, action: AgentAction, verbose: bool = False, **kwargs: Any
+    ) -> None:
+        """Run on agent action."""
+        for handler in self.handlers:
+            if not handler.ignore_agent:
+                if verbose or handler.always_verbose:
+                    if asyncio.iscoroutinefunction(handler.on_agent_action):
+                        await handler.on_agent_action(action, **kwargs)
+                    else:
+                        await asyncio.get_event_loop().run_in_executor(
+                            None,
+                            functools.partial(
+                                handler.on_agent_action, action, **kwargs
+                            ),
+                        )
 
     async def on_agent_finish(
         self, finish: AgentFinish, verbose: bool = False, **kwargs: Any

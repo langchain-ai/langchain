@@ -82,7 +82,7 @@ for language models.
 ## Augmenting
 So you've fetched your relevant data - now what? How do you pass them to the language model in a format it can understand?
 For a detailed overview of the different ways of doing so, and the tradeoffs between them, please see 
-[this documentation](../modules/chains/combine_docs.md)
+[this documentation](../modules/indexes/combine_docs.md)
 
 ## Use Cases
 LangChain supports the above three methods of augmenting LLMs with external data.

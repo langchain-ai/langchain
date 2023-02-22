@@ -11,7 +11,6 @@ from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.python import PythonREPL
 from langchain.requests import RequestsWrapper
-from langchain.serpapi import SerpAPIWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
@@ -21,6 +20,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
@@ -179,7 +179,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "searx-search": (_get_searx_search, ["searx_host", "searx_host"]),
+    "searx-search": (_get_searx_search, ["searx_host"]),
 }
 
 
