@@ -89,7 +89,7 @@ multiple_input_prompt.format(adjective="funny", content="chickens")
 # -> "Tell me a funny joke about chickens."
 ```
 
-You can also apply partial formatting to a `PromptTemplate` object:
+You can also apply partial formatting to a `PromptTemplate` object via `pformat`:
 
 ```python
 from langchain import PromptTemplate
