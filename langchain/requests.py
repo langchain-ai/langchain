@@ -38,64 +38,32 @@ class RequestsWrapper(BaseModel):
         """DELETE the URL and return the text."""
         return requests.delete(url, headers=self.headers).text
 
-    async def aget(self, url: str) -> str:
-        """GET the URL and return the text asynchronously."""
+    async def _arequest(self, method: str, url: str, **kwargs: Any) -> str:
+        """Make an async request."""
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=self.headers) as response:
+                async with session.request(method, url, headers=self.headers, **kwargs) as response:
                     return await response.text()
         else:
-            async with self.aiosession.get(url, headers=self.headers) as response:
+            async with self.aiosession.request(method, url, headers=self.headers, **kwargs) as response:
                 return await response.text()
+
+    async def aget(self, url: str) -> str:
+        """GET the URL and return the text asynchronously."""
+        return await self._arequest("GET", url)
 
     async def apost(self, url: str, data: Dict[str, Any]) -> str:
         """POST to the URL and return the text asynchronously."""
-        if not self.aiosession:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url, json=data, headers=self.headers
-                ) as response:
-                    return await response.text()
-        else:
-            async with self.aiosession.post(
-                url, json=data, headers=self.headers
-            ) as response:
-                return await response.text()
+        return await self._arequest("POST", url, json=data)
 
     async def apatch(self, url: str, data: Dict[str, Any]) -> str:
         """PATCH the URL and return the text asynchronously."""
-        if not self.aiosession:
-            async with aiohttp.ClientSession() as session:
-                async with session.patch(
-                    url, json=data, headers=self.headers
-                ) as response:
-                    return await response.text()
-        else:
-            async with self.aiosession.patch(
-                url, json=data, headers=self.headers
-            ) as response:
-                return await response.text()
+        return await self._arequest("PATCH", url, json=data)
 
     async def aput(self, url: str, data: Dict[str, Any]) -> str:
         """PUT the URL and return the text asynchronously."""
-        if not self.aiosession:
-            async with aiohttp.ClientSession() as session:
-                async with session.put(
-                    url, json=data, headers=self.headers
-                ) as response:
-                    return await response.text()
-        else:
-            async with self.aiosession.put(
-                url, json=data, headers=self.headers
-            ) as response:
-                return await response.text()
+        return await self._arequest("PUT", url, json=data)
 
     async def adelete(self, url: str) -> str:
         """DELETE the URL and return the text asynchronously."""
-        if not self.aiosession:
-            async with aiohttp.ClientSession() as session:
-                async with session.delete(url, headers=self.headers) as response:
-                    return await response.text()
-        else:
-            async with self.aiosession.delete(url, headers=self.headers) as response:
-                return await response.text()
+        return await self._arequest("DELETE", url)

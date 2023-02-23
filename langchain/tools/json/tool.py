@@ -47,7 +47,7 @@ class JsonSpec(BaseModel):
                     val = val[i]
             if not isinstance(val, dict):
                 raise ValueError(
-                    f"Value at path `{text}` is not a dict, use `value` instead to get its value directly."
+                    f"Value at path `{text}` is not a dict, get the value directly."
                 )
             return str(list(val.keys()))
         except Exception as e:
