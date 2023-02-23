@@ -119,4 +119,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
-        return {self.output_key: answer}
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}
