@@ -8,6 +8,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.atlas import AtlasDB
 
 __all__ = [
     "ElasticVectorSearch",
@@ -19,4 +20,5 @@ __all__ = [
     "Milvus",
     "Chroma",
     "OpenSearchVectorSearch",
+    "AtlasDB",
 ]
