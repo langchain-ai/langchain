@@ -48,7 +48,7 @@ class Cohere(LLM, BaseModel):
     """Penalizes repeated tokens."""
     
     truncate: Optional[str] = None
-    """Specify how the API will handle inputs longer than the maximum token length."""
+    """Specify how the client handles inputs longer than the maximum token length: Truncate from START, END or NONE"""
 
     cohere_api_key: Optional[str] = None
 
