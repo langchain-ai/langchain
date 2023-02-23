@@ -72,5 +72,5 @@ __all__ = [
     "PDFMinerLoader",
     "TelegramChatLoader",
     "SRTLoader",
-    "FacebookChatLoader"
+    "FacebookChatLoader",
 ]
