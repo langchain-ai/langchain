@@ -108,3 +108,11 @@ def test_prompt_from_file() -> None:
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+
+
+def test_relative_file_path_prompt_from_file():
+    """Test loading from relative file path."""
+    template_file = "../data/prompt_file.txt"
+    input_variables = ["question"]
+    prompt = PromptTemplate.from_file(template_file, input_variables)
+    assert prompt.template == "Question: {question}\nAnswer:"
