@@ -9,6 +9,7 @@ from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 from langchain.agents.sql_database.base import SQLDatabaseAgent
 from langchain.agents.tools import Tool, tool
+from langchain.agents.json.base import JsonAgent
 
 __all__ = [
     "SQLDatabaseAgent",
@@ -25,5 +26,6 @@ __all__ = [
     "load_tools",
     "get_all_tool_names",
     "ConversationalAgent",
+    "JsonAgent",
     "load_agent",
 ]

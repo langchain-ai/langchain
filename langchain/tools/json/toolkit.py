@@ -18,6 +18,6 @@ class JsonSpecToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         return [
-            JsonSpecListKeysTool(self.spec),
-            JsonSpecGetValueTool(self.spec),
+            JsonSpecListKeysTool(spec=self.spec),
+            JsonSpecGetValueTool(spec=self.spec),
         ]

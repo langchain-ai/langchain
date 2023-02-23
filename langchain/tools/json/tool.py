@@ -81,7 +81,11 @@ class JsonSpecListKeysTool(BaseTool):
     """Tool for listing keys in a JSON spec."""
 
     name = "json_spec_list_keys"
-    description = "Can be used to list all keys. Before calling this you should be SURE that the path to this exists."
+    description = """
+    Can be used to list all keys at a given path. 
+    Before calling this you should be SURE that the path to this exists.
+    The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
+    """
     spec: JsonSpec
 
     def _run(self, tool_input: str) -> str:
@@ -95,7 +99,11 @@ class JsonSpecGetValueTool(BaseTool):
     """Tool for getting a value in a JSON spec."""
 
     name = "json_spec_get_value"
-    description = "Can be used to see value in string format. Before calling this you should be SURE that the path to this exists."
+    description = """
+    Can be used to see value in string format at a given path.
+    Before calling this you should be SURE that the path to this exists.
+    The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
+    """
     spec: JsonSpec
 
     def _run(self, tool_input: str) -> str:

@@ -58,4 +58,10 @@ class JsonAgent(ZeroShotAgent):
         prompt = cls.create_prompt(
             tools, prefix, suffix, format_instructions, input_variables
         )
-        return cls(llm, prompt, callback_manager, **kwargs)
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
