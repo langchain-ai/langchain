@@ -57,7 +57,7 @@ def _streaming_response_template() -> Dict[str, Any]:
             {
                 "text": "",
                 "finish_reason": None,
-                "logprobs": 1,
+                "logprobs": None,
             }
         ]
     }
