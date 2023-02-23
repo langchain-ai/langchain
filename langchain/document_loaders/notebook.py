@@ -11,7 +11,6 @@ from langchain.document_loaders.base import BaseLoader
 
 def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int) -> str:
     """Combine cells information in a readable format ready to be used."""
-
     cell_type = cell["cell_type"]
     source = cell["source"]
     output = cell["outputs"]
@@ -25,6 +24,7 @@ def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int)
 
 
 def remove_newlines(x: Any) -> Any:
+    '''Remove recursivelly newlines, no matter the data structure they are stored in.'''
     if isinstance(x, str):
         return x.replace("\n", "")
     elif isinstance(x, list):
@@ -48,10 +48,7 @@ class NotebookLoader(BaseLoader):
         max_output_length: int = 10,
         remove_newline: bool = False,
     ) -> List[Document]:
-        """Load documents.
-        Select if to include cell outputs by setting include_outputs to True.
-        Select how many of the outputs values should be displayed by setting max_output_length
-        """
+        """Load documents."""
         try:
             import pandas as pd
         except ImportError:
