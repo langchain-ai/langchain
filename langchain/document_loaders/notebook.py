@@ -1,8 +1,7 @@
 """Loader that loads .ipynb notebook files."""
 import json
 from pathlib import Path
-from typing import List
-import math
+from typing import List, Any
 import pandas as pd
 
 from langchain.docstore.document import Document
@@ -26,7 +25,7 @@ def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int)
         return f"{cell_type} cell: {source}\n\n"
 
 
-def remove_newlines(x):
+def remove_newlines(x: Any) -> Any:
     if isinstance(x, str):
         return x.replace('\n', '')
     elif isinstance(x, list):
