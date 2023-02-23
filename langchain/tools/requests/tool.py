@@ -22,7 +22,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
     """Tool for making a GET request to an API endpoint."""
 
     name = "requests_get"
-    description = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a specific url, and the output will be all the text on that page."
+    description = "A portal to the internet. Use this when you need to get specific content from a website. Input should be a  url (i.e. https://www.google.com). The output will be the text response of the GET request."
 
     def _run(self, url: str) -> str:
         """Run the tool."""
@@ -41,6 +41,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to POST to the url.
+    Be careful to always use double quotes for strings in the json string
     The output will be the text response of the POST request.
     """
 
@@ -69,6 +70,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to PATCH to the url.
+    Be careful to always use double quotes for strings in the json string
     The output will be the text response of the PATCH request.
     """
 
@@ -97,6 +99,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     Input should be a json string with two keys: "url" and "data".
     The value of "url" should be a string, and the value of "data" should be a dictionary of 
     key-value pairs you want to PUT to the url.
+    Be careful to always use double quotes for strings in the json string.
     The output will be the text response of the PUT request.
     """
 
