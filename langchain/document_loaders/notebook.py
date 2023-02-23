@@ -24,7 +24,7 @@ def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int)
 
 
 def remove_newlines(x: Any) -> Any:
-    '''Remove recursivelly newlines, no matter the data structure they are stored in.'''
+    """Remove recursivelly newlines, no matter the data structure they are stored in."""
     if isinstance(x, str):
         return x.replace("\n", "")
     elif isinstance(x, list):
