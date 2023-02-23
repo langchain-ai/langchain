@@ -111,7 +111,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
-
+    # azure_openai_api_endpoint: Optional[str] = None
+    # """Azure OpenAI API endpoint."""
     class Config:
         """Configuration for this pydantic object."""
 
@@ -142,10 +143,20 @@ class BaseOpenAI(BaseLLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        is_azure_openai = get_from_dict_or_env(
+            values, "azure_openai", "AZURE_OPENAI"
+        )
+        azure_openai_api_endopint = get_from_dict_or_env(
+            values, "azure_openai_api_endpoint", "AZURE_OPENAI_API_ENDPOINT"
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if is_azure_openai:
+                openai.api_type = 'azure'
+                openai.api_version ='2022-12-01'
+                openai.api_base = azure_openai_api_endopint            
             values["client"] = openai.Completion
         except ImportError:
             raise ValueError(
@@ -494,13 +505,19 @@ class OpenAI(BaseOpenAI):
 class AzureOpenAI(BaseOpenAI):
     """Azure specific OpenAI class that uses deployment name."""
 
-    deployment_name: str = ""
     """Deployment name to use."""
+    deployment_name: str = ""
+
+    """Azure OpenAI API endpoint to use."""
+    azure_openai_api_endpoint: str = ""
+    azure_openai = True
+
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {
             **{"deployment_name": self.deployment_name},
+            **{"azure_openai_api_endpoint": self.azure_openai_api_endpoint},
             **super()._identifying_params,
         }
 
