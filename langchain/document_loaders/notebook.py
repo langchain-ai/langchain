@@ -33,6 +33,8 @@ def concatenate_cells(
     else:
         return f"'{cell_type}' cell: '{source}'\n\n"
 
+    return ""
+
 
 def remove_newlines(x: Any) -> Any:
     """Remove recursivelly newlines, no matter the data structure they are stored in."""
