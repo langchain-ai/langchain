@@ -15,10 +15,8 @@ def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int)
     source = cell["source"]
     output = cell["outputs"]
 
-   
-
-    if include_outputs and cell_type == 'code' and output:
-        output = output[0]['text']
+    if include_outputs and cell_type == "code" and output:
+        output = output[0]["text"]
         min_output = min(max_output_length, len(output))
         return f"{cell_type} cell: {source}\n with output: {output[:min_output]}\n\n"
     else:
@@ -27,7 +25,7 @@ def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int)
 
 def remove_newlines(x: Any) -> Any:
     if isinstance(x, str):
-        return x.replace('\n', '')
+        return x.replace("\n", "")
     elif isinstance(x, list):
         return [remove_newlines(elem) for elem in x]
     elif isinstance(x, pd.DataFrame):
@@ -35,7 +33,7 @@ def remove_newlines(x: Any) -> Any:
     else:
         return x
 
-        
+
 class NotebookLoader(BaseLoader):
     """Loader that loads .ipynb notebook files."""
 
@@ -43,10 +41,16 @@ class NotebookLoader(BaseLoader):
         """Initialize with path."""
         self.file_path = path
 
-    def load(self, include_outputs: bool = False, max_output_length: int = 10, remove_newline: bool = False) -> List[Document]:
-        """Load documents. 
-            Select if to include cell outputs by setting include_outputs to True. 
-            Select how many of the outputs values should be displayed by setting max_output_length"""
+    def load(
+        self,
+        include_outputs: bool = False,
+        max_output_length: int = 10,
+        remove_newline: bool = False,
+    ) -> List[Document]:
+        """Load documents.
+        Select if to include cell outputs by setting include_outputs to True.
+        Select how many of the outputs values should be displayed by setting max_output_length
+        """
         try:
             import pandas as pd
         except ImportError:
@@ -60,11 +64,13 @@ class NotebookLoader(BaseLoader):
             d = json.load(f)
 
         data = pd.json_normalize(d["cells"])
-        filtered_data = data[['cell_type', 'source', 'outputs']]
+        filtered_data = data[["cell_type", "source", "outputs"]]
         if remove_newline:
             filtered_data = filtered_data.applymap(remove_newlines)
 
-        text = filtered_data.apply(lambda x: concatenate_cells(x, include_outputs, max_output_length), axis=1).str.cat(sep=" ")
+        text = filtered_data.apply(
+            lambda x: concatenate_cells(x, include_outputs, max_output_length), axis=1
+        ).str.cat(sep=" ")
 
         metadata = {"source": str(p)}
 
