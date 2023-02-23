@@ -6,17 +6,22 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.llm_summarization_checker.memory import ImmutableMemory
 from langchain.chains.sequential import SequentialChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 
-CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file('prompts/create_facts.txt', ["summary"])
-CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file('prompts/check_facts.txt', ["assertions"])
-REVISED_SUMMARY_PROMPT = PromptTemplate.from_file('prompts/revise_summary.txt',
-                                                  ["checked_assertions", "summary"])
-ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file('prompts/are_all_true_prompt.txt',
-                                               ["checked_assertions"])
+CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(
+    "prompts/create_facts.txt", ["summary"]
+)
+CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(
+    "prompts/check_facts.txt", ["assertions"]
+)
+REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(
+    "prompts/revise_summary.txt", ["checked_assertions", "summary"]
+)
+ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
+    "prompts/are_all_true_prompt.txt", ["checked_assertions"]
+)
 
 
 class LLMSummarizationCheckerChain(Chain, BaseModel):
@@ -79,26 +84,26 @@ class LLMSummarizationCheckerChain(Chain, BaseModel):
                         llm=self.llm,
                         prompt=self.create_assertions_prompt,
                         output_key="assertions",
-                        verbose=self.verbose
+                        verbose=self.verbose,
                     ),
                     LLMChain(
                         llm=self.llm,
                         prompt=self.check_assertions_prompt,
                         output_key="checked_assertions",
-                        verbose=self.verbose
+                        verbose=self.verbose,
                     ),
                     LLMChain(
                         llm=self.llm,
                         prompt=self.revised_summary_prompt,
                         output_key="revised_summary",
-                        verbose=self.verbose
+                        verbose=self.verbose,
                     ),
                     LLMChain(
                         llm=self.llm,
                         output_key="all_true",
                         prompt=self.are_all_true_prompt,
-                        verbose=self.verbose
-                    )
+                        verbose=self.verbose,
+                    ),
                 ],
                 input_variables=["summary"],
                 output_variables=["all_true", "revised_summary"],

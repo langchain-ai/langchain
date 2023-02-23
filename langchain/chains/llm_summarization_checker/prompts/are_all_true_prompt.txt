@@ -1,4 +1,4 @@
-Below are some assertions that have been fact checked and are labeled as true of false.
+Below are some assertions that have been fact checked and are labeled as true or false.
 
 If all of the assertions are true, return "True". If any of the assertions are false, return "False".
 

@@ -117,8 +117,8 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
             The prompt loaded from the file.
         """
         if not os.path.isfile(template_file):
-            """If the template file is not an absolute path, or from the package directory, 
-            try to find it relative to the caller file."""
+            """If the template file is not an absolute path, or from the package
+            directory, try to find it relative to the caller file."""
             current_dir = os.path.dirname(os.path.abspath((inspect.stack()[1])[1]))
             template_file = os.path.join(current_dir, template_file)
 
