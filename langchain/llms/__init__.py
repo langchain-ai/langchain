@@ -7,6 +7,7 @@ from langchain.llms.anthropic import Anthropic
 from langchain.llms.base import BaseLLM
 from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
+from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -24,6 +25,7 @@ __all__ = [
     "AlephAlpha",
     "CerebriumAI",
     "Cohere",
+    "DeepInfra",
     "ForefrontAI",
     "GooseAI",
     "NLPCloud",
@@ -45,6 +47,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "anthropic": Anthropic,
     "cerebriumai": CerebriumAI,
     "cohere": Cohere,
+    "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "gooseai": GooseAI,
     "huggingface_hub": HuggingFaceHub,
