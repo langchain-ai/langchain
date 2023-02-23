@@ -9,18 +9,29 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def concatenate_cells(cell: dict, include_outputs: bool, max_output_length: int) -> str:
+def concatenate_cells(
+    cell: dict, include_outputs: bool, max_output_length: int, traceback: bool
+) -> str:
     """Combine cells information in a readable format ready to be used."""
     cell_type = cell["cell_type"]
     source = cell["source"]
     output = cell["outputs"]
 
     if include_outputs and cell_type == "code" and output:
-        output = output[0]["text"]
-        min_output = min(max_output_length, len(output))
-        return f"{cell_type} cell: {source}\n with output: {output[:min_output]}\n\n"
+        if "ename" in output[0].keys():
+            error_name = output[0]["ename"]
+            error_value = output[0]["evalue"]
+            if traceback:
+                traceback = output[0]["traceback"]
+                return f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}', with description '{error_value}'\n and traceback '{traceback}'\n\n"
+            else:
+                return f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}', with description '{error_value}'\n\n"
+        elif output[0]["output_type"] == "stream":
+            output = output[0]["text"]
+            min_output = min(max_output_length, len(output))
+            return f"'{cell_type}' cell: '{source}'\n with output: '{output[:min_output]}'\n\n"
     else:
-        return f"{cell_type} cell: {source}\n\n"
+        return f"'{cell_type}' cell: '{source}'\n\n"
 
 
 def remove_newlines(x: Any) -> Any:
@@ -47,6 +58,7 @@ class NotebookLoader(BaseLoader):
         include_outputs: bool = False,
         max_output_length: int = 10,
         remove_newline: bool = False,
+        traceback: bool = False,
     ) -> List[Document]:
         """Load documents."""
         try:
@@ -67,7 +79,10 @@ class NotebookLoader(BaseLoader):
             filtered_data = filtered_data.applymap(remove_newlines)
 
         text = filtered_data.apply(
-            lambda x: concatenate_cells(x, include_outputs, max_output_length), axis=1
+            lambda x: concatenate_cells(
+                x, include_outputs, max_output_length, traceback
+            ),
+            axis=1,
         ).str.cat(sep=" ")
 
         metadata = {"source": str(p)}
