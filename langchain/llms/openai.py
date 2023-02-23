@@ -111,6 +111,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
+
     class Config:
         """Configuration for this pydantic object."""
 
