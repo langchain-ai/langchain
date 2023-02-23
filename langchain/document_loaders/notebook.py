@@ -1,7 +1,8 @@
 """Loader that loads .ipynb notebook files."""
 import json
 from pathlib import Path
-from typing import List, Any
+from typing import Any, List
+
 import pandas as pd
 
 from langchain.docstore.document import Document
