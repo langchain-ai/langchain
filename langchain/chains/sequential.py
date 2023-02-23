@@ -43,7 +43,18 @@ class SequentialChain(Chain, BaseModel):
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
         input_variables = values["input_variables"]
-        known_variables = set(input_variables)
+        memory_keys = list()
+        if 'memory' in values and values['memory'] is not None:
+            """Validate that prompt input variables are consistent."""
+            memory_keys = values["memory"].memory_variables
+            if any(input_variables) in memory_keys:
+                overlapping_keys = input_variables & memory_keys
+                raise ValueError(
+                    f"The the input key(s) {''.join(overlapping_keys)} are found in the Memory keys "
+                    f"({memory_keys}) - please use input and memory keys that don't overlap."
+                )
+
+        known_variables = set(input_variables + memory_keys)
         for chain in chains:
             missing_vars = set(chain.input_keys).difference(known_variables)
             if missing_vars:
