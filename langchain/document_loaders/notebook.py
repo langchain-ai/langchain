@@ -23,13 +23,23 @@ def concatenate_cells(
             error_value = output[0]["evalue"]
             if traceback:
                 traceback = output[0]["traceback"]
-                return f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}', with description '{error_value}'\n and traceback '{traceback}'\n\n"
+                return (
+                    f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}',"
+                    f" with description '{error_value}'\n"
+                    f"and traceback '{traceback}'\n\n"
+                )
             else:
-                return f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}', with description '{error_value}'\n\n"
+                return (
+                    f"'{cell_type}' cell: '{source}'\n, gives error '{error_name}',"
+                    f"with description '{error_value}'\n\n"
+                )
         elif output[0]["output_type"] == "stream":
             output = output[0]["text"]
             min_output = min(max_output_length, len(output))
-            return f"'{cell_type}' cell: '{source}'\n with output: '{output[:min_output]}'\n\n"
+            return (
+                f"'{cell_type}' cell: '{source}'\n with "
+                f"output: '{output[:min_output]}'\n\n"
+            )
     else:
         return f"'{cell_type}' cell: '{source}'\n\n"
 
