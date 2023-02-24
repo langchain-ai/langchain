@@ -42,10 +42,14 @@ class RequestsWrapper(BaseModel):
         """Make an async request."""
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.request(method, url, headers=self.headers, **kwargs) as response:
+                async with session.request(
+                    method, url, headers=self.headers, **kwargs
+                ) as response:
                     return await response.text()
         else:
-            async with self.aiosession.request(method, url, headers=self.headers, **kwargs) as response:
+            async with self.aiosession.request(
+                method, url, headers=self.headers, **kwargs
+            ) as response:
                 return await response.text()
 
     async def aget(self, url: str) -> str:

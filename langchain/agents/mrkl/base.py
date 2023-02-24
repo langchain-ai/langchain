@@ -5,13 +5,22 @@ import re
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX, SQL_PREFIX, SQL_SUFFIX
+from langchain.agents.mrkl.prompt import (
+    FORMAT_INSTRUCTIONS,
+    JSON_PREFIX,
+    JSON_SUFFIX,
+    PREFIX,
+    SQL_PREFIX,
+    SQL_SUFFIX,
+    SUFFIX,
+)
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.tools.base import BaseTool
+from langchain.tools.json.toolkit import JsonToolkit
 from langchain.tools.sql_database.toolkit import SQLDatabaseToolkit
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -128,19 +137,47 @@ class ZeroShotAgent(Agent):
 
     @classmethod
     def as_sql_agent(
-            cls,
-            llm: BaseLLM,
-            toolkit: SQLDatabaseToolkit,
-            callback_manager: Optional[BaseCallbackManager] = None,
-            prefix: str = SQL_PREFIX,
-            suffix: str = SQL_SUFFIX,
-            format_instructions: str = FORMAT_INSTRUCTIONS,
-            input_variables: Optional[List[str]] = None,
-            top_k: int = 10,
-            **kwargs: Any,
+        cls,
+        llm: BaseLLM,
+        toolkit: SQLDatabaseToolkit,
+        callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = SQL_PREFIX,
+        suffix: str = SQL_SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
+        input_variables: Optional[List[str]] = None,
+        top_k: int = 10,
+        **kwargs: Any,
     ):
         tools = toolkit.get_tools()
         prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
+        prompt = cls.create_prompt(
+            tools,
+            prefix=prefix,
+            suffix=suffix,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+
+    @classmethod
+    def as_json_agent(
+        cls,
+        llm: BaseLLM,
+        toolkit: JsonToolkit,
+        callback_manager: Optional[BaseCallbackManager] = None,
+        prefix: str = JSON_PREFIX,
+        suffix: str = JSON_SUFFIX,
+        format_instructions: str = FORMAT_INSTRUCTIONS,
+        input_variables: Optional[List[str]] = None,
+        **kwargs: Any,
+    ):
+        tools = toolkit.get_tools()
         prompt = cls.create_prompt(
             tools,
             prefix=prefix,

@@ -75,7 +75,7 @@ class JsonSpec(BaseModel):
             return repr(e)
 
 
-class JsonSpecListKeysTool(BaseTool):
+class JsonListKeysTool(BaseTool):
     """Tool for listing keys in a JSON spec."""
 
     name = "json_spec_list_keys"
@@ -93,7 +93,7 @@ class JsonSpecListKeysTool(BaseTool):
         return self._run(tool_input)
 
 
-class JsonSpecGetValueTool(BaseTool):
+class JsonGetValueTool(BaseTool):
     """Tool for getting a value in a JSON spec."""
 
     name = "json_spec_get_value"
