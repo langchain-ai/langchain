@@ -93,6 +93,17 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     ) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM."""
         inputs = self._get_inputs(docs, **kwargs)
+        summary = inputs["summaries"]
+        SEPERATOR = "Content:"
+        docs = summary.split(SEPERATOR)
+        new_summary = ""
+        CONTEXT_LIMIT = 4096
+        RESPONSE_LIMIT = 256
+        for doc in docs:
+            if len(new_summary) < CONTEXT_LIMIT - RESPONSE_LIMIT:
+                new_summary += SEPERATOR
+                new_summary += doc
+        inputs["summaries"] = new_summary
         # Call predict on the LLM.
         return await self.llm_chain.apredict(**inputs), {}
 
