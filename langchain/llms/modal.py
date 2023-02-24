@@ -1,6 +1,5 @@
 """Wrapper around Modal API."""
 import logging
-
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests

@@ -1,15 +1,14 @@
 """Wrapper around StochasticAI APIs."""
 import logging
-
+import time
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-import time
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM
-from langchain.utils import get_from_dict_or_env
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
