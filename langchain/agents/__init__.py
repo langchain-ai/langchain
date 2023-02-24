@@ -7,11 +7,9 @@ from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
-from langchain.agents.sql_database.base import SQLDatabaseAgent
 from langchain.agents.tools import Tool, tool
 
 __all__ = [
-    "SQLDatabaseAgent",
     "MRKLChain",
     "SelfAskWithSearchChain",
     "ReActChain",
