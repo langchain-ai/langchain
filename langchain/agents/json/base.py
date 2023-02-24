@@ -1,5 +1,4 @@
 """Agent for interacting with JSON."""
-import string
 from typing import Any, List, Optional, Sequence
 
 from langchain.agents.agent import Agent

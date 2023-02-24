@@ -5,13 +5,14 @@ import re
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX, SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.tools.base import BaseTool
+from langchain.tools.sql_database.toolkit import SQLDatabaseToolkit
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
@@ -47,23 +48,6 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     action = match.group(1).strip()
     action_input = match.group(2)
     return action, action_input.strip(" ").strip('"')
-
-
-def create_zero_shot_prompt(
-    tools: Sequence[BaseTool],
-    prefix: str,
-    suffix: str,
-    format_instructions: str,
-    input_variables: Optional[List[str]] = None,
-) -> PromptTemplate:
-    """Create prompt in the style of the zero shot agent."""
-    tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
-    tool_names = ", ".join([tool.name for tool in tools])
-    format_instructions = format_instructions.format(tool_names=tool_names)
-    template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
-    if input_variables is None:
-        input_variables = ["input", "agent_scratchpad"]
-    return PromptTemplate(template=template, input_variables=input_variables)
 
 
 class ZeroShotAgent(Agent):
@@ -105,9 +89,13 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        return create_zero_shot_prompt(
-            tools, prefix, suffix, format_instructions, input_variables
-        )
+        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_names = ", ".join([tool.name for tool in tools])
+        format_instructions = format_instructions.format(tool_names=tool_names)
+        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        if input_variables is None:
+            input_variables = ["input", "agent_scratchpad"]
+        return PromptTemplate(template=template, input_variables=input_variables)
 
     @classmethod
     def from_llm_and_tools(
@@ -123,6 +111,36 @@ class ZeroShotAgent(Agent):
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
+        prompt = cls.create_prompt(
+            tools,
+            prefix=prefix,
+            suffix=suffix,
+            format_instructions=format_instructions,
+            input_variables=input_variables,
+        )
+        llm_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+
+    @classmethod
+    def as_sql_agent(
+            cls,
+            llm: BaseLLM,
+            toolkit: SQLDatabaseToolkit,
+            callback_manager: Optional[BaseCallbackManager] = None,
+            prefix: str = SQL_PREFIX,
+            suffix: str = SQL_SUFFIX,
+            format_instructions: str = FORMAT_INSTRUCTIONS,
+            input_variables: Optional[List[str]] = None,
+            top_k: int = 10,
+            **kwargs: Any,
+    ):
+        tools = toolkit.get_tools()
+        prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
         prompt = cls.create_prompt(
             tools,
             prefix=prefix,
