@@ -69,12 +69,13 @@ class GoogleSearchAPIWrapper(BaseModel):
         google_api_key = get_from_dict_or_env(
             values, "google_api_key", "GOOGLE_API_KEY"
         )
+        values["google_api_key"] = google_api_key
+
+        google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
+        values["google_cse_id"] = google_cse_id
+
         try:
             from googleapiclient.discovery import build
-
-            values["google_api_key"] = google_api_key
-            service = build("customsearch", "v1", developerKey=google_api_key)
-            values["search_engine"] = service
 
         except ImportError:
             raise ImportError(
@@ -82,8 +83,9 @@ class GoogleSearchAPIWrapper(BaseModel):
                 "Please install it with `pip install google-api-python-client`"
             )
 
-        google_cse_id = get_from_dict_or_env(values, "google_cse_id", "GOOGLE_CSE_ID")
-        values["google_cse_id"] = google_cse_id
+        service = build("customsearch", "v1", developerKey=google_api_key)
+        values["search_engine"] = service
+
         return values
 
     def run(self, query: str) -> str:

@@ -32,18 +32,19 @@ class WolframAlphaAPIWrapper(BaseModel):
         wolfram_alpha_appid = get_from_dict_or_env(
             values, "wolfram_alpha_appid", "WOLFRAM_ALPHA_APPID"
         )
+        values["wolfram_alpha_appid"] = wolfram_alpha_appid
+
         try:
             import wolframalpha
 
-            client = wolframalpha.Client(wolfram_alpha_appid)
-            values["wolfram_client"] = client
-
         except ImportError:
-            raise ValueError(
-                "Could not import wolframalpha "
+            raise ImportError(
+                "wolframalpha is not installed. "
                 "Please install it with `pip install wolframalpha`"
             )
-        values["wolfram_alpha_appid"] = wolfram_alpha_appid
+        client = wolframalpha.Client(wolfram_alpha_appid)
+        values["wolfram_client"] = client
+
         return values
 
     def run(self, query: str) -> str:
