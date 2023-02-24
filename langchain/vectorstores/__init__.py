@@ -1,4 +1,5 @@
 """Wrappers on top of vector stores."""
+from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
@@ -8,7 +9,6 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.weaviate import Weaviate
-from langchain.vectorstores.atlas import AtlasDB
 
 __all__ = [
     "ElasticVectorSearch",

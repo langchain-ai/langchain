@@ -1,10 +1,11 @@
 """Wrapper around Atlas by Nomic"""
 from __future__ import annotations
 
-import uuid
 import logging
-import numpy as np
+import uuid
 from typing import Any, Dict, Iterable, List, Optional
+
+import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -27,6 +28,7 @@ class AtlasDB(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 vectorstore = AtlasDB("my_project", embeddings.embed_query)
     """
+
     _ATLAS_DEFAULT_ID_FIELD = "atlas_id"
 
     def __init__(
@@ -34,9 +36,9 @@ class AtlasDB(VectorStore):
         name: str,
         embedding_function: Optional[Embeddings] = None,
         api_key: Optional[str] = None,
-        description: str = 'A description for your project',
+        description: str = "A description for your project",
         is_public: bool = True,
-        reset_project_if_exists = False,
+        reset_project_if_exists=False,
     ) -> None:
         """
         Initialize the Atlas Client
@@ -51,7 +53,7 @@ class AtlasDB(VectorStore):
         """
         try:
             import nomic
-            from nomic import atlas, AtlasProject
+            from nomic import AtlasProject, atlas
         except Exception as e:
             raise ValueError(
                 "Could not import nomic python package. "
@@ -63,19 +65,20 @@ class AtlasDB(VectorStore):
         nomic.login(api_key)
 
         self._embedding_function = embedding_function
-        modality = 'text'
+        modality = "text"
         if self._embedding_function is not None:
-            modality = 'embedding'
+            modality = "embedding"
 
         # Check if the project exists, create it if not
-        self.project = AtlasProject(name=name,
-                                    description=description,
-                                    modality=modality,
-                                    is_public=is_public,
-                                    reset_project_if_exists=reset_project_if_exists,
-                                    unique_id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD)
+        self.project = AtlasProject(
+            name=name,
+            description=description,
+            modality=modality,
+            is_public=is_public,
+            reset_project_if_exists=reset_project_if_exists,
+            unique_id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD,
+        )
         self.project._latest_project_state()
-
 
     def add_texts(
         self,
@@ -96,48 +99,53 @@ class AtlasDB(VectorStore):
             List[str]: List of IDs of the added texts.
         """
 
-        if metadatas is not None and len(metadatas) > 0 and 'text' in metadatas[0].keys():
-            raise ValueError('Cannot accept key text in metadata!')
+        if (
+            metadatas is not None
+            and len(metadatas) > 0
+            and "text" in metadatas[0].keys()
+        ):
+            raise ValueError("Cannot accept key text in metadata!")
 
         texts = list(texts)
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
-        #Embedding upload case
+        # Embedding upload case
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(texts)
             embeddings = np.stack(embeddings)
             if metadatas is None:
-                data = [{AtlasDB._ATLAS_DEFAULT_ID_FIELD: ids[i],
-                         'text': texts[i]}
-                        for i, _ in enumerate(texts)]
+                data = [
+                    {AtlasDB._ATLAS_DEFAULT_ID_FIELD: ids[i], "text": texts[i]}
+                    for i, _ in enumerate(texts)
+                ]
             else:
                 for i in range(len(metadatas)):
                     metadatas[i][AtlasDB._ATLAS_DEFAULT_ID_FIELD] = ids[i]
-                    metadatas[i]['text'] = texts[i]
+                    metadatas[i]["text"] = texts[i]
                 data = metadatas
 
-            self.project._validate_map_data_inputs([],
-                                                   id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD,
-                                                   data=data)
+            self.project._validate_map_data_inputs(
+                [], id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD, data=data
+            )
             with self.project.wait_for_project_lock():
-                self.project.add_embeddings(embeddings=embeddings,
-                                            data=data)
-        #Text upload case
+                self.project.add_embeddings(embeddings=embeddings, data=data)
+        # Text upload case
         else:
             if metadatas is None:
-                data = [{'text': text,
-                         AtlasDB._ATLAS_DEFAULT_ID_FIELD: ids[i]}
-                        for i, text in enumerate(texts)]
+                data = [
+                    {"text": text, AtlasDB._ATLAS_DEFAULT_ID_FIELD: ids[i]}
+                    for i, text in enumerate(texts)
+                ]
             else:
                 for i, text in enumerate(texts):
-                    metadatas[i]['text'] = texts
+                    metadatas[i]["text"] = texts
                     metadatas[i][AtlasDB._ATLAS_DEFAULT_ID_FIELD] = ids[i]
                 data = metadatas
 
-            self.project._validate_map_data_inputs([],
-                                                   id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD,
-                                                   data=data)
+            self.project._validate_map_data_inputs(
+                [], id_field=AtlasDB._ATLAS_DEFAULT_ID_FIELD, data=data
+            )
 
             with self.project.wait_for_project_lock():
                 self.project.add_text(data)
@@ -150,10 +158,10 @@ class AtlasDB(VectorStore):
         return ids
 
     def create_index(self, **kwargs) -> "AtlasProjection":
-        '''
+        """
         Creates an index in your project.
         See https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index for full detail
-        '''
+        """
         with self.project.wait_for_project_lock():
             return self.project.create_index(**kwargs)
 
@@ -173,16 +181,20 @@ class AtlasDB(VectorStore):
             List[Document]: List of documents most similar to the query text.
         """
         if self._embedding_function is None:
-            raise NotImplementedError('AtlasDB requires an embedding_function for text similarity search!')
+            raise NotImplementedError(
+                "AtlasDB requires an embedding_function for text similarity search!"
+            )
 
         embedding = self._embedding_function.embed_documents([query])[0]
         embedding = np.array(embedding).reshape(1, -1)
         with self.project.wait_for_project_lock():
-            neighbors, _ = self.project.projections[0].vector_search(queries=embedding, k=k)
+            neighbors, _ = self.project.projections[0].vector_search(
+                queries=embedding, k=k
+            )
             datas = self.project.get_data(ids=neighbors[0])
 
         docs = [
-            Document(page_content=datas[i]['text'], metadata=datas[i])
+            Document(page_content=datas[i]["text"], metadata=datas[i])
             for i, neighbor in enumerate(neighbors)
         ]
         return docs
@@ -196,7 +208,7 @@ class AtlasDB(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        description: str = 'A description for your project',
+        description: str = "A description for your project",
         is_public: bool = True,
         reset_project_if_exists=False,
         index_kwargs=None,
@@ -220,19 +232,18 @@ class AtlasDB(VectorStore):
             AtlasDB: Nomic's neural database and finest rhizomatic instrument
         """
 
-        #Inject relevant kwargs
-        all_index_kwargs = {'name': name + '_index',
-                            'indexed_field': 'text'}
+        # Inject relevant kwargs
+        all_index_kwargs = {"name": name + "_index", "indexed_field": "text"}
         if index_kwargs is not None:
             for k, v in index_kwargs.items():
                 all_index_kwargs[k] = v
 
-        #Build project
+        # Build project
         atlasDB = cls(
             name,
             embedding_function=embedding,
             api_key=api_key,
-            description='A description for your project',
+            description="A description for your project",
             is_public=is_public,
             reset_project_if_exists=reset_project_if_exists,
         )
@@ -250,7 +261,7 @@ class AtlasDB(VectorStore):
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
         persist_directory: Optional[str] = None,
-        description: str = 'A description for your project',
+        description: str = "A description for your project",
         is_public: bool = True,
         reset_project_if_exists=False,
         index_kwargs=None,
