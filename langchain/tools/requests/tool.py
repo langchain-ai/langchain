@@ -1,3 +1,4 @@
+# flake8: noqa
 """Tools for making requests to an API endpoint."""
 import json
 from typing import Any, Dict
@@ -46,7 +47,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the POST request.
     """
 
-    def _run(self, text) -> str:
+    def _run(self, text: str) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
@@ -54,7 +55,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text) -> str:
+    async def _arun(self, text: str) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
@@ -75,7 +76,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PATCH request.
     """
 
-    def _run(self, text) -> str:
+    def _run(self, text: str) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
@@ -83,7 +84,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text) -> str:
+    async def _arun(self, text: str) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
@@ -104,7 +105,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PUT request.
     """
 
-    def _run(self, text) -> str:
+    def _run(self, text: str) -> str:
         """Run the tool."""
         try:
             data = _parse_input(text)
@@ -112,7 +113,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         except Exception as e:
             return repr(e)
 
-    async def _arun(self, text) -> str:
+    async def _arun(self, text: str) -> str:
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)

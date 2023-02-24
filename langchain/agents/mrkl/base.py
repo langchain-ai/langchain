@@ -147,7 +147,8 @@ class ZeroShotAgent(Agent):
         input_variables: Optional[List[str]] = None,
         top_k: int = 10,
         **kwargs: Any,
-    ):
+    ) -> Agent:
+        """Construct a sql agent from an LLM and tools.""" ""
         tools = toolkit.get_tools()
         prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
         prompt = cls.create_prompt(
@@ -176,7 +177,8 @@ class ZeroShotAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
-    ):
+    ) -> Agent:
+        """Construct a json agent from an LLM and tools."""
         tools = toolkit.get_tools()
         prompt = cls.create_prompt(
             tools,

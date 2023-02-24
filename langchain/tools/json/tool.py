@@ -1,16 +1,18 @@
+# flake8: noqa
+"""Tools for working with JSON specs."""
 from __future__ import annotations
 
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 from pydantic import BaseModel
 
 from langchain.tools.base import BaseTool
 
 
-def _parse_input(text) -> List[Union[str, int]]:
+def _parse_input(text: str) -> List[Union[str, int]]:
     """Parse input of the form data["key1"][0]["key2"] into a list of keys."""
     _res = re.findall(r"\[.*?]", text)
     # strip the brackets and quotes, convert to int if possible
@@ -22,7 +24,7 @@ def _parse_input(text) -> List[Union[str, int]]:
 class JsonSpec(BaseModel):
     """Base class for JSON spec."""
 
-    dict_: Dict[str, Any]
+    dict_: Dict
     max_value_length: int = 200
 
     @classmethod
@@ -67,10 +69,10 @@ class JsonSpec(BaseModel):
 
             if isinstance(val, dict) and len(str(val)) > self.max_value_length:
                 return "Value is a large dictionary, should explore its keys directly"
-            val = str(val)
-            if len(val) > self.max_value_length:
-                val = val[: self.max_value_length] + "..."
-            return val
+            str_val = str(val)
+            if len(str_val) > self.max_value_length:
+                str_val = str_val[: self.max_value_length] + "..."
+            return str_val
         except Exception as e:
             return repr(e)
 
