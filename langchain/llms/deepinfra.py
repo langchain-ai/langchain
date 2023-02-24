@@ -23,7 +23,7 @@ class DeepInfra(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import DeepInfra
+            from langchain.llms import DeepInfra
             di = DeepInfra(model_id="google/flan-t5-xl",
                                 deepinfra_api_token="my-api-key")
     """

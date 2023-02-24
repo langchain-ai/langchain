@@ -16,7 +16,7 @@ class NLPCloud(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import NLPCloud
+            from langchain.llms import NLPCloud
             nlpcloud = NLPCloud(model="gpt-neox-20b")
     """
 

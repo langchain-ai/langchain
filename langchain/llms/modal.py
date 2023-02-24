@@ -21,7 +21,7 @@ class Modal(LLM, BaseModel):
 
     Example:
         .. code-block:: python
-            from langchain import Modal
+            from langchain.llms import Modal
             modal = Modal(endpoint_url="")
 
     """
