@@ -10,10 +10,13 @@ from langchain.document_loaders.base import BaseLoader
 class YoutubeLoader(BaseLoader):
     """Loader that loads Youtube transcripts."""
 
-    def __init__(self, video_id: str, add_video_info: bool = False):
+    def __init__(
+        self, video_id: str, add_video_info: bool = False, language: str = "en"
+    ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
         self.add_video_info = add_video_info
+        self.language = language
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
@@ -39,7 +42,9 @@ class YoutubeLoader(BaseLoader):
             video_info = self._get_video_info()
             metadata.update(video_info)
 
-        transcript_pieces = YouTubeTranscriptApi.get_transcript(self.video_id)
+        transcript_pieces = YouTubeTranscriptApi.get_transcript(
+            self.video_id, languages=(self.language,)
+        )
         transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
 
         return [Document(page_content=transcript, metadata=metadata)]
