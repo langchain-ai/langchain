@@ -1,9 +1,8 @@
 """Loader that loads Facebook chat json dump."""
-import json
 import datetime
-
-from typing import List
+import json
 from pathlib import Path
+from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
