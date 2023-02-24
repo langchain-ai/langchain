@@ -102,7 +102,7 @@ class Banana(LLM, BaseModel):
             text = response["modelOutputs"][0]["output"]
         except KeyError:
             raise ValueError(
-                f"Response. must follow the format of {'modelOutputs': [{'output': 'text'}]}. "
+                f"Response should be {'modelOutputs': [{'output': 'text'}]}."
                 f"Response was: {response}"
             )
         if stop is not None:
