@@ -25,7 +25,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     model: str = "large"
     """Model name to use."""
 
-    truncate: str = "NONE"
+    truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     cohere_api_key: Optional[str] = None
