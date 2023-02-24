@@ -46,6 +46,9 @@ class Cohere(LLM, BaseModel):
 
     presence_penalty: int = 0
     """Penalizes repeated tokens."""
+    
+    truncate: Optional[str] = None
+    """Specify how the client handles inputs longer than the maximum token length: Truncate from START, END or NONE"""
 
     cohere_api_key: Optional[str] = None
 
@@ -83,6 +86,7 @@ class Cohere(LLM, BaseModel):
             "p": self.p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
+            "truncate": self.truncate,
         }
 
     @property
