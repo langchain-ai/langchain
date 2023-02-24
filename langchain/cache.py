@@ -87,7 +87,7 @@ class SQLAlchemyCache(BaseCache):
                 prompt=prompt, llm=llm_string, response=generation.text, idx=i
             )
             with Session(self.engine) as session, session.begin():
-                session.add(item)
+                session.merge(item)
 
 
 class SQLiteCache(SQLAlchemyCache):
