@@ -17,6 +17,14 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `Goose AI <./integrations/gooseai_example.html>`_: Covers how to utilize the Goose AI wrapper.
 
+`Writer <./integrations/writer.html>`_: Covers how to utilize the Writer wrapper.
+
+`Banana <./integrations/banana.html>`_: Covers how to utilize the Banana wrapper.
+
+`Modal <./integrations/modal.html>`_: Covers how to utilize the Modal wrapper.
+
+`StochasticAI <./integrations/stochasticai.html>`_: Covers how to utilize the Stochastic AI wrapper.
+
 `Cerebrium <./integrations/cerebriumai_example.html>`_: Covers how to utilize the Cerebrium AI wrapper.
 
 `Petals <./integrations/petals_example.html>`_: Covers how to utilize the Petals wrapper.
