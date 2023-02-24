@@ -101,7 +101,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         else:
             return {self.output_key: answer}
 
-    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         chat_history_str = _get_chat_history(inputs["chat_history"])
         vectordbkwargs = inputs.get("vectordbkwargs", {})
