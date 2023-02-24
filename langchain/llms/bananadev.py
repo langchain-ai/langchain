@@ -1,4 +1,4 @@
-"""Wrapper around CerebriumAI API."""
+"""Wrapper around Banana API."""
 import logging
 
 from typing import Any, Dict, List, Mapping, Optional
