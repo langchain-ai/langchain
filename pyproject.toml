@@ -41,7 +41,7 @@ tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"
 tenacity = "^8.1.0"
 cohere = {version = "^3", optional = true}
 openai = {version = "^0", optional = true}
-nomic = {verstion = "^1", optional = true}
+nomic = {version = "^1", optional = true}
 nlpcloud = {version = "^1", optional = true}
 huggingface_hub = {version = "^0", optional = true}
 google-search-results = {version = "^2", optional = true}
