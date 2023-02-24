@@ -61,16 +61,23 @@ def remove_newlines(x: Any) -> Any:
 class NotebookLoader(BaseLoader):
     """Loader that loads .ipynb notebook files."""
 
-    def __init__(self, path: str):
-        """Initialize with path."""
-        self.file_path = path
-
-    def load(
+    def __init__(
         self,
+        path: str,
         include_outputs: bool = False,
         max_output_length: int = 10,
         remove_newline: bool = False,
         traceback: bool = False,
+    ):
+        """Initialize with path."""
+        self.file_path = path
+        self.include_outputs = include_outputs
+        self.max_output_length = max_output_length
+        self.remove_newline = remove_newline
+        self.traceback = traceback
+
+    def load(
+        self,
     ) -> List[Document]:
         """Load documents."""
         try:
@@ -87,12 +94,12 @@ class NotebookLoader(BaseLoader):
 
         data = pd.json_normalize(d["cells"])
         filtered_data = data[["cell_type", "source", "outputs"]]
-        if remove_newline:
+        if self.remove_newline:
             filtered_data = filtered_data.applymap(remove_newlines)
 
         text = filtered_data.apply(
             lambda x: concatenate_cells(
-                x, include_outputs, max_output_length, traceback
+                x, self.include_outputs, self.max_output_length, self.traceback
             ),
             axis=1,
         ).str.cat(sep=" ")

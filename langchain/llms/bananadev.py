@@ -22,8 +22,8 @@ class Banana(LLM, BaseModel):
 
     Example:
         .. code-block:: python
-            from langchain import Banana
-            cerebrium = Banana(model_key="")
+            from langchain.llms import Banana
+            banana = Banana(model_key="")
     """
 
     model_key: str = ""

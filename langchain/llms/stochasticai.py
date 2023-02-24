@@ -22,8 +22,8 @@ class StochasticAI(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import StochasticAI
-            forefrontai = StochasticAI(api_url="")
+            from langchain.llms import StochasticAI
+            stochasticai = StochasticAI(api_url="")
     """
 
     api_url: str = ""
