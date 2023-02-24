@@ -15,6 +15,7 @@ from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.online_pdf import OnlinePDFLoader
@@ -71,4 +72,5 @@ __all__ = [
     "PDFMinerLoader",
     "TelegramChatLoader",
     "SRTLoader",
+    "NotebookLoader",
 ]
