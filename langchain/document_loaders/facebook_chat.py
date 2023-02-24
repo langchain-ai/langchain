@@ -27,7 +27,6 @@ class FacebookChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-
         try:
             import pandas as pd
         except ImportError:
@@ -43,7 +42,8 @@ class FacebookChatLoader(BaseLoader):
         normalized_messages = pd.json_normalize(d["messages"])
         df_normalized_messages = pd.DataFrame(normalized_messages)
 
-        # Only keep plain text messages (no services, nor links, hashtags, code, bold ...)
+        # Only keep plain text messages
+        # (no services, nor links, hashtags, code, bold ...)
         df_filtered = df_normalized_messages[
             (df_normalized_messages.content.apply(lambda x: type(x) == str))
         ]
