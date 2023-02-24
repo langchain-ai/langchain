@@ -7,6 +7,7 @@ from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.evernote import EverNoteLoader
+from langchain.document_loaders.facebook_chat import FacebookChatLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
 from langchain.document_loaders.gitbook import GitbookLoader
@@ -72,5 +73,6 @@ __all__ = [
     "PDFMinerLoader",
     "TelegramChatLoader",
     "SRTLoader",
+    "FacebookChatLoader",
     "NotebookLoader",
 ]
