@@ -1,0 +1,64 @@
+{
+    "participants": [{"name": "User 1"}, {"name": "User 2"}],
+    "messages": [
+        {"sender_name": "User 2", "timestamp_ms": 1675597571851, "content": "Bye!"},
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675597435669,
+            "content": "Oh no worries! Bye",
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675596277579,
+            "content": "No Im sorry it was my mistake, the blue one is not for sale",
+        },
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675595140251,
+            "content": "I thought you were selling the blue one!",
+        },
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675595109305,
+            "content": "Im not interested in this bag. Im interested in the blue one!",
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675595068468,
+            "content": "Here is $129",
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675595060730,
+            "photos": [
+                {"uri": "url_of_some_picture.jpg", "creation_timestamp": 1675595059}
+            ],
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675595045152,
+            "content": "Online is at least $100",
+        },
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675594799696,
+            "content": "How much do you want?",
+        },
+        {
+            "sender_name": "User 2",
+            "timestamp_ms": 1675577876645,
+            "content": "Goodmorning! $50 is too low.",
+        },
+        {
+            "sender_name": "User 1",
+            "timestamp_ms": 1675549022673,
+            "content": "Hi! Im interested in your bag. Im offering $50. Let me know if you are interested. Thanks!",
+        },
+    ],
+    "title": "User 1 and User 2 chat",
+    "is_still_participant": true,
+    "thread_path": "inbox/User 1 and User 2 chat",
+    "magic_words": [],
+    "image": {"uri": "image_of_the_chat.jpg", "creation_timestamp": 1675549016},
+    "joinable_mode": {"mode": 1, "link": ""},
+}
