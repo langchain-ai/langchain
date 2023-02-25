@@ -17,7 +17,7 @@ name = "aiodns"
 version = "3.0.0"
 description = "Simple DNS resolver for asyncio"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "aiodns-3.0.0-py3-none-any.whl", hash = "sha256:2b19bc5f97e5c936638d28e665923c093d8af2bf3aa88d35c43417fa25d136a2"},
@@ -141,7 +141,7 @@ name = "aiohttp-retry"
 version = "2.8.3"
 description = "Simple retry client for aiohttp"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "aiohttp_retry-2.8.3-py3-none-any.whl", hash = "sha256:3aeeead8f6afe48272db93ced9440cf4eda8b6fd7ee2abb25357b7eb28525b45"},
@@ -183,7 +183,7 @@ name = "aleph-alpha-client"
 version = "2.15.0"
 description = "python client to interact with Aleph Alpha api endpoints"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "aleph-alpha-client-2.15.0.tar.gz", hash = "sha256:b50329572c319fbf0d17fab3e34a46c15f164931f40ff6eb2379c8276d4728fa"},
@@ -4127,7 +4127,7 @@ name = "pycares"
 version = "4.3.0"
 description = "Python interface for c-ares"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pycares-4.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:19c9cdd3322d422931982939773e453e491dfc5c0b2e23d7266959315c7a0824"},
@@ -6301,7 +6301,7 @@ name = "tokenizers"
 version = "0.13.2"
 description = "Fast and Customizable Tokenizers"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "tokenizers-0.13.2-cp310-cp310-macosx_10_11_x86_64.whl", hash = "sha256:a6f36b1b499233bb4443b5e57e20630c5e02fba61109632f5e00dab970440157"},
@@ -7192,4 +7192,4 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2f916a8467f87cb850664b564c317dab569c9fee490e05308ac85427ef3abadc"
+content-hash = "d721dd78b86bec2a090fa5669aa8eb7df2442dd0376695ef71c75e5b84dd04ec"

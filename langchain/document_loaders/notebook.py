@@ -3,8 +3,6 @@ import json
 from pathlib import Path
 from typing import Any, List
 
-import pandas as pd
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -47,7 +45,9 @@ def concatenate_cells(
 
 
 def remove_newlines(x: Any) -> Any:
-    """Remove recursivelly newlines, no matter the data structure they are stored in."""
+    """Remove recursively newlines, no matter the data structure they are stored in."""
+    import pandas as pd
+
     if isinstance(x, str):
         return x.replace("\n", "")
     elif isinstance(x, list):
