@@ -50,8 +50,9 @@ class SequentialChain(Chain, BaseModel):
             if any(input_variables) in memory_keys:
                 overlapping_keys = input_variables & memory_keys
                 raise ValueError(
-                    f"The the input key(s) {''.join(overlapping_keys)} are found in the Memory keys "
-                    f"({memory_keys}) - please use input and memory keys that don't overlap."
+                    f"The the input key(s) {''.join(overlapping_keys)} are found "
+                    f"in the Memory keys ({memory_keys}) - please use input and "
+                    f"memory keys that don't overlap."
                 )
 
         known_variables = set(input_variables + memory_keys)
