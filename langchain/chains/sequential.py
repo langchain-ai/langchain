@@ -44,7 +44,7 @@ class SequentialChain(Chain, BaseModel):
         chains = values["chains"]
         input_variables = values["input_variables"]
         memory_keys = list()
-        if 'memory' in values and values['memory'] is not None:
+        if "memory" in values and values["memory"] is not None:
             """Validate that prompt input variables are consistent."""
             memory_keys = values["memory"].memory_variables
             if any(input_variables) in memory_keys:
