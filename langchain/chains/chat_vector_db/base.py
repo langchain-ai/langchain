@@ -33,7 +33,6 @@ class ChatVectorDBChain(Chain, BaseModel):
     output_key: str = "answer"
     return_source_documents: bool = False
     top_k_docs_for_context: int = 4
-    search_distance: Optional[Union[float, str]]
     """Return the source documents."""
 
     @property
@@ -91,7 +90,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         else:
             new_question = question
         docs = self.vectorstore.similarity_search(
-            new_question, k=self.top_k_docs_for_context, search_distance=self.search_distance, **vectordbkwargs
+            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
         )
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
@@ -114,7 +113,7 @@ class ChatVectorDBChain(Chain, BaseModel):
             new_question = question
         # TODO: This blocks the event loop, but it's not clear how to avoid it.
         docs = self.vectorstore.similarity_search(
-            new_question, k=self.top_k_docs_for_context, search_distance=self.search_distance, **vectordbkwargs
+            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
         )
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
