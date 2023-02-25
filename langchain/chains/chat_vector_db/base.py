@@ -1,7 +1,7 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
