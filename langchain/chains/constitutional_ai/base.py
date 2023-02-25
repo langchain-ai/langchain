@@ -16,7 +16,7 @@ class ConstitutionalChain(Chain):
         .. code-block:: python
 
             from langchain.llms import OpenAI
-            from langchian.chains import LLMChain, ConstitutionalChain
+            from langchain.chains import LLMChain, ConstitutionalChain
 
             qa_prompt = PromptTemplate(
                 template="Q: {question} A:",

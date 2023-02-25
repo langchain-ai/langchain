@@ -25,14 +25,14 @@ class HuggingFacePipeline(LLM, BaseModel):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+            from langchain.llms import HuggingFacePipeline
             hf = HuggingFacePipeline.from_model_id(
                 model_id="gpt2", task="text-generation"
             )
     Example passing pipeline in directly:
         .. code-block:: python
 
-            from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+            from langchain.llms import HuggingFacePipeline
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
             model_id = "gpt2"

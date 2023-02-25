@@ -18,7 +18,7 @@ class ForefrontAI(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import ForefrontAI
+            from langchain.llms import ForefrontAI
             forefrontai = ForefrontAI(endpoint_url="")
     """
 

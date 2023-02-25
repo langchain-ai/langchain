@@ -250,7 +250,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         for s in splits:
-            if len(s) < self._chunk_size:
+            if self._length_function(s) < self._chunk_size:
                 _good_splits.append(s)
             else:
                 if _good_splits:
