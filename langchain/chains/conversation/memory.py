@@ -503,7 +503,7 @@ class ConversationSymbolicMemory(Memory, BaseModel):
     llm: BaseLLM
     prompt: BasePromptTemplate = FORMALISM_PROMPT
     model_syntax: str = "LaTeX"
-    memory_key: str = "olog"  #: :meta private:
+    memory_key: str = "history"  #: :meta private:
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     

@@ -196,7 +196,7 @@ New lines of conversation:
 {new_lines}
 
 New formalism:'''
-import pdb; pdb.set_trace()
+
 FORMALISM_PROMPT = PromptTemplate(
     input_variables=["formalism", "new_lines"], template=_DEFAULT_FORMALISER_TEMPLATE
 )

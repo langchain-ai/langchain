@@ -59,6 +59,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
         ConversationBufferMemory(memory_key="baz"),
         ConversationBufferWindowMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
+        ConversationSymbolicMemory(llm=FakeLLM(), memory_key="baz")
     ],
 )
 def test_conversation_memory(memory: Memory) -> None:
