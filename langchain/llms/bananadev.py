@@ -103,12 +103,12 @@ class Banana(LLM, BaseModel):
         except (KeyError, TypeError):
             returned = response["modelOutputs"][0]
             raise ValueError(
-                f"Response should be of schema: {'output': 'text'}."
-                f"Response was: {returned}"
-                "To fix this:"
-                "- fork the source repo of the Banana model"
-                "- modify app.py to return the above schema" 
-                "- deploy that as a custom repo"
+                "Response should be of schema: {'output': 'text'}."
+                f"\nResponse was: {returned}"
+                "\nTo fix this:"
+                "\n- fork the source repo of the Banana model"
+                "\n- modify app.py to return the above schema" 
+                "\n- deploy that as a custom repo"
             )
         if stop is not None:
             # I believe this is required since the stop tokens
