@@ -60,16 +60,18 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
-        input_variables = values["input_variables"]
-        expected_input_variables = set(values["suffix"].input_variables)
-        if values["prefix"] is not None:
-            expected_input_variables |= set(values["prefix"].input_variables)
-        missing_vars = expected_input_variables.difference(input_variables)
-        if missing_vars:
-            raise ValueError(
-                f"Got input_variables={input_variables}, but based on prefix/suffix "
-                f"expected {expected_input_variables}"
-            )
+        if values["validate_template"]:
+            input_variables = values["input_variables"]
+            expected_input_variables = set(values["suffix"].input_variables)
+            expected_input_variables |= set(values["partial_variables"])
+            if values["prefix"] is not None:
+                expected_input_variables |= set(values["prefix"].input_variables)
+            missing_vars = expected_input_variables.difference(input_variables)
+            if missing_vars:
+                raise ValueError(
+                    f"Got input_variables={input_variables}, but based on "
+                    f"prefix/suffix expected {expected_input_variables}"
+                )
         return values
 
     class Config:
@@ -130,8 +132,14 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
 
         pieces = [prefix, *example_strings, suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
+        # Get partial params:
+        partial_kwargs = {
+            k: v if isinstance(v, str) else v()
+            for k, v in self.partial_variables.items()
+        }
+        all_kwargs = {**partial_kwargs, **kwargs}
         # Format the template with the input variables.
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **all_kwargs)
 
     @property
     def _prompt_type(self) -> str:

@@ -1,12 +1,14 @@
 """BasePrompt schema definition."""
+from __future__ import annotations
+
 import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
 
@@ -117,6 +119,9 @@ class BasePromptTemplate(BaseModel, ABC):
     """A list of the names of the variables the prompt template expects."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
+    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
+        default_factory=dict
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -132,7 +137,29 @@ class BasePromptTemplate(BaseModel, ABC):
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
+        if "stop" in values["partial_variables"]:
+            raise ValueError(
+                "Cannot have an partial variable named 'stop', as it is used "
+                "internally, please rename."
+            )
+
+        overall = set(values["input_variables"]).intersection(
+            values["partial_variables"]
+        )
+        if overall:
+            raise ValueError(
+                f"Found overlapping input and partial variables: {overall}"
+            )
         return values
+
+    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+        """Return a partial of the prompt template."""
+        prompt_dict = self.__dict__.copy()
+        prompt_dict["input_variables"] = list(
+            set(self.input_variables).difference(kwargs)
+        )
+        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
+        return type(self)(**prompt_dict)
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
