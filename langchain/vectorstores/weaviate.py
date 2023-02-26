@@ -1,7 +1,7 @@
 """Wrapper around weaviate vector database."""
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional, Dict
+from typing import Any, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 from langchain.docstore.document import Document
