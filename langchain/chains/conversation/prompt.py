@@ -218,7 +218,7 @@ Current formalism:
 New lines of conversation:
 {new_lines}
 
-New summary:"""
+New formalism:"""
 FORMALISM_PROMPT = PromptTemplate(
-    input_variables=["summary", "new_lines"], template=_DEFAULT_FORMALISM_TEMPLATE
+    input_variables=["formalism", "new_lines"], template=_DEFAULT_FORMALISM_TEMPLATE
 )
