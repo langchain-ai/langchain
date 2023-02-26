@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
@@ -40,6 +41,23 @@ class RediSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        # TODO
+        prefix = "doc"  # prefix for the document keys
+
+        # Check if index exists
+        for i, text in enumerate(texts):
+            key = f"{prefix}:{uuid.uuid4()}"
+            metadata = metadatas[i] if metadatas else {}
+            self.client.hset(
+                key,
+                mapping={
+                    "content": text,
+                    "content_vector": np.array(
+                        self.embedding_function(text), dtype=np.float32
+                    ).tobytes(),
+                    "metadata": json.dumps(metadata),
+                },
+            )
         pass
 
     def similarity_search(
@@ -49,7 +67,6 @@ class RediSearch(VectorStore):
         embedding = self.embedding_function(query)
 
         # Prepare the Query
-        index_name = "redisearch-index"
         return_fields = ["metadata", "content", "vector_score"]
         vector_field = "content_vector"
         hybrid_fields = "*"
@@ -66,7 +83,7 @@ class RediSearch(VectorStore):
         params_dict = {"vector": np.array(embedding).astype(dtype=np.float32).tobytes()}
 
         # perform vector search
-        results = self.client.ft(index_name).search(query, params_dict)
+        results = self.client.ft(self.index_name).search(query, params_dict)
 
         documents = [
             Document(page_content=result.content, metadata=json.loads(result.metadata))
@@ -124,7 +141,7 @@ class RediSearch(VectorStore):
         dim = len(embeddings[0])
         # Constants
         vector_number = len(embeddings)  # initial number of vectors
-        index_name = "redisearch-index"  # name of the search index
+        index_name = uuid.uuid4().hex  # name of the search index
         prefix = "doc"  # prefix for the document keys
         distance_metric = (
             "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
@@ -154,7 +171,7 @@ class RediSearch(VectorStore):
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
         for i, text in enumerate(texts):
-            key = f"{prefix}:{str(i)}"
+            key = f"{prefix}:{str(index_name)}"
             metadata = metadatas[i] if metadatas else {}
 
             client.hset(
