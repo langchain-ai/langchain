@@ -500,6 +500,7 @@ class ConversationSymbolicMemory(Memory, BaseModel):
     buffer: str = ""
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
+    max_token_limit: int = 2000
     llm: BaseLLM
     prompt: BasePromptTemplate = FORMALISM_PROMPT
     model_syntax: str = "LaTeX"
@@ -530,6 +531,10 @@ class ConversationSymbolicMemory(Memory, BaseModel):
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
         return values
+        
+    def get_num_tokens_list(self, arr: List[str]) -> List[int]:
+        """Get list of number of tokens in each string in the input array."""
+        return [self.llm.get_num_tokens(x) for x in arr]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
@@ -546,9 +551,18 @@ class ConversationSymbolicMemory(Memory, BaseModel):
         human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
         ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
-        chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        self.buffer = chain.predict(formalism=self.buffer, new_lines=new_lines)
-
+        self.buffer = self.buffer.format(self.buffer, new_lines)
+        # Prune buffer if it exceeds max token limit
+        curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
+        if curr_buffer_length > self.max_token_limit:
+            pruned_memory = []
+            while curr_buffer_length > self.max_token_limit:
+                pruned_memory.append(self.buffer.pop(0))
+                curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
+            chain = LLMChain(llm=self.llm, prompt=self.prompt)
+            self.moving_summary_buffer = chain.predict(
+                formalism=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory))
+            )
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = ""
