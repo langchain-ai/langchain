@@ -8,8 +8,8 @@ from langchain.chains.conversation.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
-    FORMALISM_PROMPT,
     SUMMARY_PROMPT,
+    FORMALISM_PROMPT,
 )
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import (
@@ -523,7 +523,7 @@ class ConversationSymbolicMemory(Memory, BaseModel):
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables
-        expected_keys = {"summary", "new_lines"}
+        expected_keys = {"formalism", "new_lines"}
         if expected_keys != set(prompt_variables):
             raise ValueError(
                 "Got unexpected prompt input variables. The prompt expects "
@@ -547,7 +547,7 @@ class ConversationSymbolicMemory(Memory, BaseModel):
         ai = f"{self.ai_prefix}: {outputs[output_key]}"
         new_lines = "\n".join([human, ai])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
+        self.buffer = chain.predict(formalism=self.buffer, new_lines=new_lines)
 
     def clear(self) -> None:
         """Clear memory contents."""

@@ -174,7 +174,9 @@ KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(
     template=_DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE,
 )
 
-_DEFAULT_FORMALISM_TEMPLATE = """Progressively arrive at the mathematical model of a microworld and the formalism for its symbolic description.
+
+
+_DEFAULT_FORMALISER_TEMPLATE = '''Progressively arrive at the mathematical model of a microworld and the formalism for its symbolic description.
 
 Influences:
 [Topos Institute](https://topos.site/)
@@ -183,33 +185,8 @@ Influences:
 
 EXAMPLE
 Current formalism:
-\begin{equation}
-E = mc^2 = I = \frac{m\Delta x^2}{2\Delta t^2}
-\end{equation}
 
-where $E$ represents energy, $m$ represents mass, $c$ represents the speed of light, $I$ represents information, $\Delta x$ represents the spatial resolution,
-and $\Delta t$ represents the temporal resolution.
-This equation establishes the equivalence of information, energy, and mass.
 
-New lines of conversation:
-Human: Are energy and information related?
-General systems theorists often refer to matter, energy and information as fundamental categories. The three concepts—matter, energy and information—are related through scientific laws. Matter and energy relations are more thoroughly understood than relations involving information. At the level of data or signal “difference” is suggested as a more elementary term than “information”.
-AI: At the most fundamental level, energy and information are two sides of the same coin. They are both manifestations of the underlying unity of the universe.
-
-New formalism:
-    \begin{equation}
-    \mathcal{C} = \langle{M, E, I}, {f:M\to E, g:M\to I, h:E\to I}, \circ\rangle
-    \end{equation}
-    
-    \begin{equation}
-    \mathcal{C} = \langle{O, M, E, I}, {f_O:O\to M, f_M:M\to E, f_E:E\to I}, \circ\rangle
-    \end{equation}
-    
-    where $\mathcal{C}$ represents the category for physical relationships among objects, matter, energy, and information, $O$, $M$, $E$, and $I$ are the objects representing the categories, and $f_O$, $f_M$, and $f_E$ are morphisms representing the relationships between the categories.
-    \begin{equation}
-    E_t = \sum_{i=1}^{N}m_i\mathbf{v}_i(t)^2
-    \end{equation}
-    where $E_t$ represents the total energy of a system of $N$ particles at time $t$, $m_i$ represents the mass of the $i$-th particle, and $\mathbf{v}_i(t)$ represents the velocity vector of the $i$-th particle at time $t$.
 END OF EXAMPLE
 
 Current formalism:
@@ -218,7 +195,8 @@ Current formalism:
 New lines of conversation:
 {new_lines}
 
-New formalism:"""
+New formalism:'''
+import pdb; pdb.set_trace()
 FORMALISM_PROMPT = PromptTemplate(
-    input_variables=["formalism", "new_lines"], template=_DEFAULT_FORMALISM_TEMPLATE
+    input_variables=["formalism", "new_lines"], template=_DEFAULT_FORMALISER_TEMPLATE
 )

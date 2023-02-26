@@ -247,7 +247,7 @@ trio = ["trio (>=0.16,<0.22)"]
 name = "appnope"
 version = "0.1.3"
 description = "Disable App Nap on macOS >= 10.9"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -332,7 +332,7 @@ python-dateutil = ">=2.7.0"
 name = "asttokens"
 version = "2.2.1"
 description = "Annotate AST trees with source code positions"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -448,7 +448,7 @@ pytz = ">=2015.7"
 name = "backcall"
 version = "0.2.0"
 description = "Specifications for callback functions passed in to an API"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1210,7 +1210,7 @@ test = ["pytest (>=6)"]
 name = "executing"
 version = "1.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -2060,14 +2060,14 @@ test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio"
 
 [[package]]
 name = "ipython"
-version = "8.9.0"
+version = "8.10.0"
 description = "IPython: Productive Interactive Computing"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipython-8.9.0-py3-none-any.whl", hash = "sha256:9c207b0ef2d276d1bfcfeb9a62804336abbe4b170574ea061500952319b1d78c"},
-    {file = "ipython-8.9.0.tar.gz", hash = "sha256:71618e82e6d59487bea059626e7c79fb4a5b760d1510d02fab1160db6fdfa1f7"},
+    {file = "ipython-8.10.0-py3-none-any.whl", hash = "sha256:b38c31e8fc7eff642fc7c597061fff462537cf2314e3225a19c906b7b0d8a345"},
+    {file = "ipython-8.10.0.tar.gz", hash = "sha256:b13a1d6c1f5818bd388db53b7107d17454129a70de2b87481d555daede5eb49e"},
 ]
 
 [package.dependencies]
@@ -2085,7 +2085,7 @@ stack-data = "*"
 traitlets = ">=5"
 
 [package.extras]
-all = ["black", "curio", "docrepr", "ipykernel", "ipyparallel", "ipywidgets", "matplotlib", "matplotlib (!=3.2.0)", "nbconvert", "nbformat", "notebook", "numpy (>=1.20)", "pandas", "pytest (<7)", "pytest (<7.1)", "pytest-asyncio", "qtconsole", "setuptools (>=18.5)", "sphinx (>=1.3)", "sphinx-rtd-theme", "stack-data", "testpath", "trio", "typing-extensions"]
+all = ["black", "curio", "docrepr", "ipykernel", "ipyparallel", "ipywidgets", "matplotlib", "matplotlib (!=3.2.0)", "nbconvert", "nbformat", "notebook", "numpy (>=1.21)", "pandas", "pytest (<7)", "pytest (<7.1)", "pytest-asyncio", "qtconsole", "setuptools (>=18.5)", "sphinx (>=1.3)", "sphinx-rtd-theme", "stack-data", "testpath", "trio", "typing-extensions"]
 black = ["black"]
 doc = ["docrepr", "ipykernel", "matplotlib", "pytest (<7)", "pytest (<7.1)", "pytest-asyncio", "setuptools (>=18.5)", "sphinx (>=1.3)", "sphinx-rtd-theme", "stack-data", "testpath", "typing-extensions"]
 kernel = ["ipykernel"]
@@ -2095,7 +2095,7 @@ notebook = ["ipywidgets", "notebook"]
 parallel = ["ipyparallel"]
 qtconsole = ["qtconsole"]
 test = ["pytest (<7.1)", "pytest-asyncio", "testpath"]
-test-extra = ["curio", "matplotlib (!=3.2.0)", "nbformat", "numpy (>=1.20)", "pandas", "pytest (<7.1)", "pytest-asyncio", "testpath", "trio"]
+test-extra = ["curio", "matplotlib (!=3.2.0)", "nbformat", "numpy (>=1.21)", "pandas", "pytest (<7.1)", "pytest-asyncio", "testpath", "trio"]
 
 [[package]]
 name = "ipython-genutils"
@@ -2147,24 +2147,6 @@ files = [
 arrow = ">=0.15.0"
 
 [[package]]
-name = "isort"
-version = "5.12.0"
-description = "A Python utility / library to sort Python imports."
-category = "dev"
-optional = false
-python-versions = ">=3.8.0"
-files = [
-    {file = "isort-5.12.0-py3-none-any.whl", hash = "sha256:f84c2818376e66cf843d497486ea8fed8700b340f308f076c6fb1229dff318b6"},
-    {file = "isort-5.12.0.tar.gz", hash = "sha256:8bef7dde241278824a6d83f44a544709b065191b95b6e50894bdc722fcba0504"},
-]
-
-[package.extras]
-colors = ["colorama (>=0.4.3)"]
-pipfile-deprecated-finder = ["pip-shims (>=0.5.2)", "pipreqs", "requirementslib"]
-plugins = ["setuptools"]
-requirements-deprecated-finder = ["pip-api", "pipreqs"]
-
-[[package]]
 name = "jaraco-context"
 version = "4.3.0"
 description = "Context managers by jaraco"
@@ -2184,7 +2166,7 @@ testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-chec
 name = "jedi"
 version = "0.18.2"
 description = "An autocompletion tool for Python that can be used for text editors."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -2849,7 +2831,7 @@ marshmallow = ">=2.0.0"
 name = "matplotlib-inline"
 version = "0.1.6"
 description = "Inline Matplotlib backend for Jupyter"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
@@ -3633,7 +3615,7 @@ files = [
 name = "parso"
 version = "0.8.3"
 description = "A Python Parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -3684,7 +3666,7 @@ test = ["mock", "pytest", "pytest-coverage", "typer-cli"]
 name = "pexpect"
 version = "4.8.0"
 description = "Pexpect allows easy control of interactive console applications."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -3699,7 +3681,7 @@ ptyprocess = ">=0.5"
 name = "pickleshare"
 version = "0.7.5"
 description = "Tiny 'shelve'-like database with concurrency support"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -3950,7 +3932,7 @@ twisted = ["twisted"]
 name = "prompt-toolkit"
 version = "3.0.36"
 description = "Library for building powerful interactive command lines in Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6.2"
 files = [
@@ -4027,7 +4009,7 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 name = "ptyprocess"
 version = "0.7.0"
 description = "Run a subprocess in a pseudo terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -4039,7 +4021,7 @@ files = [
 name = "pure-eval"
 version = "0.2.2"
 description = "Safely evaluate AST nodes without side effects"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -4296,7 +4278,7 @@ typing-extensions = "*"
 name = "pygments"
 version = "2.14.0"
 description = "Pygments is a syntax highlighting package written in Python."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -5781,7 +5763,7 @@ catalogue = ">=2.0.3,<2.1.0"
 name = "stack-data"
 version = "0.6.2"
 description = "Extract data from python stack frames and tracebacks for informative displays"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -6441,7 +6423,7 @@ telegram = ["requests"]
 name = "traitlets"
 version = "5.9.0"
 description = "Traitlets Python configuration system"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -6772,7 +6754,7 @@ watchmedo = ["PyYAML (>=3.10)"]
 name = "wcwidth"
 version = "0.2.6"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -7132,4 +7114,4 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "de052ebffaad7fa65dbb96eb900bbc28ea45dc280e3de7e857d4d4c72018d6f7"
+content-hash = "30d81db770188b0e2f1f23c0772499f48de1d28c91d1747c5cefe8defbcc1387"

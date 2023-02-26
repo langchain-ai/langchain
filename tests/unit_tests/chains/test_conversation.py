@@ -7,6 +7,7 @@ from langchain.chains.conversation.memory import (
     ConversationBufferMemory,
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
+    ConversationSymbolicMemory,
 )
 from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -90,6 +91,7 @@ def test_conversation_memory(memory: Memory) -> None:
         ConversationBufferMemory(memory_key="baz"),
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
         ConversationBufferWindowMemory(memory_key="baz"),
+        ConversationSymbolicMemory(llm=FakeLLM(), memory_key="baz")
     ],
 )
 def test_clearing_conversation_memory(memory: Memory) -> None:
