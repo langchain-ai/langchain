@@ -1,5 +1,5 @@
 """Util that calls ArXiv using the API's unofficial python-sdk."""
-from typing import Dict, Iterable, Iterator, List
+from typing import Dict, Iterator, List
 
 from pydantic.class_validators import root_validator
 from pydantic.main import BaseModel
