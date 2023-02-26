@@ -1,6 +1,5 @@
-"""Load text files."""
+"""Load CoNLL-U files."""
 import csv
-
 from typing import List
 
 from langchain.docstore.document import Document
