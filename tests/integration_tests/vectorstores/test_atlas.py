@@ -1,7 +1,6 @@
 """Test Atlas functionality."""
 import time
 
-from langchain.docstore.document import Document
 from langchain.vectorstores import AtlasDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 

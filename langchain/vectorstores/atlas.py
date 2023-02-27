@@ -1,9 +1,9 @@
-"""Wrapper around Atlas by Nomic"""
+"""Wrapper around Atlas by Nomic."""
 from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 
 class AtlasDB(VectorStore):
-    """Wrapper around Atlas: Nomic's neural database and rhizomatic instrument
+    """Wrapper around Atlas: Nomic's neural database and rhizomatic instrument.
 
     To use, you should have the ``nomic`` python package installed.
 
@@ -38,23 +38,29 @@ class AtlasDB(VectorStore):
         api_key: Optional[str] = None,
         description: str = "A description for your project",
         is_public: bool = True,
-        reset_project_if_exists=False,
+        reset_project_if_exists: bool = False,
     ) -> None:
         """
         Initialize the Atlas Client
 
         Args:
-            name (str): The name of your project. If the project already exists, it will be loaded.
-            embedding_function (Optional[Callable]): An optional function used for embedding your data. If None, data will be embedded with Nomic's embed model.
+            name (str): The name of your project. If the project already exists,
+                it will be loaded.
+            embedding_function (Optional[Callable]): An optional function used for
+                embedding your data. If None, data will be embedded with
+                Nomic's embed model.
             api_key (str): Your nomic API key
             description (str): A description for your project.
-            is_public (bool): Whether your project is publicly accessible. True by default.
-            reset_project_if_exists (bool): Whether to reset this project if it already exists. Default False. Generally userful during development and testing.
+            is_public (bool): Whether your project is publicly accessible.
+                True by default.
+            reset_project_if_exists (bool): Whether to reset this project if it
+                already exists. Default False.
+                Generally userful during development and testing.
         """
         try:
             import nomic
-            from nomic import AtlasProject, atlas
-        except Exception as e:
+            from nomic import AtlasProject
+        except ImportError:
             raise ValueError(
                 "Could not import nomic python package. "
                 "Please it install it with `pip install nomic`."
@@ -85,7 +91,7 @@ class AtlasDB(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        refresh=True,
+        refresh: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -94,7 +100,8 @@ class AtlasDB(VectorStore):
             texts (Iterable[str]): Texts to add to the vectorstore.
             metadatas (Optional[List[dict]], optional): Optional list of metadatas.
             ids (Optional[List[str]]): An optional list of ids.
-            refresh(bool): Whether or not to refresh indices with the updated data. Default True.
+            refresh(bool): Whether or not to refresh indices with the updated data.
+                Default True.
         Returns:
             List[str]: List of IDs of the added texts.
         """
@@ -112,8 +119,8 @@ class AtlasDB(VectorStore):
 
         # Embedding upload case
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
-            embeddings = np.stack(embeddings)
+            _embeddings = self._embedding_function.embed_documents(texts)
+            embeddings = np.stack(_embeddings)
             if metadatas is None:
                 data = [
                     {AtlasDB._ATLAS_DEFAULT_ID_FIELD: ids[i], "text": texts[i]}
@@ -157,10 +164,12 @@ class AtlasDB(VectorStore):
 
         return ids
 
-    def create_index(self, **kwargs) -> "AtlasProjection":
-        """
-        Creates an index in your project.
-        See https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index for full detail
+    def create_index(self, **kwargs: Any) -> Any:
+        """Creates an index in your project.
+
+        See
+        https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index
+        for full detail.
         """
         with self.project.wait_for_project_lock():
             return self.project.create_index(**kwargs)
@@ -185,8 +194,8 @@ class AtlasDB(VectorStore):
                 "AtlasDB requires an embedding_function for text similarity search!"
             )
 
-        embedding = self._embedding_function.embed_documents([query])[0]
-        embedding = np.array(embedding).reshape(1, -1)
+        _embedding = self._embedding_function.embed_documents([query])[0]
+        embedding = np.array(_embedding).reshape(1, -1)
         with self.project.wait_for_project_lock():
             neighbors, _ = self.project.projections[0].vector_search(
                 queries=embedding, k=k
@@ -203,15 +212,15 @@ class AtlasDB(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        name: str,
-        api_key: str,
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        api_key: Optional[str] = None,
         description: str = "A description for your project",
         is_public: bool = True,
-        reset_project_if_exists=False,
-        index_kwargs=None,
+        reset_project_if_exists: bool = False,
+        index_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> AtlasDB:
         """Create an AtlasDB vectorstore from a raw documents.
@@ -222,15 +231,22 @@ class AtlasDB(VectorStore):
             api_key (str): Your nomic API key,
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
-            ids (Optional[List[str]]): Optional list of document IDs. If None, ids will be auto created
+            ids (Optional[List[str]]): Optional list of document IDs. If None,
+                ids will be auto created
             description (str): A description for your project.
-            is_public (bool): Whether your project is publicly accessible. True by default.
-            reset_project_if_exists (bool): Whether to reset this project if it already exists. Default False. Generally userful during development and testing.
-            index_kwargs (Optional[dict]): Dict of kwargs for index creation. See https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index
+            is_public (bool): Whether your project is publicly accessible.
+                True by default.
+            reset_project_if_exists (bool): Whether to reset this project if it
+                already exists. Default False.
+                Generally userful during development and testing.
+            index_kwargs (Optional[dict]): Dict of kwargs for index creation.
+                See https://docs.nomic.ai/atlas_api.html
 
         Returns:
             AtlasDB: Nomic's neural database and finest rhizomatic instrument
         """
+        if name is None or api_key is None:
+            raise ValueError("`name` and `api_key` cannot be None.")
 
         # Inject relevant kwargs
         all_index_kwargs = {"name": name + "_index", "indexed_field": "text"}
@@ -255,16 +271,16 @@ class AtlasDB(VectorStore):
     @classmethod
     def from_documents(
         cls,
-        name: str,
-        api_key: str,
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        api_key: Optional[str] = None,
         persist_directory: Optional[str] = None,
         description: str = "A description for your project",
         is_public: bool = True,
-        reset_project_if_exists=False,
-        index_kwargs=None,
+        reset_project_if_exists: bool = False,
+        index_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> AtlasDB:
         """Create an AtlasDB vectorstore from a list of documents.
@@ -274,15 +290,22 @@ class AtlasDB(VectorStore):
             api_key (str): Your nomic API key,
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-            ids (Optional[List[str]]): Optional list of document IDs. If None, ids will be auto created
+            ids (Optional[List[str]]): Optional list of document IDs. If None,
+                ids will be auto created
             description (str): A description for your project.
-            is_public (bool): Whether your project is publicly accessible. True by default.
-            reset_project_if_exists (bool): Whether to reset this project if it already exists. Default False. Generally userful during development and testing.
-            index_kwargs (Optional[dict]): Dict of kwargs for index creation. See https://docs.nomic.ai/atlas_api.html#nomic.project.AtlasProject.create_index
+            is_public (bool): Whether your project is publicly accessible.
+                True by default.
+            reset_project_if_exists (bool): Whether to reset this project if
+                it already exists. Default False.
+                Generally userful during development and testing.
+            index_kwargs (Optional[dict]): Dict of kwargs for index creation.
+                See https://docs.nomic.ai/atlas_api.html
 
         Returns:
             AtlasDB: Nomic's neural database and finest rhizomatic instrument
         """
+        if name is None or api_key is None:
+            raise ValueError("`name` and `api_key` cannot be None.")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return cls.from_texts(
