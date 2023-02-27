@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import List
 
+from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.base import BaseToolkit
 from langchain.tools.json.tool import JsonGetValueTool, JsonListKeysTool, JsonSpec
 
 
