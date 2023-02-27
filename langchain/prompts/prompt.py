@@ -60,14 +60,8 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
-        partial_kwargs = {
-            k: v if isinstance(v, str) else v()
-            for k, v in self.partial_variables.items()
-        }
-        all_kwargs = {**partial_kwargs, **kwargs}
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](
-            self.template, **all_kwargs
-        )
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:

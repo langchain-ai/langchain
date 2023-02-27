@@ -161,6 +161,14 @@ class BasePromptTemplate(BaseModel, ABC):
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+        # Get partial params:
+        partial_kwargs = {
+            k: v if isinstance(v, str) else v()
+            for k, v in self.partial_variables.items()
+        }
+        return {**partial_kwargs, **kwargs}
+
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
