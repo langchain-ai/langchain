@@ -1,4 +1,5 @@
 """Wrappers on top of vector stores."""
+from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
@@ -19,4 +20,5 @@ __all__ = [
     "Milvus",
     "Chroma",
     "OpenSearchVectorSearch",
+    "AtlasDB",
 ]
