@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Mapping, Optional
+
+import numpy as np
+from redis.commands.search.query import Query
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
 from langchain.utils import get_from_dict_or_env
-from redis.commands.search.query import Query
-import numpy as np
+from langchain.vectorstores.base import VectorStore
 
 
 class RediSearch(VectorStore):
@@ -80,7 +81,9 @@ class RediSearch(VectorStore):
             .paging(0, k)
             .dialect(2)
         )
-        params_dict = {"vector": np.array(embedding).astype(dtype=np.float32).tobytes()}
+        params_dict: Mapping[str, str] = {
+            "vector": str(np.array(embedding).astype(dtype=np.float32).tobytes())
+        }
 
         # perform vector search
         results = self.client.ft(self.index_name).search(redis_query, params_dict)
@@ -115,7 +118,7 @@ class RediSearch(VectorStore):
                 redisearch = RediSearch.from_texts(
                     texts,
                     embeddings,
-                    redis_url="redis://username:password@localhost:6379"
+                    redisearch_url="redis://username:password@localhost:6379"
                 )
         """
         redisearch_url = get_from_dict_or_env(
@@ -123,7 +126,6 @@ class RediSearch(VectorStore):
         )
         try:
             import redis
-            from redis.commands.search.query import Query
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         except ImportError:
@@ -165,7 +167,7 @@ class RediSearch(VectorStore):
         try:
             client.ft(index_name).info()
             print("Index already exists")
-        except:
+        except: # noqa
             # Create RediSearch Index
             client.ft(index_name).create_index(
                 fields=fields,
