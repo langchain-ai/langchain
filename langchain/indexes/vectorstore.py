@@ -1,17 +1,21 @@
-from langchain.vectorstores.base import VectorStore
-from langchain.vectorstores.chroma import Chroma
-from langchain.embeddings.base import Embeddings
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
-from langchain.document_loaders.base import BaseLoader
-from pydantic import BaseModel, Field, Extra
 from typing import List, Type
 
-def _get_default_text_splitter():
+from pydantic import BaseModel, Extra, Field
+
+from langchain.document_loaders.base import BaseLoader
+from langchain.embeddings.base import Embeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.chroma import Chroma
+
+
+def _get_default_text_splitter() -> TextSplitter:
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
 class VectorstoreIndexCreator(BaseModel):
+    """Logic for creating indexes."""
 
     vectorstore_cls: Type[VectorStore] = Chroma
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
@@ -23,7 +27,8 @@ class VectorstoreIndexCreator(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def from_loaders(self, loaders: List[BaseLoader]):
+    def from_loaders(self, loaders: List[BaseLoader]) -> VectorStore:
+        """Create a vectorstore index from loaders."""
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
