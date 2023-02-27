@@ -180,8 +180,3 @@ class DeepLake(VectorStore):
     def persist(self) -> None:
         """Persist the collection."""
         self.ds.flush()
-
-    # TODO implement similarity_search_by_vector
-    # TODO max_marginal_relevance_search
-    # TODO max_marginal_relevance_search_by_vector
-    # TODO write tests
