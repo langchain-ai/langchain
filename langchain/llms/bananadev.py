@@ -107,7 +107,7 @@ class Banana(LLM, BaseModel):
                 f"\nResponse was: {returned}"
                 "\nTo fix this:"
                 "\n- fork the source repo of the Banana model"
-                "\n- modify app.py to return the above schema" 
+                "\n- modify app.py to return the above schema"
                 "\n- deploy that as a custom repo"
             )
         if stop is not None:
