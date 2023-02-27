@@ -3,9 +3,9 @@ from typing import List
 
 from pydantic import Field
 
+from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.sql_database import SQLDatabase
 from langchain.tools import BaseTool
-from langchain.tools.base import BaseToolkit
 from langchain.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
     ListSQLDatabaseTool,

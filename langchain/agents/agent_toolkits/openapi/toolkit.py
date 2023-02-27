@@ -1,19 +1,41 @@
-"""Toolkit for interacting with a OpenAPI api."""
+"""Requests toolkit."""
 from __future__ import annotations
 
 from typing import Any, List
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
+from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
+from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.requests import RequestsWrapper
 from langchain.tools import BaseTool
-from langchain.tools.base import BaseToolkit
 from langchain.tools.json.tool import JsonSpec
-from langchain.tools.json.toolkit import JsonToolkit
-from langchain.tools.openapi.prompt import DESCRIPTION
-from langchain.tools.requests.toolkit import RequestsToolkit
+from langchain.tools.requests.tool import (
+    RequestsDeleteTool,
+    RequestsGetTool,
+    RequestsPatchTool,
+    RequestsPostTool,
+    RequestsPutTool,
+)
+
+
+class RequestsToolkit(BaseToolkit):
+    """Toolkit for making requests."""
+
+    requests_wrapper: RequestsWrapper
+
+    def get_tools(self) -> List[BaseTool]:
+        """Return a list of tools."""
+        return [
+            RequestsGetTool(requests_wrapper=self.requests_wrapper),
+            RequestsPostTool(requests_wrapper=self.requests_wrapper),
+            RequestsPatchTool(requests_wrapper=self.requests_wrapper),
+            RequestsPutTool(requests_wrapper=self.requests_wrapper),
+            RequestsDeleteTool(requests_wrapper=self.requests_wrapper),
+        ]
 
 
 class OpenAPIToolkit(BaseToolkit):
