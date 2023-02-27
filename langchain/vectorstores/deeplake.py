@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Sequence
 
 import numpy as np
 
@@ -14,7 +14,9 @@ from langchain.vectorstores.base import VectorStore
 logger = logging.getLogger()
 
 
-def L2_search(query_embedding, data_vectors, k=4):
+def L2_search(
+    query_embedding: np.ndarray, data_vectors: np.ndarray, k: int = 4
+) -> list:
     """naive L2 search for nearest neighbors"""
     # Calculate the L2 distance between the query_vector and all data_vectors
     distances = np.linalg.norm(data_vectors - query_embedding, axis=1)
@@ -26,9 +28,15 @@ def L2_search(query_embedding, data_vectors, k=4):
 
 class DeepLake(VectorStore):
     """Wrapper around Deep Lake, a data lake for deep learning applications.
-    It not only stores embeddings, but also the original data and queries with version control automatically enabled.
-    It is more than just a vector store. You can use the dataset to fine-tune your own LLM models or use it for other downstream tasks.
-    We implement naive similiarity search, but it can be extended with Tensor Query Language (TQL for production use cases) over billion rows.
+
+    It not only stores embeddings, but also the original data and queries with
+    version control automatically enabled.
+
+    It is more than just a vector store. You can use the dataset to fine-tune
+    your own LLM models or use it for other downstream tasks.
+
+    We implement naive similiarity search, but it can be extended with Tensor
+    Query Language (TQL for production use cases) over billion rows.
 
     To use, you should have the ``deeplake`` python package installed.
 
@@ -47,7 +55,7 @@ class DeepLake(VectorStore):
     def __init__(
         self,
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
-        token: str = None,
+        token: Optional[str] = None,
         embedding_function: Optional[Embeddings] = None,
     ) -> None:
         """Initialize with Deep Lake client."""
@@ -64,7 +72,8 @@ class DeepLake(VectorStore):
         if deeplake.exists(dataset_path, token=token):
             self.ds = deeplake.load(dataset_path, token=token)
             logger.warning(
-                f"Deep Lake Dataset in {dataset_path} already exists, loading from the storage"
+                f"Deep Lake Dataset in {dataset_path} already exists, "
+                f"loading from the storage"
             )
             self.ds.summary()
         else:
@@ -98,17 +107,22 @@ class DeepLake(VectorStore):
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
-        embeddings = None
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(list(texts))
+        text_list = list(texts)
+
+        if self._embedding_function is None:
+            embeddings: Sequence[Optional[List[float]]] = [None] * len(text_list)
+        else:
+            embeddings = self._embedding_function.embed_documents(text_list)
 
         if metadatas is None:
-            metadatas = [None] * len(texts)
+            metadatas_to_use: Sequence[Optional[dict]] = [None] * len(text_list)
+        else:
+            metadatas_to_use = metadatas
 
-        elements = zip(texts, embeddings, metadatas, ids)
+        elements = zip(text_list, embeddings, metadatas_to_use, ids)
 
         @self._deeplake.compute
-        def ingest(sample_in, sample_out):
+        def ingest(sample_in: list, sample_out: list) -> None:
             s = {
                 "text": sample_in[0],
                 "embedding": sample_in[1],
@@ -130,9 +144,9 @@ class DeepLake(VectorStore):
             self.ds.summary()
             ds_view = self.ds.filter(lambda x: query in x["text"].data()["value"])
         else:
-            query = np.array(self._embedding_function.embed_query(query))
+            query_emb = np.array(self._embedding_function.embed_query(query))
             embeddings = self.ds.embedding.numpy()
-            indices = L2_search(query, embeddings, k=k)
+            indices = L2_search(query_emb, embeddings, k=k)
             ds_view = self.ds[indices]
 
         docs = [
@@ -161,10 +175,18 @@ class DeepLake(VectorStore):
 
         Args:
             path (str, pathlib.Path): - The full path to the dataset. Can be:
-                - a Deep Lake cloud path of the form ``hub://username/datasetname``. To write to Deep Lake cloud datasets, ensure that you are logged in to Deep Lake (use 'activeloop login' from command line)
-                - an s3 path of the form ``s3://bucketname/path/to/dataset``. Credentials are required in either the environment or passed to the creds argument.
-                - a local file system path of the form ``./path/to/dataset`` or ``~/path/to/dataset`` or ``path/to/dataset``.
-                - a memory path of the form ``mem://path/to/dataset`` which doesn't save the dataset but keeps it in memory instead. Should be used only for testing as it does not persist.
+                - a Deep Lake cloud path of the form ``hub://username/datasetname``.
+                    To write to Deep Lake cloud datasets,
+                    ensure that you are logged in to Deep Lake
+                    (use 'activeloop login' from command line)
+                - an s3 path of the form ``s3://bucketname/path/to/dataset``.
+                    Credentials are required in either the environment or
+                    passed to the creds argument.
+                - a local file system path of the form ``./path/to/dataset`` or
+                    ``~/path/to/dataset`` or ``path/to/dataset``.
+                - a memory path of the form ``mem://path/to/dataset`` which doesn't
+                    save the dataset but keeps it in memory instead.
+                    Should be used only for testing as it does not persist.
             documents (List[Document]): List of documents to add.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
