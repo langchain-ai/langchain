@@ -58,8 +58,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
-        color: Optional[str] = None,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
@@ -90,6 +89,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         **kwargs: Optional[str],
     ) -> None:
         """Run when agent ends."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
         pass
 
     def on_agent_finish(

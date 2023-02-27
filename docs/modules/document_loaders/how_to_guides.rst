@@ -33,6 +33,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Hacker News <./examples/hn.html>`_: A walkthrough of how to load a Hacker News page.
 
+`GitBook <./examples/gitbook.html>`_: A walkthrough of how to load a GitBook page.
+
 `s3 File <./examples/s3_file.html>`_: A walkthrough of how to load a file from s3.
 
 `s3 Directory <./examples/s3_directory.html>`_: A walkthrough of how to load all files in a directory from s3.
@@ -54,6 +56,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 `Airbyte Json <./examples/airbyte_json.html>`_: A walkthrough of how to load data from a local Airbyte JSON file.
 
 `Online PDF <./examples/online_pdf.html>`_: A walkthrough of how to load data from an online PDF.
+
+`CoNLL-U <./examples/CoNLL-U.html>`_: A walkthrough of how to load data from a ConLL-U file.
 
 .. toctree::
    :maxdepth: 1

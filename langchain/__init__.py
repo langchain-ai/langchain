@@ -24,13 +24,17 @@ from langchain.chains import (
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import (
     Anthropic,
+    Banana,
     CerebriumAI,
     Cohere,
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    Modal,
     OpenAI,
     Petals,
+    StochasticAI,
+    Writer,
 )
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.prompts import (
@@ -39,17 +43,20 @@ from langchain.prompts import (
     Prompt,
     PromptTemplate,
 )
-from langchain.serpapi import SerpAPIChain, SerpAPIWrapper
 from langchain.sql_database import SQLDatabase
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
 set_default_callback_manager()
+
+# For backwards compatibility
+SerpAPIChain = SerpAPIWrapper
 
 __all__ = [
     "LLMChain",
@@ -64,12 +71,16 @@ __all__ = [
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
     "Anthropic",
+    "Banana",
     "CerebriumAI",
     "Cohere",
     "ForefrontAI",
     "GooseAI",
+    "Modal",
     "OpenAI",
     "Petals",
+    "StochasticAI",
+    "Writer",
     "BasePromptTemplate",
     "Prompt",
     "FewShotPromptTemplate",

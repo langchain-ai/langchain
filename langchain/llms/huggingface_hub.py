@@ -23,7 +23,7 @@ class HuggingFaceHub(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFaceHub
+            from langchain.llms import HuggingFaceHub
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 

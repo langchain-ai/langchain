@@ -9,7 +9,7 @@ from langchain.callbacks.base import (
     CallbackManager,
 )
 from langchain.callbacks.shared import SharedCallbackManager
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -27,7 +27,7 @@ def _test_callback_manager(
     manager.on_chain_start({"name": "foo"}, {})
     manager.on_chain_end({})
     manager.on_chain_error(Exception())
-    manager.on_tool_start({}, AgentAction("", "", ""))
+    manager.on_tool_start({}, "")
     manager.on_tool_end("")
     manager.on_tool_error(Exception())
     manager.on_agent_finish(AgentFinish(log="", return_values={}))
@@ -44,7 +44,7 @@ async def _test_callback_manager_async(
     await manager.on_chain_start({"name": "foo"}, {})
     await manager.on_chain_end({})
     await manager.on_chain_error(Exception())
-    await manager.on_tool_start({}, AgentAction("", "", ""))
+    await manager.on_tool_start({}, "")
     await manager.on_tool_end("")
     await manager.on_tool_error(Exception())
     await manager.on_agent_finish(AgentFinish(log="", return_values={}))
@@ -73,7 +73,7 @@ def _test_callback_manager_pass_in_verbose(
     manager.on_chain_start({"name": "foo"}, {}, verbose=True)
     manager.on_chain_end({}, verbose=True)
     manager.on_chain_error(Exception(), verbose=True)
-    manager.on_tool_start({}, AgentAction("", "", ""), verbose=True)
+    manager.on_tool_start({}, "", verbose=True)
     manager.on_tool_end("", verbose=True)
     manager.on_tool_error(Exception(), verbose=True)
     manager.on_agent_finish(AgentFinish(log="", return_values={}), verbose=True)
@@ -136,7 +136,7 @@ def test_ignore_agent() -> None:
     handler1 = FakeCallbackHandler(ignore_agent_=True, always_verbose_=True)
     handler2 = FakeCallbackHandler(always_verbose_=True)
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_tool_start({}, AgentAction("", "", ""), verbose=True)
+    manager.on_tool_start({}, "", verbose=True)
     manager.on_tool_end("", verbose=True)
     manager.on_tool_error(Exception(), verbose=True)
     manager.on_agent_finish(AgentFinish({}, ""), verbose=True)

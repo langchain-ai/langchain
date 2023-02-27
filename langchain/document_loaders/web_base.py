@@ -14,13 +14,17 @@ class WebBaseLoader(BaseLoader):
         """Initialize with webpage path."""
         self.web_path = web_path
 
-    def scrape(self) -> Any:
-        """Scrape data from webpage and return it in BeautifulSoup format."""
+    @staticmethod
+    def _scrape(url: str) -> Any:
         from bs4 import BeautifulSoup
 
-        html_doc = requests.get(self.web_path)
+        html_doc = requests.get(url)
         soup = BeautifulSoup(html_doc.text, "html.parser")
         return soup
+
+    def scrape(self) -> Any:
+        """Scrape data from webpage and return it in BeautifulSoup format."""
+        return self._scrape(self.web_path)
 
     def load(self) -> List[Document]:
         """Load data into document objects."""

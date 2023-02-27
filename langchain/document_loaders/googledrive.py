@@ -116,22 +116,19 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         )
         items = results.get("files", [])
 
-        docs = []
-        for item in items:
+        return [
+            self._load_document_from_id(item["id"])
+            for item in items
             # Only support Google Docs for now
-            if item["mimeType"] == "application/vnd.google-apps.document":
-                docs.append(self._load_document_from_id(item["id"]))
-        return docs
+            if item["mimeType"] == "application/vnd.google-apps.document"
+        ]
 
     def _load_documents_from_ids(self) -> List[Document]:
         """Load documents from a list of IDs."""
         if not self.document_ids:
             raise ValueError("document_ids must be set")
 
-        docs = []
-        for doc_id in self.document_ids:
-            docs.append(self._load_document_from_id(doc_id))
-        return docs
+        return [self._load_document_from_id(doc_id) for doc_id in self.document_ids]
 
     def load(self) -> List[Document]:
         """Load documents."""

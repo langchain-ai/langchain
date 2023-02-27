@@ -32,9 +32,6 @@ You can now use the ``search`` instance to query the searx API.
 Searching
 ---------
 
-ref to the run method with a custom name
-
-
 Use the :meth:`run() <SearxSearchWrapper.run>` and
 :meth:`results() <SearxSearchWrapper.results>` methods to query the searx API.
 Other methods are are available for convenience.
@@ -45,7 +42,6 @@ Example usage of the ``run`` method to make a search:
 
     .. code-block:: python
 
-        # using google and duckduckgo engines
         s.run(query="what is the best search engine?")
 
 Engine Parameters
@@ -81,6 +77,28 @@ For example the following query:
         s = SearxSearchWrapper("langchain library !github")
         # or even:
         s = SearxSearchWrapper("langchain library !gh")
+
+
+In some situations you might want to pass an extra string to the search query.
+For example when the `run()` method is called by an agent. The search suffix can
+also be used as a way to pass extra parameters to searx or the underlying search
+engines.
+
+    .. code-block:: python
+
+        # select the github engine and pass the search suffix
+        s = SearchWrapper("langchain library", query_suffix="!gh")
+
+
+        s = SearchWrapper("langchain library")
+        # select github the conventional google search syntax
+        s.run("large language models", query_suffix="site:github.com")
+
+
+*NOTE*: A search suffix can be defined on both the instance and the method level.
+The resulting query will be the concatenation of the two with the former taking
+precedence.
+
 
 See `SearxNG Configured Engines
 <https://docs.searxng.org/admin/engines/configured_engines.html>`_ and
@@ -132,12 +150,15 @@ class SearxResults(dict):
 
     @property
     def results(self) -> Any:
-        """Silence mypy for accessing this field."""
+        """Silence mypy for accessing this field.
+
+        :meta private:
+        """
         return self.get("results")
 
     @property
     def answers(self) -> Any:
-        """Accessor helper on the json result."""
+        """Helper accessor on the json result."""
         return self.get("answers")
 
 
@@ -175,6 +196,7 @@ class SearxSearchWrapper(BaseModel):
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
     engines: Optional[List[str]] = []
+    query_suffix: Optional[str] = ""
     k: int = 10
 
     @validator("unsecure")
@@ -236,13 +258,20 @@ class SearxSearchWrapper(BaseModel):
         self._result = res
         return res
 
-    def run(self, query: str, engines: List[str] = [], **kwargs: Any) -> str:
+    def run(
+        self,
+        query: str,
+        engines: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
+    ) -> str:
         """Run query through Searx API and parse results.
 
         You can pass any other params to the searx query API.
 
         Args:
             query: The query to search for.
+            query_suffix: Extra suffix appended to the query.
             engines: List of engines to use for the query.
             **kwargs: extra parameters to pass to the searx API.
 
@@ -255,11 +284,20 @@ class SearxSearchWrapper(BaseModel):
                 searx = SearxSearchWrapper(searx_host="http://my.searx.host")
                 searx.run("what is the weather in France ?", engine="qwant")
 
+                # the same result can be achieved using the `!` syntax of searx
+                # to select the engine using `query_suffix`
+                searx.run("what is the weather in France ?", query_suffix="!qwant")
         """
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
+
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
 
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
@@ -278,44 +316,64 @@ class SearxSearchWrapper(BaseModel):
         return toret
 
     def results(
-        self, query: str, num_results: int, engines: List[str] = [], **kwargs: Any
+        self,
+        query: str,
+        num_results: int,
+        engines: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
     ) -> List[Dict]:
         """Run query through Searx API and returns the results with metadata.
 
         Args:
             query: The query to search for.
+
+            query_suffix: Extra suffix appended to the query.
+
             num_results: Limit the number of results to return.
+
             engines: List of engines to use for the query.
+
             **kwargs: extra parameters to pass to the searx API.
 
         Returns:
-            A list of dictionaries with the following keys:
-                snippet - The description of the result.
-                title - The title of the result.
-                link - The link to the result.
-                engines - The engines used for the result.
-                category - Searx category of the result.
+            Dict with the following keys:
+
+            {
+                snippet:  The description of the result.
+
+                title:  The title of the result.
+
+                link: The link to the result.
+
+                engines: The engines used for the result.
+
+                category: Searx category of the result.
+            }
 
 
         """
-        metadata_results = []
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
-        for result in results:
-            metadata_result = {
+
+        return [
+            {
                 "snippet": result.get("content", ""),
                 "title": result["title"],
                 "link": result["url"],
                 "engines": result["engines"],
                 "category": result["category"],
             }
-            metadata_results.append(metadata_result)
-
-        return metadata_results
+            for result in results
+        ]
