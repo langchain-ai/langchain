@@ -31,6 +31,9 @@ class ChatVectorDBChain(Chain, BaseModel):
     combine_docs_chain: BaseCombineDocumentsChain
     question_generator: LLMChain
     output_key: str = "answer"
+    return_source_documents: bool = False
+    top_k_docs_for_context: int = 4
+    """Return the source documents."""
 
     @property
     def _chain_type(self) -> str:
@@ -43,8 +46,14 @@ class ChatVectorDBChain(Chain, BaseModel):
 
     @property
     def output_keys(self) -> List[str]:
-        """Output keys."""
-        return [self.output_key]
+        """Return the output keys.
+
+        :meta private:
+        """
+        _output_keys = [self.output_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
 
     @classmethod
     def from_llm(
@@ -54,6 +63,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: BasePromptTemplate = QA_PROMPT,
         chain_type: str = "stuff",
+        **kwargs: Any,
     ) -> ChatVectorDBChain:
         """Load chain from LLM."""
         doc_chain = load_qa_chain(
@@ -66,20 +76,50 @@ class ChatVectorDBChain(Chain, BaseModel):
             vectorstore=vectorstore,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
+            **kwargs,
         )
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         chat_history_str = _get_chat_history(inputs["chat_history"])
+        vectordbkwargs = inputs.get("vectordbkwargs", {})
         if chat_history_str:
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str
             )
         else:
             new_question = question
-        docs = self.vectorstore.similarity_search(new_question, k=4)
+        docs = self.vectorstore.similarity_search(
+            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
+        )
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
         answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
-        return {self.output_key: answer}
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        question = inputs["question"]
+        chat_history_str = _get_chat_history(inputs["chat_history"])
+        vectordbkwargs = inputs.get("vectordbkwargs", {})
+        if chat_history_str:
+            new_question = await self.question_generator.arun(
+                question=question, chat_history=chat_history_str
+            )
+        else:
+            new_question = question
+        # TODO: This blocks the event loop, but it's not clear how to avoid it.
+        docs = self.vectorstore.similarity_search(
+            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
+        )
+        new_inputs = inputs.copy()
+        new_inputs["question"] = new_question
+        new_inputs["chat_history"] = chat_history_str
+        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}

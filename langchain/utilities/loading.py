@@ -1,4 +1,4 @@
-"""Utilities for loading configurations from langchian-hub."""
+"""Utilities for loading configurations from langchain-hub."""
 
 import os
 import re

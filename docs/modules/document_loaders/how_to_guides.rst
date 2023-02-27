@@ -27,7 +27,13 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
 
+`EverNote <./examples/evernote.html>`_: A walkthrough of how to load data from a EverNote (`.enex`) file.
+
 `YouTube <./examples/youtube.html>`_: A walkthrough of how to load the transcript from a YouTube video.
+
+`Hacker News <./examples/hn.html>`_: A walkthrough of how to load a Hacker News page.
+
+`GitBook <./examples/gitbook.html>`_: A walkthrough of how to load a GitBook page.
 
 `s3 File <./examples/s3_file.html>`_: A walkthrough of how to load a file from s3.
 
@@ -46,6 +52,10 @@ There are a lot of different document loaders that LangChain supports. Below are
 `College Confidential <./examples/college_confidential.html>`_: A walkthrough of how to load all text data from College Confidential webpage.
 
 `Gutenberg <./examples/gutenberg.html>`_: A walkthrough of how to load data from a Gutenberg ebook text.
+
+`Airbyte Json <./examples/airbyte_json.html>`_: A walkthrough of how to load data from a local Airbyte JSON file.
+
+`Online PDF <./examples/online_pdf.html>`_: A walkthrough of how to load data from an online PDF.
 
 .. toctree::
    :maxdepth: 1

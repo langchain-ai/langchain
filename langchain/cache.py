@@ -4,7 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.schema import Generation
 
@@ -70,9 +75,7 @@ class SQLAlchemyCache(BaseCache):
             .order_by(self.cache_schema.idx)
         )
         with Session(self.engine) as session:
-            generations = []
-            for row in session.execute(stmt):
-                generations.append(Generation(text=row[0]))
+            generations = [Generation(text=row[0]) for row in session.execute(stmt)]
             if len(generations) > 0:
                 return generations
         return None

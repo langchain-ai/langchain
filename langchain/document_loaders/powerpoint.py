@@ -1,29 +1,43 @@
 """Loader that loads powerpoint files."""
+import os
 from typing import List
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
-class UnstructuredPowerPointLoader(BaseLoader):
+class UnstructuredPowerPointLoader(UnstructuredFileLoader):
     """Loader that uses unstructured to load powerpoint files."""
 
-    def __init__(self, file_path: str):
-        """Initialize with file path."""
+    def _get_elements(self) -> List:
+        from unstructured.__version__ import __version__ as __unstructured_version__
+        from unstructured.file_utils.filetype import FileType, detect_filetype
+
+        unstructured_version = tuple(
+            [int(x) for x in __unstructured_version__.split(".")]
+        )
+        # NOTE(MthwRobinson) - magic will raise an import error if the libmagic
+        # system dependency isn't installed. If it's not installed, we'll just
+        # check the file extension
         try:
-            import unstructured  # noqa:F401
+            import magic  # noqa: F401
+
+            is_ppt = detect_filetype(self.file_path) == FileType.PPT
         except ImportError:
+            _, extension = os.path.splitext(self.file_path)
+            is_ppt = extension == ".ppt"
+
+        if is_ppt and unstructured_version < (0, 4, 11):
             raise ValueError(
-                "unstructured package not found, please install it with "
-                "`pip install unstructured`"
+                f"You are on unstructured version {__unstructured_version__}. "
+                "Partitioning .ppt files is only supported in unstructured>=0.4.11. "
+                "Please upgrade the unstructured package and try again."
             )
-        self.file_path = file_path
 
-    def load(self) -> List[Document]:
-        """Load file."""
-        from unstructured.partition.pptx import partition_pptx
+        if is_ppt:
+            from unstructured.partition.ppt import partition_ppt
 
-        elements = partition_pptx(filename=self.file_path)
-        text = "\n\n".join([str(el) for el in elements])
-        metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+            return partition_ppt(filename=self.file_path)
+        else:
+            from unstructured.partition.pptx import partition_pptx
+
+            return partition_pptx(filename=self.file_path)

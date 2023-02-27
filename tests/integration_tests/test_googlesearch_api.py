@@ -7,3 +7,13 @@ def test_call() -> None:
     search = GoogleSearchAPIWrapper()
     output = search.run("What was Obama's first name?")
     assert "Barack Hussein Obama II" in output
+
+
+def test_no_result_call() -> None:
+    """Test that call gives no result."""
+    search = GoogleSearchAPIWrapper()
+    output = search.run(
+        "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
+    )
+    print(type(output))
+    assert "No good Google Search Result was found" == output

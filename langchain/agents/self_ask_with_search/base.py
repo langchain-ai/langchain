@@ -1,12 +1,14 @@
 """Chain that does self ask with search."""
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
-from langchain.serpapi import SerpAPIWrapper
+from langchain.tools.base import BaseTool
+from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.serpapi import SerpAPIWrapper
 
 
 class SelfAskWithSearchAgent(Agent):
@@ -18,12 +20,12 @@ class SelfAskWithSearchAgent(Agent):
         return "self-ask-with-search"
 
     @classmethod
-    def create_prompt(cls, tools: List[Tool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Prompt does not depend on tools."""
         return PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: List[Tool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -74,13 +76,20 @@ class SelfAskWithSearchChain(AgentExecutor):
     Example:
         .. code-block:: python
 
-            from langchain import SelfAskWithSearchChain, OpenAI, SerpAPIWrapper
-            search_chain = SerpAPIWrapper()
+            from langchain import SelfAskWithSearchChain, OpenAI, GoogleSerperAPIWrapper
+            search_chain = GoogleSerperAPIWrapper()
             self_ask = SelfAskWithSearchChain(llm=OpenAI(), search_chain=search_chain)
     """
 
-    def __init__(self, llm: BaseLLM, search_chain: SerpAPIWrapper, **kwargs: Any):
+    def __init__(
+        self,
+        llm: BaseLLM,
+        search_chain: Union[GoogleSerperAPIWrapper, SerpAPIWrapper],
+        **kwargs: Any,
+    ):
         """Initialize with just an LLM and a search chain."""
-        search_tool = Tool(name="Intermediate Answer", func=search_chain.run)
+        search_tool = Tool(
+            name="Intermediate Answer", func=search_chain.run, description="Search"
+        )
         agent = SelfAskWithSearchAgent.from_llm_and_tools(llm, [search_tool])
         super().__init__(agent=agent, tools=[search_tool], **kwargs)

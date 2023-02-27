@@ -1,8 +1,10 @@
 """Wrappers on top of vector stores."""
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.milvus import Milvus
+from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.weaviate import Weaviate
@@ -15,4 +17,6 @@ __all__ = [
     "Weaviate",
     "Qdrant",
     "Milvus",
+    "Chroma",
+    "OpenSearchVectorSearch",
 ]

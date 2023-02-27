@@ -23,7 +23,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import HuggingFaceEndpoint
+            from langchain.llms import HuggingFaceEndpoint
             endpoint_url = (
                 "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
             )

@@ -93,7 +93,6 @@ def _load_refine_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-
     initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _refine_llm = refine_llm or llm
     refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)

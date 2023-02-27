@@ -18,6 +18,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         for prompt in prompts:
             st.write(prompt)
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Do nothing."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Do nothing."""
         pass
@@ -48,10 +52,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
         # st.write requires two spaces before a newline to render it
         st.markdown(action.log.replace("\n", "  \n"))
 

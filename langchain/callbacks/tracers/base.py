@@ -129,6 +129,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Handle a new token for an LLM run."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
         if not self._stack or not isinstance(self._stack[-1], LLMRun):
@@ -195,7 +199,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._end_trace()
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Start a trace for a tool run."""
         if self._session is None:
@@ -205,8 +209,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         tool_run = ToolRun(
             serialized=serialized,
-            action=action.tool,
-            tool_input=action.tool_input,
+            # TODO: this is duplicate info as above, not needed.
+            action=str(serialized),
+            tool_input=input_str,
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
@@ -244,6 +249,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Handle an agent finish message."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Do nothing."""
         pass
 
 

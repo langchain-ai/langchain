@@ -88,6 +88,7 @@ class Milvus(VectorStore):
         metadatas: Optional[List[dict]] = None,
         partition_name: Optional[str] = None,
         timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
 
