@@ -1,5 +1,6 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
+from langchain.chains.audio import AudioChain
 from langchain.chains.chat_vector_db.base import ChatVectorDBChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
@@ -28,6 +29,7 @@ from langchain.chains.vector_db_qa.base import VectorDBQA
 __all__ = [
     "ConversationChain",
     "LLMChain",
+    "AudioChain",
     "LLMBashChain",
     "LLMCheckerChain",
     "LLMMathChain",
