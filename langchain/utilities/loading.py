@@ -14,10 +14,41 @@ URL_BASE = os.environ.get(
     "LANGCHAIN_HUB_URL_BASE",
     "https://raw.githubusercontent.com/hwchase17/langchain-hub/{ref}/",
 )
-HUB_PATH_RE = re.compile(r"lc(?P<ref>@[^:]+)?://(?P<path>.*)")
-
+HUB_PATH_RE = re.compile(r"(hf|lc)(?P<ref>@[^:]+)?://(?P<path>.*)")
 
 T = TypeVar("T")
+
+def try_load_from_hf_hub(
+    path: Union[str, Path],
+    loader: Callable[[str], T],
+    **kwargs: Any,
+): """Utility to load files from the Hugging Face Hub
+
+Example usage.
+
+```
+load_prompt("hf://LangChainHub/QA_Refine/prompt.json")
+```
+
+Advantages
+- Cache files
+- Version control
+- Easily access files/prompts/agents shared by other community members
+- ...
+
+""" 
+    from huggingface_hub import hf_hub_download
+
+    if len(path.parts) != 3:
+        raise ValueError("Invalid path. When loading from Hugging Face, make sure the path is in the format of hf://<namespace>/<repo_id>/<filename>")
+    namespace, repo_id, filename = path.parts
+    downloaded_file = hf_hub_download(
+        repo_id=f"{namespace}/{repo_id}",
+        filename=filename,
+        repo_type="dataset"
+    )
+    return loader(str(downloaded_file), **kwargs)
+
 
 
 def try_load_from_hub(
@@ -29,21 +60,28 @@ def try_load_from_hub(
 ) -> Optional[T]:
     """Load configuration from hub.  Returns None if path is not a hub path."""
     if not isinstance(path, str) or not (match := HUB_PATH_RE.match(path)):
+        print("Not valid")
         return None
-    ref, remote_path_str = match.groups()
-    ref = ref[1:] if ref else DEFAULT_REF
+    source, ref, remote_path_str = match.groups()
     remote_path = Path(remote_path_str)
-    if remote_path.parts[0] != valid_prefix:
-        return None
     if remote_path.suffix[1:] not in valid_suffixes:
         raise ValueError("Unsupported file type.")
+    if source == "lc":
+        # Prefix is ignored for Hugging Face
+        if remote_path.parts[0] != valid_prefix:
+            return None
+        ref = ref[1:] if ref else DEFAULT_REF
+        full_url = urljoin(URL_BASE.format(ref=ref), str(remote_path))
+        r = requests.get(full_url, timeout=5)
+        if r.status_code != 200:
+            raise ValueError(f"Could not find file at {full_url}")
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            file = Path(tmpdirname) / remote_path.name
+            with open(file, "wb") as f:
+                f.write(r.content)
+            return loader(str(file), **kwargs)
+    elif source == "hf":
+        return try_load_from_hf_hub(remote_path, loader, **kwargs)
+    else:
+        raise ValueError("Invalid data source. Use lc or hf prefix")
 
-    full_url = urljoin(URL_BASE.format(ref=ref), str(remote_path))
-    r = requests.get(full_url, timeout=5)
-    if r.status_code != 200:
-        raise ValueError(f"Could not find file at {full_url}")
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file = Path(tmpdirname) / remote_path.name
-        with open(file, "wb") as f:
-            f.write(r.content)
-        return loader(str(file), **kwargs)
