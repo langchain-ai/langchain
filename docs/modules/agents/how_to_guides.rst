@@ -19,7 +19,7 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Asynchronous <./examples/async_agent.html>`_: Covering asynchronous functionality.
 
-The next set of examples are all end-to-end agents for specific applications.
+The next set of examples are all end-to-end example of different agent types.
 In all examples there is an Agent with a particular set of tools.
 
 - Tools: A tool can be anything that takes in a string and returns a string. This means that you can use both the primitives AND the chains found in `this <../chains.html>`_ documentation. LangChain also provides a list of easily loadable tools. For detailed information on those, please see `this documentation <./tools.html>`_
@@ -47,11 +47,16 @@ In all examples there is an Agent with a particular set of tools.
 - `Paper <https://arxiv.org/pdf/2210.03629.pdf>`_
 - `Example Notebook <./implementations/react.html>`_
 
-**SQLDatabase**
-- **Tools used**: See `langchain.tools.sql_database.toolkit`
-- **Agent used**: `zero-shot-react-description`
-- `Example Notebook <./implementations/sql_database.html>`_
 
+The final set of examples covers agents with toolkits.
+As opposed to the examples above, these examples are not intended to show off an agent `type`,
+but rather to show off an agent applied to particular use case.
+
+`SQLDatabase Agent <./agent_toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database with an agent.
+
+`JSON Agent <./agent_toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary with an agent.
+
+`OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint with an agent.
 
 
 .. toctree::

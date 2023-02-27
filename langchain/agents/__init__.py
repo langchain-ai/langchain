@@ -1,5 +1,10 @@
 """Interface for agents."""
 from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent_toolkits import (
+    create_json_agent,
+    create_openapi_agent,
+    create_sql_agent,
+)
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import get_all_tool_names, load_tools
@@ -24,4 +29,7 @@ __all__ = [
     "get_all_tool_names",
     "ConversationalAgent",
     "load_agent",
+    "create_sql_agent",
+    "create_json_agent",
+    "create_openapi_agent",
 ]
