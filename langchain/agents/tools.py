@@ -1,31 +1,53 @@
 """Interface for tools."""
-import asyncio
-from dataclasses import dataclass
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Union
 
+from langchain.tools.base import BaseTool
 
-@dataclass
-class Tool:
-    """Interface for tools."""
 
-    name: str
+class Tool(BaseTool):
+    """Tool that takes in function or coroutine directly."""
+
+    description: str = ""
     func: Callable[[str], str]
-    description: Optional[str] = None
-    return_direct: bool = False
-    # If the tool has a coroutine, then we can use this to run it asynchronously
     coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
-    def __call__(self, *args: Any, **kwargs: Any) -> str:
-        """Make tools callable by piping through to `func`."""
-        if asyncio.iscoroutinefunction(self.func):
-            raise TypeError("Coroutine cannot be called directly")
-        return self.func(*args, **kwargs)
+    def _run(self, tool_input: str) -> str:
+        """Use the tool."""
+        return self.func(tool_input)
+
+    async def _arun(self, tool_input: str) -> str:
+        """Use the tool asynchronously."""
+        if self.coroutine:
+            return await self.coroutine(tool_input)
+        raise NotImplementedError("Tool does not support async")
+
+    # TODO: this is for backwards compatibility, remove in future
+    def __init__(
+        self, name: str, func: Callable[[str], str], description: str, **kwargs: Any
+    ) -> None:
+        """Initialize tool."""
+        super(Tool, self).__init__(
+            name=name, func=func, description=description, **kwargs
+        )
 
 
-def tool(
-    *args: Union[str, Callable], return_direct: bool = False
-) -> Union[Callable, Tool]:
+class InvalidTool(BaseTool):
+    """Tool that is run when invalid tool name is encountered by agent."""
+
+    name = "invalid_tool"
+    description = "Called when tool name is invalid."
+
+    def _run(self, tool_name: str) -> str:
+        """Use the tool."""
+        return f"{tool_name} is not a valid tool, try another one."
+
+    async def _arun(self, tool_name: str) -> str:
+        """Use the tool asynchronously."""
+        return f"{tool_name} is not a valid tool, try another one."
+
+
+def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
     Requires:
@@ -52,13 +74,13 @@ def tool(
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            tool = Tool(
+            tool_ = Tool(
                 name=tool_name,
                 func=func,
                 description=description,
                 return_direct=return_direct,
             )
-            return tool
+            return tool_
 
         return _make_tool
 
@@ -73,7 +95,7 @@ def tool(
     elif len(args) == 0:
         # if there are no arguments, then we use the function name as the tool name
         # Example usage: @tool(return_direct=True)
-        def _partial(func: Callable[[str], str]) -> Tool:
+        def _partial(func: Callable[[str], str]) -> BaseTool:
             return _make_with_name(func.__name__)(func)
 
         return _partial

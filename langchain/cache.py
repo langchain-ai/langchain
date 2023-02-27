@@ -75,9 +75,7 @@ class SQLAlchemyCache(BaseCache):
             .order_by(self.cache_schema.idx)
         )
         with Session(self.engine) as session:
-            generations = []
-            for row in session.execute(stmt):
-                generations.append(Generation(text=row[0]))
+            generations = [Generation(text=row[0]) for row in session.execute(stmt)]
             if len(generations) > 0:
                 return generations
         return None
@@ -89,7 +87,7 @@ class SQLAlchemyCache(BaseCache):
                 prompt=prompt, llm=llm_string, response=generation.text, idx=i
             )
             with Session(self.engine) as session, session.begin():
-                session.add(item)
+                session.merge(item)
 
 
 class SQLiteCache(SQLAlchemyCache):

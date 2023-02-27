@@ -7,9 +7,8 @@ The examples here are all end-to-end chains for specific applications.
 They are broken up into three categories:
 
 1. `Generic Chains <./generic_how_to.html>`_: Generic chains, that are meant to help build other chains rather than serve a particular purpose.
-2. `CombineDocuments Chains <./combine_docs_how_to.html>`_: Chains aimed at making it easy to work with documents (question answering, summarization, etc).
-3. `Utility Chains <./utility_how_to.html>`_: Chains consisting of an LLMChain interacting with a specific util.
-4. `Asynchronous <./async_chain.html>`_: Covering asynchronous functionality.
+2. `Utility Chains <./utility_how_to.html>`_: Chains consisting of an LLMChain interacting with a specific util.
+3. `Asynchronous <./async_chain.html>`_: Covering asynchronous functionality.
 
 .. toctree::
    :maxdepth: 1
@@ -17,8 +16,8 @@ They are broken up into three categories:
    :hidden:
 
    ./generic_how_to.rst
-   ./combine_docs_how_to.rst
    ./utility_how_to.rst
+   ./async_chain.ipynb
 
 In addition to different types of chains, we also have the following how-to guides for working with chains in general:
 

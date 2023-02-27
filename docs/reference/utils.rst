@@ -13,6 +13,7 @@ These can largely be grouped into two categories: generic utilities, and then ut
 
    modules/python
    modules/serpapi
+   modules/searx_search
 
 
 .. toctree::

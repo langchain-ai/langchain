@@ -21,8 +21,12 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Print out the prompts."""
         pass
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Print out the token."""
+        pass
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Do nothing."""
+        """Collect token usage."""
         if response.llm_output is not None:
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
@@ -54,8 +58,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
-        color: Optional[str] = None,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
         """Print out the log in specified color."""
@@ -86,6 +89,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         **kwargs: Optional[str],
     ) -> None:
         """Run when agent ends."""
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
         pass
 
     def on_agent_finish(

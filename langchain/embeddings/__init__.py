@@ -9,6 +9,11 @@ from langchain.embeddings.huggingface import (
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings.self_hosted import SelfHostedEmbeddings
+from langchain.embeddings.self_hosted_hugging_face import (
+    SelfHostedHuggingFaceEmbeddings,
+    SelfHostedHuggingFaceInstructEmbeddings,
+)
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +25,9 @@ __all__ = [
     "HuggingFaceHubEmbeddings",
     "TensorflowHubEmbeddings",
     "HuggingFaceInstructEmbeddings",
+    "SelfHostedEmbeddings",
+    "SelfHostedHuggingFaceEmbeddings",
+    "SelfHostedHuggingFaceInstructEmbeddings",
 ]
 
 

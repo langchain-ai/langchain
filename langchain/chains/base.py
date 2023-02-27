@@ -158,17 +158,30 @@ class Chain(BaseModel, ABC):
 
         """
         inputs = self.prep_inputs(inputs)
-        self.callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
-            inputs,
-            verbose=self.verbose,
-        )
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_chain_start(
+                {"name": self.__class__.__name__},
+                inputs,
+                verbose=self.verbose,
+            )
+        else:
+            self.callback_manager.on_chain_start(
+                {"name": self.__class__.__name__},
+                inputs,
+                verbose=self.verbose,
+            )
         try:
             outputs = await self._acall(inputs)
         except (KeyboardInterrupt, Exception) as e:
-            self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            else:
+                self.callback_manager.on_chain_error(e, verbose=self.verbose)
             raise e
-        self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
+        else:
+            self.callback_manager.on_chain_end(outputs, verbose=self.verbose)
         return self.prep_outputs(inputs, outputs, return_only_outputs)
 
     def prep_outputs(
