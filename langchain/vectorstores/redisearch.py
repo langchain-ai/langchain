@@ -30,9 +30,7 @@ class RediSearch(VectorStore):
             pool = redis.ConnectionPool.from_url(redisearch_url)
             redis_client = redis.StrictRedis(connection_pool=pool)
         except ValueError as e:
-            raise ValueError(
-                f"Your elasticsearch client string is misformatted. Got error: {e} "
-            )
+            raise ValueError(f"Your redis connected error: {e}")
         self.client = redis_client
 
     def add_texts(
@@ -44,9 +42,10 @@ class RediSearch(VectorStore):
         # TODO
         prefix = "doc"  # prefix for the document keys
 
+        ids = []
         # Check if index exists
         for i, text in enumerate(texts):
-            key = f"{prefix}:{uuid.uuid4()}"
+            key = f"{prefix}:{uuid.uuid4().hex}"
             metadata = metadatas[i] if metadatas else {}
             self.client.hset(
                 key,
@@ -58,7 +57,8 @@ class RediSearch(VectorStore):
                     "metadata": json.dumps(metadata),
                 },
             )
-        pass
+            ids.append(key)
+        return ids
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -73,7 +73,7 @@ class RediSearch(VectorStore):
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{vector_field} $vector AS vector_score]"
         )
-        query = (
+        redis_query = (
             Query(base_query)
             .return_fields(*return_fields)
             .sort_by("vector_score")
@@ -83,7 +83,7 @@ class RediSearch(VectorStore):
         params_dict = {"vector": np.array(embedding).astype(dtype=np.float32).tobytes()}
 
         # perform vector search
-        results = self.client.ft(self.index_name).search(query, params_dict)
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)
 
         documents = [
             Document(page_content=result.content, metadata=json.loads(result.metadata))
@@ -98,6 +98,7 @@ class RediSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        index_name: Optional[str] = None,
         **kwargs: Any,
     ) -> RediSearch:
         """Construct RediSearch wrapper from raw documents.
@@ -134,14 +135,14 @@ class RediSearch(VectorStore):
             pool = redis.ConnectionPool.from_url(redisearch_url)
             client = redis.StrictRedis(connection_pool=pool)
         except ValueError as e:
-            raise ValueError(
-                "Your redis client string is misformatted. " f"Got error: {e} "
-            )
+            raise ValueError(f"Your redis connected error: {e}")
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
         # Constants
         vector_number = len(embeddings)  # initial number of vectors
-        index_name = uuid.uuid4().hex  # name of the search index
+        # name of the search index if not given
+        if not index_name:
+            index_name = uuid.uuid4().hex
         prefix = "doc"  # prefix for the document keys
         distance_metric = (
             "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
@@ -171,9 +172,8 @@ class RediSearch(VectorStore):
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
         for i, text in enumerate(texts):
-            key = f"{prefix}:{str(index_name)}"
+            key = f"{prefix}:{str(uuid.uuid4().hex)}"
             metadata = metadatas[i] if metadatas else {}
-
             client.hset(
                 key,
                 mapping={
