@@ -7,12 +7,15 @@ from langchain.document_loaders.base import BaseLoader
 from pydantic import BaseModel, Field, Extra
 from typing import List, Type
 
+def _get_default_text_splitter():
+    return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+
 
 class VectorstoreIndexCreator(BaseModel):
 
     vectorstore_cls: Type[VectorStore] = Chroma
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
-    text_splitter: TextSplitter = Field(default_factory=RecursiveCharacterTextSplitter)
+    text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
 
     class Config:
         """Configuration for this pydantic object."""
