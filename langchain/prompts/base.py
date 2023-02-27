@@ -200,6 +200,8 @@ class BasePromptTemplate(BaseModel, ABC):
 
             prompt.save(file_path="path/prompt.yaml")
         """
+        if self.partial_variables:
+            raise ValueError("Cannot save prompt with partial variables.")
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
