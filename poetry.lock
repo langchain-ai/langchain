@@ -603,6 +603,46 @@ pycryptodomex = ">=3.8,<4.0"
 urllib3 = ">=1.25.3,<3"
 
 [[package]]
+name = "boto3"
+version = "1.26.79"
+description = "The AWS SDK for Python"
+category = "main"
+optional = true
+python-versions = ">= 3.7"
+files = [
+    {file = "boto3-1.26.79-py3-none-any.whl", hash = "sha256:049de631cc03726a14b8eb24ac9ec2a48b0624197796f36166da809fdc9b9a7f"},
+    {file = "boto3-1.26.79.tar.gz", hash = "sha256:73d7bd1f16118ef0dfe936e0420cd76b02d1aedb75330ebda51168458ab752ac"},
+]
+
+[package.dependencies]
+botocore = ">=1.29.79,<1.30.0"
+jmespath = ">=0.7.1,<2.0.0"
+s3transfer = ">=0.6.0,<0.7.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
+
+[[package]]
+name = "botocore"
+version = "1.29.79"
+description = "Low-level, data-driven core of boto 3."
+category = "main"
+optional = true
+python-versions = ">= 3.7"
+files = [
+    {file = "botocore-1.29.79-py3-none-any.whl", hash = "sha256:5f254f019e8641f8b2ba6dddc1f7541e8c6d25d976802392710b2fc4bac925b1"},
+    {file = "botocore-1.29.79.tar.gz", hash = "sha256:c7ded44062bed3b928944cfb09e1578ed3fed0e4c98de4f233f3c2056a8d491e"},
+]
+
+[package.dependencies]
+jmespath = ">=0.7.1,<2.0.0"
+python-dateutil = ">=2.1,<3.0.0"
+urllib3 = ">=1.25.4,<1.27"
+
+[package.extras]
+crt = ["awscrt (==0.16.9)"]
+
+[[package]]
 name = "cachetools"
 version = "5.3.0"
 description = "Extensible memoizing collections and decorators"
@@ -1017,6 +1057,42 @@ files = [
 ]
 
 [[package]]
+name = "deeplake"
+version = "3.2.9"
+description = "Activeloop Deep Lake"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "deeplake-3.2.9.tar.gz", hash = "sha256:c1c4de39ea4c3e9cf822daf882bcd480638c042f2d99e0a50325588f15e41c6f"},
+]
+
+[package.dependencies]
+boto3 = "*"
+click = "*"
+hub = ">=2.8.7"
+humbug = ">=0.2.6"
+numcodecs = "*"
+numpy = "*"
+pathos = "*"
+pillow = "*"
+pyjwt = "*"
+tqdm = "*"
+
+[package.extras]
+all = ["IPython", "av (>=8.1.0)", "flask", "google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)", "laspy", "libdeeplake (==0.0.37)", "nibabel", "oauth2client (>=4.1.3,<4.2.0)", "pydicom"]
+audio = ["av (>=8.1.0)"]
+av = ["av (>=8.1.0)"]
+dicom = ["nibabel", "pydicom"]
+enterprise = ["libdeeplake (==0.0.37)", "pyjwt"]
+gcp = ["google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "google-cloud-storage (>=1.42.0,<1.43.0)"]
+gdrive = ["google-api-python-client (>=2.31.0,<2.32.0)", "google-auth (>=2.0.1,<2.1.0)", "google-auth-oauthlib (>=0.4.5,<0.5.0)", "oauth2client (>=4.1.3,<4.2.0)"]
+medical = ["nibabel", "pydicom"]
+point-cloud = ["laspy"]
+video = ["av (>=8.1.0)"]
+visualizer = ["IPython", "flask"]
+
+[[package]]
 name = "defusedxml"
 version = "0.7.1"
 description = "XML bomb protection for Python stdlib modules"
@@ -1190,6 +1266,18 @@ elastic-transport = ">=8,<9"
 [package.extras]
 async = ["aiohttp (>=3,<4)"]
 requests = ["requests (>=2.4.0,<3.0.0)"]
+
+[[package]]
+name = "entrypoints"
+version = "0.4"
+description = "Discover and load entry points from installed packages."
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "entrypoints-0.4-py3-none-any.whl", hash = "sha256:f174b5ff827504fd3cd97cc3f8649f3693f51538c7e4bdf3ef002c8429d42f9f"},
+    {file = "entrypoints-0.4.tar.gz", hash = "sha256:b706eddaa9218a19ebcd67b56818f05bb27589b1ca9e8d797b74affad4ccacd4"},
+]
 
 [[package]]
 name = "exceptiongroup"
@@ -1907,6 +1995,21 @@ http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (>=1.0.0,<2.0.0)"]
 
 [[package]]
+name = "hub"
+version = "3.0.1"
+description = "Activeloop Deep Lake"
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "hub-3.0.1-py3-none-any.whl", hash = "sha256:16d20fbf44700b438dc372d697ee683f0d7c58b178ad01d2daf81efe88bc692d"},
+    {file = "hub-3.0.1.tar.gz", hash = "sha256:3866425914ed522090f0634887f06ff77517e8e6d7b9370e42009d774b725514"},
+]
+
+[package.dependencies]
+deeplake = "*"
+
+[[package]]
 name = "huggingface-hub"
 version = "0.12.0"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
@@ -1936,6 +2039,25 @@ tensorflow = ["graphviz", "pydot", "tensorflow"]
 testing = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "isort (>=5.5.4)", "jedi", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "soundfile"]
 torch = ["torch"]
 typing = ["types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
+
+[[package]]
+name = "humbug"
+version = "0.2.8"
+description = "Humbug: Do you build developer tools? Humbug helps you know your users."
+category = "main"
+optional = true
+python-versions = "*"
+files = [
+    {file = "humbug-0.2.8-py3-none-any.whl", hash = "sha256:e6f0b69843af2e17bf4fdd6ca0537c062889ec8ced5e5dd5b19919e0736d10d2"},
+    {file = "humbug-0.2.8.tar.gz", hash = "sha256:efa09dce7e88a49ae14d6456e4b754c11fbe69ccd9c9cf6f8c6bec245e4b88b2"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[package.extras]
+dev = ["black", "mypy", "types-dataclasses", "types-pkg-resources", "types-requests", "wheel"]
+distribute = ["setuptools", "twine", "wheel"]
 
 [[package]]
 name = "hyperframe"
@@ -2147,24 +2269,6 @@ files = [
 arrow = ">=0.15.0"
 
 [[package]]
-name = "isort"
-version = "5.12.0"
-description = "A Python utility / library to sort Python imports."
-category = "dev"
-optional = false
-python-versions = ">=3.8.0"
-files = [
-    {file = "isort-5.12.0-py3-none-any.whl", hash = "sha256:f84c2818376e66cf843d497486ea8fed8700b340f308f076c6fb1229dff318b6"},
-    {file = "isort-5.12.0.tar.gz", hash = "sha256:8bef7dde241278824a6d83f44a544709b065191b95b6e50894bdc722fcba0504"},
-]
-
-[package.extras]
-colors = ["colorama (>=0.4.3)"]
-pipfile-deprecated-finder = ["pip-shims (>=0.5.2)", "pipreqs", "requirementslib"]
-plugins = ["setuptools"]
-requirements-deprecated-finder = ["pip-api", "pipreqs"]
-
-[[package]]
 name = "jaraco-context"
 version = "4.3.0"
 description = "Context managers by jaraco"
@@ -2217,6 +2321,18 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
+
+[[package]]
+name = "jmespath"
+version = "1.0.1"
+description = "JSON Matching Expressions"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
+    {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
+]
 
 [[package]]
 name = "joblib"
@@ -3001,6 +3117,33 @@ files = [
 ]
 
 [[package]]
+name = "multiprocess"
+version = "0.70.14"
+description = "better multiprocessing and multithreading in python"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "multiprocess-0.70.14-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:560a27540daef4ce8b24ed3cc2496a3c670df66c96d02461a4da67473685adf3"},
+    {file = "multiprocess-0.70.14-pp37-pypy37_pp73-manylinux_2_24_i686.whl", hash = "sha256:bfbbfa36f400b81d1978c940616bc77776424e5e34cb0c94974b178d727cfcd5"},
+    {file = "multiprocess-0.70.14-pp37-pypy37_pp73-manylinux_2_24_x86_64.whl", hash = "sha256:89fed99553a04ec4f9067031f83a886d7fdec5952005551a896a4b6a59575bb9"},
+    {file = "multiprocess-0.70.14-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:40a5e3685462079e5fdee7c6789e3ef270595e1755199f0d50685e72523e1d2a"},
+    {file = "multiprocess-0.70.14-pp38-pypy38_pp73-manylinux_2_24_i686.whl", hash = "sha256:44936b2978d3f2648727b3eaeab6d7fa0bedf072dc5207bf35a96d5ee7c004cf"},
+    {file = "multiprocess-0.70.14-pp38-pypy38_pp73-manylinux_2_24_x86_64.whl", hash = "sha256:e628503187b5d494bf29ffc52d3e1e57bb770ce7ce05d67c4bbdb3a0c7d3b05f"},
+    {file = "multiprocess-0.70.14-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:0d5da0fc84aacb0e4bd69c41b31edbf71b39fe2fb32a54eaedcaea241050855c"},
+    {file = "multiprocess-0.70.14-pp39-pypy39_pp73-manylinux_2_24_i686.whl", hash = "sha256:6a7b03a5b98e911a7785b9116805bd782815c5e2bd6c91c6a320f26fd3e7b7ad"},
+    {file = "multiprocess-0.70.14-pp39-pypy39_pp73-manylinux_2_24_x86_64.whl", hash = "sha256:cea5bdedd10aace3c660fedeac8b087136b4366d4ee49a30f1ebf7409bce00ae"},
+    {file = "multiprocess-0.70.14-py310-none-any.whl", hash = "sha256:7dc1f2f6a1d34894c8a9a013fbc807971e336e7cc3f3ff233e61b9dc679b3b5c"},
+    {file = "multiprocess-0.70.14-py37-none-any.whl", hash = "sha256:93a8208ca0926d05cdbb5b9250a604c401bed677579e96c14da3090beb798193"},
+    {file = "multiprocess-0.70.14-py38-none-any.whl", hash = "sha256:6725bc79666bbd29a73ca148a0fb5f4ea22eed4a8f22fce58296492a02d18a7b"},
+    {file = "multiprocess-0.70.14-py39-none-any.whl", hash = "sha256:63cee628b74a2c0631ef15da5534c8aedbc10c38910b9c8b18dcd327528d1ec7"},
+    {file = "multiprocess-0.70.14.tar.gz", hash = "sha256:3eddafc12f2260d27ae03fe6069b12570ab4764ab59a75e81624fac453fbf46a"},
+]
+
+[package.dependencies]
+dill = ">=0.3.6"
+
+[[package]]
 name = "murmurhash"
 version = "1.0.9"
 description = "Cython bindings for MurmurHash"
@@ -3422,6 +3565,39 @@ jupyter-server = ">=1.8,<3"
 test = ["pytest", "pytest-console-scripts", "pytest-tornasync"]
 
 [[package]]
+name = "numcodecs"
+version = "0.11.0"
+description = "A Python package providing buffer compression and transformation codecs for use"
+category = "main"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "numcodecs-0.11.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c0bc116752be45b4f9dca4315e5a2b4185e3b46f68c997dbb84aef334ceb5a1d"},
+    {file = "numcodecs-0.11.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c27dfca402f69fbfa01c46fb572086e77f38121192160cc8ed1177dc30702c52"},
+    {file = "numcodecs-0.11.0-cp310-cp310-win_amd64.whl", hash = "sha256:0fabc7dfdf64a9555bf8a34911e05b415793c67a1377207dc79cd96342291fa1"},
+    {file = "numcodecs-0.11.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:7dae3f5678f247336c84e7315a0c59a4fec7c33eb7db72d78ff5c776479a812e"},
+    {file = "numcodecs-0.11.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32697785b786bb0039d3feeaabdc10f25eda6c149700cde954653aaa47637832"},
+    {file = "numcodecs-0.11.0-cp311-cp311-win_amd64.whl", hash = "sha256:8c2f36b21162c6ebccc05d3fe896f86b91dcf8709946809f730cc23a37f8234d"},
+    {file = "numcodecs-0.11.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0c240858bf29e0ff254b1db60430e8b2658b8c8328b684f80033289d94807a7c"},
+    {file = "numcodecs-0.11.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee5bda16e9d26a7a39fc20b6c1cec23b4debc314df5cfae3ed505149c2eeafc4"},
+    {file = "numcodecs-0.11.0-cp38-cp38-win_amd64.whl", hash = "sha256:bd05cdb853c7bcfde2efc809a9df2c5e205b96f70405b810e5788b45d0d81f73"},
+    {file = "numcodecs-0.11.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:694dc2e80b1f169b7deb14bdd0a04b20e5f17ef32cb0f81b71ab690406ec6bd9"},
+    {file = "numcodecs-0.11.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf3925eeb37aed0e6c04d7fb9614133a3c8426dc77f8bda54c99c601a44b3bd3"},
+    {file = "numcodecs-0.11.0-cp39-cp39-win_amd64.whl", hash = "sha256:11596b71267417425ea8afb407477a67d684f434c8b07b1dd59c25a97d5c3ccb"},
+    {file = "numcodecs-0.11.0.tar.gz", hash = "sha256:6c058b321de84a1729299b0eae4d652b2e48ea1ca7f9df0da65cb13470e635eb"},
+]
+
+[package.dependencies]
+entrypoints = "*"
+numpy = ">=1.7"
+
+[package.extras]
+docs = ["mock", "numpydoc", "sphinx", "sphinx-issues"]
+msgpack = ["msgpack"]
+test = ["coverage", "flake8", "pytest", "pytest-cov"]
+zfpy = ["zfpy (>=1.0.0)"]
+
+[[package]]
 name = "numpy"
 version = "1.24.2"
 description = "Fundamental package for array computing in Python"
@@ -3644,6 +3820,24 @@ files = [
 [package.extras]
 qa = ["flake8 (==3.8.3)", "mypy (==0.782)"]
 testing = ["docopt", "pytest (<6.0.0)"]
+
+[[package]]
+name = "pathos"
+version = "0.3.0"
+description = "parallel graph management and execution in heterogeneous computing"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "pathos-0.3.0-py3-none-any.whl", hash = "sha256:b1f5a79b1c79a594330d451832642ee5bb61dd77dc75ba9e5c72087c77e8994c"},
+    {file = "pathos-0.3.0.tar.gz", hash = "sha256:24fa8db51fbd9284da8e191794097c4bb2aa3fce411090e57af6385e61b97e09"},
+]
+
+[package.dependencies]
+dill = ">=0.3.6"
+multiprocess = ">=0.70.14"
+pox = ">=0.3.2"
+ppft = ">=1.7.6.6"
 
 [[package]]
 name = "pathspec"
@@ -3888,6 +4082,33 @@ files = [
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
+
+[[package]]
+name = "pox"
+version = "0.3.2"
+description = "utilities for filesystem exploration and automated builds"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "pox-0.3.2-py3-none-any.whl", hash = "sha256:56fe2f099ecd8a557b8948082504492de90e8598c34733c9b1fdeca8f7b6de61"},
+    {file = "pox-0.3.2.tar.gz", hash = "sha256:e825225297638d6e3d49415f8cfb65407a5d15e56f2fb7fe9d9b9e3050c65ee1"},
+]
+
+[[package]]
+name = "ppft"
+version = "1.7.6.6"
+description = "distributed and parallel python"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "ppft-1.7.6.6-py3-none-any.whl", hash = "sha256:f355d2caeed8bd7c9e4a860c471f31f7e66d1ada2791ab5458ea7dca15a51e41"},
+    {file = "ppft-1.7.6.6.tar.gz", hash = "sha256:f933f0404f3e808bc860745acb3b79cd4fe31ea19a20889a645f900415be60f1"},
+]
+
+[package.extras]
+dill = ["dill (>=0.3.6)"]
 
 [[package]]
 name = "preshed"
@@ -4306,6 +4527,24 @@ files = [
 
 [package.extras]
 plugins = ["importlib-metadata"]
+
+[[package]]
+name = "pyjwt"
+version = "2.6.0"
+description = "JSON Web Token implementation in Python"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "PyJWT-2.6.0-py3-none-any.whl", hash = "sha256:d83c3d892a77bbb74d3e1a2cfa90afaadb60945205d1095d9221f04466f64c14"},
+    {file = "PyJWT-2.6.0.tar.gz", hash = "sha256:69285c7e31fc44f68a1feb309e948e0df53259d579295e6cfe2b1792329f05fd"},
+]
+
+[package.extras]
+crypto = ["cryptography (>=3.4.0)"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pyparsing"
@@ -5037,6 +5276,24 @@ files = [
     {file = "ruff-0.0.249-py3-none-win_arm64.whl", hash = "sha256:3d2d11a7b750433f3acec30641faab673d101aa86a2ddfe4af8bcfa773b178e2"},
     {file = "ruff-0.0.249.tar.gz", hash = "sha256:b590689f08ecef971c45555cbda6854cdf48f3828fc326802828e851b1a14b3d"},
 ]
+
+[[package]]
+name = "s3transfer"
+version = "0.6.0"
+description = "An Amazon S3 Transfer Manager"
+category = "main"
+optional = true
+python-versions = ">= 3.7"
+files = [
+    {file = "s3transfer-0.6.0-py3-none-any.whl", hash = "sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd"},
+    {file = "s3transfer-0.6.0.tar.gz", hash = "sha256:2ed07d3866f523cc561bf4a00fc5535827981b117dd7876f036b0c1aca42c947"},
+]
+
+[package.dependencies]
+botocore = ">=1.12.36,<2.0a.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
 name = "scikit-learn"
@@ -7132,4 +7389,4 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "de052ebffaad7fa65dbb96eb900bbc28ea45dc280e3de7e857d4d4c72018d6f7"
+content-hash = "62e4e7c8794ddf379d0a5d0951259f8a1ca4899194d6b0190ba43d843536b93a"

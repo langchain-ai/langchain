@@ -27,7 +27,7 @@ class VectorStore(ABC):
 
         Returns:
             List of ids from adding the texts into the vectorstore.
-        """
+        """ 
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.

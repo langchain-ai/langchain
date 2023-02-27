@@ -491,7 +491,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
 class OpenAI(BaseOpenAI):
     """Generic OpenAI class that uses model name."""
-
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
