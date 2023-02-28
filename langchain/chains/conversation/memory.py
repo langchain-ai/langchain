@@ -92,7 +92,7 @@ class ConversationBufferMemory(Memory, BaseModel):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
@@ -137,7 +137,7 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: "\n".join(self.buffer[-self.k :])}
 
@@ -187,7 +187,7 @@ class ConversationSummaryMemory(Memory, BaseModel):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
@@ -251,7 +251,7 @@ class ConversationEntityMemory(Memory, BaseModel):
         """
         return ["entities", self.chat_history_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Return history buffer."""
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
         if self.input_key is None:
@@ -332,7 +332,7 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """Return history buffer."""
         if self.moving_summary_buffer == "":
             return {self.memory_key: "\n".join(self.buffer)}
@@ -410,7 +410,7 @@ class ConversationKGMemory(Memory, BaseModel):
     input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Return history buffer."""
         entities = self._get_current_entities(inputs)
         summaries = {}

@@ -27,8 +27,11 @@ class Memory(BaseModel, ABC):
         """Input keys this memory class will load dynamically."""
 
     @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        """Return key-value pairs given the text input to the chain."""
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+        """Return key-value pairs given the text input to the chain.
+
+        If None, return all memories
+        """
 
     @abstractmethod
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
@@ -40,14 +43,16 @@ class Memory(BaseModel, ABC):
 
 
 class SimpleMemory(Memory, BaseModel):
-    """ Simple memory for storing context or other bits of information that shouldn't ever change between prompts."""
+    """ Simple memory for storing context or other bits of information that shouldn't
+    ever change between prompts.
+    """
     memories: Dict[str, Any] = dict()
 
     @property
     def memory_variables(self) -> List[str]:
         return list(self.memories.keys())
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         return self.memories
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:

@@ -1,5 +1,4 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
-
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
@@ -9,7 +8,7 @@ from langchain.input import get_color_mapping
 
 
 class SequentialChain(Chain, BaseModel):
-    """Chain where the outputs of one step feed directly into next."""
+    """Chain where the outputs of one chain feed directly into next."""
 
     chains: List[Chain]
     input_variables: List[str]
@@ -24,7 +23,7 @@ class SequentialChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Expect input key.
+        """Return expected input keys to the chain.
 
         :meta private:
         """
@@ -56,6 +55,7 @@ class SequentialChain(Chain, BaseModel):
                 )
 
         known_variables = set(input_variables + memory_keys)
+
         for chain in chains:
             missing_vars = set(chain.input_keys).difference(known_variables)
             if missing_vars:
@@ -68,6 +68,7 @@ class SequentialChain(Chain, BaseModel):
                 raise ValueError(
                     f"Chain returned keys that already exist: {overlapping_keys}"
                 )
+
             known_variables |= set(chain.output_keys)
 
         if "output_variables" not in values:
@@ -82,13 +83,16 @@ class SequentialChain(Chain, BaseModel):
                 raise ValueError(
                     f"Expected output variables that were not found: {missing_vars}."
                 )
+
         return values
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        known_values = inputs.copy()
+        known_values = self.prep_inputs(inputs.copy())
+
         for i, chain in enumerate(self.chains):
             outputs = chain(known_values, return_only_outputs=True)
             known_values.update(outputs)
+
         return {k: known_values[k] for k in self.output_variables}
 
 
