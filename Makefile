@@ -21,13 +21,12 @@ docs_linkcheck:
 
 format:
 	poetry run black .
-	poetry run isort .
+	poetry run ruff --select I --fix .
 
 lint:
 	poetry run mypy .
 	poetry run black . --check
-	poetry run isort . --check
-	poetry run flake8 .
+	poetry run ruff .
 
 test:
 	poetry run pytest tests/unit_tests

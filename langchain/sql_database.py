@@ -94,6 +94,7 @@ class SQLDatabase:
             tbl
             for tbl in self._metadata.sorted_tables
             if tbl.name in set(all_table_names)
+            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []
