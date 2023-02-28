@@ -8,7 +8,6 @@ from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import create_vectorstore_agent
 from langchain.agents.agent_toolkits.vectorstore.toolkit import (
-    NamedVectorStore,
     VectorStoreToolkit,
 )
 
@@ -20,6 +19,5 @@ __all__ = [
     "JsonToolkit",
     "SQLDatabaseToolkit",
     "OpenAPIToolkit",
-    "NamedVectorStore",
     "VectorStoreToolkit",
 ]

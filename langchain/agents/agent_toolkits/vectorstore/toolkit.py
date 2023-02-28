@@ -1,7 +1,7 @@
 """Toolkit for interacting with a vector store."""
-from typing import List, Sequence
+from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.base import BaseLLM
@@ -14,40 +14,30 @@ from langchain.tools.vectorstore.tool import (
 from langchain.vectorstores.base import VectorStore
 
 
-class NamedVectorStore(BaseModel):
-    """A vector store with a name."""
-
-    name: str
-    vectorstore: VectorStore
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-
 class VectorStoreToolkit(BaseToolkit):
     """Toolkit for interacting with a vector store."""
 
-    vectorstores: Sequence[NamedVectorStore] = Field(exclude=True)
+    vectorstore: VectorStore = Field(exclude=True)
+    name: str
+    description: str
     llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+
+    class Config:
+        """Configuration for this pydantic object."""
+        arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        tools: List[BaseTool] = []
-        for named_vectorstore in self.vectorstores:
-            tools.append(
-                VectorStoreQATool(
-                    name=named_vectorstore.name,
-                    vectorstore=named_vectorstore.vectorstore,
-                    llm=self.llm,
-                )
-            )
-            tools.append(
-                VectorStoreQAWithSourcesTool(
-                    name=f"{named_vectorstore.name}_with_sources",
-                    vectorstore=named_vectorstore.vectorstore,
-                    llm=self.llm,
-                )
-            )
-        return tools
+        qa_tool = VectorStoreQATool(
+            name=self.name,
+            extra_description=self.description,
+            vectorstore=self.vectorstore,
+            llm=self.llm,
+        )
+        qa_with_sources_tool = VectorStoreQAWithSourcesTool(
+            name=f"{self.name}_with_sources",
+            extra_description=self.description,
+            vectorstore=self.vectorstore,
+            llm=self.llm,
+        )
+        return [qa_tool, qa_with_sources_tool]

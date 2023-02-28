@@ -35,14 +35,14 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
 
     template: str = (
         "Useful for when you need to answer questions about {name}. "
+        "This contains {extra_description}. "
         "Input should be a fully formed question."
     )
-    description = ""
+    extra_description: str
 
-    @root_validator()
-    def create_description_from_template(cls, values: dict) -> dict:
-        """Create description from template."""
-        return _create_description_from_template(values)
+    @property
+    def description(self) -> str:
+        return self.template.format(self.name, self.extra_description)
 
     def _run(self, query: str) -> str:
         """Use the tool."""
@@ -59,16 +59,16 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
 
     template: str = (
         "Useful for when you need to answer questions about {name} and the sources "
-        "used to construct the answer. Input should be a fully formed question. "
+        "used to construct the answer. This contains {extra_description}."
+        " Input should be a fully formed question. "
         "Output is a json serialized dictionary with keys `answer` and `sources`. "
         "Only use this tool if the user explicitly asks for sources."
     )
-    description = ""
+    extra_description: str
 
-    @root_validator()
-    def create_description_from_template(cls, values: dict) -> dict:
-        """Create description from template."""
-        return _create_description_from_template(values)
+    @property
+    def description(self) -> str:
+        return self.template.format(self.name, self.extra_description)
 
     def _run(self, query: str) -> str:
         """Use the tool."""
