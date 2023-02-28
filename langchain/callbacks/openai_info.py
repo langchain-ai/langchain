@@ -8,6 +8,8 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 class OpenAICallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks OpenAI info."""
 
+    completion_tokens: int = 0
+    prompt_tokens: int = 0
     total_tokens: int = 0
 
     llm_output: any
@@ -36,8 +38,14 @@ class OpenAICallbackHandler(BaseCallbackHandler):
             """Collect token usage."""
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
+                
+                if "completion_tokens" in token_usage:
+                    self.completion_tokens += token_usage["completion_tokens"]
+                if "prompt_tokens" in token_usage:
+                    self.prompt_tokens += token_usage["prompt_tokens"]
                 if "total_tokens" in token_usage:
                     self.total_tokens += token_usage["total_tokens"]
+
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
