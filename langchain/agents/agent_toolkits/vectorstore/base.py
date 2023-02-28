@@ -1,23 +1,25 @@
 """VectorStore agent."""
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_toolkits.vectorstore.toolkit import VectorStoreToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.tools.vectorstore.tool import VectorDBQATool
+from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX
 
 
 def create_vectorstore_agent(
     llm: BaseLLM,
-    tools: List[VectorDBQATool],
+    toolkit: VectorStoreToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a vectorstore agent from an LLM and tools."""
-    prompt = ZeroShotAgent.create_prompt(tools)
+    tools = toolkit.get_tools()
+    prompt = ZeroShotAgent.create_prompt(tools, prefix=PREFIX)
     llm_chain = LLMChain(
         llm=llm,
         prompt=prompt,
