@@ -50,7 +50,7 @@ def try_load_from_hf_hub(
     elif prefix == "chains":
         org_id = "LangChainHub-Chain"
     else:
-        raise ValueError("Unsupported prefix")
+        raise ValueError(f"Unsupported prefix: '{prefix}'. Must be one of 'agents', 'chains' or 'prompts'")
 
     downloaded_file = hf_hub_download(
         repo_id=f"{org_id}/{repo_id}", filename=filename, repo_type="dataset"
