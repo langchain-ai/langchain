@@ -8,8 +8,6 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-VALID_TASKS = ("text2text-generation", "text-generation")
-
 class SagemakerEndpoint(LLM, BaseModel):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
@@ -34,22 +32,19 @@ class SagemakerEndpoint(LLM, BaseModel):
 
             from langchain import SagemakerEndpoint
             import sagemaker
-            endpoint_name = "some-endpoint"
-            sagemaker_runtime_client=boto_session.client(
-                        'sagemaker-runtime',
-                        region_name='<region>'
-                    )
+            from sagemaker.serializers import JSONSerializer
+            from sagemaker.deserializers import JSONDeserializer
 
-            # Obtain SageMaker session from boto3 session and sagemaker runtime
-            sagemaker_session=sagemaker.Session(
-                boto_session,
-                sagemaker_runtime_client=sagemaker_runtime_client,
-            )
+            endpoint_name = "some-endpoint" 
+
+            sagemaker_session = sagemaker.Session()
+
             se = SagemakerEndpoint(
                 endpoint_name=endpoint_name,
                 region_name=region_name,
                 sagemaker_session=sagemaker_session,
-                task="text-generation"
+                serializer=JSONSerializer(),
+                deserializer=JSONDeserializer()
             )
     """
     client: Any  #: :meta private:
@@ -57,10 +52,21 @@ class SagemakerEndpoint(LLM, BaseModel):
     """sagemaker endpoint to use."""
     sagemaker_session: Any
     """Manage interactions with the Amazon SageMaker APIs and any other AWS services needed.."""
-    task: str
-    """Task to call the model with. Should be a task that returns `generated_text`."""
-    model_kwargs: Optional[Dict] = None
-    """Key word arguments to pass to the model."""
+    serializer: Any 
+    """sagemaker perdictor Serialize data of various formats."""
+    deserializer: Any
+    """sagemaker perdictor deserializer data of various formats."""
+    model_input_transform_fn: Callable[[str], str]
+    """
+    Function which takes the response and tranform it to correct input for predictor 
+    """
+    model_output_transform_fn: Callable[[Dict], str]
+
+    """
+    Function which takes the response and tranform it to correct text depending on endpoint type.
+    return string for _call function
+    """
+    model_kwargs: Optional[dict] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -69,27 +75,16 @@ class SagemakerEndpoint(LLM, BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
+        """Validate Predictor and python package exists in environment."""
         try:
             from sagemaker.predictor import Predictor
-            from sagemaker.serializers import JSONSerializer
-            from sagemaker.deserializers import JSONDeserializer
-  
-            endpoint_name = values["endpoint_name"]
-            sagemaker_session = values["sagemaker_session"]
             predictor = Predictor(
-                            endpoint_name,
-                            sagemaker_session=sagemaker_session, 
-                            serializer=JSONSerializer(), 
-                            deserializer=JSONDeserializer()
-                            )      
+                            values["endpoint_name"],
+                            sagemaker_session=values["sagemaker_session"], 
+                            serializer= values["serializer"], 
+                            deserializer=values["deserializer"]
+                        )      
             values["client"] = predictor
-            task = values.get("task")
-            if task not in VALID_TASKS:
-                    raise ValueError(
-                        f"Got invalid task {task}, "
-                        f"currently only {VALID_TASKS} are supported"
-                    )
         except ImportError:
             raise ValueError(
                 "Could not import sagemaker python package. "
@@ -126,11 +121,15 @@ class SagemakerEndpoint(LLM, BaseModel):
 
                 response = se("Tell me a joke.")
         """
+        if self.model_output_transform_fn or self.model_input_transform_fn is None:
+            raise NotImplementedError("model_output_transform_fn and model_input_transform_fn not implemented")
         # send request
         try:
-            response = self.client.predict({"inputs": prompt})
+            inputs = self.model_input_transform_fn(prompt)
+            response = self.client.predict(**inputs)
+            text = self.model_output_transform_fn(response)
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
         if "error" in response:
             raise ValueError(f"Error raised by inference API: {response['error']}")
-        return response[0]["generated_text"]
+        return text
