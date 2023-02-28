@@ -7,6 +7,8 @@ The first category of how-to guides here cover specific parts of working with ag
 
 `Custom Tools <./examples/custom_tools.html>`_: How to create custom tools that an agent can use.
 
+`Agents With Vectorstores <./examples/agent_vectorstore.html>`_: How to use vectorstores with agents.
+
 `Intermediate Steps <./examples/intermediate_steps.html>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
 
 `Custom Agent <./examples/custom_agent.html>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
