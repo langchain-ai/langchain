@@ -59,16 +59,14 @@ class IFixitLoader(BaseLoader):
             raise ValueError("Unknown page type: " + self.page_type)
 
     @staticmethod
-    def load_suggestions(
-            query: str = "", doc_type: str = "all"
-    ) -> List[Document]:
+    def load_suggestions(query: str = "", doc_type: str = "all") -> List[Document]:
         res = requests.get(
             IFIXIT_BASE_URL + "/suggest/" + query + "?doctypes=" + doc_type
         )
 
         if res.status_code != 200:
             raise ValueError(
-                "Could not load suggestions for \"" + query + "\"\n" + res.json()
+                'Could not load suggestions for "' + query + '"\n' + res.json()
             )
 
         data = res.json()
@@ -78,7 +76,7 @@ class IFixitLoader(BaseLoader):
 
         for result in results:
             try:
-                loader = IFixitLoader(result['url'])
+                loader = IFixitLoader(result["url"])
                 if loader.page_type == "Device":
                     output += loader.load_device(include_guides=False)
                 else:
@@ -89,7 +87,7 @@ class IFixitLoader(BaseLoader):
         return output
 
     def load_questions_and_answers(
-            self, url_override: Optional[str] = None
+        self, url_override: Optional[str] = None
     ) -> List[Document]:
         loader = WebBaseLoader(self.web_path if url_override is None else url_override)
         soup = loader.scrape()
@@ -121,8 +119,9 @@ class IFixitLoader(BaseLoader):
 
         return [Document(page_content=text, metadata=metadata)]
 
-    def load_device(self, url_override: Optional[str] = None,
-                    include_guides: bool = True) -> List[Document]:
+    def load_device(
+        self, url_override: Optional[str] = None, include_guides: bool = True
+    ) -> List[Document]:
         documents = []
         if url_override is None:
             url = IFIXIT_BASE_URL + "/wikis/CATEGORY/" + self.id
@@ -143,7 +142,7 @@ class IFixitLoader(BaseLoader):
         documents.append(Document(page_content=text, metadata=metadata))
 
         if include_guides:
-            """ Load and return documents for each guide linked to from the device """
+            """Load and return documents for each guide linked to from the device"""
             guide_urls = [guide["url"] for guide in data["guides"]]
             for guide_url in guide_urls:
                 documents.append(IFixitLoader(guide_url).load()[0])
