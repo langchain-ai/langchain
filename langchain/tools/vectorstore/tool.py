@@ -80,28 +80,3 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("VectorDBQATool does not support async")
-
-
-# if __name__ == "__main__":
-#     from langchain import OpenAI, VectorDBQA
-#     from langchain.embeddings.openai import OpenAIEmbeddings
-#     from langchain.text_splitter import CharacterTextSplitter
-#     from langchain.vectorstores import FAISS
-#
-#     llm = OpenAI(temperature=0)
-#     embeddings = OpenAIEmbeddings()
-#     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-#     from langchain.document_loaders import WebBaseLoader
-#
-#     loader = WebBaseLoader("https://beta.ruff.rs/docs/faq/")
-#     docs = loader.load()
-#     ruff_texts = text_splitter.split_documents(docs)
-#     ruff_db = FAISS.from_documents(ruff_texts, embeddings, collection_name="ruff")
-#
-#     tool = VectorStoreQATool(name="Ruff", vectorstore=ruff_db, llm=llm)
-#     print(tool.description)
-#     print(tool.run("What is Ruff?"))
-#
-#     tool2 = VectorStoreQAWithSourcesTool(name="Ruff", vectorstore=ruff_db, llm=llm)
-#     print(tool2.description)
-#     print(tool2.run("What is Ruff?"))
