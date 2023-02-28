@@ -44,11 +44,11 @@ def try_load_from_hf_hub(
         )
     prefix, repo_id, filename = path.parts
     if prefix == "prompts":
-        org_id = "LangChainHub"
+        org_id = "LangChainHub-Prompts"
     elif prefix == "agents":
-        org_id = "LangChainAgentsHub"
+        org_id = "LangChainHub-Agents"
     elif prefix == "chains":
-        org_id = "LangChainChainsHub"
+        org_id = "LangChainHub-Chain"
     else:
         raise ValueError("Unsupported prefix")
 
