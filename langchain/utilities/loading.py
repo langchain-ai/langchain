@@ -18,11 +18,12 @@ HUB_PATH_RE = re.compile(r"(hf|lc)(?P<ref>@[^:]+)?://(?P<path>.*)")
 
 T = TypeVar("T")
 
+
 def try_load_from_hf_hub(
-    path: Union[str, Path],
+    path: Path,
     loader: Callable[[str], T],
     **kwargs: Any,
-): 
+) -> Optional[T]:
     """Load configuration from the Hugging Face Hub.
 
     The Hugging Face Hub automatically has version control, simple sharing mechanism,
@@ -37,14 +38,15 @@ def try_load_from_hf_hub(
     from huggingface_hub import hf_hub_download
 
     if len(path.parts) != 2:
-        raise ValueError("Invalid path. When loading from Hugging Face, make sure the path is in the format of hf://<repo_id>/<filename>")
+        raise ValueError(
+            "Invalid path. When loading from Hugging Face, make sure the path is in the format of hf://<repo_id>/<filename>"
+        )
     repo_id, filename = path.parts
     downloaded_file = hf_hub_download(
-        repo_id=f"LangChainHub/{repo_id}",
-        filename=filename,
-        repo_type="dataset"
+        repo_id=f"LangChainHub/{repo_id}", filename=filename, repo_type="dataset"
     )
     return loader(downloaded_file, **kwargs)
+
 
 def try_load_from_hub(
     path: Union[str, Path],
@@ -78,4 +80,3 @@ def try_load_from_hub(
         return try_load_from_hf_hub(remote_path, loader, **kwargs)
     else:
         raise ValueError("Invalid data source. Use lc or hf prefix")
-
