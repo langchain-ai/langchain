@@ -360,7 +360,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "api_key": common.api_key,
                 "api_type": common.api_type,
                 "api_version": common.api_version,
-                "openai_id": common.openai_id,
                 "organization": common.organization,
                 "response_ms": common.response_ms,
             }
