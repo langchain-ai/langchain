@@ -1,9 +1,12 @@
 """VectorStore agent."""
-from typing import Any, Optional, List
+from typing import Any, Optional
 
 from langchain.agents.agent import AgentExecutor
-from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX
-from langchain.agents.agent_toolkits.vectorstore.toolkit import VectorStoreToolkit
+from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX, ROUTER_PREFIX
+from langchain.agents.agent_toolkits.vectorstore.toolkit import (
+    VectorStoreRouterToolkit,
+    VectorStoreToolkit,
+)
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -19,22 +22,28 @@ def create_vectorstore_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a vectorstore agent from an LLM and tools."""
-    return create_vectorstores_agent(
-        llm, [toolkit], callback_manager=callback_manager, prefix=prefix, verbose=verbose, **kwargs)
+    tools = toolkit.get_tools()
+    prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
+    llm_chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        callback_manager=callback_manager,
+    )
+    tool_names = [tool.name for tool in tools]
+    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
 
 
-def create_vectorstores_agent(
+def create_vectorstore_router_agent(
     llm: BaseLLM,
-    toolkits: List[VectorStoreToolkit],
+    toolkit: VectorStoreRouterToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
-    prefix: str = PREFIX,
+    prefix: str = ROUTER_PREFIX,
     verbose: bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Construct a vectorstore agent from an LLM and tools."""
-    tools = []
-    for toolkit in toolkits:
-        tools.extend(toolkit.get_tools())
+    """Construct a vectorstore router agent from an LLM and tools."""
+    tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
         llm=llm,

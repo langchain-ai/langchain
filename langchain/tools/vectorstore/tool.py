@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
@@ -33,16 +33,15 @@ def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
 class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQA chain. To be initialized with name and chain."""
 
-    template: str = (
-        "Useful for when you need to answer questions about {name}. "
-        "This contains {extra_description}. "
-        "Input should be a fully formed question."
-    )
-    extra_description: str
-
-    @property
-    def description(self) -> str:
-        return self.template.format(self.name, self.extra_description)
+    @staticmethod
+    def get_description(name: str, description: str) -> str:
+        template: str = (
+            "Useful for when you need to answer questions about {name}. "
+            "Whenever you need information about {description} "
+            "you should ALWAYS use this. "
+            "Input should be a fully formed question."
+        )
+        return template.format(name=name, description=description)
 
     def _run(self, query: str) -> str:
         """Use the tool."""
@@ -57,18 +56,18 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
 class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQAWithSources chain."""
 
-    template: str = (
-        "Useful for when you need to answer questions about {name} and the sources "
-        "used to construct the answer. This contains {extra_description}."
-        " Input should be a fully formed question. "
-        "Output is a json serialized dictionary with keys `answer` and `sources`. "
-        "Only use this tool if the user explicitly asks for sources."
-    )
-    extra_description: str
-
-    @property
-    def description(self) -> str:
-        return self.template.format(self.name, self.extra_description)
+    @staticmethod
+    def get_description(name: str, description: str) -> str:
+        template: str = (
+            "Useful for when you need to answer questions about {name} and the sources "
+            "used to construct the answer. "
+            "Whenever you need information about {description} "
+            "you should ALWAYS use this. "
+            " Input should be a fully formed question. "
+            "Output is a json serialized dictionary with keys `answer` and `sources`. "
+            "Only use this tool if the user explicitly asks for sources."
+        )
+        return template.format(name=name, description=description)
 
     def _run(self, query: str) -> str:
         """Use the tool."""

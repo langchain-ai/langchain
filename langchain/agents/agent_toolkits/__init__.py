@@ -6,8 +6,13 @@ from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
 from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from langchain.agents.agent_toolkits.vectorstore.base import create_vectorstore_agent
+from langchain.agents.agent_toolkits.vectorstore.base import (
+    create_vectorstore_agent,
+    create_vectorstore_router_agent,
+)
 from langchain.agents.agent_toolkits.vectorstore.toolkit import (
+    VectorStoreInfo,
+    VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
 
@@ -20,4 +25,7 @@ __all__ = [
     "SQLDatabaseToolkit",
     "OpenAPIToolkit",
     "VectorStoreToolkit",
+    "create_vectorstore_router_agent",
+    "VectorStoreInfo",
+    "VectorStoreRouterToolkit",
 ]
