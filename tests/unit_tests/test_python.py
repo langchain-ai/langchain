@@ -38,3 +38,15 @@ def test_functionality() -> None:
     code = "print(1 + 1)"
     output = chain.run(code)
     assert output == "2\n"
+
+
+def test_function() -> None:
+    """Test correct functionality."""
+    chain = PythonREPL()
+    code = "def add(a, b): " "    return a + b"
+    output = chain.run(code)
+    assert output == ""
+
+    code = "print(add(1, 2))"
+    output = chain.run(code)
+    assert output == "3\n"
