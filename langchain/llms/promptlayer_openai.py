@@ -23,7 +23,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI
+            from langchain.llms import OpenAI
             openai = OpenAI(model_name="text-davinci-003")
     """
 

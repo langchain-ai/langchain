@@ -75,7 +75,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI
+            from langchain.llms import OpenAI
             openai = OpenAI(model_name="text-davinci-003")
     """
 
@@ -251,7 +251,9 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     prompt=_prompts, **params
                 ):
                     self.callback_manager.on_llm_new_token(
-                        stream_resp["choices"][0]["text"], verbose=self.verbose
+                        stream_resp["choices"][0]["text"],
+                        verbose=self.verbose,
+                        logprobs=stream_resp["choices"][0]["logprobs"],
                     )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
@@ -285,11 +287,15 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 ):
                     if self.callback_manager.is_async:
                         await self.callback_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                            stream_resp["choices"][0]["text"],
+                            verbose=self.verbose,
+                            logprobs=stream_resp["choices"][0]["logprobs"],
                         )
                     else:
                         self.callback_manager.on_llm_new_token(
-                            stream_resp["choices"][0]["text"], verbose=self.verbose
+                            stream_resp["choices"][0]["text"],
+                            verbose=self.verbose,
+                            logprobs=stream_resp["choices"][0]["logprobs"],
                         )
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])

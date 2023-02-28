@@ -85,3 +85,92 @@ def test_few_shot_functionality() -> None:
         "Now you try to talk about party."
     )
     assert output == expected_output
+
+
+def test_partial_init_string() -> None:
+    """Test prompt can be initialized with partial variables."""
+    prefix = "This is a test about {content}."
+    suffix = "Now you try to talk about {new_content}."
+    examples = [
+        {"question": "foo", "answer": "bar"},
+        {"question": "baz", "answer": "foo"},
+    ]
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        prefix=prefix,
+        input_variables=["new_content"],
+        partial_variables={"content": "animals"},
+        examples=examples,
+        example_prompt=EXAMPLE_PROMPT,
+        example_separator="\n",
+    )
+    output = prompt.format(new_content="party")
+    expected_output = (
+        "This is a test about animals.\n"
+        "foo: bar\n"
+        "baz: foo\n"
+        "Now you try to talk about party."
+    )
+    assert output == expected_output
+
+
+def test_partial_init_func() -> None:
+    """Test prompt can be initialized with partial variables."""
+    prefix = "This is a test about {content}."
+    suffix = "Now you try to talk about {new_content}."
+    examples = [
+        {"question": "foo", "answer": "bar"},
+        {"question": "baz", "answer": "foo"},
+    ]
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        prefix=prefix,
+        input_variables=["new_content"],
+        partial_variables={"content": lambda: "animals"},
+        examples=examples,
+        example_prompt=EXAMPLE_PROMPT,
+        example_separator="\n",
+    )
+    output = prompt.format(new_content="party")
+    expected_output = (
+        "This is a test about animals.\n"
+        "foo: bar\n"
+        "baz: foo\n"
+        "Now you try to talk about party."
+    )
+    assert output == expected_output
+
+
+def test_partial() -> None:
+    """Test prompt can be partialed."""
+    prefix = "This is a test about {content}."
+    suffix = "Now you try to talk about {new_content}."
+    examples = [
+        {"question": "foo", "answer": "bar"},
+        {"question": "baz", "answer": "foo"},
+    ]
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        prefix=prefix,
+        input_variables=["content", "new_content"],
+        examples=examples,
+        example_prompt=EXAMPLE_PROMPT,
+        example_separator="\n",
+    )
+    new_prompt = prompt.partial(content="foo")
+    new_output = new_prompt.format(new_content="party")
+    expected_output = (
+        "This is a test about foo.\n"
+        "foo: bar\n"
+        "baz: foo\n"
+        "Now you try to talk about party."
+    )
+    assert new_output == expected_output
+    output = prompt.format(new_content="party", content="bar")
+    expected_output = (
+        "This is a test about bar.\n"
+        "foo: bar\n"
+        "baz: foo\n"
+        "Now you try to talk about party."
+    )
+    assert output == expected_output

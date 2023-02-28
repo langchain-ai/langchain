@@ -17,10 +17,6 @@ This page is broken into two parts: installation and setup, and then references 
     - `poppler-utils`
     - `tesseract-ocr`
     - `libreoffice`
-- Run the following to install NLTK dependencies. `unstructured` will handle this automatically
-  soon.
-  - `python -c "import nltk; nltk.download('punkt')"`
-  - `python -c "import nltk; nltk.download('averaged_perceptron_tagger')"`
 - If you are parsing PDFs, run the following to install the `detectron2` model, which
   `unstructured` uses for layout detection:
     - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2"`

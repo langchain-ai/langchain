@@ -68,7 +68,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
             check_valid_template(
                 values["prefix"] + values["suffix"],
                 values["template_format"],
-                values["input_variables"],
+                values["input_variables"] + list(values["partial_variables"]),
             )
         return values
 
@@ -101,6 +101,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
         # Format the examples.
@@ -110,6 +111,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         # Create the overall template.
         pieces = [self.prefix, *example_strings, self.suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
+
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
