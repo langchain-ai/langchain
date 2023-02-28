@@ -8,6 +8,8 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
+VALID_TASKS = ("text2text-generation", "text-generation")
+
 class SagemakerEndpoint(LLM, BaseModel):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
@@ -31,59 +33,33 @@ class SagemakerEndpoint(LLM, BaseModel):
         .. code-block:: python
 
             from langchain import SagemakerEndpoint
-            endpoint_name = (
-                "https://runtime.sagemaker.us-west-2.amazonaws.com/endpoints/abcdefghijklmnop/invocations"
-            )
-            region_name = (
-                "us-west-2"
-            )
-            credentials_profile_name = (
-                "default"
+            import sagemaker
+            endpoint_name = "some-endpoint"
+            sagemaker_runtime_client=boto_session.client(
+                        'sagemaker-runtime',
+                        region_name='<region>'
+                    )
+
+            # Obtain SageMaker session from boto3 session and sagemaker runtime
+            sagemaker_session=sagemaker.Session(
+                boto_session,
+                sagemaker_runtime_client=sagemaker_runtime_client,
             )
             se = SagemakerEndpoint(
                 endpoint_name=endpoint_name,
                 region_name=region_name,
-                credentials_profile_name=credentials_profile_name
+                sagemaker_session=sagemaker_session,
+                task="text-generation"
             )
     """
     client: Any  #: :meta private:
-
-    endpoint_name: str = ""
-    """The name of the endpoint from the deployed Sagemaker model.
-    Must be unique within an AWS Region."""
-
-    region_name: str = ""
-    """The aws region where the Sagemaker model is deployed, eg. `us-west-2`."""
-
-    credentials_profile_name: Optional[str] = None
-    """The name of the profile in the ~/.aws/credentials or ~/.aws/config files, which
-    has either access keys or role information specified.
-    If not specified, the default credential profile or, if on an EC2 instance,
-    credentials from IMDS will be used.
-    See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-    """
-
-    content_type: Optional[str] = "application/json"
-    """The MIME type of the input data in the request body to be used in the header
-    for the request to the Sagemaker invoke_endpoint API.
-    Defaults to "application/json"."""
-
-    model_input_transform_fn: Callable[[str, Dict], bytes]
-    """
-    Function which takes the prompt (str) and model_kwargs (dict) and transforms
-    the input to the format which the model can accept as the request Body.
-    Should return bytes or seekable file-like object in the format specified in the
-    content_type request header.
-    """
-
-    """
-    Example:
-        .. code-block:: python
-
-            def model_input_transform_fn(prompt, model_kwargs):
-                parameter_payload = {"inputs": prompt, "parameters": model_kwargs}
-                return json.dumps(parameter_payload).encode("utf-8")
-    """
+    endpoint_name: str
+    """sagemaker endpoint to use."""
+    sagemaker_session: Any
+    """Manage interactions with the Amazon SageMaker APIs and any other AWS services needed.."""
+    task: str
+    """Task to call the model with. Should be a task that returns `generated_text`."""
+    model_kwargs: Optional[dict] = None
 
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
@@ -95,34 +71,31 @@ class SagemakerEndpoint(LLM, BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that AWS credentials to and python package exists in environment."""
+        """Validate that api key and python package exists in environment."""
         try:
-            import boto3
-
-            try:
-                if values["credentials_profile_name"] is not None:
-                    session = boto3.Session(
-                        profile_name=values["credentials_profile_name"]
+            from sagemaker.predictor import Predictor
+            from sagemaker.serializers import JSONSerializer
+            from sagemaker.deserializers import JSONDeserializer
+  
+            endpoint_name = values["endpoint_name"]
+            sagemaker_session = values["sagemaker_session"]
+            predictor = Predictor(
+                            endpoint_name,
+                            sagemaker_session=sagemaker_session, 
+                            serializer=JSONSerializer(), 
+                            deserializer=JSONDeserializer()
+                            )      
+            values["client"] = predictor
+            task = values.get("task")
+            if task not in VALID_TASKS:
+                    raise ValueError(
+                        f"Got invalid task {task}, "
+                        f"currently only {VALID_TASKS} are supported"
                     )
-                else:
-                    # use default credentials
-                    session = boto3.Session()
-
-                values["client"] = session.client(
-                    "sagemaker-runtime", region_name=values["region_name"]
-                )
-
-            except Exception as e:
-                raise ValueError(
-                    "Could not load credentials to authenticate with AWS client. "
-                    "Please check that credentials in the specified "
-                    "profile name are valid."
-                ) from e
-
         except ImportError:
             raise ValueError(
-                "Could not import boto3 python package. "
-                "Please it install it with `pip install boto3`."
+                "Could not import sagemaker python package. "
+                "Please install sagemaker `pip install sagemaker`."
             )
         return values
 
@@ -155,25 +128,11 @@ class SagemakerEndpoint(LLM, BaseModel):
 
                 response = se("Tell me a joke.")
         """
-        _model_kwargs = self.model_kwargs or {}
-        if self.model_input_transform_fn is None:
-            raise NotImplementedError("model_input_transform_fn not implemented")
-
         # send request
         try:
-            response = self.client.invoke_endpoint(
-                EndpointName=self.endpoint_name,
-                Body=self.model_input_transform_fn(prompt, _model_kwargs),
-                ContentType=self.content_type,
-            )
+            response = self.client.predict({"inputs": prompt})
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-
-        response_json = json.loads(response["Body"].read().decode("utf-8"))
-        text = response_json[0]["generated_text"]
-        if stop is not None:
-            # This is a bit hacky, but I can't figure out a better way to enforce
-            # stop tokens when making calls to the sagemaker endpoint.
-            text = enforce_stop_tokens(text, stop)
-
-        return text
+        if "error" in response:
+            raise ValueError(f"Error raised by inference API: {response['error']}")
+        return response[0]["generated_text"]
