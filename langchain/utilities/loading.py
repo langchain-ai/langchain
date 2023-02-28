@@ -76,9 +76,7 @@ def try_load_from_hub(
             with open(file, "wb") as f:
                 f.write(r.content)
             return loader(str(file), **kwargs)
-    elif source == "hf":
+    else:
         if remote_path.suffix[1:] not in valid_suffixes:
             raise ValueError("Unsupported file type.")
         return try_load_from_hf_hub(remote_path, loader, **kwargs)
-    else:
-        raise ValueError("Invalid data source. Use lc or hf prefix")
