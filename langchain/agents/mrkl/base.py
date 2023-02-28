@@ -43,7 +43,9 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     regex = r"Action: (.*?)Action Input: (.*)"
     match = re.search(regex, llm_output, re.DOTALL)
     if not match:
-        if "Action:(.*?)None" in llm_output:
+        regex = r"Action:(.*?)None"
+        match = re.search(regex, llm_output, re.DOTALL)
+        if match:
             return action, ""
         else:
             raise ValueError(f"Could not parse LLM output: `{llm_output}`")
