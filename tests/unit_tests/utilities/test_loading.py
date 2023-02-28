@@ -53,6 +53,7 @@ def test_invalid_suffix() -> None:
 
     loader.assert_not_called()
 
+
 def test_invalid_source() -> None:
     """Test that a path from an invalid source"""
     path = "ts://chains/some_path.json"
@@ -62,6 +63,7 @@ def test_invalid_source() -> None:
 
     assert result is None
     loader.assert_not_called()
+
 
 @pytest.mark.parametrize("ref", [None, "v0.3"])
 def test_success(mocked_responses: responses.RequestsMock, ref: str) -> None:

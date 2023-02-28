@@ -102,7 +102,7 @@ The Hugging Face Hub [LangChainHub](https://huggingface.co/LangChainHub) organiz
 ```python
 from langchain.prompts import load_prompt
 
-prompt = load_prompt("hf://LLM_Bash/prompt.json")
+prompt = load_prompt("hf://prompts/LLM_Bash/prompt.json")
 prompt.format(question="Example question")
 ```
 
