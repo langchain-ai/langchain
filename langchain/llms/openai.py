@@ -334,7 +334,9 @@ class BaseOpenAI(BaseLLM, BaseModel):
         self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
+        common = choices[0]
         generations = []
+
         for i, _ in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
@@ -349,8 +351,19 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
+
         return LLMResult(
-            generations=generations, llm_output={"token_usage": token_usage}
+            generations=generations, 
+            llm_output={
+                "token_usage": token_usage,
+                "model_name": self.model_name,
+                "api_key": common.api_key,
+                "api_type": common.api_type,
+                "api_version": common.api_version,
+                "openai_id": common.openai_id,
+                "organization": common.organization,
+                "response_ms": common.response_ms,
+            }
         )
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
