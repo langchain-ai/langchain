@@ -2,12 +2,12 @@
 from typing import Any, Optional
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX
 from langchain.agents.agent_toolkits.vectorstore.toolkit import VectorStoreToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.agents.agent_toolkits.vectorstore.prompt import PREFIX
 
 
 def create_vectorstore_agent(
