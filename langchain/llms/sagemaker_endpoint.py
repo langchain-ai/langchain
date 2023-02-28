@@ -59,8 +59,6 @@ class SagemakerEndpoint(LLM, BaseModel):
     """Manage interactions with the Amazon SageMaker APIs and any other AWS services needed.."""
     task: str
     """Task to call the model with. Should be a task that returns `generated_text`."""
-    model_kwargs: Optional[dict] = None
-
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
 
