@@ -60,12 +60,12 @@ def try_load_from_hub(
         return None
     source, ref, remote_path_str = match.groups()
     remote_path = Path(remote_path_str)
-    if remote_path.suffix[1:] not in valid_suffixes:
-        raise ValueError("Unsupported file type.")
     if source == "lc":
         # Prefix is ignored for Hugging Face
         if remote_path.parts[0] != valid_prefix:
             return None
+        if remote_path.suffix[1:] not in valid_suffixes:
+            raise ValueError("Unsupported file type.")
         ref = ref[1:] if ref else DEFAULT_REF
         full_url = urljoin(URL_BASE.format(ref=ref), str(remote_path))
         r = requests.get(full_url, timeout=5)
@@ -77,6 +77,8 @@ def try_load_from_hub(
                 f.write(r.content)
             return loader(str(file), **kwargs)
     elif source == "hf":
+        if remote_path.suffix[1:] not in valid_suffixes:
+            raise ValueError("Unsupported file type.")
         return try_load_from_hf_hub(remote_path, loader, **kwargs)
     else:
         raise ValueError("Invalid data source. Use lc or hf prefix")
