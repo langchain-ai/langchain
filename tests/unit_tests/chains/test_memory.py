@@ -1,6 +1,4 @@
-from langchain.chains.base import Chain, Memory, SimpleMemory
-from pydantic import BaseModel
-
+from langchain.chains.base import SimpleMemory
 from tests.unit_tests.chains.test_base import FakeChain
 
 

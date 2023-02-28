@@ -39,4 +39,4 @@ def test_simple_memory() -> None:
     output = memory.load_memory_variables({})
 
     assert output == {"baz": "foo"}
-    assert ['baz'] == memory.memory_variables
+    assert ["baz"] == memory.memory_variables

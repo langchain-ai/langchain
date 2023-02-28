@@ -61,8 +61,9 @@ def test_sequential_usage_memory() -> None:
     memory = SimpleMemory(memories={"zab": "rab"})
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    chain = SequentialChain(memory=memory, chains=[chain_1, chain_2],
-                            input_variables=["foo"])
+    chain = SequentialChain(
+        memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+    )
     output = chain({"foo": "123"})
     expected_output = {"baz": "123foofoo", "foo": "123", "zab": "rab"}
     assert output == expected_output
