@@ -1,4 +1,4 @@
-"""Utilities for loading configurations from langchain-hub."""
+"""Utilities for loading configurations from langchain-hub and Hugging Face Hub."""
 
 import os
 import re
@@ -22,34 +22,29 @@ def try_load_from_hf_hub(
     path: Union[str, Path],
     loader: Callable[[str], T],
     **kwargs: Any,
-): """Utility to load files from the Hugging Face Hub
+): 
+    """Load configuration from the Hugging Face Hub.
 
-Example usage.
+    The Hugging Face Hub automatically has version control, simple sharing mechanism,
+    local caching, and social features (such as likes and Discussions).
 
-```
-load_prompt("hf://LangChainHub/QA_Refine/prompt.json")
-```
+    Example:
+        .. code-block:: python
 
-Advantages
-- Cache files
-- Version control
-- Easily access files/prompts/agents shared by other community members
-- ...
-
-""" 
+            from langchain.prompts import load_prompt
+            load_prompt("hf://QA_Refine/prompt.json")
+    """
     from huggingface_hub import hf_hub_download
 
-    if len(path.parts) != 3:
-        raise ValueError("Invalid path. When loading from Hugging Face, make sure the path is in the format of hf://<namespace>/<repo_id>/<filename>")
-    namespace, repo_id, filename = path.parts
+    if len(path.parts) != 2:
+        raise ValueError("Invalid path. When loading from Hugging Face, make sure the path is in the format of hf://<repo_id>/<filename>")
+    repo_id, filename = path.parts
     downloaded_file = hf_hub_download(
-        repo_id=f"{namespace}/{repo_id}",
+        repo_id=f"LangChainHub/{repo_id}",
         filename=filename,
         repo_type="dataset"
     )
-    return loader(str(downloaded_file), **kwargs)
-
-
+    return loader(downloaded_file, **kwargs)
 
 def try_load_from_hub(
     path: Union[str, Path],
@@ -60,7 +55,6 @@ def try_load_from_hub(
 ) -> Optional[T]:
     """Load configuration from hub.  Returns None if path is not a hub path."""
     if not isinstance(path, str) or not (match := HUB_PATH_RE.match(path)):
-        print("Not valid")
         return None
     source, ref, remote_path_str = match.groups()
     remote_path = Path(remote_path_str)

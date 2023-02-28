@@ -94,6 +94,18 @@ prompt.format(history="", input="What is 1 + 1?")
 
 You can read more about LangChainHub and the prompts available with it [here](https://github.com/hwchase17/langchain-hub).
 
+## Load a prompt template from the Hugging Face Hub
+
+The Hugging Face Hub [LangChainHub](https://huggingface.co/LangChainHub) organization contains a collection of prompts which can be loaded directly via LangChain.
+
+
+```python
+from langchain.prompts import load_prompt
+
+prompt = load_prompt("hf://LLM_Bash/prompt.json")
+prompt.format(question="Example question")
+```
+
 ## Pass few shot examples to a prompt template
 
 Few shot examples are a set of examples that can be used to help the language model generate a better response.
