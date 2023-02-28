@@ -20,6 +20,11 @@ class NamedVectorStore(BaseModel):
     name: str
     vectorstore: VectorStore
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
 
 class VectorStoreToolkit(BaseToolkit):
     """Toolkit for interacting with a vector store."""
@@ -40,7 +45,7 @@ class VectorStoreToolkit(BaseToolkit):
             )
             tools.append(
                 VectorStoreQAWithSourcesTool(
-                    name=named_vectorstore.name,
+                    name=f"{named_vectorstore.name}_with_sources",
                     vectorstore=named_vectorstore.vectorstore,
                     llm=self.llm,
                 )
