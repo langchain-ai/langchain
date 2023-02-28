@@ -40,12 +40,17 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     """
     if FINAL_ANSWER_ACTION in llm_output:
         return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
-    regex = r"Action: (.*?)\nAction Input: (.*)"
+    regex = r"Action: (.*?)Action Input: (.*)"
     match = re.search(regex, llm_output, re.DOTALL)
     if not match:
-        raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+        if "Action:(.*?)None" in llm_output:
+            return action, ""
+        else:
+            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
     action = match.group(1).strip()
     action_input = match.group(2)
+    if "Speak" in action:
+        return "Final Answer", action_input.strip(" ").strip('"')
     return action, action_input.strip(" ").strip('"')
 
 
