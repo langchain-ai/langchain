@@ -167,7 +167,7 @@ class RediSearch(VectorStore):
         try:
             client.ft(index_name).info()
             print("Index already exists")
-        except: # noqa
+        except:  # noqa
             # Create RediSearch Index
             client.ft(index_name).create_index(
                 fields=fields,
