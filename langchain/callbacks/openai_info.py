@@ -10,6 +10,9 @@ class OpenAICallbackHandler(BaseCallbackHandler):
 
     total_tokens: int = 0
 
+    llm_output: any
+    """Container for any other information return by the LLM"""
+
     @property
     def always_verbose(self) -> bool:
         """Whether to call verbose callbacks even if verbose is False."""
@@ -26,8 +29,11 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         pass
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Collect token usage."""
+        """Collect LLM Output."""
         if response.llm_output is not None:
+            self.llm_output = response.llm_output
+
+            """Collect token usage."""
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
                 if "total_tokens" in token_usage:
