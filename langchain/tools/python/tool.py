@@ -1,10 +1,10 @@
 """A tool for running python code in a REPL."""
-from __future__ import annotations
 
 import ast
+import sys
 from typing import Dict, Optional
 
-from pydantic import Field
+from pydantic import Field, root_validator
 
 from langchain.python import PythonREPL
 from langchain.tools.base import BaseTool
@@ -48,14 +48,25 @@ class PythonAstREPLTool(BaseTool):
     globals: Optional[Dict] = Field(default_factory=dict)
     locals: Optional[Dict] = Field(default_factory=dict)
 
+    @root_validator(pre=True)
+    def validate_python_version(cls, values: Dict) -> Dict:
+        """Validate valid python version."""
+        if sys.version_info[0] <= 8:
+            raise ValueError(
+                "This tool relies on Python 3.9 or higher "
+                "(as it uses new functionality in the `ast` module, "
+                f"you have Python version: {sys.version}"
+            )
+        return values
+
     def _run(self, query: str) -> str:
         """Use the tool."""
         try:
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
-            exec(ast.unparse(module), self.globals, self.locals)
+            exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
-            module_end_str = ast.unparse(module_end)
+            module_end_str = ast.unparse(module_end)  # type: ignore
             try:
                 return eval(module_end_str, self.globals, self.locals)
             except Exception:
