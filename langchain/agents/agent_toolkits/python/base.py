@@ -16,11 +16,12 @@ def create_python_agent(
     tool: PythonREPLTool,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
+    prefix: str = PREFIX,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
     tools = [tool]
-    prompt = ZeroShotAgent.create_prompt(tools, prefix=PREFIX)
+    prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
         llm=llm,
         prompt=prompt,
