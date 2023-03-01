@@ -20,6 +20,7 @@ class SQLDatabase:
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
+        custom_table_info: Optional[dict] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -48,6 +49,21 @@ class SQLDatabase:
             raise TypeError("sample_rows_in_table_info must be an integer")
 
         self._sample_rows_in_table_info = sample_rows_in_table_info
+
+        self._custom_table_info = custom_table_info
+        if self._custom_table_info:
+            if not isinstance(self._custom_table_info, dict):
+                raise TypeError(
+                    "table_info must be a dictionary with table names as keys and the "
+                    "desired table info as values"
+                )
+            # only keep the tables that are also present in the database
+            intersection = set(self._custom_table_info).intersection(self._all_tables)
+            self._custom_table_info = dict(
+                (table, self._custom_table_info[table])
+                for table in self._custom_table_info
+                if table in intersection
+            )
 
         self._metadata = metadata or MetaData()
         self._metadata.reflect(bind=self._engine)
@@ -99,6 +115,10 @@ class SQLDatabase:
 
         tables = []
         for table in meta_tables:
+            if self._custom_table_info and table.name in self._custom_table_info:
+                tables.append(self._custom_table_info[table.name])
+                continue
+
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
 
