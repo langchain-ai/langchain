@@ -18,4 +18,6 @@ class AudioChain(Chain):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        return {"transcript": self.audio_model.transcript(inputs["mp3_file"]).strip()}
+        return {
+            self.output_key: self.audio_model.transcript(inputs["mp3_file"]).strip()
+        }

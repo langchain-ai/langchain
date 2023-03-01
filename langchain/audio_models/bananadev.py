@@ -2,9 +2,7 @@ from typing import Dict, Optional
 
 from pydantic import Extra, root_validator
 
-import langchain
 from langchain.audio_models.base import AudioBase
-from langchain.schema import Generation
 from langchain.utils import get_from_dict_or_env
 
 
@@ -48,35 +46,18 @@ class AudioBanana(AudioBase):
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )
-        api_key = self.banana_api_key
-        model_key = self.model_key
         mp3 = self._read_mp3_audio(audio_path)
         model_inputs = {"mp3BytesString": mp3}
-        cache = langchain.llm_cache  # Uses the global cache
-
-        if cache:
-            cached = cache.lookup(llm_string=model_key, prompt=str(model_inputs))
-            if cached:
-                return cached[0].text
-
-        response = banana.run(api_key, model_key, model_inputs)
+        response = banana.run(self.banana_api_key, self.model_key, model_inputs)
         try:
             text = response["modelOutputs"][0]["text"]
-            assert isinstance(
-                text, str
-            ), f"Expected text to be a string, got {type(text)}"
+            if not isinstance(text, str):
+                raise ValueError(f"Expected text to be a string, got {type(text)}")
 
         except KeyError:
             raise ValueError(
                 f"Response should be {'modelOutputs': [{'output': 'text'}]}."
                 f"Response was: {response}"
-            )
-
-        if cache:
-            cache.update(
-                llm_string=model_key,
-                prompt=str(model_inputs),
-                return_val=[Generation(text=text)],
             )
 
         return text[: self.max_chars] if self.max_chars else text

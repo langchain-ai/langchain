@@ -1,6 +1,6 @@
 """Base class for text to audio models."""
 import base64
-import os
+import pathlib
 from abc import ABC, abstractmethod
 from io import BytesIO
 
@@ -11,7 +11,8 @@ class AudioBase(BaseModel, ABC):
     @staticmethod
     def _read_mp3_audio(audio_path: str) -> str:
         """Read audio file."""
-        assert os.path.exists(audio_path), f"Can't find file at {audio_path}"
+        if not pathlib.Path(audio_path).exists():
+            raise ValueError(f"Can't find audio file at {audio_path}")
         assert audio_path.endswith(".mp3"), "Only mp3 files are supported."
         with open(audio_path, "rb") as file:
             mp3bytes = BytesIO(file.read())
