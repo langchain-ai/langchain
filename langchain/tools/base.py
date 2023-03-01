@@ -1,7 +1,7 @@
 """Base implementation for tools or skills."""
 
 from abc import abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Extra, Field, validator
 
@@ -119,11 +119,3 @@ class BaseTool(BaseModel):
                 observation, verbose=verbose, color=color, **kwargs
             )
         return observation
-
-
-class BaseToolkit(BaseModel):
-    """Class responsible for defining a collection of related tools."""
-
-    @abstractmethod
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""

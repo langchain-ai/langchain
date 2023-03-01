@@ -47,7 +47,7 @@ class Agent(BaseModel):
 
     @property
     def _stop(self) -> List[str]:
-        return [f"\n{self.observation_prefix}"]
+        return [f"\n{self.observation_prefix}", f"\n\t{self.observation_prefix}"]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -426,7 +426,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = InvalidTool().run(
-                output.tool_input,
+                output.tool,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",
@@ -473,7 +473,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = await InvalidTool().arun(
-                output.tool_input,
+                output.tool,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",

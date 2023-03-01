@@ -16,6 +16,8 @@ from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
+from langchain.document_loaders.ifixit import IFixitLoader
+from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -52,6 +54,7 @@ __all__ = [
     "UnstructuredPowerPointLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredPDFLoader",
+    "UnstructuredImageLoader",
     "ObsidianLoader",
     "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
@@ -68,6 +71,7 @@ __all__ = [
     "IMSDbLoader",
     "AZLyricsLoader",
     "CollegeConfidentialLoader",
+    "IFixitLoader",
     "GutenbergLoader",
     "PagedPDFSplitter",
     "EverNoteLoader",
