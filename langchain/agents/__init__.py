@@ -4,6 +4,8 @@ from langchain.agents.agent_toolkits import (
     create_json_agent,
     create_openapi_agent,
     create_sql_agent,
+    create_vectorstore_agent,
+    create_vectorstore_router_agent,
 )
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.initialize import initialize_agent
@@ -32,4 +34,6 @@ __all__ = [
     "create_sql_agent",
     "create_json_agent",
     "create_openapi_agent",
+    "create_vectorstore_router_agent",
+    "create_vectorstore_agent",
 ]

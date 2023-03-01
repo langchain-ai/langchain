@@ -54,12 +54,15 @@ The final set of examples covers agents with toolkits.
 As opposed to the examples above, these examples are not intended to show off an agent `type`,
 but rather to show off an agent applied to particular use case.
 
-`SQLDatabase Agent <./agent_toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database with an agent.
+`SQLDatabase Agent <./agent_toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database using an agent.
 
-`JSON Agent <./agent_toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary with an agent.
+`JSON Agent <./agent_toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary using an agent.
 
-`OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint with an agent.
+`OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
 
+`VectorStore Agent <./agent_toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
+
+`Python Agent <./agent_toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
 
 .. toctree::
    :maxdepth: 1

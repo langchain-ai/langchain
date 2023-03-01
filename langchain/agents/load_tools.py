@@ -9,7 +9,7 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
-from langchain.python import PythonREPL
+from langchain.tools.python.tool import PythonREPLTool
 from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
@@ -26,11 +26,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
-    return Tool(
-        name="Python REPL",
-        description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
-        func=PythonREPL().run,
-    )
+    return PythonREPLTool()
 
 
 def _get_requests() -> BaseTool:
