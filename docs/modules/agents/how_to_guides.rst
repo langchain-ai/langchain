@@ -60,8 +60,9 @@ but rather to show off an agent applied to particular use case.
 
 `OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
 
-_`VectorStore Agent` <./agent_toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
+`VectorStore Agent <./agent_toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
 
+`Python Agent <./agent_toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
 
 .. toctree::
    :maxdepth: 1
