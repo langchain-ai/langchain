@@ -1,4 +1,6 @@
 """A tool for running python code in a REPL."""
+from __future__ import annotations
+
 import ast
 from typing import Dict, Optional
 
