@@ -15,7 +15,7 @@ from langchain.vectorstores.base import VectorStore
 
 class RediSearch(VectorStore):
     def __init__(
-        self, redisearch_url: str, index_name: str, embedding_function: Callable
+        self, redisearch_url: str, index_name: str, embedding_function: Callable, **kwargs: Any
     ):
         """Initialize with necessary components."""
         try:
@@ -28,8 +28,7 @@ class RediSearch(VectorStore):
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
-            pool = redis.ConnectionPool.from_url(redisearch_url)
-            redis_client = redis.StrictRedis(connection_pool=pool)
+            redis_client = redis.from_url(redisearch_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
         self.client = redis_client
@@ -40,7 +39,7 @@ class RediSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        # TODO
+        # `prefix`: Maybe in the future we can let the user choose the index_name.
         prefix = "doc"  # prefix for the document keys
 
         ids = []
@@ -134,8 +133,9 @@ class RediSearch(VectorStore):
                 "Please install it with `pip install redis`."
             )
         try:
-            pool = redis.ConnectionPool.from_url(redisearch_url)
-            client = redis.StrictRedis(connection_pool=pool)
+            # We need to first remove redisearch_url from kwargs, otherwise passing it to Redis will result in an error.
+            kwargs.pop("redisearch_url")
+            client = redis.from_url(url=redisearch_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
         embeddings = embedding.embed_documents(texts)
@@ -173,10 +173,12 @@ class RediSearch(VectorStore):
                 fields=fields,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
+
+        pipeline = client.pipeline()
         for i, text in enumerate(texts):
             key = f"{prefix}:{str(uuid.uuid4().hex)}"
             metadata = metadatas[i] if metadatas else {}
-            client.hset(
+            pipeline.hset(
                 key,
                 mapping={
                     "content": text,
@@ -186,4 +188,5 @@ class RediSearch(VectorStore):
                     "metadata": json.dumps(metadata),
                 },
             )
+        pipeline.execute()
         return cls(redisearch_url, index_name, embedding.embed_query)
