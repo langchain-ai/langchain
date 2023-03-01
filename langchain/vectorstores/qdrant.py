@@ -54,8 +54,8 @@ class Qdrant(VectorStore):
         self.client: qdrant_client.QdrantClient = client
         self.collection_name = collection_name
         self.embedding_function = embedding_function
-        self.content_payload_key = content_payload_key
-        self.metadata_payload_key = metadata_payload_key
+        self.content_payload_key = content_payload_key or self.CONTENT_KEY
+        self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
 
     def add_texts(
         self,
@@ -80,7 +80,12 @@ class Qdrant(VectorStore):
             points=rest.Batch(
                 ids=ids,
                 vectors=[self.embedding_function(text) for text in texts],
-                payloads=self._build_payloads(texts, metadatas),
+                payloads=self._build_payloads(
+                    texts,
+                    metadatas,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
             ),
         )
 
@@ -169,6 +174,8 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
     ) -> "Qdrant":
         """Construct Qdrant wrapper from raw documents.
@@ -207,9 +214,6 @@ class Qdrant(VectorStore):
         collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
         distance_func = kwargs.pop("distance_func", "Cosine").upper()
 
-        content_payload_key: str = kwargs.pop("content_payload_key", cls.CONTENT_KEY)
-        metadata_payload_key: str = kwargs.pop("metadata_payload_key", cls.METADATA_KEY)
-
         client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
 
         client.recreate_collection(
@@ -235,11 +239,11 @@ class Qdrant(VectorStore):
         )
 
         return cls(
-            client,
-            collection_name,
-            embedding.embed_query,
-            content_payload_key,
-            metadata_payload_key,
+            client=client,
+            collection_name=collection_name,
+            embedding_function=embedding.embed_query,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
         )
 
     @classmethod
@@ -247,8 +251,8 @@ class Qdrant(VectorStore):
         cls,
         texts: Iterable[str],
         metadatas: Optional[List[dict]],
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: str,
+        metadata_payload_key: str,
     ) -> List[dict]:
         payloads = []
         for i, text in enumerate(texts):
@@ -271,8 +275,8 @@ class Qdrant(VectorStore):
     def _document_from_scored_point(
         cls,
         scored_point: Any,
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
+        content_payload_key: str,
+        metadata_payload_key: str,
     ) -> Document:
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
