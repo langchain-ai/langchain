@@ -42,7 +42,7 @@ class Milvus(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import pymilvus python package. "
-                "Please it install it with `pip install pymilvus`."
+                "Please install it with `pip install pymilvus`."
             )
         # Connecting to Milvus instance
         if not connections.has_connection("default"):
@@ -349,7 +349,7 @@ class Milvus(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import pymilvus python package. "
-                "Please it install it with `pip install pymilvus`."
+                "Please install it with `pip install pymilvus`."
             )
         # Connect to Milvus instance
         if not connections.has_connection("default"):
