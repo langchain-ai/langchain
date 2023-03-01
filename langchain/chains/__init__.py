@@ -11,6 +11,7 @@ from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
+from langchain.chains.llm_summarization_checker.base import LLMSummarizationCheckerChain
 from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
@@ -30,6 +31,7 @@ __all__ = [
     "LLMChain",
     "LLMBashChain",
     "LLMCheckerChain",
+    "LLMSummarizationCheckerChain",
     "LLMMathChain",
     "PALChain",
     "QAWithSourcesChain",
