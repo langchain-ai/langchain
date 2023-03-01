@@ -1,7 +1,13 @@
 """A tool for running python code in a REPL."""
 
+from pydantic import Field
+
 from langchain.python import PythonREPL
 from langchain.tools.base import BaseTool
+
+
+def _get_default_python_repl() -> PythonREPL:
+    return PythonREPL(_globals=globals(), _locals=None)
 
 
 class PythonREPLTool(BaseTool):
@@ -13,7 +19,7 @@ class PythonREPLTool(BaseTool):
         "Input should be a valid python command. "
         "If you expect output it should be printed out."
     )
-    python_repl: PythonREPL = PythonREPL()
+    python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
 
     def _run(self, query: str) -> str:
         """Use the tool."""

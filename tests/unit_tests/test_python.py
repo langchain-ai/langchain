@@ -9,11 +9,13 @@ def test_python_repl() -> None:
 
     # Run a simple initial command.
     repl.run("foo = 1")
-    assert repl._locals["foo"] == 1
+    assert repl.locals is not None
+    assert repl.locals["foo"] == 1
 
     # Now run a command that accesses `foo` to make sure it still has it.
     repl.run("bar = foo * 2")
-    assert repl._locals["bar"] == 2
+    assert repl.locals is not None
+    assert repl.locals["bar"] == 2
 
 
 def test_python_repl_no_previous_variables() -> None:
@@ -29,7 +31,8 @@ def test_python_repl_pass_in_locals() -> None:
     _locals = {"foo": 4}
     repl = PythonREPL(_locals=_locals)
     repl.run("bar = foo * 2")
-    assert repl._locals["bar"] == 8
+    assert repl.locals is not None
+    assert repl.locals["bar"] == 8
 
 
 def test_functionality() -> None:
