@@ -570,11 +570,18 @@ class OpenAIChat(LLM, BaseModel):
             import openai
 
             openai.api_key = openai_api_key
-            values["client"] = openai.ChatCompletion
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
+            )
+        try:
+            values["client"] = openai.ChatCompletion
+        except AttributeError:
+            raise ValueError(
+                "`openai` has no `ChatCompletion` attribute, this is likely "
+                "due to an old version of the openai package. Try upgrading it "
+                "with `pip install --upgrade openai`."
             )
         return values
 
