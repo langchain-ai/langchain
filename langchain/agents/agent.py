@@ -426,7 +426,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = InvalidTool().run(
-                output.tool_input,
+                output.tool,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",
@@ -473,7 +473,7 @@ class AgentExecutor(Chain, BaseModel):
             )
         else:
             observation = await InvalidTool().arun(
-                output.tool_input,
+                output.tool,
                 verbose=self.verbose,
                 color=None,
                 llm_prefix="",
