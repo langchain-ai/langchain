@@ -42,7 +42,7 @@ class Chroma(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
-                "Please it install it with `pip install chromadb`."
+                "Please install it with `pip install chromadb`."
             )
 
         # TODO: Add support for custom client. For now this is in-memory only.
