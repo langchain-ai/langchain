@@ -1,10 +1,8 @@
 """OpenAI chat wrapper."""
-from langchain.chat_models.base import BaseChat
-from typing import Any, Dict, Optional, List, Callable, Mapping
-from pydantic import Field, Extra, root_validator, BaseModel
+import logging
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
-from langchain.schema import ChatResult, ChatGeneration
-from langchain.utils import get_from_dict_or_env
+from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -12,7 +10,10 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-import logging
+
+from langchain.chat_models.base import BaseChat
+from langchain.schema import ChatGeneration, ChatResult
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 
@@ -122,7 +123,9 @@ class OpenAIChat(BaseChat, BaseModel):
 
         return _completion_with_retry(**kwargs)
 
-    def _generate(self, messages: List[Dict], stop: Optional[List[str]] = None) -> ChatResult:
+    def _generate(
+        self, messages: List[Dict], stop: Optional[List[str]] = None
+    ) -> ChatResult:
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
@@ -130,8 +133,10 @@ class OpenAIChat(BaseChat, BaseModel):
             params["stop"] = stop
         response = self.completion_with_retry(messages=messages, **params)
         generations = []
-        for res in response['choices']:
-            gen = ChatGeneration(text=res["message"]["content"], role=res["message"]["role"])
+        for res in response["choices"]:
+            gen = ChatGeneration(
+                text=res["message"]["content"], role=res["message"]["role"]
+            )
             generations.append(gen)
         return ChatResult(generations=generations)
 

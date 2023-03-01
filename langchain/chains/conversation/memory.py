@@ -16,9 +16,9 @@ from langchain.graphs.networkx_graph import (
     get_entities,
     parse_triples,
 )
+from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import ChatMemory
 from langchain.memory.utils import get_buffer_string
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatGeneration
 
@@ -75,23 +75,45 @@ class CombinedMemory(Memory, BaseModel):
         for memory in self.memories:
             memory.clear()
 
-class ChatMemoryMixin(BaseModel):
 
+class ChatMemoryMixin(Memory):
     chat_memory: ChatMemory
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
+    output_key: Optional[str] = None
+    input_key: Optional[str] = None
 
     @root_validator(pre=True)
     def add_chat_memory(cls, values: Dict) -> Dict:
         """Add chat memory data structure."""
-        values["chat_memory"] = ChatMemory(human_prefix=values["human_prefix"], ai_prefix=values["ai_prefix"])
+        values["chat_memory"] = ChatMemory(
+            human_prefix=values["human_prefix"], ai_prefix=values["ai_prefix"]
+        )
         return values
 
-class ConversationBufferMemory(Memory, ChatMemoryMixin, BaseModel):
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save context from this conversation to buffer."""
+        if self.input_key is None:
+            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
+        if self.output_key is None:
+            if len(outputs) != 1:
+                raise ValueError(f"One output key expected, got {outputs.keys()}")
+            output_key = list(outputs.keys())[0]
+        else:
+            output_key = self.output_key
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
+
+    def clear(self) -> None:
+        """Clear memory contents."""
+        self.chat_memory.clear()
+
+
+class ConversationBufferMemory(ChatMemoryMixin, BaseModel):
     """Buffer for storing conversation memory."""
 
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
     @property
@@ -111,32 +133,11 @@ class ConversationBufferMemory(Memory, ChatMemoryMixin, BaseModel):
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer."""
-        if self.input_key is None:
-            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
-        else:
-            output_key = self.output_key
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
-
-    def clear(self) -> None:
-        """Clear memory contents."""
-        self.chat_memory.clear()
-
 
 class ConversationBufferWindowMemory(Memory, ChatMemoryMixin, BaseModel):
     """Buffer for storing conversation memory."""
 
     memory_key: str = "history"  #: :meta private:
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
     k: int = 5
 
     @property
@@ -154,26 +155,7 @@ class ConversationBufferWindowMemory(Memory, ChatMemoryMixin, BaseModel):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.memory_key: get_buffer_string(self.buffer[-self.k * 2:])}
-
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer."""
-        if self.input_key is None:
-            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
-        else:
-            output_key = self.output_key
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
-
-    def clear(self) -> None:
-        """Clear memory contents."""
-        self.chat_memory.clear()
+        return {self.memory_key: get_buffer_string(self.buffer[-self.k * 2 :])}
 
 
 # For legacy naming reasons
@@ -188,8 +170,6 @@ class ConversationSummaryMemory(Memory, ChatMemoryMixin, BaseModel):
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"  #: :meta private:
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
 
     @property
     def memory_variables(self) -> List[str]:
@@ -217,26 +197,15 @@ class ConversationSummaryMemory(Memory, ChatMemoryMixin, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        if self.input_key is None:
-            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
-        else:
-            output_key = self.output_key
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
+        super().save_context(inputs, outputs)
         new_lines = get_buffer_string(self.chat_memory[-2:])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
 
     def clear(self) -> None:
         """Clear memory contents."""
+        super().clear()
         self.buffer = ""
-        self.chat_memory.clear()
 
 
 class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
@@ -246,8 +215,6 @@ class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
     llm: BaseLLM
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     entity_summarization_prompt: BasePromptTemplate = ENTITY_SUMMARIZATION_PROMPT
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
     store: Dict[str, Optional[str]] = {}
     entity_cache: List[str] = []
     k: int = 3
@@ -285,24 +252,17 @@ class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
             entity_summaries[entity] = self.store.get(entity, "")
         self.entity_cache = entities
         return {
-            self.chat_history_key: get_buffer_string(self.buffer[-self.k *2 :]),
+            self.chat_history_key: get_buffer_string(self.buffer[-self.k * 2 :]),
             "entities": entity_summaries,
         }
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
+        super().save_context(inputs, outputs)
         if self.input_key is None:
             prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
         else:
             prompt_input_key = self.input_key
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
-        else:
-            output_key = self.output_key
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
         for entity in self.entity_cache:
             chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
             # key value store for entity
@@ -329,8 +289,6 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
 
     @property
     def buffer(self) -> List[ChatGeneration]:
@@ -369,18 +327,7 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
-        if self.input_key is None:
-            prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-        if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
-        else:
-            output_key = self.output_key
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
+        super().save_context(inputs, outputs)
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
         curr_buffer_length = sum(self.get_num_tokens_list(buffer))
@@ -391,12 +338,13 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
                 curr_buffer_length = sum(self.get_num_tokens_list(buffer))
             chain = LLMChain(llm=self.llm, prompt=self.prompt)
             self.moving_summary_buffer = chain.predict(
-                summary=self.moving_summary_buffer, new_lines=(get_buffer_string(pruned_memory))
+                summary=self.moving_summary_buffer,
+                new_lines=(get_buffer_string(pruned_memory)),
             )
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.chat_memory.clear()
+        super().clear()
         self.moving_summary_buffer = ""
 
 
@@ -413,8 +361,6 @@ class ConversationKGMemory(Memory, ChatMemoryMixin, BaseModel):
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     llm: BaseLLM
     """Number of previous utterances to include in the context."""
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -481,13 +427,10 @@ class ConversationKGMemory(Memory, ChatMemoryMixin, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
+        super().save_context(inputs, outputs)
         self._get_and_update_kg(inputs)
-        prompt_input_key = self._get_prompt_input_key(inputs)
-        output_key = self._get_prompt_output_key(outputs)
-        self.chat_memory.add_user_message(inputs[prompt_input_key])
-        self.chat_memory.add_ai_message(outputs[output_key])
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.chat_memory.clear()
+        super().clear()
         self.kg.clear()

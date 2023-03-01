@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field
 from typing import List
+
+from pydantic import BaseModel, Field
+
 from langchain.schema import ChatGeneration
+
 
 class ChatMemory(BaseModel):
     human_prefix: str = "user"

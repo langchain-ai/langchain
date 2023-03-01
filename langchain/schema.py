@@ -46,6 +46,7 @@ class LLMResult:
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
 
+
 @dataclass_json
 @dataclass
 class ChatGeneration:
@@ -61,6 +62,7 @@ class ChatGeneration:
     """Raw generation info response from the provider"""
     """May include things like reason for finishing (e.g. in OpenAI)"""
     # TODO: add log probs
+
 
 @dataclass_json
 @dataclass
