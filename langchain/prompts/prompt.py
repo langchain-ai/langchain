@@ -1,10 +1,9 @@
 """Prompt schema definition."""
 from __future__ import annotations
 
-import inspect
-import os
+from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -107,9 +106,9 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
     @classmethod
     def from_file(
-        cls, template_file: str, input_variables: List[str]
+        cls, template_file: Union[str, Path], input_variables: List[str]
     ) -> PromptTemplate:
-        """Load prompt text from a file.
+        """Load a prompt from a file.
 
         Args:
             template_file: The path to the file containing the prompt template.
@@ -118,19 +117,8 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         Returns:
             The prompt loaded from the file.
         """
-        if not os.path.isfile(template_file):
-            """If the template file is not an absolute path, or from the package
-            directory, try to find it relative to the caller file."""
-            current_dir = os.path.dirname(os.path.abspath((inspect.stack()[1])[1]))
-            template_file = os.path.join(current_dir, template_file)
-
-        try:
-            with open(template_file, "r") as f:
-                template = f.read()
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Could not find prompt template file at {template_file}."
-            )
+        with open(str(template_file), "r") as f:
+            template = f.read()
         return cls(input_variables=input_variables, template=template)
 
     @classmethod

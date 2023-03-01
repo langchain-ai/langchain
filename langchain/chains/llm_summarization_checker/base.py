@@ -1,5 +1,6 @@
 """Chain for summarization with self-verification."""
 
+from pathlib import Path
 from typing import Dict, List
 
 from pydantic import BaseModel, Extra
@@ -10,17 +11,19 @@ from langchain.chains.sequential import SequentialChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 
+PROMPTS_DIR = Path(__file__).parent / "prompts"
+
 CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    "prompts/create_facts.txt", ["summary"]
+    PROMPTS_DIR / "create_facts.txt", ["summary"]
 )
 CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(
-    "prompts/check_facts.txt", ["assertions"]
+    PROMPTS_DIR / "check_facts.txt", ["assertions"]
 )
 REVISED_SUMMARY_PROMPT = PromptTemplate.from_file(
-    "prompts/revise_summary.txt", ["checked_assertions", "summary"]
+    PROMPTS_DIR / "revise_summary.txt", ["checked_assertions", "summary"]
 )
 ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
-    "prompts/are_all_true_prompt.txt", ["checked_assertions"]
+    PROMPTS_DIR / "are_all_true_prompt.txt", ["checked_assertions"]
 )
 
 
