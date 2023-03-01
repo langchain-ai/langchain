@@ -16,7 +16,7 @@ from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
-from langchain.llms.openai import AzureOpenAI, OpenAI
+from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.petals import Petals
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI
 from langchain.llms.self_hosted import SelfHostedPipeline
@@ -36,6 +36,7 @@ __all__ = [
     "Modal",
     "NLPCloud",
     "OpenAI",
+    "OpenAIChat",
     "Petals",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
