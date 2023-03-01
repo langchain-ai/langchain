@@ -113,7 +113,7 @@ class SQLDatabase:
                 )
 
                 # save the columns in string format
-                columns_str = " ".join([col.name for col in table.columns])
+                columns_str = "\t".join([col.name for col in table.columns])
 
                 try:
                     # get the sample rows
@@ -125,7 +125,7 @@ class SQLDatabase:
                         )
 
                     # save the sample rows in string format
-                    sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
+                    sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
 
                 # in some dialects when there are no rows in the table a
                 # 'ProgrammingError' is returned
