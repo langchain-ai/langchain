@@ -23,7 +23,7 @@ def dependable_faiss_import() -> Any:
     except ImportError:
         raise ValueError(
             "Could not import faiss python package. "
-            "Please it install it with `pip install faiss` "
+            "Please install it with `pip install faiss` "
             "or `pip install faiss-cpu` (depending on Python version)."
         )
     return faiss
