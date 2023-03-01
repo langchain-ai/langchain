@@ -16,8 +16,11 @@ from langchain.graphs.networkx_graph import (
     get_entities,
     parse_triples,
 )
+from langchain.memory.chat_memory import ChatMemory
+from langchain.memory.utils import get_buffer_string
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import ChatGeneration
 
 
 def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
@@ -72,17 +75,29 @@ class CombinedMemory(Memory, BaseModel):
         for memory in self.memories:
             memory.clear()
 
+class ChatMemoryMixin(BaseModel):
 
-class ConversationBufferMemory(Memory, BaseModel):
-    """Buffer for storing conversation memory."""
-
+    chat_memory: ChatMemory
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    """Prefix to use for AI generated responses."""
-    buffer: str = ""
+
+    @root_validator(pre=True)
+    def add_chat_memory(cls, values: Dict) -> Dict:
+        """Add chat memory data structure."""
+        values["chat_memory"] = ChatMemory(human_prefix=values["human_prefix"], ai_prefix=values["ai_prefix"])
+        return values
+
+class ConversationBufferMemory(Memory, ChatMemoryMixin, BaseModel):
+    """Buffer for storing conversation memory."""
+
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
+
+    @property
+    def buffer(self):
+        """String buffer of memory."""
+        return get_buffer_string(self.chat_memory.messages)
 
     @property
     def memory_variables(self) -> List[str]:
@@ -108,26 +123,26 @@ class ConversationBufferMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"{self.human_prefix}: " + inputs[prompt_input_key]
-        ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer += "\n" + "\n".join([human, ai])
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.buffer = ""
+        self.chat_memory.clear()
 
 
-class ConversationBufferWindowMemory(Memory, BaseModel):
+class ConversationBufferWindowMemory(Memory, ChatMemoryMixin, BaseModel):
     """Buffer for storing conversation memory."""
 
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
-    """Prefix to use for AI generated responses."""
-    buffer: List[str] = Field(default_factory=list)
     memory_key: str = "history"  #: :meta private:
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     k: int = 5
+
+    @property
+    def buffer(self) -> List[ChatGeneration]:
+        """String buffer of memory."""
+        return self.chat_memory.messages
 
     @property
     def memory_variables(self) -> List[str]:
@@ -139,7 +154,7 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-        return {self.memory_key: "\n".join(self.buffer[-self.k :])}
+        return {self.memory_key: get_buffer_string(self.buffer[-self.k * 2:])}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
@@ -153,25 +168,22 @@ class ConversationBufferWindowMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"{self.human_prefix}: " + inputs[prompt_input_key]
-        ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer.append("\n".join([human, ai]))
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.buffer = []
+        self.chat_memory.clear()
 
 
 # For legacy naming reasons
 ConversationalBufferWindowMemory = ConversationBufferWindowMemory
 
 
-class ConversationSummaryMemory(Memory, BaseModel):
+class ConversationSummaryMemory(Memory, ChatMemoryMixin, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
@@ -215,23 +227,21 @@ class ConversationSummaryMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {outputs[output_key]}"
-        new_lines = "\n".join([human, ai])
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
+        new_lines = get_buffer_string(self.chat_memory[-2:])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
 
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = ""
+        self.chat_memory.clear()
 
 
-class ConversationEntityMemory(Memory, BaseModel):
+class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
     """Entity extractor & summarizer to memory."""
 
-    buffer: List[str] = []
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     llm: BaseLLM
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
@@ -242,6 +252,10 @@ class ConversationEntityMemory(Memory, BaseModel):
     entity_cache: List[str] = []
     k: int = 3
     chat_history_key: str = "history"
+
+    @property
+    def buffer(self) -> List[ChatGeneration]:
+        return self.chat_memory.messages
 
     @property
     def memory_variables(self) -> List[str]:
@@ -259,7 +273,7 @@ class ConversationEntityMemory(Memory, BaseModel):
         else:
             prompt_input_key = self.input_key
         output = chain.predict(
-            history="\n".join(self.buffer[-self.k :]),
+            history=get_buffer_string(self.buffer[-self.k * 2 :]),
             input=inputs[prompt_input_key],
         )
         if output.strip() == "NONE":
@@ -271,7 +285,7 @@ class ConversationEntityMemory(Memory, BaseModel):
             entity_summaries[entity] = self.store.get(entity, "")
         self.entity_cache = entities
         return {
-            self.chat_history_key: "\n".join(self.buffer[-self.k :]),
+            self.chat_history_key: get_buffer_string(self.buffer[-self.k *2 :]),
             "entities": entity_summaries,
         }
 
@@ -287,42 +301,40 @@ class ConversationEntityMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"{self.human_prefix}: " + inputs[prompt_input_key]
-        ai = f"{self.ai_prefix}: " + outputs[output_key]
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
         for entity in self.entity_cache:
             chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
             # key value store for entity
             existing_summary = self.store.get(entity, "")
             output = chain.predict(
                 summary=existing_summary,
-                history="\n".join(self.buffer[-self.k :]),
+                history=get_buffer_string(self.buffer[-self.k * 2 :]),
                 input=inputs[prompt_input_key],
                 entity=entity,
             )
             self.store[entity] = output.strip()
-        new_lines = "\n".join([human, ai])
-        self.buffer.append(new_lines)
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.buffer = []
+        self.chat_memory.clear()
         self.store = {}
 
 
-class ConversationSummaryBufferMemory(Memory, BaseModel):
+class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
     """Buffer with summarizer for storing conversation memory."""
 
-    buffer: List[str] = Field(default_factory=list)
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
-    """Prefix to use for AI generated responses."""
     output_key: Optional[str] = None
     input_key: Optional[str] = None
+
+    @property
+    def buffer(self) -> List[ChatGeneration]:
+        return self.chat_memory.messages
 
     @property
     def memory_variables(self) -> List[str]:
@@ -335,8 +347,8 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
         if self.moving_summary_buffer == "":
-            return {self.memory_key: "\n".join(self.buffer)}
-        memory_val = self.moving_summary_buffer + "\n" + "\n".join(self.buffer)
+            return {self.memory_key: get_buffer_string(self.buffer)}
+        memory_val = self.moving_summary_buffer + "\n" + get_buffer_string(self.buffer)
         return {self.memory_key: memory_val}
 
     @root_validator()
@@ -351,9 +363,9 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
             )
         return values
 
-    def get_num_tokens_list(self, arr: List[str]) -> List[int]:
+    def get_num_tokens_list(self, arr: List[ChatGeneration]) -> List[int]:
         """Get list of number of tokens in each string in the input array."""
-        return [self.llm.get_num_tokens(x) for x in arr]
+        return [self.llm.get_num_tokens(get_buffer_string([x])) for x in arr]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
@@ -367,29 +379,28 @@ class ConversationSummaryBufferMemory(Memory, BaseModel):
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
-        human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {outputs[output_key]}"
-        new_lines = "\n".join([human, ai])
-        self.buffer.append(new_lines)
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
         # Prune buffer if it exceeds max token limit
-        curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
+        buffer = self.chat_memory.messages
+        curr_buffer_length = sum(self.get_num_tokens_list(buffer))
         if curr_buffer_length > self.max_token_limit:
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
-                pruned_memory.append(self.buffer.pop(0))
-                curr_buffer_length = sum(self.get_num_tokens_list(self.buffer))
+                pruned_memory.append(buffer.pop(0))
+                curr_buffer_length = sum(self.get_num_tokens_list(buffer))
             chain = LLMChain(llm=self.llm, prompt=self.prompt)
             self.moving_summary_buffer = chain.predict(
-                summary=self.moving_summary_buffer, new_lines=("\n".join(pruned_memory))
+                summary=self.moving_summary_buffer, new_lines=(get_buffer_string(pruned_memory))
             )
 
     def clear(self) -> None:
         """Clear memory contents."""
-        self.buffer = []
+        self.chat_memory.clear()
         self.moving_summary_buffer = ""
 
 
-class ConversationKGMemory(Memory, BaseModel):
+class ConversationKGMemory(Memory, ChatMemoryMixin, BaseModel):
     """Knowledge graph memory for storing conversation memory.
 
     Integrates with external knowledge graph to store and retrieve
@@ -397,15 +408,11 @@ class ConversationKGMemory(Memory, BaseModel):
     """
 
     k: int = 2
-    buffer: List[str] = Field(default_factory=list)
     kg: NetworkxEntityGraph = Field(default_factory=NetworkxEntityGraph)
     knowledge_extraction_prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     llm: BaseLLM
     """Number of previous utterances to include in the context."""
-    human_prefix: str = "Human"
-    ai_prefix: str = "AI"
-    """Prefix to use for AI generated responses."""
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     memory_key: str = "history"  #: :meta private:
@@ -454,7 +461,7 @@ class ConversationKGMemory(Memory, BaseModel):
         prompt_input_key = self._get_prompt_input_key(inputs)
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
         output = chain.predict(
-            history="\n".join(self.buffer[-self.k :]),
+            history=get_buffer_string(self.chat_memory.messages[-self.k :]),
             input=inputs[prompt_input_key],
         )
         return get_entities(output)
@@ -464,7 +471,7 @@ class ConversationKGMemory(Memory, BaseModel):
         chain = LLMChain(llm=self.llm, prompt=self.knowledge_extraction_prompt)
         prompt_input_key = self._get_prompt_input_key(inputs)
         output = chain.predict(
-            history="\n".join(self.buffer[-self.k :]),
+            history=get_buffer_string(self.chat_memory.messages[-self.k :]),
             input=inputs[prompt_input_key],
             verbose=True,
         )
@@ -477,11 +484,10 @@ class ConversationKGMemory(Memory, BaseModel):
         self._get_and_update_kg(inputs)
         prompt_input_key = self._get_prompt_input_key(inputs)
         output_key = self._get_prompt_output_key(outputs)
-        human = f"{self.human_prefix}: {inputs[prompt_input_key]}"
-        ai = f"{self.ai_prefix}: {outputs[output_key]}"
-        new_lines = "\n".join([human.strip(), ai.strip()])
-        self.buffer.append(new_lines)
+        self.chat_memory.add_user_message(inputs[prompt_input_key])
+        self.chat_memory.add_ai_message(outputs[output_key])
 
     def clear(self) -> None:
         """Clear memory contents."""
-        return self.kg.clear()
+        self.chat_memory.clear()
+        self.kg.clear()
