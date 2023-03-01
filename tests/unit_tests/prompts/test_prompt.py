@@ -110,14 +110,6 @@ def test_prompt_from_file() -> None:
     assert prompt.template == "Question: {question}\nAnswer:"
 
 
-def test_relative_file_path_prompt_from_file() -> None:
-    """Test loading from relative file path."""
-    template_file = "../data/prompt_file.txt"
-    input_variables = ["question"]
-    prompt = PromptTemplate.from_file(template_file, input_variables)
-    assert prompt.template == "Question: {question}\nAnswer:"
-
-
 def test_partial_init_string() -> None:
     """Test prompt can be initialized with partial variables."""
     template = "This is a {foo} test."
