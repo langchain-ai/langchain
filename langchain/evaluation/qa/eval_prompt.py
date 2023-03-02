@@ -1,5 +1,6 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
+from langchain.prompts.chat import ChatPromptTemplate
 
 template = """You are a teacher grading a quiz.
 You are given a question, the student's answer, and the true answer, and are asked to score it as either CORRECT or INCORRECT.
@@ -37,3 +38,16 @@ CHAT_COMPARISON_RESPONSE_TEMPLATE = """QUESTION: {query}
 TRUE ANSWER: {answer}
 STUDENT A ANSWER: {student_a}
 STUDENT B ANSWER: {student_b}"""
+
+
+CHAT_PROMPT = ChatPromptTemplate.from_strings(
+    [("system", CHAT_INSTRUCTIONS), ("user", CHAT_RESPONSE_TEMPLATE)]
+)
+
+
+CHAT_COMP_PROMPT = ChatPromptTemplate.from_strings(
+    [
+        ("system", CHAT_COMPARISON_INSTRUCTIONS),
+        ("user", CHAT_COMPARISON_RESPONSE_TEMPLATE),
+    ]
+)
