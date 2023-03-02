@@ -1,3 +1,4 @@
+_type: prompt
 input_variables:
     ["adjective", "content"]
 template: 
