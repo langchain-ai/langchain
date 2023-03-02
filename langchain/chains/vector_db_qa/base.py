@@ -8,9 +8,10 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.llm import LLMChain
+from langchain.chains.llm import LLMChain, ChatModelChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.chains.vector_db_qa.prompt import PROMPT
+from langchain.chains.vector_db_qa.prompt import CHAT_PROMPT, PROMPT
+from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
@@ -107,6 +108,23 @@ class VectorDBQA(Chain, BaseModel):
     ) -> VectorDBQA:
         """Initialize from LLM."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
+        document_prompt = PromptTemplate(
+            input_variables=["page_content"], template="Context:\n{page_content}"
+        )
+        combine_documents_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_variable_name="context",
+            document_prompt=document_prompt,
+        )
+
+        return cls(combine_documents_chain=combine_documents_chain, **kwargs)
+
+    @classmethod
+    def from_chat_model(
+        cls, llm: BaseChatModel, prompt: PromptTemplate = CHAT_PROMPT, **kwargs: Any
+    ) -> VectorDBQA:
+        """Initialize from LLM."""
+        llm_chain = ChatModelChain(llm=llm, prompt=prompt)
         document_prompt = PromptTemplate(
             input_variables=["page_content"], template="Context:\n{page_content}"
         )

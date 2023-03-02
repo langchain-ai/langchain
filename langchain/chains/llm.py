@@ -4,13 +4,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
+from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult, ChatResult, ChatMessage
-from langchain.chat_models.base import BaseChatModel
-
+from langchain.schema import ChatMessage, ChatResult, LLMResult
 
 
 class BaseLLMChain(Chain, BaseModel):
@@ -53,9 +52,12 @@ class BaseLLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
-
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
+
+    async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Utilize the LLM generate method for speed gains."""
+        raise NotImplementedError
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
@@ -133,6 +135,7 @@ class BaseLLMChain(Chain, BaseModel):
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
+
 
 class LLMChain(BaseLLMChain):
     llm: BaseLLM
@@ -215,25 +218,30 @@ class LLMChain(BaseLLMChain):
             for generation in response.generations
         ]
 
+
 class ChatModelChain(BaseLLMChain):
     llm: BaseChatModel
     """LLM wrapper to use."""
 
-    def generate(self, input_list: List[Dict[str, Any]]) -> ChatResult:
+    def generate(self, input_list: List[Dict[str, Any]]) -> List[ChatResult]:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        response = self.llm.generate(prompts, stop=stop)
-        return response
+        results = []
+        for prompt in prompts:
+            results.append(self.llm.generate(prompt, stop=stop))
+        return results
 
-    async def agenerate(self, input_list: List[Dict[str, Any]]) -> ChatResult:
+    async def agenerate(self, input_list: List[Dict[str, Any]]) -> List[ChatResult]:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        response = await self.llm.agenerate(prompts, stop=stop)
-        return response
+        results = []
+        for prompt in prompts:
+            results.append(await self.llm.agenerate(prompt, stop=stop))
+        return results
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[ChatMessage], Optional[List[str]]]:
+    ) -> Tuple[List[List[ChatMessage]], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
         if "stop" in input_list[0]:
@@ -254,7 +262,7 @@ class ChatModelChain(BaseLLMChain):
 
     async def aprep_prompts(
         self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[ChatMessage], Optional[List[str]]]:
+    ) -> Tuple[List[List[ChatMessage]], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
         if "stop" in input_list[0]:
@@ -288,10 +296,10 @@ class ChatModelChain(BaseLLMChain):
         response = await self.agenerate(input_list)
         return self.create_outputs(response)
 
-    def create_outputs(self, response: ChatResult) -> List[Dict[str, str]]:
+    def create_outputs(self, response: List[ChatResult]) -> List[Dict[str, str]]:
         """Create outputs from response."""
         return [
             # Get the text of the top generated string.
-            {self.output_key: generation.message}
-            for generation in response.generations
+            {self.output_key: res.generations[0].message.text}
+            for res in response
         ]

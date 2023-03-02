@@ -9,8 +9,9 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
-from langchain.schema import ChatMessage
+
 from langchain.formatting import formatter
+from langchain.schema import ChatMessage
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -186,8 +187,9 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    def format_chat(self, **kwargs) -> ChatMessage:
+    def format_chat(self, **kwargs: Any) -> List[ChatMessage]:
         """Create Chat Messages."""
+        raise NotImplementedError
 
     @property
     @abstractmethod
