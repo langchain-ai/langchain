@@ -32,9 +32,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
             self.combine_documents_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain.llm.get_num_tokens(
-                    doc.page_content
-                )
+                self.combine_documents_chain.llm_chain.get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])

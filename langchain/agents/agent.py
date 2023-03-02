@@ -13,7 +13,8 @@ from pydantic import BaseModel, root_validator
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
+from langchain.chains.llm import BaseLLMChain, ChatModelChain, LLMChain
+from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_color_mapping
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
@@ -33,7 +34,7 @@ class Agent(BaseModel):
     intermediary work.
     """
 
-    llm_chain: LLMChain
+    llm_chain: BaseLLMChain
     allowed_tools: Optional[List[str]] = None
     return_values: List[str] = ["output"]
 
@@ -199,6 +200,24 @@ class Agent(BaseModel):
         cls._validate_tools(tools)
         llm_chain = LLMChain(
             llm=llm,
+            prompt=cls.create_prompt(tools),
+            callback_manager=callback_manager,
+        )
+        tool_names = [tool.name for tool in tools]
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+
+    @classmethod
+    def from_chat_model_and_tools(
+        cls,
+        model: BaseChatModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
+    ) -> Agent:
+        """Construct an agent from an LLM and tools."""
+        cls._validate_tools(tools)
+        llm_chain = ChatModelChain(
+            llm=model,
             prompt=cls.create_prompt(tools),
             callback_manager=callback_manager,
         )

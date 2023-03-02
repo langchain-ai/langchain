@@ -12,6 +12,11 @@ class BaseChatModel(ABC):
         # Nothing here now, but future proofing.
         return self._generate(messages, stop=stop)
 
+    async def agenerate(
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
+    ) -> ChatResult:
+        raise NotImplementedError
+
     @abstractmethod
     def _generate(
         self, messages: List[ChatMessage], stop: Optional[List[str]] = None
