@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chat.base import BaseChatChain
-from langchain.chat_models.base import BaseChat
+from langchain.chat_models.base import BaseChatModel
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatMessage
 
@@ -33,7 +33,7 @@ class QAChain(BaseChatChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    model: BaseChat
+    model: BaseChatModel
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
@@ -45,7 +45,7 @@ class QAChain(BaseChatChain, BaseModel):
     @classmethod
     def from_model(
         cls,
-        model: BaseChat,
+        model: BaseChatModel,
         starter_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> QAChain:

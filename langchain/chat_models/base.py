@@ -4,7 +4,7 @@ from typing import List, Optional
 from langchain.schema import ChatGeneration, ChatMessage, ChatResult
 
 
-class BaseChat(ABC):
+class BaseChatModel(ABC):
     def generate(
         self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
@@ -25,7 +25,7 @@ class BaseChat(ABC):
         return res.generations[0].message
 
 
-class SimpleChat(BaseChat):
+class SimpleChatModel(BaseChatModel):
     role: str = "assistant"
 
     def _generate(

@@ -1,9 +1,8 @@
 """Common schema objects."""
 
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from dataclasses_json import dataclass_json
+from pydantic import BaseModel
 
 
 class AgentAction(NamedTuple):
@@ -21,9 +20,7 @@ class AgentFinish(NamedTuple):
     log: str
 
 
-@dataclass_json
-@dataclass
-class Generation:
+class Generation(BaseModel):
     """Output of a single generation."""
 
     text: str
@@ -35,9 +32,7 @@ class Generation:
     # TODO: add log probs
 
 
-@dataclass_json
-@dataclass
-class LLMResult:
+class LLMResult(BaseModel):
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
@@ -47,9 +42,7 @@ class LLMResult:
     """For arbitrary LLM provider specific output."""
 
 
-@dataclass_json
-@dataclass
-class ChatMessage:
+class ChatMessage(BaseModel):
     """Message object."""
 
     text: str
@@ -59,9 +52,7 @@ class ChatMessage:
     """Role of the chatter."""
 
 
-@dataclass_json
-@dataclass
-class ChatGeneration:
+class ChatGeneration(BaseModel):
     """Output of a single generation."""
 
     message: ChatMessage
@@ -72,9 +63,7 @@ class ChatGeneration:
     # TODO: add log probs
 
 
-@dataclass_json
-@dataclass
-class ChatResult:
+class ChatResult(BaseModel):
     """Class that contains all relevant information for a Chat Result."""
 
     generations: List[ChatGeneration]

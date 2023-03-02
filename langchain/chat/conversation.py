@@ -8,7 +8,7 @@ from pydantic import BaseModel, Extra, Field
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chat.base import BaseChatChain
 from langchain.chat.memory import SimpleChatMemory
-from langchain.chat_models.base import BaseChat
+from langchain.chat_models.base import BaseChatModel
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatMessage
 
@@ -23,7 +23,7 @@ class ConversationChain(BaseChatChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    model: BaseChat
+    model: BaseChatModel
     memory: SimpleChatMemory = Field(default_factory=SimpleChatMemory)
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT

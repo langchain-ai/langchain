@@ -11,14 +11,14 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.chat_models.base import BaseChat
+from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatGeneration, ChatMessage, ChatResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 
 
-class OpenAI(BaseChat, BaseModel):
+class ChatOpenAI(BaseChatModel, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the

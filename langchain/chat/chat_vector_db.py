@@ -9,7 +9,7 @@ from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chat.base import BaseChatChain
 from langchain.chat.question_answering import QAChain
-from langchain.chat_models.base import BaseChat
+from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
@@ -53,7 +53,7 @@ class ChatVectorDBChain(BaseChatChain, BaseModel):
         cls,
         *,
         llm: BaseLLM,
-        model: BaseChat,
+        model: BaseChatModel,
         vectorstore: VectorStore,
         starter_messages: Optional[List[ChatMessage]] = None,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,

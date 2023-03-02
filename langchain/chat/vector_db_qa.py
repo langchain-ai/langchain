@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chat.base import BaseChatChain
 from langchain.chat.question_answering import QAChain
-from langchain.chat_models.base import BaseChat
+from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatMessage
 from langchain.vectorstores.base import VectorStore
 
@@ -77,7 +77,7 @@ class VectorDBQA(BaseChatChain, BaseModel):
     @classmethod
     def from_model(
         cls,
-        model: BaseChat,
+        model: BaseChatModel,
         starter_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> VectorDBQA:
