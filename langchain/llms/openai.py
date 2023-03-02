@@ -597,37 +597,6 @@ class OpenAIChat(LLM, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return self.model_kwargs
 
-    def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
-
-        min_seconds = 4
-        max_seconds = 10
-        # Wait 2^x * 1 second between each retry starting with
-        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-        return retry(
-            reraise=True,
-            stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-            retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
-            ),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
-
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
-
-        return _completion_with_retry(**kwargs)
-
     def _get_chat_params(self, prompt: str, stop: Optional[List[str]] = None):
         messages = self.prefix_messages + [{"role": "user", "content": prompt}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
@@ -642,7 +611,7 @@ class OpenAIChat(LLM, BaseModel):
         if self.streaming:
             response = ""
             params["stream"] = True
-            for stream_resp in self.completion_with_retry(messages=messages, **params):
+            for stream_resp in completion_with_retry(self, messages=messages, **params):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
                 self.callback_manager.on_llm_new_token(
@@ -651,15 +620,31 @@ class OpenAIChat(LLM, BaseModel):
                 )
             return response
         else:
-            response = self.completion_with_retry(messages=messages, **params)
+            response = completion_with_retry(self, messages=messages, **params)
             return response["choices"][0]["message"]["content"]
 
-    # async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-    #     messages, params = self._get_chat_params(prompt, stop)
-    #     response = await asyncio.get_event_loop().run_in_executor(
-    #         None, self.completion_with_retry, messages=messages, **params
-    #     )
-    #     return response["choices"][0]["message"]["content"]
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        messages, params = self._get_chat_params(prompt, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            async for stream_resp in await acompletion_with_retry(self, messages=messages, **params):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            return response
+        else:
+            response = await acompletion_with_retry(self, messages=messages, **params)
+            return response["choices"][0]["message"]["content"]
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
