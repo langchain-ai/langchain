@@ -540,6 +540,9 @@ class OpenAIChat(LLM, BaseModel):
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
+    """Series of messages for Chat input."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -621,15 +624,38 @@ class OpenAIChat(LLM, BaseModel):
 
         return _completion_with_retry(**kwargs)
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _get_chat_params(self, prompt: str, stop: Optional[List[str]] = None):
         messages = self.prefix_messages + [{"role": "user", "content": prompt}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        response = self.completion_with_retry(messages=messages, **params)
-        return response["choices"][0]["message"]["content"]
+        return messages, params
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        messages, params = self._get_chat_params(prompt, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            for stream_resp in self.completion_with_retry(messages=messages, **params):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+            return response
+        else:
+            response = self.completion_with_retry(messages=messages, **params)
+            return response["choices"][0]["message"]["content"]
+
+    # async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    #     messages, params = self._get_chat_params(prompt, stop)
+    #     response = await asyncio.get_event_loop().run_in_executor(
+    #         None, self.completion_with_retry, messages=messages, **params
+    #     )
+    #     return response["choices"][0]["message"]["content"]
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
