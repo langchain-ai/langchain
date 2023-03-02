@@ -1,5 +1,6 @@
 """Wrapper around OpenAI APIs."""
 from __future__ import annotations
+
 import logging
 import sys
 from typing import (
@@ -97,7 +98,9 @@ def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> 
     return _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
@@ -597,7 +600,7 @@ class OpenAIChat(LLM, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return self.model_kwargs
 
-    def _get_chat_params(self, prompt: str, stop: Optional[List[str]] = None):
+    def _get_chat_params(self, prompt: str, stop: Optional[List[str]] = None) -> Tuple:
         messages = self.prefix_messages + [{"role": "user", "content": prompt}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
@@ -620,15 +623,17 @@ class OpenAIChat(LLM, BaseModel):
                 )
             return response
         else:
-            response = completion_with_retry(self, messages=messages, **params)
-            return response["choices"][0]["message"]["content"]
+            full_response = completion_with_retry(self, messages=messages, **params)
+            return full_response["choices"][0]["message"]["content"]
 
     async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         messages, params = self._get_chat_params(prompt, stop)
         if self.streaming:
             response = ""
             params["stream"] = True
-            async for stream_resp in await acompletion_with_retry(self, messages=messages, **params):
+            async for stream_resp in await acompletion_with_retry(
+                self, messages=messages, **params
+            ):
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 response += token
                 if self.callback_manager.is_async:
@@ -643,8 +648,10 @@ class OpenAIChat(LLM, BaseModel):
                     )
             return response
         else:
-            response = await acompletion_with_retry(self, messages=messages, **params)
-            return response["choices"][0]["message"]["content"]
+            full_response = await acompletion_with_retry(
+                self, messages=messages, **params
+            )
+            return full_response["choices"][0]["message"]["content"]
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
