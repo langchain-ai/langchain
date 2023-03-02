@@ -86,8 +86,10 @@ class ChatMemoryMixin(Memory):
     @root_validator(pre=True)
     def add_chat_memory(cls, values: Dict) -> Dict:
         """Add chat memory data structure."""
+        human_prefix = values.get("human_prefix", "Human")
+        ai_prefix = values.get("ai_prefix", "AI")
         values["chat_memory"] = ChatMemory(
-            human_prefix=values["human_prefix"], ai_prefix=values["ai_prefix"]
+            human_prefix=human_prefix, ai_prefix=ai_prefix
         )
         return values
 
