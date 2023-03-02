@@ -36,11 +36,6 @@ class ConversationChain(BaseChatChain, BaseModel):
         """From model. Future proofing."""
         return cls(model=model, **kwargs)
 
-
-    @property
-    def _chain_type(self) -> str:
-        return "chat:conversation"
-
     @property
     def output_keys(self) -> List[str]:
         return [self.output_key]
