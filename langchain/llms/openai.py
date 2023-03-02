@@ -1,4 +1,6 @@
 """Wrapper around OpenAI APIs."""
+from __future__ import annotations
+
 import logging
 import sys
 from typing import (
@@ -23,7 +25,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.llms.base import LLM, BaseLLM
+from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -61,6 +63,53 @@ def _streaming_response_template() -> Dict[str, Any]:
             }
         ]
     }
+
+
+def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
+    import openai
+
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return llm.client.create(**kwargs)
+
+    return _completion_with_retry(**kwargs)
+
+
+async def acompletion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+) -> Any:
+    """Use tenacity to retry the async completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+        return await llm.client.acreate(**kwargs)
+
+    return await _completion_with_retry(**kwargs)
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -111,6 +160,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
+
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+        """Initialize the OpenAI object."""
+        if data.get("model_name", "").startswith("gpt-3.5-turbo"):
+            return OpenAIChat(**data)
+        return super().__new__(cls)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -174,48 +229,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
-
-        min_seconds = 4
-        max_seconds = 10
-        # Wait 2^x * 1 second between each retry starting with
-        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-        return retry(
-            reraise=True,
-            stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-            retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
-            ),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
-
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
-
-        return _completion_with_retry(**kwargs)
-
-    async def acompletion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the async completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        async def _completion_with_retry(**kwargs: Any) -> Any:
-            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-            return await self.client.acreate(**kwargs)
-
-        return await _completion_with_retry(**kwargs)
-
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -247,8 +260,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
                 response = _streaming_response_template()
-                for stream_resp in self.completion_with_retry(
-                    prompt=_prompts, **params
+                for stream_resp in completion_with_retry(
+                    self, prompt=_prompts, **params
                 ):
                     self.callback_manager.on_llm_new_token(
                         stream_resp["choices"][0]["text"],
@@ -258,7 +271,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = self.completion_with_retry(prompt=_prompts, **params)
+                response = completion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -282,8 +295,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
                 response = _streaming_response_template()
-                async for stream_resp in await self.acompletion_with_retry(
-                    prompt=_prompts, **params
+                async for stream_resp in await acompletion_with_retry(
+                    self, prompt=_prompts, **params
                 ):
                     if self.callback_manager.is_async:
                         await self.callback_manager.on_llm_new_token(
@@ -300,7 +313,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = await self.acompletion_with_retry(prompt=_prompts, **params)
+                response = await acompletion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -515,7 +528,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
 
-class OpenAIChat(LLM, BaseModel):
+class OpenAIChat(BaseLLM, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -527,8 +540,8 @@ class OpenAIChat(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="gpt-3.5-turbo")
+            from langchain.llms import OpenAIChat
+            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
     client: Any  #: :meta private:
@@ -540,6 +553,9 @@ class OpenAIChat(LLM, BaseModel):
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
+    """Series of messages for Chat input."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -590,46 +606,82 @@ class OpenAIChat(LLM, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return self.model_kwargs
 
-    def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
-
-        min_seconds = 4
-        max_seconds = 10
-        # Wait 2^x * 1 second between each retry starting with
-        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-        return retry(
-            reraise=True,
-            stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-            retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
-            ),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
-
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
-
-        return _completion_with_retry(**kwargs)
-
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        messages = self.prefix_messages + [{"role": "user", "content": prompt}]
+    def _get_chat_params(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> Tuple:
+        if len(prompts) > 1:
+            raise ValueError(
+                f"OpenAIChat currently only supports single prompt, got {prompts}"
+            )
+        messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        response = self.completion_with_retry(messages=messages, **params)
-        return response["choices"][0]["message"]["content"]
+        return messages, params
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            for stream_resp in completion_with_retry(self, messages=messages, **params):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = completion_with_retry(self, messages=messages, **params)
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output={"token_usage": full_response["usage"]},
+            )
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            async for stream_resp in await acompletion_with_retry(
+                self, messages=messages, **params
+            ):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = await acompletion_with_retry(
+                self, messages=messages, **params
+            )
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output={"token_usage": full_response["usage"]},
+            )
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

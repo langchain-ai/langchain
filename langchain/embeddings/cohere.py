@@ -64,7 +64,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model, texts=texts, truncate=self.truncate
         ).embeddings
-        return embeddings
+        return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
@@ -78,4 +78,4 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embedding = self.client.embed(
             model=self.model, texts=[text], truncate=self.truncate
         ).embeddings[0]
-        return embedding
+        return list(map(float, embedding))
