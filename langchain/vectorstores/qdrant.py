@@ -35,7 +35,7 @@ class Qdrant(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
+                "Please it install it with `pip install qdrant-client`."
             )
 
         if not isinstance(client, qdrant_client.QdrantClient):
@@ -177,7 +177,7 @@ class Qdrant(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
-                "Please install it with `pip install qdrant-client`."
+                "Please it install it with `pip install qdrant-client`."
             )
 
         from qdrant_client.http import models as rest

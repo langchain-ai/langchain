@@ -37,7 +37,7 @@ class Weaviate(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import weaviate python package. "
-                "Please install it with `pip install weaviate-client`."
+                "Please it install it with `pip install weaviate-client`."
             )
         if not isinstance(client, weaviate.Client):
             raise ValueError(
