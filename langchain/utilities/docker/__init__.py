@@ -158,11 +158,10 @@ class DockerSocket:
         return chunks
 
 
-def _default_params() -> Dict:
-    return {
-            # the only required parameter to be able to attach.
-            'stdin_open': True,
-            }
+_default_params = {
+        # the only required parameter to be able to attach.
+        'stdin_open': True,
+        }
 
 def _get_command(query: str, **kwargs: Dict) -> str:
     """Build an escaped command from a query string and keyword arguments."""
@@ -172,6 +171,7 @@ def _get_command(query: str, **kwargs: Dict) -> str:
 
     return cmd
 
+#TEST: gVisor
 class DockerWrapper(BaseModel, extra=Extra.allow):
     """Executes arbitrary payloads and returns the output.
 
@@ -187,6 +187,12 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
     image: Union[str, Type[BaseImage]] = Field(default_factory=Shell,skip=True)
     from_env: Optional[bool] = Field(default=True, skip=True)
 
+    _default_params: dict = Field(
+            default = {
+                    # needed to attach stdin
+                    'stdin_open': True,
+                }
+            )
 
     # @property
     # def image_name(self) -> str:
@@ -199,6 +205,10 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
         if self.from_env:
             self._docker_client = docker.from_env()
+            if gvisor_runtime_available(docker.from_env()):
+                self._params['runtime'] = 'runsc'
+
+
 
         # if not isinstance(self.image, str) and issubclass(self.image, BaseImage):
         #     self._params = {**self._params, **self.image().dict()}
@@ -244,7 +254,7 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
             _image = get_image_template(image)
             if isinstance(_image, str):
                 # user wants a custom image, we should use default params
-                values["_params"] = {**_default_params(), **{'image': image}}
+                values["_params"] = {**_default_params, **{'image': image}}
             else:
                 # user wants a pre registered image, we should use the image params
                 values["_params"] = _image().dict()
@@ -267,6 +277,7 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
         return values
 
+    #FIX: default shell command should be different in run vs exec mode
     def run(self, query: str, **kwargs: Any) -> str:
         """Run arbitrary shell command inside a container.
 
@@ -287,6 +298,7 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
         del kwargs['image']
         cmd = _get_command(query, **kwargs)
         kwargs.pop('default_command', None)
+        kwargs.pop('stdin_command', None)
 
         args['command'] = cmd
         # print(f"args: {args}")
@@ -351,9 +363,13 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
 
         kwargs = {**self._params, **kwargs}
-        if 'default_command' in kwargs:
-            kwargs['command'] = shlex.join([*kwargs['default_command'],query])
-            del kwargs['default_command']
+        kwargs.pop('default_command', None)
+
+        # exec_run requires flags for stdin
+        if 'stdin_command' in kwargs:
+            assert isinstance(kwargs['stdin_command'], list)
+            kwargs['command'] = shlex.join(kwargs['stdin_command'])
+            del kwargs['stdin_command']
 
         # kwargs.pop('default_command', None)
         # kwargs['command'] = cmd
@@ -364,6 +380,8 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
         # TODO: handle both output mode for tty=True/False
         logger.debug(f"running command {kwargs['command']}")
         logger.debug(f"creating container with params {kwargs}")
+
+        #FIX: create container with base interactive command
         container = self._docker_client.containers.create(**kwargs)
         container.start()
 
@@ -403,15 +421,15 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
         # output is stored in a list of tuples (stream_type, payload)
         df = pd.DataFrame(output, columns=['stream_type', 'payload'])
-        df['payload'] = df['payload'].apply(lambda x: x.decode('utf-8')).apply(lambda x: x.strip())
+        df['payload'] = df['payload'].apply(lambda x: x.decode('utf-8'))
         df['stream_type'] = df['stream_type'].apply(lambda x: 'stdout' if x == 1 else 'stderr')
         payload = df.groupby('stream_type')['payload'].apply(''.join).to_dict()
         logger.debug(f"payload: {payload}")
 
         #NOTE: stderr might just contain the prompt
         if 'stdout' in payload and 'stderr' in payload and with_stderr:
-            return f"STDOUT:\n {payload['stdout']}\nSTDERR:\n {payload['stderr']}"
+            return f"STDOUT:\n {payload['stdout'].strip()}\nSTDERR:\n {payload['stderr']}"
         elif 'stderr' in payload and not 'stdout' in payload:
             return f"STDERR: {payload['stderr']}"
         else:
-            return payload['stdout']
+            return payload['stdout'].strip()

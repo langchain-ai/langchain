@@ -1,6 +1,8 @@
 """Test the docker wrapper utility."""
 
 import pytest
+import importlib
+from typing import Any
 from langchain.utilities.docker import DockerWrapper, \
             gvisor_runtime_available, _default_params
 from unittest.mock import MagicMock
@@ -17,10 +19,30 @@ def docker_installed() -> bool:
     return True
 
 
+def gvisor_installed() -> bool:
+    """return true if gvisor local runtime is installed"""
+    try:
+        docker_lib = importlib.import_module('docker')
+        client = docker_lib.from_env()
+        return gvisor_runtime_available(client)
+    except ImportError:
+        return False
+
+    return False
 
 
-@pytest.mark.skipif(not docker_installed(), reason="docker not installed")
+
+def docker_lib_installed() -> bool:
+    return importlib.util.find_spec('docker') is not None
+
+
+def skip_docker_tests() -> bool:
+    return not docker_installed() or not docker_lib_installed()
+
+
+@pytest.mark.skipif(skip_docker_tests(), reason="docker not installed")
 class TestDockerUtility:
+
 
     def test_default_image(self) -> None:
         """Test running a command with the default alpine image."""
@@ -61,6 +83,14 @@ class TestDockerUtility:
         assert gvisor_runtime_available(mock_client)
         mock_client.info.return_value = {'Runtimes': {'runc': {'path': 'runc'}}}
         assert not gvisor_runtime_available(mock_client)
+
+
+    @pytest.mark.skipif(not gvisor_installed(), reason="gvisor not installed")
+    def test_run_with_runtime_runsc(self) -> None:
+        docker = DockerWrapper(image='shell')
+        output = docker.run('dmesg')
+        assert output.find('gVisor') != -1
+
 
     def test_socket_read_timeout(self) -> None:
         """Test socket read timeout."""

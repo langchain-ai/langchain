@@ -13,16 +13,14 @@ class BaseImage(BaseModel, extra=Extra.forbid):
     name: str
     tag: Optional[str] = 'latest'
     default_command: Optional[List[str]] = None
+    stdin_command: Optional[List[str]] = None
 
     def dict(self, *args, **kwargs):
         """Override the dict method to add the image name."""
         d = super().dict(*args, **kwargs)
         del d['name']
         del d['tag']
-        # del d['default_command']
         d['image'] = self.image_name
-        # if self.default_command:
-        #     d['command'] = self.default_command
         return d
 
     @property
@@ -46,16 +44,23 @@ class Shell(BaseImage):
     or by passing the full path to the shell binary.
     """
     name: str = 'alpine'
-    default_command: List[str] = [ShellTypes.sh.value, '-s']
+    default_command: List[str] = [ShellTypes.sh.value, '-c']
+    stdin_command: List[str] = [ShellTypes.sh.value, '-i']
 
     @validator('default_command')
-    def validate_shell(cls, value: str) -> str:
+    def validate_default_command(cls, value: str) -> str:
         """Validate shell type."""
         val = getattr(ShellTypes, value, None)
         if val:
             return val.value
-        # elif value in [v.value for v in list(ShellTypes.__members__.values())]:
-        #     print(f"docker: overriding shell binary to: {value}")
+        return value
+
+    @validator('stdin_command')
+    def validate_stdin_command(cls, value: str) -> str:
+        """Validate shell type."""
+        val = getattr(ShellTypes, value, None)
+        if val:
+            return val.value
         return value
 
 # example using base image to construct python image
@@ -66,13 +71,8 @@ class Python(BaseImage):
         stdin open.
     """
     name: str = 'python'
-    default_command: List[str] = ['python3', '-iq']
-
-    def __setattr__(self, name, value):
-        if name == 'default_command':
-            raise AttributeError(f'running this image with {self.default_command}' 
-                                 ' is necessary to keep stdin open.')
-        super().__setattr__(name, value)
+    default_command: List[str] = ['python3', '-c']
+    stdin_command: List[str] = ['python3', '-iq']
 
 
 def get_image_template(image_name: str = 'shell') -> Union[str, Type[BaseImage]]:
