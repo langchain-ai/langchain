@@ -522,7 +522,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
 
-class OpenAIChat(BaseLLM, BaseModel):
+class OpenAIChat(BaseOpenAI, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -598,7 +598,17 @@ class OpenAIChat(BaseLLM, BaseModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return self.model_kwargs
+        normal_params = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "n": self.n,
+            "request_timeout": self.request_timeout,
+            "logit_bias": self.logit_bias,
+        }
+        return {**normal_params, **self.model_kwargs}
 
     def _get_chat_params(
         self, prompts: List[str], stop: Optional[List[str]] = None
