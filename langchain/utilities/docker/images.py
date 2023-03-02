@@ -46,7 +46,7 @@ class Shell(BaseImage):
     or by passing the full path to the shell binary.
     """
     name: str = 'alpine'
-    default_command: List[str] = [ShellTypes.sh.value,  '-c']
+    default_command: List[str] = [ShellTypes.sh.value, '-s']
 
     @validator('default_command')
     def validate_shell(cls, value: str) -> str:
@@ -66,7 +66,7 @@ class Python(BaseImage):
         stdin open.
     """
     name: str = 'python'
-    default_command: List[str] = ['python3', '-i']
+    default_command: List[str] = ['python3', '-iq']
 
     def __setattr__(self, name, value):
         if name == 'default_command':
