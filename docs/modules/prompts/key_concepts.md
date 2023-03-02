@@ -62,7 +62,7 @@ To learn more about how to provide few shot examples, see [Few Shot Examples](ex
 
 If there are multiple examples that are relevant to a prompt, it is important to select the most relevant examples. Generally, the quality of the response from the LLM can be significantly improved by selecting the most relevant examples. This is because the language model will be able to better understand the context of the prompt, and also potentially learn failure modes to avoid.
 
-To help the user with selecting the most relevant examples, we provide example selectors that select the most relevant based on different criteria, such as length, semantic similarity, etc. The example selector takes in a list of examples and returns a list of selected examples, formatted as a string. The user can also provide their own example selector. To learn more about example selectors, see [Example Selection](example_selection.md).
+To help the user with selecting the most relevant examples, we provide example selectors that select the most relevant based on different criteria, such as length, semantic similarity, etc. The example selector takes in a list of examples and returns a list of selected examples, formatted as a string. The user can also provide their own example selector. To learn more about example selectors, see [Example Selectors](examples/example_selectors.ipynb).
 
 <!-- TODO(shreya): Add correct link here. -->
 

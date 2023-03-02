@@ -7,7 +7,7 @@ import pytest
 
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.loading import load_llm
-from langchain.llms.openai import OpenAI
+from langchain.llms.openai import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -141,4 +141,65 @@ async def test_openai_async_streaming_callback() -> None:
     )
     result = await llm.agenerate(["Write me a sentence with 100 words."])
     assert callback_handler.llm_streams == 10
+    assert isinstance(result, LLMResult)
+
+
+def test_openai_chat_wrong_class() -> None:
+    """Test OpenAIChat with wrong class still works."""
+    llm = OpenAI(model_name="gpt-3.5-turbo")
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def test_openai_chat() -> None:
+    """Test OpenAIChat."""
+    llm = OpenAIChat(max_tokens=10)
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def test_openai_chat_streaming() -> None:
+    """Test OpenAIChat with streaming option."""
+    llm = OpenAIChat(max_tokens=10, streaming=True)
+    output = llm("Say foo:")
+    assert isinstance(output, str)
+
+
+def test_openai_chat_streaming_callback() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    llm = OpenAIChat(
+        max_tokens=10,
+        streaming=True,
+        temperature=0,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    llm("Write me a sentence with 100 words.")
+    assert callback_handler.llm_streams != 0
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_async_generate() -> None:
+    """Test async chat."""
+    llm = OpenAIChat(max_tokens=10)
+    output = await llm.agenerate(["Hello, how are you?"])
+    assert isinstance(output, LLMResult)
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_async_streaming_callback() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    llm = OpenAIChat(
+        max_tokens=10,
+        streaming=True,
+        temperature=0,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    result = await llm.agenerate(["Write me a sentence with 100 words."])
+    assert callback_handler.llm_streams != 0
     assert isinstance(result, LLMResult)
