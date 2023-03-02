@@ -150,6 +150,32 @@ def analyze_text(
     return resp
 
 
+def construct_html_from_prompt_and_generation(prompt, generation):
+    """Construct an html element from a prompt and a generation.
+
+    Parameters:
+        prompt (str): The prompt.
+        generation (str): The generation.
+
+    Returns:
+        (wandb.Html): The html element."""
+
+    formatted_prompt = prompt.replace("\n", "<br>")
+    formatted_generation = generation.replace("\n", "<br>")
+
+    return wandb.Html(
+        f"""
+    <p style="color:black;">{formatted_prompt}:</p>
+    <blockquote>
+      <p style="color:green;">
+        {formatted_generation}
+      </p>
+    </blockquote>
+    """,
+        inject=False,
+    )
+
+
 class BaseMetadataCallbackHandler:
     """This class handles the metadata and associated function states for callbacks.
 
@@ -603,6 +629,14 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
             .rename({"step": "output_step", "text": "output"}, axis=1)
         )
         session_analysis_df = pd.concat([llm_input_prompts_df, llm_outputs_df], axis=1)
+        session_analysis_df["chat_html"] = session_analysis_df[
+            ["prompts", "output"]
+        ].apply(
+            lambda row: construct_html_from_prompt_and_generation(
+                row["prompts"], row["output"]
+            ),
+            axis=1,
+        )
         return session_analysis_df
 
     def flush_tracker(
