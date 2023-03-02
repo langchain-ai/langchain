@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
-
+from langchain.schema import ChatMessage
 from langchain.formatting import formatter
 
 
@@ -185,6 +185,9 @@ class BasePromptTemplate(BaseModel, ABC):
 
             prompt.format(variable1="foo")
         """
+
+    def format_chat(self, **kwargs) -> ChatMessage:
+        """Create Chat Messages."""
 
     @property
     @abstractmethod
