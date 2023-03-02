@@ -527,8 +527,8 @@ class OpenAIChat(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="gpt-3.5-turbo")
+            from langchain.llms import OpenAIChat
+            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
     client: Any  #: :meta private:
