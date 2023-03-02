@@ -183,6 +183,8 @@ class Qdrant(VectorStore):
         prefix: Optional[str] = None,
         timeout: Optional[float] = None,
         host: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
@@ -210,6 +212,10 @@ class Qdrant(VectorStore):
                 Default: 5.0 seconds for REST and unlimited for gRPC
             host: Host name of Qdrant service. If url and host are None, set to 'localhost'.
                 Default: `None`
+            collection_name:
+                Name of the Qdrant collection to be used. If not provided,
+                will be created randomly.
+            distance_func: Distance function. One of the: "Cosine" / "Euclid" / "Dot".
             content_payload_key: A payload key used to store the content of the document.
             metadata_payload_key: A payload key used to store the metadata of the document.
             **kwargs: Additional arguments passed directly into REST client initialization
@@ -243,10 +249,8 @@ class Qdrant(VectorStore):
         partial_embeddings = embedding.embed_documents(texts[:1])
         vector_size = len(partial_embeddings[0])
 
-        qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
-        kwargs.pop("host")
-        collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
-        distance_func = kwargs.pop("distance_func", "Cosine").upper()
+        collection_name = collection_name or uuid.uuid4().hex
+        distance_func = distance_func.upper()
 
         client = qdrant_client.QdrantClient(
             url=url,
