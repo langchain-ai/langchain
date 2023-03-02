@@ -42,7 +42,7 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 - Getting started (installation, setting up the environment, simple examples)
 - How-To examples (demos, integrations, helper functions)
 - Reference (full API docs)
-  Resources (high-level explanation of core concepts)
+- Resources (high-level explanation of core concepts)
 
 ## 🚀 What can this help with?
 
