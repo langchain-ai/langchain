@@ -20,7 +20,7 @@ from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import ChatMemory
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import ChatGeneration
+from langchain.schema import ChatMessage
 
 
 def _get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
@@ -134,14 +134,14 @@ class ConversationBufferMemory(ChatMemoryMixin, BaseModel):
         return {self.memory_key: self.buffer}
 
 
-class ConversationBufferWindowMemory(Memory, ChatMemoryMixin, BaseModel):
+class ConversationBufferWindowMemory(ChatMemoryMixin, BaseModel):
     """Buffer for storing conversation memory."""
 
     memory_key: str = "history"  #: :meta private:
     k: int = 5
 
     @property
-    def buffer(self) -> List[ChatGeneration]:
+    def buffer(self) -> List[ChatMessage]:
         """String buffer of memory."""
         return self.chat_memory.messages
 
@@ -162,7 +162,7 @@ class ConversationBufferWindowMemory(Memory, ChatMemoryMixin, BaseModel):
 ConversationalBufferWindowMemory = ConversationBufferWindowMemory
 
 
-class ConversationSummaryMemory(Memory, ChatMemoryMixin, BaseModel):
+class ConversationSummaryMemory(ChatMemoryMixin, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
@@ -208,7 +208,7 @@ class ConversationSummaryMemory(Memory, ChatMemoryMixin, BaseModel):
         self.buffer = ""
 
 
-class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
+class ConversationEntityMemory(ChatMemoryMixin, BaseModel):
     """Entity extractor & summarizer to memory."""
 
     """Prefix to use for AI generated responses."""
@@ -221,7 +221,7 @@ class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
     chat_history_key: str = "history"
 
     @property
-    def buffer(self) -> List[ChatGeneration]:
+    def buffer(self) -> List[ChatMessage]:
         return self.chat_memory.messages
 
     @property
@@ -281,7 +281,7 @@ class ConversationEntityMemory(Memory, ChatMemoryMixin, BaseModel):
         self.store = {}
 
 
-class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
+class ConversationSummaryBufferMemory(ChatMemoryMixin, BaseModel):
     """Buffer with summarizer for storing conversation memory."""
 
     max_token_limit: int = 2000
@@ -291,7 +291,7 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
     memory_key: str = "history"
 
     @property
-    def buffer(self) -> List[ChatGeneration]:
+    def buffer(self) -> List[ChatMessage]:
         return self.chat_memory.messages
 
     @property
@@ -321,7 +321,7 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
             )
         return values
 
-    def get_num_tokens_list(self, arr: List[ChatGeneration]) -> List[int]:
+    def get_num_tokens_list(self, arr: List[ChatMessage]) -> List[int]:
         """Get list of number of tokens in each string in the input array."""
         return [self.llm.get_num_tokens(get_buffer_string([x])) for x in arr]
 
@@ -348,7 +348,7 @@ class ConversationSummaryBufferMemory(Memory, ChatMemoryMixin, BaseModel):
         self.moving_summary_buffer = ""
 
 
-class ConversationKGMemory(Memory, ChatMemoryMixin, BaseModel):
+class ConversationKGMemory(ChatMemoryMixin, BaseModel):
     """Knowledge graph memory for storing conversation memory.
 
     Integrates with external knowledge graph to store and retrieve

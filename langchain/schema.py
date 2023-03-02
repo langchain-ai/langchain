@@ -46,17 +46,24 @@ class LLMResult:
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
 
-
 @dataclass_json
 @dataclass
-class ChatGeneration:
-    """Output of a single generation."""
+class ChatMessage:
+    """Message object."""
 
     text: str
     """Generated text output."""
 
     role: str
     """Role of the chatter."""
+
+
+@dataclass_json
+@dataclass
+class ChatGeneration:
+    """Output of a single generation."""
+
+    message: ChatMessage
 
     generation_info: Optional[Dict[str, Any]] = None
     """Raw generation info response from the provider"""

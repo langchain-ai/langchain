@@ -12,13 +12,13 @@ from tenacity import (
 )
 
 from langchain.chat_models.base import BaseChat
-from langchain.schema import ChatGeneration, ChatResult
+from langchain.schema import ChatGeneration, ChatResult, ChatMessage
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 
 
-class OpenAIChat(BaseChat, BaseModel):
+class OpenAI(BaseChat, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -124,19 +124,19 @@ class OpenAIChat(BaseChat, BaseModel):
         return _completion_with_retry(**kwargs)
 
     def _generate(
-        self, messages: List[Dict], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        response = self.completion_with_retry(messages=messages, **params)
+        message_dicts = [{"role": m.role, "content": m.text} for m in messages]
+        response = self.completion_with_retry(messages=message_dicts, **params)
         generations = []
         for res in response["choices"]:
-            gen = ChatGeneration(
-                text=res["message"]["content"], role=res["message"]["role"]
-            )
+            message = ChatMessage(text=res["message"]["content"], role=res["message"]["role"])
+            gen = ChatGeneration(message=message)
             generations.append(gen)
         return ChatResult(generations=generations)
 
