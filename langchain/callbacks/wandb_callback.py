@@ -17,12 +17,12 @@ import pandas as pd
 import spacy
 import textstat
 
-from langchain import LLMChain, OpenAI
 from langchain.agents import initialize_agent, load_tools
-from langchain.callbacks import BaseCallbackHandler, StdOutCallbackHandler
 from langchain.callbacks.base import BaseCallbackHandler, CallbackManager
+from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.chains import LLMChain, SimpleSequentialChain
 from langchain.input import print_text
+from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
