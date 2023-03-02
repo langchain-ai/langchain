@@ -1,18 +1,18 @@
 """Question Answering."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.conversation.prompt import PROMPT
-from langchain.chains.llm import LLMChain
 from langchain.chat.base import BaseChatChain
-from langchain.chat.memory import SimpleChatMemory
 from langchain.chat_models.base import BaseChat
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatMessage
 
 
-def _get_default_starter_messages():
+def _get_default_starter_messages() -> List[ChatMessage]:
     prompt = (
         "You are chatbot optimized for question answering. "
         "Your job is to answer the most recent user question based "
@@ -47,8 +47,8 @@ class QAChain(BaseChatChain, BaseModel):
         cls,
         model: BaseChat,
         starter_messages: Optional[List[ChatMessage]] = None,
-        **kwargs: Any
-    ):
+        **kwargs: Any,
+    ) -> QAChain:
         """From model. Future proofing."""
         if starter_messages is not None:
             _starter_messages = starter_messages

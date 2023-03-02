@@ -1,14 +1,13 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chat.base import BaseChatChain
-from langchain.chat.memory import SimpleChatMemory
 from langchain.chat.question_answering import QAChain
 from langchain.chat_models.base import BaseChat
 from langchain.llms.base import BaseLLM

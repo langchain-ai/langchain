@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Memory

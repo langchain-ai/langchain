@@ -18,5 +18,5 @@ class ChatMemory(BaseModel):
         gen = ChatMessage(text=message, role=self.ai_prefix)
         self.messages.append(gen)
 
-    def clear(self):
+    def clear(self) -> None:
         self.messages = []

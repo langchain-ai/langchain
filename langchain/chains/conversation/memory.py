@@ -117,7 +117,7 @@ class ConversationBufferMemory(ChatMemoryMixin, BaseModel):
     memory_key: str = "history"  #: :meta private:
 
     @property
-    def buffer(self):
+    def buffer(self) -> str:
         """String buffer of memory."""
         return get_buffer_string(self.chat_memory.messages)
 
@@ -198,7 +198,7 @@ class ConversationSummaryMemory(ChatMemoryMixin, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
-        new_lines = get_buffer_string(self.chat_memory[-2:])
+        new_lines = get_buffer_string(self.chat_memory.messages[-2:])
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
 

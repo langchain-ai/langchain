@@ -1,10 +1,11 @@
 """Chain that carries on a conversation and calls an LLM."""
+from __future__ import annotations
+
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.conversation.prompt import PROMPT
-from langchain.chains.llm import LLMChain
 from langchain.chat.base import BaseChatChain
 from langchain.chat.memory import SimpleChatMemory
 from langchain.chat_models.base import BaseChat
@@ -32,7 +33,7 @@ class ConversationChain(BaseChatChain, BaseModel):
     starter_messages: List[ChatMessage] = Field(default_factory=list)
 
     @classmethod
-    def from_model(cls, model: BaseModel, **kwargs: Any):
+    def from_model(cls, model: BaseModel, **kwargs: Any) -> ConversationChain:
         """From model. Future proofing."""
         return cls(model=model, **kwargs)
 
