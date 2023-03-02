@@ -51,7 +51,7 @@ class PythonAstREPLTool(BaseTool):
     @root_validator(pre=True)
     def validate_python_version(cls, values: Dict) -> Dict:
         """Validate valid python version."""
-        if sys.version_info[0] <= 8:
+        if sys.version_info < (3, 9):
             raise ValueError(
                 "This tool relies on Python 3.9 or higher "
                 "(as it uses new functionality in the `ast` module, "
