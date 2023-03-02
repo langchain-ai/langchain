@@ -96,7 +96,7 @@ You can read more about LangChainHub and the prompts available with it [here](ht
 
 ## Load a prompt template from the Hugging Face Hub
 
-The Hugging Face Hub [LangChainHub](https://huggingface.co/LangChainHub) organization contains a collection of prompts which can be loaded directly via LangChain.
+The Hugging Face Hub [LangChainHub](https://huggingface.co/LangChainHub-Prompts) organization contains a collection of prompts which can be loaded directly via LangChain.
 
 
 ```python

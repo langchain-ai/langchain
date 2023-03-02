@@ -85,5 +85,5 @@ def try_load_from_hub(
             with open(file, "wb") as f:
                 f.write(r.content)
             return loader(str(file), **kwargs)
-    else:
+    elif source == "hf":
         return try_load_from_hf_hub(remote_path, loader, **kwargs)
