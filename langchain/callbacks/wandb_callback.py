@@ -311,6 +311,12 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             name=self.name,
             notes=self.notes,
         )
+        wandb.termwarn(
+            """The wandb callback is currently in beta and is subject to change based on updates to `langchain`.
+            Please report any issues to https://github.com/wandb/wandb/issues with the tag `langchain`.
+            """,
+            repeat=False,
+        )
         self.callback_columns = []
         self.action_records = []
         self.complexity_metrics = complexity_metrics
@@ -529,7 +535,6 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             }
         )
         resp.update(self.get_custom_callback_meta())
-
         self.on_agent_action_records.append(resp)
         self.action_records.append(resp)
         self.run.log(resp)
@@ -588,10 +593,11 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         session_analysis_df = pd.concat([llm_input_prompts_df, llm_outputs_df], axis=1)
         return session_analysis_df
 
-    def flush_and_reset_session(
+    def flush_tracker(
         self,
         langchain_asset=None,
         reset: bool = True,
+        finish: bool = False,
         job_type: Optional[str] = None,
         project: Optional[str] = None,
         entity: Optional[str] = None,
@@ -602,6 +608,25 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         visualize: Optional[bool] = None,
         complexity_metrics: Optional[bool] = None,
     ):
+        """Flush the tracker and reset the session.
+
+        Args:
+            langchain_asset: The langchain asset to save.
+            reset: Whether to reset the session.
+            finish: Whether to finish the run.
+            job_type: The job type.
+            project: The project.
+            entity: The entity.
+            tags: The tags.
+            group: The group.
+            name: The name.
+            notes: The notes.
+            visualize: Whether to visualize.
+            complexity_metrics: Whether to compute complexity metrics.
+
+            Returns:
+                None
+        """
         action_records_table = wandb.Table(dataframe=pd.DataFrame(self.action_records))
         session_analysis_table = wandb.Table(
             dataframe=self._create_session_analysis_df()
@@ -630,9 +655,10 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 pass
             self.run.log_artifact(model_artifact)
 
-        if reset:
+        if finish or reset:
             self.run.finish()
             self.temp_dir.cleanup()
+        if reset:
             self.__init__(
                 job_type=job_type if job_type else self.job_type,
                 project=project if project else self.project,
@@ -670,7 +696,7 @@ def main():
 
     # SCENARIO 1 - LLM
     llm_result = llm.generate(["Tell me a joke", "Tell me a poem"] * 3)
-    wandb_callback.flush_and_reset_session(llm, name="simple_sequential")
+    wandb_callback.flush_tracker(llm, name="simple_sequential")
 
     # SCENARIO 2 - Chain
     template = """You are a playwright. Given the title of play, it is your job to write a synopsis for that title.
@@ -698,7 +724,7 @@ def main():
         {"input": "the best in class mlops tooling"},
     ]
     overall_chain.apply(test_prompts)
-    wandb_callback.flush_and_reset_session(overall_chain, name="agent")
+    wandb_callback.flush_tracker(overall_chain, name="agent")
 
     # SCENARIO 3 - Agent with Tools
     tools = load_tools(["serpapi", "llm-math"], llm=llm, callback_manager=manager)
@@ -712,8 +738,7 @@ def main():
     agent.run(
         "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
     )
-    wandb_callback.flush_and_reset_session(agent, reset=False)
-    wandb_callback.run.finish()
+    wandb_callback.flush_tracker(agent, reset=False, finish=True)
 
 
 if __name__ == "__main__":
