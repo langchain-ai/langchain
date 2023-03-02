@@ -271,7 +271,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         notes (str): The notes to log.
         visualize (bool): Whether to visualize the run.
         complexity_metrics (bool): Whether to log complexity metrics.
-
+        stream_logs (bool): Whether to stream callback actions to W&B
 
     This handler will utilize the associated callback method called and formats the input of each callback function with metadata regarding the state of LLM run, and adds the response to the list of records for both the {method}_records and action. It then logs the response using the run.log() method to Weights and Biases.
     """
@@ -285,8 +285,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         group: Optional[str] = None,
         name: Optional[str] = None,
         notes: Optional[str] = None,
-        visualize: bool = True,
-        complexity_metrics: bool = True,
+        visualize: bool = False,
+        complexity_metrics: bool = False,
+        stream_logs: bool = False,
     ) -> None:
         """Initialize callback handler."""
         super().__init__()
@@ -300,6 +301,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.notes = notes
         self.visualize = visualize
         self.complexity_metrics = complexity_metrics
+        self.stream_logs = stream_logs
 
         self.temp_dir = tempfile.TemporaryDirectory()
         self.run = wandb.init(
@@ -313,8 +315,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         wandb.termwarn(
             """The wandb callback is currently in beta and is subject to change based on updates to `langchain`.
-            Please report any issues to https://github.com/wandb/wandb/issues with the tag `langchain`.
-            """,
+Please report any issues to https://github.com/wandb/wandb/issues with the tag `langchain`.""",
             repeat=False,
         )
         self.callback_columns = []
@@ -344,7 +345,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             prompt_resp["prompts"] = prompt
             self.on_llm_start_records.append(prompt_resp)
             self.action_records.append(prompt_resp)
-            self.run.log(prompt_resp)
+            if self.stream_logs:
+                self.run.log(prompt_resp)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
@@ -357,7 +359,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_llm_token_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -385,7 +388,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 )
                 self.on_llm_end_records.append(generation_resp)
                 self.action_records.append(generation_resp)
-                self.run.log(generation_resp)
+                if self.stream_logs:
+                    self.run.log(generation_resp)
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -414,14 +418,16 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             input_resp["input"] = chain_input
             self.on_chain_start_records.append(input_resp)
             self.action_records.append(input_resp)
-            self.run.log(input_resp)
+            if self.stream_logs:
+                self.run.log(input_resp)
         elif isinstance(chain_input, list):
             for inp in chain_input:
                 input_resp = deepcopy(resp)
                 input_resp.update(inp)
                 self.on_chain_start_records.append(input_resp)
                 self.action_records.append(input_resp)
-                self.run.log(input_resp)
+                if self.stream_logs:
+                    self.run.log(input_resp)
         else:
             raise ValueError("Unexpected data format provided!")
 
@@ -437,7 +443,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_chain_end_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -461,7 +468,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_tool_start_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -475,7 +483,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_tool_end_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -497,7 +506,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_text_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
@@ -517,7 +527,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_agent_finish_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -537,7 +548,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp.update(self.get_custom_callback_meta())
         self.on_agent_action_records.append(resp)
         self.action_records.append(resp)
-        self.run.log(resp)
+        if self.stream_logs:
+            self.run.log(resp)
 
     def _create_session_analysis_df(self):
         """Create a dataframe with all the information from the session."""
@@ -687,7 +699,7 @@ def main():
     wandb_callback = WandbCallbackHandler(
         job_type="inference",
         project="langchain_callback_demo",
-        group=session_group,
+        group=f"minimal_{session_group}",
         name="llm",
         tags=["test"],
     )
