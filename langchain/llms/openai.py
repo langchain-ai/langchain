@@ -161,10 +161,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    def __new__(cls, **data: Any) -> None:
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+        """Initialize the OpenAI object."""
         if data.get("model_name", "").startswith("gpt-3.5-turbo"):
             return OpenAIChat(**data)
-        """Initialize the OpenAI object."""
         return super().__new__(cls)
 
     class Config:
