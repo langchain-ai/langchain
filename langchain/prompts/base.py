@@ -46,8 +46,11 @@ def check_valid_template(
     try:
         formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
         formatter_func(template, **dummy_inputs)
-    except KeyError:
-        raise ValueError("Invalid prompt schema.")
+    except KeyError as e:
+        raise ValueError(
+            "Invalid prompt schema; check for mismatched or missing input parameters. "
+            + str(e)
+        )
 
 
 class BaseOutputParser(BaseModel, ABC):

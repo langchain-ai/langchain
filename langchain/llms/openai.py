@@ -25,7 +25,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.llms.base import LLM, BaseLLM
+from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -522,7 +522,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
 
-class OpenAIChat(LLM, BaseModel):
+class OpenAIChat(BaseLLM, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -534,8 +534,8 @@ class OpenAIChat(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="gpt-3.5-turbo")
+            from langchain.llms import OpenAIChat
+            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
     client: Any  #: :meta private:
@@ -600,8 +600,14 @@ class OpenAIChat(LLM, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return self.model_kwargs
 
-    def _get_chat_params(self, prompt: str, stop: Optional[List[str]] = None) -> Tuple:
-        messages = self.prefix_messages + [{"role": "user", "content": prompt}]
+    def _get_chat_params(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> Tuple:
+        if len(prompts) > 1:
+            raise ValueError(
+                f"OpenAIChat currently only supports single prompt, got {prompts}"
+            )
+        messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
             if "stop" in params:
@@ -609,8 +615,10 @@ class OpenAIChat(LLM, BaseModel):
             params["stop"] = stop
         return messages, params
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        messages, params = self._get_chat_params(prompt, stop)
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
         if self.streaming:
             response = ""
             params["stream"] = True
@@ -621,13 +629,22 @@ class OpenAIChat(LLM, BaseModel):
                     token,
                     verbose=self.verbose,
                 )
-            return response
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
         else:
             full_response = completion_with_retry(self, messages=messages, **params)
-            return full_response["choices"][0]["message"]["content"]
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output={"token_usage": full_response["usage"]},
+            )
 
-    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        messages, params = self._get_chat_params(prompt, stop)
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
         if self.streaming:
             response = ""
             params["stream"] = True
@@ -646,12 +663,19 @@ class OpenAIChat(LLM, BaseModel):
                         token,
                         verbose=self.verbose,
                     )
-            return response
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
         else:
             full_response = await acompletion_with_retry(
                 self, messages=messages, **params
             )
-            return full_response["choices"][0]["message"]["content"]
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output={"token_usage": full_response["usage"]},
+            )
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
