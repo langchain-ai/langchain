@@ -27,3 +27,13 @@ The format of your response should be `GRADE: ${grade}` with ${grade} being eith
 CHAT_RESPONSE_TEMPLATE = """QUESTION: {query}
 STUDENT ANSWER: {result}
 TRUE ANSWER: {answer}"""
+
+CHAT_COMPARISON_INSTRUCTIONS = """You are a teacher grading a quiz.
+You are given a question, the correct answer, Student A's answer and then Student B's answer.
+Please describe how Student A's answer compares to Student B's.
+Describe them with a comma separated list of adjectives. Example adjectives may include: more verbose, less correct, more succint, etc."""
+
+CHAT_COMPARISON_RESPONSE_TEMPLATE = """QUESTION: {query}
+TRUE ANSWER: {answer}
+STUDENT A ANSWER: {student_a}
+STUDENT B ANSWER: {student_b}"""
