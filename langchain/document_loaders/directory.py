@@ -30,6 +30,7 @@ class DirectoryLoader(BaseLoader):
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
+        recursive: bool = False,
     ):
         """Initialize with path to directory and how to glob over it."""
         self.path = path
@@ -37,12 +38,14 @@ class DirectoryLoader(BaseLoader):
         self.load_hidden = load_hidden
         self.loader_cls = loader_cls
         self.silent_errors = silent_errors
+        self.recursive = recursive
 
     def load(self) -> List[Document]:
         """Load documents."""
         p = Path(self.path)
         docs = []
-        for i in p.glob(self.glob):
+        items = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        for i in items:
             if i.is_file():
                 if _is_visible(i.relative_to(p)) or self.load_hidden:
                     try:
