@@ -1,15 +1,16 @@
 """Question Answering."""
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chat.base import BaseChatChain
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain.chat.base import BaseChatChain
 from langchain.chat.memory import SimpleChatMemory
 from langchain.chat_models.base import BaseChat
+from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatMessage
+
 
 def _get_default_starter_messages():
     prompt = (
@@ -42,7 +43,12 @@ class QAChain(BaseChatChain, BaseModel):
     starter_messages: List[ChatMessage] = Field(default_factory=list)
 
     @classmethod
-    def from_model(cls, model: BaseChat, starter_messages: Optional[List[ChatMessage]] = None, **kwargs: Any):
+    def from_model(
+        cls,
+        model: BaseChat,
+        starter_messages: Optional[List[ChatMessage]] = None,
+        **kwargs: Any
+    ):
         """From model. Future proofing."""
         if starter_messages is not None:
             _starter_messages = starter_messages
@@ -55,13 +61,16 @@ class QAChain(BaseChatChain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        new_message = ChatMessage(text = inputs[self.question_key], role=self.human_prefix)
+        new_message = ChatMessage(
+            text=inputs[self.question_key], role=self.human_prefix
+        )
         docs = inputs[self.documents_key]
-        doc_messages = [ChatMessage(text=doc.page_content, role=self.human_prefix) for doc in docs]
+        doc_messages = [
+            ChatMessage(text=doc.page_content, role=self.human_prefix) for doc in docs
+        ]
         messages = self.starter_messages + doc_messages + [new_message]
         output = self.model.run(messages)
         return {self.output_key: output.text}
-
 
     class Config:
         """Configuration for this pydantic object."""
@@ -73,4 +82,3 @@ class QAChain(BaseChatChain, BaseModel):
     def input_keys(self) -> List[str]:
         """Use this since so some prompt vars come from history."""
         return [self.question_key, self.documents_key]
-

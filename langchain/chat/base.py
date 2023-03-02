@@ -1,15 +1,17 @@
-from langchain.chains.base import Chain
 from abc import ABC
-from langchain.memory.chat_memory import ChatMemory
-from pydantic import root_validator
 from typing import Dict
 
-class BaseChatChain(Chain, ABC):
+from pydantic import root_validator
 
+from langchain.chains.base import Chain
+from langchain.memory.chat_memory import ChatMemory
+
+
+class BaseChatChain(Chain, ABC):
     human_prefix: str = "user"
     ai_prefix: str = "assistant"
 
-    @root_validator(pre=True)
+    @root_validator()
     def validate_memory_keys(cls, values: Dict) -> Dict:
         """Validate that the human and ai prefixes line up."""
         if "memory" in values:
@@ -26,4 +28,3 @@ class BaseChatChain(Chain, ABC):
                         f"match chain ai_prefix ({values['ai_prefix']})"
                     )
         return values
-

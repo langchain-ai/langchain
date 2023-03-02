@@ -46,6 +46,7 @@ class LLMResult:
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
 
+
 @dataclass_json
 @dataclass
 class ChatMessage:

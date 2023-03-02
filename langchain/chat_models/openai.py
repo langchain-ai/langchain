@@ -12,7 +12,7 @@ from tenacity import (
 )
 
 from langchain.chat_models.base import BaseChat
-from langchain.schema import ChatGeneration, ChatResult, ChatMessage
+from langchain.schema import ChatGeneration, ChatMessage, ChatResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
@@ -135,7 +135,9 @@ class OpenAI(BaseChat, BaseModel):
         response = self.completion_with_retry(messages=message_dicts, **params)
         generations = []
         for res in response["choices"]:
-            message = ChatMessage(text=res["message"]["content"], role=res["message"]["role"])
+            message = ChatMessage(
+                text=res["message"]["content"], role=res["message"]["role"]
+            )
             gen = ChatGeneration(message=message)
             generations.append(gen)
         return ChatResult(generations=generations)

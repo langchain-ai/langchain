@@ -5,14 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-
 from langchain.chat.base import BaseChatChain
-from langchain.chat_models.base import BaseChat
 from langchain.chat.question_answering import QAChain
-from langchain.llms.base import BaseLLM
-from langchain.prompts import PromptTemplate
-from langchain.vectorstores.base import VectorStore
+from langchain.chat_models.base import BaseChat
 from langchain.schema import ChatMessage
+from langchain.vectorstores.base import VectorStore
 
 
 class VectorDBQA(BaseChatChain, BaseModel):
@@ -79,7 +76,10 @@ class VectorDBQA(BaseChatChain, BaseModel):
 
     @classmethod
     def from_model(
-        cls, model: BaseChat, starter_messages: Optional[List[ChatMessage]] = None, **kwargs: Any
+        cls,
+        model: BaseChat,
+        starter_messages: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> VectorDBQA:
         """Initialize from LLM."""
         qa_chain = QAChain.from_model(model, starter_messages=starter_messages)
@@ -119,4 +119,3 @@ class VectorDBQA(BaseChatChain, BaseModel):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
-

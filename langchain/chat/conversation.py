@@ -1,14 +1,14 @@
 """Chain that carries on a conversation and calls an LLM."""
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chat.base import BaseChatChain
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain.chat.base import BaseChatChain
 from langchain.chat.memory import SimpleChatMemory
 from langchain.chat_models.base import BaseChat
+from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import ChatMessage
 
 
@@ -41,12 +41,10 @@ class ConversationChain(BaseChatChain, BaseModel):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        new_message = ChatMessage(text = inputs[self.input_key], role=self.human_prefix)
+        new_message = ChatMessage(text=inputs[self.input_key], role=self.human_prefix)
         messages = self.starter_messages + self.memory.messages + [new_message]
         output = self.model.run(messages)
         return {self.output_key: output.text}
-
-
 
     class Config:
         """Configuration for this pydantic object."""
@@ -58,4 +56,3 @@ class ConversationChain(BaseChatChain, BaseModel):
     def input_keys(self) -> List[str]:
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
-
