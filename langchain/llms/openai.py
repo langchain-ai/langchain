@@ -161,6 +161,12 @@ class BaseOpenAI(BaseLLM, BaseModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+        """Initialize the OpenAI object."""
+        if data.get("model_name", "").startswith("gpt-3.5-turbo"):
+            return OpenAIChat(**data)
+        return super().__new__(cls)
+
     class Config:
         """Configuration for this pydantic object."""
 
