@@ -23,7 +23,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain.llms.base import LLM, BaseLLM
+from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
@@ -624,6 +624,8 @@ class OpenAIChat(BaseLLM, BaseModel):
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
+        if len(prompts) > 1:
+            raise ValueError(f"OpenAIChat only supports single prompts, got {prompts}")
         messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
