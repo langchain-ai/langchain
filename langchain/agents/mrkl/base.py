@@ -10,7 +10,7 @@ from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.prompts import PromptTemplate
+from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -75,7 +75,7 @@ class ZeroShotAgent(Agent):
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
-    ) -> PromptTemplate:
+    ) -> BasePromptTemplate:
         """Create prompt in the style of the zero shot agent.
 
         Args:

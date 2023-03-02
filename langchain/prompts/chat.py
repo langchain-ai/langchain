@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, List, Tuple
 
 from langchain.prompts.base import BasePromptTemplate

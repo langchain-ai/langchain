@@ -16,7 +16,6 @@ PROMPT = PromptTemplate(
 )
 
 
-messages = []
 chat_template_system = """Use the following pieces of context to answer any user questions. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 {context}"""

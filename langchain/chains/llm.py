@@ -59,6 +59,9 @@ class BaseLLMChain(Chain, BaseModel):
         """Utilize the LLM generate method for speed gains."""
         raise NotImplementedError
 
+    def get_num_tokens(self, prompt: str) -> int:
+        raise NotImplementedError
+
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
 
@@ -140,6 +143,9 @@ class BaseLLMChain(Chain, BaseModel):
 class LLMChain(BaseLLMChain):
     llm: BaseLLM
     """LLM wrapper to use."""
+
+    def get_num_tokens(self, prompt: str) -> int:
+        return self.llm.get_num_tokens(prompt)
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
