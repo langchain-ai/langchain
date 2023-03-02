@@ -7,7 +7,7 @@ from sqlalchemy import MetaData, create_engine, inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
- 
+
 
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
