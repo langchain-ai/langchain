@@ -19,3 +19,11 @@ GRADE:"""
 PROMPT = PromptTemplate(
     input_variables=["query", "result", "answer"], template=template
 )
+
+CHAT_INSTRUCTIONS = """You are a teacher grading a quiz.
+You are given a question, the student's answer, and the true answer, and are asked to score it as either CORRECT or INCORRECT.
+The format of your response should be `GRADE: ${grade}` with ${grade} being either CORRECT or INCORRECT and nothing more."""
+
+CHAT_RESPONSE_TEMPLATE = """QUESTION: {query}
+STUDENT ANSWER: {result}
+TRUE ANSWER: {answer}"""
