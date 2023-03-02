@@ -67,9 +67,8 @@ class ZeroShotAgent(Agent):
         """Prefix to append the llm call with."""
         return "Thought:"
 
-    @classmethod
+    @staticmethod
     def create_prompt(
-        cls,
         tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -155,7 +154,7 @@ class MRKLChain(AgentExecutor):
     @classmethod
     def from_chains(
         cls, llm: BaseLLM, chains: List[ChainConfig], **kwargs: Any
-    ) -> AgentExecutor:
+    ) -> "MRKLChain":
         """User friendly way to initialize the MRKL chain.
 
         This is intended to be an easy way to get up and running with the

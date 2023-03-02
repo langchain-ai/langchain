@@ -19,8 +19,8 @@ class SelfAskWithSearchAgent(Agent):
         """Return Identifier of agent type."""
         return "self-ask-with-search"
 
-    @classmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    @staticmethod
+    def create_prompt(tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Prompt does not depend on tools."""
         return PROMPT
 

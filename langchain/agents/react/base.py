@@ -23,8 +23,8 @@ class ReActDocstoreAgent(Agent, BaseModel):
         """Return Identifier of agent type."""
         return "react-docstore"
 
-    @classmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    @staticmethod
+    def create_prompt(tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return WIKI_PROMPT
 
@@ -108,8 +108,8 @@ class DocstoreExplorer:
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
     """Agent for the ReAct TextWorld chain."""
 
-    @classmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    @staticmethod
+    def create_prompt(tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT
 

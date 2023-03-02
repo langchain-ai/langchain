@@ -177,9 +177,9 @@ class Agent(BaseModel):
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    def create_prompt(tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod

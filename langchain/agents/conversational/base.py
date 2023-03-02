@@ -33,9 +33,8 @@ class ConversationalAgent(Agent):
         """Prefix to append the llm call with."""
         return "Thought:"
 
-    @classmethod
+    @staticmethod
     def create_prompt(
-        cls,
         tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -51,6 +50,7 @@ class ConversationalAgent(Agent):
                 prompt.
             prefix: String to put before the list of tools.
             suffix: String to put after the list of tools.
+            format_instructions: String that includes format instructions.
             ai_prefix: String to use before AI output.
             human_prefix: String to use before human output.
             input_variables: List of input variables the final prompt will expect.
