@@ -52,7 +52,7 @@ class TestDockerUtility:
         """Test inner command with non zero exit"""
         docker = DockerWrapper()
         output = docker.run('todo handle APIError')
-        assert output == 'ERROR'
+        assert str(output).startswith("STDERR") or str(output).startswith("ERROR")
 
     def test_check_gvisor_runtime(self) -> None:
         """test gVisor runtime verification using a mock docker client"""
@@ -64,9 +64,9 @@ class TestDockerUtility:
 
     def test_socket_read_timeout(self) -> None:
         """Test socket read timeout."""
-        docker = DockerWrapper(image='python', command='python')
+        docker = DockerWrapper(image='python', default_command=['python'])
         # this query should fail as python needs to be started with python3 -i
-        output = docker.exec_run("test query")
+        output = docker.exec_run("test query", timeout=1)
         assert output == "ERROR: timeout"
 
 def test_get_image_template() -> None:

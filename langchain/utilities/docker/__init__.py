@@ -17,7 +17,7 @@ import logging
 
 from .images import BaseImage, get_image_template, Python, Shell
 
-from typing import Any, Dict, Optional, Union, Type
+from typing import Any, Dict, Optional, Union, Type, List
 from pydantic import BaseModel, PrivateAttr, Extra, root_validator, validator, Field
 
 logger = logging.getLogger(__name__)
@@ -179,13 +179,14 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
     Args:
         image (str | Type[BaseImage]): Docker image to use for execution. The
         image can be a string or a subclass of images.BaseImage.
-
+        default_command (List[str]): Default command to use when creating the container.
     """
 
     _docker_client: DockerClient = PrivateAttr()
     _params: Dict = Field(default_factory=Shell().dict(), skip=True)
     image: Union[str, Type[BaseImage]] = Field(default_factory=Shell,skip=True)
     from_env: Optional[bool] = Field(default=True, skip=True)
+
 
     # @property
     # def image_name(self) -> str:
@@ -303,12 +304,12 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
         # TODO: handle docker APIError ?
         except APIError as e:
-            print(f"APIError: {e}")
+            logger.debug(f"APIError: {e}")
             return "ERROR"
 
 
 
-    def exec_run(self, query: str, socket_timeout: int = 5,
+    def exec_run(self, query: str, timeout: int = 5,
                  delay: float = 0.5,
                  with_stderr: bool = False,
                  **kwargs: Any) -> str:
@@ -319,7 +320,7 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
         using Docker API. It effectively simulates a tty session.
 
         Args:
-            socket_timeout (int): The timeout for receiving from the attached stdin.
+            timeout (int): The timeout for receiving from the attached stdin.
             delay (int): The delay in seconds before running the command.
             **kwargs: Pass extra parameters to DockerClient.container.exec_run.
         """
@@ -363,20 +364,20 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
 
 
         # input()
-        with DockerSocket(_socket, timeout=socket_timeout) as _socket:
+        with DockerSocket(_socket, timeout=timeout) as _socket:
             # flush the output buffer (if any prompt)
-            flush = _socket.recv()
-            _socket.setblocking(True)
-            logger.debug(f"flushed output: {flush}")
-            # TEST: make sure the container is ready ? use a blocking first call
-            _socket.sendall(query.encode('utf-8'))
-
-            #NOTE: delay ensures that the command is executed after the input is sent
-            sleep(delay) #this should be available as a parameter
-
-            # read the output
             output = None
             try:
+                flush = _socket.recv()
+                _socket.setblocking(True)
+                logger.debug(f"flushed output: {flush}")
+                # TEST: make sure the container is ready ? use a blocking first call
+                _socket.sendall(query.encode('utf-8'))
+
+                #NOTE: delay ensures that the command is executed after the input is sent
+                sleep(delay) #this should be available as a parameter
+
+                # read the output
                 output = _socket.recv()
             except socket.timeout:
                 return "ERROR: timeout"
