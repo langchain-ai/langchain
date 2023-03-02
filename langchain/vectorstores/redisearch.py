@@ -5,7 +5,6 @@ import uuid
 from typing import Any, Callable, Iterable, List, Mapping, Optional
 
 import numpy as np
-from redis.commands.search.query import Query
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -15,7 +14,11 @@ from langchain.vectorstores.base import VectorStore
 
 class RediSearch(VectorStore):
     def __init__(
-        self, redisearch_url: str, index_name: str, embedding_function: Callable, **kwargs: Any
+        self,
+        redisearch_url: str,
+        index_name: str,
+        embedding_function: Callable,
+        **kwargs: Any,
     ):
         """Initialize with necessary components."""
         try:
@@ -25,12 +28,15 @@ class RediSearch(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
+
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
             redis_client = redis.from_url(redisearch_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
+            # check if redis add redisearch module
+
         self.client = redis_client
 
     def add_texts(
@@ -63,6 +69,14 @@ class RediSearch(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
+        try:
+            from redis.commands.search.query import Query
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+
         # Creates embedding vector from user query
         embedding = self.embedding_function(query)
 
@@ -81,7 +95,9 @@ class RediSearch(VectorStore):
             .dialect(2)
         )
         params_dict: Mapping[str, str] = {
-            "vector": str(np.array(embedding).astype(dtype=np.float32).tobytes())
+            "vector": np.array(embedding)  # type: ignore
+            .astype(dtype=np.float32)
+            .tobytes()
         }
 
         # perform vector search
@@ -133,11 +149,13 @@ class RediSearch(VectorStore):
                 "Please install it with `pip install redis`."
             )
         try:
-            # We need to first remove redisearch_url from kwargs, otherwise passing it to Redis will result in an error.
+            # We need to first remove redisearch_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
             kwargs.pop("redisearch_url")
             client = redis.from_url(url=redisearch_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
+
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
         # Constants
