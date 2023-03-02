@@ -235,31 +235,39 @@ class Qdrant(VectorStore):
         Args:
             texts: A list of texts to be indexed in Qdrant.
             embedding: A subclass of `Embeddings`, responsible for text vectorization.
-            metadatas: An optional list of metadata. If provided it has to be of the
-                       same length as a list of texts.
-            url: either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]".
-                Default: `None`
+            metadatas:
+                An optional list of metadata. If provided it has to be of the same
+                length as a list of texts.
+            url: either host or str of "Optional[scheme], host, Optional[port],
+                Optional[prefix]". Default: `None`
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
-            prefer_grpc: If `true` - use gPRC interface whenever possible in custom methods.
+            prefer_grpc:
+                If `true` - use gPRC interface whenever possible in custom methods.
             https: If `true` - use HTTPS(SSL) protocol. Default: `None`
             api_key: API key for authentication in Qdrant Cloud. Default: `None`
             prefix:
                 If not `None` - add `prefix` to the REST URL path.
-                Example: `service/v1` will result in `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
+                Example: `service/v1` will result in
+                    `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
                 Default: `None`
             timeout:
                 Timeout for REST and gRPC API requests.
                 Default: 5.0 seconds for REST and unlimited for gRPC
-            host: Host name of Qdrant service. If url and host are None, set to 'localhost'.
-                Default: `None`
+            host:
+                Host name of Qdrant service. If url and host are None, set to
+                'localhost'. Default: `None`
             collection_name:
                 Name of the Qdrant collection to be used. If not provided,
                 will be created randomly.
-            distance_func: Distance function. One of the: "Cosine" / "Euclid" / "Dot".
-            content_payload_key: A payload key used to store the content of the document.
-            metadata_payload_key: A payload key used to store the metadata of the document.
-            **kwargs: Additional arguments passed directly into REST client initialization
+            distance_func:
+                Distance function. One of the: "Cosine" / "Euclid" / "Dot".
+            content_payload_key:
+                A payload key used to store the content of the document.
+            metadata_payload_key:
+                A payload key used to store the metadata of the document.
+            **kwargs:
+                Additional arguments passed directly into REST client initialization
 
         This is a user friendly interface that:
             1. Embeds documents.
