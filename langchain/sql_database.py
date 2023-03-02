@@ -66,8 +66,16 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
-
+        
+        self._tables_to_use = self._all_tables
+        if include_tables:
+            self._tables_to_use = self._include_tables
+        elif ignore_tables:
+            self._tables_to_use = self._all_tables - self._ignore_tables
+        
+        self._metadata.reflect(bind=self._engine, only=self._tables_to_use)
+       
+       
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
