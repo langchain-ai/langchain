@@ -1,8 +1,8 @@
 """Wrapper for untrusted code exectuion on docker."""
 # TODO:  pass payload to contanier via filesystem 
-# TODO:  attach to running container
+# TEST:  more tests for attach to running container
 # TODO:  embed file payloads in the call to run (in LLMChain)?
-# TODO:  image selection helper
+# TODO:  [doc] image selection helper
 # TODO:  LLMChain decorator ?
 
 import docker
@@ -12,6 +12,7 @@ import shlex
 import os
 import io
 import tarfile
+import time
 import pandas as pd  # type: ignore
 from docker.client import DockerClient  # type: ignore
 from docker.errors import APIError, ContainerError  # type: ignore
@@ -517,3 +518,72 @@ class DockerWrapper(BaseModel, extra=Extra.allow):
             return f"STDERR: {payload['stderr']}"
         else:
             return payload['stdout'].strip()
+
+
+
+    # method that will copy the given payload to the container filesystem then
+    # invoke the command on the file and return the output
+    def run_file(self, payload: bytes, filename: str = None,
+                 **kwargs: Any) -> str:
+        """Run arbitrary shell command inside an ephemeral container on the
+        specified input payload."""
+
+
+        for arg in kwargs.keys():
+            if arg in locals():
+                del kwargs[arg]
+
+        kwargs = {**self._params, **kwargs}
+        self._clean_kwargs(kwargs)
+
+        kwargs['command'] = '/bin/sh'
+
+        k_file_location = '/tmp/payload'
+        if filename is not None:
+            # store at /tmp/file_name
+            # strip all leading path components
+            file_loc = os.path.basename(filename)
+            k_file_location = f'/tmp/{file_loc}'
+
+        # print(kwargs)
+        # return
+
+        # create a container with the given payload
+        # container = self._docker_client.containers.create(**kwargs)
+        # container.start()
+        container = self._docker_client.containers.list()[0]
+        print(container.short_id)
+
+
+        # copy the payload to the container
+        try:
+            # put the data in tar archive at the path specified by k_file_location
+            archive = io.BytesIO()
+            with tarfile.TarFile(fileobj=archive, mode='w') as tar:
+                tarinfo = tarfile.TarInfo(name='test-archive')
+                tarinfo.size = len(payload)
+                tarinfo.mtime = time.time()
+                tar.addfile(tarinfo, io.BytesIO(payload))
+            archive.seek(0)
+
+            # store archive on local host at /tmp/test
+            # with open('/tmp/test', 'wb') as f:
+            #     f.write(archive.read())
+
+
+            container.put_archive(path='/', data=archive)
+        except APIError as e:
+            logger.error(f"Error: {e}")
+            return "ERROR"
+
+        #execute the command
+        exit_code, out = container.exec_run(['sh', k_file_location])
+        print(f"exit_code: {exit_code}")
+        print(f"out: {out}")
+
+
+        # try:
+        #     container.kill()
+        # except APIError:
+        #     pass
+        # container.remove(force=True)

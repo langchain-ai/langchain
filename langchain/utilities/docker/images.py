@@ -14,6 +14,7 @@ class BaseImage(BaseModel, extra=Extra.forbid):
     tag: Optional[str] = 'latest'
     default_command: Optional[List[str]] = None
     stdin_command: Optional[List[str]] = None
+    network: str = 'none'
 
     def dict(self, *args, **kwargs):
         """Override the dict method to add the image name."""
