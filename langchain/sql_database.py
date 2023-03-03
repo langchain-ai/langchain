@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import MetaData, create_engine, inspect, select
+from sqlalchemy import MetaData, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -177,7 +177,7 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             if self._schema is not None:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
-            cursor = connection.exec_driver_sql(command)
+            cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
