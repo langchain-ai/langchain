@@ -17,7 +17,3 @@ class AudioBase(BaseModel, ABC):
         with open(audio_path, "rb") as file:
             mp3bytes = BytesIO(file.read())
         return base64.b64encode(mp3bytes.getvalue()).decode("ISO-8859-1")
-
-    @abstractmethod
-    def transcript(self, audio_path: str) -> str:
-        """Transcribe audio file."""
