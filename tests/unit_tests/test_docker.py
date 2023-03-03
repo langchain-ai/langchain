@@ -2,16 +2,15 @@
 
 import pytest
 import importlib
-from typing import Any
-from langchain.utilities.docker import DockerWrapper, \
-            gvisor_runtime_available, _default_params
+from langchain.utilities.docker import gvisor_runtime_available
+from langchain.utilities.docker.tool import DockerWrapper, _default_params
 from unittest.mock import MagicMock
 import subprocess
 import time
 
 
 def docker_installed() -> bool:
-    """Checks if docker is installed locally."""
+    """Check if docker is installed locally."""
     try:
         subprocess.run(['which', 'docker',], check=True)
     except subprocess.CalledProcessError:
@@ -123,7 +122,8 @@ def test_get_image_template() -> None:
     image = get_image_template("python")
     assert image.__name__ == "Python" #  type: ignore
 
+#FIX: failing split in two tests: with and without gvisor
 def test_default_params() -> None:
     """Test default container parameters."""
     docker = DockerWrapper(image="my_custom_image")
-    assert docker._params == {**_default_params(), "image": "my_custom_image"}
+    assert docker._params == {**_default_params, "image": "my_custom_image"}
