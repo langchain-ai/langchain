@@ -13,7 +13,7 @@ class BaseTool(BaseModel):
     """Class responsible for defining a tool or skill for an LLM."""
 
     name: str
-    description: str
+    description:  Optional[str] # maybe the description should be optional 
     return_direct: bool = False
     verbose: bool = False
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
