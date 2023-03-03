@@ -1,6 +1,6 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
-from langchain.chains.chat_vector_db.base import ChatVectorDBChain
+from langchain.chains.chat_vector_db.base import ChatVectorDBChain,ChatOnlineDBChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
@@ -50,6 +50,7 @@ __all__ = [
     "AnalyzeDocumentChain",
     "HypotheticalDocumentEmbedder",
     "ChatVectorDBChain",
+    "ChatOnlineDBChain",
     "GraphQAChain",
     "ConstitutionalChain",
 ]
