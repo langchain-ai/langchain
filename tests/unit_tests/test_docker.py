@@ -7,6 +7,7 @@ from langchain.utilities.docker import DockerWrapper, \
             gvisor_runtime_available, _default_params
 from unittest.mock import MagicMock
 import subprocess
+import time
 
 
 def docker_installed() -> bool:
@@ -83,6 +84,23 @@ class TestDockerUtility:
         assert gvisor_runtime_available(mock_client)
         mock_client.info.return_value = {'Runtimes': {'runc': {'path': 'runc'}}}
         assert not gvisor_runtime_available(mock_client)
+
+    def test_exec_attached(self) -> None:
+        """Test exec with attached mode."""
+        # create a test container
+        d = DockerWrapper()
+        cont = d._docker_client.containers.run('alpine', '/bin/sh -s',
+                                               detach=True,
+                                               stdin_open=True)
+        cont.start()
+        # make sure the prompt is ready
+        time.sleep(1)
+        out = d.exec_attached("cat /etc/os-release", container=cont.id)
+        assert out.find('alpine') != -1
+        cont.kill()
+        cont.remove(force=True)
+
+       
 
 
     @pytest.mark.skipif(not gvisor_installed(), reason="gvisor not installed")
