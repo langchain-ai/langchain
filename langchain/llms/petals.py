@@ -22,7 +22,7 @@ class Petals(LLM, BaseModel):
 
     Example:
         .. code-block:: python
-            from langchain import petals
+            from langchain.llms import petals
             petals = Petals()
 
     """

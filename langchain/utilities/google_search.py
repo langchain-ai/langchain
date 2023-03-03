@@ -86,7 +86,6 @@ class GoogleSearchAPIWrapper(BaseModel):
         service = build("customsearch", "v1", developerKey=google_api_key)
         values["search_engine"] = service
 
-        # TODO: Add error handling if keys are missing
         return values
 
     def run(self, query: str) -> str:

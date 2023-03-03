@@ -60,16 +60,18 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
-        input_variables = values["input_variables"]
-        expected_input_variables = set(values["suffix"].input_variables)
-        if values["prefix"] is not None:
-            expected_input_variables |= set(values["prefix"].input_variables)
-        missing_vars = expected_input_variables.difference(input_variables)
-        if missing_vars:
-            raise ValueError(
-                f"Got input_variables={input_variables}, but based on prefix/suffix "
-                f"expected {expected_input_variables}"
-            )
+        if values["validate_template"]:
+            input_variables = values["input_variables"]
+            expected_input_variables = set(values["suffix"].input_variables)
+            expected_input_variables |= set(values["partial_variables"])
+            if values["prefix"] is not None:
+                expected_input_variables |= set(values["prefix"].input_variables)
+            missing_vars = expected_input_variables.difference(input_variables)
+            if missing_vars:
+                raise ValueError(
+                    f"Got input_variables={input_variables}, but based on "
+                    f"prefix/suffix expected {expected_input_variables}"
+                )
         return values
 
     class Config:
@@ -101,6 +103,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
         # Format the examples.
