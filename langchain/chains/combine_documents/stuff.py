@@ -100,7 +100,10 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         CONTEXT_LIMIT = 4096
         RESPONSE_LIMIT = 256
         for doc in docs:
-            if len(new_summary) < CONTEXT_LIMIT - RESPONSE_LIMIT:
+            if (
+                self.llm_chain.llm.get_num_tokens(new_summary)
+                < CONTEXT_LIMIT - RESPONSE_LIMIT
+            ):
                 new_summary += SEPERATOR
                 new_summary += doc
         inputs["summaries"] = new_summary
