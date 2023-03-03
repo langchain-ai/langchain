@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.schema import BaseMessage, HumanMessage
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -189,6 +190,10 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
+    def format_chat(self, **kwargs: Any) -> List[BaseMessage]:
+        """Create Chat Messages."""
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def _prompt_type(self) -> str:
@@ -233,3 +238,8 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+class ChatMessageMixin(BasePromptTemplate):
+    def format_chat(self, **kwargs: Any) -> List[BaseMessage]:
+        return [HumanMessage(text=self.format(**kwargs))]

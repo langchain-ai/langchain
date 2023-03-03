@@ -1,9 +1,7 @@
 """Common schema objects."""
-
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from dataclasses_json import dataclass_json
+from pydantic import BaseModel
 
 
 class AgentAction(NamedTuple):
@@ -21,9 +19,7 @@ class AgentFinish(NamedTuple):
     log: str
 
 
-@dataclass_json
-@dataclass
-class Generation:
+class Generation(BaseModel):
     """Output of a single generation."""
 
     text: str
@@ -35,13 +31,55 @@ class Generation:
     # TODO: add log probs
 
 
-@dataclass_json
-@dataclass
-class LLMResult:
+class LLMResult(BaseModel):
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
     """List of the things generated. This is List[List[]] because
     each input could have multiple generations."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""
+
+
+class BaseMessage(BaseModel):
+    """Message object."""
+
+    text: str
+
+
+class HumanMessage(BaseMessage):
+    """Type of message that is spoken by the human."""
+
+
+class AIMessage(BaseMessage):
+    """Type of message that is spoken by the AI."""
+
+
+class SystemMessage(BaseMessage):
+    """Type of message that is a system message."""
+
+
+class ChatMessage(BaseMessage):
+    """Type of message with arbitrary speaker."""
+
+    role: str
+
+
+class ChatGeneration(BaseModel):
+    """Output of a single generation."""
+
+    message: BaseMessage
+
+    generation_info: Optional[Dict[str, Any]] = None
+    """Raw generation info response from the provider"""
+    """May include things like reason for finishing (e.g. in OpenAI)"""
+    # TODO: add log probs
+
+
+class ChatResult(BaseModel):
+    """Class that contains all relevant information for a Chat Result."""
+
+    generations: List[ChatGeneration]
+    """List of the things generated."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""

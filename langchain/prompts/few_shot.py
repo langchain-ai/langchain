@@ -5,14 +5,14 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    ChatMessageMixin,
     check_valid_template,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
+class FewShotPromptTemplate(ChatMessageMixin, BaseModel):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None

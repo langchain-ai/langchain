@@ -60,7 +60,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                         execution_order=3,
                         serialized={},
                         prompts=[],
-                        response=LLMResult([[]]),
+                        response=LLMResult(generations=[[]]),
                         session_id=TEST_SESSION_ID,
                     )
                 ],
@@ -74,7 +74,7 @@ def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
                 execution_order=4,
                 serialized={},
                 prompts=[],
-                response=LLMResult([[]]),
+                response=LLMResult(generations=[[]]),
                 session_id=TEST_SESSION_ID,
             ),
         ],
@@ -86,10 +86,10 @@ def _perform_nested_run(tracer: BaseTracer) -> None:
     tracer.on_chain_start(serialized={}, inputs={})
     tracer.on_tool_start(serialized={}, input_str="test")
     tracer.on_llm_start(serialized={}, prompts=[])
-    tracer.on_llm_end(response=LLMResult([[]]))
+    tracer.on_llm_end(response=LLMResult(generations=[[]]))
     tracer.on_tool_end("test")
     tracer.on_llm_start(serialized={}, prompts=[])
-    tracer.on_llm_end(response=LLMResult([[]]))
+    tracer.on_llm_end(response=LLMResult(generations=[[]]))
     tracer.on_chain_end(outputs={})
 
 
@@ -209,7 +209,7 @@ def test_tracer_llm_run() -> None:
         execution_order=1,
         serialized={},
         prompts=[],
-        response=LLMResult([[]]),
+        response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
         error=None,
     )
@@ -217,7 +217,7 @@ def test_tracer_llm_run() -> None:
 
     tracer.new_session()
     tracer.on_llm_start(serialized={}, prompts=[])
-    tracer.on_llm_end(response=LLMResult([[]]))
+    tracer.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
 
 
@@ -237,7 +237,7 @@ def test_tracer_llm_run_errors_no_start() -> None:
 
     tracer.new_session()
     with pytest.raises(TracerException):
-        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_llm_end(response=LLMResult(generations=[[]]))
 
 
 @freeze_time("2023-01-01")
@@ -251,7 +251,7 @@ def test_tracer_multiple_llm_runs() -> None:
         execution_order=1,
         serialized={},
         prompts=[],
-        response=LLMResult([[]]),
+        response=LLMResult(generations=[[]]),
         session_id=TEST_SESSION_ID,
         error=None,
     )
@@ -261,7 +261,7 @@ def test_tracer_multiple_llm_runs() -> None:
     num_runs = 10
     for _ in range(num_runs):
         tracer.on_llm_start(serialized={}, prompts=[])
-        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_llm_end(response=LLMResult(generations=[[]]))
 
     assert tracer.runs == [compare_run] * num_runs
 
@@ -409,9 +409,9 @@ def test_tracer_nested_runs_on_error() -> None:
     for _ in range(3):
         tracer.on_chain_start(serialized={}, inputs={})
         tracer.on_llm_start(serialized={}, prompts=[])
-        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_llm_end(response=LLMResult(generations=[[]]))
         tracer.on_llm_start(serialized={}, prompts=[])
-        tracer.on_llm_end(response=LLMResult([[]]))
+        tracer.on_llm_end(response=LLMResult(generations=[[]]))
         tracer.on_tool_start(serialized={}, input_str="test")
         tracer.on_llm_start(serialized={}, prompts=[])
         tracer.on_llm_error(exception)
