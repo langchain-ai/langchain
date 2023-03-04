@@ -134,7 +134,8 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to the query text with distance in float.
+            List[Tuple[Document, float]]: List of documents most similar to the query
+                text with distance in float.
         """
         if self._embedding_function is None:
             results = self._collection.query(
