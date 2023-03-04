@@ -1,11 +1,12 @@
 from typing import Dict, Optional
 
-from langchain.audio_models.base import AudioBase
-from langchain.utils import get_from_dict_or_env
 from pydantic import Extra, root_validator
 
+from langchain.audio_models.base import AudioBase
+from langchain.utils import get_from_dict_or_env
 
-class WhisperAPI(AudioBase):
+
+class Whisper(AudioBase):
     """Wrapper around Whisper API.
     To use, you should have the ``openai`` python package installed,
     and the environment variable ``OPENAI_API_KEY`` set with your API key.
@@ -13,39 +14,22 @@ class WhisperAPI(AudioBase):
     in, even if not explicitly saved on this class.
     """
 
-    audio_path: str
-
     model_key: str = ""
-    """model endpoint to use"""
-
-    openai_api_key: Optional[str] = None
-
+    prompt: Optional[str] = ""
+    language: Optional[str] = ""
     max_chars: Optional[int] = None
-
-    model: str = "whisper-1"
-
-    prompt: str = None
-
-    response_format: str = "json"
-
-    temperature: int = 0
+    model: Optional[str] = "whisper-1"
+    temperature: Optional[float] = 0.0
+    response_format: Optional[str] = "json"
 
     class Config:
         """Configuration for this pydantic config."""
 
         extra = Extra.forbid
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        values["openai_api_key"] = openai_api_key
-        return values
+    def transcript(self, audio_path: str) -> str:
+        """Call to Whisper transcribe endpoint."""
 
-    def transcribe(self) -> str:
-        """Call to Whisper endpoint."""
         try:
             import openai
         except ImportError:
@@ -53,14 +37,15 @@ class WhisperAPI(AudioBase):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        openai.api_key = model_key
+        openai.api_key = self.model_key
         audio_file = open(audio_path, "rb")
         response = openai.Audio.transcribe(
             file=audio_file,
-            model=model,
-            prompt=prompt,
-            response_format=response_format,
-            temperature=temperature,
+            model=self.model,
+            prompt=self.prompt,
+            language=self.language,
+            temperature=self.temperature,
+            response_format=self.response_format,
         )
         try:
             text = response["text"]
@@ -73,8 +58,11 @@ class WhisperAPI(AudioBase):
                 f"Response was: {response}"
             )
 
-    def translate(self) -> str:
-        """Call to Whisper endpoint."""
+        return text[: self.max_chars] if self.max_chars else text
+
+    def translation(self, audio_path: str) -> str:
+        """Call to Whisper translate endpoint."""
+
         try:
             import openai
         except ImportError:
@@ -82,14 +70,14 @@ class WhisperAPI(AudioBase):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        openai.api_key = model_key
+        openai.api_key = self.model_key
         audio_file = open(audio_path, "rb")
         response = openai.Audio.translate(
             file=audio_file,
-            model=model,
-            prompt=prompt,
-            response_format=response_format,
-            temperature=temperature,
+            model=self.model,
+            prompt=self.prompt,
+            temperature=self.temperature,
+            response_format=self.response_format,
         )
         try:
             text = response["text"]
@@ -105,4 +93,4 @@ class WhisperAPI(AudioBase):
         return text[: self.max_chars] if self.max_chars else text
 
     if __name__ == "__main__":
-        test = WhisperAPI()
+        test = Whisper()

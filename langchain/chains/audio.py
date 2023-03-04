@@ -11,23 +11,23 @@ class AudioChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        return ["mp3_file"]
+        return ["audio_file"]
 
     @property
     def output_keys(self) -> List[str]:
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        if self.output_key is "transcribe":
-            output = {self.output_key: self.audio_model.transcribe().strip()}
-            return output
-
-        if self.output_key is "translate":
-            output = {self.output_key: self.audio_model.translate().strip()}
-            return output
+        if self.output_key is "translation":
+            return {
+                self.output_key: self.audio_model.translation(
+                    inputs["audio_file"]
+                ).strip()
+            }
 
         if self.output_key is "transcript":
-            output = {
-                self.output_key: self.audio_model.transcript(inputs["mp3_file"]).strip()
+            return {
+                self.output_key: self.audio_model.transcript(
+                    inputs["audio_file"]
+                ).strip()
             }
-            return output
