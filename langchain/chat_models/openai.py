@@ -63,8 +63,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.chat import OpenAI
-            openai = OpenAI(model_name="gpt-3.5-turbo")
+            from langchain.chat_models import ChatOpenAI
+            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
     client: Any  #: :meta private:

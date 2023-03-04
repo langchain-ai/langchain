@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import BaseMessage, ChatGeneration, ChatResult, LLMResult
+from langchain.schema import AIMessage, BaseMessage, ChatGeneration, ChatResult, LLMResult
 
 
 def _get_verbosity() -> bool:
@@ -61,13 +61,11 @@ class BaseChatModel(BaseModel, ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    role: str = "assistant"
-
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         output_str = self._call(messages, stop=stop)
-        message = BaseMessage(text=output_str, role=self.role)
+        message = AIMessage(text=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
