@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
@@ -17,6 +17,12 @@ class BaseChatModel(BaseModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(
@@ -48,7 +54,7 @@ class BaseChatModel(BaseModel, ABC):
     ) -> ChatResult:
         """Top Level call"""
 
-    def run(
+    def __call__(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> BaseMessage:
         return self._generate(messages, stop=stop).generations[0].message

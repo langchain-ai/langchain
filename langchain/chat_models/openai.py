@@ -79,6 +79,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+    max_tokens: int = 256
+    """Maximum number of tokens to generate."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -131,7 +133,13 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return self.model_kwargs
+        return {
+            "model": self.model_name,
+            "max_tokens": self.max_tokens,
+            "stream": self.streaming,
+            "n": self.n,
+            **self.model_kwargs,
+        }
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
         import openai
@@ -176,6 +184,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         if self.streaming:
             inner_completion = ""
             role = "assistant"
+            params["stream"] = True
             for stream_resp in self.completion_with_retry(
                 messages=message_dicts, **params
             ):
