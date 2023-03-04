@@ -15,7 +15,6 @@ from pydantic import BaseModel, root_validator, validator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
@@ -38,7 +37,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             values.get("document_ids") or values.get("file_ids")
         ):
             raise ValueError(
-                "Cannot specify both folder_id and document_ids nor folder_id and file_ids"
+                "Cannot specify both folder_id and document_ids nor "
+                "folder_id and file_ids"
             )
         if (
             not values.get("folder_id")
@@ -125,18 +125,16 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .execute()
         )
         items = results.get("files", [])
+        returns = []
+        for item in items:
+            if item["mimeType"] == "application/vnd.google-apps.document":
+                returns.append(self._load_document_from_id(item["id"]))
+            elif item["mimeType"] == "application/pdf":
+                returns.extend(self._load_file_from_id(item["id"]))
+            else:
+                pass
 
-        return [
-            self._load_document_from_id(item["id"])
-            # Google Docs Support
-            if item["mimeType"] == "application/vnd.google-apps.document"
-            else self._load_file_from_id(item["id"])
-            # PDF Google Files Support
-            if item["mimeType"]
-            == "application/pdf"  # or item["mimeType"] == "application/vnd.google-apps.file"
-            else None
-            for item in items
-        ]
+        return returns
 
     def _load_documents_from_ids(self) -> List[Document]:
         """Load documents from a list of IDs."""
@@ -145,13 +143,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         return [self._load_document_from_id(doc_id) for doc_id in self.document_ids]
 
-    def _load_file_from_id(self, id: str) -> Document:
+    def _load_file_from_id(self, id: str) -> List[Document]:
         """Load a file from an ID."""
         from io import BytesIO
 
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
-        from pdfminer.high_level import extract_text
 
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
@@ -179,12 +176,14 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             for i, page in enumerate(pdf_reader.pages)
         ]
 
-    def _load_file_from_ids(self) -> Document:
+    def _load_file_from_ids(self) -> List[Document]:
         """Load files from a list of IDs."""
         if not self.file_ids:
             raise ValueError("file_ids must be set")
-
-        return [self._load_file_from_id(file_id) for file_id in self.file_ids]
+        docs = []
+        for file_id in self.file_ids:
+            docs.extend(self._load_file_from_id(file_id))
+        return docs
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -194,14 +193,3 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             return self._load_documents_from_ids()
         else:
             return self._load_file_from_ids()
-
-    def load_and_split(
-        self, text_splitter: Optional[TextSplitter] = None
-    ) -> List[Document]:
-        """Load documents and split into chunks."""
-        if text_splitter is None:
-            _text_splitter: TextSplitter = RecursiveCharacterTextSplitter()
-        else:
-            _text_splitter = text_splitter
-        docs = self.load()
-        return [_text_splitter.split_documents(doc) for doc in docs]
