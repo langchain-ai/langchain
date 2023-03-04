@@ -1,4 +1,5 @@
 """Test memory functionality."""
+from langchain.chains.base import SimpleMemory
 from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -29,3 +30,13 @@ def test_summary_buffer_memory_summary() -> None:
     assert memory.buffer == ["Human: bar1\nAI: foo1"]
     output = memory.load_memory_variables({})
     assert output == {"baz": "foo\nHuman: bar1\nAI: foo1"}
+
+
+def test_simple_memory() -> None:
+    """Test SimpleMemory."""
+    memory = SimpleMemory(memories={"baz": "foo"})
+
+    output = memory.load_memory_variables({})
+
+    assert output == {"baz": "foo"}
+    assert ["baz"] == memory.memory_variables
