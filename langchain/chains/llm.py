@@ -131,10 +131,12 @@ class LLMChain(Chain, BaseModel):
         ]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        return self.apply([inputs])[0]
+        known_values = self.prep_inputs(inputs.copy())
+        return self.apply([known_values])[0]
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        return (await self.aapply([inputs]))[0]
+        known_values = self.prep_inputs(inputs.copy())
+        return (await self.aapply([known_values]))[0]
 
     def predict(self, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.
