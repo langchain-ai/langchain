@@ -116,25 +116,10 @@ class Chroma(VectorStore):
         Returns:
             List[Document]: List of documents most simmilar to the query text.
         """
-        if self._embedding_function is None:
-            results = self._collection.query(
-                query_texts=[query], n_results=k, where=filter
-            )
-        else:
-            query_embedding = self._embedding_function.embed_query(query)
-            results = self._collection.query(
-                query_embeddings=[query_embedding], n_results=k, where=filter
-            )
+        docs_and_scores = self.similarity_search_with_score(query, k)
+        return [doc for doc, _ in docs_and_scores]
 
-        docs = [
-            # TODO: Chroma can do batch querying,
-            # we shouldn't hard code to the 1st result
-            Document(page_content=result[0], metadata=result[1])
-            for result in zip(results["documents"][0], results["metadatas"][0])
-        ]
-        return docs
-
-    def similarity_search_with_distance(
+    def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
@@ -168,7 +153,7 @@ class Chroma(VectorStore):
             for result in zip(
                 results["documents"][0],
                 results["metadatas"][0],
-                distances["distances"][0],
+                results["distances"][0],
             )
         ]
         return docs
