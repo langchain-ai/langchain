@@ -34,9 +34,17 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
-        if (values.get("folder_id") and (values.get("document_ids") or values.get("file_ids"))):
-            raise ValueError("Cannot specify both folder_id and document_ids nor folder_id and file_ids")
-        if (not values.get("folder_id") and not values.get("document_ids") and not values.get("file_ids")):
+        if values.get("folder_id") and (
+            values.get("document_ids") or values.get("file_ids")
+        ):
+            raise ValueError(
+                "Cannot specify both folder_id and document_ids nor folder_id and file_ids"
+            )
+        if (
+            not values.get("folder_id")
+            and not values.get("document_ids")
+            and not values.get("file_ids")
+        ):
             raise ValueError("Must specify either folder_id, document_ids, or file_ids")
         return values
 
@@ -122,9 +130,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             self._load_document_from_id(item["id"])
             # Google Docs Support
             if item["mimeType"] == "application/vnd.google-apps.document"
-            else self._load_file_from_id(item["id"]) 
+            else self._load_file_from_id(item["id"])
             # PDF Google Files Support
-            if item["mimeType"] == "application/pdf" #or item["mimeType"] == "application/vnd.google-apps.file"
+            if item["mimeType"]
+            == "application/pdf"  # or item["mimeType"] == "application/vnd.google-apps.file"
             else None
             for item in items
         ]
@@ -142,7 +151,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
-
         from pdfminer.high_level import extract_text
 
         creds = self._load_credentials()
@@ -155,14 +163,18 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         while done is False:
             status, done = downloader.next_chunk()
         content = fh.getvalue()
-        
+
         from PyPDF2 import PdfReader
+
         pdf_reader = PdfReader(BytesIO(content))
 
         return [
             Document(
                 page_content=page.extract_text(),
-                metadata={"source": f"https://drive.google.com/file/d/{id}/view", "page": i},
+                metadata={
+                    "source": f"https://drive.google.com/file/d/{id}/view",
+                    "page": i,
+                },
             )
             for i, page in enumerate(pdf_reader.pages)
         ]
@@ -171,7 +183,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         """Load files from a list of IDs."""
         if not self.file_ids:
             raise ValueError("file_ids must be set")
-        
+
         return [self._load_file_from_id(file_id) for file_id in self.file_ids]
 
     def load(self) -> List[Document]:
@@ -180,7 +192,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             return self._load_documents_from_folder()
         elif self.document_ids:
             return self._load_documents_from_ids()
-        else: 
+        else:
             return self._load_file_from_ids()
 
     def load_and_split(
