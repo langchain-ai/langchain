@@ -1,9 +1,8 @@
-from typing import Dict, Optional
+from typing import Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra
 
 from langchain.audio_models.base import AudioBase
-from langchain.utils import get_from_dict_or_env
 
 
 class Whisper(AudioBase):

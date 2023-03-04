@@ -18,7 +18,7 @@ class AudioChain(Chain):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        if self.output_key is "translation":
+        if self.output_key == "translation":
             return {
                 self.output_key: self.audio_model.translation(
                     inputs["audio_file"]
