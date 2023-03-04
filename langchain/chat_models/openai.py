@@ -26,6 +26,31 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__file__)
 
 
+def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+    role = _dict["role"]
+    if role == "user":
+        return HumanMessage(text=_dict["content"])
+    elif role == "assistant":
+        return AIMessage(text=_dict["content"])
+    elif role == "systemt":
+        return SystemMessage(text=_dict["content"])
+    else:
+        return ChatMessage(text=_dict["content"], role=role)
+
+
+def _convert_message_to_dict(message: BaseMessage) -> dict:
+    if isinstance(message, ChatMessage):
+        return {"role": message.role, "content": message.text}
+    elif isinstance(message, HumanMessage):
+        return {"role": "user", "content": message.text}
+    elif isinstance(message, AIMessage):
+        return {"role": "assistant", "content": message.text}
+    elif isinstance(message, SystemMessage):
+        return {"role": "system", "content": message.text}
+    else:
+        raise ValueError(f"Got unknown type {message}")
+
+
 class ChatOpenAI(BaseChatModel, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
@@ -50,6 +75,10 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     openai_api_key: Optional[str] = None
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
+    n: int = 1
+    """Number of chat completions to generate for each prompt."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -93,6 +122,10 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
@@ -131,29 +164,6 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         return _completion_with_retry(**kwargs)
 
-    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
-        if isinstance(message, ChatMessage):
-            return {"role": message.role, "content": message.text}
-        elif isinstance(message, HumanMessage):
-            return {"role": "user", "content": message.text}
-        elif isinstance(message, AIMessage):
-            return {"role": "assistant", "content": message.text}
-        elif isinstance(message, SystemMessage):
-            return {"role": "system", "content": message.text}
-        else:
-            raise ValueError(f"Got unknown type {message}")
-
-    def _convert_dict_to_message(self, _dict: dict) -> BaseMessage:
-        role = _dict["role"]
-        if role == "user":
-            return HumanMessage(text=_dict["content"])
-        elif role == "assistant":
-            return AIMessage(text=_dict["content"])
-        elif role == "systemt":
-            return SystemMessage(text=_dict["content"])
-        else:
-            return ChatMessage(text=_dict["content"], role=role)
-
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
@@ -162,11 +172,28 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [self._convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        if self.streaming:
+            inner_completion = ""
+            role = "assistant"
+            for stream_resp in self.completion_with_retry(
+                messages=message_dicts, **params
+            ):
+                role = stream_resp["choices"][0]["delta"].get("role", role)
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                inner_completion += token
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+            message = _convert_dict_to_message(
+                {"content": inner_completion, "role": role}
+            )
+            return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
         generations = []
         for res in response["choices"]:
-            message = self._convert_message_to_dict(res["message"])
+            message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(message=message)
             generations.append(gen)
         return ChatResult(generations=generations)
