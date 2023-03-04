@@ -87,12 +87,10 @@ class SequentialChain(Chain, BaseModel):
         return values
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        known_values = self.prep_inputs(inputs.copy())
-
+        known_values = inputs.copy()
         for i, chain in enumerate(self.chains):
             outputs = chain(known_values, return_only_outputs=True)
             known_values.update(outputs)
-
         return {k: known_values[k] for k in self.output_variables}
 
 

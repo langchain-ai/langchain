@@ -27,9 +27,7 @@ class Memory(BaseModel, ABC):
         """Input keys this memory class will load dynamically."""
 
     @abstractmethod
-    def load_memory_variables(
-        self, inputs: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return key-value pairs given the text input to the chain.
 
         If None, return all memories
@@ -55,16 +53,16 @@ class SimpleMemory(Memory, BaseModel):
     def memory_variables(self) -> List[str]:
         return list(self.memories.keys())
 
-    def load_memory_variables(
-        self, inputs: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.memories
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Nothing should be saved or changed, my memory is set in stone."""
+        pass
 
     def clear(self) -> None:
         """Nothing to clear, got a memory like a vault."""
+        pass
 
 
 def _get_verbosity() -> bool:
