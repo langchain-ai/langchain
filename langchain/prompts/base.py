@@ -116,6 +116,28 @@ class RegexParser(BaseOutputParser, BaseModel):
                 }
 
 
+class PromptValue(BaseModel, ABC):
+    @abstractmethod
+    def to_string(self) -> str:
+        """Return prompt as string."""
+
+    @abstractmethod
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+
+
+class StringPromptValue(PromptValue):
+    text: str
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return self.text
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return [HumanMessage(text=self.text)]
+
+
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
@@ -190,9 +212,9 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    def format_chat(self, **kwargs: Any) -> List[BaseMessage]:
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
-        raise NotImplementedError
+        return StringPromptValue(text=self.format(**kwargs))
 
     @property
     @abstractmethod
@@ -238,8 +260,3 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
-
-
-class ChatMessageMixin(BasePromptTemplate):
-    def format_chat(self, **kwargs: Any) -> List[BaseMessage]:
-        return [HumanMessage(text=self.format(**kwargs))]
