@@ -28,6 +28,20 @@ def test_chroma_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+def test_chroma_with_metadatas_with_scores() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search_with_score("foo", k=1)
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+
+
 def test_chroma_with_persistence() -> None:
     """Test end to end construction and search, with persistence."""
     chroma_persist_dir = "./tests/persist_dir"
