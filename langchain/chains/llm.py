@@ -1,4 +1,6 @@
 """Chain that just formats a prompt and calls an LLM."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import BaseModel, Extra
@@ -12,7 +14,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseMessage, ChatResult, LLMResult
 
 
-class BaseLLMChain(Chain, BaseModel):
+class LLMChain(Chain, BaseModel):
     """Chain to run queries against LLMs.
 
     Example:
@@ -29,6 +31,15 @@ class BaseLLMChain(Chain, BaseModel):
     prompt: BasePromptTemplate
     """Prompt object to use."""
     output_key: str = "text"  #: :meta private:
+
+    def __new__(cls, **data: Any) -> LLMChain:
+        """Initialize the chain object."""
+        if isinstance(data["llm"], BaseLLM):
+            return LLMModelChain(**data)
+        elif isinstance(data["llm"], BaseChatModel):
+            return ChatModelChain(**data)
+        else:
+            raise ValueError
 
     class Config:
         """Configuration for this pydantic object."""
@@ -140,7 +151,7 @@ class BaseLLMChain(Chain, BaseModel):
         return cls(llm=llm, prompt=prompt_template)
 
 
-class LLMChain(BaseLLMChain):
+class LLMModelChain(LLMChain):
     llm: BaseLLM
     """LLM wrapper to use."""
 
@@ -225,7 +236,7 @@ class LLMChain(BaseLLMChain):
         ]
 
 
-class ChatModelChain(BaseLLMChain):
+class ChatModelChain(LLMChain):
     llm: BaseChatModel
     """LLM wrapper to use."""
 
@@ -309,14 +320,3 @@ class ChatModelChain(BaseLLMChain):
             {self.output_key: res.generations[0].message.text}
             for res in response
         ]
-
-
-def get_llm_chain(
-    model: Union[BaseLLM, BaseChatModel], prompt: BasePromptTemplate, **kwargs: Any
-) -> BaseLLMChain:
-    if isinstance(model, BaseLLM):
-        return BaseLLMChain(llm=model, prompt=prompt, **kwargs)
-    elif isinstance(model, BaseChatModel):
-        return ChatModelChain(llm=model, prompt=prompt, **kwargs)
-    else:
-        raise ValueError(f"Got unknown type {type(model)}")

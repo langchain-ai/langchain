@@ -80,7 +80,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         """Get the prompt length by formatting the prompt."""
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain.llm.get_num_tokens(prompt)
+        return self.llm_chain.get_num_tokens(prompt)
 
     def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM."""
