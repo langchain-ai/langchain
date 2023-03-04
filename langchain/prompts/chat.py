@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Tuple, Type, Union
 
 from pydantic import BaseModel
 
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, PromptValue
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AIMessage,
@@ -51,6 +51,18 @@ class SystemMessagePromptTemplate(BaseMessagePromptTemplate):
         return SystemMessage(text=text)
 
 
+class ChatPromptValue(PromptValue):
+    messages: List[BaseMessage]
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return str(self.messages)
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return self.messages
+
+
 class ChatPromptTemplate(BasePromptTemplate, ABC):
     input_variables: List[str]
     messages: List[BaseMessagePromptTemplate]
@@ -80,10 +92,9 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         return cls(input_variables=list(input_vars), messages=messages)
 
     def format(self, **kwargs: Any) -> str:
-        return str(self.format_chat(**kwargs))
+        return self.format_prompt().to_string()
 
-    def format_chat(self, **kwargs: Any) -> List[BaseMessage]:
-        """Format message templates."""
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
         result = []
         for message_template in self.messages:
             rel_params = {
@@ -93,7 +104,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
             }
             message = message_template.format(**rel_params)
             result.append(message)
-        return result
+        return ChatPromptValue(messages=result)
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
         raise NotImplementedError

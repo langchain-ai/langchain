@@ -1,20 +1,22 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from langchain.schema import BaseMessage, ChatGeneration, ChatResult
+from langchain.schema import BaseMessage, ChatGeneration, ChatResult, LLMResult
 
 
 class BaseChatModel(ABC):
     def generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+        self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
+    ) -> LLMResult:
         """Top Level call"""
-        # Nothing here now, but future proofing.
-        return self._generate(messages, stop=stop)
+        results = []
+        for m in messages:
+            results.append(self._generate(m, stop=stop))
+        return LLMResult(generations=[res.generations for res in results])
 
     async def agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+        self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
+    ) -> LLMResult:
         raise NotImplementedError
 
     @abstractmethod
@@ -26,8 +28,7 @@ class BaseChatModel(ABC):
     def run(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> BaseMessage:
-        res = self.generate(messages, stop=stop)
-        return res.generations[0].message
+        return self._generate(messages, stop=stop).generations[0].message
 
 
 class SimpleChatModel(BaseChatModel):

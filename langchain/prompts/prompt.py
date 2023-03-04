@@ -9,12 +9,12 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    ChatMessageMixin,
+    BasePromptTemplate,
     check_valid_template,
 )
 
 
-class PromptTemplate(ChatMessageMixin, BaseModel):
+class PromptTemplate(BasePromptTemplate, BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:

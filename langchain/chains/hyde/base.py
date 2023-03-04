@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
-from langchain.chains.llm import LLMChain, LLMModelChain
+from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
 from langchain.llms.base import BaseLLM
 
@@ -23,7 +23,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):
     """
 
     base_embeddings: Embeddings
-    llm_chain: LLMModelChain
+    llm_chain: LLMChain
 
     class Config:
         """Configuration for this pydantic object."""

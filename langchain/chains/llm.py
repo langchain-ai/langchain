@@ -9,9 +9,9 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, PromptValue
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseMessage, ChatResult, LLMResult
+from langchain.schema import LLMResult
 
 
 class LLMChain(Chain, BaseModel):
@@ -30,16 +30,8 @@ class LLMChain(Chain, BaseModel):
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
+    llm: Union[BaseLLM, BaseChatModel]
     output_key: str = "text"  #: :meta private:
-
-    def __new__(cls, **data: Any) -> LLMChain:
-        """Initialize the chain object."""
-        if isinstance(data["llm"], BaseLLM):
-            return LLMModelChain(**data)
-        elif isinstance(data["llm"], BaseChatModel):
-            return ChatModelChain(**data)
-        else:
-            raise ValueError
 
     class Config:
         """Configuration for this pydantic object."""
@@ -66,12 +58,105 @@ class LLMChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
 
+    def get_num_tokens(self, prompt: str) -> int:
+        if isinstance(self.llm, BaseLLM):
+            return self.llm.get_num_tokens(prompt)
+        elif isinstance(self.llm, BaseChatModel):
+            raise ValueError("Not supported for chat models yet")
+        else:
+            raise ValueError
+
+    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+        """Generate LLM result from inputs."""
+        prompts, stop = self.prep_prompts(input_list)
+        if isinstance(self.llm, BaseLLM):
+            string_prompts = [p.to_string() for p in prompts]
+            response = self.llm.generate(string_prompts, stop=stop)
+        elif isinstance(self.llm, BaseChatModel):
+            chat_prompts = [p.to_messages() for p in prompts]
+            response = self.llm.generate(chat_prompts, stop=stop)
+        else:
+            raise ValueError
+
+        return response
+
+    async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+        """Generate LLM result from inputs."""
+        prompts, stop = await self.aprep_prompts(input_list)
+        if isinstance(self.llm, BaseLLM):
+            string_prompts = [p.to_string() for p in prompts]
+            response = await self.llm.agenerate(string_prompts, stop=stop)
+        elif isinstance(self.llm, BaseChatModel):
+            chat_prompts = [p.to_messages() for p in prompts]
+            response = await self.llm.agenerate(chat_prompts, stop=stop)
+        else:
+            raise ValueError
+        return response
+
+    def prep_prompts(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+        """Prepare prompts from inputs."""
+        stop = None
+        if "stop" in input_list[0]:
+            stop = input_list[0]["stop"]
+        prompts = []
+        for inputs in input_list:
+            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            prompt = self.prompt.format_prompt(**selected_inputs)
+            _colored_text = get_colored_text(prompt.to_string(), "green")
+            _text = "Prompt after formatting:\n" + _colored_text
+            self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if "stop" in inputs and inputs["stop"] != stop:
+                raise ValueError(
+                    "If `stop` is present in any inputs, should be present in all."
+                )
+            prompts.append(prompt)
+        return prompts, stop
+
+    async def aprep_prompts(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+        """Prepare prompts from inputs."""
+        stop = None
+        if "stop" in input_list[0]:
+            stop = input_list[0]["stop"]
+        prompts = []
+        for inputs in input_list:
+            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            prompt = self.prompt.format_prompt(**selected_inputs)
+            _colored_text = get_colored_text(prompt.to_string(), "green")
+            _text = "Prompt after formatting:\n" + _colored_text
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_text(
+                    _text, end="\n", verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if "stop" in inputs and inputs["stop"] != stop:
+                raise ValueError(
+                    "If `stop` is present in any inputs, should be present in all."
+                )
+            prompts.append(prompt)
+        return prompts, stop
+
+    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Utilize the LLM generate method for speed gains."""
+        response = self.generate(input_list)
+        return self.create_outputs(response)
+
     async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        raise NotImplementedError
+        response = await self.agenerate(input_list)
+        return self.create_outputs(response)
 
-    def get_num_tokens(self, prompt: str) -> int:
-        raise NotImplementedError
+    def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
+        """Create outputs from response."""
+        return [
+            # Get the text of the top generated string.
+            {self.output_key: generation[0].text}
+            for generation in response.generations
+        ]
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
@@ -149,174 +234,3 @@ class LLMChain(Chain, BaseModel):
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
-
-
-class LLMModelChain(LLMChain):
-    llm: BaseLLM
-    """LLM wrapper to use."""
-
-    def get_num_tokens(self, prompt: str) -> int:
-        return self.llm.get_num_tokens(prompt)
-
-    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
-        """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
-        response = self.llm.generate(prompts, stop=stop)
-        return response
-
-    async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
-        """Generate LLM result from inputs."""
-        prompts, stop = await self.aprep_prompts(input_list)
-        response = await self.llm.agenerate(prompts, stop=stop)
-        return response
-
-    def prep_prompts(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[str], Optional[List[str]]]:
-        """Prepare prompts from inputs."""
-        stop = None
-        if "stop" in input_list[0]:
-            stop = input_list[0]["stop"]
-        prompts = []
-        for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format(**selected_inputs)
-            _colored_text = get_colored_text(prompt, "green")
-            _text = "Prompt after formatting:\n" + _colored_text
-            self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
-            if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
-            prompts.append(prompt)
-        return prompts, stop
-
-    async def aprep_prompts(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[str], Optional[List[str]]]:
-        """Prepare prompts from inputs."""
-        stop = None
-        if "stop" in input_list[0]:
-            stop = input_list[0]["stop"]
-        prompts = []
-        for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format(**selected_inputs)
-            _colored_text = get_colored_text(prompt, "green")
-            _text = "Prompt after formatting:\n" + _colored_text
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_text(
-                    _text, end="\n", verbose=self.verbose
-                )
-            else:
-                self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
-            if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
-            prompts.append(prompt)
-        return prompts, stop
-
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Utilize the LLM generate method for speed gains."""
-        response = self.generate(input_list)
-        return self.create_outputs(response)
-
-    async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Utilize the LLM generate method for speed gains."""
-        response = await self.agenerate(input_list)
-        return self.create_outputs(response)
-
-    def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
-        """Create outputs from response."""
-        return [
-            # Get the text of the top generated string.
-            {self.output_key: generation[0].text}
-            for generation in response.generations
-        ]
-
-
-class ChatModelChain(LLMChain):
-    llm: BaseChatModel
-    """LLM wrapper to use."""
-
-    def generate(self, input_list: List[Dict[str, Any]]) -> List[ChatResult]:
-        """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
-        results = []
-        for prompt in prompts:
-            results.append(self.llm.generate(prompt, stop=stop))
-        return results
-
-    async def agenerate(self, input_list: List[Dict[str, Any]]) -> List[ChatResult]:
-        """Generate LLM result from inputs."""
-        prompts, stop = await self.aprep_prompts(input_list)
-        results = []
-        for prompt in prompts:
-            results.append(await self.llm.agenerate(prompt, stop=stop))
-        return results
-
-    def prep_prompts(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[List[BaseMessage]], Optional[List[str]]]:
-        """Prepare prompts from inputs."""
-        stop = None
-        if "stop" in input_list[0]:
-            stop = input_list[0]["stop"]
-        prompts = []
-        for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format_chat(**selected_inputs)
-            _colored_text = get_colored_text(str(prompt), "green")
-            _text = "Prompt after formatting:\n" + _colored_text
-            self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
-            if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
-            prompts.append(prompt)
-        return prompts, stop
-
-    async def aprep_prompts(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[List[BaseMessage]], Optional[List[str]]]:
-        """Prepare prompts from inputs."""
-        stop = None
-        if "stop" in input_list[0]:
-            stop = input_list[0]["stop"]
-        prompts = []
-        for inputs in input_list:
-            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format_chat(**selected_inputs)
-            _colored_text = get_colored_text(str(prompt), "green")
-            _text = "Prompt after formatting:\n" + _colored_text
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_text(
-                    _text, end="\n", verbose=self.verbose
-                )
-            else:
-                self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
-            if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
-            prompts.append(prompt)
-        return prompts, stop
-
-    def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Utilize the LLM generate method for speed gains."""
-        response = self.generate(input_list)
-        return self.create_outputs(response)
-
-    async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """Utilize the LLM generate method for speed gains."""
-        response = await self.agenerate(input_list)
-        return self.create_outputs(response)
-
-    def create_outputs(self, response: List[ChatResult]) -> List[Dict[str, str]]:
-        """Create outputs from response."""
-        return [
-            # Get the text of the top generated string.
-            {self.output_key: res.generations[0].message.text}
-            for res in response
-        ]
