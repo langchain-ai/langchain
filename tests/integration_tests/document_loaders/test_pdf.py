@@ -1,7 +1,10 @@
 from pathlib import Path
 
-from langchain.document_loaders import PyMuPDFLoader, UnstructuredPDFLoader, \
-    PDFMinerLoader
+from langchain.document_loaders import (
+    PDFMinerLoader,
+    PyMuPDFLoader,
+    UnstructuredPDFLoader,
+)
 
 
 def test_unstructured_pdf_loader() -> None:

@@ -24,8 +24,11 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.online_pdf import OnlinePDFLoader
 from langchain.document_loaders.paged_pdf import PagedPDFSplitter
-from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader, \
-    PyMuPDFLoader
+from langchain.document_loaders.pdf import (
+    PDFMinerLoader,
+    PyMuPDFLoader,
+    UnstructuredPDFLoader,
+)
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader

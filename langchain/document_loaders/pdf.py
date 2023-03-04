@@ -1,5 +1,5 @@
 """Loader that loads PDF files."""
-from typing import List, Any, Optional
+from typing import Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -40,12 +40,12 @@ class PDFMinerLoader(BaseLoader):
 
 
 class PyMuPDFLoader(BaseLoader):
-    """ Loader that uses PyMuPDF to load PDF files."""
+    """Loader that uses PyMuPDF to load PDF files."""
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
         try:
-            import fitz
+            import fitz  # noqa:F401
         except ImportError:
             raise ValueError(
                 "PyMuPDF package not found, please install it with "
@@ -60,9 +60,14 @@ class PyMuPDFLoader(BaseLoader):
 
         doc = fitz.open(self.file_path)  # open document
         return [
-            Document(page_content=page.get_text(**kwargs).encode('utf-8'),
-                     metadata={"file_path": self.file_path,
-                               'page_number': page.number + 1,
-                               'total_pages': len(doc)} | doc.metadata)
+            Document(
+                page_content=page.get_text(**kwargs).encode("utf-8"),
+                metadata={
+                    "file_path": self.file_path,
+                    "page_number": page.number + 1,
+                    "total_pages": len(doc),
+                }
+                | doc.metadata,
+            )
             for page in doc
         ]
