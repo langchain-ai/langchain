@@ -28,7 +28,7 @@ class Chroma(VectorStore):
     """
 
     def __init__(
-        self, collection_name: str, embedding_function: Optional[Embeddings] = None
+        self, collection_name: str, embedding_function: Optional[Embeddings] = None, server_host: Optional[str] = None
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -40,7 +40,13 @@ class Chroma(VectorStore):
             )
 
         # TODO: Add support for custom client. For now this is in-memory only.
-        self._client = chromadb.Client()
+        self._client =  chromadb.Client() if server_host==None else chromadb.Client(
+            chromadb.Settings(
+                chroma_api_impl='rest',
+                chroma_server_host=server_host,
+                chroma_server_http_port=8000
+            )
+        )
         self._embedding_function = embedding_function
 
         # Check if the collection exists, create it if not
