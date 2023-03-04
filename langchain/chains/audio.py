@@ -25,9 +25,6 @@ class AudioChain(Chain):
                 ).strip()
             }
 
-        if self.output_key is "transcript":
-            return {
-                self.output_key: self.audio_model.transcript(
-                    inputs["audio_file"]
-                ).strip()
-            }
+        return {
+            self.output_key: self.audio_model.transcript(inputs["audio_file"]).strip()
+        }
