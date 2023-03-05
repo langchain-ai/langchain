@@ -2,7 +2,13 @@
 """Load tools."""
 from typing import Any, List, Optional
 
-from langchain.agents.tools import Tool
+from langchain.agents.tools import (
+    Tool,
+    register_tool,
+    register_llm_tool,
+    _TOOLS,
+    _LLM_TOOLS,
+)
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
@@ -27,14 +33,17 @@ from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
+@register_tool("python_repl")
 def _get_python_repl() -> BaseTool:
     return PythonREPLTool()
 
 
+@register_tool("requests")
 def _get_requests() -> BaseTool:
     return RequestsGetTool(requests_wrapper=RequestsWrapper())
 
 
+@register_tool("terminal")
 def _get_terminal() -> BaseTool:
     return Tool(
         name="Terminal",
@@ -43,13 +52,7 @@ def _get_terminal() -> BaseTool:
     )
 
 
-_BASE_TOOLS = {
-    "python_repl": _get_python_repl,
-    "requests": _get_requests,
-    "terminal": _get_terminal,
-}
-
-
+@register_llm_tool("pal-math")
 def _get_pal_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="PAL-MATH",
@@ -58,6 +61,7 @@ def _get_pal_math(llm: BaseLLM) -> BaseTool:
     )
 
 
+@register_llm_tool("pal-colored-objects")
 def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="PAL-COLOR-OBJ",
@@ -66,6 +70,7 @@ def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     )
 
 
+@register_llm_tool("llm-math")
 def _get_llm_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Calculator",
@@ -75,6 +80,7 @@ def _get_llm_math(llm: BaseLLM) -> BaseTool:
     )
 
 
+@register_llm_tool("open-meteo-api")
 def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
@@ -84,14 +90,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS = {
-    "pal-math": _get_pal_math,
-    "pal-colored-objects": _get_pal_colored_objects,
-    "llm-math": _get_llm_math,
-    "open-meteo-api": _get_open_meteo_api,
-}
-
-
+@register_tool("news-api", ["news_api_key"])
 def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
@@ -104,6 +103,7 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
+@register_tool("tmdb-api", ["tmdb_bearer_token"])
 def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     chain = APIChain.from_llm_and_api_docs(
@@ -118,18 +118,22 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
+@register_tool("wolfram-alpha", ["wolfram_alpha_appid"])
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
     return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
 
+@register_tool("google-search", ["google_api_key", "google_cse_id"])
 def _get_google_search(**kwargs: Any) -> BaseTool:
     return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
+@register_tool("wikipedia", ["top_k_results"])
 def _get_wikipedia(**kwargs: Any) -> BaseTool:
     return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
 
 
+@register_tool("google-search-results-json", ["serper_api_key"])
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Serper Search",
@@ -138,10 +142,14 @@ def _get_google_serper(**kwargs: Any) -> BaseTool:
     )
 
 
+@register_tool(
+    "google-search-results-json", ["google_api_key", "google_cse_id", "num_results"]
+)
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
+@register_tool("serpapi", ["serpapi_api_key", "aiosession"])
 def _get_serpapi(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Search",
@@ -151,6 +159,7 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
     )
 
 
+@register_tool("searx-search", ["searx_host"])
 def _get_searx_search(**kwargs: Any) -> BaseTool:
     return Tool(
         name="SearX Search",
@@ -159,28 +168,9 @@ def _get_searx_search(**kwargs: Any) -> BaseTool:
     )
 
 
+@register_tool("bing-search", ["bing_subscription_key", "bing_search_url"])
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
-
-
-_EXTRA_LLM_TOOLS = {
-    "news-api": (_get_news_api, ["news_api_key"]),
-    "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
-}
-
-_EXTRA_OPTIONAL_TOOLS = {
-    "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
-    "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
-    "google-search-results-json": (
-        _get_google_search_results_json,
-        ["google_api_key", "google_cse_id", "num_results"],
-    ),
-    "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
-    "google-serper": (_get_google_serper, ["serper_api_key"]),
-    "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "searx-search": (_get_searx_search, ["searx_host"]),
-    "wikipedia": (_get_wikipedia, ["top_k_results"]),
-}
 
 
 def load_tools(
@@ -201,47 +191,32 @@ def load_tools(
     """
     tools = []
     for name in tool_names:
-        if name in _BASE_TOOLS:
-            tools.append(_BASE_TOOLS[name]())
+        if name in _TOOLS:
+            _get_tool_func, extra_keys = _TOOLS[name]
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
-            tool = _LLM_TOOLS[name](llm)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
-            tools.append(tool)
-        elif name in _EXTRA_LLM_TOOLS:
-            if llm is None:
-                raise ValueError(f"Tool {name} requires an LLM to be provided")
-            _get_llm_tool_func, extra_keys = _EXTRA_LLM_TOOLS[name]
-            missing_keys = set(extra_keys).difference(kwargs)
-            if missing_keys:
-                raise ValueError(
-                    f"Tool {name} requires some parameters that were not "
-                    f"provided: {missing_keys}"
-                )
-            sub_kwargs = {k: kwargs[k] for k in extra_keys}
-            tool = _get_llm_tool_func(llm=llm, **sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
-            tools.append(tool)
-        elif name in _EXTRA_OPTIONAL_TOOLS:
-            _get_tool_func, extra_keys = _EXTRA_OPTIONAL_TOOLS[name]
-            sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
-            tool = _get_tool_func(**sub_kwargs)
-            if callback_manager is not None:
-                tool.callback_manager = callback_manager
-            tools.append(tool)
+            _get_tool_func, extra_keys = _LLM_TOOLS[name]
+            extra_keys += ["llm"]
         else:
             raise ValueError(f"Got unknown tool {name}")
+
+        missing_keys = set(extra_keys).difference(kwargs)
+        if missing_keys:
+            raise ValueError(
+                f"Tool {name} requires some parameters that were not "
+                f"provided: {missing_keys}"
+            )
+        sub_kwargs = {k: kwargs[k] for k in extra_keys if k in kwargs}
+
+        tool = _get_tool_func(**sub_kwargs)
+        if callback_manager is not None:
+            tool.callback_manager = callback_manager
+        tools.append(tool)
+
     return tools
 
 
 def get_all_tool_names() -> List[str]:
     """Get a list of all possible tool names."""
-    return (
-        list(_BASE_TOOLS)
-        + list(_EXTRA_OPTIONAL_TOOLS)
-        + list(_EXTRA_LLM_TOOLS)
-        + list(_LLM_TOOLS)
-    )
+    return list(_TOOLS) + list(_LLM_TOOLS)
