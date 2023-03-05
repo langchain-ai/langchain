@@ -2,11 +2,10 @@ Chat
 ==========================
 
 Chat models are a variation on language models.
-While chat models language models under the hood, the interface they expose is a bit different.
-Rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the input,
-and the output is also a chat message.
+While chat models use language models under the hood, the interface they expose is a bit different.
+Rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
 
-Chat APIs are fairly new, so we are still figuring out the correct abstractions.
+Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
 
 The following sections of documentation are provided:
 
