@@ -71,8 +71,9 @@ def test_chat_prompt_template() -> None:
     expected = (
         '[SystemMessage(content="Here\'s some context: context"), '
         'HumanMessage(content="Hello foo, I\'m bar. Thanks for the context"), '
-        "AIMessage(content=\"I'm an AI. I'm foo. I'm bar.\"), ChatMessage(content=\"I'm a "
-        "generic message. I'm foo. I'm bar.\", role='test')]"
+        "AIMessage(content=\"I'm an AI. I'm foo. I'm bar.\"), "
+        "ChatMessage(content=\"I'm a generic message. I'm foo. I'm bar.\","
+        " role='test')]"
     )
     assert string == expected
 

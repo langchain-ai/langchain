@@ -1,7 +1,7 @@
 """Example selector that selects examples based on SemanticSimilarity."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel, Extra
 
@@ -65,7 +65,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         cls,
         examples: List[dict],
         embeddings: Embeddings,
-        vectorstore_cls: VectorStore,
+        vectorstore_cls: Type[VectorStore],
         k: int = 4,
         input_keys: Optional[List[str]] = None,
         **vectorstore_cls_kwargs: Any,
@@ -131,7 +131,7 @@ class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, Bas
         cls,
         examples: List[dict],
         embeddings: Embeddings,
-        vectorstore_cls: VectorStore,
+        vectorstore_cls: Type[VectorStore],
         k: int = 4,
         input_keys: Optional[List[str]] = None,
         fetch_k: int = 20,
