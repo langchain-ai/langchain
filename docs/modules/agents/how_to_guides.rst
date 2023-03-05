@@ -12,23 +12,23 @@ Agent Overview
 
 The first category of how-to guides here cover specific parts of working with agents.
 
-`Load From Hub <./examples/load_from_hub.html>`_: This notebook covers how to load agents from `LangChainHub <https://github.com/hwchase17/langchain-hub>`_.
+`Load From Hub <./examples/load_from_hub.ipynb>`_: This notebook covers how to load agents from `LangChainHub <https://github.com/hwchase17/langchain-hub>`_.
 
-`Custom Tools <./examples/custom_tools.html>`_: How to create custom tools that an agent can use.
+`Custom Tools <./examples/custom_tools.ipynb>`_: How to create custom tools that an agent can use.
 
-`Agents With Vectorstores <./examples/agent_vectorstore.html>`_: How to use vectorstores with agents.
+`Agents With Vectorstores <./examples/agent_vectorstore.ipynb>`_: How to use vectorstores with agents.
 
-`Intermediate Steps <./examples/intermediate_steps.html>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
+`Intermediate Steps <./examples/intermediate_steps.ipynb>`_: How to access and use intermediate steps to get more visibility into the internals of an agent.
 
-`Custom Agent <./examples/custom_agent.html>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
+`Custom Agent <./examples/custom_agent.ipynb>`_: How to create a custom agent (specifically, a custom LLM + prompt to drive that agent).
 
-`Multi Input Tools <./examples/multi_input_tool.html>`_: How to use a tool that requires multiple inputs with an agent.
+`Multi Input Tools <./examples/multi_input_tool.ipynb>`_: How to use a tool that requires multiple inputs with an agent.
 
-`Search Tools <./examples/search_tools.html>`_: How to use the different type of search tools that LangChain supports.
+`Search Tools <./examples/search_tools.ipynb>`_: How to use the different type of search tools that LangChain supports.
 
-`Max Iterations <./examples/max_iterations.html>`_: How to restrict an agent to a certain number of iterations.
+`Max Iterations <./examples/max_iterations.ipynb>`_: How to restrict an agent to a certain number of iterations.
 
-`Asynchronous <./examples/async_agent.html>`_: Covering asynchronous functionality.
+`Asynchronous <./examples/async_agent.ipynb>`_: Covering asynchronous functionality.
 
 
 .. toctree::
@@ -46,19 +46,19 @@ The next set of examples covers agents with toolkits.
 As opposed to the examples above, these examples are not intended to show off an agent `type`,
 but rather to show off an agent applied to particular use case.
 
-`SQLDatabase Agent <./agent_toolkits/sql_database.html>`_: This notebook covers how to interact with an arbitrary SQL database using an agent.
+`SQLDatabase Agent <./agent_toolkits/sql_database.ipynb>`_: This notebook covers how to interact with an arbitrary SQL database using an agent.
 
-`JSON Agent <./agent_toolkits/json.html>`_: This notebook covers how to interact with a JSON dictionary using an agent.
+`JSON Agent <./agent_toolkits/json.ipynb>`_: This notebook covers how to interact with a JSON dictionary using an agent.
 
-`OpenAPI Agent <./agent_toolkits/openapi.html>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
+`OpenAPI Agent <./agent_toolkits/openapi.ipynb>`_: This notebook covers how to interact with an arbitrary OpenAPI endpoint using an agent.
 
-`VectorStore Agent <./agent_toolkits/vectorstore.html>`_: This notebook covers how to interact with VectorStores using an agent.
+`VectorStore Agent <./agent_toolkits/vectorstore.ipynb>`_: This notebook covers how to interact with VectorStores using an agent.
 
-`Python Agent <./agent_toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
+`Python Agent <./agent_toolkits/python.ipynb>`_: This notebook covers how to produce and execute python code using an agent.
 
-`Pandas DataFrame Agent <./agent_toolkits/pandas.html>`_: This notebook covers how to do question answering over a pandas dataframe using an agent. Under the hood this calls the Python agent..
+`Pandas DataFrame Agent <./agent_toolkits/pandas.ipynb>`_: This notebook covers how to do question answering over a pandas dataframe using an agent. Under the hood this calls the Python agent..
 
-`CSV Agent <./agent_toolkits/csv.html>`_: This notebook covers how to do question answering over a csv file. Under the hood this calls the Pandas DataFrame agent.
+`CSV Agent <./agent_toolkits/csv.ipynb>`_: This notebook covers how to do question answering over a csv file. Under the hood this calls the Pandas DataFrame agent.
 
 .. toctree::
    :maxdepth: 1
