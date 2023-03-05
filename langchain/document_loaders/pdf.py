@@ -27,13 +27,14 @@ class BasePDFLoader(BaseLoader, ABC):
     Defaults to check for local file, but if the file is a web path, it will download it
     to a temporary file, and use that, then clean up the temporary file after completion
     """
+
     file_path: str
     web_path: Optional[str] = None
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
         self.file_path = file_path
-        if '~' in self.file_path:
+        if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
         """If the file is a web path, download it to a temporary file, and use that"""
@@ -42,7 +43,9 @@ class BasePDFLoader(BaseLoader, ABC):
 
             if r.status_code != 200:
                 raise ValueError(
-                    "Check the url of your file; returned status code %s" % r.status_code)
+                    "Check the url of your file; returned status code %s"
+                    % r.status_code
+                )
 
             self.web_path = self.file_path
             self.temp_file = tempfile.NamedTemporaryFile()
@@ -51,7 +54,7 @@ class BasePDFLoader(BaseLoader, ABC):
         else:
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if hasattr(self, "temp_file"):
             self.temp_file.close()
 
@@ -110,12 +113,18 @@ class PyMuPDFLoader(BasePDFLoader):
         return [
             Document(
                 page_content=page.get_text(**kwargs).encode("utf-8"),
-                metadata=dict({
-                    "file_path": file_path,
-                    "page_number": page.number + 1,
-                    "total_pages": len(doc),
-                }, **{k: doc.metadata[k] for k in doc.metadata if
-                      type(doc.metadata[k]) in [str, int]}),
+                metadata=dict(
+                    {
+                        "file_path": file_path,
+                        "page_number": page.number + 1,
+                        "total_pages": len(doc),
+                    },
+                    **{
+                        k: doc.metadata[k]
+                        for k in doc.metadata
+                        if type(doc.metadata[k]) in [str, int]
+                    }
+                ),
             )
             for page in doc
         ]

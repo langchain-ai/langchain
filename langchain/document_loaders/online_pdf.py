@@ -3,7 +3,7 @@
 from typing import List
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.pdf import UnstructuredPDFLoader, BasePDFLoader
+from langchain.document_loaders.pdf import BasePDFLoader, UnstructuredPDFLoader
 
 
 class OnlinePDFLoader(BasePDFLoader):
