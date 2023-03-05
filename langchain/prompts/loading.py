@@ -7,7 +7,8 @@ from typing import Union
 
 import yaml
 
-from langchain.prompts.base import BasePromptTemplate, RegexParser
+from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import RegexParser
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub

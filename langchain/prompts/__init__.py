@@ -3,7 +3,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.few_shot_with_templates import FewShotPromptWithTemplates
 from langchain.prompts.loading import load_prompt
-from langchain.prompts.prompt import Prompt, PromptTemplate
+from langchain.prompts.prompt import Prompt, PromptTemplate, StringPromptTemplate
 
 __all__ = [
     "BasePromptTemplate",
@@ -12,4 +12,5 @@ __all__ = [
     "FewShotPromptTemplate",
     "Prompt",
     "FewShotPromptWithTemplates",
+    "StringPromptTemplate",
 ]

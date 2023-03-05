@@ -1,5 +1,5 @@
 """Prompt template that contains few shot examples."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -8,12 +8,37 @@ from langchain.prompts.base import (
     BasePromptTemplate,
     check_valid_template,
 )
+from langchain.prompts.chat import (
+    AIMessagePromptTemplate,
+    BaseChatPromptTemplate,
+    BaseMessagePromptTemplate,
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.prompts.example_selector.base import BaseExampleSelector
-from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts.prompt import (
+    BaseStringPromptTemplate,
+    PromptTemplate,
+    StringPromptTemplate,
+)
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 
-class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
-    """Prompt template that contains few shot examples."""
+class BaseFewShotPromptTemplate(BaseModel):
+    """Base class for creating few-shot prompts."""
+
+    suffix: str
+    """A prompt template string to put after the examples."""
+
+    prefix: str = ""
+    """A prompt template string to put before the examples."""
 
     examples: Optional[List[dict]] = None
     """Examples to format into the prompt.
@@ -23,26 +48,35 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
-    example_prompt: PromptTemplate
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
+    def _get_examples(self, **kwargs: Any) -> List[dict]:
+        if self.examples is not None:
+            return self.examples
+        elif self.example_selector is not None:
+            return self.example_selector.select_examples(kwargs)
+        else:
+            raise ValueError("No examples or example selector provided")
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return a dictionary of the prompt."""
+        if self.example_selector:
+            raise ValueError("Saving an example selector is not currently supported")
+        return super().dict(**kwargs)
+
+
+class FewShotStringPromptTemplate(BaseStringPromptTemplate, BaseFewShotPromptTemplate):
+    """Prompt template that contains few shot examples."""
+
+    example_prompt: StringPromptTemplate
     """PromptTemplate used to format an individual example."""
-
-    suffix: str
-    """A prompt template string to put after the examples."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
 
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
-
-    prefix: str = ""
-    """A prompt template string to put before the examples."""
-
-    template_format: str = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-
-    validate_template: bool = True
-    """Whether or not to try validating the template."""
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -71,20 +105,6 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
                 values["input_variables"] + list(values["partial_variables"]),
             )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    def _get_examples(self, **kwargs: Any) -> List[dict]:
-        if self.examples is not None:
-            return self.examples
-        elif self.example_selector is not None:
-            return self.example_selector.select_examples(kwargs)
-        else:
-            raise ValueError
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
@@ -120,8 +140,73 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         """Return the prompt type key."""
         return "few_shot"
 
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return a dictionary of the prompt."""
-        if self.example_selector:
-            raise ValueError("Saving an example selector is not currently supported")
-        return super().dict(**kwargs)
+
+# For backwards compatibility.
+FewShotPromptTemplate = FewShotStringPromptTemplate
+
+
+class FewShotChatPromptTemplate(BaseChatPromptTemplate, BaseFewShotPromptTemplate):
+    """Prompt template that contains few shot examples."""
+
+    example_input: str
+    example_output: str
+    examples: List[Dict[str, str]]
+
+    @property
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+        return "few_shot_chat"
+
+    def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
+        """Format to a sequence of BaseMessages."""
+
+        message_prompts = []
+        if self.prefix:
+            prefix_message_prompt = SystemMessagePromptTemplate(
+                prompt=StringPromptTemplate.from_template(self.prefix)
+            )
+            message_prompts.append(prefix_message_prompt)
+
+        # TODO: add support for example selectors
+        for example in self._get_examples():
+            message_prompts.append(
+                HumanMessagePromptTemplate(
+                    prompt=StringPromptTemplate.from_template(
+                        self.example_input.format(**example)
+                    )
+                ),
+            )
+            message_prompts.append(
+                AIMessagePromptTemplate(
+                    prompt=StringPromptTemplate.from_template(
+                        self.example_output.format(**example)
+                    )
+                ),
+            )
+
+        # construct the suffix message
+        suffix_message_prompt = HumanMessagePromptTemplate(
+            prompt=StringPromptTemplate.from_template(self.suffix)
+        )
+        message_prompts.append(suffix_message_prompt)
+
+        chat_prompt_template = ChatPromptTemplate.from_messages(message_prompts)
+        return chat_prompt_template.format(**kwargs)
+
+
+if __name__ == "__main__":
+    few_shot = FewShotChatPromptTemplate(
+        prefix="You are a helpful assistant. You are helping translate from {source_language} to {target_language}.",
+        suffix="{text}",
+        example_input="{input}",
+        example_output="{output}",
+        examples=[
+            {"input": "Hello", "output": "Bonjour"},
+            {"input": "Goodbye", "output": "Au revoir"},
+            {"input": "Thank you", "output": "Merci"},
+            {"input": "I am sorry", "output": "Je suis désolé"},
+        ],
+        input_variables=["source_language", "target_language", "text"],
+    )
+
+    print(few_shot.format_prompt(source_language="English", target_language="French", text="How are you?"))

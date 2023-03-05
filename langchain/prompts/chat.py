@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 from pydantic import BaseModel
 
 from langchain.prompts.base import BasePromptTemplate, PromptValue
-from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts.prompt import BaseStringPromptTemplate, StringPromptTemplate
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -19,11 +19,11 @@ from langchain.schema import (
 
 
 class BaseMessagePromptTemplate(BaseModel, ABC):
-    prompt: BasePromptTemplate
+    prompt: BaseStringPromptTemplate
 
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> BaseMessagePromptTemplate:
-        prompt = PromptTemplate.from_template(template)
+        prompt = StringPromptTemplate.from_template(template)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -69,17 +69,16 @@ class ChatPromptValue(PromptValue):
         return self.messages
 
 
-class ChatPromptTemplate(BasePromptTemplate, ABC):
-    input_variables: List[str]
-    messages: List[BaseMessagePromptTemplate]
+class BaseChatPromptTemplate(BasePromptTemplate, ABC):
+    """Base class for chat prompt templates."""
 
     @classmethod
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
-    ) -> ChatPromptTemplate:
+    ) -> BaseChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                content=PromptTemplate.from_template(template), role=role
+                content=StringPromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
@@ -88,9 +87,9 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     @classmethod
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
-    ) -> ChatPromptTemplate:
+    ) -> BaseChatPromptTemplate:
         messages = [
-            role(content=PromptTemplate.from_template(template))
+            role(content=StringPromptTemplate.from_template(template))
             for role, template in string_messages
         ]
         return cls.from_messages(messages)
@@ -98,16 +97,28 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     @classmethod
     def from_messages(
         cls, messages: Sequence[BaseMessagePromptTemplate]
-    ) -> ChatPromptTemplate:
+    ) -> BaseChatPromptTemplate:
         input_vars = set()
         for message in messages:
             input_vars.update(message.prompt.input_variables)
         return cls(input_variables=list(input_vars), messages=messages)
 
-    def format(self, **kwargs: Any) -> str:
-        return self.format_prompt(**kwargs).to_string()
+    @abstractmethod
+    def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
+        """Format to a sequence of BaseMessages."""
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format to a ChatPromptValue."""
+        return ChatPromptValue(messages=self.format(**kwargs))
+
+
+class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
+    """Chat prompt template."""
+
+    messages: List[BaseMessagePromptTemplate]
+
+    def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
+        """Format to a sequence of BaseMessages."""
         result = []
         for message_template in self.messages:
             rel_params = {
@@ -117,7 +128,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
             }
             message = message_template.format(**rel_params)
             result.append(message)
-        return ChatPromptValue(messages=result)
+        return result
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
         raise NotImplementedError
