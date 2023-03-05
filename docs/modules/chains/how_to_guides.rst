@@ -6,9 +6,9 @@ Primitives can be either `prompts <../prompts.html>`_, `llms <../llms.html>`_, `
 The examples here are all end-to-end chains for specific applications.
 They are broken up into three categories:
 
-1. `Generic Chains <./generic_how_to.html>`_: Generic chains, that are meant to help build other chains rather than serve a particular purpose.
-2. `Utility Chains <./utility_how_to.html>`_: Chains consisting of an LLMChain interacting with a specific util.
-3. `Asynchronous <./async_chain.html>`_: Covering asynchronous functionality.
+1. `Generic Chains <./generic_how_to.rst>`_: Generic chains, that are meant to help build other chains rather than serve a particular purpose.
+2. `Utility Chains <./utility_how_to.rst>`_: Chains consisting of an LLMChain interacting with a specific util.
+3. `Asynchronous <./async_chain.ipynb>`_: Covering asynchronous functionality.
 
 .. toctree::
    :maxdepth: 1
