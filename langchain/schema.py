@@ -62,7 +62,7 @@ class ChatGeneration(Generation):
     message: BaseMessage
 
     @root_validator
-    def set_text(cls, values):
+    def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["text"] = values["message"].text
         return values
 

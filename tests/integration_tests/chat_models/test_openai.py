@@ -15,7 +15,7 @@ from langchain.schema import (
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-def test_chat_openai():
+def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
     chat = ChatOpenAI(max_tokens=10)
     message = HumanMessage(text="Hello")
@@ -24,7 +24,7 @@ def test_chat_openai():
     assert isinstance(response.text, str)
 
 
-def test_chat_openai_system_message():
+def test_chat_openai_system_message() -> None:
     """Test ChatOpenAI wrapper with system message."""
     chat = ChatOpenAI(max_tokens=10)
     system_message = SystemMessage(text="You are to chat with the user.")
@@ -34,7 +34,7 @@ def test_chat_openai_system_message():
     assert isinstance(response.text, str)
 
 
-def test_chat_openai_generate():
+def test_chat_openai_generate() -> None:
     """Test ChatOpenAI wrapper with generate."""
     chat = ChatOpenAI(max_tokens=10, n=2)
     message = HumanMessage(text="Hello")
@@ -49,7 +49,7 @@ def test_chat_openai_generate():
             assert generation.text == generation.message.text
 
 
-def test_chat_openai_multiple_completions():
+def test_chat_openai_multiple_completions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
     chat = ChatOpenAI(max_tokens=10, n=5)
     message = HumanMessage(text="Hello")
@@ -61,7 +61,7 @@ def test_chat_openai_multiple_completions():
         assert isinstance(generation.message.text, str)
 
 
-def test_chat_openai_streaming():
+def test_chat_openai_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
@@ -78,7 +78,7 @@ def test_chat_openai_streaming():
     assert isinstance(response, BaseMessage)
 
 
-def test_chat_openai_invalid_streaming_params():
+def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
         ChatOpenAI(
