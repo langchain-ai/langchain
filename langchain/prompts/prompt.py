@@ -1,5 +1,6 @@
 """Prompt schema definition."""
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 from pathlib import Path
 from string import Formatter
@@ -11,22 +12,12 @@ from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     BasePromptTemplate,
     check_valid_template,
+    PromptValue,
+    StringPromptValue
 )
 
 
-class PromptTemplate(BasePromptTemplate, BaseModel):
-    """Schema to represent a prompt for an LLM.
-
-    Example:
-        .. code-block:: python
-
-            from langchain import PromptTemplate
-            prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
-    """
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
+class BaseStringPromptTemplate(BasePromptTemplate, ABC):
     template: str
     """The prompt template."""
 
@@ -35,6 +26,38 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
     validate_template: bool = True
     """Whether or not to try validating the template."""
+
+    @abstractmethod
+    def format(self, **kwargs: Any) -> str:
+        """Format the prompt as a string with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            prompt.format(variable1="foo")
+        """
+
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format the prompt with the inputs."""
+        return StringPromptValue(text=self.format(**kwargs))
+
+
+class StringPromptTemplate(BaseStringPromptTemplate, BaseModel):
+    """Schema to represent a prompt for an LLM.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import PromptTemplate
+            prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
+    """
 
     @property
     def _prompt_type(self) -> str:
@@ -82,7 +105,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
-    ) -> PromptTemplate:
+    ) -> StringPromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
         Intended be used as a way to dynamically create a prompt from examples.
@@ -107,7 +130,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
     @classmethod
     def from_file(
         cls, template_file: Union[str, Path], input_variables: List[str]
-    ) -> PromptTemplate:
+    ) -> StringPromptTemplate:
         """Load a prompt from a file.
 
         Args:
@@ -122,7 +145,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         return cls(input_variables=input_variables, template=template)
 
     @classmethod
-    def from_template(cls, template: str) -> PromptTemplate:
+    def from_template(cls, template: str) -> StringPromptTemplate:
         """Load a prompt template from a template."""
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
@@ -131,4 +154,5 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
 
 # For backwards compatibility.
+PromptTemplate = StringPromptTemplate
 Prompt = PromptTemplate

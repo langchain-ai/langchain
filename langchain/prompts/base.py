@@ -196,25 +196,8 @@ class BasePromptTemplate(BaseModel, ABC):
         return {**partial_kwargs, **kwargs}
 
     @abstractmethod
-    def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-        """
-
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
-        return StringPromptValue(text=self.format(**kwargs))
+        """Format the prompt as a PromptValue with the inputs."""
 
     @property
     @abstractmethod
