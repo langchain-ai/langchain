@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.prompts.base import PromptValue
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -53,6 +54,18 @@ class BaseChatModel(BaseModel, ABC):
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         raise NotImplementedError
+
+    def generate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_messages = [p.to_messages() for p in prompts]
+        return self.generate(prompt_messages, stop=stop)
+
+    async def agenerate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_messages = [p.to_messages() for p in prompts]
+        return await self.agenerate(prompt_messages, stop=stop)
 
     @abstractmethod
     def _generate(

@@ -69,29 +69,12 @@ class LLMChain(Chain, BaseModel):
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        if isinstance(self.llm, BaseLLM):
-            string_prompts = [p.to_string() for p in prompts]
-            response = self.llm.generate(string_prompts, stop=stop)
-        elif isinstance(self.llm, BaseChatModel):
-            chat_prompts = [p.to_messages() for p in prompts]
-            response = self.llm.generate(chat_prompts, stop=stop)
-        else:
-            raise ValueError
-
-        return response
+        return self.llm.generate_prompt(prompts, stop)
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        if isinstance(self.llm, BaseLLM):
-            string_prompts = [p.to_string() for p in prompts]
-            response = await self.llm.agenerate(string_prompts, stop=stop)
-        elif isinstance(self.llm, BaseChatModel):
-            chat_prompts = [p.to_messages() for p in prompts]
-            response = await self.llm.agenerate(chat_prompts, stop=stop)
-        else:
-            raise ValueError
-        return response
+        return await self.llm.agenerate_prompt(prompts, stop)
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]

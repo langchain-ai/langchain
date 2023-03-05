@@ -10,6 +10,7 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.prompts.base import PromptValue
 from langchain.schema import Generation, LLMResult
 
 
@@ -99,6 +100,18 @@ class BaseLLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
+
+    def generate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return self.generate(prompt_strings, stop=stop)
+
+    async def agenerate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return await self.agenerate(prompt_strings, stop=stop)
 
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
