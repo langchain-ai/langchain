@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langchain.prompts.base import BasePromptTemplate, PromptValue
 from langchain.prompts.prompt import BaseStringPromptTemplate, StringPromptTemplate
@@ -20,6 +20,7 @@ from langchain.schema import (
 
 class BaseMessagePromptTemplate(BaseModel, ABC):
     prompt: BaseStringPromptTemplate
+    additional_kwargs: dict = Field(default_factory=dict)
 
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> BaseMessagePromptTemplate:
@@ -36,25 +37,27 @@ class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
 
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return ChatMessage(content=text, role=self.role)
+        return ChatMessage(
+            content=text, role=self.role, additional_kwargs=self.additional_kwargs
+        )
 
 
 class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return HumanMessage(content=text)
+        return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class AIMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return AIMessage(content=text)
+        return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class SystemMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return SystemMessage(content=text)
+        return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class ChatPromptValue(PromptValue):

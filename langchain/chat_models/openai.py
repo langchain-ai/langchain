@@ -32,7 +32,7 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
         return AIMessage(content=_dict["content"])
-    elif role == "systemt":
+    elif role == "system":
         return SystemMessage(content=_dict["content"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
@@ -40,15 +40,18 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
-        return {"role": message.role, "content": message.content}
+        message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
-        return {"role": "assistant", "content": message.content}
+        message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
-        return {"role": "system", "content": message.content}
+        message_dict = {"role": "system", "content": message.content}
     else:
         raise ValueError(f"Got unknown type {message}")
+    if "name" in message.additional_kwargs:
+        message_dict["name"] = message.additional_kwargs["name"]
+    return message_dict
 
 
 class ChatOpenAI(BaseChatModel, BaseModel):

@@ -1,7 +1,7 @@
 """Common schema objects."""
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 
 class AgentAction(NamedTuple):
@@ -35,6 +35,7 @@ class BaseMessage(BaseModel):
     """Message object."""
 
     content: str
+    additional_kwargs: dict = Field(default_factory=dict)
 
 
 class HumanMessage(BaseMessage):
