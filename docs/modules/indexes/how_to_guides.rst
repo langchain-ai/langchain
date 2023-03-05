@@ -5,7 +5,7 @@ How To Guides
 Utils
 -----
 
-There are a lot of different utilities that LangChain provides integrations for
+There are a lot of different utilities that LangChain provides integrations for.
 These guides go over how to use them.
 The utilities here are all utilities that make it easier to work with documents.
 
