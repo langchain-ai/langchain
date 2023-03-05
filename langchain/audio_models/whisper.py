@@ -91,5 +91,3 @@ class Whisper(AudioBase):
 
         return text[: self.max_chars] if self.max_chars else text
 
-    if __name__ == "__main__":
-        test = Whisper()
