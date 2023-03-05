@@ -150,6 +150,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    http_proxy: Optional[str] = None
+    """ environment variable for openai.proxy , it is not mandatory."""
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -206,6 +208,18 @@ class BaseOpenAI(BaseLLM, BaseModel):
             raise ValueError(
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
+            )
+        """ environment variable HTTP_PROXY for openai.proxy, it is not mandatory."""
+        try:
+            http_proxy = get_from_dict_or_env(
+                values, "http_proxy", "HTTP_PROXY"
+            )
+            openai.proxy = http_proxy
+            logger.info(f"""openai.proxy is set as {http_proxy}""")
+        except ValueError:
+            logger.warning(
+                f"""Warinng: HTTP_PROXY is not configured, however its not mandatory for openai.proxy.
+                Please decide whether to setup it according to your dev/test environment."""
             )
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
@@ -550,6 +564,8 @@ class OpenAIChat(BaseLLM, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    http_proxy: Optional[str] = None
+    """ environment variable for openai.proxy , it is not mandatory."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
@@ -590,6 +606,18 @@ class OpenAIChat(BaseLLM, BaseModel):
             raise ValueError(
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
+            )
+        """ environment variable HTTP_PROXY for openai.proxy, it is not mandatory."""
+        try:
+            http_proxy = get_from_dict_or_env(
+                values, "http_proxy", "HTTP_PROXY"
+            )
+            openai.proxy = http_proxy
+            logger.info(f"""openai.proxy is set as {http_proxy}""")
+        except ValueError:
+            logger.warning(
+                f"""Warinng: HTTP_PROXY is not configured, however its not mandatory for openai.proxy.
+                Please decide whether to setup it according to your dev/test environment."""
             )
         try:
             values["client"] = openai.ChatCompletion
