@@ -90,4 +90,3 @@ class Whisper(AudioBase):
             )
 
         return text[: self.max_chars] if self.max_chars else text
-
