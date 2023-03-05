@@ -6,10 +6,11 @@ from langchain.callbacks.base import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
     BaseMessage,
-    ChatMessage,
+    ChatGeneration,
     ChatResult,
     HumanMessage,
     SystemMessage,
+    LLMResult,
 )
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -33,13 +34,19 @@ def test_chat_openai_system_message():
     assert isinstance(response.text, str)
 
 
-# def test_chat_openai_generate():
-#     """Test ChatOpenAI wrapper with generate."""
-#     chat = ChatOpenAI(max_tokens=10)
-#     message = HumanMessage(text="Hello")
-#     response = chat.generate([[message]])
-#     assert isinstance(response, ChatMessage)
-#     assert isinstance(response.text, str)
+def test_chat_openai_generate():
+    """Test ChatOpenAI wrapper with generate."""
+    chat = ChatOpenAI(max_tokens=10, n=2)
+    message = HumanMessage(text="Hello")
+    response = chat.generate([[message], [message]])
+    assert isinstance(response, LLMResult)
+    assert len(response.generations) == 2
+    for generations in response.generations:
+        assert len(generations) == 2
+        for generation in generations:
+            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation.text, str)
+            assert generation.text == generation.message.text
 
 
 def test_chat_openai_multiple_completions():

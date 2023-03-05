@@ -1,7 +1,7 @@
 """Common schema objects."""
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 
 class AgentAction(NamedTuple):
@@ -55,15 +55,16 @@ class ChatMessage(BaseMessage):
     role: str
 
 
-class ChatGeneration(BaseModel):
+class ChatGeneration(Generation):
     """Output of a single generation."""
 
+    text = ""
     message: BaseMessage
 
-    generation_info: Optional[Dict[str, Any]] = None
-    """Raw generation info response from the provider"""
-    """May include things like reason for finishing (e.g. in OpenAI)"""
-    # TODO: add log probs
+    @root_validator
+    def set_text(cls, values):
+        values["text"] = values["message"].text
+        return values
 
 
 class ChatResult(BaseModel):
