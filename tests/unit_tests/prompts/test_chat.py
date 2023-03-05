@@ -62,10 +62,10 @@ def test_chat_prompt_template() -> None:
     assert isinstance(prompt, ChatPromptValue)
     messages = prompt.to_messages()
     assert len(messages) == 4
-    assert messages[0].text == "Here's some context: context"
-    assert messages[1].text == "Hello foo, I'm bar. Thanks for the context"
-    assert messages[2].text == "I'm an AI. I'm foo. I'm bar."
-    assert messages[3].text == "I'm a generic message. I'm foo. I'm bar."
+    assert messages[0].content == "Here's some context: context"
+    assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
+    assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
+    assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
 
     string = prompt.to_string()
     expected = (

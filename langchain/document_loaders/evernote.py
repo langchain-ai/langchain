@@ -23,10 +23,10 @@ def _parse_resource(resource: list) -> dict:
     for elem in resource:
         if elem.tag == "data":
             # Some times elem.text is None
-            rsc_dict[elem.tag] = b64decode(elem.text) if elem.text else b""
+            rsc_dict[elem.tag] = b64decode(elem.content) if elem.content else b""
             rsc_dict["hash"] = hashlib.md5(rsc_dict[elem.tag]).hexdigest()
         else:
-            rsc_dict[elem.tag] = elem.text
+            rsc_dict[elem.tag] = elem.content
 
     return rsc_dict
 
@@ -36,15 +36,15 @@ def _parse_note(note: List) -> dict:
     resources = []
     for elem in note:
         if elem.tag == "content":
-            note_dict[elem.tag] = _parse_content(elem.text)
+            note_dict[elem.tag] = _parse_content(elem.content)
             # A copy of original content
-            note_dict["content-raw"] = elem.text
+            note_dict["content-raw"] = elem.content
         elif elem.tag == "resource":
             resources.append(_parse_resource(elem))
         elif elem.tag == "created" or elem.tag == "updated":
-            note_dict[elem.tag] = strptime(elem.text, "%Y%m%dT%H%M%SZ")
+            note_dict[elem.tag] = strptime(elem.content, "%Y%m%dT%H%M%SZ")
         else:
-            note_dict[elem.tag] = elem.text
+            note_dict[elem.tag] = elem.content
 
     note_dict["resource"] = resources
 

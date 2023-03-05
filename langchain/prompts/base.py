@@ -135,7 +135,7 @@ class StringPromptValue(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
-        return [HumanMessage(text=self.text)]
+        return [HumanMessage(content=self.text)]
 
 
 class BasePromptTemplate(BaseModel, ABC):

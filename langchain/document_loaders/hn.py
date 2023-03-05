@@ -32,7 +32,7 @@ class HNLoader(WebBaseLoader):
         title = soup_info.select_one("tr[id='pagespace']").get("title")
         return [
             Document(
-                page_content=comment.text.strip(),
+                page_content=comment.content.strip(),
                 metadata={"source": self.web_path, "title": title},
             )
             for comment in comments
@@ -43,9 +43,9 @@ class HNLoader(WebBaseLoader):
         items = soup.select("tr[class='athing']")
         documents = []
         for lineItem in items:
-            ranking = lineItem.select_one("span[class='rank']").text
+            ranking = lineItem.select_one("span[class='rank']").content
             link = lineItem.find("span", {"class": "titleline"}).find("a").get("href")
-            title = lineItem.find("span", {"class": "titleline"}).text.strip()
+            title = lineItem.find("span", {"class": "titleline"}).content.strip()
             metadata = {
                 "source": self.web_path,
                 "title": title,

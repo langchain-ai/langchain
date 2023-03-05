@@ -124,7 +124,7 @@ class Cohere(LLM, BaseModel):
             params["stop_sequences"] = stop
 
         response = self.client.generate(model=self.model, prompt=prompt, **params)
-        text = response.generations[0].text
+        text = response.generations[0].content
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
         if stop is not None or self.stop is not None:

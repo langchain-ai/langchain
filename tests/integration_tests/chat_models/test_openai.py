@@ -21,7 +21,7 @@ def test_chat_openai() -> None:
     message = HumanMessage(text="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
-    assert isinstance(response.text, str)
+    assert isinstance(response.content, str)
 
 
 def test_chat_openai_system_message() -> None:
@@ -31,7 +31,7 @@ def test_chat_openai_system_message() -> None:
     human_message = HumanMessage(text="Hello")
     response = chat([system_message, human_message])
     assert isinstance(response, BaseMessage)
-    assert isinstance(response.text, str)
+    assert isinstance(response.content, str)
 
 
 def test_chat_openai_generate() -> None:
@@ -46,7 +46,7 @@ def test_chat_openai_generate() -> None:
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
-            assert generation.text == generation.message.text
+            assert generation.text == generation.message.content
 
 
 def test_chat_openai_multiple_completions() -> None:
@@ -58,7 +58,7 @@ def test_chat_openai_multiple_completions() -> None:
     assert len(response.generations) == 5
     for generation in response.generations:
         assert isinstance(generation.message, BaseMessage)
-        assert isinstance(generation.message.text, str)
+        assert isinstance(generation.message.content, str)
 
 
 def test_chat_openai_streaming() -> None:

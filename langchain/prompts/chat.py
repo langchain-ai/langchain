@@ -21,6 +21,11 @@ from langchain.schema import (
 class BaseMessagePromptTemplate(BaseModel, ABC):
     prompt: BasePromptTemplate
 
+    @classmethod
+    def from_template(cls, template: str, **kwargs: Any) -> BaseMessagePromptTemplate:
+        prompt = PromptTemplate.from_template(template)
+        return cls(prompt=prompt, **kwargs)
+
     @abstractmethod
     def format(self, **kwargs: Any) -> BaseMessage:
         """To a BaseMessage."""
@@ -31,25 +36,25 @@ class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
 
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return ChatMessage(text=text, role=self.role)
+        return ChatMessage(content=text, role=self.role)
 
 
 class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return HumanMessage(text=text)
+        return HumanMessage(content=text)
 
 
 class AIMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return AIMessage(text=text)
+        return AIMessage(content=text)
 
 
 class SystemMessagePromptTemplate(BaseMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
-        return SystemMessage(text=text)
+        return SystemMessage(content=text)
 
 
 class ChatPromptValue(PromptValue):
@@ -74,7 +79,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     ) -> ChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                text=PromptTemplate.from_template(template), role=role
+                content=PromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
@@ -85,7 +90,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
         messages = [
-            role(text=PromptTemplate.from_template(template))
+            role(content=PromptTemplate.from_template(template))
             for role, template in string_messages
         ]
         return cls.from_messages(messages)

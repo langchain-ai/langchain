@@ -38,7 +38,7 @@ class GitbookLoader(WebBaseLoader):
         page_content_raw = soup.find("main")
         content = page_content_raw.get_text(separator="\n").strip()
         title_if_exists = page_content_raw.find("h1")
-        title = title_if_exists.text if title_if_exists else ""
+        title = title_if_exists.content if title_if_exists else ""
         metadata = {
             "source": custom_url if custom_url else self.web_path,
             "title": title,

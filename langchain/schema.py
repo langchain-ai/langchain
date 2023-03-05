@@ -34,7 +34,7 @@ class Generation(BaseModel):
 class BaseMessage(BaseModel):
     """Message object."""
 
-    text: str
+    content: str
 
 
 class HumanMessage(BaseMessage):
@@ -63,7 +63,7 @@ class ChatGeneration(Generation):
 
     @root_validator
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["text"] = values["message"].text
+        values["text"] = values["message"].content
         return values
 
 

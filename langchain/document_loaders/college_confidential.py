@@ -11,6 +11,6 @@ class CollegeConfidentialLoader(WebBaseLoader):
     def load(self) -> List[Document]:
         """Load webpage."""
         soup = self.scrape()
-        text = soup.select_one("main[class='skin-handler']").text
+        text = soup.select_one("main[class='skin-handler']").content
         metadata = {"source": self.web_path}
         return [Document(page_content=text, metadata=metadata)]

@@ -29,24 +29,24 @@ logger = logging.getLogger(__file__)
 def _convert_dict_to_message(_dict: dict) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
-        return HumanMessage(text=_dict["content"])
+        return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(text=_dict["content"])
+        return AIMessage(content=_dict["content"])
     elif role == "systemt":
-        return SystemMessage(text=_dict["content"])
+        return SystemMessage(content=_dict["content"])
     else:
-        return ChatMessage(text=_dict["content"], role=role)
+        return ChatMessage(content=_dict["content"], role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
-        return {"role": message.role, "content": message.text}
+        return {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.text}
+        return {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
-        return {"role": "assistant", "content": message.text}
+        return {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
-        return {"role": "system", "content": message.text}
+        return {"role": "system", "content": message.content}
     else:
         raise ValueError(f"Got unknown type {message}")
 
