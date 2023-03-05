@@ -23,6 +23,6 @@ class SRTLoader(BaseLoader):
         import pysrt
 
         parsed_info = pysrt.open(self.file_path)
-        text = " ".join([t.content for t in parsed_info])
+        text = " ".join([t.text for t in parsed_info])
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]

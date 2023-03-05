@@ -11,8 +11,8 @@ class AZLyricsLoader(WebBaseLoader):
     def load(self) -> List[Document]:
         """Load webpage."""
         soup = self.scrape()
-        title = soup.title.content
-        lyrics = soup.find_all("div", {"class": ""})[2].content
+        title = soup.title.text
+        lyrics = soup.find_all("div", {"class": ""})[2].text
         text = title + lyrics
         metadata = {"source": self.web_path}
         return [Document(page_content=text, metadata=metadata)]

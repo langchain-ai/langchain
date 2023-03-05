@@ -18,7 +18,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
     chat = ChatOpenAI(max_tokens=10)
-    message = HumanMessage(text="Hello")
+    message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -27,8 +27,8 @@ def test_chat_openai() -> None:
 def test_chat_openai_system_message() -> None:
     """Test ChatOpenAI wrapper with system message."""
     chat = ChatOpenAI(max_tokens=10)
-    system_message = SystemMessage(text="You are to chat with the user.")
-    human_message = HumanMessage(text="Hello")
+    system_message = SystemMessage(content="You are to chat with the user.")
+    human_message = HumanMessage(content="Hello")
     response = chat([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -37,7 +37,7 @@ def test_chat_openai_system_message() -> None:
 def test_chat_openai_generate() -> None:
     """Test ChatOpenAI wrapper with generate."""
     chat = ChatOpenAI(max_tokens=10, n=2)
-    message = HumanMessage(text="Hello")
+    message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 2
@@ -52,7 +52,7 @@ def test_chat_openai_generate() -> None:
 def test_chat_openai_multiple_completions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
     chat = ChatOpenAI(max_tokens=10, n=5)
-    message = HumanMessage(text="Hello")
+    message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
     assert len(response.generations) == 5
@@ -72,7 +72,7 @@ def test_chat_openai_streaming() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    message = HumanMessage(text="Hello")
+    message = HumanMessage(content="Hello")
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)

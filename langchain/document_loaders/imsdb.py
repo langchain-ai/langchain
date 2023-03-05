@@ -11,6 +11,6 @@ class IMSDbLoader(WebBaseLoader):
     def load(self) -> List[Document]:
         """Load webpage."""
         soup = self.scrape()
-        text = soup.select_one("td[class='scrtext']").content
+        text = soup.select_one("td[class='scrtext']").text
         metadata = {"source": self.web_path}
         return [Document(page_content=text, metadata=metadata)]

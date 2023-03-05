@@ -52,8 +52,8 @@ class WolframAlphaAPIWrapper(BaseModel):
         res = self.wolfram_client.query(query)
 
         try:
-            assumption = next(res.pods).content
-            answer = next(res.results).content
+            assumption = next(res.pods).text
+            answer = next(res.results).text
         except StopIteration:
             return "Wolfram Alpha wasn't able to answer it"
 

@@ -139,5 +139,5 @@ class GooseAI(LLM, BaseModel):
             params["stop"] = stop
 
         response = self.client.create(engine=self.model_name, prompt=prompt, **params)
-        text = response.choices[0].content
+        text = response.choices[0].text
         return text

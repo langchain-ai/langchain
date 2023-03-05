@@ -94,12 +94,12 @@ class IFixitLoader(BaseLoader):
 
         output = []
 
-        title = soup.find("h1", "post-title").content
+        title = soup.find("h1", "post-title").text
 
         output.append("# " + title)
-        output.append(soup.select_one(".post-content .post-text").content.strip())
+        output.append(soup.select_one(".post-content .post-text").text.strip())
 
-        output.append("\n## " + soup.find("div", "post-answers-header").content.strip())
+        output.append("\n## " + soup.find("div", "post-answers-header").text.strip())
         for answer in soup.select(".js-answers-list .post.post-answer"):
             if answer.has_attr("itemprop") and "acceptedAnswer" in answer["itemprop"]:
                 output.append("\n### Accepted Answer")
@@ -109,7 +109,7 @@ class IFixitLoader(BaseLoader):
                 output.append("\n### Other Answer")
 
             output += [
-                a.content.strip() for a in answer.select(".post-content .post-text")
+                a.text.strip() for a in answer.select(".post-content .post-text")
             ]
             output.append("\n")
 
