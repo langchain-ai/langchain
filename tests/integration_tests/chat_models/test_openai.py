@@ -9,8 +9,8 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
     HumanMessage,
-    SystemMessage,
     LLMResult,
+    SystemMessage,
 )
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

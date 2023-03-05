@@ -1,8 +1,9 @@
+"""Chat prompt template."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Tuple, Type, Union
+from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel
 
@@ -77,8 +78,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
             )
             for role, template in string_messages
         ]
-        input_vars = set([m.prompt.input_variables] for m in messages)
-        return cls(input_variables=list(input_vars), messages=messages)
+        return cls.from_messages(messages)
 
     @classmethod
     def from_strings(
@@ -88,11 +88,19 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
             role(text=PromptTemplate.from_template(template))
             for role, template in string_messages
         ]
-        input_vars = set([m.prompt.input_variables] for m in messages)
+        return cls.from_messages(messages)
+
+    @classmethod
+    def from_messages(
+        cls, messages: Sequence[BaseMessagePromptTemplate]
+    ) -> ChatPromptTemplate:
+        input_vars = set()
+        for message in messages:
+            input_vars.update(message.prompt.input_variables)
         return cls(input_variables=list(input_vars), messages=messages)
 
     def format(self, **kwargs: Any) -> str:
-        return self.format_prompt().to_string()
+        return self.format_prompt(**kwargs).to_string()
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         result = []

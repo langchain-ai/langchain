@@ -6,7 +6,13 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import AIMessage, BaseMessage, ChatGeneration, ChatResult, LLMResult
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatGeneration,
+    ChatResult,
+    LLMResult,
+)
 
 
 def _get_verbosity() -> bool:
