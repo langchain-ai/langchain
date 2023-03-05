@@ -72,6 +72,20 @@ class ChatPromptValue(PromptValue):
 class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     """Base class for chat prompt templates."""
 
+    @abstractmethod
+    def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
+        """Format to a sequence of BaseMessages."""
+
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format to a ChatPromptValue."""
+        return ChatPromptValue(messages=self.format(**kwargs))
+
+
+class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
+    """Chat prompt template."""
+
+    messages: List[BaseMessagePromptTemplate]
+
     @classmethod
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
@@ -102,20 +116,6 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         for message in messages:
             input_vars.update(message.prompt.input_variables)
         return cls(input_variables=list(input_vars), messages=messages)
-
-    @abstractmethod
-    def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
-        """Format to a sequence of BaseMessages."""
-
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Format to a ChatPromptValue."""
-        return ChatPromptValue(messages=self.format(**kwargs))
-
-
-class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
-    """Chat prompt template."""
-
-    messages: List[BaseMessagePromptTemplate]
 
     def format(self, **kwargs: Any) -> Sequence[BaseMessage]:
         """Format to a sequence of BaseMessages."""
