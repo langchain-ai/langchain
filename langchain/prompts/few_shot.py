@@ -209,4 +209,8 @@ if __name__ == "__main__":
         input_variables=["source_language", "target_language", "text"],
     )
 
-    print(few_shot.format_prompt(source_language="English", target_language="French", text="How are you?"))
+    print(
+        few_shot.format_prompt(
+            source_language="English", target_language="French", text="How are you?"
+        )
+    )

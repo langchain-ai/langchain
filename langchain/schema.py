@@ -50,6 +50,14 @@ class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
 
 
+class ExampleHumanMessage(BaseMessage):
+    """Type of message that is treated as example human input."""
+
+
+class ExampleAIMessage(BaseMessage):
+    """Type of message that is treated as example AI input."""
+
+
 class ChatMessage(BaseMessage):
     """Type of message with arbitrary speaker."""
 

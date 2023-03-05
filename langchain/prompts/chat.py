@@ -13,12 +13,16 @@ from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatMessage,
+    ExampleAIMessage,
+    ExampleHumanMessage,
     HumanMessage,
     SystemMessage,
 )
 
 
 class BaseMessagePromptTemplate(BaseModel, ABC):
+    """Base class for message prompt templates."""
+
     prompt: BaseStringPromptTemplate
     additional_kwargs: dict = Field(default_factory=dict)
 
@@ -33,6 +37,8 @@ class BaseMessagePromptTemplate(BaseModel, ABC):
 
 
 class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
+    """Chat message prompt template."""
+
     role: str
 
     def format(self, **kwargs: Any) -> BaseMessage:
@@ -43,21 +49,45 @@ class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
 
 
 class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
+    """Human message prompt template."""
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class AIMessagePromptTemplate(BaseMessagePromptTemplate):
+    """ "AI message prompt template."""
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class SystemMessagePromptTemplate(BaseMessagePromptTemplate):
+    """System message prompt template."""
+
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
+
+
+class ExampleHumanMessagePromptTemplate(BaseMessagePromptTemplate):
+    """Example human message prompt template."""
+
+    def format(self, **kwargs: Any) -> BaseMessage:
+        text = self.prompt.format(**kwargs)
+        return ExampleHumanMessage(
+            content=text, additional_kwargs=self.additional_kwargs
+        )
+
+
+class ExampleAIMessagePromptTemplate(BaseMessagePromptTemplate):
+    """Example AI message prompt template."""
+
+    def format(self, **kwargs: Any) -> BaseMessage:
+        text = self.prompt.format(**kwargs)
+        return ExampleAIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
 class ChatPromptValue(PromptValue):

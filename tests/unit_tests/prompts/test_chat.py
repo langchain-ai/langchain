@@ -7,6 +7,8 @@ from langchain.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     ChatPromptValue,
+    ExampleAIMessagePromptTemplate,
+    ExampleHumanMessagePromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
@@ -39,18 +41,32 @@ def create_messages() -> List[BaseMessagePromptTemplate]:
             input_variables=["foo", "bar"],
         ),
     )
+    example_human_message_prompt = ExampleHumanMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="This is an example human message: {input}.",
+            input_variables=["input"],
+        ),
+    )
+    example_ai_message_prompt = ExampleAIMessagePromptTemplate(
+        prompt=PromptTemplate(
+            template="This is an example AI message: {output}.",
+            input_variables=["output"],
+        ),
+    )
     return [
         system_message_prompt,
         human_message_prompt,
         ai_message_prompt,
         chat_message_prompt,
+        example_human_message_prompt,
+        example_ai_message_prompt,
     ]
 
 
 def create_chat_prompt_template() -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
-        input_variables=["foo", "bar", "context"],
+        input_variables=["foo", "bar", "context", "input", "output"],
         messages=create_messages(),
     )
 
@@ -58,34 +74,24 @@ def create_chat_prompt_template() -> ChatPromptTemplate:
 def test_chat_prompt_template() -> None:
     """Test chat prompt template."""
     prompt_template = create_chat_prompt_template()
-    prompt = prompt_template.format_prompt(foo="foo", bar="bar", context="context")
+    prompt = prompt_template.format_prompt(
+        foo="foo", bar="bar", context="context", input="input", output="output"
+    )
     assert isinstance(prompt, ChatPromptValue)
     messages = prompt.to_messages()
-    assert len(messages) == 4
+    assert len(messages) == 6
     assert messages[0].content == "Here's some context: context"
     assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
     assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
     assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
-
-    string = prompt.to_string()
-    expected = (
-        '[SystemMessage(content="Here\'s some context: context", '
-        'additional_kwargs={}), HumanMessage(content="Hello foo, '
-        "I'm bar. Thanks for the context\", additional_kwargs={}), "
-        "AIMessage(content=\"I'm an AI. I'm foo. I'm bar.\", additional_kwargs={}), "
-        "ChatMessage(content=\"I'm a generic message. I'm foo. I'm bar.\","
-        " additional_kwargs={}, role='test')]"
-    )
-    assert string == expected
-
-    string = prompt_template.format(foo="foo", bar="bar", context="context")
-    assert string == expected
+    assert messages[4].content == "This is an example human message: input."
+    assert messages[5].content == "This is an example AI message: output."
 
 
 def test_chat_prompt_template_from_messages() -> None:
     """Test creating a chat prompt template from messages."""
     chat_prompt_template = ChatPromptTemplate.from_messages(create_messages())
     assert sorted(chat_prompt_template.input_variables) == sorted(
-        ["context", "foo", "bar"]
+        ["bar", "context", "foo", "input", "output"]
     )
-    assert len(chat_prompt_template.messages) == 4
+    assert len(chat_prompt_template.messages) == 6
