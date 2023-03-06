@@ -7,8 +7,6 @@ Rather than expose a "text in, text out" API, they expose an interface where "ch
 
 Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
 
-**NOTE: this is currently only in prerelease. To use, you should install with `pip install --pre langchain==0.0.102rc0`.**
-
 The following sections of documentation are provided:
 
 - `Getting Started <./chat/getting_started.html>`_: An overview of the basics of chat models.

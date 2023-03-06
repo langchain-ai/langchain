@@ -6,9 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
-from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
@@ -57,9 +55,6 @@ class LLMChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
-
-    def get_num_tokens(self, prompt: str) -> int:
-        return self.llm.get_num_tokens(prompt)
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
