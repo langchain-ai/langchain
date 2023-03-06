@@ -45,7 +45,7 @@ class BaseChatMemory(BaseMemory, ABC):
         self.chat_memory.clear()
 
 
-class ChatMessageMemory(ChatMemoryMixin):
+class ChatMessageMemory(BaseChatMemory):
     memory_key: str = "history"  #: :meta private:
 
     @property
