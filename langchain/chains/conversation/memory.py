@@ -276,6 +276,12 @@ class ConversationEntityMemory(Memory, BaseModel):
         }
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        if inputs is None:
+            raise ValueError(
+                "Inputs must be provided to save context from "
+                "ConversationEntityMemory."
+            )
+
         """Save context from this conversation to buffer."""
         if self.input_key is None:
             prompt_input_key = _get_prompt_input_key(inputs, self.memory_variables)

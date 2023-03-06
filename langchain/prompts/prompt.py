@@ -9,12 +9,12 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    StringPromptTemplate,
     check_valid_template,
 )
 
 
-class PromptTemplate(BasePromptTemplate, BaseModel):
+class PromptTemplate(StringPromptTemplate, BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:

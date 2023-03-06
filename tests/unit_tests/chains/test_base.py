@@ -1,5 +1,5 @@
 """Test logic on base chain class."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel
@@ -17,7 +17,9 @@ class FakeMemory(Memory, BaseModel):
         """Return baz variable."""
         return ["baz"]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
 

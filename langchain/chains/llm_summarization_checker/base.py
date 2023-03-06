@@ -110,7 +110,7 @@ class LLMSummarizationCheckerChain(Chain, BaseModel):
                 ],
                 input_variables=["summary"],
                 output_variables=["all_true", "revised_summary"],
-                verbose=True,
+                verbose=self.verbose,
             )
             output = chain({"summary": chain_input})
             count += 1
