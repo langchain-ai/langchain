@@ -1,4 +1,7 @@
 """Common schema objects."""
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Field, root_validator
@@ -85,3 +88,27 @@ class LLMResult(BaseModel):
     each input could have multiple generations."""
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
+
+
+class PromptValue(BaseModel, ABC):
+    @abstractmethod
+    def to_string(self) -> str:
+        """Return prompt as string."""
+
+    @abstractmethod
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+
+
+class BaseLanguageModel(ABC):
+    @abstractmethod
+    def generate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Take in a list of prompt values and return an LLMResult."""
+
+    @abstractmethod
+    async def agenerate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Take in a list of prompt values and return an LLMResult."""

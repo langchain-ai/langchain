@@ -11,7 +11,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
-from langchain.schema import BaseMessage, HumanMessage
+from langchain.schema import BaseMessage, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -114,16 +114,6 @@ class RegexParser(BaseOutputParser, BaseModel):
                     key: text if key == self.default_output_key else ""
                     for key in self.output_keys
                 }
-
-
-class PromptValue(BaseModel, ABC):
-    @abstractmethod
-    def to_string(self) -> str:
-        """Return prompt as string."""
-
-    @abstractmethod
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as messages."""
 
 
 class StringPromptValue(PromptValue):

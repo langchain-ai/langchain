@@ -9,9 +9,9 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate, PromptValue
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult
+from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
 class LLMChain(Chain, BaseModel):
@@ -30,7 +30,7 @@ class LLMChain(Chain, BaseModel):
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
-    llm: Union[BaseLLM, BaseChatModel]
+    llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
 
     class Config:
@@ -69,29 +69,12 @@ class LLMChain(Chain, BaseModel):
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        if isinstance(self.llm, BaseLLM):
-            string_prompts = [p.to_string() for p in prompts]
-            response = self.llm.generate(string_prompts, stop=stop)
-        elif isinstance(self.llm, BaseChatModel):
-            chat_prompts = [p.to_messages() for p in prompts]
-            response = self.llm.generate(chat_prompts, stop=stop)
-        else:
-            raise ValueError
-
-        return response
+        return self.llm.generate_prompt(prompts, stop)
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        if isinstance(self.llm, BaseLLM):
-            string_prompts = [p.to_string() for p in prompts]
-            response = await self.llm.agenerate(string_prompts, stop=stop)
-        elif isinstance(self.llm, BaseChatModel):
-            chat_prompts = [p.to_messages() for p in prompts]
-            response = await self.llm.agenerate(chat_prompts, stop=stop)
-        else:
-            raise ValueError
-        return response
+        return await self.llm.agenerate_prompt(prompts, stop)
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
@@ -230,7 +213,7 @@ class LLMChain(Chain, BaseModel):
         return "llm_chain"
 
     @classmethod
-    def from_string(cls, llm: BaseLLM, template: str) -> Chain:
+    def from_string(cls, llm: BaseLanguageModel, template: str) -> Chain:
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
