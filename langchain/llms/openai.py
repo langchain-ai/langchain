@@ -706,10 +706,10 @@ class OpenAIChat(BaseLLM, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding("gpt2")
+        # create a GPT-3.5-Turbo encoder instance
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-        # encode the text using the GPT-3 encoder
+        # encode the text using the GPT-3.5-Turbo encoder
         tokenized_text = enc.encode(text)
 
         # calculate the number of tokens in the encoded text
