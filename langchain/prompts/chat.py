@@ -24,8 +24,8 @@ class BaseMessagePromptTemplate(BaseModel, ABC):
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """To messages."""
 
-    @abstractmethod
     @property
+    @abstractmethod
     def input_variables(self) -> List[str]:
         """Input variables for this prompt template."""
 
