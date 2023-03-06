@@ -18,13 +18,7 @@ class AudioChain(Chain):
         return [self.output_key]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        if self.output_key == "translation":
-            return {
-                self.output_key: self.audio_model.translation(
-                    inputs["audio_file"]
-                ).strip()
-            }
-
-        return {
-            self.output_key: self.audio_model.transcript(inputs["audio_file"]).strip()
-        }
+        file_path = inputs["audio_file"]
+        task = self.output_key
+        content = self.audio_model.transcript(file_path, task).strip()
+        return {self.output_key: content}

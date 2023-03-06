@@ -26,7 +26,7 @@ class Whisper(AudioBase):
 
         extra = Extra.forbid
 
-    def transcript(self, audio_path: str) -> str:
+    def transcript(self, audio_path: str, task: str) -> str:
         """Call to Whisper transcribe endpoint."""
 
         try:
@@ -36,48 +36,31 @@ class Whisper(AudioBase):
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-        openai.api_key = self.model_key
-        audio_file = open(audio_path, "rb")
-        response = openai.Audio.transcribe(
-            file=audio_file,
-            model=self.model,
-            prompt=self.prompt,
-            language=self.language,
-            temperature=self.temperature,
-            response_format=self.response_format,
-        )
-        try:
-            text = response["text"]
-            if not isinstance(text, str):
-                raise ValueError(f"Expected text to be a string, got {type(text)}")
 
-        except KeyError:
-            raise ValueError(
-                f"Response should be {'modelOutputs': [{'output': 'text'}]}."
-                f"Response was: {response}"
+        if task == "transcript":
+            openai.api_key = self.model_key
+            audio_file = open(audio_path, "rb")
+            response = openai.Audio.transcribe(
+                file=audio_file,
+                model=self.model,
+                prompt=self.prompt,
+                language=self.language,
+                temperature=self.temperature,
+                response_format=self.response_format,
             )
 
-        return text[: self.max_chars] if self.max_chars else text
-
-    def translation(self, audio_path: str) -> str:
-        """Call to Whisper translate endpoint."""
-
-        try:
-            import openai
-        except ImportError:
-            raise ValueError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
+        if task == "translate":
+            openai.api_key = self.model_key
+            audio_file = open(audio_path, "rb")
+            response = openai.Audio.translate(
+                file=audio_file,
+                model=self.model,
+                prompt=self.prompt,
+                temperature=self.temperature,
+                response_format=self.response_format,
             )
-        openai.api_key = self.model_key
-        audio_file = open(audio_path, "rb")
-        response = openai.Audio.translate(
-            file=audio_file,
-            model=self.model,
-            prompt=self.prompt,
-            temperature=self.temperature,
-            response_format=self.response_format,
-        )
+            print("translate")
+
         try:
             text = response["text"]
             if not isinstance(text, str):

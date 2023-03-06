@@ -13,7 +13,8 @@ class AudioBase(BaseModel, ABC):
         """Read audio file."""
         if not pathlib.Path(audio_path).exists():
             raise ValueError(f"Can't find audio file at {audio_path}")
-        assert audio_path.endswith(".mp3"), "Only mp3 files are supported."
+        if not audio_path.endswith(".mp3"):
+            raise ValueError("Only mp3 files are supported.")
         with open(audio_path, "rb") as file:
             mp3bytes = BytesIO(file.read())
         return base64.b64encode(mp3bytes.getvalue()).decode("ISO-8859-1")
@@ -21,7 +22,3 @@ class AudioBase(BaseModel, ABC):
     @abstractmethod
     def transcript(self, audio_path: str) -> str:
         """Transcribe audio file."""
-
-    @abstractmethod
-    def translation(self, audio_path: str) -> str:
-        """Translate audio file."""
