@@ -26,7 +26,7 @@ class Whisper(AudioBase):
 
         extra = Extra.forbid
 
-    def transcript(self, audio_path: str, task: str) -> str:
+    def transcript(self, audio_path: str, task: str = "transcript") -> str:
         """Call to Whisper transcribe endpoint."""
 
         try:
