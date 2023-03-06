@@ -1,8 +1,10 @@
 """Wrapper around OpenAI APIs."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import sys
+from collections import defaultdict
 from typing import (
     Any,
     Callable,
@@ -647,10 +649,16 @@ class OpenAIChat(BaseLLM, BaseModel):
                 llm_output={"token_usage": full_response["usage"]},
             )
 
+    async def _agenerate_with_one_prompt(self, prompt: str, stop: Optional[List[str]] = None):
+        messages, params = self._get_chat_params([prompt], stop)
+        full_response = await acompletion_with_retry(
+            self, messages=messages, **params
+        )
+        return full_response
+
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        messages, params = self._get_chat_params(prompts, stop)
         if self.streaming:
             response = ""
             params["stream"] = True
@@ -672,16 +680,20 @@ class OpenAIChat(BaseLLM, BaseModel):
             return LLMResult(
                 generations=[[Generation(text=response)]],
             )
-        else:
-            full_response = await acompletion_with_retry(
-                self, messages=messages, **params
-            )
-            return LLMResult(
-                generations=[
-                    [Generation(text=full_response["choices"][0]["message"]["content"])]
-                ],
-                llm_output={"token_usage": full_response["usage"]},
-            )
+
+        full_responses = await asyncio.gather(*[self._agenerate_with_one_prompt(prompt, stop) for prompt in prompts])
+        generations = []
+        total_token_usage = defaultdict(int)
+        for full_response in full_responses:
+            generations.append([Generation(text=full_response["choices"][0]["message"]["content"])])
+            # Update token usage
+            token_usage = full_response['usage']
+            for k, v in token_usage.items():
+                total_token_usage[k] += v
+        return LLMResult(
+            generations=generations,
+            llm_output={"token_usage": total_token_usage},
+        )
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
