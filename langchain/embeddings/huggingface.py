@@ -35,19 +35,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         try:
             import sentence_transformers
-            try:
-                self.client = sentence_transformers.SentenceTransformer(self.model_name)
-            except:
-                try:
-                    # [Hugging Face Models can be converted into sentence_transformer models by adding a pooling layer](https://www.sbert.net/docs/training/overview.html#creating-networks-from-scratch)
-                    word_embedding_model = sentence_transformers.models.Transformer(self.model_name)
-                    pooling_model = sentence_transformers.models.Pooling(word_embedding_model.get_word_embedding_dimension())
-                    self.client = sentence_transformers.SentenceTransformer(modules=[word_embedding_model, pooling_model])
-                except ImportError:
-                    raise ValueError(
-                        "Model is not compatible sentence_transformers architecture. "
-                        "Please use a sentence_transformers model."
-                    )
+
+            self.client = sentence_transformers.SentenceTransformer(self.model_name)
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
