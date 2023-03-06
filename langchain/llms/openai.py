@@ -619,6 +619,9 @@ class OpenAIChat(BaseLLM, BaseModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
+        if params.get("max_tokens") == -1:
+            # for ChatGPT api, omitting max_tokens is equivalent to having no limit
+            del params["max_tokens"]
         return messages, params
 
     def _generate(
