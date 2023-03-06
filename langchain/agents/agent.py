@@ -5,7 +5,7 @@ import json
 import logging
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Generator
 
 import yaml
 from pydantic import BaseModel, root_validator
@@ -512,6 +512,37 @@ class AgentExecutor(Chain, BaseModel):
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return self._return(output, intermediate_steps)
+
+    def _ycall(self, inputs: Dict[str, str]) -> Generator[Any, None, None]:
+        """Run text through and get agent response."""
+        # Do any preparation necessary when receiving a new input.
+        self.agent.prepare_for_new_call()
+        # Construct a mapping of tool name to tool for easy lookup
+        name_to_tool_map = {tool.name: tool for tool in self.tools}
+        # We construct a mapping from each tool to a color, used for logging.
+        color_mapping = get_color_mapping(
+            [tool.name for tool in self.tools], excluded_colors=["green"]
+        )
+        intermediate_steps: List[Tuple[AgentAction, str]] = []
+        # Let's start tracking the iterations the agent has gone through
+        iterations = 0
+        # We now enter the agent loop (until it returns something).
+        while self._should_continue(iterations):
+            next_step_output = self._take_next_step(
+                name_to_tool_map, color_mapping, inputs, intermediate_steps
+            )
+            if isinstance(next_step_output, AgentFinish):
+                yield self._return(next_step_output, intermediate_steps)
+                return
+            else:
+                # yield the intermediate step
+                yield next_step_output
+            intermediate_steps.append(next_step_output)
+            iterations += 1
+        output = self.agent.return_stopped_response(
+            self.early_stopping_method, intermediate_steps, **inputs
+        )
+        yield self._return(output, intermediate_steps)
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
