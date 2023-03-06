@@ -2,11 +2,12 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
 
-from langchain import BasePromptTemplate, LLMChain
-from langchain.chains.conversation.prompt import SUMMARY_PROMPT
-from langchain.llms import BaseLLM
+from langchain.chains.llm import LLMChain
+from langchain.chains.memory.prompt import SUMMARY_PROMPT
+from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import ChatMemoryMixin
 from langchain.memory.utils import get_buffer_string
+from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
 
 

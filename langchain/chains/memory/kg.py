@@ -2,16 +2,17 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from langchain import BasePromptTemplate, LLMChain
-from langchain.chains.conversation.prompt import (
+from langchain.chains.llm import LLMChain
+from langchain.chains.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import get_entities, parse_triples
-from langchain.llms import BaseLLM
+from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import ChatMemoryMixin
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
+from langchain.prompts.base import BasePromptTemplate
 
 
 class ConversationKGMemory(ChatMemoryMixin, BaseModel):
