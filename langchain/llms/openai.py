@@ -692,3 +692,25 @@ class OpenAIChat(BaseLLM, BaseModel):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "openai-chat"
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        # tiktoken NOT supported for Python 3.8 or below
+        if sys.version_info[1] <= 8:
+            return super().get_num_tokens(text)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3.5-Turbo encoder instance
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+        # encode the text using the GPT-3.5-Turbo encoder
+        tokenized_text = enc.encode(text)
+
+        # calculate the number of tokens in the encoded text
+        return len(tokenized_text)
