@@ -33,6 +33,7 @@ class ChatVectorDBChain(Chain, BaseModel):
     output_key: str = "answer"
     return_source_documents: bool = False
     top_k_docs_for_context: int = 4
+    get_chat_history: Any = _get_chat_history
     """Return the source documents."""
 
     @property
@@ -81,7 +82,7 @@ class ChatVectorDBChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
-        chat_history_str = _get_chat_history(inputs["chat_history"])
+        chat_history_str = self.get_chat_history(inputs["chat_history"])
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         if chat_history_str:
             new_question = self.question_generator.run(
@@ -103,7 +104,7 @@ class ChatVectorDBChain(Chain, BaseModel):
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
-        chat_history_str = _get_chat_history(inputs["chat_history"])
+        chat_history_str = self.get_chat_history(inputs["chat_history"])
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         if chat_history_str:
             new_question = await self.question_generator.arun(
