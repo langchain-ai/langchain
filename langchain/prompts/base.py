@@ -252,7 +252,7 @@ class BasePromptTemplate(BaseModel, ABC):
             raise ValueError(f"{save_path} must be json or yaml")
 
 
-class StringPromptTemplate(BasePromptTemplate):
+class StringPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
