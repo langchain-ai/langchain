@@ -20,6 +20,8 @@ from langchain.schema import (
     ChatResult,
     HumanMessage,
     SystemMessage,
+    ExampleHumanMessage,
+    ExampleAIMessage,
 )
 from langchain.utils import get_from_dict_or_env
 
@@ -33,6 +35,11 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
     elif role == "assistant":
         return AIMessage(content=_dict["content"])
     elif role == "system":
+        if "name" in _dict:
+            if _dict["name"] == "example_user":
+                return ExampleHumanMessage(content=_dict["content"])
+            elif _dict["name"] == "example_assistant":
+                return ExampleAIMessage(content=_dict["content"])
         return SystemMessage(content=_dict["content"])
     else:
         return ChatMessage(content=_dict["content"], role=role)
@@ -47,6 +54,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, ExampleHumanMessage):
+        message_dict = {"role": "system", "content": message.content, "name": "example_user"}
+    elif isinstance(message, ExampleAIMessage):
+        message_dict = {"role": "system", "content": message.content, "name": "example_assistant"}
     else:
         raise ValueError(f"Got unknown type {message}")
     if "name" in message.additional_kwargs:

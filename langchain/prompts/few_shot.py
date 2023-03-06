@@ -15,6 +15,8 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    ExampleAIMessagePromptTemplate,
+    ExampleHumanMessagePromptTemplate,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import (
@@ -170,14 +172,14 @@ class FewShotChatPromptTemplate(BaseChatPromptTemplate, BaseFewShotPromptTemplat
         # TODO: add support for example selectors
         for example in self._get_examples():
             message_prompts.append(
-                HumanMessagePromptTemplate(
+                ExampleHumanMessagePromptTemplate(
                     prompt=StringPromptTemplate.from_template(
                         self.example_input.format(**example)
                     )
                 ),
             )
             message_prompts.append(
-                AIMessagePromptTemplate(
+                ExampleAIMessagePromptTemplate(
                     prompt=StringPromptTemplate.from_template(
                         self.example_output.format(**example)
                     )

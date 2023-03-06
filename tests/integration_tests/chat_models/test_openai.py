@@ -11,6 +11,8 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     SystemMessage,
+    ExampleHumanMessage,
+    ExampleAIMessage,
 )
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -76,6 +78,22 @@ def test_chat_openai_streaming() -> None:
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
+
+
+def test_chat_openai_few_shot() -> None:
+    """Test with few shot examples."""
+    messages = [
+        SystemMessage(content="You are to provide an antonym for the user's input."),
+        ExampleHumanMessage(content="Hello"),
+        ExampleAIMessage(content="Goodbye"),
+        ExampleHumanMessage(content="High"),
+        ExampleAIMessage(content="Low"),
+        HumanMessage(content="Happy"),
+    ]
+    chat = ChatOpenAI(max_tokens=10)
+    response = chat(messages)
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, str)
 
 
 def test_chat_openai_invalid_streaming_params() -> None:
