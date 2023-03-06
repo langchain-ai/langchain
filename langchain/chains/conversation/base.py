@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.base import Memory
+from langchain.memory.base import Memory
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain

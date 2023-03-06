@@ -5,7 +5,8 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.callbacks.base import CallbackManager
-from langchain.chains.base import Chain, Memory
+from langchain.chains.base import Chain
+from langchain.memory.base import Memory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

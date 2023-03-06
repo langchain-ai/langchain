@@ -29,6 +29,7 @@ class BaseMessagePromptTemplate(BaseModel, ABC):
     def input_variables(self) -> List[str]:
         """Input variables for this prompt template."""
 
+
 class SimpleMessagePromptTemplate(BaseMessagePromptTemplate):
     """Prompt template that assumes variable is already list of messages."""
 
@@ -159,9 +160,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         result = []
         for message_template in self.messages:
             rel_params = {
-                k: v
-                for k, v in kwargs.items()
-                if k in message_template.input_variables
+                k: v for k, v in kwargs.items() if k in message_template.input_variables
             }
             message = message_template.format_messages(**rel_params)
             result.extend(message)

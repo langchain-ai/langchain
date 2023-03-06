@@ -1,7 +1,7 @@
 """Test conversation chain and memory."""
 import pytest
 
-from langchain.chains.base import Memory
+from langchain.memory.base import Memory
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.conversation.memory import (
     ConversationBufferMemory,
