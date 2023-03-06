@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -62,10 +62,17 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     @classmethod
     def from_chain_type(
-        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+        cls,
+        llm: BaseLLM,
+        chain_type: str = "stuff",
+        chain_type_kwargs: Optional[dict] = None,
+        **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
-        combine_document_chain = load_qa_with_sources_chain(llm, chain_type=chain_type)
+        _chain_kwargs = chain_type_kwargs or {}
+        combine_document_chain = load_qa_with_sources_chain(
+            llm, chain_type=chain_type, **_chain_kwargs
+        )
         return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:

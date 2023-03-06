@@ -11,6 +11,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.schema import BaseMessage, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -115,6 +116,18 @@ class RegexParser(BaseOutputParser, BaseModel):
                 }
 
 
+class StringPromptValue(PromptValue):
+    text: str
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return self.text
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return [HumanMessage(content=self.text)]
+
+
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
@@ -131,6 +144,10 @@ class BasePromptTemplate(BaseModel, ABC):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @abstractmethod
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
@@ -233,3 +250,9 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+class StringPromptTemplate(BasePromptTemplate, ABC):
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
+        return StringPromptValue(text=self.format(**kwargs))
