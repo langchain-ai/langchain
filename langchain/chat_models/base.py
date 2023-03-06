@@ -54,7 +54,10 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     async def agenerate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        raise NotImplementedError
+        results = []
+        for m in messages:
+            results.append(self._generate(m, stop=stop))
+        return LLMResult(generations=[res.generations for res in results])
 
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
@@ -70,6 +73,12 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     @abstractmethod
     def _generate(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> ChatResult:
+        """Top Level call"""
+
+    @abstractmethod
+    async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Top Level call"""

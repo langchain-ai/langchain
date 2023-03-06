@@ -1,4 +1,6 @@
 """OpenAI chat wrapper."""
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
@@ -24,6 +26,40 @@ from langchain.schema import (
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
+
+
+def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
+    import openai
+
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
+    """Use tenacity to retry the async completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+        return await llm.client.acreate(**kwargs)
+
+    return await _completion_with_retry(**kwargs)
 
 
 def _convert_dict_to_message(_dict: dict) -> BaseMessage:
@@ -209,6 +245,50 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             gen = ChatGeneration(message=message)
             generations.append(gen)
         return ChatResult(generations=generations)
+
+    async def _agenerate(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> ChatResult:
+        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        if self.streaming:
+            inner_completion = ""
+            role = "assistant"
+            params["stream"] = True
+            async for stream_resp in await acompletion_with_retry(
+                self, messages=message_dicts, **params
+            ):
+                role = stream_resp["choices"][0]["delta"].get("role", role)
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                inner_completion += token
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            message = _convert_dict_to_message(
+                {"content": inner_completion, "role": role}
+            )
+            return ChatResult(generations=[ChatGeneration(message=message)])
+        else:
+            full_response = await acompletion_with_retry(
+                self, messages=message_dicts, **params
+            )
+            generations = []
+            for res in full_response["choices"]:
+                message = _convert_dict_to_message(res["message"])
+                gen = ChatGeneration(message=message)
+                generations.append(gen)
+            return ChatResult(generations=generations)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
