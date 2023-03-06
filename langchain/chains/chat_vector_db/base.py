@@ -129,13 +129,18 @@ class ChatVectorDBChain(Chain, BaseModel):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
-        
 
-class ChatOnlineDBChain(ChatVectorDBChain, BaseModel):
-    """Chain for chatting with sources over documents."""
+class ChatOnlineDBChain(Chain, BaseModel):
+    """Chain for chatting with a vector database."""
 
+    combine_docs_chain: BaseCombineDocumentsChain
+    question_generator: LLMChain
+    output_key: str = "answer"
+    return_source_documents: bool = False
+    top_k_docs_for_context: int = 4
     input_docs_key: str = "input_documents"  #: :meta private:
     question_key: str = "question"  #: :meta private:
+    """Return the source documents."""
 
     @property
     def input_keys(self) -> List[str]:
@@ -145,25 +150,51 @@ class ChatOnlineDBChain(ChatVectorDBChain, BaseModel):
         """
         return [self.input_docs_key, self.question_key, "chat_history"]
 
-    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
-        return inputs.pop(self.input_docs_key)
-
     @property
     def _chain_type(self) -> str:
-        return "chat-online-db"        
-        
+        return "chat-online-db" 
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Return the output keys.
+
+        :meta private:
+        """
+        _output_keys = [self.output_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
+    
+    @property
+    def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        return inputs.pop(self.input_docs_key)       
+
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLLM,
+        condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
+        qa_prompt: BasePromptTemplate = QA_PROMPT,
+        chain_type: str = "stuff",
+        **kwargs: Any,
+    ) -> ChatOnlineDBChain:
+        """Load chain from LLM."""
+        doc_chain = load_qa_chain(
+            llm,
+            chain_type=chain_type,
+            prompt=qa_prompt,
+        )
+        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        return cls(
+            combine_docs_chain=doc_chain,
+            question_generator=condense_question_chain,
+            **kwargs,
+        )
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         chat_history_str = _get_chat_history(inputs["chat_history"])
-        input_docs = self._get_docs(inputs)
-        if input_docs is not None:
-            docs = input_docs
-        else:
-            docs = self.vectorstore.similarity_search(
-            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
-            )        
-        vectordbkwargs = inputs.get("vectordbkwargs", {})
+        docs = self._get_docs(inputs)     
         if chat_history_str:
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str
@@ -182,21 +213,13 @@ class ChatOnlineDBChain(ChatVectorDBChain, BaseModel):
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         chat_history_str = _get_chat_history(inputs["chat_history"])
-        input_docs = self._get_docs(inputs)
-        if input_docs is not None:
-            docs = input_docs
-        else:
-            docs = self.vectorstore.similarity_search(
-            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
-            ) 
-        vectordbkwargs = inputs.get("vectordbkwargs", {})
+        docs = self._get_docs(inputs)
         if chat_history_str:
             new_question = await self.question_generator.arun(
                 question=question, chat_history=chat_history_str
             )
         else:
             new_question = question
-        # TODO: This blocks the event loop, but it's not clear how to avoid it.
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -204,5 +227,5 @@ class ChatOnlineDBChain(ChatVectorDBChain, BaseModel):
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
-            return {self.output_key: answer}
-        
+            return {self.output_key: answer}     
+
