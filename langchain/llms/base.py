@@ -10,8 +10,7 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.prompts.base import PromptValue
-from langchain.schema import Generation, LLMResult
+from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
 
 
 def _get_verbosity() -> bool:
@@ -54,7 +53,7 @@ def update_cache(
     return llm_output
 
 
-class BaseLLM(BaseModel, ABC):
+class BaseLLM(BaseLanguageModel, BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None

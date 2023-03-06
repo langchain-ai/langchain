@@ -6,13 +6,14 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.prompts.base import PromptValue
 from langchain.schema import (
     AIMessage,
+    BaseLanguageModel,
     BaseMessage,
     ChatGeneration,
     ChatResult,
     LLMResult,
+    PromptValue,
 )
 
 
@@ -20,7 +21,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class BaseChatModel(BaseModel, ABC):
+class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)

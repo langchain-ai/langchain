@@ -7,13 +7,14 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
-from langchain.prompts.base import BasePromptTemplate, PromptValue
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AIMessage,
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    PromptValue,
     SystemMessage,
 )
 

@@ -9,9 +9,9 @@ from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.input import get_colored_text
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate, PromptValue
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult
+from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
 class LLMChain(Chain, BaseModel):
@@ -30,7 +30,7 @@ class LLMChain(Chain, BaseModel):
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
-    llm: Union[BaseLLM, BaseChatModel]
+    llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
 
     class Config:
@@ -213,7 +213,7 @@ class LLMChain(Chain, BaseModel):
         return "llm_chain"
 
     @classmethod
-    def from_string(cls, llm: BaseLLM, template: str) -> Chain:
+    def from_string(cls, llm: BaseLanguageModel, template: str) -> Chain:
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)
