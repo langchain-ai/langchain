@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, root_validator
 
-from langchain.memory.base import Memory
 from langchain.chains.conversation.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
@@ -17,6 +16,7 @@ from langchain.graphs.networkx_graph import (
     parse_triples,
 )
 from langchain.llms.base import BaseLLM
+from langchain.memory.base import Memory
 from langchain.memory.chat_memory import ChatMessageHistory
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra
 
@@ -19,7 +19,7 @@ class Memory(BaseModel, ABC):
         """Input keys this memory class will load dynamically."""
 
     @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return key-value pairs given the text input to the chain.
 
         If None, return all memories
