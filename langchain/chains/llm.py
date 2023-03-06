@@ -59,12 +59,7 @@ class LLMChain(Chain, BaseModel):
         return self.apply([inputs])[0]
 
     def get_num_tokens(self, prompt: str) -> int:
-        if isinstance(self.llm, BaseLLM):
-            return self.llm.get_num_tokens(prompt)
-        elif isinstance(self.llm, BaseChatModel):
-            raise ValueError("Not supported for chat models yet")
-        else:
-            raise ValueError
+        return self.llm.get_num_tokens(prompt)
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
