@@ -7,7 +7,7 @@ from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.memory.buffer import ConversationBufferMemory
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import Memory
+from langchain.schema import BaseMemory
 
 
 class ConversationChain(LLMChain, BaseModel):
@@ -20,7 +20,7 @@ class ConversationChain(LLMChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    memory: Memory = Field(default_factory=ConversationBufferMemory)
+    memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""

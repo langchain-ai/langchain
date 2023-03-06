@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import Memory
+from langchain.schema import BaseMemory
 
 
 def _get_verbosity() -> bool:
@@ -20,7 +20,7 @@ def _get_verbosity() -> bool:
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
-    memory: Optional[Memory] = None
+    memory: Optional[BaseMemory] = None
     callback_manager: BaseCallbackManager = Field(
         default_factory=get_callback_manager, exclude=True
     )

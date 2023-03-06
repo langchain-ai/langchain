@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.memory.chat_memory import ChatMemoryMixin
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
@@ -14,7 +14,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
 
 
-class ConversationEntityMemory(ChatMemoryMixin, BaseModel):
+class ConversationEntityMemory(BaseChatMemory, BaseModel):
     """Entity extractor & summarizer to memory."""
 
     human_prefix: str = "Human"

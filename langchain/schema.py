@@ -135,7 +135,7 @@ class BaseLanguageModel(BaseModel, ABC):
         return len(tokenized_text)
 
 
-class Memory(BaseModel, ABC):
+class BaseMemory(BaseModel, ABC):
     """Base interface for memory in chains."""
 
     class Config:
@@ -163,3 +163,9 @@ class Memory(BaseModel, ABC):
     @abstractmethod
     def clear(self) -> None:
         """Clear memory contents."""
+
+
+# For backwards compatibility
+
+
+Memory = BaseMemory

@@ -6,7 +6,7 @@ from langchain.memory.buffer import ConversationBufferMemory
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import Memory
+from langchain.schema import BaseMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -58,7 +58,7 @@ def test_conversation_chain_errors_bad_variable() -> None:
         ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
     ],
 )
-def test_conversation_memory(memory: Memory) -> None:
+def test_conversation_memory(memory: BaseMemory) -> None:
     """Test basic conversation memory functionality."""
     # This is a good input because the input is not the same as baz.
     good_inputs = {"foo": "bar", "baz": "foo"}
@@ -90,7 +90,7 @@ def test_conversation_memory(memory: Memory) -> None:
         ConversationBufferWindowMemory(memory_key="baz"),
     ],
 )
-def test_clearing_conversation_memory(memory: Memory) -> None:
+def test_clearing_conversation_memory(memory: BaseMemory) -> None:
     """Test clearing the conversation memory."""
     # This is a good input because the input is not the same as baz.
     good_inputs = {"foo": "bar", "baz": "foo"}
