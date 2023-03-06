@@ -42,3 +42,14 @@ class ChatMemoryMixin(Memory):
     def clear(self) -> None:
         """Clear memory contents."""
         self.chat_memory.clear()
+
+
+class ChatMessageMemory(ChatMemoryMixin):
+    memory_key: str = "history"  #: :meta private:
+
+    @property
+    def memory_variables(self) -> List[str]:
+        return [self.memory_key]
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        return {self.memory_key: self.chat_memory.messages}
