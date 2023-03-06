@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
-from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AIMessage,
@@ -20,7 +20,7 @@ from langchain.schema import (
 
 
 class BaseMessagePromptTemplate(BaseModel, ABC):
-    prompt: BasePromptTemplate
+    prompt: StringPromptTemplate
     additional_kwargs: dict = Field(default_factory=dict)
 
     @classmethod

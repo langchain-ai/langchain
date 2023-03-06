@@ -5,13 +5,13 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    StringPromptTemplate,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
+class FewShotPromptWithTemplates(StringPromptTemplate, BaseModel):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None
@@ -25,7 +25,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
 
-    suffix: BasePromptTemplate
+    suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
 
     input_variables: List[str]
@@ -34,7 +34,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: Optional[BasePromptTemplate] = None
+    prefix: Optional[StringPromptTemplate] = None
     """A PromptTemplate to put before the examples."""
 
     template_format: str = "f-string"

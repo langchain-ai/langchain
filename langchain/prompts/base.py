@@ -145,6 +145,10 @@ class BasePromptTemplate(BaseModel, ABC):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    @abstractmethod
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
+
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
         """Validate variable names do not include restricted names."""
@@ -202,10 +206,6 @@ class BasePromptTemplate(BaseModel, ABC):
             prompt.format(variable1="foo")
         """
 
-    def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
-        return StringPromptValue(text=self.format(**kwargs))
-
     @property
     @abstractmethod
     def _prompt_type(self) -> str:
@@ -250,3 +250,9 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+class StringPromptTemplate(BasePromptTemplate):
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
+        return StringPromptValue(text=self.format(**kwargs))
