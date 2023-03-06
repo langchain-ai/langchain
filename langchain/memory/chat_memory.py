@@ -47,10 +47,16 @@ class BaseChatMemory(BaseMemory, ABC):
 
 class ChatMessageMemory(BaseChatMemory):
     memory_key: str = "history"  #: :meta private:
+    k: Optional[int] = 10
+    """Include the last `k` messages."""
 
     @property
     def memory_variables(self) -> List[str]:
         return [self.memory_key]
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        return {self.memory_key: self.chat_memory.messages}
+        if self.k is None:
+            messages = self.chat_memory.messages
+        else:
+            messages = self.chat_memory.messages[-self.k: ]
+        return {self.memory_key: messages}

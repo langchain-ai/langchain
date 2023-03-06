@@ -30,7 +30,7 @@ class BaseMessagePromptTemplate(BaseModel, ABC):
         """Input variables for this prompt template."""
 
 
-class SimpleMessagePromptTemplate(BaseMessagePromptTemplate):
+class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Prompt template that assumes variable is already list of messages."""
 
     variable_name: str

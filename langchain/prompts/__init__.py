@@ -5,7 +5,7 @@ from langchain.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
-    SimpleMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -21,7 +21,7 @@ __all__ = [
     "Prompt",
     "FewShotPromptWithTemplates",
     "ChatPromptTemplate",
-    "SimpleMessagePromptTemplate",
+    "MessagesPlaceholder",
     "HumanMessagePromptTemplate",
     "AIMessagePromptTemplate",
     "SystemMessagePromptTemplate",
