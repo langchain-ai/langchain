@@ -165,7 +165,7 @@ class ChatOnlineDBChain(Chain, BaseModel):
             _output_keys = _output_keys + ["source_documents"]
         return _output_keys
     
-    @property
+    
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)       
 
