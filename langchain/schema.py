@@ -100,7 +100,7 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
-class BaseLanguageModel(ABC):
+class BaseLanguageModel(BaseModel, ABC):
     @abstractmethod
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
