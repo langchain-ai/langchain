@@ -4,13 +4,13 @@ from pydantic import BaseModel, root_validator
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.memory.chat_memory import ChatMemoryMixin
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
 
 
-class ConversationSummaryMemory(ChatMemoryMixin, BaseModel):
+class ConversationSummaryMemory(BaseChatMemory, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""

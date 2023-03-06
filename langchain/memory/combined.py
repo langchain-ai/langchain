@@ -2,13 +2,13 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
-from langchain.schema import Memory
+from langchain.schema import BaseMemory
 
 
-class CombinedMemory(Memory, BaseModel):
+class CombinedMemory(BaseMemory, BaseModel):
     """Class for combining multiple memories' data together."""
 
-    memories: List[Memory]
+    memories: List[BaseMemory]
     """For tracking all the memories that should be accessed."""
 
     @property

@@ -1,9 +1,10 @@
+from abc import ABC
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import AIMessage, BaseMessage, HumanMessage, Memory
+from langchain.schema import AIMessage, BaseMemory, BaseMessage, HumanMessage
 
 
 class ChatMessageHistory(BaseModel):
@@ -19,7 +20,7 @@ class ChatMessageHistory(BaseModel):
         self.messages = []
 
 
-class ChatMemoryMixin(Memory):
+class BaseChatMemory(BaseMemory, ABC):
     chat_memory: ChatMessageHistory = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None

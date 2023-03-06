@@ -2,10 +2,10 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
-from langchain.schema import Memory
+from langchain.schema import BaseMemory
 
 
-class SimpleMemory(Memory, BaseModel):
+class SimpleMemory(BaseMemory, BaseModel):
     """Simple memory for storing context or other bits of information that shouldn't
     ever change between prompts.
     """
