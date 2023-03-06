@@ -3,9 +3,9 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, root_validator
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.memory.prompt import SUMMARY_PROMPT
 from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import ChatMemoryMixin
+from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
 

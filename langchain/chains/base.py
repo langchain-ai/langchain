@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.memory.base import Memory
+from langchain.schema import Memory
 
 
 def _get_verbosity() -> bool:

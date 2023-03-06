@@ -2,9 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from langchain.memory.base import Memory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import AIMessage, BaseMessage, HumanMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, Memory
 
 
 class ChatMessageHistory(BaseModel):

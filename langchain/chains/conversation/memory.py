@@ -1,12 +1,12 @@
 """Memory modules for conversation prompts."""
 
-from langchain.chains.memory.entity import ConversationEntityMemory
-from langchain.chains.memory.kg import ConversationKGMemory
-from langchain.chains.memory.summary import ConversationSummaryMemory
-from langchain.chains.memory.summary_buffer import ConversationSummaryBufferMemory
 from langchain.memory.buffer import ConversationBufferMemory
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
+from langchain.memory.entity import ConversationEntityMemory
+from langchain.memory.kg import ConversationKGMemory
+from langchain.memory.summary import ConversationSummaryMemory
+from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
 
 # This is only for backwards compatibility.
 

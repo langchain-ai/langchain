@@ -1,10 +1,10 @@
-from langchain.chains.memory.prompt import (
+from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_MEMORY_CONVERSATION_TEMPLATE,
     ENTITY_SUMMARIZATION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
-    SUMMARY_PROMPT,
     PROMPT,
+    SUMMARY_PROMPT,
 )
 
 # Only for backwards compatibility
@@ -15,5 +15,5 @@ __all__ = [
     "ENTITY_SUMMARIZATION_PROMPT",
     "ENTITY_EXTRACTION_PROMPT",
     "KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT",
-    "PROMPT"
+    "PROMPT",
 ]

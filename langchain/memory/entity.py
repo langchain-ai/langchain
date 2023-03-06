@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
-from langchain.chains.memory.prompt import (
+from langchain.llms.base import BaseLLM
+from langchain.memory.chat_memory import ChatMemoryMixin
+from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
 )
-from langchain.llms.base import BaseLLM
-from langchain.memory.chat_memory import ChatMemoryMixin
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage

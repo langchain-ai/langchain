@@ -3,11 +3,11 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.memory.base import Memory
 from langchain.memory.buffer import ConversationBufferMemory
+from langchain.memory.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import Memory
 
 
 class ConversationChain(LLMChain, BaseModel):

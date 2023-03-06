@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
-from langchain.memory.base import Memory
+from langchain.schema import Memory
 
 
 class CombinedMemory(Memory, BaseModel):
