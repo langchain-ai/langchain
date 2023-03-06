@@ -59,7 +59,6 @@ class Whisper(AudioBase):
                 temperature=self.temperature,
                 response_format=self.response_format,
             )
-            print("translate")
 
         try:
             text = response["text"]
