@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
@@ -11,7 +10,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage
+from langchain.schema import BaseLanguageModel, BaseMessage
 
 
 class ConversationEntityMemory(BaseChatMemory, BaseModel):
@@ -19,7 +18,7 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    llm: BaseLLM
+    llm: BaseLanguageModel
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     entity_summarization_prompt: BasePromptTemplate = ENTITY_SUMMARIZATION_PROMPT
     store: Dict[str, Optional[str]] = {}
