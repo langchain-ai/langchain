@@ -3,8 +3,7 @@
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.audio_files import AudioLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
-from langchain.document_loaders.college_confidential import \
-    CollegeConfidentialLoader
+from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
@@ -26,8 +25,7 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.online_pdf import OnlinePDFLoader
 from langchain.document_loaders.paged_pdf import PagedPDFSplitter
-from langchain.document_loaders.pdf import (PDFMinerLoader,
-                                            UnstructuredPDFLoader)
+from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
@@ -36,12 +34,13 @@ from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
-from langchain.document_loaders.unstructured import (UnstructuredFileIOLoader,
-                                                     UnstructuredFileLoader)
+from langchain.document_loaders.unstructured import (
+    UnstructuredFileIOLoader,
+    UnstructuredFileLoader,
+)
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.document_loaders.word_document import \
-    UnstructuredWordDocumentLoader
+from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
 from langchain.document_loaders.youtube import YoutubeLoader
 
 __all__ = [
