@@ -24,7 +24,7 @@ class ReadTheDocsLoader(BaseLoader):
         self.file_path = path
         self.bs_kwargs = kwargs
 
-    def load(self, encoding:str =None, error:str =None) -> List[Document]:
+    def load(self, encoding:Optional[str] =None, error:Optional[str] =None) -> List[Document]:
         """Load documents."""
         from bs4 import BeautifulSoup
 
