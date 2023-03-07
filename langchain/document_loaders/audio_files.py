@@ -11,7 +11,7 @@ class AudioLoader(BaseLoader):
     to text using an audio model."""
 
     def __init__(
-        self, audio_model: AudioBase, file_path: str, task: str = "transcript"
+        self, audio_model: AudioBase, file_path: str, task: str = "transcribe"
     ) -> None:
         super().__init__()
         self.audio_model = audio_model
@@ -20,7 +20,7 @@ class AudioLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load audio file then convert to text. \
-        Select among 'transcript' and 'translation' tasks"""
+        Select among 'transcribe' and 'translate' tasks"""
         raw_content = self.audio_model.transcript(self.file_path, self.task)
         content = raw_content.strip()
         metadata = {"source": self.file_path, "task": self.task}

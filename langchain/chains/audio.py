@@ -7,7 +7,7 @@ from langchain.chains.base import Chain
 class AudioChain(Chain):
     audio_model: AudioBase
 
-    output_key: str = "transcript"
+    output_key: str = "transcribe"
 
     @property
     def input_keys(self) -> List[str]:

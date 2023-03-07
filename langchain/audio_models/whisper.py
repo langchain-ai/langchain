@@ -26,7 +26,7 @@ class Whisper(AudioBase):
 
         extra = Extra.forbid
 
-    def transcript(self, audio_path: str, task: str = "transcript") -> str:
+    def transcript(self, audio_path: str, task: str = "transcribe") -> str:
         """Call to Whisper transcribe endpoint."""
 
         try:
@@ -37,7 +37,7 @@ class Whisper(AudioBase):
                 "Please install it with `pip install openai`."
             )
 
-        if task == "transcript":
+        if task == "transcribe":
             openai.api_key = self.model_key
             audio_file = open(audio_path, "rb")
             response = openai.Audio.transcribe(

@@ -37,7 +37,7 @@ class AudioBanana(AudioBase):
         values["banana_api_key"] = banana_api_key
         return values
 
-    def transcript(self, audio_path: str, task: str = "transcript") -> str:
+    def transcript(self, audio_path: str, task: str = "transcribe") -> str:
         """Call to Banana endpoint."""
         try:
             import banana_dev as banana
@@ -47,7 +47,7 @@ class AudioBanana(AudioBase):
                 "Please install it with `pip install banana-dev`."
             )
 
-        if task == "transcript":
+        if task == "transcribe":
             mp3 = self._read_mp3_audio(audio_path)
             model_inputs = {"mp3BytesString": mp3}
             response = banana.run(self.banana_api_key, self.model_key, model_inputs)
@@ -63,7 +63,7 @@ class AudioBanana(AudioBase):
                 )
         else:
             raise ValueError(
-                f"Only task available is 'transcript' for this model."
+                f"Only task available is 'transcribe' for this model."
                 f"Task was: {task}"
             )
 
