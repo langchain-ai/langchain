@@ -1,6 +1,6 @@
 """Loader that loads ReadTheDocs documentation directory dump."""
 from pathlib import Path
-from typing import List
+from typing import Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -9,16 +9,27 @@ from langchain.document_loaders.base import BaseLoader
 class ReadTheDocsLoader(BaseLoader):
     """Loader that loads ReadTheDocs documentation directory dump."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, **kwargs: Optional[Any]):
         """Initialize path."""
-        self.file_path = path
+        try:
+            from bs4 import BeautifulSoup
+            _ = BeautifulSoup('<html><body>Parser builder library test.</body></html>', **kwargs)
 
-    def load(self) -> List[Document]:
+        except ImportError:
+            raise ValueError(
+                "Could not import python packages. "
+                "Please install it with `pip install beautifulsoup4`. "
+            )
+
+        self.file_path = path
+        self.bs_kwargs = kwargs
+
+    def load(self, encoding:Optional[str] =None, error:Optional[str] =None) -> List[Document]:
         """Load documents."""
         from bs4 import BeautifulSoup
 
         def _clean_data(data: str) -> str:
-            soup = BeautifulSoup(data)
+            soup = BeautifulSoup(data, **self.bs_kwargs)
             text = soup.find_all("main", {"id": "main-content"})
             if len(text) != 0:
                 text = text[0].get_text()
@@ -30,8 +41,9 @@ class ReadTheDocsLoader(BaseLoader):
         for p in Path(self.file_path).rglob("*"):
             if p.is_dir():
                 continue
-            with open(p) as f:
+            with open(p, encoding=encoding, errors=errors) as f:
                 text = _clean_data(f.read())
             metadata = {"source": str(p)}
             docs.append(Document(page_content=text, metadata=metadata))
         return docs
+
