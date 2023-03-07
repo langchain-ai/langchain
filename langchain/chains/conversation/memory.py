@@ -493,7 +493,7 @@ class ConversationKGMemory(Memory, BaseModel):
         return self.kg.clear()
 
 
-class ReadOnlySharedMemory(Memory, BaseModel):
+class ReadOnlySharedMemory(Memory):
     """A memory wrapper that is read-only and cannot be changed."""
 
     memory: Memory
