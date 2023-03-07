@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
@@ -28,6 +29,7 @@ __all__ = [
     "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
+    "FakeEmbeddings",
 ]
 
 
