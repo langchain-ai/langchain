@@ -51,12 +51,13 @@ def _load_map_rerank_chain(
 
 def _load_stuff_chain(
     llm: BaseLLM,
-    prompt: BasePromptTemplate = stuff_prompt.PROMPT,
+    prompt: Optional[BasePromptTemplate] = None,
     document_variable_name: str = "context",
     verbose: Optional[bool] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
+    _prompt = prompt or stuff_prompt.PROMPT_COLLECTION.get_default_prompt(llm)
     llm_chain = LLMChain(
         llm=llm, prompt=prompt, verbose=verbose, callback_manager=callback_manager
     )
