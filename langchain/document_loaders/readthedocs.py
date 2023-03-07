@@ -9,11 +9,16 @@ from langchain.document_loaders.base import BaseLoader
 class ReadTheDocsLoader(BaseLoader):
     """Loader that loads ReadTheDocs documentation directory dump."""
 
-    def __init__(self, path: str, **kwargs: Optional[Any]):
+    def __init__(
+        self,
+        path: str,
+        encoding: Optional[str] = None,
+        errors: Optional[str] = None,
+        **kwargs: Optional[Any]
+    ):
         """Initialize path."""
         try:
             from bs4 import BeautifulSoup
-            _ = BeautifulSoup('<html><body>Parser builder library test.</body></html>', **kwargs)
 
         except ImportError:
             raise ValueError(
@@ -21,10 +26,19 @@ class ReadTheDocsLoader(BaseLoader):
                 "Please install it with `pip install beautifulsoup4`. "
             )
 
+        try:
+            _ = BeautifulSoup(
+                "<html><body>Parser builder library test.</body></html>", **kwargs
+            )
+        except Exception as e:
+            raise ValueError("Parsing kwargs do not appear valid") from e
+
         self.file_path = path
+        self.encoding = encoding
+        self.errors = errors
         self.bs_kwargs = kwargs
 
-    def load(self, encoding:Optional[str] =None, error:Optional[str] =None) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load documents."""
         from bs4 import BeautifulSoup
 
@@ -41,9 +55,8 @@ class ReadTheDocsLoader(BaseLoader):
         for p in Path(self.file_path).rglob("*"):
             if p.is_dir():
                 continue
-            with open(p, encoding=encoding, errors=errors) as f:
+            with open(p, encoding=self.encoding, errors=self.errors) as f:
                 text = _clean_data(f.read())
             metadata = {"source": str(p)}
             docs.append(Document(page_content=text, metadata=metadata))
         return docs
-
