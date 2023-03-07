@@ -8,7 +8,7 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage
+from langchain.schema import BaseMessage, SystemMessage
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, BaseModel):
@@ -34,16 +34,21 @@ class ConversationSummaryBufferMemory(BaseChatMemory, BaseModel):
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer_string = get_buffer_string(
-            self.buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
-        )
-
-        if self.moving_summary_buffer == "":
-            return {self.memory_key: buffer_string}
-        memory_val = self.moving_summary_buffer + "\n" + buffer_string
-        return {self.memory_key: memory_val}
+        buffer = self.buffer
+        if self.moving_summary_buffer != "":
+            first_messages: List[BaseMessage] = [
+                SystemMessage(content=self.moving_summary_buffer)
+            ]
+            buffer = first_messages + buffer
+        if self.return_messages:
+            final_buffer: Any = buffer
+        else:
+            final_buffer = get_buffer_string(
+                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+            )
+        return {self.memory_key: final_buffer}
 
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
