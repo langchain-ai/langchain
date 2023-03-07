@@ -23,6 +23,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Do nothing."""
+        pass
+
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
@@ -49,11 +53,16 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
-        color: Optional[str] = None,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
-        """Print out the log in specified color."""
+        """Do nothing."""
+        pass
+
+    def on_agent_action(
+        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+    ) -> Any:
+        """Run on agent action."""
         print_text(action.log, color=color if color else self.color)
 
     def on_tool_end(

@@ -2,6 +2,7 @@
 from langchain.chains.api.base import APIChain
 from langchain.chains.chat_vector_db.base import ChatVectorDBChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
+from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -10,6 +11,7 @@ from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.llm_requests import LLMRequestsChain
+from langchain.chains.llm_summarization_checker.base import LLMSummarizationCheckerChain
 from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
@@ -29,6 +31,7 @@ __all__ = [
     "LLMChain",
     "LLMBashChain",
     "LLMCheckerChain",
+    "LLMSummarizationCheckerChain",
     "LLMMathChain",
     "PALChain",
     "QAWithSourcesChain",
@@ -48,4 +51,5 @@ __all__ = [
     "HypotheticalDocumentEmbedder",
     "ChatVectorDBChain",
     "GraphQAChain",
+    "ConstitutionalChain",
 ]

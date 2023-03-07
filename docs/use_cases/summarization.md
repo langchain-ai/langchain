@@ -12,9 +12,9 @@ chain.run(docs)
 ```
 
 The following resources exist:
-- [Summarization Notebook](../modules/chains/combine_docs_examples/summarize.ipynb): A notebook walking through how to accomplish this task.
+- [Summarization Notebook](../modules/indexes/chain_examples/summarize.ipynb): A notebook walking through how to accomplish this task.
 
 Additional related resources include:
-- [Utilities for working with Documents](../modules/utils/how_to_guides.rst): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents).
-- [CombineDocuments Chains](../modules/chains/combine_docs.md): A conceptual overview of specific types of chains by which you can accomplish this task.
+- [Utilities for working with Documents](../reference/utils.rst): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents).
+- [CombineDocuments Chains](../modules/indexes/combine_docs.md): A conceptual overview of specific types of chains by which you can accomplish this task.
 - [Data Augmented Generation](./combine_docs.md): An overview of data augmented generation, which is the general concept of combining external data with LLMs (of which this is a subset).

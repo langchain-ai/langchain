@@ -25,7 +25,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     model: str = "large"
     """Model name to use."""
 
-    truncate: str = "NONE"
+    truncate: Optional[str] = None
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     cohere_api_key: Optional[str] = None
@@ -64,7 +64,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.embed(
             model=self.model, texts=texts, truncate=self.truncate
         ).embeddings
-        return embeddings
+        return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
@@ -78,4 +78,4 @@ class CohereEmbeddings(BaseModel, Embeddings):
         embedding = self.client.embed(
             model=self.model, texts=[text], truncate=self.truncate
         ).embeddings[0]
-        return embedding
+        return list(map(float, embedding))

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -27,9 +27,11 @@ class Chroma(VectorStore):
                 vectorstore = Chroma("langchain_store", embeddings.embed_query)
     """
 
+    _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+
     def __init__(
         self,
-        collection_name: str,
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
     ) -> None:
@@ -40,7 +42,7 @@ class Chroma(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
-                "Please it install it with `pip install chromadb`."
+                "Please install it with `pip install chromadb`."
             )
 
         # TODO: Add support for custom client. For now this is in-memory only.
@@ -64,7 +66,7 @@ class Chroma(VectorStore):
         else:
             self._collection = self._client.create_collection(
                 name=collection_name,
-                embedding_fn=self._embedding_function.embed_documents
+                embedding_function=self._embedding_function.embed_documents
                 if self._embedding_function is not None
                 else None,
             )
@@ -74,6 +76,7 @@ class Chroma(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -113,6 +116,27 @@ class Chroma(VectorStore):
         Returns:
             List[Document]: List of documents most simmilar to the query text.
         """
+        docs_and_scores = self.similarity_search_with_score(query, k)
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with Chroma with distance.
+
+        Args:
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to the query
+                text with distance in float.
+        """
         if self._embedding_function is None:
             results = self._collection.query(
                 query_texts=[query], n_results=k, where=filter
@@ -126,8 +150,12 @@ class Chroma(VectorStore):
         docs = [
             # TODO: Chroma can do batch querying,
             # we shouldn't hard code to the 1st result
-            Document(page_content=result[0], metadata=result[1])
-            for result in zip(results["documents"][0], results["metadatas"][0])
+            (Document(page_content=result[0], metadata=result[1]), result[2])
+            for result in zip(
+                results["documents"][0],
+                results["metadatas"][0],
+                results["distances"][0],
+            )
         ]
         return docs
 
@@ -155,7 +183,7 @@ class Chroma(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = "langchain",
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Chroma:
@@ -189,7 +217,7 @@ class Chroma(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
-        collection_name: str = "langchain",
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         **kwargs: Any,
     ) -> Chroma:

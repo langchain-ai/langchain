@@ -1,14 +1,17 @@
 """BasePrompt schema definition."""
+from __future__ import annotations
+
 import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.schema import BaseMessage, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -44,8 +47,11 @@ def check_valid_template(
     try:
         formatter_func = DEFAULT_FORMATTER_MAPPING[template_format]
         formatter_func(template, **dummy_inputs)
-    except KeyError:
-        raise ValueError("Invalid prompt schema.")
+    except KeyError as e:
+        raise ValueError(
+            "Invalid prompt schema; check for mismatched or missing input parameters. "
+            + str(e)
+        )
 
 
 class BaseOutputParser(BaseModel, ABC):
@@ -110,6 +116,18 @@ class RegexParser(BaseOutputParser, BaseModel):
                 }
 
 
+class StringPromptValue(PromptValue):
+    text: str
+
+    def to_string(self) -> str:
+        """Return prompt as string."""
+        return self.text
+
+    def to_messages(self) -> List[BaseMessage]:
+        """Return prompt as messages."""
+        return [HumanMessage(content=self.text)]
+
+
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
@@ -117,12 +135,19 @@ class BasePromptTemplate(BaseModel, ABC):
     """A list of the names of the variables the prompt template expects."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
+    partial_variables: Mapping[str, Union[str, Callable[[], str]]] = Field(
+        default_factory=dict
+    )
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @abstractmethod
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
@@ -132,7 +157,37 @@ class BasePromptTemplate(BaseModel, ABC):
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
+        if "stop" in values["partial_variables"]:
+            raise ValueError(
+                "Cannot have an partial variable named 'stop', as it is used "
+                "internally, please rename."
+            )
+
+        overall = set(values["input_variables"]).intersection(
+            values["partial_variables"]
+        )
+        if overall:
+            raise ValueError(
+                f"Found overlapping input and partial variables: {overall}"
+            )
         return values
+
+    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+        """Return a partial of the prompt template."""
+        prompt_dict = self.__dict__.copy()
+        prompt_dict["input_variables"] = list(
+            set(self.input_variables).difference(kwargs)
+        )
+        prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
+        return type(self)(**prompt_dict)
+
+    def _merge_partial_and_user_variables(self, **kwargs: Any) -> Dict[str, Any]:
+        # Get partial params:
+        partial_kwargs = {
+            k: v if isinstance(v, str) else v()
+            for k, v in self.partial_variables.items()
+        }
+        return {**partial_kwargs, **kwargs}
 
     @abstractmethod
     def format(self, **kwargs: Any) -> str:
@@ -173,6 +228,8 @@ class BasePromptTemplate(BaseModel, ABC):
 
             prompt.save(file_path="path/prompt.yaml")
         """
+        if self.partial_variables:
+            raise ValueError("Cannot save prompt with partial variables.")
         # Convert file to Path object.
         if isinstance(file_path, str):
             save_path = Path(file_path)
@@ -193,3 +250,9 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+
+class StringPromptTemplate(BasePromptTemplate, ABC):
+    def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Chat Messages."""
+        return StringPromptValue(text=self.format(**kwargs))

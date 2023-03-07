@@ -10,7 +10,7 @@ from pydantic import BaseModel, Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import Generation, LLMResult
+from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
 
 
 def _get_verbosity() -> bool:
@@ -53,7 +53,7 @@ def update_cache(
     return llm_output
 
 
-class BaseLLM(BaseModel, ABC):
+class BaseLLM(BaseLanguageModel, BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
@@ -99,6 +99,18 @@ class BaseLLM(BaseModel, ABC):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
+
+    def generate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return self.generate(prompt_strings, stop=stop)
+
+    async def agenerate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        prompt_strings = [p.to_string() for p in prompts]
+        return await self.agenerate(prompt_strings, stop=stop)
 
     def generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -165,15 +177,26 @@ class BaseLLM(BaseModel, ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
-            )
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                )
             try:
                 output = await self._agenerate(prompts, stop=stop)
             except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                else:
+                    self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_end(output, verbose=self.verbose)
+            else:
+                self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
         params = self.dict()
         params["stop"] = stop
@@ -184,15 +207,32 @@ class BaseLLM(BaseModel, ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
-            self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
-            )
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__},
+                    missing_prompts,
+                    verbose=self.verbose,
+                )
+            else:
+                self.callback_manager.on_llm_start(
+                    {"name": self.__class__.__name__},
+                    missing_prompts,
+                    verbose=self.verbose,
+                )
             try:
                 new_results = await self._agenerate(missing_prompts, stop=stop)
             except (KeyboardInterrupt, Exception) as e:
-                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+                else:
+                    self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_end(
+                    new_results, verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
@@ -200,27 +240,6 @@ class BaseLLM(BaseModel, ABC):
             llm_output = {}
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output)
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
 
     def __call__(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -291,6 +310,10 @@ class LLM(BaseLLM):
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Run the LLM on the given prompt and input."""
 
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Run the LLM on the given prompt and input."""
+        raise NotImplementedError("Async generation not implemented for this LLM.")
+
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -306,4 +329,8 @@ class LLM(BaseLLM):
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
-        raise NotImplementedError("Async generation not implemented for this LLM.")
+        generations = []
+        for prompt in prompts:
+            text = await self._acall(prompt, stop=stop)
+            generations.append([Generation(text=text)])
+        return LLMResult(generations=generations)

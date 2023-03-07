@@ -1,7 +1,7 @@
 """Wrapper around weaviate vector database."""
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 from langchain.docstore.document import Document
@@ -37,7 +37,7 @@ class Weaviate(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import weaviate python package. "
-                "Please it install it with `pip install weaviate-client`."
+                "Please install it with `pip install weaviate-client`."
             )
         if not isinstance(client, weaviate.Client):
             raise ValueError(
@@ -51,7 +51,10 @@ class Weaviate(VectorStore):
             self._query_attrs.extend(attributes)
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Upload texts with metadata (properties) to Weaviate."""
         from weaviate.util import get_valid_uuid
@@ -75,7 +78,9 @@ class Weaviate(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Look up similar documents in weaviate."""
-        content = {"concepts": [query]}
+        content: Dict[str, Any] = {"concepts": [query]}
+        if kwargs.get("search_distance"):
+            content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_text(content).with_limit(k).do()
         docs = []

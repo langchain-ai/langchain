@@ -39,7 +39,7 @@ class Pinecone(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import pinecone python package. "
-                "Please it install it with `pip install pinecone-client`."
+                "Please install it with `pip install pinecone-client`."
             )
         if not isinstance(index, pinecone.index.Index):
             raise ValueError(
@@ -56,6 +56,7 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 

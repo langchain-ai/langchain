@@ -1,14 +1,15 @@
 """Chain that just formats a prompt and calls an LLM."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import LLMResult
+from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
 class LLMChain(Chain, BaseModel):
@@ -27,8 +28,7 @@ class LLMChain(Chain, BaseModel):
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
-    llm: BaseLLM
-    """LLM wrapper to use."""
+    llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
 
     class Config:
@@ -53,21 +53,22 @@ class LLMChain(Chain, BaseModel):
         """
         return [self.output_key]
 
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        return self.apply([inputs])[0]
+
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        response = self.llm.generate(prompts, stop=stop)
-        return response
+        return self.llm.generate_prompt(prompts, stop)
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
-        response = await self.llm.agenerate(prompts, stop=stop)
-        return response
+        prompts, stop = await self.aprep_prompts(input_list)
+        return await self.llm.agenerate_prompt(prompts, stop)
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[str], Optional[List[str]]]:
+    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
         """Prepare prompts from inputs."""
         stop = None
         if "stop" in input_list[0]:
@@ -75,10 +76,36 @@ class LLMChain(Chain, BaseModel):
         prompts = []
         for inputs in input_list:
             selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
-            prompt = self.prompt.format(**selected_inputs)
-            _colored_text = get_colored_text(prompt, "green")
+            prompt = self.prompt.format_prompt(**selected_inputs)
+            _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text
             self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+            if "stop" in inputs and inputs["stop"] != stop:
+                raise ValueError(
+                    "If `stop` is present in any inputs, should be present in all."
+                )
+            prompts.append(prompt)
+        return prompts, stop
+
+    async def aprep_prompts(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+        """Prepare prompts from inputs."""
+        stop = None
+        if "stop" in input_list[0]:
+            stop = input_list[0]["stop"]
+        prompts = []
+        for inputs in input_list:
+            selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            prompt = self.prompt.format_prompt(**selected_inputs)
+            _colored_text = get_colored_text(prompt.to_string(), "green")
+            _text = "Prompt after formatting:\n" + _colored_text
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_text(
+                    _text, end="\n", verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
                 raise ValueError(
                     "If `stop` is present in any inputs, should be present in all."
@@ -98,15 +125,11 @@ class LLMChain(Chain, BaseModel):
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
-        outputs = []
-        for generation in response.generations:
+        return [
             # Get the text of the top generated string.
-            response_str = generation[0].text
-            outputs.append({self.output_key: response_str})
-        return outputs
-
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        return self.apply([inputs])[0]
+            {self.output_key: generation[0].text}
+            for generation in response.generations
+        ]
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
@@ -156,21 +179,31 @@ class LLMChain(Chain, BaseModel):
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
         result = self.apply(input_list)
+        return self._parse_result(result)
+
+    def _parse_result(
+        self, result: List[Dict[str, str]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         if self.prompt.output_parser is not None:
-            new_result = []
-            for res in result:
-                text = res[self.output_key]
-                new_result.append(self.prompt.output_parser.parse(text))
-            return new_result
+            return [
+                self.prompt.output_parser.parse(res[self.output_key]) for res in result
+            ]
         else:
             return result
+
+    async def aapply_and_parse(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        """Call apply and then parse the results."""
+        result = await self.aapply(input_list)
+        return self._parse_result(result)
 
     @property
     def _chain_type(self) -> str:
         return "llm_chain"
 
     @classmethod
-    def from_string(cls, llm: BaseLLM, template: str) -> Chain:
+    def from_string(cls, llm: BaseLanguageModel, template: str) -> Chain:
         """Create LLMChain from LLM and template."""
         prompt_template = PromptTemplate.from_template(template)
         return cls(llm=llm, prompt=prompt_template)

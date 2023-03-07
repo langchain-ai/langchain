@@ -1,15 +1,15 @@
 """Load agent."""
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
-from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.llms.base import BaseLLM
+from langchain.tools.base import BaseTool
 
 
 def initialize_agent(
-    tools: List[Tool],
+    tools: Sequence[BaseTool],
     llm: BaseLLM,
     agent: Optional[str] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
@@ -17,12 +17,12 @@ def initialize_agent(
     agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Load agent given tools and LLM.
+    """Load an agent executor given tools and LLM.
 
     Args:
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
-        agent: The agent to use. Valid options are:
+        agent: A string that specified the agent type to use. Valid options are:
             `zero-shot-react-description`
             `react-docstore`
             `self-ask-with-search`
@@ -32,10 +32,11 @@ def initialize_agent(
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         agent_path: Path to serialized agent to use.
-        **kwargs: Additional key word arguments to pass to the agent.
+        agent_kwargs: Additional key word arguments to pass to the underlying agent
+        **kwargs: Additional key word arguments passed to the agent executor
 
     Returns:
-        An agent.
+        An agent executor
     """
     if agent is None and agent_path is None:
         agent = "zero-shot-react-description"
