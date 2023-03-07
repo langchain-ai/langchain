@@ -1,16 +1,6 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-_DEFAULT_TEMPLATE = """The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
-
-Current conversation:
-{history}
-Human: {input}
-AI:"""
-PROMPT = PromptTemplate(
-    input_variables=["history", "input"], template=_DEFAULT_TEMPLATE
-)
-
 _DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = """You are an assistant to a human, powered by a large language model trained by OpenAI.
 
 You are designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, you are able to generate human-like text based on the input you receive, allowing you to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.

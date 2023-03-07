@@ -16,4 +16,4 @@ There are a few different ways to accomplish this:
 A more complex form of memory is remembering information about specific entities in the conversation.
 This is a more direct and organized way of remembering information over time.
 Putting it a more structured form also has the benefit of allowing easy inspection of what is known about specific entities.
-For a guide on how to use this type of memory, see [this notebook](./examples/entity_summary_memory.ipynb).
+For a guide on how to use this type of memory, see [this notebook](types/entity_summary_memory.ipynb).

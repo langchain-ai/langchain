@@ -13,6 +13,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import SystemMessage
 
 
 class ConversationKGMemory(BaseChatMemory, BaseModel):
@@ -44,10 +45,16 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
             summary_strings = [
                 f"On {entity}: {summary}" for entity, summary in summaries.items()
             ]
-            context_str = "\n".join(summary_strings)
+            if self.return_messages:
+                context: Any = [SystemMessage(content=text) for text in summary_strings]
+            else:
+                context = "\n".join(summary_strings)
         else:
-            context_str = ""
-        return {self.memory_key: context_str}
+            if self.return_messages:
+                context = []
+            else:
+                context = ""
+        return {self.memory_key: context}
 
     @property
     def memory_variables(self) -> List[str]:

@@ -24,6 +24,7 @@ class BaseChatMemory(BaseMemory, ABC):
     chat_memory: ChatMessageHistory = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None
+    return_messages: bool = False
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""

@@ -1,5 +1,6 @@
 from langchain.memory.buffer import ConversationBufferMemory
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
+from langchain.memory.chat_memory import ChatMessageHistory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import ConversationEntityMemory
 from langchain.memory.kg import ConversationKGMemory
@@ -16,4 +17,5 @@ __all__ = [
     "ConversationKGMemory",
     "ConversationEntityMemory",
     "ConversationSummaryMemory",
+    "ChatMessageHistory",
 ]
