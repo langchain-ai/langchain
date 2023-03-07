@@ -54,7 +54,7 @@ def test_openai_stop_error() -> None:
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
-    """Test saving/loading an OpenAPI LLM."""
+    """Test saving/loading an OpenAI LLM."""
     llm = OpenAI(max_tokens=10)
     llm.save(file_path=tmp_path / "openai.yaml")
     loaded_llm = load_llm(tmp_path / "openai.yaml")
