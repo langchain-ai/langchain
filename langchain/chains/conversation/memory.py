@@ -491,3 +491,26 @@ class ConversationKGMemory(Memory, BaseModel):
     def clear(self) -> None:
         """Clear memory contents."""
         return self.kg.clear()
+
+
+class ReadOnlySharedMemory(Memory, BaseModel):
+    """A memory wrapper that is read-only and cannot be changed."""
+
+    memory: Memory
+
+    @property
+    def memory_variables(self) -> List[str]:
+        """Return memory variables."""
+        return self.memory.memory_variables
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Load memory variables from memory."""
+        return self.memory.load_memory_variables(inputs)
+
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Nothing should be saved or changed"""
+        pass
+
+    def clear(self) -> None:
+        """Nothing to clear, got a memory like a vault."""
+        pass
