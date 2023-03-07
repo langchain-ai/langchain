@@ -46,17 +46,14 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
-        results = []
-        for m in messages:
-            results.append(self._generate(m, stop=stop))
+        results = [self._generate(m, stop=stop) for m in messages]
         return LLMResult(generations=[res.generations for res in results])
 
     async def agenerate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        results = []
-        for m in messages:
-            results.append(self._generate(m, stop=stop))
+        """Top Level call"""
+        results = [await self._agenerate(m, stop=stop) for m in messages]
         return LLMResult(generations=[res.generations for res in results])
 
     def generate_prompt(
