@@ -58,5 +58,5 @@ class ChatMessageMemory(BaseChatMemory):
         if self.k is None:
             messages = self.chat_memory.messages
         else:
-            messages = self.chat_memory.messages[-self.k: ]
+            messages = self.chat_memory.messages[-self.k :]
         return {self.memory_key: messages}
