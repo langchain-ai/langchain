@@ -8,32 +8,17 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage, SystemMessage
+from langchain.schema import SystemMessage
 
 
-class SummarizerMixin(BaseModel):
+class ConversationSummaryMemory(BaseChatMemory, BaseModel):
+    """Conversation summarizer to memory."""
+
+    buffer: str = ""
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     llm: BaseLLM
     prompt: BasePromptTemplate = SUMMARY_PROMPT
-
-    def predict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
-    ) -> str:
-        new_lines = get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
-        )
-
-        chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        return chain.predict(summary=existing_summary, new_lines=new_lines)
-
-
-class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
-    """Conversation summarizer to memory."""
-
-    buffer: str = ""
     memory_key: str = "history"  #: :meta private:
 
     @property
@@ -67,9 +52,14 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
-        self.buffer = self.predict_new_summary(
-            self.chat_memory.messages[-2:], self.buffer
+        new_lines = get_buffer_string(
+            self.chat_memory.messages[-2:],
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
         )
+
+        chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        self.buffer = chain.predict(summary=self.buffer, new_lines=new_lines)
 
     def clear(self) -> None:
         """Clear memory contents."""

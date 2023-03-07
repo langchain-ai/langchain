@@ -2,17 +2,24 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, root_validator
 
+from langchain.chains.llm import LLMChain
+from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.memory.summary import SummarizerMixin
+from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
+from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage, SystemMessage
 
 
-class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel):
+class ConversationSummaryBufferMemory(BaseChatMemory, BaseModel):
     """Buffer with summarizer for storing conversation memory."""
 
     max_token_limit: int = 2000
+    human_prefix: str = "Human"
+    ai_prefix: str = "AI"
     moving_summary_buffer: str = ""
+    llm: BaseLLM
+    prompt: BasePromptTemplate = SUMMARY_PROMPT
     memory_key: str = "history"
 
     @property
@@ -70,8 +77,16 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = sum(self.get_num_tokens_list(buffer))
-            self.moving_summary_buffer = self.predict_new_summary(
-                pruned_memory, self.moving_summary_buffer
+            chain = LLMChain(llm=self.llm, prompt=self.prompt)
+            self.moving_summary_buffer = chain.predict(
+                summary=self.moving_summary_buffer,
+                new_lines=(
+                    get_buffer_string(
+                        pruned_memory,
+                        human_prefix=self.human_prefix,
+                        ai_prefix=self.ai_prefix,
+                    )
+                ),
             )
 
     def clear(self) -> None:
