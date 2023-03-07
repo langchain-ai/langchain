@@ -63,9 +63,12 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
         for entity in entities:
             entity_summaries[entity] = self.store.get(entity, "")
         self.entity_cache = entities
-
+        if self.return_messages:
+            buffer: Any = self.buffer[-self.k * 2 :]
+        else:
+            buffer = buffer_string
         return {
-            self.chat_history_key: buffer_string,
+            self.chat_history_key: buffer,
             "entities": entity_summaries,
         }
 
