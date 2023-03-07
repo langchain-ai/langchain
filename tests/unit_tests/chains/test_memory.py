@@ -1,4 +1,4 @@
-from langchain.chains.base import SimpleMemory
+from langchain.memory.simple import SimpleMemory
 
 
 def test_simple_memory() -> None:

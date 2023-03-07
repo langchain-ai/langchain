@@ -3,11 +3,11 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.chains.base import Memory
-from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
+from langchain.memory.buffer import ConversationBufferMemory
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseMemory
 
 
 class ConversationChain(LLMChain, BaseModel):
@@ -20,7 +20,7 @@ class ConversationChain(LLMChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    memory: Memory = Field(default_factory=ConversationBufferMemory)
+    memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
