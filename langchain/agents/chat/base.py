@@ -1,3 +1,4 @@
+import json
 from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
@@ -40,10 +41,9 @@ class ChatAgent(Agent):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
         _, action, _ = text.split("```")
-        import json
 
-        foo = json.loads(action.strip())
-        return foo["action"], foo["action_input"]
+        response = json.loads(action.strip())
+        return response["action"], response["action_input"]
 
     @property
     def _stop(self) -> List[str]:
