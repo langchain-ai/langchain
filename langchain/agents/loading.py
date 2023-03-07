@@ -6,6 +6,7 @@ from typing import Any, List, Optional, Union
 import yaml
 
 from langchain.agents.agent import Agent
+from langchain.agents.chat.base import ChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
@@ -20,6 +21,7 @@ AGENT_TO_CLASS = {
     "react-docstore": ReActDocstoreAgent,
     "self-ask-with-search": SelfAskWithSearchAgent,
     "conversational-react-description": ConversationalAgent,
+    "chat-zero-shot-react-description": ChatAgent,
 }
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
