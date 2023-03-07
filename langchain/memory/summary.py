@@ -3,18 +3,17 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, root_validator
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage, SystemMessage
+from langchain.schema import BaseLanguageModel, BaseMessage, SystemMessage
 
 
 class SummarizerMixin(BaseModel):
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    llm: BaseLLM
+    llm: BaseLanguageModel
     prompt: BasePromptTemplate = SUMMARY_PROMPT
 
     def predict_new_summary(
