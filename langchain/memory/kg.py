@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import KnowledgeTriple, get_entities, parse_triples
-from langchain.llms.base import BaseLLM
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
@@ -13,7 +12,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import SystemMessage
+from langchain.schema import BaseLanguageModel, SystemMessage
 
 
 class ConversationKGMemory(BaseChatMemory, BaseModel):
@@ -29,7 +28,7 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
     kg: NetworkxEntityGraph = Field(default_factory=NetworkxEntityGraph)
     knowledge_extraction_prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
-    llm: BaseLLM
+    llm: BaseLanguageModel
     """Number of previous utterances to include in the context."""
     memory_key: str = "history"  #: :meta private:
 
