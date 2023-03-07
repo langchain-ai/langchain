@@ -40,14 +40,14 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         value = kwargs[self.variable_name]
         if not isinstance(value, list):
             raise ValueError(
-                f"variable {self.variable_name} should be a list of chatMessages, "
+                f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
         for v in value:
             if not isinstance(v, BaseMessage):
                 raise ValueError(
-                    f"variable {self.variable_name} should be a list of chatMessages, "
-                    f"got {value}"
+                    f"variable {self.variable_name} should be a list of base messages,"
+                    f" got {value}"
                 )
         return value
 
