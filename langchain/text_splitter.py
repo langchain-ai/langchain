@@ -78,7 +78,10 @@ class TextSplitter(ABC):
         total = 0
         for d in splits:
             _len = self._length_function(d)
-            if total + _len + (separator_len if len(current_doc) > 0 else 0) >= self._chunk_size:
+            if (
+                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                > self._chunk_size
+            ):
                 if total > self._chunk_size:
                     logger.warning(
                         f"Created a chunk of size {total}, "
@@ -92,9 +95,13 @@ class TextSplitter(ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len + (separator_len if len(current_doc) > 0 else 0) > self._chunk_size and total > 0
+                        total + _len + (separator_len if len(current_doc) > 0 else 0)
+                        > self._chunk_size
+                        and total > 0
                     ):
-                        total -= self._length_function(current_doc[0]) + (separator_len if len(current_doc) > 1 else 0)
+                        total -= self._length_function(current_doc[0]) + (
+                            separator_len if len(current_doc) > 1 else 0
+                        )
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += _len + (separator_len if len(current_doc) > 1 else 0)
