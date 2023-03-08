@@ -46,8 +46,7 @@ __all__ = [
     "SelfHostedPipeline",
     "SelfHostedHuggingFaceLLM",
     "PromptLayerOpenAI",
-    "PromptLayerOpenAIChat"
-    "StochasticAI",
+    "PromptLayerOpenAIChat" "StochasticAI",
     "Writer",
 ]
 

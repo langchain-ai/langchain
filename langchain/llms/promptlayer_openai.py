@@ -78,6 +78,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
             )
         return generated_responses
 
+
 class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     """Wrapper around OpenAI large language models.
 
@@ -96,8 +97,9 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
             from langchain.llms import PromptLayerOpenAIChat
             openaichat = PromptLayerOpenAIChat(model_name="gpt-3.5-turbo")
     """
-    
+
     pl_tags: Optional[List[str]]
+
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
