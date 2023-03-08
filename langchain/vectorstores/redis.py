@@ -1,3 +1,4 @@
+"""Wrapper around Redis vector database."""
 from __future__ import annotations
 
 import json
@@ -5,6 +6,7 @@ import uuid
 from typing import Any, Callable, Iterable, List, Mapping, Optional
 
 import numpy as np
+from redis.client import Redis as RedisType
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -12,10 +14,14 @@ from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
 
-class RediSearch(VectorStore):
+def _check_redis_module_exist(client: RedisType, module: str) -> bool:
+    return module in [m["name"] for m in client.info().get("modules", {"name": ""})]
+
+
+class Redis(VectorStore):
     def __init__(
         self,
-        redisearch_url: str,
+        redis_url: str,
         index_name: str,
         embedding_function: Callable,
         **kwargs: Any,
@@ -32,10 +38,16 @@ class RediSearch(VectorStore):
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
-            redis_client = redis.from_url(redisearch_url, **kwargs)
+            redis_client = redis.from_url(redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
-            # check if redis add redisearch module
+
+        # check if redis add redisearch module
+        if not _check_redis_module_exist(redis_client, "search"):
+            raise ValueError(
+                "Could not use redis directly, you need to add search module"
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)" # noqa
+            )
 
         self.client = redis_client
 
@@ -118,7 +130,7 @@ class RediSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
         **kwargs: Any,
-    ) -> RediSearch:
+    ) -> Redis:
         """Construct RediSearch wrapper from raw documents.
         This is a user-friendly interface that:
             1. Embeds documents.
@@ -133,12 +145,10 @@ class RediSearch(VectorStore):
                 redisearch = RediSearch.from_texts(
                     texts,
                     embeddings,
-                    redisearch_url="redis://username:password@localhost:6379"
+                    redis_url="redis://username:password@localhost:6379"
                 )
         """
-        redisearch_url = get_from_dict_or_env(
-            kwargs, "redisearch_url", "REDISEARCH_URL"
-        )
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
             import redis
             from redis.commands.search.field import TextField, VectorField
@@ -149,12 +159,19 @@ class RediSearch(VectorStore):
                 "Please install it with `pip install redis`."
             )
         try:
-            # We need to first remove redisearch_url from kwargs,
+            # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redisearch_url")
-            client = redis.from_url(url=redisearch_url, **kwargs)
+            kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
+
+        # check if redis add redisearch module
+        if not _check_redis_module_exist(client, "search"):
+            raise ValueError(
+                "Could not use redis directly, you need to add search module"
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)" # noqa
+            )
 
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
@@ -186,7 +203,7 @@ class RediSearch(VectorStore):
             client.ft(index_name).info()
             print("Index already exists")
         except:  # noqa
-            # Create RediSearch Index
+            # Create Redis Index
             client.ft(index_name).create_index(
                 fields=fields,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
@@ -207,4 +224,4 @@ class RediSearch(VectorStore):
                 },
             )
         pipeline.execute()
-        return cls(redisearch_url, index_name, embedding.embed_query)
+        return cls(redis_url, index_name, embedding.embed_query)
