@@ -1,7 +1,7 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
-from langchain.chains.prompt_collection import (
-    ConditionalPromptCollection,
+from langchain.chains.prompt_selector import (
+    ConditionalPromptSelector,
     is_chat_model,
 )
 from langchain.prompts.chat import (
@@ -32,6 +32,6 @@ messages = [
 CHAT_PROMPT = ChatPromptTemplate.from_messages(messages)
 
 
-PROMPT_COLLECTION = ConditionalPromptCollection(
+PROMPT_COLLECTION = ConditionalPromptSelector(
     default_prompt=PROMPT, conditionals=[(is_chat_model, CHAT_PROMPT)]
 )

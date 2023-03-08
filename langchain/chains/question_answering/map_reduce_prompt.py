@@ -5,8 +5,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     ChatPromptTemplate,
 )
-from langchain.chains.prompt_collection import (
-    ConditionalPromptCollection,
+from langchain.chains.prompt_selector import (
+    ConditionalPromptSelector,
     is_chat_model,
 )
 
@@ -29,7 +29,7 @@ messages = [
 CHAT_QUESTION_PROMPT = ChatPromptTemplate.from_messages(messages)
 
 
-QUESTION_PROMPT_COLLECTION = ConditionalPromptCollection(
+QUESTION_PROMPT_COLLECTION = ConditionalPromptSelector(
     default_prompt=QUESTION_PROMPT, conditionals=[(is_chat_model, CHAT_QUESTION_PROMPT)]
 )
 
@@ -78,6 +78,6 @@ messages = [
 CHAT_COMBINE_PROMPT = ChatPromptTemplate.from_messages(messages)
 
 
-COMBINE_PROMPT_COLLECTION = ConditionalPromptCollection(
+COMBINE_PROMPT_COLLECTION = ConditionalPromptSelector(
     default_prompt=COMBINE_PROMPT, conditionals=[(is_chat_model, CHAT_COMBINE_PROMPT)]
 )
