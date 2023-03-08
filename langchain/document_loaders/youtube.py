@@ -14,7 +14,21 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 @dataclass
 class GoogleApiClient():
+    """A Generic Google Api Client.
 
+    To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google`` python package installed.
+    As the google api expects credentials you need to set up a google account and register your Service
+    "https://developers.google.com/docs/api/quickstart/python"
+
+    
+
+    Example:
+        .. code-block:: python
+
+            from langchain.document_loaders import GoogleApiClient
+            google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
+            
+    """
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     service_account_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
@@ -150,7 +164,25 @@ class YoutubeLoader(BaseLoader):
 
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
-    """Loader that loads all Videos from a Channel"""
+    """Loader that loads all Videos from a Channel
+    To use, you should have the ``googleapiclient,youtube_transcript_api`` python package installed.
+    As the service needs a google_api_client, you first have too initialize  the GoogleApiClient.
+    
+    Additonali you have to either provide a channel name or a list of videoids
+    "https://developers.google.com/docs/api/quickstart/python"
+
+    
+
+    Example:
+        .. code-block:: python
+
+            from langchain.document_loaders import GoogleApiClient
+            from langchain.document_loaders import GoogleApiYoutubeLoader
+            google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
+            loader = GoogleApiYoutubeLoader(google_api_client=google_api_client, channel_name = "CodeAesthetic")
+            load.load()
+            
+    """
 
     google_api_client: GoogleApiClient
     channel_name: Optional[str] = None
@@ -208,7 +240,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             metadata=video_response.get("items")[0],
         )
     
-    def _get_channel_id(self, channel_name: str):
+    def _get_channel_id(self, channel_name: str) -> str:
         request = self.youtube_client.search().list(
             part="id",
             q=channel_name,
