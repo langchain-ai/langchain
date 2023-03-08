@@ -120,7 +120,7 @@ class ChatPromptValue(PromptValue):
 
 class ChatPromptTemplate(BasePromptTemplate, ABC):
     input_variables: List[str]
-    messages: List[BaseMessagePromptTemplate]
+    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
     @classmethod
     def from_role_strings(
@@ -146,11 +146,12 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
 
     @classmethod
     def from_messages(
-        cls, messages: Sequence[BaseMessagePromptTemplate]
+        cls, messages: Sequence[Union[BaseMessagePromptTemplate, BaseMessage]]
     ) -> ChatPromptTemplate:
         input_vars = set()
         for message in messages:
-            input_vars.update(message.input_variables)
+            if isinstance(message, BaseMessagePromptTemplate):
+                input_vars.update(message.input_variables)
         return cls(input_variables=list(input_vars), messages=messages)
 
     def format(self, **kwargs: Any) -> str:
@@ -159,11 +160,18 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         result = []
         for message_template in self.messages:
-            rel_params = {
-                k: v for k, v in kwargs.items() if k in message_template.input_variables
-            }
-            message = message_template.format_messages(**rel_params)
-            result.extend(message)
+            if isinstance(message_template, BaseMessage):
+                result.extend([message_template])
+            elif isinstance(message_template, BaseMessagePromptTemplate):
+                rel_params = {
+                    k: v
+                    for k, v in kwargs.items()
+                    if k in message_template.input_variables
+                }
+                message = message_template.format_messages(**rel_params)
+                result.extend(message)
+            else:
+                raise ValueError(f"Unexpected input: {message_template}")
         return ChatPromptValue(messages=result)
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
