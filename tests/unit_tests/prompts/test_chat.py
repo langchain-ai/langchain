@@ -10,6 +10,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.schema import HumanMessage
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:
@@ -89,3 +90,17 @@ def test_chat_prompt_template_from_messages() -> None:
         ["context", "foo", "bar"]
     )
     assert len(chat_prompt_template.messages) == 4
+
+
+def test_chat_prompt_template_with_messages() -> None:
+    messages = create_messages() + [HumanMessage(content="foo")]
+    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
+    assert sorted(chat_prompt_template.input_variables) == sorted(
+        ["context", "foo", "bar"]
+    )
+    assert len(chat_prompt_template.messages) == 5
+    prompt_value = chat_prompt_template.format_prompt(
+        context="see", foo="this", bar="magic"
+    )
+    prompt_value_messages = prompt_value.to_messages()
+    assert prompt_value_messages[-1] == HumanMessage(content="foo")
