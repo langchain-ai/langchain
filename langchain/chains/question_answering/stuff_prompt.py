@@ -32,6 +32,6 @@ messages = [
 CHAT_PROMPT = ChatPromptTemplate.from_messages(messages)
 
 
-PROMPT_COLLECTION = ConditionalPromptSelector(
+PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=PROMPT, conditionals=[(is_chat_model, CHAT_PROMPT)]
 )

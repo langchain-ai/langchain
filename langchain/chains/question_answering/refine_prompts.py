@@ -44,7 +44,7 @@ messages = [
     HumanMessagePromptTemplate.from_template(refine_template),
 ]
 CHAT_REFINE_PROMPT = ChatPromptTemplate.from_messages(messages)
-REFINE_PROMPT_COLLECTION = ConditionalPromptSelector(
+REFINE_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_REFINE_PROMPT,
     conditionals=[(is_chat_model, CHAT_REFINE_PROMPT)],
 )
@@ -74,7 +74,7 @@ messages = [
     HumanMessagePromptTemplate.from_template("{question}"),
 ]
 CHAT_QUESTION_PROMPT = ChatPromptTemplate.from_messages(messages)
-QUESTION_PROMPT_COLLECTION = ConditionalPromptSelector(
+QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
     default_prompt=DEFAULT_TEXT_QA_PROMPT,
     conditionals=[(is_chat_model, CHAT_QUESTION_PROMPT)],
 )
