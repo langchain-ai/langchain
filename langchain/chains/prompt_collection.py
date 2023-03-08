@@ -11,7 +11,7 @@ from langchain.schema import BaseLanguageModel
 
 class BasePromptCollection(BaseModel, ABC):
     @abstractmethod
-    def get_default_prompt(self, llm: BaseLanguageModel) -> BasePromptTemplate:
+    def get_prompt(self, llm: BaseLanguageModel) -> BasePromptTemplate:
         """Get default prompt for a language model."""
 
 
@@ -23,7 +23,7 @@ class ConditionalPromptCollection(BasePromptCollection):
         Tuple[Callable[[BaseLanguageModel], bool], BasePromptTemplate]
     ] = Field(default_factory=list)
 
-    def get_default_prompt(self, llm: BaseLanguageModel) -> BasePromptTemplate:
+    def get_prompt(self, llm: BaseLanguageModel) -> BasePromptTemplate:
         for condition, prompt in self.conditionals:
             if condition(llm):
                 return prompt

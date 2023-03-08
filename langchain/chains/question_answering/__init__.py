@@ -57,7 +57,7 @@ def _load_stuff_chain(
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    _prompt = prompt or stuff_prompt.PROMPT_COLLECTION.get_default_prompt(llm)
+    _prompt = prompt or stuff_prompt.PROMPT_COLLECTION.get_prompt(llm)
     llm_chain = LLMChain(
         llm=llm, prompt=prompt, verbose=verbose, callback_manager=callback_manager
     )
