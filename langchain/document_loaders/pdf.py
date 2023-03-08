@@ -51,7 +51,7 @@ class BasePDFLoader(BaseLoader, ABC):
             self.temp_file = tempfile.NamedTemporaryFile()
             self.temp_file.write(r.content)
             self.file_path = self.temp_file.name
-        else:
+        elif not os.path.isfile(self.file_path):
             raise ValueError("File path %s is not a valid file or url" % self.file_path)
 
     def __del__(self) -> None:
@@ -109,7 +109,12 @@ class PyMuPDFLoader(BasePDFLoader):
         import fitz
 
         doc = fitz.open(self.file_path)  # open document
-        file_path = self.file_path if not hasattr(self, "web_path") else self.web_path
+        file_path = (
+            self.file_path
+            if self.web_path is None
+            else self.web_path
+        )
+
         return [
             Document(
                 page_content=page.get_text(**kwargs).encode("utf-8"),
