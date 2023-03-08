@@ -95,17 +95,18 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         inputs = self._get_inputs(docs, **kwargs)
         summary = inputs["summaries"]
         SEPERATOR = "Content:"
-        docs = summary.split(SEPERATOR)
+        split_docs = summary.split(SEPERATOR)
         new_summary = ""
         CONTEXT_LIMIT = 4096
         RESPONSE_LIMIT = 256
-        for doc in docs:
-            if (
-                self.llm_chain.llm.get_num_tokens(new_summary)
-                < CONTEXT_LIMIT - RESPONSE_LIMIT
-            ):
+        TEMPLATE_SIZE = self.llm_chain.llm.get_num_tokens(
+            self.llm_chain.prompt.template)
+        for split_doc in split_docs:
+            if (self.llm_chain.llm.get_num_tokens(new_summary + SEPERATOR +
+                                                  split_doc) <
+                    CONTEXT_LIMIT - RESPONSE_LIMIT - TEMPLATE_SIZE):
                 new_summary += SEPERATOR
-                new_summary += doc
+                new_summary += split_doc
         inputs["summaries"] = new_summary
         # Call predict on the LLM.
         return await self.llm_chain.apredict(**inputs), {}
