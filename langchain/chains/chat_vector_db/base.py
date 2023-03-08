@@ -1,17 +1,17 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
 from langchain.chains.base import Chain
-from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
+from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -58,10 +58,10 @@ class ChatVectorDBChain(Chain, BaseModel):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         vectorstore: VectorStore,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
-        qa_prompt: BasePromptTemplate = QA_PROMPT,
+        qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
         **kwargs: Any,
     ) -> ChatVectorDBChain:
