@@ -5,30 +5,33 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator, validator
+from pydantic.dataclasses import dataclass
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from pydantic.dataclasses import dataclass
+
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
 @dataclass
-class GoogleApiClient():
+class GoogleApiClient:
     """A Generic Google Api Client.
 
-    To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google`` python package installed.
-    As the google api expects credentials you need to set up a google account and register your Service
-    "https://developers.google.com/docs/api/quickstart/python"
+    To use, you should have the ``google_auth_oauthlib,youtube_transcript_api,google``
+    python package installed.
+    As the google api expects credentials you need to set up a google account and
+    register your Service. "https://developers.google.com/docs/api/quickstart/python"
 
-    
+
 
     Example:
         .. code-block:: python
 
             from langchain.document_loaders import GoogleApiClient
             google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
-            
+
     """
+
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     service_account_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
@@ -36,14 +39,15 @@ class GoogleApiClient():
     def __post_init__(self) -> None:
         self.creds = self._load_credentials()
 
-
     @root_validator
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
-        
-        if not values.get("credentials_path") and not values.get("service_account_path"):
+
+        if not values.get("credentials_path") and not values.get(
+            "service_account_path"
+        ):
             raise ValueError("Must specify either channel_name or video_ids")
         return values
 
@@ -52,8 +56,8 @@ class GoogleApiClient():
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
             from google.auth.transport.requests import Request
-            from google.oauth2.credentials import Credentials
             from google.oauth2 import service_account
+            from google.oauth2.credentials import Credentials
             from google_auth_oauthlib.flow import InstalledAppFlow
             from youtube_transcript_api import YouTubeTranscriptApi
         except ImportError:
@@ -69,8 +73,8 @@ class GoogleApiClient():
         creds = None
         if self.service_account_path.exists():
             return service_account.Credentials.from_service_account_file(
-            str(self.service_account_path)
-        )
+                str(self.service_account_path)
+            )
         if self.token_path.exists():
             creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
 
@@ -160,18 +164,18 @@ class YoutubeLoader(BaseLoader):
             "author": yt.author,
         }
         return video_info
-    
+
 
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
     """Loader that loads all Videos from a Channel
     To use, you should have the ``googleapiclient,youtube_transcript_api`` python package installed.
     As the service needs a google_api_client, you first have too initialize  the GoogleApiClient.
-    
+
     Additonali you have to either provide a channel name or a list of videoids
     "https://developers.google.com/docs/api/quickstart/python"
 
-    
+
 
     Example:
         .. code-block:: python
@@ -181,7 +185,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
             loader = GoogleApiYoutubeLoader(google_api_client=google_api_client, channel_name = "CodeAesthetic")
             load.load()
-            
+
     """
 
     google_api_client: GoogleApiClient
@@ -192,7 +196,6 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     def __post_init__(self) -> None:
         self.youtube_client = self._build_youtube_client(self.google_api_client.creds)
-        
 
     def _build_youtube_client(self, creds: Any) -> Any:
         try:
@@ -209,6 +212,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             )
 
         return build("youtube", "v3", credentials=creds)
+
     @root_validator
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
@@ -217,8 +221,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
         if not values.get("channel_name") and not values.get("video_ids"):
             raise ValueError("Must specify either channel_name or video_ids")
         return values
-    
-        
+
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
         from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -239,7 +242,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             page_content=captions,
             metadata=video_response.get("items")[0],
         )
-    
+
     def _get_channel_id(self, channel_name: str) -> str:
         request = self.youtube_client.search().list(
             part="id",
@@ -266,19 +269,21 @@ class GoogleApiYoutubeLoader(BaseLoader):
             for item in response["items"]:
                 if not item["id"].get("videoId"):
                     continue
-                item["snippet"].pop("thumbnails")
+                meta_data = {"videoId": item["id"]["videoId"]}
+                if self.add_video_info:
+                    item["snippet"].pop("thumbnails")
+                    meta_data.update(item["snippet"])
                 video_ids.append(
                     Document(
                         page_content=self._get_transcripe_for_video_id(
                             item["id"]["videoId"]
                         ),
-                        metadata=item["snippet"],
+                        metadata=meta_data,
                     )
                 )
             request = self.youtube_client.search().list_next(request, response)
 
         return video_ids
-
 
     def load(self) -> List[Document]:
         """Load documents."""
