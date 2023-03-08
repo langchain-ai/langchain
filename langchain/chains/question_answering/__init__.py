@@ -16,6 +16,7 @@ from langchain.chains.question_answering import (
 )
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):
@@ -50,7 +51,7 @@ def _load_map_rerank_chain(
 
 
 def _load_stuff_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
     document_variable_name: str = "context",
     verbose: Optional[bool] = None,
@@ -72,9 +73,9 @@ def _load_stuff_chain(
 
 
 def _load_map_reduce_chain(
-    llm: BaseLLM,
-    question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
-    combine_prompt: BasePromptTemplate = map_reduce_prompt.COMBINE_PROMPT,
+    llm: BaseLanguageModel,
+    question_prompt: Optional[BasePromptTemplate] = None,
+    combine_prompt: Optional[BasePromptTemplate] = None,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
     collapse_prompt: Optional[BasePromptTemplate] = None,
@@ -84,16 +85,22 @@ def _load_map_reduce_chain(
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
+    _question_prompt = (
+        question_prompt or map_reduce_prompt.QUESTION_PROMPT_COLLECTION.get_prompt(llm)
+    )
+    _combine_prompt = (
+        combine_prompt or map_reduce_prompt.COMBINE_PROMPT_COLLECTION.get_prompt(llm)
+    )
     map_chain = LLMChain(
         llm=llm,
-        prompt=question_prompt,
+        prompt=_question_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
     )
     _reduce_llm = reduce_llm or llm
     reduce_chain = LLMChain(
         llm=_reduce_llm,
-        prompt=combine_prompt,
+        prompt=_combine_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
     )
@@ -136,9 +143,9 @@ def _load_map_reduce_chain(
 
 
 def _load_refine_chain(
-    llm: BaseLLM,
-    question_prompt: BasePromptTemplate = refine_prompts.DEFAULT_TEXT_QA_PROMPT,
-    refine_prompt: BasePromptTemplate = refine_prompts.DEFAULT_REFINE_PROMPT,
+    llm: BaseLanguageModel,
+    question_prompt: Optional[BasePromptTemplate] = None,
+    refine_prompt: Optional[BasePromptTemplate] = None,
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
     refine_llm: Optional[BaseLLM] = None,
@@ -146,16 +153,22 @@ def _load_refine_chain(
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
+    _question_prompt = (
+        question_prompt or refine_prompts.REFINE_PROMPT_COLLECTION.get_prompt(llm)
+    )
+    _refine_prompt = (
+        refine_prompt or refine_prompts.REFINE_PROMPT_COLLECTION.get_prompt(llm)
+    )
     initial_chain = LLMChain(
         llm=llm,
-        prompt=question_prompt,
+        prompt=_question_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
     )
     _refine_llm = refine_llm or llm
     refine_chain = LLMChain(
         llm=_refine_llm,
-        prompt=refine_prompt,
+        prompt=_refine_prompt,
         verbose=verbose,
         callback_manager=callback_manager,
     )
