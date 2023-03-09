@@ -29,3 +29,5 @@ This LLM is identical to the [OpenAI LLM](./openai), except that
 - all your requests will be logged to your PromptLayer account
 - you can add `pl_tags` when instantializing to tag your requests on PromptLayer
 
+
+PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/chat/examples/promptlayer_chat_openai.ipynb)
