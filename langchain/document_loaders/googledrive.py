@@ -26,16 +26,26 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     token_path: Path = Path.home() / ".credentials" / "token.json"
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
+    file_ids: Optional[List[str]] = None
 
     @root_validator
     def validate_folder_id_or_document_ids(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
-        if values.get("folder_id") and values.get("document_ids"):
-            raise ValueError("Cannot specify both folder_id and document_ids")
-        if not values.get("folder_id") and not values.get("document_ids"):
-            raise ValueError("Must specify either folder_id or document_ids")
+        if values.get("folder_id") and (
+            values.get("document_ids") or values.get("file_ids")
+        ):
+            raise ValueError(
+                "Cannot specify both folder_id and document_ids nor "
+                "folder_id and file_ids"
+            )
+        if (
+            not values.get("folder_id")
+            and not values.get("document_ids")
+            and not values.get("file_ids")
+        ):
+            raise ValueError("Must specify either folder_id, document_ids, or file_ids")
         return values
 
     @validator("credentials_path")
@@ -115,13 +125,16 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .execute()
         )
         items = results.get("files", [])
+        returns = []
+        for item in items:
+            if item["mimeType"] == "application/vnd.google-apps.document":
+                returns.append(self._load_document_from_id(item["id"]))
+            elif item["mimeType"] == "application/pdf":
+                returns.extend(self._load_file_from_id(item["id"]))
+            else:
+                pass
 
-        return [
-            self._load_document_from_id(item["id"])
-            for item in items
-            # Only support Google Docs for now
-            if item["mimeType"] == "application/vnd.google-apps.document"
-        ]
+        return returns
 
     def _load_documents_from_ids(self) -> List[Document]:
         """Load documents from a list of IDs."""
@@ -130,9 +143,53 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         return [self._load_document_from_id(doc_id) for doc_id in self.document_ids]
 
+    def _load_file_from_id(self, id: str) -> List[Document]:
+        """Load a file from an ID."""
+        from io import BytesIO
+
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaIoBaseDownload
+
+        creds = self._load_credentials()
+        service = build("drive", "v3", credentials=creds)
+
+        request = service.files().get_media(fileId=id)
+        fh = BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+        content = fh.getvalue()
+
+        from PyPDF2 import PdfReader
+
+        pdf_reader = PdfReader(BytesIO(content))
+
+        return [
+            Document(
+                page_content=page.extract_text(),
+                metadata={
+                    "source": f"https://drive.google.com/file/d/{id}/view",
+                    "page": i,
+                },
+            )
+            for i, page in enumerate(pdf_reader.pages)
+        ]
+
+    def _load_file_from_ids(self) -> List[Document]:
+        """Load files from a list of IDs."""
+        if not self.file_ids:
+            raise ValueError("file_ids must be set")
+        docs = []
+        for file_id in self.file_ids:
+            docs.extend(self._load_file_from_id(file_id))
+        return docs
+
     def load(self) -> List[Document]:
         """Load documents."""
         if self.folder_id:
             return self._load_documents_from_folder()
-        else:
+        elif self.document_ids:
             return self._load_documents_from_ids()
+        else:
+            return self._load_file_from_ids()
