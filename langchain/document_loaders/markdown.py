@@ -19,7 +19,7 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
         if unstructured_version < (0, 4, 16):
             raise ValueError(
                 f"You are on unstructured version {__unstructured_version__}. "
-                "Partitioning markdown files is only supported in unstructured>=0.4.11."
+                "Partitioning markdown files is only supported in unstructured>=0.4.16."
             )
 
         return partition_md(filename=self.file_path)
