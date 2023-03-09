@@ -13,6 +13,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
+from langchain.schema import BaseIndex
 
 
 def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
@@ -27,7 +28,7 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
 class ChatVectorDBChain(Chain, BaseModel):
     """Chain for chatting with a vector database."""
 
-    vectorstore: VectorStore
+    vectorstore: BaseIndex
     combine_docs_chain: BaseCombineDocumentsChain
     question_generator: LLMChain
     output_key: str = "answer"
@@ -89,7 +90,7 @@ class ChatVectorDBChain(Chain, BaseModel):
             )
         else:
             new_question = question
-        docs = self.vectorstore.similarity_search(
+        docs = self.vectorstore.get_relevant_texts(
             new_question, k=self.top_k_docs_for_context, **vectordbkwargs
         )
         new_inputs = inputs.copy()
@@ -112,7 +113,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         else:
             new_question = question
         # TODO: This blocks the event loop, but it's not clear how to avoid it.
-        docs = self.vectorstore.similarity_search(
+        docs = self.vectorstore.get_relevant_texts(
             new_question, k=self.top_k_docs_for_context, **vectordbkwargs
         )
         new_inputs = inputs.copy()

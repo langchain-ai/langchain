@@ -6,9 +6,10 @@ from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.schema import BaseIndex
 
 
-class VectorStore(ABC):
+class VectorStore(BaseIndex, ABC):
     """Interface for vector stores."""
 
     @abstractmethod
@@ -43,6 +44,9 @@ class VectorStore(ABC):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
+
+    def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
+        return self.similarity_search(query, **kwargs)
 
     @abstractmethod
     def similarity_search(
