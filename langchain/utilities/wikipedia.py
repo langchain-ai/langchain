@@ -1,5 +1,5 @@
 """Util that calls Wikipedia."""
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -48,7 +48,7 @@ class WikipediaAPIWrapper(BaseModel):
             )
         )
 
-    def fetch_formatted_page_summary(self, page: str) -> str:
+    def fetch_formatted_page_summary(self, page: str) -> Optional[str]:
         try:
             return f"Page: {page}\nSummary: {self.wiki_client.page(title=page).summary}"
         except (
