@@ -1,14 +1,18 @@
-"""Util that can interact with Zapier NLA
+"""Util that can interact with Zapier NLA.
 
 Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
 
-Note: this wrapper currently only implemented the `api_key` auth method for testing and server-side production use cases (using the developer's connected accounts on Zapier.com)
+Note: this wrapper currently only implemented the `api_key` auth method for testing
+and server-side production use cases (using the developer's connected accounts on
+Zapier.com)
 
-For use-cases where LangChain + Zapier NLA is powering a user-facing application, and LangChain needs access to the end-user's connected accounts on Zapier.com, you'll need
-to use oauth. Review the full docs above and reach out to nla@zapier.com for developer support.
+For use-cases where LangChain + Zapier NLA is powering a user-facing application, and
+LangChain needs access to the end-user's connected accounts on Zapier.com, you'll need
+to use oauth. Review the full docs above and reach out to nla@zapier.com for
+developer support.
 """
 import json
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -18,14 +22,18 @@ from langchain.utils import get_from_dict_or_env
 
 
 class ZapierNLAWrapper(BaseModel):
-    """Wrapper for Zapier NLA
+    """Wrapper for Zapier NLA.
 
     Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
 
-    Note: this wrapper currently only implemented the `api_key` auth method for testing and server-side production use cases (using the developer's connected accounts on Zapier.com)
+    Note: this wrapper currently only implemented the `api_key` auth method for
+    testingand server-side production use cases (using the developer's connected
+    accounts on Zapier.com)
 
-    For use-cases where LangChain + Zapier NLA is powering a user-facing application, and LangChain needs access to the end-user's connected accounts on Zapier.com, you'll need
-    to use oauth. Review the full docs above and reach out to nla@zapier.com for developer support.
+    For use-cases where LangChain + Zapier NLA is powering a user-facing application,
+    and LangChain needs access to the end-user's connected accounts on Zapier.com,
+    you'll need to use oauth. Review the full docs above and reach out to
+    nla@zapier.com for developer support.
     """
 
     zapier_nla_api_key: str
@@ -74,11 +82,12 @@ class ZapierNLAWrapper(BaseModel):
         return values
 
     def list(self) -> list[dict]:
-        """
-        Returns a list of all exposed (enabled) actions associated with current user (associated with the set api_key).
-        Change your exposed actions here: https://nla.zapier.com/zapier/start/
+        """Returns a list of all exposed (enabled) actions associated with
+        current user (associated with the set api_key). Change your exposed
+        actions here: https://nla.zapier.com/zapier/start/
 
-        The return list can be empty if no actions exposed. Else will contain a list of action objects:
+        The return list can be empty if no actions exposed. Else will contain
+        a list of action objects:
 
         [{
             "id": str,
@@ -86,9 +95,10 @@ class ZapierNLAWrapper(BaseModel):
             "params": dict[str, str]
         }]
 
-        `params` will always contain an `instructions` key, the only required param. All others optional and if provided
-        will override any AI guesses (see "understanding the AI guessing flow" here: https://nla.zapier.com/api/v1/dynamic/docs)
-
+        `params` will always contain an `instructions` key, the only required
+        param. All others optional and if provided will override any AI guesses
+        (see "understanding the AI guessing flow" here:
+        https://nla.zapier.com/api/v1/dynamic/docs)
         """
         session = self._get_session()
         response = session.get(self.zapier_nla_api_dynamic_base + "exposed/")
@@ -98,11 +108,13 @@ class ZapierNLAWrapper(BaseModel):
     def run(
         self, action_id: str, instructions: str, params: Optional[dict] = None
     ) -> dict:
-        """
-        Executes an action that is identified by action_id, must be exposed (enabled) by the current user (associated with the set api_key).
-        Change your exposed actions here: https://nla.zapier.com/zapier/start/
+        """Executes an action that is identified by action_id, must be exposed
+        (enabled) by the current user (associated with the set api_key). Change
+        your exposed actions here: https://nla.zapier.com/zapier/start/
 
-        The return JSON is guaranteed to be less than ~500 words (350 tokens) making it safe to inject into the prompt of another LLM call.
+        The return JSON is guaranteed to be less than ~500 words (350
+        tokens) making it safe to inject into the prompt of another LLM
+        call.
         """
         session = self._get_session()
         request = self._get_action_request(action_id, instructions, params)
@@ -113,10 +125,9 @@ class ZapierNLAWrapper(BaseModel):
     def preview(
         self, action_id: str, instructions: str, params: Optional[dict] = None
     ) -> dict:
-        """
-        Same as run, but instead of actually executing the action, will instead return a preview of params that have been guessed
-        by the AI in case you need to explicitly review before executing.
-        """
+        """Same as run, but instead of actually executing the action, will
+        instead return a preview of params that have been guessed by the AI in
+        case you need to explicitly review before executing."""
         session = self._get_session()
         request = self._get_action_request(action_id, instructions, params)
         request.data.update(
@@ -129,22 +140,19 @@ class ZapierNLAWrapper(BaseModel):
         return response.json()["params"]
 
     def run_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
-        """
-        Same as run, but returns a stringified version of the JSON for insertting back into an LLM.
-        """
+        """Same as run, but returns a stringified version of the JSON for
+        insertting back into an LLM."""
         data = self.run(*args, **kwargs)
         return json.dumps(data)
 
     def preview_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
-        """
-        Same as preview, but returns a stringified version of the JSON for insertting back into an LLM.
-        """
+        """Same as preview, but returns a stringified version of the JSON for
+        insertting back into an LLM."""
         data = self.preview(*args, **kwargs)
         return json.dumps(data)
 
     def list_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
-        """
-        Same as list, but returns a stringified version of the JSON for insertting back into an LLM.
-        """
+        """Same as list, but returns a stringified version of the JSON for
+        insertting back into an LLM."""
         actions = self.list(*args, **kwargs)
         return json.dumps(actions)
