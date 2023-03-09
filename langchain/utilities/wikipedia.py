@@ -23,7 +23,7 @@ class WikipediaAPIWrapper(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
+        """Validate that the python package exists in environment."""
         try:
             import wikipedia
 
