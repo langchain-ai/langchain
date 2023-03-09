@@ -59,7 +59,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
-        """Call ChatOpenAI agenerate and then call PromptLayer API to log the request."""
+        """Call ChatOpenAI agenerate and then call PromptLayer to log."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
 
         request_start_time = datetime.datetime.now().timestamp()

@@ -1,7 +1,6 @@
 """Test PromptLayer OpenAIChat API wrapper."""
 
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
