@@ -2,8 +2,8 @@ Chains
 ==========================
 
 Using an LLM in isolation is fine for some simple applications,
-but many more complex ones require chaining LLMs - either with eachother or with other experts.
-LangChain provides a standard interface for Chains, as well as some common implementations of chains for easy use.
+but many more complex ones require chaining LLMs - either with each other or with other experts.
+LangChain provides a standard interface for Chains, as well as some common implementations of chains for ease of use.
 
 The following sections of documentation are provided:
 

@@ -67,7 +67,7 @@ class LLMRequestsChain(Chain, BaseModel):
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
         url = inputs[self.input_key]
-        res = self.requests_wrapper.run(url)
+        res = self.requests_wrapper.get(url)
         # extract the text from the html
         soup = BeautifulSoup(res, "html.parser")
         other_keys[self.requests_key] = soup.get_text()[: self.text_length]

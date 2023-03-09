@@ -1,6 +1,6 @@
 # Create a custom example selector
 
-In this tutorial, we'll create a custom example selector that selects examples every alternate example given a list of examples.
+In this tutorial, we'll create a custom example selector that selects every alternate example from a given list of examples.
 
 An `ExampleSelector` must implement two methods:
 

@@ -63,6 +63,8 @@ These modules are, in increasing order of complexity:
 
 - `Memory <./modules/memory.html>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
+- `Chat <./modules/chat.html>`_: Chat models are a variation on Language Models that expose a different API - rather than working with raw text, they work with messages. LangChain provides a standard interface for working with them and doing all the same things as above.
+
 
 .. toctree::
    :maxdepth: 1
@@ -78,6 +80,7 @@ These modules are, in increasing order of complexity:
    ./modules/chains.md
    ./modules/agents.md
    ./modules/memory.md
+   ./modules/chat.md
 
 Use Cases
 ----------

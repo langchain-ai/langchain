@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    import chromadb
+    import chromadb.config
 
 logger = logging.getLogger()
 
@@ -34,6 +38,7 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
+        client_settings: Optional[chromadb.config.Settings] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -42,15 +47,17 @@ class Chroma(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import chromadb python package. "
-                "Please it install it with `pip install chromadb`."
+                "Please install it with `pip install chromadb`."
             )
 
-        # TODO: Add support for custom client. For now this is in-memory only.
-        self._client_settings = chromadb.config.Settings()
-        if persist_directory is not None:
-            self._client_settings = chromadb.config.Settings(
-                chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
-            )
+        if client_settings:
+            self._client_settings = client_settings
+        else:
+            self._client_settings = chromadb.config.Settings()
+            if persist_directory is not None:
+                self._client_settings = chromadb.config.Settings(
+                    chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
+                )
         self._client = chromadb.Client(self._client_settings)
         self._embedding_function = embedding_function
         self._persist_directory = persist_directory
@@ -116,6 +123,27 @@ class Chroma(VectorStore):
         Returns:
             List[Document]: List of documents most simmilar to the query text.
         """
+        docs_and_scores = self.similarity_search_with_score(query, k)
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with Chroma with distance.
+
+        Args:
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of documents most similar to the query
+                text with distance in float.
+        """
         if self._embedding_function is None:
             results = self._collection.query(
                 query_texts=[query], n_results=k, where=filter
@@ -129,8 +157,12 @@ class Chroma(VectorStore):
         docs = [
             # TODO: Chroma can do batch querying,
             # we shouldn't hard code to the 1st result
-            Document(page_content=result[0], metadata=result[1])
-            for result in zip(results["documents"][0], results["metadatas"][0])
+            (Document(page_content=result[0], metadata=result[1]), result[2])
+            for result in zip(
+                results["documents"][0],
+                results["metadatas"][0],
+                results["distances"][0],
+            )
         ]
         return docs
 
@@ -160,6 +192,7 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
+        client_settings: Optional[chromadb.config.Settings] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -182,6 +215,7 @@ class Chroma(VectorStore):
             collection_name=collection_name,
             embedding_function=embedding,
             persist_directory=persist_directory,
+            client_settings=client_settings,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
@@ -194,6 +228,7 @@ class Chroma(VectorStore):
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
+        client_settings: Optional[chromadb.config.Settings] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -219,4 +254,5 @@ class Chroma(VectorStore):
             ids=ids,
             collection_name=collection_name,
             persist_directory=persist_directory,
+            client_settings=client_settings,
         )

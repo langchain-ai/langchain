@@ -121,12 +121,15 @@ class HuggingFaceEndpoint(LLM, BaseModel):
             )
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             raise ValueError(f"Error raised by inference endpoint: {e}")
+        generated_text = response.json()
+        if "error" in generated_text:
+            raise ValueError(
+                f"Error raised by inference API: {generated_text['error']}"
+            )
         if self.task == "text-generation":
             # Text generation return includes the starter text.
-            generated_text = response.json()
             text = generated_text[0]["generated_text"][len(prompt) :]
         elif self.task == "text2text-generation":
-            generated_text = response.json()
             text = generated_text[0]["generated_text"]
         else:
             raise ValueError(

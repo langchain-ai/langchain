@@ -62,6 +62,8 @@ class LLMMathChain(Chain, BaseModel):
             answer = "Answer: " + output
         elif t.startswith("Answer:"):
             answer = t
+        elif "Answer:" in t:
+            answer = "Answer: " + t.split("Answer:")[-1]
         else:
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: answer}

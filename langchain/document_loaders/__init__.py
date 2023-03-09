@@ -16,6 +16,7 @@ from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
+from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
@@ -24,7 +25,11 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.online_pdf import OnlinePDFLoader
 from langchain.document_loaders.paged_pdf import PagedPDFSplitter
-from langchain.document_loaders.pdf import PDFMinerLoader, UnstructuredPDFLoader
+from langchain.document_loaders.pdf import (
+    PDFMinerLoader,
+    PyMuPDFLoader,
+    UnstructuredPDFLoader,
+)
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
@@ -40,7 +45,11 @@ from langchain.document_loaders.unstructured import (
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
-from langchain.document_loaders.youtube import YoutubeLoader
+from langchain.document_loaders.youtube import (
+    GoogleApiClient,
+    GoogleApiYoutubeLoader,
+    YoutubeLoader,
+)
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -72,15 +81,19 @@ __all__ = [
     "IMSDbLoader",
     "AZLyricsLoader",
     "CollegeConfidentialLoader",
+    "IFixitLoader",
     "GutenbergLoader",
     "PagedPDFSplitter",
     "EverNoteLoader",
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "PyMuPDFLoader",
     "TelegramChatLoader",
     "SRTLoader",
     "FacebookChatLoader",
     "NotebookLoader",
     "CoNLLULoader",
+    "GoogleApiYoutubeLoader",
+    "GoogleApiClient",
 ]

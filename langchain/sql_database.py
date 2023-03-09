@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import MetaData, create_engine, inspect, select
+from sqlalchemy import MetaData, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
 
@@ -20,6 +20,7 @@ class SQLDatabase:
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
+        custom_table_info: Optional[dict] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -48,6 +49,21 @@ class SQLDatabase:
             raise TypeError("sample_rows_in_table_info must be an integer")
 
         self._sample_rows_in_table_info = sample_rows_in_table_info
+
+        self._custom_table_info = custom_table_info
+        if self._custom_table_info:
+            if not isinstance(self._custom_table_info, dict):
+                raise TypeError(
+                    "table_info must be a dictionary with table names as keys and the "
+                    "desired table info as values"
+                )
+            # only keep the tables that are also present in the database
+            intersection = set(self._custom_table_info).intersection(self._all_tables)
+            self._custom_table_info = dict(
+                (table, self._custom_table_info[table])
+                for table in self._custom_table_info
+                if table in intersection
+            )
 
         self._metadata = metadata or MetaData()
         self._metadata.reflect(bind=self._engine)
@@ -99,6 +115,10 @@ class SQLDatabase:
 
         tables = []
         for table in meta_tables:
+            if self._custom_table_info and table.name in self._custom_table_info:
+                tables.append(self._custom_table_info[table.name])
+                continue
+
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
 
@@ -113,7 +133,7 @@ class SQLDatabase:
                 )
 
                 # save the columns in string format
-                columns_str = " ".join([col.name for col in table.columns])
+                columns_str = "\t".join([col.name for col in table.columns])
 
                 try:
                     # get the sample rows
@@ -125,7 +145,7 @@ class SQLDatabase:
                         )
 
                     # save the sample rows in string format
-                    sample_rows_str = "\n".join([" ".join(row) for row in sample_rows])
+                    sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
 
                 # in some dialects when there are no rows in the table a
                 # 'ProgrammingError' is returned
@@ -157,7 +177,7 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             if self._schema is not None:
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
-            cursor = connection.exec_driver_sql(command)
+            cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
@@ -167,3 +187,33 @@ class SQLDatabase:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 return str(result)
         return ""
+
+    def get_table_info_no_throw(self, table_names: Optional[List[str]] = None) -> str:
+        """Get information about specified tables.
+
+        Follows best practices as specified in: Rajkumar et al, 2022
+        (https://arxiv.org/abs/2204.00498)
+
+        If `sample_rows_in_table_info`, the specified number of sample rows will be
+        appended to each table description. This can increase performance as
+        demonstrated in the paper.
+        """
+        try:
+            return self.get_table_info(table_names)
+        except ValueError as e:
+            """Format the error message"""
+            return f"Error: {e}"
+
+    def run_no_throw(self, command: str, fetch: str = "all") -> str:
+        """Execute a SQL command and return a string representing the results.
+
+        If the statement returns rows, a string of the results is returned.
+        If the statement returns no rows, an empty string is returned.
+
+        If the statement throws an error, the error message is returned.
+        """
+        try:
+            return self.run(command, fetch)
+        except SQLAlchemyError as e:
+            """Format the error message"""
+            return f"Error: {e}"

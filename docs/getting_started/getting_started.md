@@ -66,7 +66,7 @@ llm = OpenAI(temperature=0.9)
 We can now call it on some input!
 
 ```python
-text = "What would be a good company name a company that makes colorful socks?"
+text = "What would be a good company name for a company that makes colorful socks?"
 print(llm(text))
 ```
 

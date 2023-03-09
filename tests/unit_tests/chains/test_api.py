@@ -16,7 +16,7 @@ class FakeRequestsChain(RequestsWrapper):
 
     output: str
 
-    def run(self, url: str) -> str:
+    def get(self, url: str) -> str:
         """Just return the specified output."""
         return self.output
 

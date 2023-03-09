@@ -5,38 +5,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-
-
-class Memory(BaseModel, ABC):
-    """Base interface for memory in chains."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @property
-    @abstractmethod
-    def memory_variables(self) -> List[str]:
-        """Input keys this memory class will load dynamically."""
-
-    @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
-        """Return key-value pairs given the text input to the chain."""
-
-    @abstractmethod
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save the context of this model run to memory."""
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Clear memory contents."""
+from langchain.schema import BaseMemory
 
 
 def _get_verbosity() -> bool:
@@ -46,7 +20,7 @@ def _get_verbosity() -> bool:
 class Chain(BaseModel, ABC):
     """Base interface that all chains should implement."""
 
-    memory: Optional[Memory] = None
+    memory: Optional[BaseMemory] = None
     callback_manager: BaseCallbackManager = Field(
         default_factory=get_callback_manager, exclude=True
     )

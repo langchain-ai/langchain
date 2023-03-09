@@ -1,11 +1,10 @@
 """Wrapper around Qdrant vector database."""
 import uuid
 from operator import itemgetter
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple, cast
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -28,14 +27,21 @@ class Qdrant(VectorStore):
     CONTENT_KEY = "page_content"
     METADATA_KEY = "metadata"
 
-    def __init__(self, client: Any, collection_name: str, embedding_function: Callable):
+    def __init__(
+        self,
+        client: Any,
+        collection_name: str,
+        embedding_function: Callable,
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+    ):
         """Initialize with necessary components."""
         try:
             import qdrant_client
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
-                "Please it install it with `pip install qdrant-client`."
+                "Please install it with `pip install qdrant-client`."
             )
 
         if not isinstance(client, qdrant_client.QdrantClient):
@@ -47,6 +53,8 @@ class Qdrant(VectorStore):
         self.client: qdrant_client.QdrantClient = client
         self.collection_name = collection_name
         self.embedding_function = embedding_function
+        self.content_payload_key = content_payload_key or self.CONTENT_KEY
+        self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
 
     def add_texts(
         self,
@@ -71,7 +79,12 @@ class Qdrant(VectorStore):
             points=rest.Batch(
                 ids=ids,
                 vectors=[self.embedding_function(text) for text in texts],
-                payloads=self._build_payloads(texts, metadatas),
+                payloads=self._build_payloads(
+                    texts,
+                    metadatas,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                ),
             ),
         )
 
@@ -113,7 +126,9 @@ class Qdrant(VectorStore):
         )
         return [
             (
-                self._document_from_scored_point(result),
+                self._document_from_scored_point(
+                    result, self.content_payload_key, self.metadata_payload_key
+                ),
                 result.score,
             )
             for result in results
@@ -145,7 +160,54 @@ class Qdrant(VectorStore):
         )
         embeddings = [result.vector for result in results]
         mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
-        return [self._document_from_scored_point(results[i]) for i in mmr_selected]
+        return [
+            self._document_from_scored_point(
+                results[i], self.content_payload_key, self.metadata_payload_key
+            )
+            for i in mmr_selected
+        ]
+
+    @classmethod
+    def from_documents(
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,
+        https: Optional[bool] = None,
+        api_key: Optional[str] = None,
+        prefix: Optional[str] = None,
+        timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+        **kwargs: Any,
+    ) -> "Qdrant":
+        return cast(
+            Qdrant,
+            super().from_documents(
+                documents,
+                embedding,
+                url=url,
+                port=port,
+                grpc_port=grpc_port,
+                prefer_grpc=prefer_grpc,
+                https=https,
+                api_key=api_key,
+                prefix=prefix,
+                timeout=timeout,
+                host=host,
+                collection_name=collection_name,
+                distance_func=distance_func,
+                content_payload_key=content_payload_key,
+                metadata_payload_key=metadata_payload_key,
+                **kwargs,
+            ),
+        )
 
     @classmethod
     def from_texts(
@@ -153,9 +215,59 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,
+        https: Optional[bool] = None,
+        api_key: Optional[str] = None,
+        prefix: Optional[str] = None,
+        timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        distance_func: str = "Cosine",
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
     ) -> "Qdrant":
         """Construct Qdrant wrapper from raw documents.
+
+        Args:
+            texts: A list of texts to be indexed in Qdrant.
+            embedding: A subclass of `Embeddings`, responsible for text vectorization.
+            metadatas:
+                An optional list of metadata. If provided it has to be of the same
+                length as a list of texts.
+            url: either host or str of "Optional[scheme], host, Optional[port],
+                Optional[prefix]". Default: `None`
+            port: Port of the REST API interface. Default: 6333
+            grpc_port: Port of the gRPC interface. Default: 6334
+            prefer_grpc:
+                If `true` - use gPRC interface whenever possible in custom methods.
+            https: If `true` - use HTTPS(SSL) protocol. Default: `None`
+            api_key: API key for authentication in Qdrant Cloud. Default: `None`
+            prefix:
+                If not `None` - add `prefix` to the REST URL path.
+                Example: `service/v1` will result in
+                    `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
+                Default: `None`
+            timeout:
+                Timeout for REST and gRPC API requests.
+                Default: 5.0 seconds for REST and unlimited for gRPC
+            host:
+                Host name of Qdrant service. If url and host are None, set to
+                'localhost'. Default: `None`
+            collection_name:
+                Name of the Qdrant collection to be used. If not provided,
+                will be created randomly.
+            distance_func:
+                Distance function. One of the: "Cosine" / "Euclid" / "Dot".
+            content_payload_key:
+                A payload key used to store the content of the document.
+            metadata_payload_key:
+                A payload key used to store the metadata of the document.
+            **kwargs:
+                Additional arguments passed directly into REST client initialization
 
         This is a user friendly interface that:
             1. Embeds documents.
@@ -170,14 +282,14 @@ class Qdrant(VectorStore):
                 from langchain import Qdrant
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                qdrant = Qdrant.from_texts(texts, embeddings)
+                qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
         try:
             import qdrant_client
         except ImportError:
             raise ValueError(
                 "Could not import qdrant-client python package. "
-                "Please it install it with `pip install qdrant-client`."
+                "Please install it with `pip install qdrant-client`."
             )
 
         from qdrant_client.http import models as rest
@@ -186,12 +298,21 @@ class Qdrant(VectorStore):
         partial_embeddings = embedding.embed_documents(texts[:1])
         vector_size = len(partial_embeddings[0])
 
-        qdrant_host = get_from_dict_or_env(kwargs, "host", "QDRANT_HOST")
-        kwargs.pop("host")
-        collection_name = kwargs.pop("collection_name", uuid.uuid4().hex)
-        distance_func = kwargs.pop("distance_func", "Cosine").upper()
+        collection_name = collection_name or uuid.uuid4().hex
+        distance_func = distance_func.upper()
 
-        client = qdrant_client.QdrantClient(host=qdrant_host, **kwargs)
+        client = qdrant_client.QdrantClient(
+            url=url,
+            port=port,
+            grpc_port=grpc_port,
+            prefer_grpc=prefer_grpc,
+            https=https,
+            api_key=api_key,
+            prefix=prefix,
+            timeout=timeout,
+            host=host,
+            **kwargs,
+        )
 
         client.recreate_collection(
             collection_name=collection_name,
@@ -209,15 +330,27 @@ class Qdrant(VectorStore):
             points=rest.Batch(
                 ids=[uuid.uuid4().hex for _ in texts],
                 vectors=embeddings,
-                payloads=cls._build_payloads(texts, metadatas),
+                payloads=cls._build_payloads(
+                    texts, metadatas, content_payload_key, metadata_payload_key
+                ),
             ),
         )
 
-        return cls(client, collection_name, embedding.embed_query)
+        return cls(
+            client=client,
+            collection_name=collection_name,
+            embedding_function=embedding.embed_query,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
+        )
 
     @classmethod
     def _build_payloads(
-        cls, texts: Iterable[str], metadatas: Optional[List[dict]]
+        cls,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]],
+        content_payload_key: str,
+        metadata_payload_key: str,
     ) -> List[dict]:
         payloads = []
         for i, text in enumerate(texts):
@@ -226,18 +359,24 @@ class Qdrant(VectorStore):
                     "At least one of the texts is None. Please remove it before "
                     "calling .from_texts or .add_texts on Qdrant instance."
                 )
+            metadata = metadatas[i] if metadatas is not None else None
             payloads.append(
                 {
-                    cls.CONTENT_KEY: text,
-                    cls.METADATA_KEY: metadatas[i] if metadatas is not None else None,
+                    content_payload_key: text,
+                    metadata_payload_key: metadata,
                 }
             )
 
         return payloads
 
     @classmethod
-    def _document_from_scored_point(cls, scored_point: Any) -> Document:
+    def _document_from_scored_point(
+        cls,
+        scored_point: Any,
+        content_payload_key: str,
+        metadata_payload_key: str,
+    ) -> Document:
         return Document(
-            page_content=scored_point.payload.get(cls.CONTENT_KEY),
-            metadata=scored_point.payload.get(cls.METADATA_KEY) or {},
+            page_content=scored_point.payload.get(content_payload_key),
+            metadata=scored_point.payload.get(metadata_payload_key) or {},
         )

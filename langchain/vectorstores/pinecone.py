@@ -39,7 +39,7 @@ class Pinecone(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import pinecone python package. "
-                "Please it install it with `pip install pinecone-client`."
+                "Please install it with `pip install pinecone-client`."
             )
         if not isinstance(index, pinecone.index.Index):
             raise ValueError(

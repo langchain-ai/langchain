@@ -69,7 +69,7 @@ class APIChain(Chain, BaseModel):
         self.callback_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
-        api_response = self.requests_wrapper.run(api_url)
+        api_response = self.requests_wrapper.get(api_url)
         self.callback_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )

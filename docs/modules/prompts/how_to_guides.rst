@@ -17,6 +17,8 @@ The user guide here shows more advanced workflows and how to use the library in 
 
 `Few Shot Prompt Examples <./examples/few_shot_examples.html>`_: Examples of Few Shot Prompt Templates.
 
+`Partial Prompt Template <./examples/partial.html>`_: How to partial Prompt Templates.
+
 
 
 .. toctree::

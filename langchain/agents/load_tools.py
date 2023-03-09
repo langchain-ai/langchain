@@ -9,11 +9,12 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
-from langchain.python import PythonREPL
+from langchain.tools.python.tool import PythonREPLTool
 from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.requests.tool import RequestsGetTool
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -25,19 +26,11 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
 def _get_python_repl() -> BaseTool:
-    return Tool(
-        name="Python REPL",
-        description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you expect output it should be printed out.",
-        func=PythonREPL().run,
-    )
+    return PythonREPLTool()
 
 
 def _get_requests() -> BaseTool:
-    return Tool(
-        name="Requests",
-        description="A portal to the internet. Use this when you need to get specific content from a site. Input should be a specific url, and the output will be all the text on that page.",
-        func=RequestsWrapper().run,
-    )
+    return RequestsGetTool(requests_wrapper=RequestsWrapper())
 
 
 def _get_terminal() -> BaseTool:

@@ -3,12 +3,15 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.prompts.base import DEFAULT_FORMATTER_MAPPING, BasePromptTemplate
+from langchain.prompts.base import (
+    DEFAULT_FORMATTER_MAPPING,
+    StringPromptTemplate,
+)
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
+class FewShotPromptWithTemplates(StringPromptTemplate, BaseModel):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None
@@ -22,7 +25,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
 
-    suffix: BasePromptTemplate
+    suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
 
     input_variables: List[str]
@@ -31,7 +34,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: Optional[BasePromptTemplate] = None
+    prefix: Optional[StringPromptTemplate] = None
     """A PromptTemplate to put before the examples."""
 
     template_format: str = "f-string"
@@ -60,16 +63,18 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
-        input_variables = values["input_variables"]
-        expected_input_variables = set(values["suffix"].input_variables)
-        if values["prefix"] is not None:
-            expected_input_variables |= set(values["prefix"].input_variables)
-        missing_vars = expected_input_variables.difference(input_variables)
-        if missing_vars:
-            raise ValueError(
-                f"Got input_variables={input_variables}, but based on prefix/suffix "
-                f"expected {expected_input_variables}"
-            )
+        if values["validate_template"]:
+            input_variables = values["input_variables"]
+            expected_input_variables = set(values["suffix"].input_variables)
+            expected_input_variables |= set(values["partial_variables"])
+            if values["prefix"] is not None:
+                expected_input_variables |= set(values["prefix"].input_variables)
+            missing_vars = expected_input_variables.difference(input_variables)
+            if missing_vars:
+                raise ValueError(
+                    f"Got input_variables={input_variables}, but based on "
+                    f"prefix/suffix expected {expected_input_variables}"
+                )
         return values
 
     class Config:
@@ -101,6 +106,7 @@ class FewShotPromptWithTemplates(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
         # Format the examples.
