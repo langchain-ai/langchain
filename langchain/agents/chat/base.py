@@ -6,7 +6,11 @@ from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from langchain.schema import AgentAction, BaseLanguageModel
 from langchain.tools import BaseTool
 
@@ -63,7 +67,7 @@ class ChatAgent(Agent):
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         messages = [
-            HumanMessagePromptTemplate.from_template(template),
+            SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
         ]
         return ChatPromptTemplate(
