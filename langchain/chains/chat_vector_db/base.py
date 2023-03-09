@@ -1,7 +1,8 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -126,3 +127,8 @@ class ChatVectorDBChain(Chain, BaseModel):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        if self.get_chat_history:
+            raise ValueError("Chain not savable when `get_chat_history` is not None.")
+        super().save(file_path)
