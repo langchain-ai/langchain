@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator, validator
+from pydantic import root_validator
 from pydantic.dataclasses import dataclass
 
 from langchain.docstore.document import Document
@@ -28,7 +28,9 @@ class GoogleApiClient:
         .. code-block:: python
 
             from langchain.document_loaders import GoogleApiClient
-            google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
+            google_api_client = GoogleApiClient(
+                service_account_path=Path("path_to_your_sec_file.json")
+            )
 
     """
 
@@ -59,7 +61,7 @@ class GoogleApiClient:
             from google.oauth2 import service_account
             from google.oauth2.credentials import Credentials
             from google_auth_oauthlib.flow import InstalledAppFlow
-            from youtube_transcript_api import YouTubeTranscriptApi
+            from youtube_transcript_api import YouTubeTranscriptApi  # noqa: F401
         except ImportError:
             raise ImportError(
                 "You must run"
@@ -128,7 +130,7 @@ class YoutubeLoader(BaseLoader):
             metadata.update(video_info)
 
         transcript_pieces = YouTubeTranscriptApi.get_transcript(
-            self.video_id, languages=(self.language,)
+            self.video_id, languages=[self.language]
         )
         transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
 
@@ -169,8 +171,11 @@ class YoutubeLoader(BaseLoader):
 @dataclass
 class GoogleApiYoutubeLoader(BaseLoader):
     """Loader that loads all Videos from a Channel
-    To use, you should have the ``googleapiclient,youtube_transcript_api`` python package installed.
-    As the service needs a google_api_client, you first have too initialize  the GoogleApiClient.
+
+    To use, you should have the ``googleapiclient,youtube_transcript_api``
+    python package installed.
+    As the service needs a google_api_client, you first have to initialize
+    the GoogleApiClient.
 
     Additonali you have to either provide a channel name or a list of videoids
     "https://developers.google.com/docs/api/quickstart/python"
@@ -182,8 +187,13 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
             from langchain.document_loaders import GoogleApiClient
             from langchain.document_loaders import GoogleApiYoutubeLoader
-            google_api_client = GoogleApiClient(service_account_path=Path("path_to_your_sec_file.json"))
-            loader = GoogleApiYoutubeLoader(google_api_client=google_api_client, channel_name = "CodeAesthetic")
+            google_api_client = GoogleApiClient(
+                service_account_path=Path("path_to_your_sec_file.json")
+            )
+            loader = GoogleApiYoutubeLoader(
+                google_api_client=google_api_client,
+                channel_name = "CodeAesthetic"
+            )
             load.load()
 
     """
@@ -200,7 +210,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
     def _build_youtube_client(self, creds: Any) -> Any:
         try:
             from googleapiclient.discovery import build
-            from youtube_transcript_api import YouTubeTranscriptApi
+            from youtube_transcript_api import YouTubeTranscriptApi  # noqa: F401
         except ImportError:
             raise ImportError(
                 "You must run"
