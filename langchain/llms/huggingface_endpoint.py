@@ -123,7 +123,9 @@ class HuggingFaceEndpoint(LLM, BaseModel):
             raise ValueError(f"Error raised by inference endpoint: {e}")
         generated_text = response.json()
         if "error" in generated_text:
-            raise ValueError(f"Error raised by inference API: {generated_text['error']}")           
+            raise ValueError(
+                f"Error raised by inference API: {generated_text['error']}"
+            )
         if self.task == "text-generation":
             # Text generation return includes the starter text.
             text = generated_text[0]["generated_text"][len(prompt) :]
