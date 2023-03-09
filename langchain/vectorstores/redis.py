@@ -46,7 +46,7 @@ class Redis(VectorStore):
         if not _check_redis_module_exist(redis_client, "search"):
             raise ValueError(
                 "Could not use redis directly, you need to add search module"
-                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)" # noqa
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
             )
 
         self.client = redis_client
@@ -170,7 +170,7 @@ class Redis(VectorStore):
         if not _check_redis_module_exist(client, "search"):
             raise ValueError(
                 "Could not use redis directly, you need to add search module"
-                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)" # noqa
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
             )
 
         embeddings = embedding.embed_documents(texts)
