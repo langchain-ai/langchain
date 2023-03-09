@@ -123,7 +123,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str
+        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
         embeddings: List[List[float]] = [[] for i in range(len(texts))]
         try:
@@ -141,10 +141,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     indices += [i]
 
             batched_embeddings = []
-            for i in range(0, len(tokens), self.chunk_size):
+            _chunk_size = chunk_size or self.chunk_size
+            for i in range(0, len(tokens), _chunk_size):
                 response = embed_with_retry(
                     self,
-                    input=tokens[i : i + self.chunk_size],
+                    input=tokens[i : i + _chunk_size],
                     engine=self.document_model_name,
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
@@ -179,11 +180,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "embedding"
             ]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], chunk_size: Optional[int] = 0
+    ) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
+            chunk_size: The chunk size of embeddings. If None, will use the chunk size
+                specified by the class.
 
         Returns:
             List of embeddings, one for each text.
@@ -193,10 +198,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return self._get_len_safe_embeddings(texts, engine=self.document_model_name)
         else:
             results = []
-            for i in range(0, len(texts), self.chunk_size):
+            _chunk_size = chunk_size or self.chunk_size
+            for i in range(0, len(texts), _chunk_size):
                 response = embed_with_retry(
                     self,
-                    input=texts[i : i + self.chunk_size],
+                    input=texts[i : i + _chunk_size],
                     engine=self.document_model_name,
                 )
                 results += [r["embedding"] for r in response["data"]]
