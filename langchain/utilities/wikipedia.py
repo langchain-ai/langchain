@@ -38,19 +38,17 @@ class WikipediaAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         """Run Wikipedia search and get page summaries."""
         search_results = self.wiki_client.search(query)
-        return "\n\n".join(
-            filter(
-                lambda x: x is not None,
-                (
-                    self.fetch_formatted_page_summary(search_results[i])
-                    for i in range(min(self.top_k_results, len(search_results)))
-                ),
-            )
-        )
+        summaries = []
+        for i in range(min(self.top_k_results, len(search_results))):
+            summary = self.fetch_formatted_page_summary(search_results[i])
+            if summary is not None:
+                summaries.append(summary)
+        return "\n\n".join(summaries)
 
     def fetch_formatted_page_summary(self, page: str) -> Optional[str]:
         try:
-            return f"Page: {page}\nSummary: {self.wiki_client.page(title=page).summary}"
+            wiki_page = self.wiki_client.page(title=page)
+            return f"Page: {page}\nSummary: {wiki_page.summary}"
         except (
             self.wiki_client.exceptions.PageError,
             self.wiki_client.exceptions.DisambiguationError,
