@@ -55,4 +55,4 @@ class WikipediaAPIWrapper(BaseModel):
             self.wiki_client.exceptions.PageError,
             self.wiki_client.exceptions.DisambiguationError,
         ):
-            None
+            return None
