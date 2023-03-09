@@ -51,6 +51,8 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
+from langchain.document_loaders.csv import CSVLoader
+
 __all__ = [
     "UnstructuredFileLoader",
     "UnstructuredFileIOLoader",
@@ -96,4 +98,5 @@ __all__ = [
     "CoNLLULoader",
     "GoogleApiYoutubeLoader",
     "GoogleApiClient",
+    "CSVLoader"
 ]
