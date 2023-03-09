@@ -44,3 +44,12 @@ def test_pymupdf_loader() -> None:
 
     docs = loader.load()
     assert len(docs) == 16
+    assert loader.web_path is None
+
+    file_path = 'https://people.sc.fsu.edu/~jpeterson/hello_world.pdf'
+    loader = PyMuPDFLoader(file_path)
+
+    docs = loader.load()
+    assert loader.web_path == file_path
+    assert loader.file_path != file_path
+    assert len(docs) == 1
