@@ -12,7 +12,7 @@ to use oauth. Review the full docs above and reach out to nla@zapier.com for
 developer support.
 """
 import json
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -57,7 +57,7 @@ class ZapierNLAWrapper(BaseModel):
         return session
 
     def _get_action_request(
-        self, action_id: str, instructions: str, params: Optional[dict] = None
+        self, action_id: str, instructions: str, params: Optional[Dict] = None
     ) -> Request:
         data = params if params else {}
         data.update(
@@ -81,7 +81,7 @@ class ZapierNLAWrapper(BaseModel):
 
         return values
 
-    def list(self) -> list[dict]:
+    def list(self) -> List[Dict]:
         """Returns a list of all exposed (enabled) actions associated with
         current user (associated with the set api_key). Change your exposed
         actions here: https://nla.zapier.com/zapier/start/
@@ -92,7 +92,7 @@ class ZapierNLAWrapper(BaseModel):
         [{
             "id": str,
             "description": str,
-            "params": dict[str, str]
+            "params": Dict[str, str]
         }]
 
         `params` will always contain an `instructions` key, the only required
@@ -106,8 +106,8 @@ class ZapierNLAWrapper(BaseModel):
         return response.json()["results"]
 
     def run(
-        self, action_id: str, instructions: str, params: Optional[dict] = None
-    ) -> dict:
+        self, action_id: str, instructions: str, params: Optional[Dict] = None
+    ) -> Dict:
         """Executes an action that is identified by action_id, must be exposed
         (enabled) by the current user (associated with the set api_key). Change
         your exposed actions here: https://nla.zapier.com/zapier/start/
@@ -123,8 +123,8 @@ class ZapierNLAWrapper(BaseModel):
         return response.json()["result"]
 
     def preview(
-        self, action_id: str, instructions: str, params: Optional[dict] = None
-    ) -> dict:
+        self, action_id: str, instructions: str, params: Optional[Dict] = None
+    ) -> Dict:
         """Same as run, but instead of actually executing the action, will
         instead return a preview of params that have been guessed by the AI in
         case you need to explicitly review before executing."""
