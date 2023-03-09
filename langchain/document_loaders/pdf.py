@@ -37,7 +37,7 @@ class BasePDFLoader(BaseLoader, ABC):
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
-        """If the file is a web path, download it to a temporary file, and use that"""
+        # If the file is a web path, download it to a temporary file, and use that
         if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
             r = requests.get(self.file_path)
 
@@ -109,11 +109,7 @@ class PyMuPDFLoader(BasePDFLoader):
         import fitz
 
         doc = fitz.open(self.file_path)  # open document
-        file_path = (
-            self.file_path
-            if self.web_path is None
-            else self.web_path
-        )
+        file_path = self.file_path if self.web_path is None else self.web_path
 
         return [
             Document(
