@@ -40,14 +40,17 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
-            resp = generated_responses.generations[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAI",
                 "langchain",
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                resp[0].text,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
@@ -64,14 +67,17 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
-            resp = generated_responses.generations[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAI.async",
                 "langchain",
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                resp[0].text,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
@@ -111,14 +117,17 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
-            resp = generated_responses.generations[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAIChat",
                 "langchain",
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                resp[0].text,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
