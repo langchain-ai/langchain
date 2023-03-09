@@ -14,6 +14,7 @@ from langchain.llms.gooseai import GooseAI
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.huggingface_text_generation import HFTextGeneration
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
@@ -41,6 +42,7 @@ __all__ = [
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "HuggingFacePipeline",
+    "HFTextGeneration",
     "AI21",
     "AzureOpenAI",
     "SelfHostedPipeline",
