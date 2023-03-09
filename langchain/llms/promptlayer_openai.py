@@ -41,7 +41,9 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         for i in range(len(prompts)):
             prompt = prompts[i]
             resp = {
-                'text': generated_responses.generations[i][0].text, 'llm_output': generated_responses.llm_output}
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAI",
                 "langchain",
@@ -66,7 +68,8 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         for i in range(len(prompts)):
             prompt = prompts[i]
             resp = {
-                'text': generated_responses.generations[i][0].text, 'llm_output': generated_responses.llm_output
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
             }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAI.async",
@@ -80,6 +83,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 get_api_key(),
             )
         return generated_responses
+
 
 class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     """Wrapper around OpenAI large language models.
@@ -114,7 +118,8 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         for i in range(len(prompts)):
             prompt = prompts[i]
             resp = {
-                'text': generated_responses.generations[i][0].text, 'llm_output': generated_responses.llm_output
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
             }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAIChat",

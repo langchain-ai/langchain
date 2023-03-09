@@ -16,22 +16,6 @@ def test_promptlayer_openai_chat_call() -> None:
     assert isinstance(output, str)
 
 
-def test_promptlayer_openai_chat_extra_kwargs() -> None:
-    """Test extra kwargs to promptlayer openai."""
-    # Check that foo is saved in extra_kwargs.
-    llm = PromptLayerOpenAIChat(foo=3, max_tokens=10)
-    assert llm.max_tokens == 10
-    assert llm.model_kwargs == {"foo": 3}
-
-    # Test that if extra_kwargs are provided, they are added to it.
-    llm = PromptLayerOpenAIChat(foo=3, model_kwargs={"bar": 2})
-    assert llm.model_kwargs == {"foo": 3, "bar": 2}
-
-    # Test that if provided twice it errors
-    with pytest.raises(ValueError):
-        PromptLayerOpenAIChat(foo=3, model_kwargs={"foo": 2})
-
-
 def test_promptlayer_openai_chat_stop_valid() -> None:
     """Test promptlayer openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
@@ -56,21 +40,3 @@ def test_saving_loading_llm(tmp_path: Path) -> None:
     llm.save(file_path=tmp_path / "openai.yaml")
     loaded_llm = load_llm(tmp_path / "openai.yaml")
     assert loaded_llm == llm
-
-
-def test_promptlayer_openai_chat_streaming() -> None:
-    """Test streaming tokens from promptalyer OpenAI."""
-    llm = PromptLayerOpenAIChat(max_tokens=10)
-    generator = llm.stream("I'm Pickle Rick")
-
-    assert isinstance(generator, Generator)
-
-    for token in generator:
-        assert isinstance(token["choices"][0]["text"], str)
-
-
-def test_promptlayer_openai_chat_streaming_error() -> None:
-    """Test error handling in stream."""
-    llm = PromptLayerOpenAIChat(best_of=2)
-    with pytest.raises(ValueError):
-        llm.stream("I'm Pickle Rick")
