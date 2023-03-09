@@ -26,6 +26,15 @@ def test_character_text_splitter_empty_doc() -> None:
     assert output == expected_output
 
 
+def test_character_text_splitter_separtor_empty_doc() -> None:
+    """Test edge cases are separators."""
+    text = "f b"
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=2, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["f", "b"]
+    assert output == expected_output
+
+
 def test_character_text_splitter_long() -> None:
     """Test splitting by character count on long words."""
     text = "foo bar baz a a"
@@ -99,7 +108,7 @@ Bye!\n\n-H."""
         "Harrison.",
         "How? Are?",
         "You?",
-        "Okay then f",
+        "Okay then",
         "f f f f.",
         "This is a",
         "a weird",
@@ -107,8 +116,8 @@ Bye!\n\n-H."""
         "write, but",
         "gotta test",
         "the",
-        "splitting",
-        "gggg",
+        "splittingg",
+        "ggg",
         "some how.",
         "Bye!\n\n-H.",
     ]

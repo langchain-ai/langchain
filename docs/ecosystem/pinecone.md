@@ -17,4 +17,4 @@ To import this vectorstore:
 from langchain.vectorstores import Pinecone
 ```
 
-For a more detailed walkthrough of the Pinecone wrapper, see [this notebook](../modules/indexes/examples/vectorstores.ipynb)
+For a more detailed walkthrough of the Pinecone wrapper, see [this notebook](../modules/indexes/vectorstore_examples/pinecone.ipynb)

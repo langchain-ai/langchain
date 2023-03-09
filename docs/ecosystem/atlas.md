@@ -1,12 +1,12 @@
 # AtlasDB
 
-This page covers how to Nomic's Atlas ecosystem within LangChain.
+This page covers how to use Nomic's Atlas ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Atlas wrappers.
 
 ## Installation and Setup
 - Install the Python package with `pip install nomic`
 - Nomic is also included in langchains poetry extras `poetry install -E all`
-- 
+
 ## Wrappers
 
 ### VectorStore
