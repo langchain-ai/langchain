@@ -604,18 +604,18 @@ urllib3 = ">=1.25.3,<3"
 
 [[package]]
 name = "boto3"
-version = "1.26.82"
+version = "1.26.89"
 description = "The AWS SDK for Python"
 category = "main"
-optional = true
+optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.26.82-py3-none-any.whl", hash = "sha256:f618f2e8a4b9d5cb9f05d3a5628ca2afa4bcd3e8b4b8413d11dea0f4c4480b3c"},
-    {file = "boto3-1.26.82.tar.gz", hash = "sha256:f50c048b4f3223dd57afb6eee1189ef9a472bf0ed9b26ff9db65ec13275c4414"},
+    {file = "boto3-1.26.89-py3-none-any.whl", hash = "sha256:09929b24aaec4951e435d53d31f800e2ca52244af049dc11e5385ce062e106e9"},
+    {file = "boto3-1.26.89.tar.gz", hash = "sha256:e819812f16fab46fadf9b2853a46aaa126e108e7f038502dde555ebbbfc80133"},
 ]
 
 [package.dependencies]
-botocore = ">=1.29.82,<1.30.0"
+botocore = ">=1.29.89,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -624,14 +624,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.82"
+version = "1.29.89"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
-optional = true
+optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.29.82-py3-none-any.whl", hash = "sha256:b31e86f9b51eced5506a0f6038370fe8c1355000379610def1bb9e91cae9e77e"},
-    {file = "botocore-1.29.82.tar.gz", hash = "sha256:913ca09a184cf4428f05838afc631c4fb93f3b173871b69d66230fd14656a3a1"},
+    {file = "botocore-1.29.89-py3-none-any.whl", hash = "sha256:b757e59feca82ac62934f658918133116b4535cf66f1d72ff4935fa24e522527"},
+    {file = "botocore-1.29.89.tar.gz", hash = "sha256:ac8da651f73a9d5759cf5d80beba68deda407e56aaaeb10d249fd557459f3b56"},
 ]
 
 [package.dependencies]
@@ -1120,7 +1120,6 @@ files = [
     {file = "debugpy-1.6.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9b5d1b13d7c7bf5d7cf700e33c0b8ddb7baf030fcf502f76fc061ddd9405d16c"},
     {file = "debugpy-1.6.6-cp38-cp38-win32.whl", hash = "sha256:70ab53918fd907a3ade01909b3ed783287ede362c80c75f41e79596d5ccacd32"},
     {file = "debugpy-1.6.6-cp38-cp38-win_amd64.whl", hash = "sha256:c05349890804d846eca32ce0623ab66c06f8800db881af7a876dc073ac1c2225"},
-    {file = "debugpy-1.6.6-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:11a0f3a106f69901e4a9a5683ce943a7a5605696024134b522aa1bfda25b5fec"},
     {file = "debugpy-1.6.6-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a771739902b1ae22a120dbbb6bd91b2cae6696c0e318b5007c5348519a4211c6"},
     {file = "debugpy-1.6.6-cp39-cp39-win32.whl", hash = "sha256:549ae0cb2d34fc09d1675f9b01942499751d174381b6082279cf19cdb3c47cbe"},
     {file = "debugpy-1.6.6-cp39-cp39-win_amd64.whl", hash = "sha256:de4a045fbf388e120bb6ec66501458d3134f4729faed26ff95de52a754abddb1"},
@@ -2408,7 +2407,7 @@ name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
@@ -5468,7 +5467,7 @@ name = "s3transfer"
 version = "0.6.0"
 description = "An Amazon S3 Transfer Manager"
 category = "main"
-optional = true
+optional = false
 python-versions = ">= 3.7"
 files = [
     {file = "s3transfer-0.6.0-py3-none-any.whl", hash = "sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd"},
@@ -7595,10 +7594,10 @@ docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker
 testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake"]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6394a04c5f73c711b6f6e0e8e41765048653090c51aae6b5cc3d6fb2910ca17c"
+content-hash = "3aa8b303222eb78d16947ede747b73a41e560bea6bb96cb165261ca308eecc0b"

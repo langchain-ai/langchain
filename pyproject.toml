@@ -51,6 +51,7 @@ pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.2.9", optional = true}
+boto3 = "^1.26.89"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
