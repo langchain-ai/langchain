@@ -12,9 +12,26 @@ class GitbookLoader(WebBaseLoader):
     2. load all (relative) paths in the navbar.
     """
 
-    def __init__(self, web_page: str, load_all_paths: bool = False):
-        """Initialize with web page and whether to load all paths."""
+    def __init__(
+        self,
+        web_page: str,
+        load_all_paths: bool = False,
+        base_url: Optional[str] = None,
+    ):
+        """Initialize with web page and whether to load all paths.
+
+        Args:
+            web_page: The web page to load or the starting point from where
+                relative paths are discovered.
+            load_all_paths: If set to True, all relative paths in the navbar
+                are loaded instead of only `web_page`.
+            base_url: If `load_all_paths` is True, the relative paths are
+                appended to this base url. Defaults to `web_page` if not set.
+        """
         super().__init__(web_page)
+        self.base_url = base_url or web_page
+        if self.base_url.endswith("/"):
+            self.base_url = self.base_url[:-1]
         self.load_all_paths = load_all_paths
 
     def load(self) -> List[Document]:
@@ -24,7 +41,7 @@ class GitbookLoader(WebBaseLoader):
             relative_paths = self._get_paths(soup_info)
             documents = []
             for path in relative_paths:
-                url = self.web_path + path
+                url = self.base_url + path
                 print(f"Fetching text from {url}")
                 soup_info = self._scrape(url)
                 documents.append(self._get_document(soup_info, url))

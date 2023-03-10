@@ -1,4 +1,4 @@
-"""Chain that calls SearxNG meta search API.
+"""Utility for using SearxNG meta search API.
 
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
 `multiple search engines
@@ -15,7 +15,7 @@ Quick Start
 -----------
 
 
-In order to use this chain you need to provide the searx host. This can be done
+In order to use this tool you need to provide the searx host. This can be done
 by passing the named parameter :attr:`searx_host <SearxSearchWrapper.searx_host>`
 or exporting the environment variable SEARX_HOST.
 Note: this is the only required parameter.

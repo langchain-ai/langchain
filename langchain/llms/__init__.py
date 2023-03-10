@@ -19,7 +19,7 @@ from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.petals import Petals
-from langchain.llms.promptlayer_openai import PromptLayerOpenAI
+from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
@@ -48,6 +48,7 @@ __all__ = [
     "SelfHostedPipeline",
     "SelfHostedHuggingFaceLLM",
     "PromptLayerOpenAI",
+    "PromptLayerOpenAIChat",
     "StochasticAI",
     "Writer",
 ]
