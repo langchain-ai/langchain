@@ -23,8 +23,8 @@ class HFTextGeneration(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Could not import text_generation python package. "
+                "Please it install it with `pip install text_generation`."
             )
         values["token"] = huggingfacehub_api_token
         return values
