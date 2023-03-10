@@ -43,16 +43,19 @@ class BaseMessage(BaseModel):
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
+
     _type = "human"
 
 
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
+
     _type = "ai"
 
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
+
     _type = "system"
 
 

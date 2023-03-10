@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel
 
 import langchain
 from langchain.base_language_model import BaseLanguageModel
-from langchain.callbacks import get_callback_manager
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import (
     AIMessage,
     BaseMessage,
