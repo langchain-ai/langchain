@@ -18,6 +18,10 @@ def _get_default_text_splitter() -> TextSplitter:
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
+def _get_default_vectorstore_kwargs() -> dict:
+    return dict(embedding=OpenAIEmbeddings())
+
+
 class VectorStoreIndexWrapper(BaseModel):
     """Wrapper around a vectorstore for easy access."""
 
@@ -50,8 +54,9 @@ class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
     vectorstore_cls: Type[VectorStore] = Chroma
-    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
+    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
+    vectorstore_kwargs: dict = Field(default_factory=_get_default_vectorstore_kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -65,5 +70,7 @@ class VectorstoreIndexCreator(BaseModel):
         for loader in loaders:
             docs.extend(loader.load())
         sub_docs = self.text_splitter.split_documents(docs)
-        vectorstore = self.vectorstore_cls.from_documents(sub_docs, self.embedding)
+        vectorstore = self.vectorstore_cls.from_documents(
+            sub_docs, self.embedding, **self.vectorstore_kwargs
+        )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)
