@@ -5,7 +5,6 @@ from pydantic import BaseModel, Extra, Field
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
@@ -68,12 +67,10 @@ class VectorstoreIndexCreator(BaseModel):
         super().__init__(*args, **kwargs)
 
         """backwards compatibility for embedding param"""
-        if 'embedding' in kwargs:
-            self.vectorstore_kwargs['embedding'] = kwargs['embedding']
+        if "embedding" in kwargs:
+            self.vectorstore_kwargs["embedding"] = kwargs["embedding"]
 
-    def from_loaders(
-        self, loaders: List[BaseLoader]
-    ) -> VectorStoreIndexWrapper:
+    def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from loaders."""
         docs = []
         for loader in loaders:
