@@ -51,7 +51,8 @@ def test_sql_database_run_update() -> None:
 
 
 def test_sql_database_sequential_chain_run() -> None:
-    """Test that commands can be run successfully SEQUENTIALLY and returned in correct format."""
+    """Test that commands can be run successfully SEQUENTIALLY
+    and returned in correct format."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
@@ -67,8 +68,8 @@ def test_sql_database_sequential_chain_run() -> None:
 
 
 def test_sql_database_sequential_chain_intermediate_steps() -> None:
-    """Test that commands can be run successfully SEQUENTIALLY and returned in correct format.
-    With Intermediate steps"""
+    """Test that commands can be run successfully SEQUENTIALLY and returned
+    in correct format. sWith Intermediate steps"""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison", user_company="Foo")
