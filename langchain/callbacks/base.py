@@ -4,7 +4,7 @@ import functools
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult, PromptValue
 
 
 class BaseCallbackHandler(ABC):
@@ -29,6 +29,10 @@ class BaseCallbackHandler(ABC):
     def ignore_agent(self) -> bool:
         """Whether to ignore agent callbacks."""
         return False
+
+    def on_llm_start_prompt_value(self, prompt: PromptValue, **kwargs: Any) -> Any:
+        """Run when LLM starts running."""
+        pass
 
     @abstractmethod
     def on_llm_start(
@@ -126,6 +130,15 @@ class CallbackManager(BaseCallbackManager):
     def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
+
+    def on_llm_start_prompt_value(
+        self, prompt: PromptValue, verbose: bool = False, **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+        for handler in self.handlers:
+            if not handler.ignore_llm:
+                if verbose or handler.always_verbose:
+                    handler.on_llm_start_prompt_value(prompt, **kwargs)
 
     def on_llm_start(
         self,
@@ -276,6 +289,11 @@ class CallbackManager(BaseCallbackManager):
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
 
+    async def on_llm_start_prompt_value(
+        self, prompt: PromptValue, **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+
     async def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -339,6 +357,23 @@ class AsyncCallbackManager(BaseCallbackManager):
     def __init__(self, handlers: List[BaseCallbackHandler]) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
+
+    async def on_llm_start_prompt_value(
+        self, prompt: PromptValue, verbose: bool = False, **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+        for handler in self.handlers:
+            if not handler.ignore_llm:
+                if verbose or handler.always_verbose:
+                    if asyncio.iscoroutinefunction(handler.on_llm_start_prompt_value):
+                        return await handler.on_llm_start_prompt_value(prompt, **kwargs)
+                    else:
+                        return await asyncio.get_event_loop().run_in_executor(
+                            None,
+                            functools.partial(
+                                handler.on_llm_start_prompt_value, prompt, **kwargs
+                            ),
+                        )
 
     async def on_llm_start(
         self,
