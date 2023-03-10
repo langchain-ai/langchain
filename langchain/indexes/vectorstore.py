@@ -59,11 +59,15 @@ class VectorstoreIndexCreator(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+    def from_loaders(
+        self, loaders: List[BaseLoader], **kwargs: Any
+    ) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from loaders."""
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
         sub_docs = self.text_splitter.split_documents(docs)
-        vectorstore = self.vectorstore_cls.from_documents(sub_docs, self.embedding)
+        vectorstore = self.vectorstore_cls.from_documents(
+            sub_docs, self.embedding, **kwargs
+        )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)

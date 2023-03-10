@@ -207,6 +207,7 @@ class Chroma(VectorStore):
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
+            client_settings (Optional[chromadb.config.Settings]): Chroma client settings
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -241,7 +242,7 @@ class Chroma(VectorStore):
             persist_directory (Optional[str]): Directory to persist the collection.
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
-
+            client_settings (Optional[chromadb.config.Settings]): Chroma client settings
         Returns:
             Chroma: Chroma vectorstore.
         """
