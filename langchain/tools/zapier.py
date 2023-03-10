@@ -42,7 +42,7 @@ import os
 # get from https://platform.openai.com/
 os.environ["OPENAI_API_KEY"] = "..."
 
-# get from https://nla.zapier.com/zapier/provider/debug (under User, after logging in):
+# get from https://nla.zapier.com/demo/provider/debug (under User, after logging in):
 os.environ["ZAPIER_NLA_API_KEY"] = "..."
 
 from langchain.llms import OpenAI
@@ -54,9 +54,9 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 ## step 0. expose gmail 'find email' and slack 'send channel message' actions
 
 # first go here, log in, expose (enable) the two actions:
-#    https://nla.zapier.com/zapier/start
+#    https://nla.zapier.com/demo/start
 #    -- for this example, can leave all fields "Have AI guess"
-# in an oauth scenario, you'd get your own <provider> id (instead of 'zapier')
+# in an oauth scenario, you'd get your own <provider> id (instead of 'demo')
 # which you route your users through first
 
 actions = ZapierNLAWrapper().list()

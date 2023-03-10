@@ -84,7 +84,7 @@ class ZapierNLAWrapper(BaseModel):
     def list(self) -> List[Dict]:
         """Returns a list of all exposed (enabled) actions associated with
         current user (associated with the set api_key). Change your exposed
-        actions here: https://nla.zapier.com/zapier/start/
+        actions here: https://nla.zapier.com/demo/start/
 
         The return list can be empty if no actions exposed. Else will contain
         a list of action objects:
@@ -110,7 +110,7 @@ class ZapierNLAWrapper(BaseModel):
     ) -> Dict:
         """Executes an action that is identified by action_id, must be exposed
         (enabled) by the current user (associated with the set api_key). Change
-        your exposed actions here: https://nla.zapier.com/zapier/start/
+        your exposed actions here: https://nla.zapier.com/demo/start/
 
         The return JSON is guaranteed to be less than ~500 words (350
         tokens) making it safe to inject into the prompt of another LLM
