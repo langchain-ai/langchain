@@ -78,22 +78,12 @@ class Chroma(VectorStore):
         self._client = chromadb.Client(self._client_settings)
         self._embedding_function = embedding_function
         self._persist_directory = persist_directory
-
-        # Check if the collection exists, create it if not
-        if collection_name in [col.name for col in self._client.list_collections()]:
-            self._collection = self._client.get_collection(name=collection_name)
-            # TODO: Persist the user's embedding function
-            logger.warning(
-                f"Collection {collection_name} already exists,"
-                " Do you have the right embedding function?"
-            )
-        else:
-            self._collection = self._client.create_collection(
-                name=collection_name,
-                embedding_function=self._embedding_function.embed_documents
-                if self._embedding_function is not None
-                else None,
-            )
+        self._collection = self._client.get_or_create_collection(
+            name=collection_name,
+            embedding_function=self._embedding_function.embed_documents
+            if self._embedding_function is not None
+            else None,
+        )
 
     def add_texts(
         self,
@@ -224,9 +214,9 @@ class Chroma(VectorStore):
         Otherwise, the data will be ephemeral in-memory.
 
         Args:
+            texts (List[str]): List of texts to add to the collection.
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
-            documents (List[Document]): List of documents to add.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
@@ -263,6 +253,7 @@ class Chroma(VectorStore):
         Args:
             collection_name (str): Name of the collection to create.
             persist_directory (Optional[str]): Directory to persist the collection.
+            ids (Optional[List[str]]): List of document IDs. Defaults to None.
             documents (List[Document]): List of documents to add to the vectorstore.
             embedding (Optional[Embeddings]): Embedding function. Defaults to None.
             client_settings (Optional[chromadb.config.Settings]): Chroma client settings
