@@ -1,5 +1,5 @@
 import boto3
-from langchain.chains.base import BaseMemory
+from langchain.schema import BaseMemory
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 from datetime import datetime
