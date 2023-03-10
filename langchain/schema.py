@@ -79,6 +79,8 @@ class BaseMessage(BaseModel):
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
 
+    example: bool = False
+
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -87,6 +89,8 @@ class HumanMessage(BaseMessage):
 
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
+
+    example: bool = False
 
     @property
     def type(self) -> str:
