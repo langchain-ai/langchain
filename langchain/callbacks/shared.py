@@ -8,7 +8,7 @@ from langchain.callbacks.base import (
     BaseCallbackManager,
     CallbackManager,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult, PromptValue
 
 
 class Singleton:
@@ -33,6 +33,15 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
     """A thread-safe singleton CallbackManager."""
 
     _callback_manager: CallbackManager = CallbackManager(handlers=[])
+
+    def on_llm_start_prompt_value(
+        self, serialized: Dict[str, Any], prompts: List[PromptValue], **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+        with self._lock:
+            self._callback_manager.on_llm_start_prompt_value(
+                serialized, prompts, **kwargs
+            )
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any

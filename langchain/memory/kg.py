@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
+from langchain.base_language_model import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
 from langchain.graphs.networkx_graph import KnowledgeTriple, get_entities, parse_triples
@@ -13,7 +14,6 @@ from langchain.memory.prompt import (
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import SystemMessage
-from langchain.base_language_model import BaseLanguageModel
 
 
 class ConversationKGMemory(BaseChatMemory, BaseModel):

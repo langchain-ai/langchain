@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
+from langchain.base_language_model import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
@@ -11,7 +12,6 @@ from langchain.memory.prompt import (
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
-from langchain.base_language_model import BaseLanguageModel
 
 
 class ConversationEntityMemory(BaseChatMemory, BaseModel):

@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import BaseModel, Extra
 
+from langchain.base_language_model import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import LLMResult, PromptValue
-from langchain.base_language_model import BaseLanguageModel
 
 
 class LLMChain(Chain, BaseModel):
@@ -60,12 +60,12 @@ class LLMChain(Chain, BaseModel):
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        return self.llm._generate_prompt(prompts, stop)
+        return self.llm.generate_prompt(prompts, stop)
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        return await self.llm._agenerate_prompt(prompts, stop)
+        return await self.llm.agenerate_prompt(prompts, stop)
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]

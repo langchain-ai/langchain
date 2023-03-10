@@ -4,6 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
+from langchain.base_language_model import BaseLanguageModel
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import (
@@ -14,7 +15,6 @@ from langchain.schema import (
     LLMResult,
     PromptValue,
 )
-from langchain.base_language_model import BaseLanguageModel
 
 
 def _get_verbosity() -> bool:
@@ -23,6 +23,7 @@ def _get_verbosity() -> bool:
 
 class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     """Base class for chat models."""
+
     def generate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:

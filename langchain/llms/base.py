@@ -8,8 +8,8 @@ import yaml
 from pydantic import BaseModel, Extra
 
 import langchain
-from langchain.schema import Generation, LLMResult, PromptValue
 from langchain.base_language_model import BaseLanguageModel
+from langchain.schema import Generation, LLMResult, PromptValue
 
 
 def get_prompts(
@@ -109,7 +109,6 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
             except (KeyboardInterrupt, Exception) as e:
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            self.callback_manager.on_llm_end(output, verbose=self.verbose)
             return output
         params = self.dict()
         params["stop"] = stop
@@ -128,7 +127,6 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
             except (KeyboardInterrupt, Exception) as e:
                 self.callback_manager.on_llm_error(e, verbose=self.verbose)
                 raise e
-            self.callback_manager.on_llm_end(new_results, verbose=self.verbose)
             llm_output = update_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )

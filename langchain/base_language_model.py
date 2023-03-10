@@ -4,12 +4,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator, Extra
-
-from langchain.callbacks import BaseCallbackManager, get_callback_manager
-from langchain.schema import PromptValue, LLMResult
+from pydantic import BaseModel, Extra, Field, validator
 
 import langchain
+from langchain.callbacks import BaseCallbackManager, get_callback_manager
+from langchain.schema import LLMResult, PromptValue
 
 
 def _get_verbosity() -> bool:
@@ -18,6 +17,7 @@ def _get_verbosity() -> bool:
 
 class BaseLanguageModel(BaseModel, ABC):
     """Base class for language models."""
+
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
@@ -49,7 +49,9 @@ class BaseLanguageModel(BaseModel, ABC):
         else:
             return verbose
 
-    def generate_prompt(self, prompts: List[PromptValue], stop: Optional[List[str]] = None) -> LLMResult:
+    def generate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
         self.callback_manager.on_llm_start_prompt_value(
             {"name": self.__class__.__name__}, prompts, verbose=self.verbose
@@ -62,7 +64,9 @@ class BaseLanguageModel(BaseModel, ABC):
         self.callback_manager.on_llm_end(output, verbose=self.verbose)
         return output
 
-    async def agenerate_prompt(self, prompts: List[PromptValue], stop: Optional[List[str]] = None) -> LLMResult:
+    async def agenerate_prompt(
+        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+    ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
         if self.callback_manager.is_async:
             await self.callback_manager.on_llm_start_prompt_value(

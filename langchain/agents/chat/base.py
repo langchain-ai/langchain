@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.base_language_model import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
@@ -12,7 +13,6 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction
-from langchain.base_language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
