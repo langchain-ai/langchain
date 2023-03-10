@@ -37,7 +37,7 @@ class AudioBanana(AudioBase):
         values["banana_api_key"] = banana_api_key
         return values
 
-    def transcript(self, audio_path: str) -> str:
+    def transcript(self, audio_path: str, task: str = "transcribe") -> str:
         """Call to Banana endpoint."""
         try:
             import banana_dev as banana
@@ -46,18 +46,25 @@ class AudioBanana(AudioBase):
                 "Could not import banana-dev python package. "
                 "Please install it with `pip install banana-dev`."
             )
-        mp3 = self._read_mp3_audio(audio_path)
-        model_inputs = {"mp3BytesString": mp3}
-        response = banana.run(self.banana_api_key, self.model_key, model_inputs)
-        try:
-            text = response["modelOutputs"][0]["text"]
-            if not isinstance(text, str):
-                raise ValueError(f"Expected text to be a string, got {type(text)}")
 
-        except KeyError:
+        if task == "transcribe":
+            mp3 = self._read_mp3_audio(audio_path)
+            model_inputs = {"mp3BytesString": mp3}
+            response = banana.run(self.banana_api_key, self.model_key, model_inputs)
+            try:
+                text = response["modelOutputs"][0]["text"]
+                if not isinstance(text, str):
+                    raise ValueError(f"Expected text to be a string, got {type(text)}")
+
+            except KeyError:
+                raise ValueError(
+                    f"Response should be {'modelOutputs': [{'output': 'text'}]}."
+                    f"Response was: {response}"
+                )
+        else:
             raise ValueError(
-                f"Response should be {'modelOutputs': [{'output': 'text'}]}."
-                f"Response was: {response}"
+                f"Only task available is 'transcribe' for this model."
+                f"Task was: {task}"
             )
 
         return text[: self.max_chars] if self.max_chars else text

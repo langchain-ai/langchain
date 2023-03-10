@@ -1,6 +1,7 @@
 """All different types of document loaders."""
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
+from langchain.document_loaders.audio_files import AudioLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -83,4 +84,5 @@ __all__ = [
     "FacebookChatLoader",
     "NotebookLoader",
     "CoNLLULoader",
+    "AudioLoader",
 ]
