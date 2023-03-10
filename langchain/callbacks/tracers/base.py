@@ -110,7 +110,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             self._persist_run(run)
 
     def on_llm_start_prompt_value(
-        self, serialized, prompts: List[PromptValue], **kwargs: Any
+        self, serialized: Dict[str, Any], prompts: List[PromptValue], **kwargs: Any
     ) -> Any:
         """Start a trace for an LLM run."""
         if self._session is None:
