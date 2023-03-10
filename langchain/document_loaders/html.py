@@ -1,4 +1,4 @@
-"""Loader that loads PDF files."""
+"""Loader that uses unstructured to load HTML files."""
 from typing import List
 
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
