@@ -109,7 +109,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             self._execution_order = 1
             self._persist_run(run)
 
-    def on_llm_start_prompt_value(self, serialized, prompt: PromptValue, **kwargs: Any) -> Any:
+    def on_llm_start_prompt_value(self, serialized, prompts: List[PromptValue], **kwargs: Any) -> Any:
         """Start a trace for an LLM run."""
         if self._session is None:
             raise TracerException(
@@ -118,7 +118,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         llm_run = LLMRun(
             serialized=serialized,
-            prompts=prompt,
+            prompts=prompts,
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,

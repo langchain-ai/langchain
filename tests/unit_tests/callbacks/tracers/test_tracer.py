@@ -85,10 +85,10 @@ def _perform_nested_run(tracer: BaseTracer) -> None:
     """Perform a nested run."""
     tracer.on_chain_start(serialized={}, inputs={})
     tracer.on_tool_start(serialized={}, input_str="test")
-    tracer.on_llm_start(serialized={}, prompts=[])
+    tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult(generations=[[]]))
     tracer.on_tool_end("test")
-    tracer.on_llm_start(serialized={}, prompts=[])
+    tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult(generations=[[]]))
     tracer.on_chain_end(outputs={})
 
@@ -216,7 +216,7 @@ def test_tracer_llm_run() -> None:
     tracer = FakeTracer()
 
     tracer.new_session()
-    tracer.on_llm_start(serialized={}, prompts=[])
+    tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
     tracer.on_llm_end(response=LLMResult(generations=[[]]))
     assert tracer.runs == [compare_run]
 
@@ -227,7 +227,7 @@ def test_tracer_llm_run_errors_no_session() -> None:
     tracer = FakeTracer()
 
     with pytest.raises(TracerException):
-        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
 
 
 @freeze_time("2023-01-01")
@@ -260,7 +260,7 @@ def test_tracer_multiple_llm_runs() -> None:
     tracer.new_session()
     num_runs = 10
     for _ in range(num_runs):
-        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
         tracer.on_llm_end(response=LLMResult(generations=[[]]))
 
     assert tracer.runs == [compare_run] * num_runs
@@ -342,7 +342,7 @@ def test_tracer_llm_run_on_error() -> None:
     tracer = FakeTracer()
 
     tracer.new_session()
-    tracer.on_llm_start(serialized={}, prompts=[])
+    tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
     tracer.on_llm_error(exception)
     assert tracer.runs == [compare_run]
 
@@ -408,12 +408,12 @@ def test_tracer_nested_runs_on_error() -> None:
 
     for _ in range(3):
         tracer.on_chain_start(serialized={}, inputs={})
-        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
         tracer.on_llm_end(response=LLMResult(generations=[[]]))
-        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
         tracer.on_llm_end(response=LLMResult(generations=[[]]))
         tracer.on_tool_start(serialized={}, input_str="test")
-        tracer.on_llm_start(serialized={}, prompts=[])
+        tracer.on_llm_start_prompt_value(serialized={}, prompts=[])
         tracer.on_llm_error(exception)
         tracer.on_tool_error(exception)
         tracer.on_chain_error(exception)

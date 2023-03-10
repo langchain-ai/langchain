@@ -45,7 +45,7 @@ class BaseRun(BaseModel):
 class LLMRun(BaseRun):
     """Class for LLMRun."""
 
-    prompts: PromptValue
+    prompts: List[PromptValue]
     response: Optional[LLMResult] = None
 
 
