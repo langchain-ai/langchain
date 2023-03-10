@@ -18,10 +18,6 @@ def _get_default_text_splitter() -> TextSplitter:
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
-def _get_default_vectorstore_kwargs() -> dict:
-    return dict(embedding=OpenAIEmbeddings())
-
-
 class VectorStoreIndexWrapper(BaseModel):
     """Wrapper around a vectorstore for easy access."""
 
@@ -56,7 +52,7 @@ class VectorstoreIndexCreator(BaseModel):
     vectorstore_cls: Type[VectorStore] = Chroma
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
-    vectorstore_kwargs: dict = Field(default_factory=_get_default_vectorstore_kwargs)
+    vectorstore_kwargs: dict = Field(default_factory=dict)
 
     class Config:
         """Configuration for this pydantic object."""
