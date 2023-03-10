@@ -4,6 +4,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
+from langchain.document_loaders.csv import CSVLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
@@ -51,8 +52,6 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
-from langchain.document_loaders.csv import CSVLoader
-
 __all__ = [
     "UnstructuredFileLoader",
     "UnstructuredFileIOLoader",
@@ -98,5 +97,5 @@ __all__ = [
     "CoNLLULoader",
     "GoogleApiYoutubeLoader",
     "GoogleApiClient",
-    "CSVLoader"
+    "CSVLoader",
 ]
