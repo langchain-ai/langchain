@@ -5,6 +5,7 @@ from pydantic import BaseModel, Extra, Field
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.document_loaders.base import BaseLoader
+from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
@@ -54,6 +55,7 @@ class VectorstoreIndexCreator(BaseModel):
 
     vectorstore_cls: Type[VectorStore] = Chroma
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
+    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     vectorstore_kwargs: dict = Field(default_factory=_get_default_vectorstore_kwargs)
 
     class Config:
@@ -62,14 +64,6 @@ class VectorstoreIndexCreator(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        """Initialize the class."""
-        super().__init__(*args, **kwargs)
-
-        """backwards compatibility for embedding param"""
-        if "embedding" in kwargs:
-            self.vectorstore_kwargs["embedding"] = kwargs["embedding"]
-
     def from_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from loaders."""
         docs = []
@@ -77,6 +71,6 @@ class VectorstoreIndexCreator(BaseModel):
             docs.extend(loader.load())
         sub_docs = self.text_splitter.split_documents(docs)
         vectorstore = self.vectorstore_cls.from_documents(
-            sub_docs, **self.vectorstore_kwargs
+            sub_docs, self.embedding, **self.vectorstore_kwargs
         )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)
