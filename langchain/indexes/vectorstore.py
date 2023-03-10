@@ -18,6 +18,10 @@ def _get_default_text_splitter() -> TextSplitter:
     return RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
+def _get_default_vectorstore_kwargs() -> dict:
+    return dict(embedding=OpenAIEmbeddings())
+
+
 class VectorStoreIndexWrapper(BaseModel):
     """Wrapper around a vectorstore for easy access."""
 
@@ -50,8 +54,8 @@ class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
     vectorstore_cls: Type[VectorStore] = Chroma
-    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
+    vectorstore_kwargs: dict = Field(default_factory=_get_default_vectorstore_kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -59,8 +63,16 @@ class VectorstoreIndexCreator(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    def __init__(self, *args: Any, **kwargs: Any):
+        """Initialize the class."""
+        super().__init__(*args, **kwargs)
+
+        """backwards compatibility for embedding param"""
+        if 'embedding' in kwargs:
+            self.vectorstore_kwargs['embedding'] = kwargs['embedding']
+
     def from_loaders(
-        self, loaders: List[BaseLoader], **kwargs: Any
+        self, loaders: List[BaseLoader]
     ) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from loaders."""
         docs = []
@@ -68,6 +80,6 @@ class VectorstoreIndexCreator(BaseModel):
             docs.extend(loader.load())
         sub_docs = self.text_splitter.split_documents(docs)
         vectorstore = self.vectorstore_cls.from_documents(
-            sub_docs, self.embedding, **kwargs
+            sub_docs, **self.vectorstore_kwargs
         )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)
