@@ -16,7 +16,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
     TracerSessionCreate,
 )
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult, PromptValue
 
 
 class TracerException(Exception):
@@ -109,9 +109,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             self._execution_order = 1
             self._persist_run(run)
 
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> None:
+    def on_llm_start_prompt_value(self, serialized, prompt: PromptValue, **kwargs: Any) -> Any:
         """Start a trace for an LLM run."""
         if self._session is None:
             raise TracerException(
@@ -120,7 +118,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         llm_run = LLMRun(
             serialized=serialized,
-            prompts=prompts,
+            prompts=prompt,
             extra=kwargs,
             start_time=datetime.utcnow(),
             execution_order=self._execution_order,
@@ -128,6 +126,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
             id=self._generate_id(),
         )
         self._start_trace(llm_run)
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        """Start a trace for an LLM run."""
+        pass
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Handle a new token for an LLM run."""

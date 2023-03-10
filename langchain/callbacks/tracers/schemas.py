@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from langchain.schema import LLMResult
+from langchain.schema import LLMResult, PromptValue
 
 
 class TracerSessionBase(BaseModel):
@@ -45,7 +45,7 @@ class BaseRun(BaseModel):
 class LLMRun(BaseRun):
     """Class for LLMRun."""
 
-    prompts: List[str]
+    prompts: PromptValue
     response: Optional[LLMResult] = None
 
 

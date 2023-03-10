@@ -30,7 +30,7 @@ class BaseCallbackHandler(ABC):
         """Whether to ignore agent callbacks."""
         return False
 
-    def on_llm_start_prompt_value(self, prompt: PromptValue, **kwargs: Any) -> Any:
+    def on_llm_start_prompt_value(self, serialized: Dict[str, Any], prompt: PromptValue, **kwargs: Any) -> Any:
         """Run when LLM starts running."""
         pass
 
@@ -132,13 +132,13 @@ class CallbackManager(BaseCallbackManager):
         self.handlers: List[BaseCallbackHandler] = handlers
 
     def on_llm_start_prompt_value(
-        self, prompt: PromptValue, verbose: bool = False, **kwargs: Any
+        self, serialized: Dict[str, Any], prompt: PromptValue, verbose: bool = False, **kwargs: Any
     ) -> Any:
         """Run when LLM starts running."""
         for handler in self.handlers:
             if not handler.ignore_llm:
                 if verbose or handler.always_verbose:
-                    handler.on_llm_start_prompt_value(prompt, **kwargs)
+                    handler.on_llm_start_prompt_value(serialized, prompt, **kwargs)
 
     def on_llm_start(
         self,
@@ -290,7 +290,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
 
     async def on_llm_start_prompt_value(
-        self, prompt: PromptValue, **kwargs: Any
+        self, serialized: Dict[str, Any], prompt: PromptValue, **kwargs: Any
     ) -> Any:
         """Run when LLM starts running."""
 
@@ -359,19 +359,19 @@ class AsyncCallbackManager(BaseCallbackManager):
         self.handlers: List[BaseCallbackHandler] = handlers
 
     async def on_llm_start_prompt_value(
-        self, prompt: PromptValue, verbose: bool = False, **kwargs: Any
+        self, serialized: Dict[str, Any], prompt: PromptValue, verbose: bool = False, **kwargs: Any
     ) -> Any:
         """Run when LLM starts running."""
         for handler in self.handlers:
             if not handler.ignore_llm:
                 if verbose or handler.always_verbose:
                     if asyncio.iscoroutinefunction(handler.on_llm_start_prompt_value):
-                        return await handler.on_llm_start_prompt_value(prompt, **kwargs)
+                        return await handler.on_llm_start_prompt_value(serialized, prompt, **kwargs)
                     else:
                         return await asyncio.get_event_loop().run_in_executor(
                             None,
                             functools.partial(
-                                handler.on_llm_start_prompt_value, prompt, **kwargs
+                                handler.on_llm_start_prompt_value, serialized, prompt, **kwargs
                             ),
                         )
 
