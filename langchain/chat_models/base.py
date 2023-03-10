@@ -8,13 +8,13 @@ from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import (
     AIMessage,
-    BaseLanguageModel,
     BaseMessage,
     ChatGeneration,
     ChatResult,
     LLMResult,
     PromptValue,
 )
+from langchain.base_language_model import BaseLanguageModel
 
 
 def _get_verbosity() -> bool:
@@ -22,26 +22,7 @@ def _get_verbosity() -> bool:
 
 
 class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
-
-        This allows users to pass in None as callback manager, which is a nice UX.
-        """
-        return callback_manager or get_callback_manager()
-
+    """Base class for chat models."""
     def generate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -56,13 +37,13 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         results = [await self._agenerate(m, stop=stop) for m in messages]
         return LLMResult(generations=[res.generations for res in results])
 
-    def generate_prompt(
+    def _generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         return self.generate(prompt_messages, stop=stop)
 
-    async def agenerate_prompt(
+    async def _agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]

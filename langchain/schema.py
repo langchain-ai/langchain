@@ -100,41 +100,6 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
-class BaseLanguageModel(BaseModel, ABC):
-    @abstractmethod
-    def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    @abstractmethod
-    async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
-
-
 class BaseMemory(BaseModel, ABC):
     """Base interface for memory in chains."""
 

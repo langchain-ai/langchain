@@ -10,7 +10,8 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.schema import BaseMessage
+from langchain.base_language_model import BaseLanguageModel
 
 
 class ConversationEntityMemory(BaseChatMemory, BaseModel):

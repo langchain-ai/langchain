@@ -11,7 +11,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction, BaseLanguageModel
+from langchain.schema import AgentAction
+from langchain.base_language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"

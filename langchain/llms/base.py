@@ -5,16 +5,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra
 
 import langchain
-from langchain.callbacks import get_callback_manager
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
-
-
-def _get_verbosity() -> bool:
-    return langchain.verbose
+from langchain.schema import Generation, LLMResult, PromptValue
+from langchain.base_language_model import BaseLanguageModel
 
 
 def get_prompts(
@@ -57,36 +52,12 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
-
-        This allows users to pass in None as callback manager, which is a nice UX.
-        """
-        return callback_manager or get_callback_manager()
-
-    @validator("verbose", pre=True, always=True)
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:
-        """If verbose is None, set it.
-
-        This allows users to pass in None as verbose to access the global setting.
-        """
-        if verbose is None:
-            return _get_verbosity()
-        else:
-            return verbose
 
     @abstractmethod
     def _generate(
@@ -100,13 +71,13 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
-    def generate_prompt(
+    def _generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
         return self.generate(prompt_strings, stop=stop)
 
-    async def agenerate_prompt(
+    async def _agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]

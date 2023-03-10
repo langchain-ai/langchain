@@ -12,7 +12,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.base_language_model import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
