@@ -12,18 +12,7 @@ class ConversationBufferMemory(BaseChatMemory, BaseModel):
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     memory_key: str = "history"  #: :meta private:
-
-    @property
-    def buffer(self) -> Any:
-        """String buffer of memory."""
-        if self.return_messages:
-            return self.chat_memory.messages
-        else:
-            return get_buffer_string(
-                self.chat_memory.messages,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
+    buffer: str = ""
 
     @property
     def memory_variables(self) -> List[str]:
@@ -33,6 +22,23 @@ class ConversationBufferMemory(BaseChatMemory, BaseModel):
         """
         return [self.memory_key]
 
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """Save context from this conversation to buffer."""
+        super().save_context(inputs, outputs)
+        self.buffer += "\n" + get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        return {self.memory_key: self.buffer}
+        if self.return_messages:
+            buffer: Any = self.chat_memory.messages
+        else:
+            buffer = self.buffer
+        return {self.memory_key: buffer}
+
+    def clear(self) -> None:
+        super().clear()
+        self.buffer = ""
