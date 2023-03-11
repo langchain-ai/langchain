@@ -25,6 +25,7 @@ from langchain.chains.sql_database.base import (
 )
 from langchain.chains.transform import TransformChain
 from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.structured_data_extraction.base import StructuredDataExtractionChain
 
 __all__ = [
     "ConversationChain",
@@ -52,4 +53,5 @@ __all__ = [
     "ChatVectorDBChain",
     "GraphQAChain",
     "ConstitutionalChain",
+    "StructuredDataExtractionChain"
 ]
