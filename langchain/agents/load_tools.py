@@ -9,12 +9,13 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
-from langchain.tools.python.tool import PythonREPLTool
 from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import RequestsGetTool
+from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -22,6 +23,7 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 
@@ -124,6 +126,10 @@ def _get_google_search(**kwargs: Any) -> BaseTool:
     return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
 
 
+def _get_wikipedia(**kwargs: Any) -> BaseTool:
+    return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
+
+
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Serper Search",
@@ -173,6 +179,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host"]),
+    "wikipedia": (_get_wikipedia, ["top_k_results"]),
 }
 
 

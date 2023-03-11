@@ -30,6 +30,7 @@ version = data["tool"]["poetry"]["version"]
 release = version
 
 html_title = project + " " + version
+html_last_updated_fmt = "%b %d, %Y"
 
 
 # -- General configuration ---------------------------------------------------
