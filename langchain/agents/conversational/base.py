@@ -10,9 +10,11 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.register import register_agent
 from langchain.tools.base import BaseTool
 
 
+@register_agent("conversational-react-description")
 class ConversationalAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 

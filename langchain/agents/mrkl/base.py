@@ -11,6 +11,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.register import register_agent
 from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -49,6 +50,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     return action, action_input.strip(" ").strip('"')
 
 
+@register_agent("zero-shot-react-description")
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 

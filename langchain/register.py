@@ -18,6 +18,19 @@ def register(key: str, _registry: Dict[str, Tuple[Any, List[str]]]) -> Any:
     return _register_cls
 
 
+AGENT_TO_CLASS: Dict[str, Any] = {}
+
+
+def register_agent(key: str) -> Callable:
+    """Register an agent."""
+
+    def _register_agent_cls(cls: Any) -> Callable:
+        register(key, AGENT_TO_CLASS)(cls=cls)
+        return cls
+
+    return _register_agent_cls
+
+
 _TOOLS: Dict[str, Tuple[Callable, List[str]]] = {}
 _LLM_TOOLS: Dict[str, Tuple[Callable, List[str]]] = {}
 

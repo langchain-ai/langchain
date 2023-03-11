@@ -12,9 +12,11 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.register import register_agent
 from langchain.tools.base import BaseTool
 
 
+@register_agent("react-docstore")
 class ReActDocstoreAgent(Agent, BaseModel):
     """Agent for the ReAct chain."""
 

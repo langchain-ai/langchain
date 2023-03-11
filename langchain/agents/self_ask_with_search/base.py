@@ -6,11 +6,13 @@ from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.register import register_agent
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 
 
+@register_agent("self-ask-with-search")
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 

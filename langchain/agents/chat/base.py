@@ -11,12 +11,14 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.register import register_agent
 from langchain.schema import AgentAction, BaseLanguageModel
 from langchain.tools import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
 
+@register_agent("chat-zero-shot-react-description")
 class ChatAgent(Agent):
     @property
     def observation_prefix(self) -> str:
