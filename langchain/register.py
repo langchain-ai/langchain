@@ -11,7 +11,7 @@ def register(key: str, _registry: Dict[str, Tuple[Any, List[str]]]) -> Any:
 
     def _register_cls(cls: Any, required_kwargs: List = None) -> Any:
         if key in _registry:
-            raise ValueError(f"{_registry[key][0]} already registered as {key}")
+            raise KeyError(f"{cls} already registered as {key}")
         _registry[key] = cls if required_kwargs is None else (cls, required_kwargs)
         return cls
 
