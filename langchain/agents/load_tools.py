@@ -2,13 +2,8 @@
 """Load tools."""
 from typing import Any, List, Optional
 
-from langchain.agents.tools import (
-    Tool,
-    register_tool,
-    register_llm_tool,
-    _TOOLS,
-    _LLM_TOOLS,
-)
+from langchain.agents.tools import Tool
+from langchain.register import register_tool, register_llm_tool, _TOOLS, _LLM_TOOLS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
 from langchain.chains.api.base import APIChain

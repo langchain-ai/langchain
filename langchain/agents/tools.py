@@ -1,9 +1,9 @@
 """Interface for tools."""
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, List, Optional, Union
 
+from langchain.register import _LLM_TOOLS, _TOOLS
 from langchain.tools.base import BaseTool
-from langchain.utils import register
 
 
 class Tool(BaseTool):
@@ -102,30 +102,6 @@ def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
         return _partial
     else:
         raise ValueError("Too many arguments for tool decorator")
-
-
-_TOOLS: Dict[str, Tuple[Callable, List[str]]] = {}
-_LLM_TOOLS: Dict[str, Tuple[Callable, List[str]]] = {}
-
-
-def register_tool(key: str, required_kwargs: List[str] = []) -> Callable:
-    """Register a tool."""
-
-    def _register_tool_cls(cls: Any) -> Callable:
-        register(key, _TOOLS)(cls=cls, required_kwargs=required_kwargs)
-        return cls
-
-    return _register_tool_cls
-
-
-def register_llm_tool(key: str, required_kwargs: List[str] = []) -> Callable:
-    """Register an LLM tool."""
-
-    def _register_llm_tool_cls(cls: Any) -> Callable:
-        register(key, _LLM_TOOLS)(cls=cls, required_kwargs=required_kwargs)
-        return cls
-
-    return _register_llm_tool_cls
 
 
 def get_all_tool_names() -> List[str]:
