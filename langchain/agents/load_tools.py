@@ -133,7 +133,7 @@ def _get_wikipedia(**kwargs: Any) -> BaseTool:
     return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
 
 
-@register_tool("google-search-results-json", ["serper_api_key"])
+@register_tool("google-serper", ["serper_api_key"])
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Serper Search",
@@ -215,8 +215,3 @@ def load_tools(
         tools.append(tool)
 
     return tools
-
-
-def get_all_tool_names() -> List[str]:
-    """Get a list of all possible tool names."""
-    return list(_TOOLS) + list(_LLM_TOOLS)

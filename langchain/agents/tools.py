@@ -126,3 +126,8 @@ def register_llm_tool(key: str, required_kwargs: List[str] = []) -> Callable:
         return cls
 
     return _register_llm_tool_cls
+
+
+def get_all_tool_names() -> List[str]:
+    """Get a list of all possible tool names."""
+    return list(_TOOLS) + list(_LLM_TOOLS)
