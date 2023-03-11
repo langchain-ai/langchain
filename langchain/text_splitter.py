@@ -1,6 +1,7 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import copy
 import logging
 from abc import ABC, abstractmethod
 from typing import (
@@ -51,7 +52,7 @@ class TextSplitter(ABC):
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(text):
-                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+                documents.append(Document(page_content=chunk, metadata=copy.deepcopy(_metadatas[i])))
         return documents
 
     def split_documents(self, documents: List[Document]) -> List[Document]:
