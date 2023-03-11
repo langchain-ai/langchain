@@ -52,7 +52,10 @@ class TextSplitter(ABC):
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(text):
-                documents.append(Document(page_content=chunk, metadata=copy.deepcopy(_metadatas[i])))
+                new_doc = Document(
+                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
+                )
+                documents.append(new_doc)
         return documents
 
     def split_documents(self, documents: List[Document]) -> List[Document]:
