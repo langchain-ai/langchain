@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
@@ -11,6 +10,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
+from langchain.output_parsers.base import BaseOutputParser
 from langchain.schema import BaseMessage, HumanMessage, PromptValue
 
 
@@ -52,68 +52,6 @@ def check_valid_template(
             "Invalid prompt schema; check for mismatched or missing input parameters. "
             + str(e)
         )
-
-
-class BaseOutputParser(BaseModel, ABC):
-    """Class to parse the output of an LLM call."""
-
-    @abstractmethod
-    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
-        """Parse the output of an LLM call."""
-
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        raise NotImplementedError
-
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of output parser."""
-        output_parser_dict = super().dict()
-        output_parser_dict["_type"] = self._type
-        return output_parser_dict
-
-
-class ListOutputParser(BaseOutputParser):
-    """Class to parse the output of an LLM call to a list."""
-
-    @abstractmethod
-    def parse(self, text: str) -> List[str]:
-        """Parse the output of an LLM call."""
-
-
-class CommaSeparatedListOutputParser(ListOutputParser):
-    """Parse out comma separated lists."""
-
-    def parse(self, text: str) -> List[str]:
-        """Parse the output of an LLM call."""
-        return text.strip().split(", ")
-
-
-class RegexParser(BaseOutputParser, BaseModel):
-    """Class to parse the output into a dictionary."""
-
-    regex: str
-    output_keys: List[str]
-    default_output_key: Optional[str] = None
-
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        return "regex_parser"
-
-    def parse(self, text: str) -> Dict[str, str]:
-        """Parse the output of an LLM call."""
-        match = re.search(self.regex, text)
-        if match:
-            return {key: match.group(i + 1) for i, key in enumerate(self.output_keys)}
-        else:
-            if self.default_output_key is None:
-                raise ValueError(f"Could not parse output: {text}")
-            else:
-                return {
-                    key: text if key == self.default_output_key else ""
-                    for key in self.output_keys
-                }
 
 
 class StringPromptValue(PromptValue):
