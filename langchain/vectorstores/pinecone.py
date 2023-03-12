@@ -66,6 +66,8 @@ class Pinecone(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
             namespace: Optional pinecone namespace to add the texts to.
+            batch_size: Optional batch size to use when embedding texts. Requires
+                embedding function to support batching.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
