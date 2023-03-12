@@ -36,7 +36,7 @@ Here is what we have for each problem so far:
 
 **# 1: Lack of data**
 
-We have started `LangChainDatasets<https://huggingface.co/LangChainDatasets>`_ a Community space on Hugging Face.
+We have started `LangChainDatasets <https://huggingface.co/LangChainDatasets>`_ a Community space on Hugging Face.
 We intend this to be a collection of open source datasets for evaluating common chains and agents.
 We have contributed five datasets of our own to start, but we highly intend this to be a community effort.
 In order to contribute a dataset, you simply need to join the community and then you will be able to upload datasets.
@@ -44,7 +44,7 @@ In order to contribute a dataset, you simply need to join the community and then
 We're also aiming to make it as easy as possible for people to create their own datasets.
 As a first pass at this, we've added a QAGenerationChain, which given a document comes up
 with question-answer pairs that can be used to evaluate question-answering tasks over that document down the line.
-See `this notebook<qa_generation.html>`_ for an example of how to use this chain.
+See `this notebook <qa_generation.html>`_ for an example of how to use this chain.
 
 **# 2: Lack of metrics**
 
@@ -61,19 +61,19 @@ The Examples
 
 We have created a bunch of examples combining the above two solutions to show how we internally evaluate chains and agents when we are developing.
 In addition to the examples we've curated, we also highly welcome contributions here.
-To facilitate that, we've included a `template notebook<./evaluation/benchmarking_template.html>`_ for community members to use to build their own examples.
+To facilitate that, we've included a `template notebook <./evaluation/benchmarking_template.html>`_ for community members to use to build their own examples.
 
 The existing examples we have are:
 
-`Question Answering (State of Union)<./evaluation/qa_benchmarking_sota.html>`_: An notebook showing evaluation of a question-answering task over a State-of-the-Union address.
+`Question Answering (State of Union) <./evaluation/qa_benchmarking_sota.html>`_: An notebook showing evaluation of a question-answering task over a State-of-the-Union address.
 
-`Question Answering (Paul Graham Essay)<./evaluation/qa_benchmarking_pg.html>`_: An notebook showing evaluation of a question-answering task over a Paul Graham essay.
+`Question Answering (Paul Graham Essay) <./evaluation/qa_benchmarking_pg.html>`_: An notebook showing evaluation of a question-answering task over a Paul Graham essay.
 
-`SQL Question Answering (Chinook)<./evaluation/sql_qa_benchmarking_chinook.html>`_: An notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
+`SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: An notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
 
-`Agent Vectorstore<./evaluation/vectordb_agent_qa_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
+`Agent Vectorstore <./evaluation/vectordb_agent_qa_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
 
-`Agent Search + Calculator<./evaluation/agent_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
+`Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
 
 
 Other Examples
