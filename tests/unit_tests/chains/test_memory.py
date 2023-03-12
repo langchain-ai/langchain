@@ -1,12 +1,12 @@
 import pytest
 
-from langchain.chains.base import Memory, SimpleMemory
 from langchain.chains.conversation.memory import (
     ConversationBufferMemory,
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
-    ReadOnlySharedMemory,
 )
+from langchain.memory import ReadOnlySharedMemory, SimpleMemory
+from langchain.schema import BaseMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -28,7 +28,7 @@ def test_simple_memory() -> None:
         ConversationBufferWindowMemory(memory_key="baz"),
     ],
 )
-def test_readonly_memory(memory: Memory) -> None:
+def test_readonly_memory(memory: BaseMemory) -> None:
     read_only_memory = ReadOnlySharedMemory(memory=memory)
     memory.save_context({"input": "bar"}, {"output": "foo"})
 
