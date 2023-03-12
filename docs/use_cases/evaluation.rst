@@ -41,6 +41,11 @@ We intend this to be a collection of open source datasets for evaluating common 
 We have contributed five datasets of our own to start, but we highly intend this to be a community effort.
 In order to contribute a dataset, you simply need to join the community and then you will be able to upload datasets.
 
+We're also aiming to make it as easy as possible for people to create their own datasets.
+As a first pass at this, we've added a QAGenerationChain, which given a document comes up
+with question-answer pairs that can be used to evaluate question-answering tasks over that document down the line.
+See `this notebook<qa_generation.html>`_ for an example of how to use this chain.
+
 **# 2: Lack of metrics**
 
 We have two solutions to the lack of metrics.
