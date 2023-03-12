@@ -7,7 +7,8 @@ from typing import Union
 
 import yaml
 
-from langchain.prompts.base import BasePromptTemplate, RegexParser
+from langchain.output_parsers.regex import RegexParser
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
@@ -73,15 +74,15 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parser" in config:
-        if config["output_parser"] is not None:
-            _config = config["output_parser"]
+    if "output_parsers" in config:
+        if config["output_parsers"] is not None:
+            _config = config["output_parsers"]
             output_parser_type = _config["_type"]
             if output_parser_type == "regex_parser":
                 output_parser = RegexParser(**_config)
             else:
                 raise ValueError(f"Unsupported output parser {output_parser_type}")
-            config["output_parser"] = output_parser
+            config["output_parsers"] = output_parser
     return config
 
 
