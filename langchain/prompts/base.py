@@ -8,6 +8,9 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
+from typing import Any, Dict, List, Union
+
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.formatting import formatter
 from langchain.output_parsers.base import BaseOutputParser
@@ -69,6 +72,22 @@ class StringPromptValue(PromptValue):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
         return [HumanMessage(content=self.text)]
+
+
+class OutputParser(ABC):
+    """Class to parse the output of an LLM call."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
+        """Parse the output of an LLM call."""
+
+
+class DefaultParser(OutputParser):
+    """Just return the text."""
+
+    def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
+        """Parse the output of an LLM call."""
+        return text
 
 
 class BasePromptTemplate(BaseModel, ABC):
