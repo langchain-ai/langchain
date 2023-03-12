@@ -66,5 +66,7 @@ class VectorstoreIndexCreator(BaseModel):
         for loader in loaders:
             docs.extend(loader.load())
         sub_docs = self.text_splitter.split_documents(docs)
-        vectorstore = self.vectorstore_cls.from_documents(sub_docs, self.embedding, **self.vectorstore_kwargs)
+        vectorstore = self.vectorstore_cls.from_documents(
+            sub_docs, self.embedding, **self.vectorstore_kwargs
+        )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)

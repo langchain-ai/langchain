@@ -94,6 +94,21 @@ def test_create_documents_with_metadata() -> None:
     assert docs == expected_docs
 
 
+def test_metadata_not_shallow() -> None:
+    """Test that metadatas are not shallow."""
+    texts = ["foo bar"]
+    splitter = CharacterTextSplitter(separator=" ", chunk_size=3, chunk_overlap=0)
+    docs = splitter.create_documents(texts, [{"source": "1"}])
+    expected_docs = [
+        Document(page_content="foo", metadata={"source": "1"}),
+        Document(page_content="bar", metadata={"source": "1"}),
+    ]
+    assert docs == expected_docs
+    docs[0].metadata["foo"] = 1
+    assert docs[0].metadata == {"source": "1", "foo": 1}
+    assert docs[1].metadata == {"source": "1"}
+
+
 def test_iterative_text_splitter() -> None:
     """Test iterative text splitter."""
     text = """Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
