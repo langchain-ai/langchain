@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -25,8 +27,8 @@ class QAGenerationChain(Chain):
         cls,
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
-        **kwargs: Any
-    ):
+        **kwargs: Any,
+    ) -> QAGenerationChain:
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=chain, **kwargs)
@@ -43,7 +45,7 @@ class QAGenerationChain(Chain):
     def output_keys(self) -> List[str]:
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
         results = self.llm_chain.generate([{"text": d.page_content} for d in docs])
         qa = [json.loads(res[0].text) for res in results.generations]
