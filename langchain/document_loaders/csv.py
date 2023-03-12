@@ -40,8 +40,7 @@ class CSVLoader(BaseLoader):
                         page_content="\n".join(
                             f"{k.strip()}: {v.strip()}" for k, v in row.items()
                         ),
-                        metadata={"source": self.file_path},
-                        lookup_index=i,
+                        metadata={"source": self.file_path, "row": i},
                     )
                 )
 
