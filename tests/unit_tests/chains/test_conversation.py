@@ -34,7 +34,7 @@ def test_conversation_chain_works() -> None:
 
 
 def test_conversation_chain_errors_bad_prompt() -> None:
-    """Test that conversation chain works in basic setting."""
+    """Test that conversation chain raise error with bad prompt."""
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=[], template="nothing here")
     with pytest.raises(ValueError):
@@ -42,7 +42,7 @@ def test_conversation_chain_errors_bad_prompt() -> None:
 
 
 def test_conversation_chain_errors_bad_variable() -> None:
-    """Test that conversation chain works in basic setting."""
+    """Test that conversation chain raise error with bad variable."""
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=["foo"], template="{foo}")
     memory = ConversationBufferMemory(memory_key="foo")
