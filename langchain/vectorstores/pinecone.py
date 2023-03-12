@@ -74,7 +74,7 @@ class Pinecone(VectorStore):
 
         """
         # Embed and create the documents
-        docs = []
+        docs: list = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         # If a batch_size value is provided, we will batch the embeddings
         if batch_size is not None:
@@ -86,7 +86,7 @@ class Pinecone(VectorStore):
                 embeddings.append(self._embedding_function(text))
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
-        docs = zip(ids, embeddings, metadatas)
+            docs.append((ids[i], embeddings[i], metadata))
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace)
         return ids
