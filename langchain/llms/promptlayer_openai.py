@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from langchain.llms import OpenAI
+from langchain.llms import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 
 
@@ -23,8 +23,8 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="text-davinci-003")
+            from langchain.llms import PromptLayerOpenAI
+            openai = PromptLayerOpenAI(model_name="text-davinci-003")
     """
 
     pl_tags: Optional[List[str]]
@@ -40,14 +40,94 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
-            resp = generated_responses.generations[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
             promptlayer_api_request(
                 "langchain.PromptLayerOpenAI",
                 "langchain",
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                resp[0].text,
+                resp,
+                request_start_time,
+                request_end_time,
+                get_api_key(),
+            )
+        return generated_responses
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        from promptlayer.utils import get_api_key, promptlayer_api_request
+
+        request_start_time = datetime.datetime.now().timestamp()
+        generated_responses = await super()._agenerate(prompts, stop)
+        request_end_time = datetime.datetime.now().timestamp()
+        for i in range(len(prompts)):
+            prompt = prompts[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
+            promptlayer_api_request(
+                "langchain.PromptLayerOpenAI.async",
+                "langchain",
+                [prompt],
+                self._identifying_params,
+                self.pl_tags,
+                resp,
+                request_start_time,
+                request_end_time,
+                get_api_key(),
+            )
+        return generated_responses
+
+
+class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
+    """Wrapper around OpenAI large language models.
+
+    To use, you should have the ``openai`` and ``promptlayer`` python
+    package installed, and the environment variable ``OPENAI_API_KEY``
+    and ``PROMPTLAYER_API_KEY`` set with your openAI API key and
+    promptlayer key respectively.
+
+    All parameters that can be passed to the OpenAIChat LLM can also
+    be passed here. The PromptLayerOpenAIChat LLM adds an extra
+    ``pl_tags`` parameter that can be used to tag the request.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import PromptLayerOpenAIChat
+            openaichat = PromptLayerOpenAIChat(model_name="gpt-3.5-turbo")
+    """
+
+    pl_tags: Optional[List[str]]
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Call OpenAI generate and then call PromptLayer API to log the request."""
+        from promptlayer.utils import get_api_key, promptlayer_api_request
+
+        request_start_time = datetime.datetime.now().timestamp()
+        generated_responses = super()._generate(prompts, stop)
+        request_end_time = datetime.datetime.now().timestamp()
+        for i in range(len(prompts)):
+            prompt = prompts[i]
+            resp = {
+                "text": generated_responses.generations[i][0].text,
+                "llm_output": generated_responses.llm_output,
+            }
+            promptlayer_api_request(
+                "langchain.PromptLayerOpenAIChat",
+                "langchain",
+                [prompt],
+                self._identifying_params,
+                self.pl_tags,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
@@ -66,7 +146,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
             prompt = prompts[i]
             resp = generated_responses.generations[i]
             promptlayer_api_request(
-                "langchain.PromptLayerOpenAI.async",
+                "langchain.PromptLayerOpenAIChat.async",
                 "langchain",
                 [prompt],
                 self._identifying_params,

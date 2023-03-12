@@ -1,6 +1,6 @@
 # Graphsignal
 
-This page covers how to use the Graphsignal to trace and monitor LangChain.
+This page covers how to use the Graphsignal ecosystem to trace and monitor LangChain.
 
 ## Installation and Setup
 

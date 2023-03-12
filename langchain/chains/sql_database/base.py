@@ -117,6 +117,8 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
     This is useful in cases where the number of tables in the database is large.
     """
 
+    return_intermediate_steps: bool = False
+
     @classmethod
     def from_llm(
         cls,
@@ -154,7 +156,10 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.output_key]
+        if not self.return_intermediate_steps:
+            return [self.output_key]
+        else:
+            return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _table_names = self.sql_chain.database.get_table_names()

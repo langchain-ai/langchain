@@ -10,6 +10,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain.schema import HumanMessage
 
 
 def create_messages() -> List[BaseMessagePromptTemplate]:
@@ -69,12 +70,10 @@ def test_chat_prompt_template() -> None:
 
     string = prompt.to_string()
     expected = (
-        '[SystemMessage(content="Here\'s some context: context", '
-        'additional_kwargs={}), HumanMessage(content="Hello foo, '
-        "I'm bar. Thanks for the context\", additional_kwargs={}), "
-        "AIMessage(content=\"I'm an AI. I'm foo. I'm bar.\", additional_kwargs={}), "
-        "ChatMessage(content=\"I'm a generic message. I'm foo. I'm bar.\","
-        " additional_kwargs={}, role='test')]"
+        "System: Here's some context: context\n"
+        "Human: Hello foo, I'm bar. Thanks for the context\n"
+        "AI: I'm an AI. I'm foo. I'm bar.\n"
+        "test: I'm a generic message. I'm foo. I'm bar."
     )
     assert string == expected
 
@@ -89,3 +88,17 @@ def test_chat_prompt_template_from_messages() -> None:
         ["context", "foo", "bar"]
     )
     assert len(chat_prompt_template.messages) == 4
+
+
+def test_chat_prompt_template_with_messages() -> None:
+    messages = create_messages() + [HumanMessage(content="foo")]
+    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
+    assert sorted(chat_prompt_template.input_variables) == sorted(
+        ["context", "foo", "bar"]
+    )
+    assert len(chat_prompt_template.messages) == 5
+    prompt_value = chat_prompt_template.format_prompt(
+        context="see", foo="this", bar="magic"
+    )
+    prompt_value_messages = prompt_value.to_messages()
+    assert prompt_value_messages[-1] == HumanMessage(content="foo")

@@ -4,6 +4,7 @@ from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
+from langchain.document_loaders.csv import CSVLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
@@ -19,6 +20,7 @@ from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
+from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
@@ -44,7 +46,11 @@ from langchain.document_loaders.unstructured import (
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
-from langchain.document_loaders.youtube import YoutubeLoader
+from langchain.document_loaders.youtube import (
+    GoogleApiClient,
+    GoogleApiYoutubeLoader,
+    YoutubeLoader,
+)
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -62,6 +68,7 @@ __all__ = [
     "ObsidianLoader",
     "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
+    "UnstructuredMarkdownLoader",
     "RoamLoader",
     "YoutubeLoader",
     "S3FileLoader",
@@ -88,4 +95,7 @@ __all__ = [
     "FacebookChatLoader",
     "NotebookLoader",
     "CoNLLULoader",
+    "GoogleApiYoutubeLoader",
+    "GoogleApiClient",
+    "CSVLoader",
 ]

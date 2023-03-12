@@ -1,6 +1,7 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import copy
 import logging
 from abc import ABC, abstractmethod
 from typing import (
@@ -51,7 +52,10 @@ class TextSplitter(ABC):
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(text):
-                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+                new_doc = Document(
+                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
+                )
+                documents.append(new_doc)
         return documents
 
     def split_documents(self, documents: List[Document]) -> List[Document]:
@@ -71,12 +75,17 @@ class TextSplitter(ABC):
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
+        separator_len = self._length_function(separator)
+
         docs = []
         current_doc: List[str] = []
         total = 0
         for d in splits:
             _len = self._length_function(d)
-            if total + _len >= self._chunk_size:
+            if (
+                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                > self._chunk_size
+            ):
                 if total > self._chunk_size:
                     logger.warning(
                         f"Created a chunk of size {total}, "
@@ -90,12 +99,16 @@ class TextSplitter(ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len > self._chunk_size and total > 0
+                        total + _len + (separator_len if len(current_doc) > 0 else 0)
+                        > self._chunk_size
+                        and total > 0
                     ):
-                        total -= self._length_function(current_doc[0])
+                        total -= self._length_function(current_doc[0]) + (
+                            separator_len if len(current_doc) > 1 else 0
+                        )
                         current_doc = current_doc[1:]
             current_doc.append(d)
-            total += _len
+            total += _len + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)

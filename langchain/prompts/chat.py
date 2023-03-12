@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
+from langchain.memory.buffer import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -20,6 +21,44 @@ from langchain.schema import (
 
 
 class BaseMessagePromptTemplate(BaseModel, ABC):
+    @abstractmethod
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """To messages."""
+
+    @property
+    @abstractmethod
+    def input_variables(self) -> List[str]:
+        """Input variables for this prompt template."""
+
+
+class MessagesPlaceholder(BaseMessagePromptTemplate):
+    """Prompt template that assumes variable is already list of messages."""
+
+    variable_name: str
+
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """To a BaseMessage."""
+        value = kwargs[self.variable_name]
+        if not isinstance(value, list):
+            raise ValueError(
+                f"variable {self.variable_name} should be a list of base messages, "
+                f"got {value}"
+            )
+        for v in value:
+            if not isinstance(v, BaseMessage):
+                raise ValueError(
+                    f"variable {self.variable_name} should be a list of base messages,"
+                    f" got {value}"
+                )
+        return value
+
+    @property
+    def input_variables(self) -> List[str]:
+        """Input variables for this prompt template."""
+        return [self.variable_name]
+
+
+class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     prompt: StringPromptTemplate
     additional_kwargs: dict = Field(default_factory=dict)
 
@@ -32,8 +71,15 @@ class BaseMessagePromptTemplate(BaseModel, ABC):
     def format(self, **kwargs: Any) -> BaseMessage:
         """To a BaseMessage."""
 
+    def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [self.format(**kwargs)]
 
-class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
+    @property
+    def input_variables(self) -> List[str]:
+        return self.prompt.input_variables
+
+
+class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
     role: str
 
     def format(self, **kwargs: Any) -> BaseMessage:
@@ -43,19 +89,19 @@ class ChatMessagePromptTemplate(BaseMessagePromptTemplate):
         )
 
 
-class HumanMessagePromptTemplate(BaseMessagePromptTemplate):
+class HumanMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return HumanMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
-class AIMessagePromptTemplate(BaseMessagePromptTemplate):
+class AIMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return AIMessage(content=text, additional_kwargs=self.additional_kwargs)
 
 
-class SystemMessagePromptTemplate(BaseMessagePromptTemplate):
+class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
     def format(self, **kwargs: Any) -> BaseMessage:
         text = self.prompt.format(**kwargs)
         return SystemMessage(content=text, additional_kwargs=self.additional_kwargs)
@@ -66,7 +112,7 @@ class ChatPromptValue(PromptValue):
 
     def to_string(self) -> str:
         """Return prompt as string."""
-        return str(self.messages)
+        return get_buffer_string(self.messages)
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
@@ -75,7 +121,7 @@ class ChatPromptValue(PromptValue):
 
 class ChatPromptTemplate(BasePromptTemplate, ABC):
     input_variables: List[str]
-    messages: List[BaseMessagePromptTemplate]
+    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
 
     @classmethod
     def from_role_strings(
@@ -101,11 +147,12 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
 
     @classmethod
     def from_messages(
-        cls, messages: Sequence[BaseMessagePromptTemplate]
+        cls, messages: Sequence[Union[BaseMessagePromptTemplate, BaseMessage]]
     ) -> ChatPromptTemplate:
         input_vars = set()
         for message in messages:
-            input_vars.update(message.prompt.input_variables)
+            if isinstance(message, BaseMessagePromptTemplate):
+                input_vars.update(message.input_variables)
         return cls(input_variables=list(input_vars), messages=messages)
 
     def format(self, **kwargs: Any) -> str:
@@ -114,13 +161,18 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         result = []
         for message_template in self.messages:
-            rel_params = {
-                k: v
-                for k, v in kwargs.items()
-                if k in message_template.prompt.input_variables
-            }
-            message = message_template.format(**rel_params)
-            result.append(message)
+            if isinstance(message_template, BaseMessage):
+                result.extend([message_template])
+            elif isinstance(message_template, BaseMessagePromptTemplate):
+                rel_params = {
+                    k: v
+                    for k, v in kwargs.items()
+                    if k in message_template.input_variables
+                }
+                message = message_template.format_messages(**rel_params)
+                result.extend(message)
+            else:
+                raise ValueError(f"Unexpected input: {message_template}")
         return ChatPromptValue(messages=result)
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:

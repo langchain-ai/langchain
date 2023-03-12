@@ -5,11 +5,12 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.callbacks.base import CallbackManager
-from langchain.chains.base import Chain, Memory
+from langchain.chains.base import Chain
+from langchain.schema import BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeMemory(Memory, BaseModel):
+class FakeMemory(BaseMemory, BaseModel):
     """Fake memory class for testing purposes."""
 
     @property
