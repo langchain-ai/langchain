@@ -56,6 +56,7 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
+        batch_size: Optional[int] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -73,11 +74,17 @@ class Pinecone(VectorStore):
         # Embed and create the documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
+        # If a batch_size value is provided, we will batch the embeddings
+        if batch_size is not None:
+            embeddings = self._embedding_function(texts)
+        else:
+            embeddings = []
         for i, text in enumerate(texts):
-            embedding = self._embedding_function(text)
+            if batch_size is None:
+                embeddings.append(self._embedding_function(text))
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
-            docs.append((ids[i], embedding, metadata))
+        docs = zip(ids, embeddings, metadatas)
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace)
         return ids
