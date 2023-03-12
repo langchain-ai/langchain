@@ -87,6 +87,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
+
+    # TODO: deprecate these two in favor of model
+    #  https://community.openai.com/t/api-update-engines-models/18597
+    #  https://github.com/openai/openai-python/issues/132
+    document_model_name: str = "text-embedding-ada-002"
+    query_model_name: str = "text-embedding-ada-002"
     embedding_ctx_length: int = -1
     openai_api_key: Optional[str] = None
     chunk_size: int = 1000
@@ -97,8 +103,52 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
+        extra = Extra.forbid
 
+    # TODO: deprecate this
+    @root_validator(pre=True)
+    def get_model_names(cls, values: Dict) -> Dict:
+        """model_name is for first generation, and model is for second generation. Both are not allowed together."""
+        if "model_name" in values and "model" in values:
+                raise ValueError(
+                    "Both `model_name` and `model` were provided, "
+                    "but only one should be."
+                )
+        
+        """Get model names from just old model name."""
+        if "model_name" in values:
+            if "document_model_name" in values:
+                raise ValueError(
+                    "Both `model_name` and `document_model_name` were provided, "
+                    "but only one should be."
+                )
+            if "query_model_name" in values:
+                raise ValueError(
+                    "Both `model_name` and `query_model_name` were provided, "
+                    "but only one should be."
+                )
+            model_name = values.pop("model_name")
+            values["document_model_name"] = f"text-search-{model_name}-doc-001"
+            values["query_model_name"] = f"text-search-{model_name}-query-001"
+               
+        """Set document/query model names from model parameter."""
+        if "model" in values:
+            if "document_model_name" in values:
+                raise ValueError(
+                    "Both `model` and `document_model_name` were provided, "
+                    "but only one should be."
+                )
+            if "query_model_name" in values:
+                raise ValueError(
+                    "Both `model` and `query_model_name` were provided, "
+                    "but only one should be."
+                )
+            model = values.get("model")
+            values["document_model_name"] = model
+            values["query_model_name"] = model
+
+        return values
+        
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -128,7 +178,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             tokens = []
             indices = []
-            encoding = tiktoken.model.encoding_for_model(self.model)
+            encoding = tiktoken.model.encoding_for_model(self.document_model_name)
             for i, text in enumerate(texts):
                 # replace newlines, which can negatively affect performance.
                 text = text.replace("\n", " ")
@@ -143,7 +193,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 response = embed_with_retry(
                     self,
                     input=tokens[i : i + _chunk_size],
-                    engine=self.model,
+                    engine=self.document_model_name,
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
@@ -190,12 +240,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        #  engine and model are used interchangably in create - https://community.openai.com/t/api-update-engines-models/18597
-        #  TODO: deprecate engine when libraries are all updated.
-
         # handle large batches of texts
         if self.embedding_ctx_length > 0:
-            return self._get_len_safe_embeddings(texts, engine=self.model)
+            return self._get_len_safe_embeddings(texts, engine=self.document_model_name)
         else:
             results = []
             _chunk_size = chunk_size or self.chunk_size
@@ -203,7 +250,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 response = embed_with_retry(
                     self,
                     input=texts[i : i + _chunk_size],
-                    engine=self.model,
+                    engine=self.document_model_name,
                 )
                 results += [r["embedding"] for r in response["data"]]
             return results
@@ -217,7 +264,5 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        #  engine and model are used interchangably in create - https://community.openai.com/t/api-update-engines-models/18597
-        #  TODO: deprecate engine when libraries are all updated.
-        embedding = self._embedding_func(text, engine=self.model)
+        embedding = self._embedding_func(text, engine=self.query_model_name)
         return embedding
