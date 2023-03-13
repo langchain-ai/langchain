@@ -78,8 +78,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
             os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
 
-            from langchain.embeddings.openai import AzureOpenAIEmbeddings
-            embeddings = AzureOpenAIEmbeddings(model="your-embeddings-deployment-name")
+            from langchain.embeddings.openai import OpenAIEmbeddings
+            embeddings = OpenAIEmbeddings(model="your-embeddings-deployment-name")
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
 
