@@ -44,14 +44,14 @@ In order to contribute a dataset, you simply need to join the community and then
 We're also aiming to make it as easy as possible for people to create their own datasets.
 As a first pass at this, we've added a QAGenerationChain, which given a document comes up
 with question-answer pairs that can be used to evaluate question-answering tasks over that document down the line.
-See `this notebook <qa_generation.html>`_ for an example of how to use this chain.
+See `this notebook <./evaluation/qa_generation.html>`_ for an example of how to use this chain.
 
 **# 2: Lack of metrics**
 
 We have two solutions to the lack of metrics.
 
 The first solution is to use no metrics, and rather just rely on looking at results by eye to get a sense for how the chain/agent is performing.
-To assist in this, we have developed (and will continue to develop) `tracing <../tracing.md>`_, a UI-based visualizer of your chain and agent runs.
+To assist in this, we have developed (and will continue to develop) `tracing <../tracing.html>`_, a UI-based visualizer of your chain and agent runs.
 
 The second solution we recommend is to use Language Models themselves to evaluate outputs.
 For this we have a few different chains and prompts aimed at tackling this issue.
@@ -71,7 +71,7 @@ The existing examples we have are:
 
 `SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: An notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
 
-`Agent Vectorstore <./evaluation/vectordb_agent_qa_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
+`Agent Vectorstore <./evaluation/agent_vectordb_sota_pg.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
 
 `Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
 
