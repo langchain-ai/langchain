@@ -51,7 +51,8 @@ class QuerySQLWithSubqueryDataBaseTool(BaseSQLDatabaseTool, BaseTool):
 
     Tips:
         * When appropriate, use the WITH clause to modularize the query in order to make it more readable
-        * Leave block comments before complex subqueries, joins, and filters to explain step by step why they are correct
+        * Leave block comments before complex parts of the query, subqueries, joins, filters, etc. to explain step by step why they are correct
+
 
     If the query is not correct, an error message will be returned. 
     If an error is returned, rewrite the query, check the query, and try again.
