@@ -504,13 +504,10 @@ class AgentExecutor(Chain, BaseModel):
                 return self._return(next_step_output, intermediate_steps)
 
             intermediate_steps.append(next_step_output)
-            if self._is_returning_tool(name_to_tool_map, next_step_output[0].tool):
-                # Set the log to "" because we do not want to log it.
-                finish = AgentFinish(
-                    {self.agent.return_values[0]: next_step_output[1]},
-                    "",
-                )
-                return self._return(finish, intermediate_steps)
+            # See if tool should return directly
+            tool_return = self._get_tool_return(next_step_output)
+            if tool_return is not None:
+                return self._return(tool_return, intermediate_steps)
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
@@ -539,23 +536,28 @@ class AgentExecutor(Chain, BaseModel):
                 return await self._areturn(next_step_output, intermediate_steps)
 
             intermediate_steps.append(next_step_output)
-            if self._is_returning_tool(name_to_tool_map, next_step_output[0].tool):
-                # Set the log to "" because we do not want to log it.
-                finish = AgentFinish(
-                    {self.agent.return_values[0]: next_step_output[1]},
-                    "",
-                )
-                return await self._areturn(finish, intermediate_steps)
+            # See if tool should return directly
+            tool_return = self._get_tool_return(next_step_output)
+            if tool_return is not None:
+                return await self._areturn(tool_return, intermediate_steps)
+
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return await self._areturn(output, intermediate_steps)
 
-    def _is_returning_tool(self, name_to_tool_map: dict, tool_name: str) -> bool:
+    def _get_tool_return(
+        self, next_step_output: Tuple[AgentAction, str]
+    ) -> Optional[AgentFinish]:
         """Check if the tool is a returning tool."""
+        agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # Invalid tools won't be in the map, so we return False.
-        if tool_name in name_to_tool_map:
-            return name_to_tool_map[tool_name].return_direct
-        return False
+        if agent_action.tool in name_to_tool_map:
+            if name_to_tool_map[agent_action.tool].return_direct:
+                return AgentFinish(
+                    {self.agent.return_values[0]: observation},
+                    "",
+                )
+        return None
