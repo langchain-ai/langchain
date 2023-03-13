@@ -70,8 +70,10 @@ class ChatAgent(Agent):
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
         ]
+        if input_variables is None:
+            input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(
-            input_variables=["input", "agent_scratchpad"], messages=messages
+            input_variables=input_variables, messages=messages
         )
 
     @classmethod
