@@ -65,6 +65,7 @@ sphinx-panels = "^0.6.0"
 toml = "^0.10.2"
 myst-nb = "^0.17.1"
 linkchecker = "^10.2.1"
+sphinx-copybutton = "^0.5.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
