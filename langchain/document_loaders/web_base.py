@@ -1,5 +1,4 @@
 """Web base loader class."""
-import random
 from typing import Any, List
 
 import requests
