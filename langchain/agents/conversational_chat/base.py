@@ -6,27 +6,45 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.conversational_chat.prompt import (
-    FORMAT_INSTRUCTIONS,
     PREFIX,
     SUFFIX,
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseLanguageModel, AgentAction
 from langchain.tools.base import BaseTool
+
+template = """\n\nYou then took the following action:
+
+```json
+{{{{
+    "action": "{tool}",
+    "action_input": "{tool_input}"
+}}}}
+```
+
+This yielded a response of:
+
+```json
+{{{{
+    "response": "{observation}"
+}}}}
+```"""
+def _format_step(action: AgentAction, observation: str):
+
+    return template.format(tool=action.tool, tool_input=action.tool_input, observation=observation)
 
 
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
-
-    ai_prefix: str = "AI"
 
     @property
     def _agent_type(self) -> str:
@@ -49,7 +67,6 @@ class ConversationalChatAgent(Agent):
         tools: Sequence[BaseTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
-        format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
@@ -58,31 +75,44 @@ class ConversationalChatAgent(Agent):
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = format_instructions.format(
-            tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
+        format_instructions = suffix.format(
+            tool_names=tool_names, tools=tool_strings
         )
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
 
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         messages = [
-            SystemMessagePromptTemplate.from_template(template),
+            SystemMessagePromptTemplate.from_template(prefix),
             MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
+            HumanMessagePromptTemplate.from_template(format_instructions)
         ]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
-    @property
-    def finish_tool_name(self) -> str:
-        """Name of the tool to use to finish the chain."""
-        return self.ai_prefix
-
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
+        cleaned_output = llm_output.strip()
+        if cleaned_output.startswith("```json"):
+            cleaned_output = cleaned_output[len("```json"):]
+        if cleaned_output.endswith("```"):
+            cleaned_output = cleaned_output[:-len("```")]
+        cleaned_output = cleaned_output.strip()
         try:
-            response = json.loads(llm_output.strip())
+            response = json.loads(cleaned_output)
             return response["action"], response["action_input"]
         except Exception:
-            return self.ai_prefix, llm_output
+            raise ValueError(f"Could not parse LLM output: {llm_output}")
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]]
+    ) -> str:
+        """Construct the scratchpad that lets the agent continue its thought process."""
+        thoughts = ""
+        if intermediate_steps:
+            thoughts += (
+                "\n\nTool Use History:"
+            )
+            for action, observation in intermediate_steps:
+                thoughts += _format_step(action, observation)
+        return thoughts
 
     @classmethod
     def from_llm_and_tools(
@@ -92,7 +122,6 @@ class ConversationalChatAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
-        format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
         input_variables: Optional[List[str]] = None,
@@ -106,7 +135,6 @@ class ConversationalChatAgent(Agent):
             human_prefix=human_prefix,
             prefix=prefix,
             suffix=suffix,
-            format_instructions=format_instructions,
             input_variables=input_variables,
         )
         llm_chain = LLMChain(
