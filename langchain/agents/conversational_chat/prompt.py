@@ -11,20 +11,23 @@ TOOLS:
 ------
 
 Assistant has access to the following tools:"""
-FORMAT_INSTRUCTIONS = """To use a tool, please use the following format:
+FORMAT_INSTRUCTIONS = """When responding, you have two choices.
+
+First, you can just respond normally. When you do this, anything you say will be returned to the user.
+
+Second, you can use one of the above tools to get an answer, which you can then use as information later on.
+The way you use the tools is by specifying  a valid json blob.
+Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
+
+The only values that should be in the "action" field are: {tool_names}
+
+The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
 
 ```
-Thought: Do I need to use a tool? Yes
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-```
-
-When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
-
-```
-Thought: Do I need to use a tool? No
-{ai_prefix}: [your response here]
+{{{{
+  "action": $TOOL_NAME,
+  "action_input": $INPUT
+}}}}
 ```"""
 
 SUFFIX = """Begin!
@@ -32,5 +35,5 @@ SUFFIX = """Begin!
 Previous conversation history:
 {chat_history}
 
-New input: {input}
+Question: {input}
 {agent_scratchpad}"""
