@@ -3,7 +3,7 @@ import os
 from typing import List
 
 from langchain.docstore.document import Document
-from langchain.vectorstores import PGVector
+from langchain.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
 )

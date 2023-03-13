@@ -21,7 +21,7 @@ whether for semantic search or example selection.
 
 To import this vectorstore:
 ```python
-from langchain.vectorstores import PGVector
+from langchain.vectorstores.pgvector import PGVector
 ```
 
 ### Usage
