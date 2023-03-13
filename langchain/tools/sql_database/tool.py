@@ -32,7 +32,30 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
     If the query is not correct, an error message will be returned. 
     If an error is returned, rewrite the query, check the query, and try again.
-    """
+    """.strip()
+
+    def _run(self, query: str) -> str:
+        """Execute the query, return the results or an error message."""
+        return self.db.run_no_throw(query)
+
+    async def _arun(self, query: str) -> str:
+        raise NotImplementedError("QuerySqlDbTool does not support async")
+
+
+class QuerySQLWithSubqueryDataBaseTool(BaseSQLDatabaseTool, BaseTool):
+    """Tool for querying a SQL database."""
+
+    name = "query_with_subquery_sql_db"
+    description = """
+    Input to this tool is detailed and correct SQL query, output is a result from the database.
+
+    Tips:
+        * When appropriate, use the WITH clause to modularize the query in order to make it more readable
+        * Leave block comments before complex subqueries, joins, and filters to explain step by step why they are correct
+
+    If the query is not correct, an error message will be returned. 
+    If an error is returned, rewrite the query, check the query, and try again.
+    """.strip()
 
     def _run(self, query: str) -> str:
         """Execute the query, return the results or an error message."""
