@@ -1,17 +1,11 @@
 import enum
+import logging
 import uuid
-from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-try:
-    import sqlalchemy
-    from sqlalchemy.dialects.postgresql import UUID
-    from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
-except ImportError:
-    raise ValueError(
-        "Could not import sqlalchemy python package. "
-        "Please install it with `pip install sqlalchemy`."
-    )
+import sqlalchemy
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -112,7 +106,6 @@ class DistanceStrategy(str, enum.Enum):
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN
 
 
-@dataclass
 class PGVector(VectorStore):
     """
     VectorStore implementation using Postgres and pgvector.
@@ -131,11 +124,22 @@ class PGVector(VectorStore):
         - Useful for testing.
     """
 
-    connection_string: str
-    embedding_function: Embeddings
-    collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME
-    distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY
-    pre_delete_collection: bool = False
+    def __init__(
+        self,
+        connection_string: str,
+        embedding_function: Embeddings,
+        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        pre_delete_collection: bool = False,
+        logger: Optional[logging.Logger] = None,
+    ) -> None:
+        self.connection_string = connection_string
+        self.embedding_function = embedding_function
+        self.collection_name = collection_name
+        self.distance_strategy = distance_strategy
+        self.pre_delete_collection = pre_delete_collection
+        self.logger = logger or logging.getLogger(__name__)
+        self.__post_init__()
 
     def __post_init__(
         self,
@@ -160,7 +164,7 @@ class PGVector(VectorStore):
                 session.execute(statement)
                 session.commit()
         except Exception as e:
-            print(e)
+            self.logger.exception(e)
 
     def create_tables_if_not_exists(self) -> None:
         Base.metadata.create_all(self._conn)
@@ -175,11 +179,11 @@ class PGVector(VectorStore):
             CollectionStore.get_or_create(session, self.collection_name)
 
     def delete_collection(self) -> None:
-        print("Trying to delete collection")
+        self.logger.debug("Trying to delete collection")
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
-                print("Collection not found")
+                self.logger.error("Collection not found")
                 return
             session.delete(collection)
             session.commit()
