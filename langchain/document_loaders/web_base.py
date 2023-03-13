@@ -1,10 +1,21 @@
 """Web base loader class."""
+import random
 from typing import Any, List
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+header_template = {
+    "User-Agent": "",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Referer": "https://www.google.com/",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
 
 
 class WebBaseLoader(BaseLoader):
@@ -13,12 +24,23 @@ class WebBaseLoader(BaseLoader):
     def __init__(self, web_path: str):
         """Initialize with webpage path."""
         self.web_path = web_path
+        self.session = requests.Session()
 
-    @staticmethod
-    def _scrape(url: str) -> Any:
+        try:
+            from fake_useragent import UserAgent
+
+            header_template["User-Agent"] = UserAgent().random
+            self.session.headers = dict(header_template)
+        except ImportError:
+            print(
+                "fake_useragent not found, using default user agent."
+                "To get a realistic header for requests, `pip install fake_useragent`."
+            )
+
+    def _scrape(self, url: str) -> Any:
         from bs4 import BeautifulSoup
 
-        html_doc = requests.get(url)
+        html_doc = self.session.get(url)
         soup = BeautifulSoup(html_doc.text, "html.parser")
         return soup
 
