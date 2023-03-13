@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from pydantic import Field, root_validator
 
-from langchain.output_parsing.base import BaseOutputParser
+from langchain.output_parsers.base import BaseOutputParser
 
 
 class BooleanOutputParser(BaseOutputParser):

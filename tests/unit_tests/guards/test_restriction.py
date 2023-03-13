@@ -3,6 +3,7 @@ from typing import List
 import pytest
 
 from langchain.guards.restriction import RestrictionGuard
+from langchain.guards.restriction_prompt import RESTRICTION_PROMPT
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -19,7 +20,7 @@ def test_restriction_guard() -> None:
     ) -> str:
         concatenated_restrictions = ", ".join(restrictions)
         queries = {
-            RestrictionGuard.prompt.format(
+            RESTRICTION_PROMPT.format(
                 restrictions=concatenated_restrictions, function_output=llm_input_output
             ): "restricted because I said so :) (¥)"
             if restricted
@@ -27,7 +28,7 @@ def test_restriction_guard() -> None:
         }
         restriction_guard_llm = FakeLLM(queries=queries)
 
-        @RestrictionGuard(
+        @RestrictionGuard.from_llm(
             restrictions=restrictions, llm=restriction_guard_llm, retries=0
         )
         def example_func(prompt: str) -> str:

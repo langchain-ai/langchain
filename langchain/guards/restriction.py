@@ -1,11 +1,13 @@
 """Check if chain or agent violates one or more restrictions."""
-from typing import Any, Callable, List, Tuple
+from __future__ import annotations
+
+from typing import Any, List, Tuple
 
 from langchain.chains.llm import LLMChain
 from langchain.guards.base import BaseGuard
 from langchain.guards.restriction_prompt import RESTRICTION_PROMPT
 from langchain.llms.base import BaseLLM
-from langchain.output_parsing.boolean import BooleanOutputParser
+from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -60,7 +62,7 @@ class RestrictionGuard(BaseGuard):
         llm: BaseLLM,
         prompt: BasePromptTemplate = RESTRICTION_PROMPT,
         **kwargs: Any,
-    ):
+    ) -> RestrictionGuard:
         """Load from llm and prompt."""
         guard_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(guard_chain=guard_chain, **kwargs)

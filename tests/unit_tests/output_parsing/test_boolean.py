@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from langchain.output_parsing.boolean import BooleanOutputParser
+from langchain.output_parsers.boolean import BooleanOutputParser
 
 GOOD_EXAMPLES = [
     ("0", False, ["1"], ["0"]),

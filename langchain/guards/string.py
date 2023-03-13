@@ -38,7 +38,8 @@ class StringGuard(BaseGuard):
             called recursively if the output violates the restrictions. Defaults to 0.
 
     Raises:
-        Exception: If the output violates the restrictions and the maximum number of retries has been exceeded.
+        Exception: If the output violates the restrictions and the maximum number of
+            retries has been exceeded.
 
     Example:
         .. code-block:: python
