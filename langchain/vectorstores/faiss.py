@@ -222,6 +222,50 @@ class FAISS(VectorStore):
         return docs
 
     @classmethod
+    def from_embedding_vecotrs(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        embedding_vectors: List[List[float]],
+        metadatas: Optional[List[Dict]] = None,
+        **kwargs: Any,
+    ) -> FAISS:
+        """Convenience method to construct FAISS wrapper using existing
+        embedding vectors of the documents.
+
+        This is a user friendly interface that can be used in case you already
+        have created embedding vectors of the documents beforehand and want
+        to avoid an extra call to the embedding APIs. It does the following
+            2. Creates an in memory docstore
+            3. Initializes the FAISS database using the passed embeddings and metadata
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import FAISS
+                from langchain.embeddings import OpenAIEmbeddings
+                embeddings = OpenAIEmbeddings()
+                embedding_vectors = embeddings.embed_documents(texts)
+                faiss = FAISS.from_embedding_vectors(texts, embeddings,
+                        embedding_vectors, embeddings)
+        """
+
+        faiss = dependable_faiss_import()
+        index = faiss.IndexFlatL2(len(embedding_vectors[0]))
+        index.add(np.array(embedding_vectors, dtype=np.float32))
+        documents = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            documents.append(Document(page_content=text, metadata=metadata))
+        index_to_id = {i: str(uuid.uuid4()) for i in range(len(documents))}
+        docstore = InMemoryDocstore(
+            {index_to_id[i]: doc for i, doc in enumerate(documents)}
+        )
+        return cls(embedding.embed_query, index, docstore, index_to_id)
+
+    @classmethod
     def from_texts(
         cls,
         texts: List[str],
