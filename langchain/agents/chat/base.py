@@ -72,9 +72,7 @@ class ChatAgent(Agent):
         ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
-        return ChatPromptTemplate(
-            input_variables=input_variables, messages=messages
-        )
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
     def from_llm_and_tools(
