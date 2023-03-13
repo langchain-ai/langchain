@@ -65,6 +65,8 @@ These modules are, in increasing order of complexity:
 
 - `Chat <./modules/chat.html>`_: Chat models are a variation on Language Models that expose a different API - rather than working with raw text, they work with messages. LangChain provides a standard interface for working with them and doing all the same things as above.
 
+- `Guards <./modules/guards.html>`_: Guards aim to prevent unwanted output from reaching the user and unwanted user input from reaching the LLM. Guards can be used for everythign from security, to improving user experience by keeping agents on topic, to validating user input before it is passed to your system.
+
 
 .. toctree::
    :maxdepth: 1
@@ -81,6 +83,7 @@ These modules are, in increasing order of complexity:
    ./modules/agents.md
    ./modules/memory.md
    ./modules/chat.md
+   ./modules/guards.md
 
 Use Cases
 ----------

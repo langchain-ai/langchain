@@ -59,18 +59,6 @@ def check_valid_template(
         )
 
 
-class StringPromptValue(PromptValue):
-    text: str
-
-    def to_string(self) -> str:
-        """Return prompt as string."""
-        return self.text
-
-    def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as messages."""
-        return [HumanMessage(content=self.text)]
-
-
 class BasePromptTemplate(BaseModel, ABC):
     """Base prompt should expose the format method, returning a prompt."""
 
