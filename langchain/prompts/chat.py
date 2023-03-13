@@ -159,6 +159,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         return self.format_prompt(**kwargs).to_string()
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         result = []
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):
