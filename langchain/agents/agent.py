@@ -435,7 +435,6 @@ class AgentExecutor(Chain, BaseModel):
                 llm_prefix="",
                 observation_prefix=self.agent.observation_prefix,
             )
-            return_direct = False
         return output, observation
 
     async def _atake_next_step(
