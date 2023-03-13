@@ -40,4 +40,10 @@ class StructuredOutputParser(BaseOutputParser):
     def parse(self, text: str) -> BaseModel:
         json_string = text.split("```json")[1].strip().strip("```").strip()
         json_obj = json.loads(json_string)
+        for schema in self.response_schemas:
+            if schema.name not in json_obj:
+                raise ValueError(
+                    f"Got invalid return object. Expected key `{schema.name}` "
+                    f"to be present, but got {json_obj}"
+                )
         return json_obj
