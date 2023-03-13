@@ -7,7 +7,7 @@ from langchain.vectorstores import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
 )
-from pytest
+
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
     driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
@@ -16,8 +16,6 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
     user=os.environ.get("TEST_PGVECTOR_USER", "postgres"),
     password=os.environ.get("TEST_PGVECTOR_PASSWORD", "postgres"),
 )
-
-print(CONNECTION_STRING)
 
 
 ADA_TOKEN_COUNT = 1536
@@ -81,4 +79,3 @@ def test_pgvector_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
-

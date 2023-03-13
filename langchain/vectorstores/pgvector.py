@@ -40,7 +40,7 @@ class BaseModel(Base):
 
 
 class CollectionStore(BaseModel):
-    __tablename__ = "langchain_collection"
+    __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
     cmetadata = sqlalchemy.Column(sqlalchemy.JSON)
@@ -79,7 +79,7 @@ class CollectionStore(BaseModel):
 
 
 class EmbeddingStore(BaseModel):
-    __tablename__ = "langchain_embedding"
+    __tablename__ = "langchain_pg_embedding"
 
     collection_id: Mapped[UUID] = sqlalchemy.Column(
         UUID(as_uuid=True),
@@ -104,22 +104,45 @@ class QueryResult:
 
 
 class DistanceStrategy(str, enum.Enum):
-    L2 = EmbeddingStore.embedding.l2_distance
+    EUCLIDEAN = EmbeddingStore.embedding.l2_distance
     COSINE = EmbeddingStore.embedding.cosine_distance
     MAX_INNER_PRODUCT = EmbeddingStore.embedding.max_inner_product
 
 
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.EUCLIDEAN
+
+
 @dataclass
 class PGVector(VectorStore):
+    """
+    VectorStore implementation using Postgres and pgvector.
+    - `connection_string` is a postgres connection string.
+    - `embedding_function` any embedding function implementing
+        `langchain.embeddings.base.Embeddings` interface.
+    - `collection_name` is the name of the collection to use. (default: langchain)
+        - NOTE: This is not the name of the table, but the name of the collection.
+            The tables will be created when initializing the store (if not exists)
+            So, make sure the user has the right permissions to create tables.
+    - `distance_strategy` is the distance strategy to use. (default: EUCLIDEAN)
+        - `EUCLIDEAN` is the euclidean distance.
+        - `COSINE` is the cosine distance.
+    - `pre_delete_collection` if True, will delete the collection if it exists.
+        (default: False)
+        - Useful for testing.
+    """
+
     connection_string: str
     embedding_function: Embeddings
     collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME
-    distance_strategy: DistanceStrategy = DistanceStrategy.COSINE
+    distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY
     pre_delete_collection: bool = False
 
     def __post_init__(
         self,
     ) -> None:
+        """
+        Initialize the store.
+        """
         self._conn = self.connect()
         # self.create_vector_extension()
         self.create_tables_if_not_exists()
@@ -312,7 +335,12 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> "PGVector":
-        """Return VectorStore initialized from texts and embeddings."""
+        """
+        Return VectorStore initialized from texts and embeddings.
+        Postgres connection string is required
+        "Either pass it as a parameter
+        or set the PGVECTOR_CONNECTION_STRING environment variable.
+        """
 
         connection_string = cls.get_connection_string(kwargs)
 
@@ -350,18 +378,25 @@ class PGVector(VectorStore):
         documents: List[Document],
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> "PGVector":
-        """Return VectorStore initialized from documents and embeddings."""
+        """
+        Return VectorStore initialized from documents and embeddings.
+        Postgres connection string is required
+        "Either pass it as a parameter
+        or set the PGVECTOR_CONNECTION_STRING environment variable.
+        """
+
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
         connection_string = cls.get_connection_string(kwargs)
 
+        kwargs["connection_string"] = connection_string
+
         return cls.from_texts(
-            connection_string=connection_string,
             texts=texts,
             pre_delete_collection=pre_delete_collection,
             embedding=embedding,
