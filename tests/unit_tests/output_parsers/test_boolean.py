@@ -20,7 +20,7 @@ GOOD_EXAMPLES = [
     "input_string,expected,true_values,false_values", GOOD_EXAMPLES
 )
 def test_boolean_output_parsing(
-    input_string: str, expected: str, true_values: List[str], false_values: list[str]
+    input_string: str, expected: str, true_values: List[str], false_values: List[str]
 ) -> None:
     """Test booleans are parsed as expected."""
     output_parser = BooleanOutputParser(
