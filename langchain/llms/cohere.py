@@ -41,11 +41,11 @@ class Cohere(LLM, BaseModel):
     p: int = 1
     """Total probability mass of tokens to consider at each step."""
 
-    frequency_penalty: int = 0
-    """Penalizes repeated tokens according to frequency."""
+    frequency_penalty: float = 0.0
+    """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
-    presence_penalty: int = 0
-    """Penalizes repeated tokens."""
+    presence_penalty: float = 0.0
+    """Penalizes repeated tokens. Between 0 and 1."""
 
     truncate: Optional[str] = None
     """Specify how the client handles inputs longer than the maximum token

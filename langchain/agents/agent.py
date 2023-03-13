@@ -47,7 +47,10 @@ class Agent(BaseModel):
 
     @property
     def _stop(self) -> List[str]:
-        return [f"\n{self.observation_prefix}", f"\n\t{self.observation_prefix}"]
+        return [
+            f"\n{self.observation_prefix.rstrip()}",
+            f"\n\t{self.observation_prefix.rstrip()}",
+        ]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -432,10 +435,6 @@ class AgentExecutor(Chain, BaseModel):
                 llm_prefix="",
                 observation_prefix=self.agent.observation_prefix,
             )
-            return_direct = False
-        if return_direct:
-            # Set the log to "" because we do not want to log it.
-            return AgentFinish({self.agent.return_values[0]: observation}, "")
         return output, observation
 
     async def _atake_next_step(
@@ -480,9 +479,6 @@ class AgentExecutor(Chain, BaseModel):
                 observation_prefix=self.agent.observation_prefix,
             )
             return_direct = False
-        if return_direct:
-            # Set the log to "" because we do not want to log it.
-            return AgentFinish({self.agent.return_values[0]: observation}, "")
         return output, observation
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
@@ -507,6 +503,10 @@ class AgentExecutor(Chain, BaseModel):
                 return self._return(next_step_output, intermediate_steps)
 
             intermediate_steps.append(next_step_output)
+            # See if tool should return directly
+            tool_return = self._get_tool_return(next_step_output)
+            if tool_return is not None:
+                return self._return(tool_return, intermediate_steps)
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
@@ -535,8 +535,28 @@ class AgentExecutor(Chain, BaseModel):
                 return await self._areturn(next_step_output, intermediate_steps)
 
             intermediate_steps.append(next_step_output)
+            # See if tool should return directly
+            tool_return = self._get_tool_return(next_step_output)
+            if tool_return is not None:
+                return await self._areturn(tool_return, intermediate_steps)
+
             iterations += 1
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return await self._areturn(output, intermediate_steps)
+
+    def _get_tool_return(
+        self, next_step_output: Tuple[AgentAction, str]
+    ) -> Optional[AgentFinish]:
+        """Check if the tool is a returning tool."""
+        agent_action, observation = next_step_output
+        name_to_tool_map = {tool.name: tool for tool in self.tools}
+        # Invalid tools won't be in the map, so we return False.
+        if agent_action.tool in name_to_tool_map:
+            if name_to_tool_map[agent_action.tool].return_direct:
+                return AgentFinish(
+                    {self.agent.return_values[0]: observation},
+                    "",
+                )
+        return None

@@ -12,6 +12,7 @@ from langchain.schema import (
     BaseMessage,
     ChatGeneration,
     ChatResult,
+    HumanMessage,
     LLMResult,
     PromptValue,
 )
@@ -60,13 +61,44 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return self.generate(prompt_messages, stop=stop)
+        prompt_strings = [p.to_string() for p in prompts]
+        self.callback_manager.on_llm_start(
+            {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+        )
+        try:
+            output = self.generate(prompt_messages, stop=stop)
+        except (KeyboardInterrupt, Exception) as e:
+            self.callback_manager.on_llm_error(e, verbose=self.verbose)
+            raise e
+        self.callback_manager.on_llm_end(output, verbose=self.verbose)
+        return output
 
     async def agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return await self.agenerate(prompt_messages, stop=stop)
+        prompt_strings = [p.to_string() for p in prompts]
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+            )
+        else:
+            self.callback_manager.on_llm_start(
+                {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+            )
+        try:
+            output = await self.agenerate(prompt_messages, stop=stop)
+        except (KeyboardInterrupt, Exception) as e:
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_llm_error(e, verbose=self.verbose)
+            else:
+                self.callback_manager.on_llm_error(e, verbose=self.verbose)
+            raise e
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_llm_end(output, verbose=self.verbose)
+        else:
+            self.callback_manager.on_llm_end(output, verbose=self.verbose)
+        return output
 
     @abstractmethod
     def _generate(
@@ -84,6 +116,10 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> BaseMessage:
         return self._generate(messages, stop=stop).generations[0].message
+
+    def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
+        result = self([HumanMessage(content=message)], stop=stop)
+        return result.content
 
 
 class SimpleChatModel(BaseChatModel):
