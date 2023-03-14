@@ -85,11 +85,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        kwargs = {"filename": self.file_path}
-        if satisfies_min_unstructured_version("0.5.4"):
-            kwargs["strategy"] = self.strategy
+        if not satisfies_min_unstructured_version("0.5.4"):
+            return partition(filename=self.file_path)
 
-        return partition(**kwargs)
+        return partition(filename=self.file_path, strategy=self.strategy)
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
