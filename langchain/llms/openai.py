@@ -26,15 +26,7 @@ from tenacity import (
 )
 
 from langchain.llms.base import BaseLLM
-from langchain.schema import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    Generation,
-    HumanMessage,
-    LLMResult,
-    SystemMessage,
-)
+from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -118,22 +110,6 @@ async def acompletion_with_retry(
         return await llm.client.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    else:
-        raise ValueError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
 
 
 class BaseOpenAI(BaseLLM, BaseModel):
@@ -741,38 +717,3 @@ class OpenAIChat(BaseLLM, BaseModel):
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
-
-    def get_num_tokens_from_messages(
-        self, messages: List[BaseMessage], model: str = "gpt-3.5-turbo-0301"
-    ):
-        """Calculate num tokens for gpt-3.5-turbo with tiktoken package."""
-        try:
-            import tiktoken
-        except ImportError:
-            raise ValueError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
-            )
-
-        """Returns the number of tokens used by a list of messages."""
-        try:
-            encoding = tiktoken.encoding_for_model(model)
-        except KeyError:
-            encoding = tiktoken.get_encoding("cl100k_base")
-        if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
-            num_tokens = 0
-            messages_dict = [_convert_message_to_dict(m) for m in messages]
-            for message in messages_dict:
-                num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-                for key, value in message.items():
-                    num_tokens += len(encoding.encode(value))
-                    if key == "name":  # if there's a name, the role is omitted
-                        num_tokens += -1  # role is always required and always 1 token
-            num_tokens += 2  # every reply is primed with <im_start>assistant
-            return num_tokens
-        else:
-            raise NotImplementedError(
-                f"""get_num_tokens_from_messages() is not presently implemented for model {model}.
-    See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
-            )
