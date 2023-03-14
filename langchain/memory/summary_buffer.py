@@ -56,8 +56,14 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         return values
 
     def get_num_tokens_list(self, arr: List[BaseMessage]) -> List[int]:
-        """Get list of number of tokens in each string in the input array."""
-        return [self.llm.get_num_tokens(get_buffer_string([x])) for x in arr]
+        """Get list of number of tokens in the input array."""
+        if self.llm.__class__.__name__ in ["ChatOpenAI", "OpenAIChat"]:
+            num_tokens_list = [self.llm.get_num_tokens_from_messages(arr)]
+        else:
+            num_tokens_list = [
+                self.llm.get_num_tokens(get_buffer_string([x])) for x in arr
+            ]
+        return num_tokens_list
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
