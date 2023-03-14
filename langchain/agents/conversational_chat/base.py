@@ -19,7 +19,7 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import BaseLanguageModel, AgentAction
+from langchain.schema import BaseLanguageModel, AgentAction, AIMessage, HumanMessage
 from langchain.tools.base import BaseTool
 
 template = """\n\nYou then took the following action:
@@ -38,6 +38,15 @@ This yielded a response of:
     "response": "{observation}"
 }}}}
 ```"""
+
+template_tool_response = """TOOL RESPONSE: 
+---------------------
+{observation}
+
+USER'S INPUT
+--------------------
+
+Okay, so what is the response to my original question? Remember to respond in the format you were instructed to!"""
 def _format_step(action: AgentAction, observation: str):
 
     return template.format(tool=action.tool, tool_input=action.tool_input, observation=observation)
@@ -84,14 +93,19 @@ class ConversationalChatAgent(Agent):
         messages = [
             SystemMessagePromptTemplate.from_template(prefix),
             MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template(format_instructions)
+            HumanMessagePromptTemplate.from_template(format_instructions),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
         cleaned_output = llm_output.strip()
+        if "```json" in cleaned_output:
+            _, cleaned_output = cleaned_output.split("```json")
         if cleaned_output.startswith("```json"):
             cleaned_output = cleaned_output[len("```json"):]
+        if cleaned_output.startswith("```"):
+            cleaned_output = cleaned_output[len("```"):]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[:-len("```")]
         cleaned_output = cleaned_output.strip()
@@ -103,15 +117,12 @@ class ConversationalChatAgent(Agent):
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
-    ) -> str:
+    ) -> list:
         """Construct the scratchpad that lets the agent continue its thought process."""
-        thoughts = ""
-        if intermediate_steps:
-            thoughts += (
-                "\n\nTool Use History:"
-            )
-            for action, observation in intermediate_steps:
-                thoughts += _format_step(action, observation)
+        thoughts = []
+        for action, observation in intermediate_steps:
+            thoughts.append(AIMessage(content=action.log))
+            thoughts.append(HumanMessage(content=template_tool_response.format(observation=observation)))
         return thoughts
 
     @classmethod
