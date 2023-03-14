@@ -1,12 +1,12 @@
 """Web base loader class."""
-from typing import Any, List
+from typing import Any, List, Optional
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-header_template = {
+default_header_template = {
     "User-Agent": "",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
     ";q=0.8",
@@ -21,7 +21,7 @@ header_template = {
 class WebBaseLoader(BaseLoader):
     """Loader that uses urllib and beautiful soup to load webpages."""
 
-    def __init__(self, web_path: str):
+    def __init__(self, web_path: str, header_template: Optional[dict] = None):
         """Initialize with webpage path."""
         self.web_path = web_path
         self.session = requests.Session()
@@ -29,8 +29,11 @@ class WebBaseLoader(BaseLoader):
         try:
             from fake_useragent import UserAgent
 
-            header_template["User-Agent"] = UserAgent().random
-            self.session.headers = dict(header_template)
+            headers = dict(
+                default_header_template if header_template is None else header_template
+            )
+            headers["User-Agent"] = UserAgent().random
+            self.session.headers = headers
         except ImportError:
             print(
                 "fake_useragent not found, using default user agent."
