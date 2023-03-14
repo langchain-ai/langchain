@@ -106,7 +106,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        kwargs = {"filename": self.file_path}
+        kwargs = {"file": self.file}
         if satisfies_min_unstructured_version("0.5.4"):
             kwargs["strategy"] = self.strategy
 
