@@ -54,9 +54,10 @@ def test_table_info() -> None:
         user_name VARCHAR NOT NULL, 
         PRIMARY KEY (user_id)
     )
-
-    SELECT * FROM 'user' LIMIT 3;
+    /*
+    3 rows from user table:
     user_id user_name
+    */
     """
 
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))

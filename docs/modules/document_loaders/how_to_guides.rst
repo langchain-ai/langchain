@@ -55,8 +55,6 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Airbyte Json <./examples/airbyte_json.html>`_: A walkthrough of how to load data from a local Airbyte JSON file.
 
-`Online PDF <./examples/online_pdf.html>`_: A walkthrough of how to load data from an online PDF.
-
 `CoNLL-U <./examples/CoNLL-U.html>`_: A walkthrough of how to load data from a ConLL-U file.
 
 `iFixit <./examples/ifixit.html>`_: A walkthrough of how to search and load data like guides, technical Q&A's, and device wikis from iFixit.com

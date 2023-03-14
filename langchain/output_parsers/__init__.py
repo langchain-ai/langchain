@@ -4,10 +4,15 @@ from langchain.output_parsers.list import (
     ListOutputParser,
 )
 from langchain.output_parsers.regex import RegexParser
+from langchain.output_parsers.regex_dict import RegexDictParser
+from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
 
 __all__ = [
     "RegexParser",
+    "RegexDictParser",
     "ListOutputParser",
     "CommaSeparatedListOutputParser",
     "BaseOutputParser",
+    "StructuredOutputParser",
+    "ResponseSchema",
 ]

@@ -38,7 +38,7 @@ class FAISS(VectorStore):
         .. code-block:: python
 
             from langchain import FAISS
-            faiss = FAISS(embedding_function, index, docstore)
+            faiss = FAISS(embedding_function, index, docstore, index_to_docstore_id)
 
     """
 
