@@ -46,10 +46,13 @@ class ChatAgent(Agent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
-        _, action, _ = text.split("```")
+        try:
+            _, action, _ = text.split("```")
+            response = json.loads(action.strip())
+            return response["action"], response["action_input"]
 
-        response = json.loads(action.strip())
-        return response["action"], response["action_input"]
+        except Exception:
+            raise ValueError(f"Could not parse LLM output: {text}")
 
     @property
     def _stop(self) -> List[str]:
@@ -72,9 +75,9 @@ class ChatAgent(Agent):
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
         ]
-        return ChatPromptTemplate(
-            input_variables=["input", "agent_scratchpad"], messages=messages
-        )
+        if input_variables is None:
+            input_variables = ["input", "agent_scratchpad"]
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
     def from_llm_and_tools(

@@ -30,6 +30,7 @@ version = data["tool"]["poetry"]["version"]
 release = version
 
 html_title = project + " " + version
+html_last_updated_fmt = "%b %d, %Y"
 
 
 # -- General configuration ---------------------------------------------------
@@ -45,6 +46,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
     "myst_nb",
+    "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
 ]

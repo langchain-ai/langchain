@@ -24,11 +24,11 @@ from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
-from langchain.document_loaders.online_pdf import OnlinePDFLoader
-from langchain.document_loaders.paged_pdf import PagedPDFSplitter
 from langchain.document_loaders.pdf import (
+    OnlinePDFLoader,
     PDFMinerLoader,
     PyMuPDFLoader,
+    PyPDFLoader,
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
@@ -51,6 +51,9 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+
+"""Legacy: only for backwards compat. use PyPDFLoader instead"""
+PagedPDFSplitter = PyPDFLoader
 
 __all__ = [
     "UnstructuredFileLoader",
@@ -85,6 +88,7 @@ __all__ = [
     "IFixitLoader",
     "GutenbergLoader",
     "PagedPDFSplitter",
+    "PyPDFLoader",
     "EverNoteLoader",
     "AirbyteJSONLoader",
     "OnlinePDFLoader",

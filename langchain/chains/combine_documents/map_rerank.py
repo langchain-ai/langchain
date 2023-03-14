@@ -9,7 +9,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import RegexParser
+from langchain.output_parsers.regex import RegexParser
 
 
 class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
