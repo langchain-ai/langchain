@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
-from typing import IO, List
+from typing import Any, IO, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -26,7 +26,7 @@ def satisfies_min_unstructured_version(min_version: str) -> bool:
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Loader that uses unstructured to load files."""
 
-    def __init__(self, mode: str = "single", strategy: str = "hi_res"):
+    def __init__(self, mode: str = "single", **unstructured_kwargs: Any):
         """Initialize with file path."""
         try:
             import unstructured  # noqa:F401
@@ -41,7 +41,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
         self.mode = mode
-        self.strategy = strategy
+        self.unstructured_kwargs = unstructured_kwargs
 
     @abstractmethod
     def _get_elements(self) -> List:
@@ -77,18 +77,21 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load files."""
 
-    def __init__(self, file_path: str, mode: str = "single", strategy: str = "hi_res"):
+    def __init__(
+        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+    ):
         """Initialize with file path."""
         self.file_path = file_path
-        super().__init__(mode=mode, strategy=strategy)
+        super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
         if not satisfies_min_unstructured_version("0.5.4"):
-            return partition(filename=self.file_path)
+            if "strategy" in self.unstructured_kwargs:
+                self.unstructured_kwargs.pop("strategy")
 
-        return partition(filename=self.file_path, strategy=self.strategy)
+        return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
@@ -97,18 +100,19 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
-    def __init__(self, file: IO, mode: str = "single", strategy: str = "hi_res"):
+    def __init__(self, file: IO, mode: str = "single", **unstructured_kwargs: Any):
         """Initialize with file path."""
         self.file = file
-        super().__init__(mode=mode, strategy=strategy)
+        super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
         if not satisfies_min_unstructured_version("0.5.4"):
-            return partition(file=self.file)
+            if "strategy" in self.unstructured_kwargs:
+                self.unstructured_kwargs.pop("strategy")
 
-        return partition(file=self.file, strategy=self.strategy)
+        return partition(file=self.file, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
         return {}
