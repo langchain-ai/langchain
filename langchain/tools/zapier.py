@@ -130,7 +130,8 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 zapier_nla_base_desc = (
     "A wrapper around Zapier NLA actions. "
     "The input to this tool is a natural language instruction, "
-    'for example "get the latest email from my bank" or "send a slack message to the #general channel". '
+    'for example "get the latest email from my bank" or '
+    '"send a slack message to the #general channel". '
     "This tool specifically used for: "
 )
 
