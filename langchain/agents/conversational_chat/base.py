@@ -12,7 +12,6 @@ from langchain.agents.conversational_chat.prompt import (
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -22,22 +21,6 @@ from langchain.prompts.chat import (
 from langchain.schema import BaseLanguageModel, AgentAction, AIMessage, HumanMessage
 from langchain.tools.base import BaseTool
 
-template = """\n\nYou then took the following action:
-
-```json
-{{{{
-    "action": "{tool}",
-    "action_input": "{tool_input}"
-}}}}
-```
-
-This yielded a response of:
-
-```json
-{{{{
-    "response": "{observation}"
-}}}}
-```"""
 
 template_tool_response = """TOOL RESPONSE: 
 ---------------------
@@ -46,10 +29,7 @@ template_tool_response = """TOOL RESPONSE:
 USER'S INPUT
 --------------------
 
-Okay, so what is the response to my original question? Remember to respond in the format you were instructed to!"""
-def _format_step(action: AgentAction, observation: str):
-
-    return template.format(tool=action.tool, tool_input=action.tool_input, observation=observation)
+Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES! Remember to respond in the format you were instructed to!"""
 
 
 class ConversationalChatAgent(Agent):
