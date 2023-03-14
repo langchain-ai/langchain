@@ -7,7 +7,7 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, SystemMessage
+from langchain.schema import BaseLanguageModel, ChatMessage, SystemMessage
 
 
 class SummarizerMixin(BaseModel):
@@ -17,7 +17,7 @@ class SummarizerMixin(BaseModel):
     prompt: BasePromptTemplate = SUMMARY_PROMPT
 
     def predict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
+        self, messages: List[ChatMessage], existing_summary: str
     ) -> str:
         new_lines = get_buffer_string(
             messages,

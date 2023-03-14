@@ -41,29 +41,35 @@ class BaseMessage(BaseModel):
     additional_kwargs: dict = Field(default_factory=dict)
 
 
-class HumanMessage(BaseMessage):
-    """Type of message that is spoken by the human."""
-
-
-class AIMessage(BaseMessage):
-    """Type of message that is spoken by the AI."""
-
-
-class SystemMessage(BaseMessage):
-    """Type of message that is a system message."""
-
-
 class ChatMessage(BaseMessage):
     """Type of message with arbitrary speaker."""
 
     role: str
 
 
+class HumanMessage(ChatMessage):
+    """Type of message that is spoken by the human."""
+
+    role: str = "Human"
+
+
+class AIMessage(ChatMessage):
+    """Type of message that is spoken by the AI."""
+
+    role: str = "AI"
+
+
+class SystemMessage(ChatMessage):
+    """Type of message that is a system message."""
+
+    role: str = "System"
+
+
 class ChatGeneration(Generation):
     """Output of a single generation."""
 
     text = ""
-    message: BaseMessage
+    message: ChatMessage
 
     @root_validator
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -96,7 +102,7 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as string."""
 
     @abstractmethod
-    def to_messages(self) -> List[BaseMessage]:
+    def to_messages(self) -> List[ChatMessage]:
         """Return prompt as messages."""
 
 

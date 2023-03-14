@@ -10,7 +10,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.schema import BaseLanguageModel, ChatMessage
 
 
 class ConversationEntityMemory(BaseChatMemory, BaseModel):
@@ -27,7 +27,7 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
     chat_history_key: str = "history"
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> List[ChatMessage]:
         return self.chat_memory.messages
 
     @property

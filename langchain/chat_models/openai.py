@@ -17,7 +17,6 @@ from tenacity import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
-    BaseMessage,
     ChatGeneration,
     ChatMessage,
     ChatResult,
@@ -63,7 +62,7 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
+def _convert_dict_to_message(_dict: dict) -> ChatMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
@@ -75,7 +74,7 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
         return ChatMessage(content=_dict["content"], role=role)
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(message: ChatMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -222,7 +221,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return _completion_with_retry(**kwargs)
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -247,7 +246,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return _create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[ChatMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
         if stop is not None:
@@ -258,7 +257,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return message_dicts, params
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:

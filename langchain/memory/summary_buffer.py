@@ -5,7 +5,7 @@ from pydantic import BaseModel, root_validator
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
 from langchain.memory.utils import get_buffer_string
-from langchain.schema import BaseMessage, SystemMessage
+from langchain.schema import ChatMessage, SystemMessage
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel):
@@ -16,7 +16,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
     memory_key: str = "history"
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> List[ChatMessage]:
         return self.chat_memory.messages
 
     @property
@@ -31,7 +31,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         """Return history buffer."""
         buffer = self.buffer
         if self.moving_summary_buffer != "":
-            first_messages: List[BaseMessage] = [
+            first_messages: List[ChatMessage] = [
                 SystemMessage(content=self.moving_summary_buffer)
             ]
             buffer = first_messages + buffer
@@ -55,7 +55,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
             )
         return values
 
-    def get_num_tokens_list(self, arr: List[BaseMessage]) -> List[int]:
+    def get_num_tokens_list(self, arr: List[ChatMessage]) -> List[int]:
         """Get list of number of tokens in each string in the input array."""
         return [self.llm.get_num_tokens(get_buffer_string([x])) for x in arr]
 

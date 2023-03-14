@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.utils import get_buffer_string
-from langchain.schema import BaseMessage
+from langchain.schema import ChatMessage
 
 
 class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
@@ -16,7 +16,7 @@ class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
     k: int = 5
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> List[ChatMessage]:
         """String buffer of memory."""
         return self.chat_memory.messages
 

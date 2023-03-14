@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import AIMessage, BaseMemory, BaseMessage, HumanMessage
+from langchain.schema import AIMessage, BaseMemory, ChatMessage, HumanMessage
 
 
 class ChatMessageHistory(BaseModel):
-    messages: List[BaseMessage] = Field(default_factory=list)
+    messages: List[ChatMessage] = Field(default_factory=list)
 
     def add_user_message(self, message: str) -> None:
         self.messages.append(HumanMessage(content=message))

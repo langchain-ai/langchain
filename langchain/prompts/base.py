@@ -16,7 +16,7 @@ from langchain.output_parsers.list import (  # noqa: F401
     ListOutputParser,
 )
 from langchain.output_parsers.regex import RegexParser  # noqa: F401
-from langchain.schema import BaseMessage, HumanMessage, PromptValue
+from langchain.schema import ChatMessage, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -66,7 +66,7 @@ class StringPromptValue(PromptValue):
         """Return prompt as string."""
         return self.text
 
-    def to_messages(self) -> List[BaseMessage]:
+    def to_messages(self) -> List[ChatMessage]:
         """Return prompt as messages."""
         return [HumanMessage(content=self.text)]
 

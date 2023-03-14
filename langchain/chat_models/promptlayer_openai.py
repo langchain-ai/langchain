@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import BaseMessage, ChatResult
+from langchain.schema import ChatMessage, ChatResult
 
 
 class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
@@ -30,7 +30,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     pl_tags: Optional[List[str]]
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Call ChatOpenAI generate and then call PromptLayer API to log the request."""
         from promptlayer.utils import get_api_key, promptlayer_api_request
@@ -57,7 +57,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
         return generated_responses
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
         from promptlayer.utils import get_api_key, promptlayer_api_request

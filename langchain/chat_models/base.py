@@ -9,8 +9,8 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import (
     AIMessage,
     BaseLanguageModel,
-    BaseMessage,
     ChatGeneration,
+    ChatMessage,
     ChatResult,
     HumanMessage,
     LLMResult,
@@ -44,14 +44,14 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         return callback_manager or get_callback_manager()
 
     def generate(
-        self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
+        self, messages: List[List[ChatMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
         results = [self._generate(m, stop=stop) for m in messages]
         return LLMResult(generations=[res.generations for res in results])
 
     async def agenerate(
-        self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
+        self, messages: List[List[ChatMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
         results = [await self._agenerate(m, stop=stop) for m in messages]
@@ -102,19 +102,19 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     @abstractmethod
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Top Level call"""
 
     @abstractmethod
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Top Level call"""
 
     def __call__(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> BaseMessage:
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
+    ) -> ChatMessage:
         return self._generate(messages, stop=stop).generations[0].message
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
@@ -124,7 +124,7 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
 class SimpleChatModel(BaseChatModel):
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         output_str = self._call(messages, stop=stop)
         message = AIMessage(text=output_str)
@@ -133,6 +133,6 @@ class SimpleChatModel(BaseChatModel):
 
     @abstractmethod
     def _call(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self, messages: List[ChatMessage], stop: Optional[List[str]] = None
     ) -> str:
         """Simpler interface."""

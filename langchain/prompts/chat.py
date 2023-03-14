@@ -108,13 +108,13 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class ChatPromptValue(PromptValue):
-    messages: List[BaseMessage]
+    messages: List[ChatMessage]
 
     def to_string(self) -> str:
         """Return prompt as string."""
         return get_buffer_string(self.messages)
 
-    def to_messages(self) -> List[BaseMessage]:
+    def to_messages(self) -> List[ChatMessage]:
         """Return prompt as messages."""
         return self.messages
 

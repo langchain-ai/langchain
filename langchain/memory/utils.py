@@ -1,28 +1,25 @@
 from typing import Any, Dict, List
 
 from langchain.schema import (
-    AIMessage,
-    BaseMessage,
     ChatMessage,
-    HumanMessage,
-    SystemMessage,
 )
 
 
 def get_buffer_string(
-    messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+    messages: List[ChatMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
     """Get buffer string of messages."""
     string_messages = []
     for m in messages:
-        if isinstance(m, HumanMessage):
-            role = human_prefix
-        elif isinstance(m, AIMessage):
-            role = ai_prefix
-        elif isinstance(m, SystemMessage):
-            role = "System"
-        elif isinstance(m, ChatMessage):
-            role = m.role
+        if isinstance(m, ChatMessage):
+            if m.role == "Human":
+                role = human_prefix
+            elif m.role == "AI":
+                role = ai_prefix
+            elif m.role == "System":
+                role = "System"
+            else:
+                role = m.role
         else:
             raise ValueError(f"Got unsupported message type: {m}")
         string_messages.append(f"{role}: {m.content}")
