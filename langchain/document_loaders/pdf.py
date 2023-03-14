@@ -9,7 +9,10 @@ import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.unstructured import (
+    UnstructuredFileLoader,
+    satisfies_min_unstructured_version,
+)
 
 
 class UnstructuredPDFLoader(UnstructuredFileLoader):
@@ -18,7 +21,11 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path)
+        kwargs = {"filename": self.file_path}
+        if satisfies_min_unstructured_version("0.5.4"):
+            kwargs["strategy"] = self.strategy
+
+        return partition_pdf(**kwargs)
 
 
 class BasePDFLoader(BaseLoader, ABC):

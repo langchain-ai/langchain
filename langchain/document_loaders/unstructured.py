@@ -6,10 +6,27 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
+def satisfies_min_unstructured_version(min_version: str):
+    """Checks to see if the installed unstructured version exceeds the minimum version
+    for the feature in question."""
+    from unstructured.__version__ import __version__ as __unstructured_version__
+
+    min_version_tuple = tuple(min_version.split("."))
+
+    # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
+    # versions of unstructured like 0.4.17-dev1
+    _unstructured_version = __unstructured_version__.split("-")[0]
+    unstructured_version_tuple = tuple(
+        [int(x) for x in _unstructured_version.split(".")]
+    )
+
+    return min_version_tuple >= unstructured_version_tuple
+
+
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Loader that uses unstructured to load files."""
 
-    def __init__(self, mode: str = "single"):
+    def __init__(self, mode: str = "single", strategy: str = "hi_res"):
         """Initialize with file path."""
         try:
             import unstructured  # noqa:F401
@@ -24,6 +41,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
         self.mode = mode
+        self.strategy = strategy
 
     @abstractmethod
     def _get_elements(self) -> List:
@@ -59,15 +77,19 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load files."""
 
-    def __init__(self, file_path: str, mode: str = "single"):
+    def __init__(self, file_path: str, mode: str = "single", strategy: str = "hi_res"):
         """Initialize with file path."""
         self.file_path = file_path
-        super().__init__(mode=mode)
+        super().__init__(mode=mode, strategy=strategy)
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        return partition(filename=self.file_path)
+        kwargs = {"filename": self.file_path}
+        if satisfies_min_unstructured_version("0.5.4"):
+            kwargs["strategy"] = self.strategy
+
+        return partition(**kwargs)
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
@@ -84,7 +106,11 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        return partition(file=self.file)
+        kwargs = {"filename": self.file_path}
+        if satisfies_min_unstructured_version("0.5.4"):
+            kwargs["strategy"] = self.strategy
+
+        return partition(**kwargs)
 
     def _get_metadata(self) -> dict:
         return {}
