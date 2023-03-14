@@ -40,8 +40,8 @@ class BaseMessage(BaseModel):
     content: str
     additional_kwargs: dict = Field(default_factory=dict)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
