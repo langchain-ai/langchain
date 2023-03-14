@@ -448,9 +448,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
-        gpt-4: 8,192 tokens
-        gpt-4-32k: 32,768 tokens
-        gpt-3.5-turbo: 4,096 tokens
         text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
@@ -469,13 +466,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
-        if modelname == "gpt-4":
-            return 8192
-        elif modelname == "gpt-4-32k":
-            return 32768
-        elif modelname == "gpt-3.5-turbo":
-            return 4096
-        elif modelname == "text-davinci-003":
+        if modelname == "text-davinci-003":
             return 4097
         elif modelname == "text-curie-001":
             return 2048
@@ -726,3 +717,30 @@ class OpenAIChat(BaseLLM, BaseModel):
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
+    
+    def modelname_to_contextsize(self, modelname: str) -> int:
+        """Calculate the maximum number of tokens possible to generate for a model.
+
+        gpt-3.5-turbo: 4,096 tokens
+        gpt-4: 8,192 tokens
+        gpt-4-32k: 32,768 tokens
+
+        Args:
+            modelname: The modelname we want to know the context size for.
+
+        Returns:
+            The maximum context size
+
+        Example:
+            .. code-block:: python
+
+                max_tokens = openai.modelname_to_contextsize("gpt-4")
+        """
+        if modelname == "gpt-3.5-turbo":
+            return 4096
+        elif modelname == "gpt-4":
+            return 8192
+        elif modelname == "gpt-4-32k":
+            return 32768
+        else:
+            return 4096
