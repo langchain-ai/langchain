@@ -7,13 +7,7 @@ Assistant is constantly learning and improving, and its capabilities are constan
 
 Overall, Assistant is a powerful system that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist."""
 
-SUFFIX = """TOOLS
-------
-Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
-
-{tools}
-
-RESPONSE FORMAT INSTRUCTIONS
+FORMAT_INSTRUCTIONS = """RESPONSE FORMAT INSTRUCTIONS
 ----------------------------
 
 When responding to me please, please output a response in one of two formats:
@@ -37,13 +31,21 @@ Use this if you want to respond directly to the human. Markdown code snippet for
     "action": "Final Answer",
     "action_input": string \\ You should put what you want to return to use here
 }}}}
-```
+```"""
+
+SUFFIX = """TOOLS
+------
+Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
+
+{{tools}}
+
+{format_instructions}
 
 USER'S INPUT
 --------------------
 Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
 
-{{input}}"""
+{{{{input}}}}"""
 
 TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE: 
 ---------------------
