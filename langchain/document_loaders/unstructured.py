@@ -41,6 +41,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
         self.mode = mode
+
+        if not satisfies_min_unstructured_version("0.5.4"):
+            if "strategy" in unstructured_kwargs:
+                unstructured_kwargs.pop("strategy")
+
         self.unstructured_kwargs = unstructured_kwargs
 
     @abstractmethod
@@ -87,10 +92,6 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        if not satisfies_min_unstructured_version("0.5.4"):
-            if "strategy" in self.unstructured_kwargs:
-                self.unstructured_kwargs.pop("strategy")
-
         return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
@@ -107,10 +108,6 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
-
-        if not satisfies_min_unstructured_version("0.5.4"):
-            if "strategy" in self.unstructured_kwargs:
-                self.unstructured_kwargs.pop("strategy")
 
         return partition(file=self.file, **self.unstructured_kwargs)
 
