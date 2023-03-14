@@ -6,7 +6,7 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def satisfies_min_unstructured_version(min_version: str):
+def satisfies_min_unstructured_version(min_version: str) -> bool:
     """Checks to see if the installed unstructured version exceeds the minimum version
     for the feature in question."""
     from unstructured.__version__ import __version__ as __unstructured_version__
