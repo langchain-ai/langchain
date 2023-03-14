@@ -122,7 +122,7 @@ overall_chain.run(GMAIL_SEARCH_INSTRUCTIONS)
 """
 from typing import Any, Dict, Optional
 
-from pydantic import root_validator
+from pydantic import Field, root_validator
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.zapier import ZapierNLAWrapper
@@ -148,7 +148,7 @@ class ZapierNLARunAction(BaseTool):
             https://nla.zapier.com/api/v1/dynamic/docs)
     """
 
-    api_wrapper: ZapierNLAWrapper = ZapierNLAWrapper()
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
     action_id: str
     params: Optional[dict] = None
     zapier_description: str
@@ -189,7 +189,7 @@ class ZapierNLAListActions(BaseTool):
     description = zapier_nla_base_desc + (
         "This tool returns a list of the user's exposed actions."
     )
-    api_wrapper: ZapierNLAWrapper = ZapierNLAWrapper()
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
 
     def _run(self, _: str) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
