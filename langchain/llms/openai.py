@@ -448,6 +448,9 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
+        gpt-4: 8,192 tokens
+        gpt-4-32k: 32,768 tokens
+        gpt-3.5-turbo: 4,096 tokens
         text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
@@ -466,7 +469,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
-        if modelname == "text-davinci-003":
+        if modelname == "gpt-4":
+            return 8192
+        elif modelname == "gpt-4-32k":
+            return 32768
+        elif modelname == "gpt-3.5-turbo":
+            return 4096
+        elif modelname == "text-davinci-003":
             return 4097
         elif modelname == "text-curie-001":
             return 2048
@@ -709,10 +718,10 @@ class OpenAIChat(BaseLLM, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
-        # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        # create a GPT encoder instance
+        enc = tiktoken.encoding_for_model(self.model_name)
 
-        # encode the text using the GPT-3.5-Turbo encoder
+        # encode the text using the GPT encoder
         tokenized_text = enc.encode(text)
 
         # calculate the number of tokens in the encoded text
