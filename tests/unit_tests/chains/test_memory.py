@@ -35,3 +35,17 @@ def test_readonly_memory(memory: BaseMemory) -> None:
     assert read_only_memory.load_memory_variables({}) == memory.load_memory_variables(
         {}
     )
+
+
+@pytest.mark.parametrize(
+    "memory",
+    [
+        ConversationBufferMemory(memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
+    ],
+)
+def test_save_external_memory(memory: BaseMemory) -> None:
+    memory.save_context({"input": "bar"}, {"output": "foo"})
+    memory_copy = memory.parse_obj(memory.dict())
+
+    assert memory.load_memory_variables({}) == memory_copy.load_memory_variables({})
