@@ -56,6 +56,10 @@ class ConversationalChatAgent(Agent):
     output_parser: BaseOutputParser
 
     @property
+    def _agent_type(self) -> str:
+        raise NotImplementedError
+
+    @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
         return "Observation: "
