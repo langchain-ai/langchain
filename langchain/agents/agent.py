@@ -19,7 +19,7 @@ from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema import AgentAction, AgentFinish, BaseMessage
 from langchain.tools.base import BaseTool
 
 logger = logging.getLogger()
@@ -54,7 +54,7 @@ class Agent(BaseModel):
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
-    ) -> str:
+    ) -> Union[str, List[BaseMessage]]:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts = ""
         for action, observation in intermediate_steps:

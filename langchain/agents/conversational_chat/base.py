@@ -8,9 +8,11 @@ from langchain.agents.agent import Agent
 from langchain.agents.conversational_chat.prompt import (
     PREFIX,
     SUFFIX,
+    TEMPLATE_TOOL_RESPONSE,
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
+from langchain.output_parsers.base import BaseOutputParser
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -18,18 +20,30 @@ from langchain.prompts.chat import (
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import BaseLanguageModel, AgentAction, AIMessage, HumanMessage
+from langchain.schema import (
+    AgentAction,
+    AIMessage,
+    BaseLanguageModel,
+    BaseMessage,
+    HumanMessage,
+)
 from langchain.tools.base import BaseTool
 
 
-template_tool_response = """TOOL RESPONSE: 
----------------------
-{observation}
-
-USER'S INPUT
---------------------
-
-Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES! Remember to respond in the format you were instructed to!"""
+class AgentOutputParser(BaseOutputParser):
+    def parse(self, text: str) -> Any:
+        cleaned_output = text.strip()
+        if "```json" in cleaned_output:
+            _, cleaned_output = cleaned_output.split("```json")
+        if cleaned_output.startswith("```json"):
+            cleaned_output = cleaned_output[len("```json") :]
+        if cleaned_output.startswith("```"):
+            cleaned_output = cleaned_output[len("```") :]
+        if cleaned_output.endswith("```"):
+            cleaned_output = cleaned_output[: -len("```")]
+        cleaned_output = cleaned_output.strip()
+        response = json.loads(cleaned_output)
+        return {"action": response["action"], "action_input": response["action_input"]}
 
 
 class ConversationalChatAgent(Agent):
@@ -54,24 +68,22 @@ class ConversationalChatAgent(Agent):
     def create_prompt(
         cls,
         tools: Sequence[BaseTool],
-        prefix: str = PREFIX,
-        suffix: str = SUFFIX,
-        ai_prefix: str = "AI",
-        human_prefix: str = "Human",
+        system_message: str = PREFIX,
+        human_message: str = SUFFIX,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = suffix.format(
+        format_instructions = human_message.format(
             tool_names=tool_names, tools=tool_strings
         )
 
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         messages = [
-            SystemMessagePromptTemplate.from_template(prefix),
+            SystemMessagePromptTemplate.from_template(system_message),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template(format_instructions),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -79,30 +91,24 @@ class ConversationalChatAgent(Agent):
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
-        cleaned_output = llm_output.strip()
-        if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
-        if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
-        if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
-        if cleaned_output.endswith("```"):
-            cleaned_output = cleaned_output[:-len("```")]
-        cleaned_output = cleaned_output.strip()
+        output_parser = AgentOutputParser()
         try:
-            response = json.loads(cleaned_output)
+            response = output_parser.parse(llm_output)
             return response["action"], response["action_input"]
         except Exception:
             raise ValueError(f"Could not parse LLM output: {llm_output}")
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
-    ) -> list:
+    ) -> List[BaseMessage]:
         """Construct the scratchpad that lets the agent continue its thought process."""
-        thoughts = []
+        thoughts: List[BaseMessage] = []
         for action, observation in intermediate_steps:
             thoughts.append(AIMessage(content=action.log))
-            thoughts.append(HumanMessage(content=template_tool_response.format(observation=observation)))
+            human_message = HumanMessage(
+                content=TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+            )
+            thoughts.append(human_message)
         return thoughts
 
     @classmethod
@@ -111,10 +117,8 @@ class ConversationalChatAgent(Agent):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        prefix: str = PREFIX,
-        suffix: str = SUFFIX,
-        ai_prefix: str = "AI",
-        human_prefix: str = "Human",
+        system_message: str = PREFIX,
+        human_message: str = SUFFIX,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
@@ -122,10 +126,8 @@ class ConversationalChatAgent(Agent):
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
             tools,
-            ai_prefix=ai_prefix,
-            human_prefix=human_prefix,
-            prefix=prefix,
-            suffix=suffix,
+            system_message=system_message,
+            human_message=human_message,
             input_variables=input_variables,
         )
         llm_chain = LLMChain(
@@ -134,6 +136,4 @@ class ConversationalChatAgent(Agent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
-        return cls(
-            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, **kwargs
-        )
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)

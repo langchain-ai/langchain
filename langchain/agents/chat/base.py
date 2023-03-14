@@ -32,6 +32,8 @@ class ChatAgent(Agent):
         self, intermediate_steps: List[Tuple[AgentAction, str]]
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
+        if not isinstance(agent_scratchpad, str):
+            raise ValueError("agent_scratchpad should be of type string.")
         if agent_scratchpad:
             return (
                 f"This was your previous work "

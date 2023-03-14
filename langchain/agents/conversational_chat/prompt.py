@@ -41,6 +41,15 @@ Use this if you want to respond directly to the human. Markdown code snippet for
 
 USER'S INPUT
 --------------------
-Here is the user's input (remember to respond with a markdown code snippet of a json blob, and NOTHING else):
+Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
 
 {{input}}"""
+
+TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE: 
+---------------------
+{observation}
+
+USER'S INPUT
+--------------------
+
+Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""
