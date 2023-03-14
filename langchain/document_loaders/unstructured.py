@@ -11,7 +11,7 @@ def satisfies_min_unstructured_version(min_version: str):
     for the feature in question."""
     from unstructured.__version__ import __version__ as __unstructured_version__
 
-    min_version_tuple = tuple(min_version.split("."))
+    min_version_tuple = tuple([int(x) for x in min_version.split(".")])
 
     # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
     # versions of unstructured like 0.4.17-dev1
@@ -20,7 +20,7 @@ def satisfies_min_unstructured_version(min_version: str):
         [int(x) for x in _unstructured_version.split(".")]
     )
 
-    return min_version_tuple >= unstructured_version_tuple
+    return unstructured_version_tuple >= min_version_tuple
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
