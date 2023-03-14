@@ -120,15 +120,18 @@ overall_chain.run(GMAIL_SEARCH_INSTRUCTIONS)
 ```
 
 """
-from typing import Optional
+from typing import Any, Dict, Optional
+
+from pydantic import root_validator
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 zapier_nla_base_desc = (
-    "A wrapper around Zapier NLA. "
-    "Can be used to call or retrieve data from 5k+ apps, 20k+ actions"
-    "on the Zapier platform."
+    "A wrapper around Zapier NLA actions. "
+    "The input to this tool is a natural language instruction, "
+    'for example "get the latest email from my bank" or "send a slack message to the #general channel". '
+    "This tool specifically used for: "
 )
 
 
@@ -144,15 +147,19 @@ class ZapierNLARunAction(BaseTool):
             https://nla.zapier.com/api/v1/dynamic/docs)
     """
 
-    name = "Zapier NLA: Run Action"
-    description = zapier_nla_base_desc + (
-        "This tool will run a specified action and return a stringified JSON result "
-        " of the API call. The return result is guarenteed to be less than ~500 words "
-        " (350 tokens), safe to insert back into another LLM prompt."
-    )
     api_wrapper: ZapierNLAWrapper = ZapierNLAWrapper()
     action_id: str
     params: Optional[dict] = None
+    zapier_description: str
+    name = ""
+    description = ""
+
+    @root_validator
+    def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        zapier_description = values["zapier_description"]
+        values["name"] = zapier_description
+        values["description"] = zapier_nla_base_desc + zapier_description
+        return values
 
     def _run(self, instructions: str) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
