@@ -98,10 +98,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
-    def __init__(self, file: IO, mode: str = "single"):
+    def __init__(self, file: IO, mode: str = "single", strategy: str = "hi_res"):
         """Initialize with file path."""
         self.file = file
-        super().__init__(mode=mode)
+        super().__init__(mode=mode, strategy=strategy)
 
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
