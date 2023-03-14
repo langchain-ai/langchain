@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
-from typing import Any, IO, List
+from typing import IO, Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
