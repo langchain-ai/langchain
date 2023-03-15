@@ -189,7 +189,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                generation.text,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
