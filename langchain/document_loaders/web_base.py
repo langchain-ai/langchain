@@ -1,10 +1,13 @@
 """Web base loader class."""
+import logging
 from typing import Any, List, Optional
 
 import requests
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__file__)
 
 default_header_template = {
     "User-Agent": "",
@@ -29,13 +32,11 @@ class WebBaseLoader(BaseLoader):
         try:
             from fake_useragent import UserAgent
 
-            headers = dict(
-                default_header_template if header_template is None else header_template
-            )
+            headers = header_template or default_header_template
             headers["User-Agent"] = UserAgent().random
             self.session.headers = headers
         except ImportError:
-            print(
+            logger.info(
                 "fake_useragent not found, using default user agent."
                 "To get a realistic header for requests, `pip install fake_useragent`."
             )
