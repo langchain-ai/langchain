@@ -42,7 +42,8 @@ import os
 # get from https://platform.openai.com/
 os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 
-# get from https://nla.zapier.com/demo/provider/debug (under User Information, after logging in):
+# get from https://nla.zapier.com/demo/provider/debug
+# (under User Information, after logging in):
 os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
 from langchain.llms import OpenAI
