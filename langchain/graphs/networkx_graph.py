@@ -48,7 +48,7 @@ def get_entities(entity_str: str) -> List[str]:
 class NetworkxEntityGraph:
     """Networkx wrapper for entity graph operations."""
 
-    def __init__(self) -> None:
+    def __init__(self, from_gml_path: str = "") -> None:
         """Create a new graph."""
         try:
             import networkx as nx
@@ -57,8 +57,10 @@ class NetworkxEntityGraph:
                 "Could not import networkx python package. "
                 "Please it install it with `pip install networkx`."
             )
-
-        self._graph = nx.DiGraph()
+        if from_gml_path:
+            self._graph = nx.read_gml(from_gml_path)
+        else:
+            self._graph = nx.DiGraph()
 
     def add_triple(self, knowledge_triple: KnowledgeTriple) -> None:
         """Add a triple to the graph."""
@@ -96,6 +98,11 @@ class NetworkxEntityGraph:
             relation = self._graph[src][sink]["relation"]
             results.append(f"{src} {relation} {sink}")
         return results
+
+    def write_to_gml(self, path: str) -> None:
+        import networkx as nx
+
+        nx.write_gml(self._graph, path)
 
     def clear(self) -> None:
         """Clear the graph."""
