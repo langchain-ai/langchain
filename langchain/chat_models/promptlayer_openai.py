@@ -17,8 +17,12 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     promptlayer key respectively.
 
     All parameters that can be passed to the OpenAI LLM can also
-    be passed here. The PromptLayerChatOpenAI LLM adds an extra
-    ``pl_tags`` parameter that can be used to tag the request.
+    be passed here. The PromptLayerChatOpenAI adds to optional
+    parameters:
+        ``pl_tags``: List of strings to tag the request with.
+        ``return_pl_id``: If True, the PromptLayer request ID will be
+            returned in the ``generation_info`` field of the
+            ``Generation`` object.
 
     Example:
         .. code-block:: python
@@ -57,7 +61,9 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 return_pl_id=self.return_pl_id,
             )
             if self.return_pl_id:
-                if generation.generation_info is None or not isinstance(generation.generation_info, dict):
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
                     generation.generation_info = {}
                 generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
@@ -89,7 +95,9 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 return_pl_id=self.return_pl_id,
             )
             if self.return_pl_id:
-                if generation.generation_info is None or not isinstance(generation.generation_info, dict):
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
                     generation.generation_info = {}
                 generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
