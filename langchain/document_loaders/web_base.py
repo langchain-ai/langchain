@@ -34,7 +34,7 @@ class WebBaseLoader(BaseLoader):
 
             headers = header_template or default_header_template
             headers["User-Agent"] = UserAgent().random
-            self.session.headers = headers
+            self.session.headers = dict(headers)
         except ImportError:
             logger.info(
                 "fake_useragent not found, using default user agent."
