@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Dict
 
-from guardrails import Guard
+try:
+    from guardrails import Guard
+except ImportError:
+    pass
+
 
 from langchain.output_parsers.base import BaseOutputParser
 from langchain.prompts import PromptTemplate
