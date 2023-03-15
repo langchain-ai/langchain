@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -122,8 +122,8 @@ class ElasticVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_documents([query])
-        script_query = _default_script_query(embedding[0])
+        embedding = self.embedding.embed_query(query)
+        script_query = _default_script_query(embedding)
         response = self.client.search(index=self.index_name, query=script_query)
         hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
         documents = [
