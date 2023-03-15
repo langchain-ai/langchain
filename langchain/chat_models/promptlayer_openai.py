@@ -28,6 +28,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
     """
 
     pl_tags: Optional[List[str]]
+    return_pl_id: Optional[bool] = False
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -43,7 +44,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerChatOpenAI",
                 "langchain",
                 message_dicts,
@@ -53,7 +54,12 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(generation.generation_info, dict):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
 
     async def _agenerate(
@@ -70,7 +76,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerChatOpenAI.async",
                 "langchain",
                 message_dicts,
@@ -80,5 +86,10 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(generation.generation_info, dict):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
