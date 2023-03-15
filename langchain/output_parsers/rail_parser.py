@@ -14,7 +14,6 @@ class GuardrailsOutputParser(BaseOutputParser):
 
     @classmethod
     def from_rail(cls, rail_file: str, num_reasks: int = 1) -> GuardrailsOutputParser:
-
         from guardrails import Guard
 
         if Guard is None:
@@ -28,7 +27,6 @@ class GuardrailsOutputParser(BaseOutputParser):
     def from_rail_string(
         cls, rail_str: str, num_reasks: int = 1
     ) -> GuardrailsOutputParser:
-
         from guardrails import Guard
 
         if Guard is None:
