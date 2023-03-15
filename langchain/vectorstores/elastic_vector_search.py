@@ -19,7 +19,7 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[int]) -> Dict:
+def _default_script_query(query_vector: List[float]) -> Dict:
     return {
         "script_score": {
             "query": {"match_all": {}},
@@ -46,9 +46,7 @@ class ElasticVectorSearch(VectorStore):
 
     """
 
-    def __init__(
-        self, elasticsearch_url: str, index_name: str, embedding: Embeddings
-    ):
+    def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings):
         """Initialize with necessary components."""
         try:
             import elasticsearch
@@ -91,7 +89,7 @@ class ElasticVectorSearch(VectorStore):
             )
         requests = []
         ids = []
-        embeddings = self.embedding.embed_documents(texts)
+        embeddings = self.embedding.embed_documents(list(texts))
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             _id = str(uuid.uuid4())
@@ -197,4 +195,4 @@ class ElasticVectorSearch(VectorStore):
             requests.append(request)
         bulk(client, requests)
         client.indices.refresh(index=index_name)
-        return cls(elasticsearch_url, index_name, embedding.embed_query)
+        return cls(elasticsearch_url, index_name, embedding)
