@@ -100,7 +100,7 @@ class IFixitLoader(BaseLoader):
         output.append(soup.select_one(".post-content .post-text").text.strip())
 
         answersHeader = soup.find("div", "post-answers-header")
-        if (answersHeader):
+        if answersHeader:
             output.append("\n## " + answersHeader.text.strip())
 
         for answer in soup.select(".js-answers-list .post.post-answer"):
