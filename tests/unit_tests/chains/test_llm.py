@@ -7,7 +7,7 @@ import pytest
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.loading import load_chain
-from langchain.prompts.base import BaseOutputParser
+from langchain.output_parsers.base import BaseOutputParser
 from langchain.prompts.prompt import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

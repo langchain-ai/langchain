@@ -16,6 +16,7 @@ from langchain.chains.loading import load_chain
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.chains.moderation import OpenAIModerationChain
 from langchain.chains.pal.base import PALChain
+from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
@@ -52,4 +53,5 @@ __all__ = [
     "ChatVectorDBChain",
     "GraphQAChain",
     "ConstitutionalChain",
+    "QAGenerationChain",
 ]

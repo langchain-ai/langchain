@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel, Field
 
+from langchain.memory.buffer import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate, StringPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
@@ -111,7 +112,7 @@ class ChatPromptValue(PromptValue):
 
     def to_string(self) -> str:
         """Return prompt as string."""
-        return str(self.messages)
+        return get_buffer_string(self.messages)
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
@@ -158,6 +159,7 @@ class ChatPromptTemplate(BasePromptTemplate, ABC):
         return self.format_prompt(**kwargs).to_string()
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         result = []
         for message_template in self.messages:
             if isinstance(message_template, BaseMessage):

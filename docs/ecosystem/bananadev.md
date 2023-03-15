@@ -5,7 +5,7 @@ It is broken into two parts: installation and setup, and then references to spec
 
 ## Installation and Setup
 
-- Install with `pip3 install banana-dev`
+- Install with `pip install banana-dev`
 - Get an Banana api key and set it as an environment variable (`BANANA_API_KEY`)
 
 ## Define your Banana Template

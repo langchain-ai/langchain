@@ -61,7 +61,7 @@ def _load_stuff_chain(
 ) -> StuffDocumentsChain:
     _prompt = prompt or stuff_prompt.PROMPT_SELECTOR.get_prompt(llm)
     llm_chain = LLMChain(
-        llm=llm, prompt=prompt, verbose=verbose, callback_manager=callback_manager
+        llm=llm, prompt=_prompt, verbose=verbose, callback_manager=callback_manager
     )
     # TODO: document prompt
     return StuffDocumentsChain(
