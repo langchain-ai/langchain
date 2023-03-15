@@ -30,11 +30,5 @@ class GuardrailOutputParser(BaseOutputParser):
     def get_format_instructions(self) -> str:
         return self.guard.raw_prompt.format_instructions
 
-    def to_prompt_template(self) -> PromptTemplate:
-        return PromptTemplate(
-            template=self.guard.base_prompt,
-            input_variables=self.guard.prompt.input_variables
-        )
-
     def parse(self, text: str) -> Dict:
         return self.guard.parse(text)
