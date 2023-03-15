@@ -3,7 +3,7 @@ from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
-from langchain.tools.zapier import ZapierNLARunAction
+from langchain.tools.zapier.tool import ZapierNLARunAction
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 
@@ -22,6 +22,7 @@ class ZapierToolkit(BaseToolkit):
             ZapierNLARunAction(
                 action_id=action["id"],
                 zapier_description=action["description"],
+                params_schema=action["params"],
                 api_wrapper=zapier_nla_wrapper,
             )
             for action in actions

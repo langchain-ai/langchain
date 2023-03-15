@@ -125,15 +125,8 @@ from typing import Any, Dict, Optional
 from pydantic import Field, root_validator
 
 from langchain.tools.base import BaseTool
+from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
-
-zapier_nla_base_desc = (
-    "A wrapper around Zapier NLA actions. "
-    "The input to this tool is a natural language instruction, "
-    'for example "get the latest email from my bank" or '
-    '"send a slack message to the #general channel". '
-    "This tool specifically used for: "
-)
 
 
 class ZapierNLARunAction(BaseTool):
@@ -152,14 +145,21 @@ class ZapierNLARunAction(BaseTool):
     action_id: str
     params: Optional[dict] = None
     zapier_description: str
+    params_schema: Dict[str, str] = Field(default_factory=dict)
     name = ""
     description = ""
 
     @root_validator
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         zapier_description = values["zapier_description"]
+        params_schema = values["params_schema"]
+        if "instructions" in params_schema:
+            del params_schema["instructions"]
         values["name"] = zapier_description
-        values["description"] = zapier_nla_base_desc + zapier_description
+        values["description"] = BASE_ZAPIER_TOOL_PROMPT.format(
+            zapier_description=zapier_description,
+            params=str(list(params_schema.keys())),
+        )
         return values
 
     def _run(self, instructions: str) -> str:
@@ -186,7 +186,7 @@ class ZapierNLAListActions(BaseTool):
     """
 
     name = "Zapier NLA: List Actions"
-    description = zapier_nla_base_desc + (
+    description = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)

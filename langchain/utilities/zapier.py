@@ -129,15 +129,12 @@ class ZapierNLAWrapper(BaseModel):
         instead return a preview of params that have been guessed by the AI in
         case you need to explicitly review before executing."""
         session = self._get_session()
+        params = params if params else {}
+        params.update({"preview_only": True})
         request = self._get_action_request(action_id, instructions, params)
-        request.data.update(
-            {
-                "preview_only": True,
-            }
-        )
         response = session.send(session.prepare_request(request))
         response.raise_for_status()
-        return response.json()["params"]
+        return response.json()["input_params"]
 
     def run_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
         """Same as run, but returns a stringified version of the JSON for
