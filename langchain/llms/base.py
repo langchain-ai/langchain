@@ -22,8 +22,8 @@ def get_prompts(
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    missing_prompts = []
-    missing_prompt_idxs = []
+    missing_prompts = []  # type: ignore
+    missing_prompt_idxs = []  # type: ignore
     existing_prompts = {}
     for i, prompt in enumerate(prompts):
         if langchain.llm_cache is not None:

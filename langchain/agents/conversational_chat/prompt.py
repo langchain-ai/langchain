@@ -47,7 +47,7 @@ Here is the user's input (remember to respond with a markdown code snippet of a 
 
 {{{{input}}}}"""
 
-TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE: 
+TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 ---------------------
 {observation}
 

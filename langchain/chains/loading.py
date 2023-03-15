@@ -434,7 +434,7 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
         raise ValueError(f"Loading {config_type} chain not supported")
 
     chain_loader = type_to_loader_dict[config_type]
-    return chain_loader(config, **kwargs)
+    return chain_loader(config, **kwargs)  # type: ignore
 
 
 def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:

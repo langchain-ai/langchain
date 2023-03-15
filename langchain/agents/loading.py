@@ -40,7 +40,7 @@ def _load_agent_from_tools(
         raise ValueError(f"Loading {config_type} agent not supported")
     agent_cls = AGENT_TO_CLASS[config_type]
     combined_config = {**config, **kwargs}
-    return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
+    return agent_cls.from_llm_and_tools(llm, tools, **combined_config)  # type: ignore
 
 
 def load_agent_from_config(

@@ -123,8 +123,8 @@ Below is a list of all supported tools and relevant information:
 **searx-search**
 
 - Tool Name: Search
-- Tool Description: A wrapper around SearxNG meta search engine. Input should be a search query. 
-- Notes: SearxNG is easy to deploy self-hosted. It is a good privacy friendly alternative to Google Search. Uses the SearxNG API. 
+- Tool Description: A wrapper around SearxNG meta search engine. Input should be a search query.
+- Notes: SearxNG is easy to deploy self-hosted. It is a good privacy friendly alternative to Google Search. Uses the SearxNG API.
 - Requires LLM: No
 - Extra Parameters: `searx_host`
 
@@ -144,4 +144,3 @@ Below is a list of all supported tools and relevant information:
 - Notes: Uses the [wikipedia](https://pypi.org/project/wikipedia/) Python package to call the MediaWiki API and then parses results.
 - Requires LLM: No
 - Extra Parameters: `top_k_results`
-

@@ -3,7 +3,7 @@
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
 `multiple search engines
 <https://docs.searxng.org/admin/engines/configured_engines.html>`_ and databases and
-supports the `OpenSearch 
+supports the `OpenSearch
 <https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md>`_
 specification.
 

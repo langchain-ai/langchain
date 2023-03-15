@@ -16,7 +16,7 @@ You can check out an example Banana repository [here](https://github.com/concept
 
 ## Build the Banana app
 
-Banana Apps must include the "output" key in the return json. 
+Banana Apps must include the "output" key in the return json.
 There is a rigid response structure.
 
 ```python

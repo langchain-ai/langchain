@@ -1,6 +1,5 @@
 # Quickstart Guide
 
-
 This tutorial gives you a quick walkthrough about building an end-to-end language model application with LangChain.
 
 ## Installation
@@ -10,7 +9,6 @@ To get started, install LangChain with the following command:
 ```bash
 pip install langchain
 ```
-
 
 ## Environment Setup
 
@@ -35,19 +33,16 @@ import os
 os.environ["OPENAI_API_KEY"] = "..."
 ```
 
-
 ## Building a Language Model Application
 
 Now that we have installed LangChain and set up our environment, we can start building our language model application.
 
 LangChain provides many modules that can be used to build language model applications. Modules can be combined to create more complex applications, or be used individually for simple applications.
 
-
-
-`````{dropdown} LLMs: Get predictions from a language model
+````{dropdown} LLMs: Get predictions from a language model
 
 The most basic building block of LangChain is calling an LLM on some input.
-Let's walk through a simple example of how to do this. 
+Let's walk through a simple example of how to do this.
 For this purpose, let's pretend we are building a service that generates a company name based on what the company makes.
 
 In order to do this, we first need to import the LLM wrapper.
@@ -75,10 +70,9 @@ Feetful of Fun
 ```
 
 For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/llms/getting_started.ipynb).
-`````
+````
 
-
-`````{dropdown} Prompt Templates: Manage prompts for LLMs
+````{dropdown} Prompt Templates: Manage prompts for LLMs
 
 Calling an LLM is a great first step, but it's just the beginning.
 Normally when you use an LLM in an application, you are not sending user input directly to the LLM.
@@ -113,11 +107,9 @@ What is a good name for a company that makes colorful socks?
 
 [For more details, check out the getting started guide for prompts.](../modules/prompts/getting_started.ipynb)
 
-`````
+````
 
-
-
-`````{dropdown} Chains: Combine LLMs and prompts in multi-step workflows
+````{dropdown} Chains: Combine LLMs and prompts in multi-step workflows
 
 Up until now, we've worked with the PromptTemplate and LLM primitives by themselves. But of course, a real application is not just one primitive, but rather a combination of them.
 
@@ -157,10 +149,9 @@ This is one of the simpler types of chains, but understanding how it works will 
 
 [For more details, check out the getting started guide for chains.](../modules/chains/getting_started.ipynb)
 
-`````
+````
 
-
-`````{dropdown} Agents: Dynamically call chains based on user input
+````{dropdown} Agents: Dynamically call chains based on user input
 
 So far the chains we've looked at run in a predetermined order.
 
@@ -235,10 +226,9 @@ Final Answer: Jason Sudeikis, Olivia Wilde's boyfriend, is 47 years old and his 
 ```
 
 
-`````
+````
 
-
-`````{dropdown} Memory: Add state to chains and agents
+````{dropdown} Memory: Add state to chains and agents
 
 So far, all the chains and agents we've gone through have been stateless. But often, you may want a chain or agent to have some concept of "memory" so that it may remember information about its previous interactions. The clearest and simple example of this is when designing a chatbot - you want it to remember previous messages so it can use context from that to have a better conversation. This would be a type of "short-term memory". On the more complex side, you could imagine a chain/agent remembering key pieces of information over time - this would be a form of "long-term memory". For more concrete ideas on the latter, see this [awesome paper](https://memprompt.com/).
 
@@ -288,3 +278,4 @@ AI:
 > Finished chain.
 " That's great! What would you like to talk about?"
 ```
+````

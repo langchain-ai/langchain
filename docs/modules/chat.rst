@@ -20,7 +20,7 @@ The following sections of documentation are provided:
    :maxdepth: 1
    :name: LLMs
    :hidden:
-   
+
    ./chat/getting_started.ipynb
    ./chat/key_concepts.md
    ./chat/how_to_guides.rst

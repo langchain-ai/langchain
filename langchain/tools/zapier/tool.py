@@ -32,7 +32,7 @@ Typically you'd use SequentialChain, here's a basic example:
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
     3. Use NLA to send the draft reply (2) to someone in Slack via direct mesage
-    
+
 In code, below:
 
 ```python

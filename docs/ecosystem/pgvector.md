@@ -4,13 +4,14 @@ This page covers how to use the Postgres [PGVector](https://github.com/pgvector/
 It is broken into two parts: installation and setup, and then references to specific PGVector wrappers.
 
 ## Installation
+
 - Install the Python package with `pip install pgvector`
 
-
 ## Setup
+
 1. The first step is to create a database with the `pgvector` extension installed.
 
-    Follow the steps at [PGVector Installation Steps](https://github.com/pgvector/pgvector#installation) to install the database and the extension. The docker image is the easiest way to get started.
+   Follow the steps at [PGVector Installation Steps](https://github.com/pgvector/pgvector#installation) to install the database and the extension. The docker image is the easiest way to get started.
 
 ## Wrappers
 
@@ -20,6 +21,7 @@ There exists a wrapper around Postgres vector databases, allowing you to use it 
 whether for semantic search or example selection.
 
 To import this vectorstore:
+
 ```python
 from langchain.vectorstores.pgvector import PGVector
 ```

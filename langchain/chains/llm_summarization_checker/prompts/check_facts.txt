@@ -7,4 +7,3 @@ Here is a bullet point list of facts:
 
 For each fact, determine whether it is true or false about the subject. If you are unable to determine whether the fact is true or false, output "Undetermined".
 If the fact is false, explain why.
-

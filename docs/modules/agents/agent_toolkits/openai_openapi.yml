@@ -2,19 +2,19 @@ openapi: 3.0.0
 info:
   title: OpenAI API
   description: APIs for sampling from and fine-tuning language models
-  version: '1.1.0'
+  version: "1.1.0"
 servers:
   - url: https://api.openai.com/v1
 tags:
-- name: OpenAI
-  description: The OpenAI REST API
+  - name: OpenAI
+    description: The OpenAI REST API
 paths:
   /engines:
     get:
       operationId: listEngines
       deprecated: true
       tags:
-      - OpenAI
+        - OpenAI
       summary: Lists the currently available (non-finetuned) models, and provides basic information about each one such as the owner and availability.
       responses:
         "200":
@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListEnginesResponse'
+                $ref: "#/components/schemas/ListEnginesResponse"
       x-oaiMeta:
         name: List engines
         group: engines
@@ -72,7 +72,7 @@ paths:
       operationId: retrieveEngine
       deprecated: true
       tags:
-      - OpenAI
+        - OpenAI
       summary: Retrieves a model instance, providing basic information about it such as the owner and availability.
       parameters:
         - in: path
@@ -81,8 +81,7 @@ paths:
           schema:
             type: string
             # ideally this will be an actual ID, so this will always work from browser
-            example:
-              davinci
+            example: davinci
           description: &engine_id_description >
             The ID of the engine to use for this request
       responses:
@@ -91,7 +90,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Engine'
+                $ref: "#/components/schemas/Engine"
       x-oaiMeta:
         name: Retrieve engine
         group: engines
@@ -123,21 +122,21 @@ paths:
     post:
       operationId: createCompletion
       tags:
-      - OpenAI
+        - OpenAI
       summary: Creates a completion for the provided prompt and parameters
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCompletionRequest'
+              $ref: "#/components/schemas/CreateCompletionRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateCompletionResponse'
+                $ref: "#/components/schemas/CreateCompletionResponse"
       x-oaiMeta:
         name: Create completion
         group: completions
@@ -218,14 +217,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEditRequest'
+              $ref: "#/components/schemas/CreateEditRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEditResponse'
+                $ref: "#/components/schemas/CreateEditResponse"
       x-oaiMeta:
         name: Create edit
         group: edits
@@ -286,21 +285,21 @@ paths:
     post:
       operationId: createImage
       tags:
-      - OpenAI
+        - OpenAI
       summary: Creates an image given a prompt.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateImageRequest'
+              $ref: "#/components/schemas/CreateImageRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImagesResponse'
+                $ref: "#/components/schemas/ImagesResponse"
       x-oaiMeta:
         name: Create image
         group: images
@@ -357,21 +356,21 @@ paths:
     post:
       operationId: createImageEdit
       tags:
-      - OpenAI
+        - OpenAI
       summary: Creates an edited or extended image given an original image and a prompt.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateImageEditRequest'
+              $ref: "#/components/schemas/CreateImageEditRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImagesResponse'
+                $ref: "#/components/schemas/ImagesResponse"
       x-oaiMeta:
         name: Create image edit
         group: images
@@ -425,21 +424,21 @@ paths:
     post:
       operationId: createImageVariation
       tags:
-      - OpenAI
+        - OpenAI
       summary: Creates a variation of a given image.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateImageVariationRequest'
+              $ref: "#/components/schemas/CreateImageVariationRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImagesResponse'
+                $ref: "#/components/schemas/ImagesResponse"
       x-oaiMeta:
         name: Create image variation
         group: images
@@ -494,14 +493,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEmbeddingRequest'
+              $ref: "#/components/schemas/CreateEmbeddingRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEmbeddingResponse'
+                $ref: "#/components/schemas/CreateEmbeddingResponse"
       x-oaiMeta:
         name: Create embeddings
         group: embeddings
@@ -563,7 +562,7 @@ paths:
       operationId: createSearch
       deprecated: true
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         The search endpoint computes similarity scores between provided query and documents. Documents can be passed directly to the API if there are no more than 200 of them.
         To go beyond the 200 document limit, documents can be processed offline and then used for efficient retrieval at query time. When `file` is set, the search endpoint searches over all the documents in the given file and returns up to the `max_rerank` number of documents. These documents will be returned along with their search scores.
@@ -581,14 +580,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateSearchRequest'
+              $ref: "#/components/schemas/CreateSearchRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateSearchResponse'
+                $ref: "#/components/schemas/CreateSearchResponse"
       x-oaiMeta:
         name: Create search
         group: searches
@@ -654,7 +653,7 @@ paths:
     get:
       operationId: listFiles
       tags:
-      - OpenAI
+        - OpenAI
       summary: Returns a list of files that belong to the user's organization.
       responses:
         "200":
@@ -662,7 +661,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListFilesResponse'
+                $ref: "#/components/schemas/ListFilesResponse"
       x-oaiMeta:
         name: List files
         group: files
@@ -708,7 +707,7 @@ paths:
     post:
       operationId: createFile
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Upload a file that contains document(s) to be used across various endpoints/features. Currently, the size of all the files uploaded by one organization can be up to 1 GB. Please contact us if you need to increase the storage limit.
       requestBody:
@@ -716,14 +715,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateFileRequest'
+              $ref: "#/components/schemas/CreateFileRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OpenAIFile'
+                $ref: "#/components/schemas/OpenAIFile"
       x-oaiMeta:
         name: Upload file
         group: files
@@ -766,7 +765,7 @@ paths:
     delete:
       operationId: deleteFile
       tags:
-      - OpenAI
+        - OpenAI
       summary: Delete a file.
       parameters:
         - in: path
@@ -781,7 +780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteFileResponse'
+                $ref: "#/components/schemas/DeleteFileResponse"
       x-oaiMeta:
         name: Delete file
         group: files
@@ -812,7 +811,7 @@ paths:
     get:
       operationId: retrieveFile
       tags:
-      - OpenAI
+        - OpenAI
       summary: Returns information about a specific file.
       parameters:
         - in: path
@@ -827,7 +826,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OpenAIFile'
+                $ref: "#/components/schemas/OpenAIFile"
       x-oaiMeta:
         name: Retrieve file
         group: files
@@ -861,7 +860,7 @@ paths:
     get:
       operationId: downloadFile
       tags:
-      - OpenAI
+        - OpenAI
       summary: Returns the contents of the specified file
       parameters:
         - in: path
@@ -902,7 +901,7 @@ paths:
       operationId: createAnswer
       deprecated: true
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Answers the specified question using the provided documents and examples.
         The endpoint first [searches](/docs/api-reference/searches) over provided documents or files to find relevant context. The relevant context is combined with the provided examples and question to create the prompt for [completion](/docs/api-reference/completions).
@@ -911,14 +910,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAnswerRequest'
+              $ref: "#/components/schemas/CreateAnswerRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateAnswerResponse'
+                $ref: "#/components/schemas/CreateAnswerResponse"
       x-oaiMeta:
         name: Create answer
         group: answers
@@ -1005,7 +1004,7 @@ paths:
       operationId: createClassification
       deprecated: true
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Classifies the specified `query` using provided examples.
         The endpoint first [searches](/docs/api-reference/searches) over the labeled examples
@@ -1019,14 +1018,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateClassificationRequest'
+              $ref: "#/components/schemas/CreateClassificationRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateClassificationResponse'
+                $ref: "#/components/schemas/CreateClassificationResponse"
       x-oaiMeta:
         name: Create classification
         group: classifications
@@ -1120,7 +1119,7 @@ paths:
     post:
       operationId: createFineTune
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Creates a job that fine-tunes a specified model from a given dataset.
         Response includes details of the enqueued job including job status and the name of the fine-tuned models once complete.
@@ -1130,14 +1129,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFineTuneRequest'
+              $ref: "#/components/schemas/CreateFineTuneRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FineTune'
+                $ref: "#/components/schemas/FineTune"
       x-oaiMeta:
         name: Create fine-tune
         group: fine-tunes
@@ -1206,7 +1205,7 @@ paths:
     get:
       operationId: listFineTunes
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         List your organization's fine-tuning jobs
       responses:
@@ -1215,7 +1214,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListFineTunesResponse'
+                $ref: "#/components/schemas/ListFineTunesResponse"
       x-oaiMeta:
         name: List fine-tunes
         group: fine-tunes
@@ -1263,7 +1262,7 @@ paths:
     get:
       operationId: retrieveFineTune
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Gets info about the fine-tune job.
         [Learn more about Fine-tuning](/docs/guides/fine-tuning)
@@ -1273,8 +1272,7 @@ paths:
           required: true
           schema:
             type: string
-            example:
-              ft-AF1WoRqd3aJAHsqc9NY7iL8F
+            example: ft-AF1WoRqd3aJAHsqc9NY7iL8F
           description: |
             The ID of the fine-tune job
       responses:
@@ -1283,7 +1281,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FineTune'
+                $ref: "#/components/schemas/FineTune"
       x-oaiMeta:
         name: Retrieve fine-tune
         group: fine-tunes
@@ -1379,7 +1377,7 @@ paths:
     post:
       operationId: cancelFineTune
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Immediately cancel a fine-tune job.
       parameters:
@@ -1388,8 +1386,7 @@ paths:
           required: true
           schema:
             type: string
-            example:
-              ft-AF1WoRqd3aJAHsqc9NY7iL8F
+            example: ft-AF1WoRqd3aJAHsqc9NY7iL8F
           description: |
             The ID of the fine-tune job to cancel
       responses:
@@ -1398,7 +1395,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FineTune'
+                $ref: "#/components/schemas/FineTune"
       x-oaiMeta:
         name: Cancel fine-tune
         group: fine-tunes
@@ -1450,7 +1447,7 @@ paths:
     get:
       operationId: listFineTuneEvents
       tags:
-      - OpenAI
+        - OpenAI
       summary: |
         Get fine-grained status updates for a fine-tune job.
       parameters:
@@ -1459,8 +1456,7 @@ paths:
           required: true
           schema:
             type: string
-            example:
-              ft-AF1WoRqd3aJAHsqc9NY7iL8F
+            example: ft-AF1WoRqd3aJAHsqc9NY7iL8F
           description: |
             The ID of the fine-tune job to get events for.
         - in: query
@@ -1483,7 +1479,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListFineTuneEventsResponse'
+                $ref: "#/components/schemas/ListFineTuneEventsResponse"
       x-oaiMeta:
         name: List fine-tune events
         group: fine-tunes
@@ -1553,7 +1549,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListModelsResponse'
+                $ref: "#/components/schemas/ListModelsResponse"
       x-oaiMeta:
         name: List models
         group: models
@@ -1611,17 +1607,15 @@ paths:
           schema:
             type: string
             # ideally this will be an actual ID, so this will always work from browser
-            example:
-              text-davinci-001
-          description:
-            The ID of the model to use for this request
+            example: text-davinci-001
+          description: The ID of the model to use for this request
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Model'
+                $ref: "#/components/schemas/Model"
       x-oaiMeta:
         name: Retrieve model
         group: models
@@ -1652,7 +1646,7 @@ paths:
     delete:
       operationId: deleteModel
       tags:
-      - OpenAI
+        - OpenAI
       summary: Delete a fine-tuned model. You must have the Owner role in your organization.
       parameters:
         - in: path
@@ -1668,7 +1662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteModelResponse'
+                $ref: "#/components/schemas/DeleteModelResponse"
       x-oaiMeta:
         name: Delete fine-tune model
         group: fine-tunes
@@ -1708,14 +1702,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateModerationRequest'
+              $ref: "#/components/schemas/CreateModerationRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateModerationResponse'
+                $ref: "#/components/schemas/CreateModerationResponse"
       x-oaiMeta:
         name: Create moderation
         group: moderations
@@ -1786,7 +1780,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Engine'
+            $ref: "#/components/schemas/Engine"
       required:
         - object
         - data
@@ -1799,7 +1793,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Model'
+            $ref: "#/components/schemas/Model"
       required:
         - object
         - data
@@ -1829,16 +1823,16 @@ components:
             The prompt(s) to generate completions for, encoded as a string, array of strings, array of tokens, or array of token arrays.
 
             Note that <|endoftext|> is the document separator that the model sees during training, so if a prompt is not specified the model will generate as if from the beginning of a new document.
-          default: '<|endoftext|>'
+          default: "<|endoftext|>"
           nullable: true
           oneOf:
             - type: string
-              default: ''
+              default: ""
               example: "This is a test."
             - type: array
               items:
                 type: string
-                default: ''
+                default: ""
                 example: "This is a test."
             - type: array
               minItems: 1
@@ -1854,8 +1848,7 @@ components:
                   type: integer
               example: "[[1212, 318, 257, 1332, 13]]"
         suffix:
-          description:
-            The suffix that comes after a completion of inserted text.
+          description: The suffix that comes after a completion of inserted text.
           default: null
           nullable: true
           type: string
@@ -2044,11 +2037,11 @@ components:
               type: integer
             total_tokens:
               type: integer
-          required: 
+          required:
             - prompt_tokens
             - completion_tokens
             - total_tokens
-      required: 
+      required:
         - id
         - object
         - created
@@ -2060,15 +2053,13 @@ components:
       properties:
         model: *model_configuration
         input:
-          description:
-            The input text to use as a starting point for the edit.
+          description: The input text to use as a starting point for the edit.
           type: string
-          default: ''
+          default: ""
           nullable: true
           example: "What day of the wek is it?"
         instruction:
-          description:
-            The instruction that tells the model how to edit the prompt.
+          description: The instruction that tells the model how to edit the prompt.
           type: string
           example: "Fix the spelling mistakes."
         n:
@@ -2078,8 +2069,7 @@ components:
           default: 1
           example: 1
           nullable: true
-          description:
-            How many edits to generate for the input and instruction.
+          description: How many edits to generate for the input and instruction.
         temperature:
           type: number
           minimum: 0
@@ -2147,11 +2137,11 @@ components:
               type: integer
             total_tokens:
               type: integer
-          required: 
+          required:
             - prompt_tokens
             - completion_tokens
             - total_tokens
-      required: 
+      required:
         - object
         - created
         - choices
@@ -2251,12 +2241,12 @@ components:
           description: The input text to classify
           oneOf:
             - type: string
-              default: ''
+              default: ""
               example: "I want to kill them."
             - type: array
               items:
                 type: string
-                default: ''
+                default: ""
                 example: "I want to kill them."
         model:
           description: |
@@ -2300,7 +2290,7 @@ components:
                     type: boolean
                   violence/graphic:
                     type: boolean
-                required: 
+                required:
                   - hate
                   - hate/threatening
                   - self-harm
@@ -2325,7 +2315,7 @@ components:
                     type: number
                   violence/graphic:
                     type: number
-                required: 
+                required:
                   - hate
                   - hate/threatening
                   - self-harm
@@ -2333,11 +2323,11 @@ components:
                   - sexual/minors
                   - violence
                   - violence/graphic
-            required: 
+            required:
               - flagged
               - categories
               - category_scores
-      required: 
+      required:
         - id
         - model
         - results
@@ -2414,8 +2404,8 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/OpenAIFile'
-      required: 
+            $ref: "#/components/schemas/OpenAIFile"
+      required:
         - object
         - data
 
@@ -2447,7 +2437,7 @@ components:
           type: string
         deleted:
           type: boolean
-      required: 
+      required:
         - id
         - object
         - deleted
@@ -2639,8 +2629,7 @@ components:
           nullable: true
         search_model: *search_model_configuration
         temperature:
-          description:
-            What sampling `temperature` to use. Higher values mean the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.
+          description: What sampling `temperature` to use. Higher values mean the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.
           type: number
           minimum: 0
           maximum: 2
@@ -2828,8 +2817,8 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/FineTune'
-      required: 
+            $ref: "#/components/schemas/FineTune"
+      required:
         - object
         - data
 
@@ -2841,8 +2830,8 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/FineTuneEvent'
-      required: 
+            $ref: "#/components/schemas/FineTuneEvent"
+      required:
         - object
         - data
 
@@ -2857,12 +2846,12 @@ components:
           example: "The quick brown fox jumped over the lazy dog"
           oneOf:
             - type: string
-              default: ''
+              default: ""
               example: "This is a test."
             - type: array
               items:
                 type: string
-                default: ''
+                default: ""
                 example: "This is a test."
             - type: array
               minItems: 1
@@ -2902,7 +2891,7 @@ components:
                 type: array
                 items:
                   type: number
-            required: 
+            required:
               - index
               - object
               - embedding
@@ -2913,10 +2902,10 @@ components:
               type: integer
             total_tokens:
               type: integer
-          required: 
+          required:
             - prompt_tokens
             - total_tokens
-      required: 
+      required:
         - object
         - model
         - data
@@ -2934,7 +2923,7 @@ components:
           nullable: true
         ready:
           type: boolean
-      required: 
+      required:
         - id
         - object
         - created
@@ -2951,7 +2940,7 @@ components:
           type: integer
         owned_by:
           type: string
-      required: 
+      required:
         - id
         - object
         - created
@@ -2977,7 +2966,7 @@ components:
         status_details:
           type: object
           nullable: true
-      required: 
+      required:
         - id
         - object
         - bytes
@@ -3010,20 +2999,20 @@ components:
         training_files:
           type: array
           items:
-            $ref: '#/components/schemas/OpenAIFile'
+            $ref: "#/components/schemas/OpenAIFile"
         validation_files:
           type: array
           items:
-            $ref: '#/components/schemas/OpenAIFile'
+            $ref: "#/components/schemas/OpenAIFile"
         result_files:
           type: array
           items:
-            $ref: '#/components/schemas/OpenAIFile'
+            $ref: "#/components/schemas/OpenAIFile"
         events:
           type: array
           items:
-            $ref: '#/components/schemas/FineTuneEvent'
-      required: 
+            $ref: "#/components/schemas/FineTuneEvent"
+      required:
         - id
         - object
         - created_at
@@ -3048,7 +3037,7 @@ components:
           type: string
         message:
           type: string
-      required: 
+      required:
         - object
         - created_at
         - level

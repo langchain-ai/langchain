@@ -77,7 +77,7 @@ def test_loading_with_template_as_file() -> None:
         prompt = load_prompt("simple_prompt_with_template_file.json")
         expected_prompt = PromptTemplate(
             input_variables=["adjective", "content"],
-            template="Tell me a {adjective} joke about {content}.",
+            template="Tell me a {adjective} joke about {content}.\n",
         )
         assert prompt == expected_prompt
 

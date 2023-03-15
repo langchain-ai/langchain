@@ -4,6 +4,7 @@ This page covers how to use the Modal ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Modal wrappers.
 
 ## Installation and Setup
+
 - Install with `pip install modal-client`
 - Run `modal token new`
 
@@ -60,7 +61,8 @@ def get_text(item: Item):
 
 ### LLM
 
-There exists an Modal LLM wrapper, which you can access with 
+There exists an Modal LLM wrapper, which you can access with
+
 ```python
 from langchain.llms import Modal
 ```

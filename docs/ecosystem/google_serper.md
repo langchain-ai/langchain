@@ -1,9 +1,10 @@
 # Google Serper Wrapper
 
-This page covers how to use the [Serper](https://serper.dev) Google Search API within LangChain. Serper is a low-cost Google Search API that can be used to add answer box, knowledge graph, and organic results data from Google Search. 
+This page covers how to use the [Serper](https://serper.dev) Google Search API within LangChain. Serper is a low-cost Google Search API that can be used to add answer box, knowledge graph, and organic results data from Google Search.
 It is broken into two parts: setup, and then references to the specific Google Serper wrapper.
 
 ## Setup
+
 - Go to [serper.dev](https://serper.dev) to sign up for a free account
 - Get the api key and set it as an environment variable (`SERPER_API_KEY`)
 
@@ -43,6 +44,7 @@ self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open c
 ```
 
 #### Output
+
 ```
 Entering new AgentExecutor chain...
  Yes.
@@ -63,6 +65,7 @@ For a more detailed walkthrough of this wrapper, see [this notebook](../modules/
 
 You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
+
 ```python
 from langchain.agents import load_tools
 tools = load_tools(["google-serper"])

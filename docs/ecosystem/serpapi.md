@@ -4,6 +4,7 @@ This page covers how to use the SerpAPI search APIs within LangChain.
 It is broken into two parts: installation and setup, and then references to the specific SerpAPI wrapper.
 
 ## Installation and Setup
+
 - Install requirements with `pip install google-search-results`
 - Get a SerpAPI api key and either set it as an environment variable (`SERPAPI_API_KEY`)
 
@@ -23,6 +24,7 @@ For a more detailed walkthrough of this wrapper, see [this notebook](../modules/
 
 You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
+
 ```python
 from langchain.agents import load_tools
 tools = load_tools(["serpapi"])

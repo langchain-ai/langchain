@@ -33,7 +33,7 @@ It implements a Question Answering app and contains instructions for deploying t
 
 A minimal example on how to run LangChain on Vercel using Flask.
 
-
 ## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
+
 This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
 This includes: production ready endpoints, horizontal scaling across dependencies, persistant storage of app state, multi-tenancy support, etc.

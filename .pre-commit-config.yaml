@@ -1,0 +1,53 @@
+repos:
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.0.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/python/black.git
+    rev: 23.1.0
+    hooks:
+      - id: black
+        language_version: python3
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.7.1
+    hooks:
+      - id: prettier
+        stages: [commit]
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.6.17
+    hooks:
+      - id: actionlint-docker
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shellcheck
+      - id: shfmt
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.1.1
+    hooks:
+      - id: mypy
+        args:
+          [
+            --no-strict-optional,
+            --ignore-missing-imports,
+            --disallow-untyped-defs,
+            --install-types,
+            --non-interactive,
+          ]
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.0.245"
+    hooks:
+      - id: ruff
+        args: ["--select", "I", "--fix", "."]

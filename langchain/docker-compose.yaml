@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   langchain-frontend:
     image: notlangchain/langchainplus-frontend:latest

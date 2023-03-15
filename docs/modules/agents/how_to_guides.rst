@@ -109,5 +109,3 @@ In all examples there is an Agent with a particular set of tools.
    :hidden:
 
    ./implementations/*
-
-

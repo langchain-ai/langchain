@@ -27,7 +27,7 @@ def load_prompt_from_config(config: dict) -> BasePromptTemplate:
         raise ValueError(f"Loading {config_type} prompt not supported")
 
     prompt_loader = type_to_loader_dict[config_type]
-    return prompt_loader(config)
+    return prompt_loader(config)  # type: ignore
 
 
 def _load_template(var_name: str, config: dict) -> dict:

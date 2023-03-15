@@ -1,7 +1,7 @@
 .PHONY: all clean format lint test tests test_watch integration_tests help
 
 all: help
-	
+
 coverage:
 	poetry run pytest --cov \
 		--cov-config=.coveragerc \

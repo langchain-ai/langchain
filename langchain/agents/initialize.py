@@ -53,7 +53,7 @@ def initialize_agent(
             )
         agent_cls = AGENT_TO_CLASS[agent]
         agent_kwargs = agent_kwargs or {}
-        agent_obj = agent_cls.from_llm_and_tools(
+        agent_obj = agent_cls.from_llm_and_tools(  # type: ignore
             llm, tools, callback_manager=callback_manager, **agent_kwargs
         )
     elif agent_path is not None:

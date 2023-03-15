@@ -1,15 +1,15 @@
 # flake8: noqa
 from langchain.prompts.prompt import PromptTemplate
 
-web_search_template = """Please write a passage to answer the question 
+web_search_template = """Please write a passage to answer the question
 Question: {QUESTION}
 Passage:"""
 web_search = PromptTemplate(template=web_search_template, input_variables=["QUESTION"])
-sci_fact_template = """Please write a scientific paper passage to support/refute the claim 
+sci_fact_template = """Please write a scientific paper passage to support/refute the claim
 Claim: {Claim}
 Passage:"""
 sci_fact = PromptTemplate(template=sci_fact_template, input_variables=["Claim"])
-arguana_template = """Please write a counter argument for the passage 
+arguana_template = """Please write a counter argument for the passage
 Passage: {PASSAGE}
 Counter Argument:"""
 arguana = PromptTemplate(template=arguana_template, input_variables=["PASSAGE"])

@@ -1,6 +1,7 @@
 # Getting Started
 
 In this tutorial, we will learn about:
+
 - what a prompt template is, and why it is needed,
 - how to create a prompt template,
 - how to pass few shot examples to a prompt template,
@@ -11,6 +12,7 @@ In this tutorial, we will learn about:
 A prompt template refers to a reproducible way to generate a prompt. It contains a text string ("the template"), that can take in a set of parameters from the end user and generate a prompt.
 
 The prompt template may contain:
+
 - instructions to the language model,
 - a set of few shot examples to help the language model generate a better response,
 - a question to the language model.
@@ -41,11 +43,9 @@ prompt = PromptTemplate(
 )
 ```
 
-
 ## Create a prompt template
 
 You can create simple hardcoded prompts using the `PromptTemplate` class. Prompt templates can take any number of input variables, and can be formatted to generate a prompt.
-
 
 ```python
 from langchain import PromptTemplate
@@ -62,16 +62,14 @@ one_input_prompt.format(adjective="funny")
 
 # An example prompt with multiple input variables
 multiple_input_prompt = PromptTemplate(
-    input_variables=["adjective", "content"], 
+    input_variables=["adjective", "content"],
     template="Tell me a {adjective} joke about {content}."
 )
 multiple_input_prompt.format(adjective="funny", content="chickens")
 # -> "Tell me a funny joke about chickens."
 ```
 
-
 You can create custom prompt templates that format the prompt in any way you want. For more information, see [Custom Prompt Templates](examples/custom_prompt_template.ipynb).
-
 
 <!-- TODO(shreya): Add link to Jinja -->
 
@@ -79,11 +77,9 @@ You can create custom prompt templates that format the prompt in any way you wan
 Currently, the template should be formatted as a Python f-string. We also support Jinja2 templates (see [Using Jinja templates](examples/custom_prompt_template.ipynb)). In the future, we will support more templating languages such as Mako.
 :::
 
-
 ## Load a prompt template from LangChainHub
 
 LangChainHub contains a collection of prompts which can be loaded directly via LangChain.
-
 
 ```python
 from langchain.prompts import load_prompt
@@ -144,7 +140,7 @@ few_shot_prompt = FewShotPromptTemplate(
 # We can now generate a prompt using the `format` method.
 print(few_shot_prompt.format(input="big"))
 # -> Give the antonym of every input
-# -> 
+# ->
 # -> Word: happy
 # -> Antonym: sad
 # ->
@@ -179,9 +175,9 @@ examples = [
 # We'll use the `LengthBasedExampleSelector` to select the examples.
 example_selector = LengthBasedExampleSelector(
     # These are the examples is has available to choose from.
-    examples=examples, 
+    examples=examples,
     # This is the PromptTemplate being used to format the examples.
-    example_prompt=example_prompt, 
+    example_prompt=example_prompt,
     # This is the maximum length that the formatted examples should be.
     # Length is measured by the get_text_length function below.
     max_length=25,
@@ -236,6 +232,7 @@ print(dynamic_prompt.format(input=long_string))
 ```
 
 <!-- TODO(shreya): Add correct link here. -->
+
 LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](./examples/example_selectors.ipynb).
 
 You can create custom example selectors that select examples based on any criteria you want. For more details on how to do this, see [Creating a custom example selector](examples/custom_example_selector.ipynb).

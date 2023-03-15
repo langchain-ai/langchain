@@ -1,4 +1,4 @@
 [
-    {"input": "happy", "output": "sad"},
-    {"input": "tall", "output": "short"}
+  { "input": "happy", "output": "sad" },
+  { "input": "tall", "output": "short" }
 ]

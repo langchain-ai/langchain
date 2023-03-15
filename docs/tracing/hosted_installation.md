@@ -14,7 +14,7 @@ After installation, you must now set up your environment to use tracing.
 
 This can be done by setting an environment variable in your terminal by running `export LANGCHAIN_HANDLER=langchain`.
 
-You can also do this by adding the below snippet to the top of every script. **IMPORTANT:** this must go at the VERY TOP of your script, before you import anything from `langchain`. 
+You can also do this by adding the below snippet to the top of every script. **IMPORTANT:** this must go at the VERY TOP of your script, before you import anything from `langchain`.
 
 ```python
 import os

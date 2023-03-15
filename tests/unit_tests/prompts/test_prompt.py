@@ -107,7 +107,7 @@ def test_prompt_from_file() -> None:
     template_file = "tests/unit_tests/data/prompt_file.txt"
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
-    assert prompt.template == "Question: {question}\nAnswer:"
+    assert prompt.template == "Question: {question}\nAnswer:\n"
 
 
 def test_partial_init_string() -> None:

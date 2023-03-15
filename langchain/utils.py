@@ -8,7 +8,7 @@ def get_from_dict_or_env(
 ) -> str:
     """Get a value from a dictionary or an environment variable."""
     if key in data and data[key]:
-        return data[key]
+        return str(data[key])
     elif env_key in os.environ and os.environ[env_key]:
         return os.environ[env_key]
     elif default is not None:

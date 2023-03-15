@@ -8,7 +8,7 @@ class StrictFormatter(Formatter):
 
     def check_unused_args(
         self,
-        used_args: Sequence[Union[int, str]],
+        used_args: Sequence[Union[int, str]],  # type: ignore
         args: Sequence,
         kwargs: Mapping[str, Any],
     ) -> None:

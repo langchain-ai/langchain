@@ -20,7 +20,7 @@ The following sections of documentation are provided:
    :maxdepth: 1
    :name: LLMs
    :hidden:
-   
+
    ./llms/getting_started.ipynb
    ./llms/key_concepts.md
    ./llms/how_to_guides.rst

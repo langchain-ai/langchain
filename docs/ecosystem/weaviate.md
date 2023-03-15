@@ -5,6 +5,7 @@ This page covers how to use the Weaviate ecosystem within LangChain.
 What is Weaviate?
 
 **Weaviate in a nutshell:**
+
 - Weaviate is an open-source ​database of the type ​vector search engine.
 - Weaviate allows you to store JSON documents in a class property-like fashion while attaching machine learning vectors to these documents to represent them in vector space.
 - Weaviate can be used stand-alone (aka bring your vectors) or with a variety of modules that can do the vectorization for you and extend the core capabilities.
@@ -17,7 +18,9 @@ What is Weaviate?
 Weaviate is a low-latency vector search engine with out-of-the-box support for different media types (text, images, etc.). It offers Semantic Search, Question-Answer Extraction, Classification, Customizable Models (PyTorch/TensorFlow/Keras), etc. Built from scratch in Go, Weaviate stores both objects and vectors, allowing for combining vector search with structured filtering and the fault tolerance of a cloud-native database. It is all accessible through GraphQL, REST, and various client-side programming languages.
 
 ## Installation and Setup
+
 - Install the Python SDK with `pip install weaviate-client`
+
 ## Wrappers
 
 ### VectorStore
@@ -26,6 +29,7 @@ There exists a wrapper around Weaviate indexes, allowing you to use it as a vect
 whether for semantic search or example selection.
 
 To import this vectorstore:
+
 ```python
 from langchain.vectorstores import Weaviate
 ```

@@ -30,7 +30,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     name = "query_sql_db"
     description = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
-    If the query is not correct, an error message will be returned. 
+    If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
 
@@ -49,7 +49,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     description = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_sql_db first!
-    
+
     Example Input: "table1, table2, table3"
     """
 

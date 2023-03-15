@@ -50,8 +50,8 @@ def test_table_info() -> None:
     output = db.table_info
     expected_output = """
     CREATE TABLE schema_a."user" (
-        user_id INTEGER NOT NULL, 
-        user_name VARCHAR NOT NULL, 
+        user_id INTEGER NOT NULL,
+        user_name VARCHAR NOT NULL,
         PRIMARY KEY (user_id)
     )
     /*

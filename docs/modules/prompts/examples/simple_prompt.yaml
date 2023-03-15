@@ -1,5 +1,3 @@
 _type: prompt
-input_variables:
-    ["adjective", "content"]
-template: 
-    Tell me a {adjective} joke about {content}.
+input_variables: ["adjective", "content"]
+template: Tell me a {adjective} joke about {content}.

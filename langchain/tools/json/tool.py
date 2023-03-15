@@ -82,7 +82,7 @@ class JsonListKeysTool(BaseTool):
 
     name = "json_spec_list_keys"
     description = """
-    Can be used to list all keys at a given path. 
+    Can be used to list all keys at a given path.
     Before calling this you should be SURE that the path to this exists.
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
     """

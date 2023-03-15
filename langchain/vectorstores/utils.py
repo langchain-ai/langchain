@@ -1,18 +1,18 @@
 """Utility functions for working with vectors and vectorstores."""
 
-from typing import List
+from typing import Any, List
 
 import numpy as np
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     """Calculate cosine similarity with numpy."""
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 
 def maximal_marginal_relevance(
     query_embedding: np.ndarray,
-    embedding_list: list,
+    embedding_list: List[Any],
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> List[int]:

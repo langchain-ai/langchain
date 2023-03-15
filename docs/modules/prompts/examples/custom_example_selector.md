@@ -24,10 +24,10 @@ import numpy as np
 
 
 class CustomExampleSelector(BaseExampleSelector):
-    
+
     def __init__(self, examples: List[Dict[str, str]]):
         self.examples = examples
-    
+
     def add_example(self, example: Dict[str, str]) -> None:
         """Add new example to store for a key."""
         self.examples.append(example)
@@ -37,7 +37,6 @@ class CustomExampleSelector(BaseExampleSelector):
         return np.random.choice(self.examples, size=2, replace=False)
 
 ```
-
 
 ## Use custom example selector
 

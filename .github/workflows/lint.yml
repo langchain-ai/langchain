@@ -1,15 +1,12 @@
-name: lint
+name: CI
 
 on:
+  workflow_dispatch:
   push:
-    branches: [master]
-  pull_request:
-
-env:
-  POETRY_VERSION: "1.3.1"
 
 jobs:
-  build:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,18 +16,22 @@ jobs:
           - "3.10"
           - "3.11"
     steps:
-      - uses: actions/checkout@v3
-      - name: Install poetry
-        run: |
-          pipx install poetry==$POETRY_VERSION
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: armand-sauzay/actions-python/lint@v1
         with:
           python-version: ${{ matrix.python-version }}
-          cache: poetry
-      - name: Install dependencies
-        run: |
-          poetry install
-      - name: Analysing the code with our lint
-        run: |
-          make lint
+
+  test:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: armand-sauzay/actions-python/test@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          test-flags: "tests/unit_tests"

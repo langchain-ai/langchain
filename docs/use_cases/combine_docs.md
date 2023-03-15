@@ -17,12 +17,13 @@ All of these examples are instances when you do not want the LLM to generate tex
 This guide is intended to provide an overview of how to do this. This includes an overview of the literature, as well as common tools, abstractions and chains for doing this.
 
 ## Related Literature
+
 There are a lot of related papers in this area. Most of them are focused on end-to-end methods that optimize the fetching of the relevant data as well as passing it in as context. These are a few of the papers that are particularly relevant:
 
-**[RAG](https://arxiv.org/abs/2005.11401):** Retrieval Augmented Generation. 
+**[RAG](https://arxiv.org/abs/2005.11401):** Retrieval Augmented Generation.
 This paper introduces RAG models where the parametric memory is a pre-trained seq2seq model and the non-parametric memory is a dense vector index of Wikipedia, accessed with a pre-trained neural retriever.
 
-**[REALM](https://arxiv.org/abs/2002.08909):** Retrieval-Augmented Language Model Pre-Training. 
+**[REALM](https://arxiv.org/abs/2002.08909):** Retrieval-Augmented Language Model Pre-Training.
 To capture knowledge in a more modular and interpretable way, this paper augments language model pre-training with a latent knowledge retriever, which allows the model to retrieve and attend over documents from a large corpus such as Wikipedia, used during pre-training, fine-tuning and inference.
 
 **[HayStack](https://haystack.deepset.ai/):** This is not a paper, but rather an open source library aimed at semantic search, question answering, summarization, and document ranking for a wide range of NLP applications. The underpinnings of this library are focused on the same `fetching` and `augmenting` concepts discussed here, and incorporate some methods in the above papers.
@@ -32,6 +33,7 @@ These papers/open-source projects are centered around retrieval of documents, wh
 Let's now deep dive on the two steps involved: fetching and augmenting.
 
 ## Fetching
+
 There are many ways to fetch relevant data to pass in as context to a LM, and these methods largely depend
 on the use case.
 
@@ -53,8 +55,9 @@ There are two big issues to deal with in fetching:
 2. Not fetching too many pieces of information (e.g. fetching only the most relevant pieces)
 
 ### Text Splitting
+
 One big issue with all of these methods is how to make sure you are working with pieces of text that are not too large.
-This is important because most language models have a context length, and so you cannot (yet) just pass a 
+This is important because most language models have a context length, and so you cannot (yet) just pass a
 large document in as context. Therefore, it is important to not only fetch relevant data but also make sure it is in
 small enough chunks.
 
@@ -64,6 +67,7 @@ size of the chunks as well as the overlap in the chunks (important for maintaini
 See [this walkthrough](../modules/indexes/examples/textsplitter.ipynb) for more information.
 
 ### Relevant Documents
+
 A second large issue related fetching data is to make sure you are not fetching too many documents, and are only fetching
 the documents that are relevant to the query/question at hand. There are a few ways to deal with this.
 
@@ -71,7 +75,7 @@ One concrete example of this is vector stores for document retrieval, often used
 With this method, larger documents are split up into
 smaller chunks and then each chunk of text is passed to an embedding function which creates an embedding for that piece of text.
 Those are embeddings are then stored in a database. When a new search query or question comes in, an embedding is
-created for that query/question and then documents with embeddings most similar to that embedding are fetched. 
+created for that query/question and then documents with embeddings most similar to that embedding are fetched.
 Examples of vector database companies include [Pinecone](https://www.pinecone.io/) and [Weaviate](https://weaviate.io/).
 
 Although this is perhaps the most common way of document retrieval, people are starting to think about alternative
@@ -80,11 +84,13 @@ check out [GPT Index](https://github.com/jerryjliu/gpt_index) - a collection of 
 for language models.
 
 ## Augmenting
+
 So you've fetched your relevant data - now what? How do you pass them to the language model in a format it can understand?
-For a detailed overview of the different ways of doing so, and the tradeoffs between them, please see 
+For a detailed overview of the different ways of doing so, and the tradeoffs between them, please see
 [this documentation](../modules/indexes/combine_docs.md)
 
 ## Use Cases
+
 LangChain supports the above three methods of augmenting LLMs with external data.
 These methods can be used to underpin several common use cases, and they are discussed below.
 For all three of these use cases, all three methods are supported.

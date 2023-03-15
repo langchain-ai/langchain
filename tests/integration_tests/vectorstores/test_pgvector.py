@@ -4,9 +4,7 @@ from typing import List
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
-from tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
-)
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
     driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
