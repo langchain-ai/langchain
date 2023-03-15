@@ -84,15 +84,15 @@ class ChatMessage(BaseMessage):
         return "chat"
 
 
-def _message_to_json(message: BaseMessage) -> dict:
+def _message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.dict()}
 
 
-def messages_to_json(messages: List[BaseMessage]) -> List[dict]:
-    return [_message_to_json(m) for m in messages]
+def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
+    return [_message_to_dict(m) for m in messages]
 
 
-def _message_from_json(message: dict) -> BaseMessage:
+def _message_from_dict(message: dict) -> BaseMessage:
     _type = message["type"]
     if _type == "human":
         return HumanMessage(**message["data"])
@@ -106,8 +106,8 @@ def _message_from_json(message: dict) -> BaseMessage:
         raise ValueError(f"Got unexpected type: {_type}")
 
 
-def messages_from_json(messages: List[dict]) -> List[BaseMessage]:
-    return [_message_from_json(m) for m in messages]
+def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
+    return [_message_from_dict(m) for m in messages]
 
 
 class ChatGeneration(Generation):
