@@ -15,6 +15,7 @@ from langchain.prompts import PromptTemplate
 class GuardrailOutputParser(BaseOutputParser):
     guard = Guard
 
+    @property
     def _type(self) -> str:
         return "guardrail"
 
