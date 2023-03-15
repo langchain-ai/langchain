@@ -12,7 +12,7 @@ from langchain.output_parsers.base import BaseOutputParser
 
 
 class GuardrailOutputParser(BaseOutputParser):
-    guard = Guard
+    guard: Guard
 
     @property
     def _type(self) -> str:
