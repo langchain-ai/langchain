@@ -105,14 +105,25 @@ class SagemakerEndpoint(LLM, BaseModel):
     """
 
     content_handler: Type[ContentHandlerBase]
+    """The content handler class that provides an input and
+    output transform functions to handle formats between LLM
+    and the endpoint.
+    """
 
     """
-    Example:
+     Example:
         .. code-block:: python
 
-            def model_input_transform_fn(prompt, model_kwargs):
-                parameter_payload = {"inputs": prompt, "parameters": model_kwargs}
-                return json.dumps(parameter_payload).encode("utf-8")
+        class ContentHandler(ContentHandlerBase):
+                content_type = "application/json"
+
+                def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
+                    input_str = json.dumps({prompt: prompt, **model_kwargs})
+                    return input_str.encode('utf-8')
+                
+                def transform_output(self, output: bytes) -> str:
+                    response_json = json.loads(output.read().decode("utf-8"))
+                    return response_json[0]["generated_text"]
     """
 
     model_kwargs: Optional[Dict] = None
