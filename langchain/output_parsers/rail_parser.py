@@ -14,10 +14,10 @@ class GuardrailsOutputParser(BaseOutputParser):
 
     @classmethod
     def from_rail(cls, rail_file: str, num_reasks: int = 1) -> GuardrailsOutputParser:
-        from guardrails import Guard
-
-        if Guard is None:
-            raise ImportError(
+        try:
+            from guardrails import Guard
+        except ImportError:
+            raise ValueError(
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
@@ -27,10 +27,10 @@ class GuardrailsOutputParser(BaseOutputParser):
     def from_rail_string(
         cls, rail_str: str, num_reasks: int = 1
     ) -> GuardrailsOutputParser:
-        from guardrails import Guard
-
-        if Guard is None:
-            raise ImportError(
+        try:
+            from guardrails import Guard
+        except ImportError:
+            raise ValueError(
                 "guardrails-ai package not installed. "
                 "Install it by running `pip install guardrails-ai`."
             )
