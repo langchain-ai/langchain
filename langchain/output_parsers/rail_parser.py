@@ -1,25 +1,22 @@
 from __future__ import annotations
 
-from typing import Dict
-
-try:
-    from guardrails import Guard
-except ImportError:
-    Guard = None
-
+from typing import Any, Dict
 
 from langchain.output_parsers.base import BaseOutputParser
 
 
-class GuardrailOutputParser(BaseOutputParser):
-    guard: Guard
+class GuardrailsOutputParser(BaseOutputParser):
+    guard: Any
 
     @property
     def _type(self) -> str:
-        return "guardrail"
+        return "guardrails"
 
     @classmethod
-    def from_rail(cls, rail_file: str, num_reasks: int = 1) -> GuardrailOutputParser:
+    def from_rail(cls, rail_file: str, num_reasks: int = 1) -> GuardrailsOutputParser:
+
+        from guardrails import Guard
+
         if Guard is None:
             raise ImportError(
                 "guardrails-ai package not installed. "
@@ -30,7 +27,10 @@ class GuardrailOutputParser(BaseOutputParser):
     @classmethod
     def from_rail_string(
         cls, rail_str: str, num_reasks: int = 1
-    ) -> GuardrailOutputParser:
+    ) -> GuardrailsOutputParser:
+
+        from guardrails import Guard
+
         if Guard is None:
             raise ImportError(
                 "guardrails-ai package not installed. "

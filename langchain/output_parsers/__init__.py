@@ -3,7 +3,7 @@ from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
 )
-from langchain.output_parsers.rail_parser import GuardrailOutputParser
+from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
@@ -16,5 +16,5 @@ __all__ = [
     "BaseOutputParser",
     "StructuredOutputParser",
     "ResponseSchema",
-    "GuardrailOutputParser",
+    "GuardrailsOutputParser",
 ]
