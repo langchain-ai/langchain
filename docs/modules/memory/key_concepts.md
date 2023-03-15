@@ -9,7 +9,7 @@ both at a short term but also at a long term level. The concept of "Memory" exis
 One of the simpler forms of memory occurs in chatbots, where they remember previous conversations.
 There are a few different ways to accomplish this:
 - Buffer: This is just passing in the past `N` interactions in as context. `N` can be chosen based on a fixed number, the length of the interactions, or other!
-- Summary: This involves summarizing previous conversations and passing that summary in, instead of the raw dialouge itself. Compared to `Buffer`, this compresses information: meaning it is more lossy, but also less likely to run into context length limits.
+- Summary: This involves summarizing previous conversations and passing that summary in, instead of the raw dialogue itself. Compared to `Buffer`, this compresses information: meaning it is more lossy, but also less likely to run into context length limits.
 - Combination: A combination of the above two approaches, where you compute a summary but also pass in some previous interactions directly!
 
 ## Entity Memory
