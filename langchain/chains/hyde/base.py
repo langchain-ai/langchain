@@ -52,7 +52,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):
     def embed_query(self, text: str) -> List[float]:
         """Generate a hypothetical document and embedded it."""
         var_name = self.llm_chain.input_keys[0]
-        result = self.llm_chain.generate([{var_name: text}])
+        result, _ = self.llm_chain.generate([{var_name: text}])
         documents = [generation.text for generation in result.generations[0]]
         embeddings = self.embed_documents(documents)
         return self.combine_embeddings(embeddings)
