@@ -36,6 +36,8 @@ In the below guides, we cover different types of vectorstores and how to use the
 
 `Chroma <./vectorstore_examples/chroma.html>`_: A walkthrough of how to use the Chroma vectorstore wrapper.
 
+`AtlasDB <./vectorstore_examples/atlas.html>`_: A walkthrough of how to use the AtlasDB vectorstore and visualizer wrapper.
+
 `DeepLake <./vectorstore_examples/deeplake.html>`_: A walkthrough of how to use the Deep Lake, data lake, wrapper.
 
 `FAISS <./vectorstore_examples/faiss.html>`_: A walkthrough of how to use the FAISS vectorstore wrapper.

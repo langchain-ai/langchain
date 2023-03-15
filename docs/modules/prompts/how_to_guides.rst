@@ -32,3 +32,4 @@ The user guide here shows more advanced workflows and how to use the library in 
    ./examples/prompt_serialization.ipynb
    ./examples/few_shot_examples_data.ipynb
    ./examples/example_selectors.ipynb
+   ./examples/output_parsers.ipynb
