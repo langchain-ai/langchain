@@ -40,15 +40,14 @@ In code, below:
 import os
 
 # get from https://platform.openai.com/
-os.environ["OPENAI_API_KEY"] = "..."
+os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "")
 
-# get from https://nla.zapier.com/demo/provider/debug (under User, after logging in):
-os.environ["ZAPIER_NLA_API_KEY"] = "..."
+# get from https://nla.zapier.com/demo/provider/debug (under User Information, after logging in):
+os.environ["ZAPIER_NLA_API_KEY"] = os.environ.get("ZAPIER_NLA_API_KEY", "")
 
 from langchain.llms import OpenAI
-from langchain.chains import LLMChain, TransformChain, SimpleSequentialChain
-from langchain.prompts import PromptTemplate
-from langchain.tools.zapier import ZapierNLAListActions, ZapierNLARunAction
+from langchain.agents import initialize_agent
+from langchain.agents.agent_toolkits import ZapierToolkit
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 ## step 0. expose gmail 'find email' and slack 'send channel message' actions
@@ -59,64 +58,18 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 # in an oauth scenario, you'd get your own <provider> id (instead of 'demo')
 # which you route your users through first
 
-actions = ZapierNLAWrapper().list()
-
-## step 1. gmail find email
-
-GMAIL_SEARCH_INSTRUCTIONS = "Grab the latest email from Bryan Helmig"
-
-def nla_gmail(inputs):
-    action = next((
-        a for a in actions if a["description"].startswith("Gmail: Find Email")
-    ), None)
-    data = ZapierNLARunAction(action_id=action["id"]).run(inputs["instructions"])
-    return {
-        "email_data": data
-    }
-gmail_chain = TransformChain(
-    input_variables=["instructions"],
-    output_variables=["email_data"],
-    transform=nla_gmail
-)
-
-## step 2. generate draft reply
-
-template = \"""You are an assisstant who drafts replies to an incoming email.
-Output draft reply in plain text (not JSON).
-
-Incoming email:
-{email_data}
-
-Draft email reply:\"""
-
-prompt_template = PromptTemplate(input_variables=["email_data"], template=template)
-reply_chain = LLMChain(llm=OpenAI(temperature=.7), prompt=prompt_template)
-
-## step 3. send draft reply via a slack direct message
-
-SLACK_HANDLE = "@knoop"
-
-def nla_slack(inputs):
-    action = next(
-        (a for a in actions if a["description"].startswith("Slack: Send Direct Message")
-    ), None)
-    instructions = f'Send this to {SLACK_HANDLE} in Slack: {inputs["draft_reply"]}'
-    return {"slack_data": ZapierNLARunAction(action_id=action["id"]).run(instructions)}
-slack_chain = TransformChain(
-    input_variables=["draft_reply"],
-    output_variables=["slack_data"],
-    transform=nla_slack
-)
-
-## finally, execute
-
-overall_chain = SimpleSequentialChain(
-    chains=[gmail_chain, reply_chain, slack_chain],
+llm = OpenAI(temperature=0)
+zapier = ZapierNLAWrapper()
+toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
+agent = initialize_agent(
+    toolkit.get_tools(),
+    llm,
+    agent="zero-shot-react-description",
     verbose=True
 )
-overall_chain.run(GMAIL_SEARCH_INSTRUCTIONS)
 
-
+agent.run(("Summarize the last email I received regarding Silicon Valley Bank. "
+    "Send the summary to the #test-zapier channel in slack."))
 ```
 
 """
