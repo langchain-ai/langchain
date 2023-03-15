@@ -1,11 +1,52 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
+from abc import ABC, abstractmethod
 import json
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+
+
+class ContentHandlerBase(ABC):
+    """A handler class to transform input from LLM to a
+    format that SageMaker endpoint expects. Similarily,
+    the class also handles transforming output from the
+    SageMaker endpoint to a format that LLM class expects.
+    """
+
+    """
+    Example:
+        .. code-block:: python
+
+            class ContentHandler(ContentHandlerBase):
+                content_type = "application/json"
+
+                def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
+                    input_str = json.dumps({prompt: prompt, **model_kwargs})
+                    return input_str.encode('utf-8')
+                
+                def transform_output(self, output: bytes) -> str:
+                    response_json = json.loads(output.read().decode("utf-8"))
+                    return response_json[0]["generated_text"]
+    """
+
+    content_type: Optional[str] = "text/plain"
+
+    @abstractmethod
+    def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
+        """Transforms the input to a format that model can accept
+        as the request Body. Should return bytes or seekable file
+        like object in the format specified in the content_type
+        request header.
+        """
+
+    @abstractmethod
+    def transform_output(self, output: bytes) -> str:
+        """Transforms the output from the model to string that
+        the LLM class expects.
+        """
 
 
 class SagemakerEndpoint(LLM, BaseModel):
@@ -63,18 +104,7 @@ class SagemakerEndpoint(LLM, BaseModel):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    content_type: Optional[str] = "application/json"
-    """The MIME type of the input data in the request body to be used in the header
-    for the request to the Sagemaker invoke_endpoint API.
-    Defaults to "application/json"."""
-
-    model_input_transform_fn: Callable[[str, Dict], bytes]
-    """
-    Function which takes the prompt (str) and model_kwargs (dict) and transforms
-    the input to the format which the model can accept as the request Body.
-    Should return bytes or seekable file-like object in the format specified in the
-    content_type request header.
-    """
+    content_handler: Type[ContentHandlerBase]
 
     """
     Example:
@@ -156,21 +186,18 @@ class SagemakerEndpoint(LLM, BaseModel):
                 response = se("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
-        if self.model_input_transform_fn is None:
-            raise NotImplementedError("model_input_transform_fn not implemented")
 
         # send request
         try:
             response = self.client.invoke_endpoint(
                 EndpointName=self.endpoint_name,
-                Body=self.model_input_transform_fn(prompt, _model_kwargs),
-                ContentType=self.content_type,
+                Body=self.content_handler.transform_input(prompt, _model_kwargs),
+                ContentType=self.content_handler.content_type,
             )
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
-        response_json = json.loads(response["Body"].read().decode("utf-8"))
-        text = response_json[0]["generated_text"]
+        text = self.content_handler.transform_output(response["Body"])
         if stop is not None:
             # This is a bit hacky, but I can't figure out a better way to enforce
             # stop tokens when making calls to the sagemaker endpoint.
