@@ -3,13 +3,20 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
+from langchain.output_parsers.base import OutputGuardrail
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
+from langchain.schema import (
+    BaseLanguageModel,
+    Guardrail,
+    LLMResult,
+    PromptValue,
+    ValidationError,
+)
 
 
 class LLMChain(Chain, BaseModel):
@@ -30,6 +37,8 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
+    output_parser: Optional[OutputGuardrail] = None
+    guardrails: List[Guardrail] = Field(default_factory=list)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -56,15 +65,19 @@ class LLMChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
 
-    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+    def generate(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[LLMResult, List[PromptValue]]:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        return self.llm.generate_prompt(prompts, stop)
+        return self.llm.generate_prompt(prompts, stop), prompts
 
-    async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
+    async def agenerate(
+        self, input_list: List[Dict[str, Any]]
+    ) -> Tuple[LLMResult, List[PromptValue]]:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        return await self.llm.agenerate_prompt(prompts, stop)
+        return await self.llm.agenerate_prompt(prompts, stop), prompts
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
@@ -115,20 +128,37 @@ class LLMChain(Chain, BaseModel):
 
     def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = self.generate(input_list)
-        return self.create_outputs(response)
+        response, prompts = self.generate(input_list)
+        return self.create_outputs(response, prompts)
 
     async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = await self.agenerate(input_list)
-        return self.create_outputs(response)
+        response, prompts = await self.agenerate(input_list)
+        return self.create_outputs(response, prompts)
 
-    def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
+    def _get_final_output(self, text: str, prompt_value: PromptValue) -> Any:
+        result: Any = text
+        for guardrail in self.guardrails:
+            if isinstance(guardrail, OutputGuardrail):
+                try:
+                    result = guardrail.output_parser.parse(result)
+                    error = None
+                except Exception as e:
+                    error = ValidationError(text=e)
+            else:
+                error = guardrail.check(prompt_value, result)
+            if error is not None:
+                result = guardrail.fix(prompt_value, result, error)
+        return result
+
+    def create_outputs(
+        self, response: LLMResult, prompts: List[PromptValue]
+    ) -> List[Dict[str, str]]:
         """Create outputs from response."""
         return [
             # Get the text of the top generated string.
-            {self.output_key: generation[0].text}
-            for generation in response.generations
+            {self.output_key: self._get_final_output(generation[0].text, prompts[i])}
+            for i, generation in enumerate(response.generations)
         ]
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
