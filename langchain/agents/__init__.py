@@ -8,6 +8,7 @@ from langchain.agents.agent_toolkits import (
     create_sql_agent,
     create_vectorstore_agent,
     create_vectorstore_router_agent,
+    create_gmail_agent,
 )
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.initialize import initialize_agent
@@ -40,4 +41,5 @@ __all__ = [
     "create_vectorstore_agent",
     "create_pandas_dataframe_agent",
     "create_csv_agent",
+    "create_gmail_agent",
 ]
