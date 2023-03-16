@@ -64,6 +64,7 @@ class AgentOutputParser(BaseOutputParser):
                 response["action"] = cleaned_output.split('"action": "', 1)[1].split('",', 1)[0].strip()
                 response["action_input"] = cleaned_output.split('"action_input": "', 1)[1].split('"}', 1)[0].strip()
             except IndexError:
+
                 raise ValueError("Invalid input format. Unable to extract 'action' and 'action_input' from the text.")
 
         return {"action": response["action"], "action_input": response["action_input"]}
@@ -123,7 +124,7 @@ class ConversationalChatAgent(Agent):
             response = self.output_parser.parse(llm_output)
             return response["action"], response["action_input"]
         except Exception:
-            raise ValueError(f"Could not parse LLM output: {llm_output}")
+            return "Final Answer", llm_output
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
