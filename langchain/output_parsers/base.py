@@ -46,4 +46,4 @@ class OutputGuardrail(Guardrail, BaseModel):
     def fix(
         self, prompt_value: PromptValue, result: Any, error: ValidationError
     ) -> Any:
-        return self.fix(prompt_value, result, error)
+        return self.fixer(prompt_value, result, error)
