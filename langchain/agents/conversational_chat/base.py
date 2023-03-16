@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple, Dict
 
 from langchain.agents.agent import Agent
 from langchain.agents.conversational_chat.prompt import (
@@ -32,11 +32,17 @@ from langchain.tools.base import BaseTool
 
 
 class AgentOutputParser(BaseOutputParser):
+    """
+    A parser class to extract action and action_input from LLM 
+    output text. It processes the text by removing code block 
+    delimiters and extracts the necessary information.
+    """
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> Dict[str, str]:
         cleaned_output = text.strip()
+
         if "```json" in cleaned_output:
             _, cleaned_output = cleaned_output.split("```json")
         if cleaned_output.startswith("```json"):
@@ -45,8 +51,21 @@ class AgentOutputParser(BaseOutputParser):
             cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
+
         cleaned_output = cleaned_output.strip()
-        response = json.loads(cleaned_output)
+
+        try:
+            response = json.loads(cleaned_output)
+        except json.JSONDecodeError:
+            response = {}
+            cleaned_output = cleaned_output.replace('\n', '')
+
+            try:
+                response["action"] = cleaned_output.split('"action": "', 1)[1].split('",', 1)[0].strip()
+                response["action_input"] = cleaned_output.split('"action_input": "', 1)[1].split('"}', 1)[0].strip()
+            except IndexError:
+                raise ValueError("Invalid input format. Unable to extract 'action' and 'action_input' from the text.")
+
         return {"action": response["action"], "action_input": response["action_input"]}
 
 
