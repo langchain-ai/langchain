@@ -66,6 +66,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "modal": Modal,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
+    "openai-chat": OpenAIChat,
     "petals": Petals,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
