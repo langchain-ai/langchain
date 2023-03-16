@@ -7,6 +7,7 @@ from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain.output_parsers.pydantic import PydanticOutputParser
 
 __all__ = [
     "RegexParser",
@@ -17,4 +18,5 @@ __all__ = [
     "StructuredOutputParser",
     "ResponseSchema",
     "GuardrailsOutputParser",
+    "PydanticOutputParser"
 ]
