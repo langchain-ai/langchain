@@ -1,7 +1,6 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
 from abc import ABC, abstractmethod
-import json
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -22,6 +21,7 @@ class ContentHandlerBase(ABC):
 
             class ContentHandler(ContentHandlerBase):
                 content_type = "application/json"
+                accepts = "application/json"
 
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
@@ -33,6 +33,10 @@ class ContentHandlerBase(ABC):
     """
 
     content_type: Optional[str] = "text/plain"
+    """The MIME type of the input data passed to endpoint"""
+
+    accepts: Optional[str] = "text/plain"
+    """The MIME type of the response data returned from endpoint"""
 
     @abstractmethod
     def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
@@ -73,7 +77,7 @@ class SagemakerEndpoint(LLM, BaseModel):
 
             from langchain import SagemakerEndpoint
             endpoint_name = (
-                "https://runtime.sagemaker.us-west-2.amazonaws.com/endpoints/abcdefghijklmnop/invocations"
+                "my-endpoint-name"
             )
             region_name = (
                 "us-west-2"
@@ -104,7 +108,7 @@ class SagemakerEndpoint(LLM, BaseModel):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    content_handler: Type[ContentHandlerBase]
+    content_handler: ContentHandlerBase
     """The content handler class that provides an input and
     output transform functions to handle formats between LLM
     and the endpoint.
@@ -116,6 +120,7 @@ class SagemakerEndpoint(LLM, BaseModel):
 
         class ContentHandler(ContentHandlerBase):
                 content_type = "application/json"
+                accepts = "application/json"
 
                 def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
                     input_str = json.dumps({prompt: prompt, **model_kwargs})
@@ -128,6 +133,12 @@ class SagemakerEndpoint(LLM, BaseModel):
 
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
+
+    endpoint_kwargs: Optional[Dict] = None
+    """Optional attributes passed to the invoke_endpoint
+    function. See `boto3`_. docs for more info.
+    .. _boto3: <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -197,13 +208,20 @@ class SagemakerEndpoint(LLM, BaseModel):
                 response = se("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
+        _endpoint_kwargs = self.endpoint_kwargs or {}
+
+        body = self.content_handler.transform_input(prompt, _model_kwargs)
+        content_type = self.content_handler.content_type
+        accepts = self.content_handler.accepts
 
         # send request
         try:
             response = self.client.invoke_endpoint(
                 EndpointName=self.endpoint_name,
-                Body=self.content_handler.transform_input(prompt, _model_kwargs),
-                ContentType=self.content_handler.content_type,
+                Body=body,
+                ContentType=content_type,
+                Accept=accepts,
+                **_endpoint_kwargs,
             )
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
