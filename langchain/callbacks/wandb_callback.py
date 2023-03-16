@@ -276,6 +276,47 @@ class BaseMetadataCallbackHandler:
             "agent_ends": self.agent_ends,
         }
 
+    def reset_callback_meta(self):
+        """Reset the callback metadata."""
+        self.step: int = 0
+
+        self.starts: int = 0
+        self.ends: int = 0
+        self.errors: int = 0
+        self.text_ctr: int = 0
+
+        self.ignore_llm_: bool = False
+        self.ignore_chain_: bool = False
+        self.ignore_agent_: bool = False
+        self.always_verbose_: bool = False
+
+        self.chain_starts: int = 0
+        self.chain_ends: int = 0
+
+        self.llm_starts: int = 0
+        self.llm_ends: int = 0
+        self.llm_streams: int = 0
+
+        self.tool_starts: int = 0
+        self.tool_ends: int = 0
+
+        self.agent_ends: int = 0
+
+        self.on_llm_start_records = []
+        self.on_llm_token_records = []
+        self.on_llm_end_records = []
+
+        self.on_chain_start_records = []
+        self.on_chain_end_records = []
+
+        self.on_tool_start_records = []
+        self.on_tool_end_records = []
+
+        self.on_text_records = []
+        self.on_agent_finish_records = []
+        self.on_agent_action_records = []
+        return None
+
 
 class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     """Callback Handler that logs to Weights and Biases.
@@ -690,13 +731,16 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
                 langchain_asset.save_agent(langchain_asset_path)
                 model_artifact.add_file(langchain_asset_path)
                 model_artifact.metadata = load_json_to_dict(langchain_asset_path)
-            except NotImplementedError:
+            except NotImplementedError as e:
+                print("Could not save model.")
+                print(e.message)
                 pass
             self.run.log_artifact(model_artifact)
 
         if finish or reset:
             self.run.finish()
             self.temp_dir.cleanup()
+            self.reset_callback_meta()
         if reset:
             self.__init__(
                 job_type=job_type if job_type else self.job_type,
