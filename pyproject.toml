@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.112"
+version = "0.0.113"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -51,6 +51,9 @@ pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.2.9", optional = true}
+pgvector = {version = "^0.1.6", optional = true}
+psycopg2-binary = {version = "^2.9.5", optional = true}
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -97,7 +100,7 @@ playwright = "^1.28.0"
 
 [tool.poetry.extras]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", ]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary"]
 
 [tool.ruff]
 select = [

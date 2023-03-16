@@ -52,6 +52,8 @@ In the below guides, we cover different types of vectorstores and how to use the
 
 `Weaviate <./vectorstore_examples/weaviate.html>`_: A walkthrough of how to use the Weaviate vectorstore wrapper.
 
+`PGVector <./vectorstore_examples/pgvector.html>`_: A walkthrough of how to use the PGVector (Postgres Vector DB) vectorstore wrapper.
+
 
 .. toctree::
    :maxdepth: 1
