@@ -1,20 +1,30 @@
 import json
 import re
+from typing import Any
 
-from pydantic import BaseModel
+
+from pydantic import BaseModel, ValidationError
 from langchain.output_parsers.base import BaseOutputParser
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
 
 
 class PydanticOutputParser(BaseOutputParser):
 
-    pydantic_object: BaseModel
+    pydantic_object: Any
 
     def parse(self, text: str) -> BaseModel:
-        # Greedy search for 1st json candidate.
-        json_str = re.search('\{.*\}', text.strip())
-        json_object = json.loads(json_str)
-        return self.pydantic_object.parse_obj(json_object)
+        try:
+            # Greedy search for 1st json candidate.
+            match = re.search('\{.*\}', text.strip())
+            json_str = ''
+            if match:
+                json_str = match.group()
+            json_object = json.loads(json_str)
+            return self.pydantic_object.parse_obj(json_object)
+
+        except (json.JSONDecodeError, ValidationError) as e:
+            raise ValueError(f"Failed to parse {self.pydantic_object.__name__} from completion {text}. Got: {e} ")
+
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()
