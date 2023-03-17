@@ -2,6 +2,7 @@
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
+from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv import CSVLoader
@@ -102,4 +103,5 @@ __all__ = [
     "GoogleApiYoutubeLoader",
     "GoogleApiClient",
     "CSVLoader",
+    "BlackboardLoader",
 ]
