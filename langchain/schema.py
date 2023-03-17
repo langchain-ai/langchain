@@ -205,7 +205,7 @@ class BaseLanguageModel(BaseModel, ABC):
         # calculate the number of tokens in the tokenized text
         return len(tokenized_text)
 
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]):
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the message."""
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 

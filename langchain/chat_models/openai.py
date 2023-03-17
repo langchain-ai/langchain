@@ -320,7 +320,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens_from_messages(
         self, messages: List[BaseMessage], model: str = "gpt-3.5-turbo-0301"
-    ):
+    ) -> int:
         """Calculate num tokens for gpt-3.5-turbo with tiktoken package."""
         try:
             import tiktoken
@@ -340,7 +340,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             num_tokens = 0
             messages_dict = [_convert_message_to_dict(m) for m in messages]
             for message in messages_dict:
-                num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+                # every message follows <im_start>{role/name}\n{content}<im_end>\n
+                num_tokens += 4
                 for key, value in message.items():
                     num_tokens += len(encoding.encode(value))
                     if key == "name":  # if there's a name, the role is omitted
@@ -349,6 +350,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             return num_tokens
         else:
             raise NotImplementedError(
-                f"""get_num_tokens_from_messages() is not presently implemented for model {model}.
-    See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
+                f"get_num_tokens_from_messages() is not presently implemented "
+                f"for model {model}."
+                "See https://github.com/openai/openai-python/blob/main/chatml.md for "
+                "information on how messages are converted to tokens."
             )
