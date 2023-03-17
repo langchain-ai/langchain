@@ -453,9 +453,15 @@ class AgentExecutor(Chain, BaseModel):
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
-        self.callback_manager.on_agent_action(
-            output, verbose=self.verbose, color="green"
-        )
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_agent_action(
+                output, verbose=self.verbose, color="green"
+            )
+        else:
+            self.callback_manager.on_agent_action(
+                output, verbose=self.verbose, color="green"
+            )
+
         # Otherwise we lookup the tool
         if output.tool in name_to_tool_map:
             tool = name_to_tool_map[output.tool]
