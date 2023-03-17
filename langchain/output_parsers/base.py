@@ -11,6 +11,12 @@ from langchain.schema import Fixer, Guardrail, PromptValue, ValidationError
 class BaseOutputParser(BaseModel, ABC):
     """Class to parse the output of an LLM call."""
 
+    Exception: ValidationError = ValidationError
+
+    @property
+    def Exception(self) -> ValidationError:
+        return self.__class__.Exception
+
     @abstractmethod
     def parse(self, text: str) -> Any:
         """Parse the output of an LLM call."""
@@ -41,7 +47,7 @@ class OutputGuardrail(Guardrail, BaseModel):
             self.output_parser.parse(result)
             return None
         except Exception as e:
-            return ValidationError(text=e)
+            return self.output_parser.Exception(text=e)
 
     def fix(
         self, prompt_value: PromptValue, result: Any, error: ValidationError

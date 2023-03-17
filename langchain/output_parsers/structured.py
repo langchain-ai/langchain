@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from langchain.output_parsers.base import BaseOutputParser
 from langchain.output_parsers.format_instructions import STRUCTURED_FORMAT_INSTRUCTIONS
+from langchain.schema import ValidationError
 
 line_template = '\t"{name}": {type}  // {description}'
 
@@ -22,7 +23,13 @@ def _get_sub_string(schema: ResponseSchema) -> str:
     )
 
 
+class StructuredOutputParserException(ValidationError):
+    pass
+
+
 class StructuredOutputParser(BaseOutputParser):
+    Exception = StructuredOutputParserException
+
     response_schemas: List[ResponseSchema]
 
     @classmethod

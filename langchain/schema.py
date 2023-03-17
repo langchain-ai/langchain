@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic.dataclasses import dataclass
 
 
 class AgentAction(NamedTuple):
@@ -222,7 +223,8 @@ class BaseMemory(BaseModel, ABC):
 Memory = BaseMemory
 
 
-class ValidationError(BaseModel):
+@dataclass
+class ValidationError(Exception):
     error_message: str
 
 
