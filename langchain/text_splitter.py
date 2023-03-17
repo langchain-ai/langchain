@@ -355,6 +355,37 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
+class LatexTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Latex-formatted layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a LatexTextSplitter."""
+        separators = [
+            # First, try to split along Latex sections
+            "\n\\chapter{",
+            "\n\\section{",
+            "\n\\subsection{",
+            "\n\\subsubsection{",
+            # Now split by environments
+            "\n\\begin{enumerate}",
+            "\n\\begin{itemize}",
+            "\n\\begin{description}",
+            "\n\\begin{list}",
+            "\n\\begin{quote}",
+            "\n\\begin{quotation}",
+            "\n\\begin{verse}",
+            "\n\\begin{verbatim}",
+            ## Now split by math environments
+            "\n\\begin{align}",
+            "$$",
+            "$",
+            # Now split by the normal type of lines
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
 class PythonCodeTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Python syntax."""
 
