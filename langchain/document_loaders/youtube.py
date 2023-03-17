@@ -177,7 +177,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
     As the service needs a google_api_client, you first have to initialize
     the GoogleApiClient.
 
-    Additonali you have to either provide a channel name or a list of videoids
+    Additionally you have to either provide a channel name or a list of videoids
     "https://developers.google.com/docs/api/quickstart/python"
 
 
