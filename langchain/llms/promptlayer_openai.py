@@ -17,8 +17,12 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     promptlayer key respectively.
 
     All parameters that can be passed to the OpenAI LLM can also
-    be passed here. The PromptLayerOpenAI LLM adds an extra
-    ``pl_tags`` parameter that can be used to tag the request.
+    be passed here. The PromptLayerOpenAI LLM adds two optional
+    parameters:
+        ``pl_tags``: List of strings to tag the request with.
+        ``return_pl_id``: If True, the PromptLayer request ID will be
+            returned in the ``generation_info`` field of the
+            ``Generation`` object.
 
     Example:
         .. code-block:: python
@@ -28,6 +32,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     """
 
     pl_tags: Optional[List[str]]
+    return_pl_id: Optional[bool] = False
 
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -40,11 +45,12 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
+            generation = generated_responses.generations[i][0]
             resp = {
-                "text": generated_responses.generations[i][0].text,
+                "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerOpenAI",
                 "langchain",
                 [prompt],
@@ -54,7 +60,14 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
 
     async def _agenerate(
@@ -67,11 +80,12 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
+            generation = generated_responses.generations[i][0]
             resp = {
-                "text": generated_responses.generations[i][0].text,
+                "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerOpenAI.async",
                 "langchain",
                 [prompt],
@@ -81,7 +95,14 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
 
 
@@ -94,8 +115,12 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     promptlayer key respectively.
 
     All parameters that can be passed to the OpenAIChat LLM can also
-    be passed here. The PromptLayerOpenAIChat LLM adds an extra
-    ``pl_tags`` parameter that can be used to tag the request.
+    be passed here. The PromptLayerOpenAIChat adds two optional
+    parameters:
+        ``pl_tags``: List of strings to tag the request with.
+        ``return_pl_id``: If True, the PromptLayer request ID will be
+            returned in the ``generation_info`` field of the
+            ``Generation`` object.
 
     Example:
         .. code-block:: python
@@ -105,6 +130,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     """
 
     pl_tags: Optional[List[str]]
+    return_pl_id: Optional[bool] = False
 
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
@@ -117,11 +143,12 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
+            generation = generated_responses.generations[i][0]
             resp = {
-                "text": generated_responses.generations[i][0].text,
+                "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            promptlayer_api_request(
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerOpenAIChat",
                 "langchain",
                 [prompt],
@@ -131,7 +158,14 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
 
     async def _agenerate(
@@ -144,16 +178,27 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         request_end_time = datetime.datetime.now().timestamp()
         for i in range(len(prompts)):
             prompt = prompts[i]
-            resp = generated_responses.generations[i]
-            promptlayer_api_request(
+            generation = generated_responses.generations[i][0]
+            resp = {
+                "text": generation.text,
+                "llm_output": generated_responses.llm_output,
+            }
+            pl_request_id = promptlayer_api_request(
                 "langchain.PromptLayerOpenAIChat.async",
                 "langchain",
                 [prompt],
                 self._identifying_params,
                 self.pl_tags,
-                resp[0].text,
+                resp,
                 request_start_time,
                 request_end_time,
                 get_api_key(),
+                return_pl_id=self.return_pl_id,
             )
+            if self.return_pl_id:
+                if generation.generation_info is None or not isinstance(
+                    generation.generation_info, dict
+                ):
+                    generation.generation_info = {}
+                generation.generation_info["pl_request_id"] = pl_request_id
         return generated_responses
