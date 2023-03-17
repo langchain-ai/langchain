@@ -8,11 +8,9 @@ STRUCTURED_FORMAT_INSTRUCTIONS = """The output should be a markdown code snippet
 }}
 ```"""
 
-PYDANTIC_FORMAT_INSTRUCTIONS = """The following is a JSON Schema object.
+PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below. For example, the object {{"foo":  ["bar", "baz"]}} conforms to the schema {{"foo": {{"description": "a list of strings field", "type": "string"}}}}.
 
-------------
+Here is the output schema:
+```
 {schema}
--------------
-
-Please respond with a instance that can be validated against this JSON Schema."""
-
+```"""
