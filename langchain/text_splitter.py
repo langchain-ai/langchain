@@ -354,6 +354,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         ]
         super().__init__(separators=separators, **kwargs)
 
+
 class LatexTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Latex-formatted layout elements."""
 
@@ -365,7 +366,6 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
             "\n\\section{",
             "\n\\subsection{",
             "\n\\subsubsection{",
-
             # Now split by environments
             "\n\\begin{enumerate}",
             "\n\\begin{itemize}",
@@ -375,12 +375,10 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
             "\n\\begin{quotation}",
             "\n\\begin{verse}",
             "\n\\begin{verbatim}",
-
             ## Now split by math environments
             "\n\\begin{align}",
             "$$",
             "$",
-
             # Now split by the normal type of lines
             " ",
             "",
