@@ -6,8 +6,8 @@ from typing import Any, List, Optional, Tuple
 from urllib.parse import unquote
 
 from langchain.docstore.document import Document
+from langchain.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.document_loaders import PyPDFLoader, DirectoryLoader
 
 
 class BlackboardLoader(WebBaseLoader):
@@ -169,7 +169,7 @@ class BlackboardLoader(WebBaseLoader):
         Returns:
             List of attachments.
         """
-        from bs4 import Tag, BeautifulSoup
+        from bs4 import BeautifulSoup, Tag
 
         # Get content list
         content_list = soup.find("ul", {"class": "contentList"})
