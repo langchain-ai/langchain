@@ -13,4 +13,4 @@ For more detailed information on tools, and different types of tools in LangChai
 Toolkits are groups of tools that are best used together.
 They allow you to logically group and initialize a set of tools that share a particular resource (such as a database connection or json object). 
 They can be used to construct an agent for a specific use-case.
-For more detailed information on toolkits and their use cases, see [this documentation](how_to_guides.rst#agent-toolkits).
+For more detailed information on toolkits and their use cases, see [this documentation](how_to_guides.rst#agent-toolkits) (the "Agent Toolkits" section).
