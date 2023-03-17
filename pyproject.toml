@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 pydantic = "^1"
 SQLAlchemy = "^1"
 requests = "^2"
-PyYAML = "^6"
+PyYAML = ">=5.4.1"
 numpy = "^1"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
