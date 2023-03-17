@@ -3,8 +3,7 @@ from typing import Any, Dict, List
 from pydantic import BaseModel
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.memory.utils import get_buffer_string
-from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.schema import BaseLanguageModel, BaseMessage, get_buffer_string
 
 
 class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
@@ -29,10 +28,6 @@ class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
         """
         return [self.memory_key]
 
-    def get_num_tokens_list(self, arr: List[BaseMessage]) -> List[int]:
-        """Get list of number of tokens in each string in the input array."""
-        return [self.llm.get_num_tokens(get_buffer_string([x])) for x in arr]
-
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         buffer: Any = self.buffer
@@ -51,9 +46,9 @@ class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
         super().save_context(inputs, outputs)
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
-        curr_buffer_length = sum(self.get_num_tokens_list(buffer))
+        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = sum(self.get_num_tokens_list(buffer))
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
