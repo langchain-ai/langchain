@@ -10,9 +10,9 @@ from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
-from langchain.memory.utils import get_buffer_string, get_prompt_input_key
+from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, SystemMessage
+from langchain.schema import BaseLanguageModel, SystemMessage, get_buffer_string
 
 
 class ConversationKGMemory(BaseChatMemory, BaseModel):
