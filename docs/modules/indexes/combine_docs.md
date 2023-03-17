@@ -19,20 +19,20 @@ to pass to the language model. This is implemented in LangChain as the `StuffDoc
 
 **Cons:** Most LLMs have a context length, and for large documents (or many documents) this will not work as it will result in a prompt larger than the context length.
 
-The main downside of this method is that it only works on smaller pieces of data. Once you are working
+The main downside of this method is that it only works one smaller pieces of data. Once you are working
 with many pieces of data, this approach is no longer feasible. The next two approaches are designed to help deal with that.
 
 ## Map Reduce
-This method involves running an initial prompt on each chunk of data (for summarization tasks, this 
+This method involves an initial prompt on each chunk of data (for summarization tasks, this 
 could be a summary of that chunk; for question-answering tasks, it could be an answer based solely on that chunk).
 Then a different prompt is run to combine all the initial outputs. This is implemented in the LangChain as the `MapReduceDocumentsChain`.
 
 **Pros:** Can scale to larger documents (and more documents) than `StuffDocumentsChain`. The calls to the LLM on individual documents are independent and can therefore be parallelized.
 
-**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. Loses some information during the final combined call.
+**Cons:** Requires many more calls to the LLM than `StuffDocumentsChain`. Loses some information during the final combining call.
 
 ## Refine
-This method involves running an initial prompt on the first chunk of data, generating some output.
+This method involves an initial prompt on the first chunk of data, generating some output.
 For the remaining documents, that output is passed in, along with the next document, 
 asking the LLM to refine the output based on the new document. 
 
@@ -46,6 +46,6 @@ This method involves running an initial prompt on each chunk of data, that not o
 task but also gives a score for how certain it is in its answer. The responses are then
 ranked according to this score, and the highest score is returned.
 
-**Pros:** Similar pros as `MapReduceDocumentsChain`. Requires fewer calls, compared to `MapReduceDocumentsChain`.
+**Pros:** Similar pros as `MapReduceDocumentsChain`. Compared to `MapReduceDocumentsChain`, it requires fewer calls.
 
 **Cons:** Cannot combine information between documents. This means it is most useful when you expect there to be a single simple answer in a single document.

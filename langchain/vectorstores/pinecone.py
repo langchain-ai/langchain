@@ -56,7 +56,6 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
-        batch_size: int = 32,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -80,7 +79,7 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
+        self._index.upsert(vectors=docs, namespace=namespace)
         return ids
 
     def similarity_search_with_score(

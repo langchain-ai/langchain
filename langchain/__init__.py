@@ -33,7 +33,6 @@ from langchain.llms import (
     Modal,
     OpenAI,
     Petals,
-    SagemakerEndpoint,
     StochasticAI,
     Writer,
 )
@@ -91,7 +90,6 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
-    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",

@@ -8,9 +8,9 @@ from langchain.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     ENTITY_SUMMARIZATION_PROMPT,
 )
-from langchain.memory.utils import get_prompt_input_key
+from langchain.memory.utils import get_buffer_string, get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, get_buffer_string
+from langchain.schema import BaseLanguageModel, BaseMessage
 
 
 class ConversationEntityMemory(BaseChatMemory, BaseModel):

@@ -18,7 +18,7 @@ ALWAYS use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
-Action:
+Action: 
 ```
 $JSON_BLOB
 ```

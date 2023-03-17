@@ -1,8 +1,7 @@
 version: 2
 sphinx:
   configuration: docs/conf.py
-formats:
-  - htmlzip
+formats: all
 python:
   version: 3.8
   install:

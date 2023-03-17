@@ -3,7 +3,8 @@ from typing import Any, Dict, List
 from pydantic import BaseModel
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import BaseMessage, get_buffer_string
+from langchain.memory.utils import get_buffer_string
+from langchain.schema import BaseMessage
 
 
 class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):

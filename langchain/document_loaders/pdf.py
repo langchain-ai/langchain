@@ -18,7 +18,7 @@ class UnstructuredPDFLoader(UnstructuredFileLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.pdf import partition_pdf
 
-        return partition_pdf(filename=self.file_path, **self.unstructured_kwargs)
+        return partition_pdf(filename=self.file_path)
 
 
 class BasePDFLoader(BaseLoader, ABC):
@@ -63,46 +63,6 @@ class BasePDFLoader(BaseLoader, ABC):
         """Check if the url is valid."""
         parsed = urlparse(url)
         return bool(parsed.netloc) and bool(parsed.scheme)
-
-
-class OnlinePDFLoader(BasePDFLoader):
-    """Loader that loads online PDFs."""
-
-    def load(self) -> List[Document]:
-        """Load documents."""
-        loader = UnstructuredPDFLoader(str(self.file_path))
-        return loader.load()
-
-
-class PyPDFLoader(BasePDFLoader):
-    """Loads a PDF with pypdf and chunks at character level.
-
-    Loader also stores page numbers in metadatas.
-    """
-
-    def __init__(self, file_path: str):
-        """Initialize with file path."""
-        try:
-            import pypdf  # noqa:F401
-        except ImportError:
-            raise ValueError(
-                "pypdf package not found, please install it with " "`pip install pypdf`"
-            )
-        super().__init__(file_path)
-
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        import pypdf
-
-        with open(self.file_path, "rb") as pdf_file_obj:
-            pdf_reader = pypdf.PdfReader(pdf_file_obj)
-            return [
-                Document(
-                    page_content=page.extract_text(),
-                    metadata={"source": self.file_path, "page": i},
-                )
-                for i, page in enumerate(pdf_reader.pages)
-            ]
 
 
 class PDFMinerLoader(BasePDFLoader):

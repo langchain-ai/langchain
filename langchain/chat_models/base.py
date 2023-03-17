@@ -127,7 +127,7 @@ class SimpleChatModel(BaseChatModel):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         output_str = self._call(messages, stop=stop)
-        message = AIMessage(content=output_str)
+        message = AIMessage(text=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 

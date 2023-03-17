@@ -34,8 +34,7 @@ search = GoogleSerperAPIWrapper()
 tools = [
     Tool(
         name="Intermediate Answer",
-        func=search.run,
-        description="useful for when you need to ask with search"
+        func=search.run
     )
 ]
 

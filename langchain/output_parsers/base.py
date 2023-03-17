@@ -13,9 +13,6 @@ class BaseOutputParser(BaseModel, ABC):
     def parse(self, text: str) -> Any:
         """Parse the output of an LLM call."""
 
-    def get_format_instructions(self) -> str:
-        raise NotImplementedError
-
     @property
     def _type(self) -> str:
         """Return the type key."""

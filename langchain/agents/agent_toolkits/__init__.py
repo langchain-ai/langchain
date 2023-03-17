@@ -18,7 +18,6 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
-from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 
 __all__ = [
     "create_json_agent",
@@ -35,5 +34,4 @@ __all__ = [
     "VectorStoreRouterToolkit",
     "create_pandas_dataframe_agent",
     "create_csv_agent",
-    "ZapierToolkit",
 ]
