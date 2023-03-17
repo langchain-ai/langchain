@@ -25,7 +25,7 @@ class BSHTMLLoader(BaseLoader):
         text = soup.get_text()
 
         if soup.title:
-            title = soup.title.string
+            title = str(soup.title.string)
         else:
             title = ""
 
