@@ -126,12 +126,6 @@ class SQLDatabase:
                 # build the select command
                 command = select(table).limit(self._sample_rows_in_table_info)
 
-                # save the command in string format
-                select_star = (
-                    f"SELECT * FROM '{table.name}' LIMIT "
-                    f"{self._sample_rows_in_table_info}"
-                )
-
                 # save the columns in string format
                 columns_str = "\t".join([col.name for col in table.columns])
 
@@ -152,15 +146,17 @@ class SQLDatabase:
                 except ProgrammingError:
                     sample_rows_str = ""
 
-                # build final info for table
-                tables.append(
-                    create_table
-                    + select_star
-                    + ";\n"
-                    + columns_str
-                    + "\n"
-                    + sample_rows_str
+                table_info = (
+                    f"{create_table.rstrip()}\n"
+                    f"/*\n"
+                    f"{self._sample_rows_in_table_info} rows from {table.name} table:\n"
+                    f"{columns_str}\n"
+                    f"{sample_rows_str}\n"
+                    f"*/"
                 )
+
+                # build final info for table
+                tables.append(table_info)
 
             else:
                 tables.append(create_table)

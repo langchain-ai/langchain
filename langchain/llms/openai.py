@@ -362,9 +362,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
-        return LLMResult(
-            generations=generations, llm_output={"token_usage": token_usage}
-        )
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
@@ -643,11 +642,15 @@ class OpenAIChat(BaseLLM, BaseModel):
             )
         else:
             full_response = completion_with_retry(self, messages=messages, **params)
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
             return LLMResult(
                 generations=[
                     [Generation(text=full_response["choices"][0]["message"]["content"])]
                 ],
-                llm_output={"token_usage": full_response["usage"]},
+                llm_output=llm_output,
             )
 
     async def _agenerate(
@@ -679,11 +682,15 @@ class OpenAIChat(BaseLLM, BaseModel):
             full_response = await acompletion_with_retry(
                 self, messages=messages, **params
             )
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
             return LLMResult(
                 generations=[
                     [Generation(text=full_response["choices"][0]["message"]["content"])]
                 ],
-                llm_output={"token_usage": full_response["usage"]},
+                llm_output=llm_output,
             )
 
     @property

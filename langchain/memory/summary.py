@@ -5,9 +5,13 @@ from pydantic import BaseModel, root_validator
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
-from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, SystemMessage
+from langchain.schema import (
+    BaseLanguageModel,
+    BaseMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 
 class SummarizerMixin(BaseModel):
