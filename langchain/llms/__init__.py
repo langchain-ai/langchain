@@ -18,7 +18,8 @@ from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.petals import Petals
-from langchain.llms.promptlayer_openai import PromptLayerOpenAI
+from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
+from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
@@ -40,12 +41,14 @@ __all__ = [
     "Petals",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "AI21",
     "AzureOpenAI",
     "SelfHostedPipeline",
     "SelfHostedHuggingFaceLLM",
     "PromptLayerOpenAI",
+    "PromptLayerOpenAIChat",
     "StochasticAI",
     "Writer",
 ]
@@ -63,6 +66,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "modal": Modal,
+    "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "petals": Petals,

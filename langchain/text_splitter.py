@@ -1,6 +1,7 @@
 """Functionality for splitting text."""
 from __future__ import annotations
 
+import copy
 import logging
 from abc import ABC, abstractmethod
 from typing import (
@@ -51,7 +52,10 @@ class TextSplitter(ABC):
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(text):
-                documents.append(Document(page_content=chunk, metadata=_metadatas[i]))
+                new_doc = Document(
+                    page_content=chunk, metadata=copy.deepcopy(_metadatas[i])
+                )
+                documents.append(new_doc)
         return documents
 
     def split_documents(self, documents: List[Document]) -> List[Document]:
@@ -345,6 +349,37 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
             # by *three or more* of ***, ---, or ___, but this is not handled
             "\n\n",
             "\n",
+            " ",
+            "",
+        ]
+        super().__init__(separators=separators, **kwargs)
+
+
+class LatexTextSplitter(RecursiveCharacterTextSplitter):
+    """Attempts to split the text along Latex-formatted layout elements."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize a LatexTextSplitter."""
+        separators = [
+            # First, try to split along Latex sections
+            "\n\\chapter{",
+            "\n\\section{",
+            "\n\\subsection{",
+            "\n\\subsubsection{",
+            # Now split by environments
+            "\n\\begin{enumerate}",
+            "\n\\begin{itemize}",
+            "\n\\begin{description}",
+            "\n\\begin{list}",
+            "\n\\begin{quote}",
+            "\n\\begin{quotation}",
+            "\n\\begin{verse}",
+            "\n\\begin{verbatim}",
+            ## Now split by math environments
+            "\n\\begin{align}",
+            "$$",
+            "$",
+            # Now split by the normal type of lines
             " ",
             "",
         ]
