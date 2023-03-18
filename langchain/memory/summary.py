@@ -53,12 +53,13 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
+            buffer: Any
             if self.summary_message_role == "user":
-                buffer: Any = [HumanMessage(content=self.buffer)]
+                buffer = [HumanMessage(content=self.buffer)]
             elif self.summary_message_role == "assistant":
-                buffer: Any = [AIMessage(content=self.buffer)]
+                buffer = [AIMessage(content=self.buffer)]
             elif self.summary_message_role == "system":
-                buffer: Any = [SystemMessage(content=self.buffer)]
+                buffer = [SystemMessage(content=self.buffer)]
             else:
                 raise ValueError(
                     f"Invalid summary_message_role value: {self.summary_message_role}."

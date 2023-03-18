@@ -37,18 +37,13 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         """Return history buffer."""
         buffer = self.buffer
         if self.moving_summary_buffer != "":
+            first_messages: List[BaseMessage]
             if self.summary_message_role == "user":
-                first_messages: List[BaseMessage] = [
-                    HumanMessage(content=self.moving_summary_buffer)
-                ]
+                first_messages = [HumanMessage(content=self.moving_summary_buffer)]
             elif self.summary_message_role == "assistant":
-                first_messages: List[BaseMessage] = [
-                    AIMessage(content=self.moving_summary_buffer)
-                ]
+                first_messages = [AIMessage(content=self.moving_summary_buffer)]
             elif self.summary_message_role == "system":
-                first_messages: List[BaseMessage] = [
-                    SystemMessage(content=self.moving_summary_buffer)
-                ]
+                first_messages = [SystemMessage(content=self.moving_summary_buffer)]
             else:
                 raise ValueError(
                     f"Invalid summary_message_role value: {self.summary_message_role}."

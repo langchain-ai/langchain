@@ -52,16 +52,13 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
                 f"On {entity}: {summary}" for entity, summary in summaries.items()
             ]
             if self.return_messages:
+                context: Any
                 if self.summary_message_role == "user":
-                    context: Any = [
-                        HumanMessage(content=text) for text in summary_strings
-                    ]
+                    context = [HumanMessage(content=text) for text in summary_strings]
                 elif self.summary_message_role == "assistant":
-                    context: Any = [AIMessage(content=text) for text in summary_strings]
+                    context = [AIMessage(content=text) for text in summary_strings]
                 elif self.summary_message_role == "system":
-                    context: Any = [
-                        SystemMessage(content=text) for text in summary_strings
-                    ]
+                    context = [SystemMessage(content=text) for text in summary_strings]
                 else:
                     raise ValueError(
                         f"Invalid summary_message_role value: {self.summary_message_role}."
