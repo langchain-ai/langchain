@@ -97,6 +97,8 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 
 - `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
 
+- `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
+
 - `Evaluation <./use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
 - `Generate similar examples <./use_cases/generate_examples.html>`_: Generating similar examples to a given input. This is a common use case for many applications, and LangChain provides some prompts/chains for assisting in this.
@@ -117,6 +119,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    ./use_cases/combine_docs.md
    ./use_cases/question_answering.md
    ./use_cases/summarization.md
+   ./use_cases/tabular.rst
    ./use_cases/evaluation.rst
    ./use_cases/model_laboratory.ipynb
 
