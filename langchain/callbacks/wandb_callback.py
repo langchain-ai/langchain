@@ -1,33 +1,60 @@
-try:
-    import wandb
-except ImportError:
-    raise ImportError(
-        "You are trying to use wandb which is not currently installed Please install it using pip install wandb"
-    )
-
 import hashlib
 import json
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-import pandas as pd
 import spacy
-import textstat
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-def _flatten_dict(nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"):
+def import_wandb() -> Any:
+    try:
+        import wandb  # noqa: F401
+    except ImportError:
+        raise ImportError(
+            "To use the wandb callback manager you need to have the `wandb` python "
+            "package installed. Please install it with `pip install wandb`"
+        )
+    return wandb
+
+
+def import_pandas() -> Any:
+    try:
+        import pandas  # noqa: F401
+    except ImportError:
+        raise ImportError(
+            "To use the wandb callback manager you need to have the `pandas` python "
+            "package installed. Please install it with `pip install pandas`"
+        )
+    return pandas
+
+
+def import_textstat() -> Any:
+    try:
+        import textstat  # noqa: F401
+    except ImportError:
+        raise ImportError(
+            "To use the wandb callback manager you need to have the `textstat` python "
+            "package installed. Please install it with `pip install textstat`"
+        )
+    return textstat
+
+
+def _flatten_dict(
+    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
+) -> Iterable[Tuple[str, Any]]:
     """
-    Generator that yields flattened items from a nested dictionary for a flat dictionary.
+    Generator that yields flattened items from a nested dictionary for a flat dict.
 
     Parameters:
         nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dictionary.
-        sep (str): The separator to use between the parent key and the key of the flattened dictionary.
+        parent_key (str): The prefix to prepend to the keys of the flattened dict.
+        sep (str): The separator to use between the parent key and the key of the
+            flattened dictionary.
 
     Yields:
         (str, any): A key-value pair from the flattened dictionary.
@@ -40,13 +67,16 @@ def _flatten_dict(nested_dict: Dict[str, Any], parent_key: str = "", sep: str = 
             yield new_key, value
 
 
-def flatten_dict(nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"):
+def flatten_dict(
+    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
+) -> Dict[str, Any]:
     """Flattens a nested dictionary into a flat dictionary.
 
     Parameters:
         nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dictionary.
-        sep (str): The separator to use between the parent key and the key of the flattened dictionary.
+        parent_key (str): The prefix to prepend to the keys of the flattened dict.
+        sep (str): The separator to use between the parent key and the key of the
+            flattened dictionary.
 
     Returns:
         (dict): A flat dictionary.
@@ -56,7 +86,7 @@ def flatten_dict(nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "
     return flat_dict
 
 
-def hash_string(s: str):
+def hash_string(s: str) -> str:
     """Hash a string using sha1.
 
     Parameters:
@@ -68,7 +98,7 @@ def hash_string(s: str):
     return hashlib.sha1(s.encode("utf-8")).hexdigest()
 
 
-def load_json_to_dict(json_path: Union[str, Path]):
+def load_json_to_dict(json_path: Union[str, Path]) -> dict:
     """Load json file to a dictionary.
 
     Parameters:
@@ -86,9 +116,9 @@ def analyze_text(
     text: str,
     complexity_metrics: bool = True,
     visualize: bool = True,
-    nlp=None,
-    output_dir: Union[str, Path] = None,
-):
+    nlp: Any = None,
+    output_dir: Optional[Union[str, Path]] = None,
+) -> dict:
     """Analyze text using textstat and spacy.
 
     Parameters:
@@ -99,9 +129,12 @@ def analyze_text(
         output_dir (str): The directory to save the visualization files to.
 
     Returns:
-        (dict): A dictionary containing the complexity metrics and visualization files serialized in a wandb.Html element.
+        (dict): A dictionary containing the complexity metrics and visualization
+            files serialized in a wandb.Html element.
     """
     resp = {}
+    textstat = import_textstat()
+    wandb = import_wandb()
     if complexity_metrics:
         text_complexity_metrics = {
             "flesch_reading_ease": textstat.flesch_reading_ease(text),
@@ -123,14 +156,18 @@ def analyze_text(
         }
         resp.update(text_complexity_metrics)
 
-    if visualize and nlp:
+    if visualize and nlp and output_dir is not None:
         doc = nlp(text)
 
-        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
+        dep_out = spacy.displacy.render(  # type: ignore
+            doc, style="dep", jupyter=False, page=True
+        )
         dep_output_path = Path(output_dir, hash_string(f"dep-{text}") + ".html")
         dep_output_path.open("w", encoding="utf-8").write(dep_out)
 
-        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
+        ent_out = spacy.displacy.render(  # type: ignore
+            doc, style="ent", jupyter=False, page=True
+        )
         ent_output_path = Path(output_dir, hash_string(f"ent-{text}") + ".html")
         ent_output_path.open("w", encoding="utf-8").write(ent_out)
 
@@ -143,7 +180,7 @@ def analyze_text(
     return resp
 
 
-def construct_html_from_prompt_and_generation(prompt, generation):
+def construct_html_from_prompt_and_generation(prompt: str, generation: str) -> Any:
     """Construct an html element from a prompt and a generation.
 
     Parameters:
@@ -152,7 +189,7 @@ def construct_html_from_prompt_and_generation(prompt, generation):
 
     Returns:
         (wandb.Html): The html element."""
-
+    wandb = import_wandb()
     formatted_prompt = prompt.replace("\n", "<br>")
     formatted_generation = generation.replace("\n", "<br>")
 
@@ -197,47 +234,47 @@ class BaseMetadataCallbackHandler:
         on_chain_end_records (list): A list of records of the on_chain_end method.
         on_tool_start_records (list): A list of records of the on_tool_start method.
         on_tool_end_records (list): A list of records of the on_tool_end method.
-        on_agent_end_records (list): A list of records of the on_agent_end method.
+        on_agent_finish_records (list): A list of records of the on_agent_end method.
     """
 
-    def __init__(self):
-        self.step: int = 0
+    def __init__(self) -> None:
+        self.step = 0
 
-        self.starts: int = 0
-        self.ends: int = 0
-        self.errors: int = 0
-        self.text_ctr: int = 0
+        self.starts = 0
+        self.ends = 0
+        self.errors = 0
+        self.text_ctr = 0
 
-        self.ignore_llm_: bool = False
-        self.ignore_chain_: bool = False
-        self.ignore_agent_: bool = False
-        self.always_verbose_: bool = False
+        self.ignore_llm_ = False
+        self.ignore_chain_ = False
+        self.ignore_agent_ = False
+        self.always_verbose_ = False
 
-        self.chain_starts: int = 0
-        self.chain_ends: int = 0
+        self.chain_starts = 0
+        self.chain_ends = 0
 
-        self.llm_starts: int = 0
-        self.llm_ends: int = 0
-        self.llm_streams: int = 0
+        self.llm_starts = 0
+        self.llm_ends = 0
+        self.llm_streams = 0
 
-        self.tool_starts: int = 0
-        self.tool_ends: int = 0
+        self.tool_starts = 0
+        self.tool_ends = 0
 
-        self.agent_ends: int = 0
+        self.agent_ends = 0
 
-        self.on_llm_start_records = []
-        self.on_llm_token_records = []
-        self.on_llm_end_records = []
+        self.on_llm_start_records: list = []
+        self.on_llm_token_records: list = []
+        self.on_llm_end_records: list = []
 
-        self.on_chain_start_records = []
-        self.on_chain_end_records = []
+        self.on_chain_start_records: list = []
+        self.on_chain_end_records: list = []
 
-        self.on_tool_start_records = []
-        self.on_tool_end_records = []
+        self.on_tool_start_records: list = []
+        self.on_tool_end_records: list = []
 
-        self.on_text_records = []
-        self.on_agent_finish_records = []
-        self.on_agent_action_records = []
+        self.on_text_records: list = []
+        self.on_agent_finish_records: list = []
+        self.on_agent_action_records: list = []
 
     @property
     def always_verbose(self) -> bool:
@@ -276,31 +313,31 @@ class BaseMetadataCallbackHandler:
             "agent_ends": self.agent_ends,
         }
 
-    def reset_callback_meta(self):
+    def reset_callback_meta(self) -> None:
         """Reset the callback metadata."""
-        self.step: int = 0
+        self.step = 0
 
-        self.starts: int = 0
-        self.ends: int = 0
-        self.errors: int = 0
-        self.text_ctr: int = 0
+        self.starts = 0
+        self.ends = 0
+        self.errors = 0
+        self.text_ctr = 0
 
-        self.ignore_llm_: bool = False
-        self.ignore_chain_: bool = False
-        self.ignore_agent_: bool = False
-        self.always_verbose_: bool = False
+        self.ignore_llm_ = False
+        self.ignore_chain_ = False
+        self.ignore_agent_ = False
+        self.always_verbose_ = False
 
-        self.chain_starts: int = 0
-        self.chain_ends: int = 0
+        self.chain_starts = 0
+        self.chain_ends = 0
 
-        self.llm_starts: int = 0
-        self.llm_ends: int = 0
-        self.llm_streams: int = 0
+        self.llm_starts = 0
+        self.llm_ends = 0
+        self.llm_streams = 0
 
-        self.tool_starts: int = 0
-        self.tool_ends: int = 0
+        self.tool_starts = 0
+        self.tool_ends = 0
 
-        self.agent_ends: int = 0
+        self.agent_ends = 0
 
         self.on_llm_start_records = []
         self.on_llm_token_records = []
@@ -333,7 +370,10 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         complexity_metrics (bool): Whether to log complexity metrics.
         stream_logs (bool): Whether to stream callback actions to W&B
 
-    This handler will utilize the associated callback method called and formats the input of each callback function with metadata regarding the state of LLM run, and adds the response to the list of records for both the {method}_records and action. It then logs the response using the run.log() method to Weights and Biases.
+    This handler will utilize the associated callback method called and formats
+    the input of each callback function with metadata regarding the state of LLM run,
+    and adds the response to the list of records for both the {method}_records and
+    action. It then logs the response using the run.log() method to Weights and Biases.
     """
 
     def __init__(
@@ -350,6 +390,10 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         stream_logs: bool = False,
     ) -> None:
         """Initialize callback handler."""
+
+        wandb = import_wandb()
+        import_pandas()
+        import_textstat()
         super().__init__()
 
         self.job_type = job_type
@@ -364,7 +408,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.stream_logs = stream_logs
 
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.run = wandb.init(
+        self.run: wandb.sdk.wandb_run.Run = wandb.init(  # type: ignore
             job_type=self.job_type,
             project=self.project,
             entity=self.entity,
@@ -373,18 +417,22 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             name=self.name,
             notes=self.notes,
         )
+        warning = (
+            "The wandb callback is currently in beta and is subject to change "
+            "based on updates to `langchain`. Please report any issues to "
+            "https://github.com/wandb/wandb/issues with the tag `langchain`."
+        )
         wandb.termwarn(
-            """The wandb callback is currently in beta and is subject to change based on updates to `langchain`.
-Please report any issues to https://github.com/wandb/wandb/issues with the tag `langchain`.""",
+            warning,
             repeat=False,
         )
-        self.callback_columns = []
-        self.action_records = []
+        self.callback_columns: list = []
+        self.action_records: list = []
         self.complexity_metrics = complexity_metrics
         self.visualize = visualize
         self.nlp = spacy.load("en_core_web_sm")
 
-    def _init_resp(self):
+    def _init_resp(self) -> Dict:
         return {k: None for k in self.callback_columns}
 
     def on_llm_start(
@@ -430,13 +478,13 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
 
         resp = self._init_resp()
         resp.update({"action": "on_llm_end"})
-        resp.update(flatten_dict(response.llm_output))
+        resp.update(flatten_dict(response.llm_output or {}))
         resp.update(self.get_custom_callback_meta())
 
         for generations in response.generations:
             for generation in generations:
                 generation_resp = deepcopy(resp)
-                generation_resp.update(flatten_dict(generation.to_dict()))
+                generation_resp.update(flatten_dict(generation.dict()))
                 generation_resp.update(
                     analyze_text(
                         generation.text,
@@ -611,8 +659,9 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
         if self.stream_logs:
             self.run.log(resp)
 
-    def _create_session_analysis_df(self):
+    def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
+        pd = import_pandas()
         on_llm_start_records_df = pd.DataFrame(self.on_llm_start_records)
         on_llm_end_records_df = pd.DataFrame(self.on_llm_end_records)
 
@@ -675,7 +724,7 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
 
     def flush_tracker(
         self,
-        langchain_asset=None,
+        langchain_asset: Any = None,
         reset: bool = True,
         finish: bool = False,
         job_type: Optional[str] = None,
@@ -687,7 +736,7 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
         notes: Optional[str] = None,
         visualize: Optional[bool] = None,
         complexity_metrics: Optional[bool] = None,
-    ):
+    ) -> None:
         """Flush the tracker and reset the session.
 
         Args:
@@ -707,6 +756,8 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
             Returns:
                 None
         """
+        pd = import_pandas()
+        wandb = import_wandb()
         action_records_table = wandb.Table(dataframe=pd.DataFrame(self.action_records))
         session_analysis_table = wandb.Table(
             dataframe=self._create_session_analysis_df()
@@ -725,15 +776,15 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
             model_artifact.add(session_analysis_table, name="session_analysis")
             try:
                 langchain_asset.save(langchain_asset_path)
-                model_artifact.add_file(langchain_asset_path)
+                model_artifact.add_file(str(langchain_asset_path))
                 model_artifact.metadata = load_json_to_dict(langchain_asset_path)
             except ValueError:
                 langchain_asset.save_agent(langchain_asset_path)
-                model_artifact.add_file(langchain_asset_path)
+                model_artifact.add_file(str(langchain_asset_path))
                 model_artifact.metadata = load_json_to_dict(langchain_asset_path)
             except NotImplementedError as e:
                 print("Could not save model.")
-                print(e.message)
+                print(repr(e))
                 pass
             self.run.log_artifact(model_artifact)
 
@@ -742,7 +793,7 @@ Please report any issues to https://github.com/wandb/wandb/issues with the tag `
             self.temp_dir.cleanup()
             self.reset_callback_meta()
         if reset:
-            self.__init__(
+            self.__init__(  # type: ignore
                 job_type=job_type if job_type else self.job_type,
                 project=project if project else self.project,
                 entity=entity if entity else self.entity,
