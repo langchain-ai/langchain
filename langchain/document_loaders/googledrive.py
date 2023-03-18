@@ -31,7 +31,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_ids: Optional[List[str]] = None
     account_type: Optional[str] = None
 
-
     @root_validator
     def validate_folder_id_or_document_ids(
         cls, values: Dict[str, Any]
@@ -64,8 +63,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
             from google.auth.transport.requests import Request
-            from google.oauth2.credentials import Credentials
             from google.oauth2 import service_account
+            from google.oauth2.credentials import Credentials
             from google_auth_oauthlib.flow import InstalledAppFlow
         except ImportError:
             raise ImportError(
@@ -75,11 +74,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 "google-auth-oauthlib`"
                 "to use the Google Drive loader."
             )
-        
+
         creds = None
         if self.service_account_key.exists():
             return service_account.Credentials.from_service_account_file(
-                self.service_account_key, scopes=SCOPES)
+                str(self.service_account_key), scopes=SCOPES
+            )
 
         if self.token_path.exists():
             creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
