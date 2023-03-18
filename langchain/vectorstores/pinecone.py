@@ -33,7 +33,6 @@ class Pinecone(VectorStore):
         embedding_function: Callable,
         text_key: str,
         namespace: Optional[str] = None,
-
     ):
         """Initialize with Pinecone client."""
         try:
@@ -52,7 +51,6 @@ class Pinecone(VectorStore):
         self._embedding_function = embedding_function
         self._text_key = text_key
         self._namespace = namespace
-
 
     def add_texts(
         self,
@@ -250,7 +248,6 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-        
 
         return cls(
             pinecone.Index(index_name), embedding.embed_query, text_key, namespace

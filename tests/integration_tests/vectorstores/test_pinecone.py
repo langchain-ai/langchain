@@ -63,8 +63,9 @@ def test_pinecone_with_scores() -> None:
     ]
     assert scores[0] > scores[1] > scores[2]
 
+
 def test_pinecone_with_namespaces() -> None:
-    "Test that namespaces are properly handled."""
+    "Test that namespaces are properly handled." ""
     # Create two indexes with the same name but different namespaces
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -87,12 +88,10 @@ def test_pinecone_with_namespaces() -> None:
     )
 
     # Search with namespace
-    docsearch = Pinecone.from_existing_index("langchain-demo", 
-                                             embedding=FakeEmbeddings(),
-                                             namespace="test-namespace")
+    docsearch = Pinecone.from_existing_index(
+        "langchain-demo", embedding=FakeEmbeddings(), namespace="test-namespace"
+    )
     output = docsearch.similarity_search("foo", k=6)
     # check that we don't get results from the other namespace
     page_contents = [o.page_content for o in output]
     assert set(page_contents) == set(["foo", "bar", "baz"])
-
-
