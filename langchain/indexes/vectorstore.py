@@ -2,8 +2,8 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
+from langchain.chains.index_qa.base import VectorDBQA
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.vector_db_qa.base import VectorDBQA
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings

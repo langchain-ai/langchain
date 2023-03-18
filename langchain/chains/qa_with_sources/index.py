@@ -1,4 +1,4 @@
-"""Question-answering with sources over a vector database."""
+"""Question-answering with sources over an index."""
 
 from typing import Any, Dict, List
 
@@ -6,22 +6,15 @@ from pydantic import BaseModel, Field
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
-from langchain.deprecated import deprecated
 from langchain.docstore.document import Document
-from langchain.vectorstores.base import VectorStore
+from langchain.schema import BaseIndex
 
 
-@deprecated(
-    "`VectorDBQAWithSourcesChain` is deprecated - "
-    "please use `from langchain.chains import IndexQAWithSourcesChain`"
-)
-class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
-    """Question-answering with sources over a vector database."""
+class IndexQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+    """Question-answering with sources over an index."""
 
-    vectorstore: VectorStore = Field(exclude=True)
-    """Vector Database to connect to."""
-    k: int = 4
-    """Number of results to return from store"""
+    index: BaseIndex = Field(exclude=True)
+    """Index to connect to."""
     reduce_k_below_max_tokens: bool = False
     """Reduce the number of results to return from store based on tokens limit"""
     max_tokens_limit: int = 3375
@@ -51,11 +44,5 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        docs = self.vectorstore.similarity_search(
-            question, k=self.k, **self.search_kwargs
-        )
+        docs = self.index.get_relevant_texts(question, **self.search_kwargs)
         return self._reduce_tokens_below_limit(docs)
-
-    @property
-    def _chain_type(self) -> str:
-        return "vector_db_qa_with_sources_chain"

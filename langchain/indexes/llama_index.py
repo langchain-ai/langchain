@@ -1,10 +1,11 @@
-from langchain.schema import BaseIndex, Document
-from pydantic import BaseModel
 from typing import Any, List
+
+from pydantic import BaseModel
+
+from langchain.schema import BaseIndex, Document
 
 
 class LlamaIndex(BaseIndex, BaseModel):
-
     index: Any
 
     def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:

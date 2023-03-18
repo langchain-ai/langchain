@@ -4,17 +4,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from langchain.chains.base import Chain
-from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
+from langchain.chains.chat_index.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
+from langchain.deprecated import deprecated
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseIndex, BaseLanguageModel, Document
 from langchain.vectorstores.base import VectorStore
-from langchain.schema import BaseIndex
 
 
 def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
@@ -26,21 +26,17 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     return buffer
 
 
-class ChatVectorDBChain(Chain, BaseModel):
-    """Chain for chatting with a vector database."""
+class ChatIndexChain(Chain, BaseModel):
+    """Chain for chatting with an index."""
 
-    vectorstore: BaseIndex
+    index: BaseIndex
     combine_docs_chain: BaseCombineDocumentsChain
     question_generator: LLMChain
     output_key: str = "answer"
     return_source_documents: bool = False
-    top_k_docs_for_context: int = 4
+    search_kwargs: dict = Field(default_factory=dict)
     get_chat_history: Optional[Callable[[Tuple[str, str]], str]] = None
     """Return the source documents."""
-
-    @property
-    def _chain_type(self) -> str:
-        return "chat-vector-db"
 
     @property
     def input_keys(self) -> List[str]:
@@ -62,12 +58,12 @@ class ChatVectorDBChain(Chain, BaseModel):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        vectorstore: VectorStore,
+        index: BaseIndex,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
         **kwargs: Any,
-    ) -> ChatVectorDBChain:
+    ) -> ChatIndexChain:
         """Load chain from LLM."""
         doc_chain = load_qa_chain(
             llm,
@@ -76,26 +72,29 @@ class ChatVectorDBChain(Chain, BaseModel):
         )
         condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
-            vectorstore=vectorstore,
+            index=index,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
             **kwargs,
         )
 
+    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        indexkwargs = inputs.get("indexkwargs", {})
+        full_index_kwargs = {**self.search_kwargs, **indexkwargs}
+        return self.index.get_relevant_texts(question, **full_index_kwargs)
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
-        vectordbkwargs = inputs.get("vectordbkwargs", {})
+
         if chat_history_str:
             new_question = self.question_generator.run(
                 question=question, chat_history=chat_history_str
             )
         else:
             new_question = question
-        docs = self.vectorstore.get_relevant_texts(
-            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
-        )
+        docs = self._get_docs(new_question, inputs)
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -109,7 +108,6 @@ class ChatVectorDBChain(Chain, BaseModel):
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
         chat_history_str = get_chat_history(inputs["chat_history"])
-        vectordbkwargs = inputs.get("vectordbkwargs", {})
         if chat_history_str:
             new_question = await self.question_generator.arun(
                 question=question, chat_history=chat_history_str
@@ -117,9 +115,7 @@ class ChatVectorDBChain(Chain, BaseModel):
         else:
             new_question = question
         # TODO: This blocks the event loop, but it's not clear how to avoid it.
-        docs = self.vectorstore.get_relevant_texts(
-            new_question, k=self.top_k_docs_for_context, **vectordbkwargs
-        )
+        docs = self._get_docs(new_question, inputs)
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -133,3 +129,33 @@ class ChatVectorDBChain(Chain, BaseModel):
         if self.get_chat_history:
             raise ValueError("Chain not savable when `get_chat_history` is not None.")
         super().save(file_path)
+
+
+@deprecated(
+    "`ChatVectorDBChain` is deprecated - "
+    "please use `from langchain.chains import ChatIndexChain`"
+)
+class ChatVectorDBChain(ChatIndexChain, BaseModel):
+    """Chain for chatting with a vector database."""
+
+    index: VectorStore = Field(alias="vectorstore")
+    top_k_docs_for_context: int = 4
+
+    @property
+    def vectorstore(self) -> VectorStore:
+        return self.index
+
+    @vectorstore.setter
+    def vectorstore(self, vectorstore: VectorStore) -> None:
+        self.index = vectorstore
+
+    @property
+    def _chain_type(self) -> str:
+        return "chat-vector-db"
+
+    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        vectordbkwargs = inputs.get("vectordbkwargs", {})
+        full_kwargs = {**self.search_kwargs, **vectordbkwargs}
+        return self.index.similarity_search(
+            question, k=self.top_k_docs_for_context, **full_kwargs
+        )

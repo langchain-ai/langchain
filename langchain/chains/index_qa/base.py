@@ -11,28 +11,29 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
+from langchain.deprecated import deprecated
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseIndex, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class VectorDBQA(Chain, BaseModel):
-    """Chain for question-answering against a vector database.
+class IndexQA(Chain, BaseModel):
+    """Chain for question-answering against an index.
 
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI, VectorDBQA
+            from langchain.llms import OpenAI
+            from langchain.chains import IndexQA
             from langchain.faiss import FAISS
             vectordb = FAISS(...)
-            vectordbQA = VectorDBQA(llm=OpenAI(), vectorstore=vectordb)
+            indexQA = IndexQA.from_llm(llm=OpenAI(), index=vectordb)
 
     """
 
-    vectorstore: VectorStore = Field(exclude=True)
-    """Vector Database to connect to."""
-    k: int = 4
-    """Number of documents to query for."""
+    index: BaseIndex = Field(exclude=True)
+    """Index to connect to."""
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -41,8 +42,6 @@ class VectorDBQA(Chain, BaseModel):
     """Return the source documents."""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
-    search_type: str = "similarity"
-    """Search type to use over vectorstore. `similarity` or `mmr`."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -69,42 +68,10 @@ class VectorDBQA(Chain, BaseModel):
             _output_keys = _output_keys + ["source_documents"]
         return _output_keys
 
-    # TODO: deprecate this
-    @root_validator(pre=True)
-    def load_combine_documents_chain(cls, values: Dict) -> Dict:
-        """Validate question chain."""
-        if "combine_documents_chain" not in values:
-            if "llm" not in values:
-                raise ValueError(
-                    "If `combine_documents_chain` not provided, `llm` should be."
-                )
-            llm = values.pop("llm")
-            prompt = values.pop("prompt", PROMPT_SELECTOR.get_prompt(llm))
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            document_prompt = PromptTemplate(
-                input_variables=["page_content"], template="Context:\n{page_content}"
-            )
-            combine_documents_chain = StuffDocumentsChain(
-                llm_chain=llm_chain,
-                document_variable_name="context",
-                document_prompt=document_prompt,
-            )
-            values["combine_documents_chain"] = combine_documents_chain
-        return values
-
-    @root_validator()
-    def validate_search_type(cls, values: Dict) -> Dict:
-        """Validate search type."""
-        if "search_type" in values:
-            search_type = values["search_type"]
-            if search_type not in ("similarity", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
-        return values
-
     @classmethod
     def from_llm(
         cls, llm: BaseLLM, prompt: Optional[PromptTemplate] = None, **kwargs: Any
-    ) -> VectorDBQA:
+    ) -> IndexQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
@@ -126,7 +93,7 @@ class VectorDBQA(Chain, BaseModel):
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         **kwargs: Any,
-    ) -> VectorDBQA:
+    ) -> IndexQA:
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
@@ -134,8 +101,11 @@ class VectorDBQA(Chain, BaseModel):
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
+    def _get_docs(self, question: str) -> List[Document]:
+        return self.index.get_relevant_texts(question, **self.search_kwargs)
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
-        """Run similarity search and llm on input query.
+        """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
         the retrieved documents as well under the key 'source_documents'.
@@ -143,27 +113,62 @@ class VectorDBQA(Chain, BaseModel):
         Example:
         .. code-block:: python
 
-        res = vectordbqa({'query': 'This is my query'})
+        res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
         question = inputs[self.input_key]
 
-        if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(
-                question, k=self.k, **self.search_kwargs
-            )
-        elif self.search_type == "mmr":
-            docs = self.vectorstore.max_marginal_relevance_search(
-                question, k=self.k, **self.search_kwargs
-            )
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        docs = self._get_docs(question)
         answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
+
+
+@deprecated(
+    "`VectorDBQA` is deprecated - please use `from langchain.chains import IndexQA`"
+)
+class VectorDBQA(IndexQA, BaseModel):
+    """Chain for question-answering against a vector database."""
+
+    index: VectorStore = Field(exclude=True, alias="vectorstore")
+    """Vector Database to connect to."""
+    k: int = 4
+    """Number of documents to query for."""
+    search_type: str = "similarity"
+    """Search type to use over vectorstore. `similarity` or `mmr`."""
+
+    @property
+    def vectorstore(self) -> VectorStore:
+        return self.index
+
+    @vectorstore.setter
+    def vectorstore(self, vectorstore: VectorStore) -> None:
+        self.index = vectorstore
+
+    @root_validator()
+    def validate_search_type(cls, values: Dict) -> Dict:
+        """Validate search type."""
+        if "search_type" in values:
+            search_type = values["search_type"]
+            if search_type not in ("similarity", "mmr"):
+                raise ValueError(f"search_type of {search_type} not allowed.")
+        return values
+
+    def _get_docs(self, question: str) -> List[Document]:
+        if self.search_type == "similarity":
+            docs = self.index.similarity_search(
+                question, k=self.k, **self.search_kwargs
+            )
+        elif self.search_type == "mmr":
+            docs = self.index.max_marginal_relevance_search(
+                question, k=self.k, **self.search_kwargs
+            )
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
 
     @property
     def _chain_type(self) -> str:

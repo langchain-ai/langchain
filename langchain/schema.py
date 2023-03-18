@@ -275,11 +275,18 @@ class Document(BaseModel):
             return f"{result_prefix} {lookups[self.lookup_index]}"
 
 
-
 class BaseIndex(ABC):
-
+    @abstractmethod
     def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
-        """Get texts relevant for a query."""
+        """Get texts relevant for a query.
+
+        Args:
+            query: string to find relevant tests for
+            kwargs: Other index specific arguments
+
+        Returns:
+            List of relevant documents
+        """
 
 
 # For backwards compatibility
