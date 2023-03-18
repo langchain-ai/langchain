@@ -12,7 +12,13 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, SystemMessage, get_buffer_string
+from langchain.schema import (
+    AIMessage,
+    BaseLanguageModel,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 
 class ConversationKGMemory(BaseChatMemory, BaseModel):
@@ -29,6 +35,7 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
     knowledge_extraction_prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     llm: BaseLanguageModel
+    summary_message_role: str = "system"
     """Number of previous utterances to include in the context."""
     memory_key: str = "history"  #: :meta private:
 
@@ -45,7 +52,21 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
                 f"On {entity}: {summary}" for entity, summary in summaries.items()
             ]
             if self.return_messages:
-                context: Any = [SystemMessage(content=text) for text in summary_strings]
+                if self.summary_message_role == "user":
+                    context: Any = [
+                        HumanMessage(content=text) for text in summary_strings
+                    ]
+                elif self.summary_message_role == "assistant":
+                    context: Any = [AIMessage(content=text) for text in summary_strings]
+                elif self.summary_message_role == "system":
+                    context: Any = [
+                        SystemMessage(content=text) for text in summary_strings
+                    ]
+                else:
+                    raise ValueError(
+                        f"Invalid summary_message_role value: {self.summary_message_role}."
+                        " summary_message_role must be 'user', 'assistant', or 'system'."
+                    )
             else:
                 context = "\n".join(summary_strings)
         else:
