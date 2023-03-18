@@ -6,7 +6,8 @@
 #   https://console.cloud.google.com/flows/enableapi?apiid=drive.googleapis.com
 # 3. Authorize credentials for desktop app:
 #   https://developers.google.com/drive/api/quickstart/python#authorize_credentials_for_a_desktop_application # noqa: E501
-
+# 4. For service accounts visit
+#   https://cloud.google.com/iam/docs/service-accounts-create
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -22,11 +23,14 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 class GoogleDriveLoader(BaseLoader, BaseModel):
     """Loader that loads Google Docs from Google Drive."""
 
+    service_account_key: Path = Path.home() / ".credentials" / "keys.json"
     credentials_path: Path = Path.home() / ".credentials" / "credentials.json"
     token_path: Path = Path.home() / ".credentials" / "token.json"
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
+    account_type: Optional[str] = None
+
 
     @root_validator
     def validate_folder_id_or_document_ids(
@@ -61,6 +65,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         try:
             from google.auth.transport.requests import Request
             from google.oauth2.credentials import Credentials
+            from google.oauth2 import service_account
             from google_auth_oauthlib.flow import InstalledAppFlow
         except ImportError:
             raise ImportError(
@@ -70,8 +75,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 "google-auth-oauthlib`"
                 "to use the Google Drive loader."
             )
-
+        
         creds = None
+        if self.service_account_key.exists():
+            return service_account.Credentials.from_service_account_file(
+                self.service_account_key, scopes=SCOPES)
+
         if self.token_path.exists():
             creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
 
