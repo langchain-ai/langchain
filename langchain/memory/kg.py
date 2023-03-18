@@ -61,8 +61,9 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
                     context = [SystemMessage(content=text) for text in summary_strings]
                 else:
                     raise ValueError(
-                        f"Invalid summary_message_role value: {self.summary_message_role}."
-                        " summary_message_role must be 'user', 'assistant', or 'system'."
+                        "Invalid summary_message_role value:"
+                        f" {self.summary_message_role}. summary_message_role must be"
+                        " 'user', 'assistant', or 'system'."
                     )
             else:
                 context = "\n".join(summary_strings)
