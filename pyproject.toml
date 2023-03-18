@@ -51,6 +51,11 @@ pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.2.9", optional = true}
+wandb = "^0.13.10"
+textstat = "^0.7.3"
+pandas = "^1.5.3"
+en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl"}
+
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 

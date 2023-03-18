@@ -8,6 +8,7 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
+from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 
 def get_callback_manager() -> BaseCallbackManager:
