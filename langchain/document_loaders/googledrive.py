@@ -29,7 +29,6 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     folder_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     file_ids: Optional[List[str]] = None
-    account_type: Optional[str] = None
 
     @root_validator
     def validate_folder_id_or_document_ids(
