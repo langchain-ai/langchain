@@ -33,6 +33,7 @@ from langchain.llms import (
     Modal,
     OpenAI,
     Petals,
+    SagemakerEndpoint,
     StochasticAI,
     Writer,
 )
@@ -48,6 +49,7 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
@@ -70,6 +72,7 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
+    "WikipediaAPIWrapper",
     "Anthropic",
     "Banana",
     "CerebriumAI",
@@ -88,6 +91,7 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",

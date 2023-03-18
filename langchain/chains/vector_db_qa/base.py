@@ -10,7 +10,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.chains.vector_db_qa.prompt import PROMPT
+from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores.base import VectorStore
@@ -78,8 +78,8 @@ class VectorDBQA(Chain, BaseModel):
                 raise ValueError(
                     "If `combine_documents_chain` not provided, `llm` should be."
                 )
-            prompt = values.pop("prompt", PROMPT)
             llm = values.pop("llm")
+            prompt = values.pop("prompt", PROMPT_SELECTOR.get_prompt(llm))
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             document_prompt = PromptTemplate(
                 input_variables=["page_content"], template="Context:\n{page_content}"
@@ -103,10 +103,11 @@ class VectorDBQA(Chain, BaseModel):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
+        cls, llm: BaseLLM, prompt: Optional[PromptTemplate] = None, **kwargs: Any
     ) -> VectorDBQA:
         """Initialize from LLM."""
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
+        llm_chain = LLMChain(llm=llm, prompt=_prompt)
         document_prompt = PromptTemplate(
             input_variables=["page_content"], template="Context:\n{page_content}"
         )

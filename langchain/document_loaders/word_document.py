@@ -36,8 +36,8 @@ class UnstructuredWordDocumentLoader(UnstructuredFileLoader):
         if is_doc:
             from unstructured.partition.doc import partition_doc
 
-            return partition_doc(filename=self.file_path)
+            return partition_doc(filename=self.file_path, **self.unstructured_kwargs)
         else:
             from unstructured.partition.docx import partition_docx
 
-            return partition_docx(filename=self.file_path)
+            return partition_docx(filename=self.file_path, **self.unstructured_kwargs)

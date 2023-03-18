@@ -1,7 +1,13 @@
-"""Chain that calls SearxNG meta search API.
+"""Utility for using SearxNG meta search API.
 
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
-multiple search engines and databases.
+`multiple search engines
+<https://docs.searxng.org/admin/engines/configured_engines.html>`_ and databases and
+supports the `OpenSearch 
+<https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md>`_
+specification.
+
+More detailes on the installtion instructions `here. <../../ecosystem/searx.html>`_
 
 For the search API refer to https://docs.searxng.org/dev/search_api.html
 
@@ -9,7 +15,7 @@ Quick Start
 -----------
 
 
-In order to use this chain you need to provide the searx host. This can be done
+In order to use this tool you need to provide the searx host. This can be done
 by passing the named parameter :attr:`searx_host <SearxSearchWrapper.searx_host>`
 or exporting the environment variable SEARX_HOST.
 Note: this is the only required parameter.
@@ -176,7 +182,7 @@ class SearxSearchWrapper(BaseModel):
         .. code-block:: python
 
             from langchain.utilities import SearxSearchWrapper
-            searx = SearxSearchWrapper(searx_host="https://searx.example.com")
+            searx = SearxSearchWrapper(searx_host="http://localhost:8888")
 
     Example with SSL disabled:
         .. code-block:: python
@@ -184,7 +190,7 @@ class SearxSearchWrapper(BaseModel):
             from langchain.utilities import SearxSearchWrapper
             # note the unsecure parameter is not needed if you pass the url scheme as
             # http
-            searx = SearxSearchWrapper(searx_host="http://searx.example.com",
+            searx = SearxSearchWrapper(searx_host="http://localhost:8888",
                                                     unsecure=True)
 
 

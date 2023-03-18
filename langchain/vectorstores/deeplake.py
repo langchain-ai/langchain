@@ -65,7 +65,7 @@ class DeepLake(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import deeplake python package. "
-                "Please it install it with `pip install deeplake`."
+                "Please install it with `pip install deeplake`."
             )
         self._deeplake = deeplake
 

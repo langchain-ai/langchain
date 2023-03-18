@@ -63,6 +63,8 @@ These modules are, in increasing order of complexity:
 
 - `Memory <./modules/memory.html>`_: Memory is the concept of persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
+- `Chat <./modules/chat.html>`_: Chat models are a variation on Language Models that expose a different API - rather than working with raw text, they work with messages. LangChain provides a standard interface for working with them and doing all the same things as above.
+
 
 .. toctree::
    :maxdepth: 1
@@ -78,6 +80,7 @@ These modules are, in increasing order of complexity:
    ./modules/chains.md
    ./modules/agents.md
    ./modules/memory.md
+   ./modules/chat.md
 
 Use Cases
 ----------
@@ -93,6 +96,8 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 - `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
 
 - `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
+
+- `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
 
 - `Evaluation <./use_cases/evaluation.html>`_: Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
@@ -114,6 +119,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    ./use_cases/combine_docs.md
    ./use_cases/question_answering.md
    ./use_cases/summarization.md
+   ./use_cases/tabular.rst
    ./use_cases/evaluation.rst
    ./use_cases/model_laboratory.ipynb
 

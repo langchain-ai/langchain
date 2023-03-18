@@ -1,19 +1,20 @@
 """Prompt schema definition."""
 from __future__ import annotations
 
+from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    StringPromptTemplate,
     check_valid_template,
 )
 
 
-class PromptTemplate(BasePromptTemplate, BaseModel):
+class PromptTemplate(StringPromptTemplate, BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -105,7 +106,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
     @classmethod
     def from_file(
-        cls, template_file: str, input_variables: List[str]
+        cls, template_file: Union[str, Path], input_variables: List[str]
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
@@ -116,7 +117,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         Returns:
             The prompt loaded from the file.
         """
-        with open(template_file, "r") as f:
+        with open(str(template_file), "r") as f:
             template = f.read()
         return cls(input_variables=input_variables, template=template)
 

@@ -8,7 +8,7 @@ In this tutorial, we will learn about:
 
 ## What is a prompt template?
 
-A prompt template refers to a reproducible way to generate a prompt. It contains a text string ("the template"), that can can take in a set of parameters from the end user and generate a prompt.
+A prompt template refers to a reproducible way to generate a prompt. It contains a text string ("the template"), that can take in a set of parameters from the end user and generate a prompt.
 
 The prompt template may contain:
 - instructions to the language model,

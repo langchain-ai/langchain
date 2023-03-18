@@ -56,6 +56,10 @@ but rather to show off an agent applied to particular use case.
 
 `Python Agent <./agent_toolkits/python.html>`_: This notebook covers how to produce and execute python code using an agent.
 
+`Pandas DataFrame Agent <./agent_toolkits/pandas.html>`_: This notebook covers how to do question answering over a pandas dataframe using an agent. Under the hood this calls the Python agent..
+
+`CSV Agent <./agent_toolkits/csv.html>`_: This notebook covers how to do question answering over a csv file. Under the hood this calls the Pandas DataFrame agent.
+
 .. toctree::
    :maxdepth: 1
    :glob:

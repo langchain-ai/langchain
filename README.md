@@ -42,7 +42,7 @@ Please see [here](https://langchain.readthedocs.io/en/latest/?) for full documen
 - Getting started (installation, setting up the environment, simple examples)
 - How-To examples (demos, integrations, helper functions)
 - Reference (full API docs)
-  Resources (high-level explanation of core concepts)
+- Resources (high-level explanation of core concepts)
 
 ## 🚀 What can this help with?
 
@@ -79,4 +79,4 @@ For more information on these concepts, please see our [full documentation](http
 
 As an open source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infra, or better documentation.
 
-For detailed information on how to contribute, see [here](CONTRIBUTING.md).
+For detailed information on how to contribute, see [here](.github/CONTRIBUTING.md).

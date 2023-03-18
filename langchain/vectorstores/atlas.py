@@ -63,7 +63,7 @@ class AtlasDB(VectorStore):
         except ImportError:
             raise ValueError(
                 "Could not import nomic python package. "
-                "Please it install it with `pip install nomic`."
+                "Please install it with `pip install nomic`."
             )
 
         if api_key is None:
