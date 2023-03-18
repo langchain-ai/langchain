@@ -20,6 +20,7 @@ from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain.chains.parallel import SimpleParallelChain
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
@@ -54,4 +55,5 @@ __all__ = [
     "GraphQAChain",
     "ConstitutionalChain",
     "QAGenerationChain",
+    "SimpleParallelChain",
 ]
