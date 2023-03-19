@@ -193,7 +193,28 @@ class BasePromptTemplate(BaseModel, ABC):
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+    
+    def rename_variable(self, variable: str, new_variable: str) -> None:
+        """Allows us to switch the variable name in the prompt template.
 
+        Args:
+            variable: The existing variable to be renamed.
+            new_variable: The new variable name.
+        
+        Example:
+        .. code-block:: python
+
+            prompt.rename_variable(variable="old_variable", new_variable="new_variable")
+        """
+        if variable not in self.input_variables:
+            raise ValueError(f"{variable} is not an input variable.")
+        if new_variable in self.input_variables:
+            raise ValueError(f"{new_variable} is already an input variable.")
+        # Find and replace variable in input_variables
+        index = self.input_variables.index(variable)
+        self.input_variables[index] = new_variable
+        # Find and replace variable in format_prompt
+        self.format_prompt = self.format_prompt.replace("{"+variable+"}", "{"+new_variable+"}")
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
