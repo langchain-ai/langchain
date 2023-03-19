@@ -7,8 +7,10 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import (
+    AIMessage,
     BaseLanguageModel,
     BaseMessage,
+    HumanMessage,
     SystemMessage,
     get_buffer_string,
 )
@@ -37,6 +39,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
+    summary_message_role: str = "system"
     memory_key: str = "history"  #: :meta private:
 
     @property
@@ -50,7 +53,18 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
-            buffer: Any = [SystemMessage(content=self.buffer)]
+            buffer: Any
+            if self.summary_message_role == "user":
+                buffer = [HumanMessage(content=self.buffer)]
+            elif self.summary_message_role == "assistant":
+                buffer = [AIMessage(content=self.buffer)]
+            elif self.summary_message_role == "system":
+                buffer = [SystemMessage(content=self.buffer)]
+            else:
+                raise ValueError(
+                    f"Invalid summary_message_role value: {self.summary_message_role}."
+                    " summary_message_role must be 'user', 'assistant', or 'system'."
+                )
         else:
             buffer = self.buffer
         return {self.memory_key: buffer}

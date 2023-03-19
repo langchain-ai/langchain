@@ -4,7 +4,13 @@ from pydantic import BaseModel, root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
-from langchain.schema import BaseMessage, SystemMessage, get_buffer_string
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel):
@@ -12,6 +18,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
 
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
+    summary_message_role: str = "system"
     memory_key: str = "history"
 
     @property
@@ -30,9 +37,18 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         """Return history buffer."""
         buffer = self.buffer
         if self.moving_summary_buffer != "":
-            first_messages: List[BaseMessage] = [
-                SystemMessage(content=self.moving_summary_buffer)
-            ]
+            first_messages: List[BaseMessage]
+            if self.summary_message_role == "user":
+                first_messages = [HumanMessage(content=self.moving_summary_buffer)]
+            elif self.summary_message_role == "assistant":
+                first_messages = [AIMessage(content=self.moving_summary_buffer)]
+            elif self.summary_message_role == "system":
+                first_messages = [SystemMessage(content=self.moving_summary_buffer)]
+            else:
+                raise ValueError(
+                    f"Invalid summary_message_role value: {self.summary_message_role}."
+                    " summary_message_role must be 'user', 'assistant', or 'system'."
+                )
             buffer = first_messages + buffer
         if self.return_messages:
             final_buffer: Any = buffer
