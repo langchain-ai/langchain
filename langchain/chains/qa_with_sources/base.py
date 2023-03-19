@@ -42,8 +42,12 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
+        sources_variable: Optional[str] = "source",
         **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
+        # Reformat the document_prompt if needed
+        if sources_variable not in document_prompt.input_variables:
+            document_prompt.rename_variable("source", sources_variable)
         """Construct the chain from an LLM."""
         llm_question_chain = LLMChain(llm=llm, prompt=question_prompt)
         llm_combine_chain = LLMChain(llm=llm, prompt=combine_prompt)
@@ -68,6 +72,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         llm: BaseLLM,
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
+        sources_variable: Optional[str] = "source",
         **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
@@ -75,6 +80,10 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         combine_document_chain = load_qa_with_sources_chain(
             llm, chain_type=chain_type, **_chain_kwargs
         )
+        if sources_variable not in combine_document_chain.document_prompt.input_variables:
+            combine_document_chain.document_prompt.rename_variable(
+                "source", sources_variable
+            )
         return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:
