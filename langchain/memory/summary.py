@@ -38,7 +38,6 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
-    summary_message_role: str = "system"
     memory_key: str = "history"  #: :meta private:
 
     @property
