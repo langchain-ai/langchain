@@ -4,8 +4,6 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
-from langchain.input import get_color_mapping
-
 
 class SimpleParallelChain(Chain, BaseModel):
     """Chain pipeline where multiple independent chains process the same inputs to produce multiple outputs.
