@@ -605,6 +605,11 @@ class OpenAIChat(BaseLLM, BaseModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        warnings.warn(
+            "You are trying to use a chat model. This way of initializing it is "
+            "no longer supported. Instead, please use: "
+            "`from langchain.chat_models import ChatOpenAI`"
+        )
         return values
 
     @property
