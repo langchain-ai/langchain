@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from langchain.chains.base import Chain
 from langchain.chains.parallel import SimpleParallelChain
 
+
 class FakeChain(Chain, BaseModel):
     """Fake Chain for testing purposes."""
 
@@ -31,6 +32,7 @@ class FakeChain(Chain, BaseModel):
             outputs[var] = f"{' '.join(variables)} {self.chain_id}"
         return outputs
 
+
 def test_parallel_usage_single_input() -> None:
     """Test parallel on single input."""
     input_variables = ["input"]
@@ -39,11 +41,13 @@ def test_parallel_usage_single_input() -> None:
             FakeChain(
                 input_variables=input_variables,
                 output_variables=["chain_out1"],
-                chain_id=1),
+                chain_id=1,
+            ),
             FakeChain(
                 input_variables=input_variables,
                 output_variables=["chain_out2"],
-                chain_id=2),
+                chain_id=2,
+            ),
         ],
         input_variables=input_variables,
         output_variables=["output1", "output2"],
@@ -51,6 +55,7 @@ def test_parallel_usage_single_input() -> None:
     output = chain("bar")
     expected_output = {"input": "bar", "output1": "bar 1", "output2": "bar 2"}
     assert output == expected_output
+
 
 def test_parallel_usage_multiple_inputs() -> None:
     """Test parallel on multiple inputs."""
@@ -76,6 +81,7 @@ def test_parallel_usage_multiple_inputs() -> None:
     expected_output = {"output1": "foo bar 1", "output2": "foo bar 2"}
     assert output == {**inputs, **expected_output}
 
+
 def test_parallel_usage_one_chain_single_output() -> None:
     """Test parallel on multiple inputs."""
     input_variables = ["input1", "input2"]
@@ -94,6 +100,7 @@ def test_parallel_usage_one_chain_single_output() -> None:
     output = chain(inputs)
     expected_output = {"output1": "foo bar 1"}
     assert output == {**inputs, **expected_output}
+
 
 def test_parallel_error_mismatched_inputs() -> None:
     """Test error is raised when the input variables to the parallel chain do not match the input variables to the chains."""
@@ -115,6 +122,7 @@ def test_parallel_error_mismatched_inputs() -> None:
             output_variables=["output1", "output2"],
         )
 
+
 def test_parallel_error_mismatched_inputs_between_chains() -> None:
     """Test error is raised when the input variables to different chains do not match."""
     with pytest.raises(ValueError):
@@ -135,6 +143,7 @@ def test_parallel_error_mismatched_inputs_between_chains() -> None:
             output_variables=["output1", "output2"],
         )
 
+
 def test_parallel_error_single_chain_multiple_outputs() -> None:
     """Test error is raised when there is a single chain but only multiple outputs."""
     input_variables = ["input1", "input2"]
@@ -150,6 +159,7 @@ def test_parallel_error_single_chain_multiple_outputs() -> None:
             input_variables=input_variables,
             output_variables=["output1", "output2"],
         )
+
 
 def test_parallel_error_multiple_chains_single_output() -> None:
     """Test error is raised when there are multiple chains but only a single output."""
@@ -172,6 +182,7 @@ def test_parallel_error_multiple_chains_single_output() -> None:
             output_variables=["output1"],
         )
 
+
 def test_parallel_error_different_number_of_chains_than_outputs() -> None:
     """Test error is raised when there are different numbers of chains than outputs."""
     input_variables = ["input1", "input2"]
@@ -192,6 +203,7 @@ def test_parallel_error_different_number_of_chains_than_outputs() -> None:
             input_variables=input_variables,
             output_variables=["output1", "output2", "output3"],
         )
+
 
 def test_parallel_error_zero_chains() -> None:
     """Test error is raised when there are no chains."""

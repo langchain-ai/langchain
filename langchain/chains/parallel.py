@@ -5,6 +5,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
 
+
 class SimpleParallelChain(Chain, BaseModel):
     """Chain pipeline where multiple independent chains process the same inputs to produce multiple outputs.
 
@@ -13,6 +14,7 @@ class SimpleParallelChain(Chain, BaseModel):
     Each chain is run in parallel and their outputs are merged together,
     with each output key of SimpleParallelChain corresponding to a different chain's output.
     """
+
     chains: List[Chain]
     input_variables: List[str]  #: :meta private:
     output_variables: List[str]  #: :meta private:
@@ -78,6 +80,8 @@ class SimpleParallelChain(Chain, BaseModel):
         outputs = {}
         for key, chain in zip(self.output_variables, self.chains):
             chain_output = chain(inputs, return_only_outputs=True)
-            only_output_key = next(iter(chain_output))  # we assume there is only one output key
+            only_output_key = next(
+                iter(chain_output)
+            )  # we assume there is only one output key
             outputs[key] = chain_output[only_output_key]
         return outputs
