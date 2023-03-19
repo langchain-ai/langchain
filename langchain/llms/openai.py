@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 import sys
 from typing import (
     Any,
@@ -28,6 +29,7 @@ from tenacity import (
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
+from langchain.chat_models.openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +167,11 @@ class BaseOpenAI(BaseLLM, BaseModel):
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
         if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+            warnings.warn(
+                "You are trying to use a chat model. This way of initializing it is "
+                "no longer supported. Instead, please use: "
+                "`from langchain.chat_models import ChatOpenAI`"
+            )
             return OpenAIChat(**data)
         return super().__new__(cls)
 
