@@ -142,16 +142,18 @@ class LLMChain(Chain, BaseModel):
 
         We may want to apply guardrails not just to raw string completions, but also to structured parsed completions.
         For this 1st attempt, we'll keep this simple.
+
+        TODO: actually, reasonable to do the parsing first so that guardrail.evaluate gets the reified data structure.
         """
         for guardrail in self.guardrails:
             evaluation, ok = guardrail.evaluate(prompt_value, completion)
-            if not ok:
-                # TODO: consider associating customer exception w/ guardrail
-                # as suggested in https://github.com/hwchase17/langchain/pull/1683/files#r1139987185
-                raise RuntimeError(evaluation.error_msg)
             if evaluation.revised_output:
                 assert isinstance(evaluation.revised_output, str)
                 completion = evaluation.revised_output
+            elif not ok and not evaluation.revised_output:
+                # TODO: consider associating customer exception w/ guardrail
+                # as suggested in https://github.com/hwchase17/langchain/pull/1683/files#r1139987185
+                raise RuntimeError(evaluation.error_msg)
 
         if self.output_parser:
             try:

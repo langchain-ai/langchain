@@ -7,10 +7,8 @@ from pydantic import BaseModel
 class GuardrailEvaluation(BaseModel):
     """Hm want to encapsulate the result of applying a guardrail
     """
-    # It may fail.
-    error_msg: str
-    # Optionally, it may retry upon failure. The retry can also fail.
-    revised_output: Any
+    error_msg: str                  # Indicate why initial output validation failed.
+    revised_output: Optional[Any]   # Optionally, try to fix the output.
 
 
 class Guardrail(ABC, BaseModel):
@@ -21,4 +19,5 @@ class Guardrail(ABC, BaseModel):
         is evaluated against that function's input and output.
 
         Evaluation includes a validation/verification step. It may also include a retry to generate a satisfactory revised output.
+        These steps are encapsulated jointly, as a single LM call may succeed in both.
         """
