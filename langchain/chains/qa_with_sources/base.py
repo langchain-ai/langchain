@@ -42,7 +42,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
-        sources_variable: Optional[str] = "source",
+        sources_variable: str = "source",
         **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
         # Reformat the document_prompt if needed
@@ -77,7 +77,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
         _chain_kwargs = chain_type_kwargs or {}
-        combine_document_chain = load_qa_with_sources_chain(
+        combine_document_chain: Any = load_qa_with_sources_chain(
             llm, chain_type=chain_type, **_chain_kwargs
         )
         if sources_variable not in combine_document_chain.document_prompt.input_variables:
