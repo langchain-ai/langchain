@@ -65,9 +65,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import OpenAIEmbeddings
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
-    
-    In order to use the library with Microsoft Azure endpoints, you need to set the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and optionally and API_VERSION.
-    The OPENAI_API_TYPE must be set to 'azure' and the others correspond to the properties of your endpoint.
+
+    In order to use the library with Microsoft Azure endpoints, you need to set
+    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and optionally and
+    API_VERSION.
+    The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
+    the properties of your endpoint.
     In addition, the deployment name must be passed as the model parameter.
 
     Example:
@@ -108,13 +111,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # TODO: deprecate this
     @root_validator(pre=True)
     def get_model_names(cls, values: Dict) -> Dict:
-        """model_name is for first generation, and model is for second generation. Both are not allowed together."""
+        # model_name is for first generation, and model is for second generation.
+        # Both are not allowed together.
         if "model_name" in values and "model" in values:
-                raise ValueError(
-                    "Both `model_name` and `model` were provided, "
-                    "but only one should be."
-                )
-        
+            raise ValueError(
+                "Both `model_name` and `model` were provided, "
+                "but only one should be."
+            )
+
         """Get model names from just old model name."""
         if "model_name" in values:
             if "document_model_name" in values:
@@ -130,8 +134,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             model_name = values.pop("model_name")
             values["document_model_name"] = f"text-search-{model_name}-doc-001"
             values["query_model_name"] = f"text-search-{model_name}-query-001"
-               
-        """Set document/query model names from model parameter."""
+
+        # Set document/query model names from model parameter.
         if "model" in values:
             if "document_model_name" in values:
                 raise ValueError(
@@ -148,7 +152,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             values["query_model_name"] = model
 
         return values
-        
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
