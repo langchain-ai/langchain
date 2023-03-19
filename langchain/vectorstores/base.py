@@ -4,12 +4,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, List, Optional
 
+from pydantic import BaseModel, Field
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseIndex
+from langchain.schema import BaseIndexInterface
 
 
-class VectorStore(BaseIndex, ABC):
+class VectorStore(ABC):
     """Interface for vector stores."""
 
     @abstractmethod
@@ -44,9 +46,6 @@ class VectorStore(BaseIndex, ABC):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
-
-    def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
-        return self.similarity_search(query, **kwargs)
 
     @abstractmethod
     def similarity_search(
@@ -126,3 +125,19 @@ class VectorStore(BaseIndex, ABC):
         **kwargs: Any,
     ) -> VectorStore:
         """Return VectorStore initialized from texts and embeddings."""
+
+    def to_index(self) -> VectorstoreIndex:
+        return VectorstoreIndex(vectorstore=self)
+
+
+class VectorstoreIndex(BaseIndexInterface, BaseModel):
+    vectorstore: VectorStore
+    search_kwargs: dict = Field(default_factory=dict)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
+        return self.vectorstore.similarity_search(query, **self.search_kwargs)

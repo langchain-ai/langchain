@@ -32,7 +32,9 @@ class VectorStoreIndexWrapper(BaseModel):
     def query(self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
-        chain = IndexQA.from_chain_type(llm, index=self.vectorstore, **kwargs)
+        chain = IndexQA.from_chain_type(
+            llm, index=self.vectorstore.to_index(), **kwargs
+        )
         return chain.run(question)
 
     def query_with_sources(
@@ -41,7 +43,7 @@ class VectorStoreIndexWrapper(BaseModel):
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
         chain = IndexQAWithSourcesChain.from_chain_type(
-            llm, index=self.vectorstore, **kwargs
+            llm, index=self.vectorstore.to_index(), **kwargs
         )
         return chain({chain.question_key: question})
 

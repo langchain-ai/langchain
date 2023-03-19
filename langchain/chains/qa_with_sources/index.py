@@ -7,21 +7,19 @@ from pydantic import BaseModel, Field
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
-from langchain.schema import BaseIndex
+from langchain.schema import BaseIndexInterface
 
 
 class IndexQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Question-answering with sources over an index."""
 
-    index: BaseIndex = Field(exclude=True)
+    index: BaseIndexInterface = Field(exclude=True)
     """Index to connect to."""
     reduce_k_below_max_tokens: bool = False
     """Reduce the number of results to return from store based on tokens limit"""
     max_tokens_limit: int = 3375
     """Restrict the docs to return from store based on tokens,
     enforced only for StuffDocumentChain and if reduce_k_below_max_tokens is to true"""
-    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Extra search args."""
 
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
         num_docs = len(docs)
@@ -44,5 +42,5 @@ class IndexQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        docs = self.index.get_relevant_texts(question, **self.search_kwargs)
+        docs = self.index.get_relevant_texts(question)
         return self._reduce_tokens_below_limit(docs)

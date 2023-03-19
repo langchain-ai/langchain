@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import warnings
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -14,34 +15,17 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseIndex, Document
+from langchain.schema import BaseIndexInterface, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class IndexQA(Chain, BaseModel):
-    """Chain for question-answering against an index.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import OpenAI
-            from langchain.chains import IndexQA
-            from langchain.faiss import FAISS
-            vectordb = FAISS(...)
-            indexQA = IndexQA.from_llm(llm=OpenAI(), index=vectordb)
-
-    """
-
-    index: BaseIndex = Field(exclude=True)
-    """Index to connect to."""
+class BaseIndexQA(Chain, BaseModel):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     return_source_documents: bool = False
     """Return the source documents."""
-    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Extra search args."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -72,7 +56,7 @@ class IndexQA(Chain, BaseModel):
     @classmethod
     def from_llm(
         cls, llm: BaseLLM, prompt: Optional[PromptTemplate] = None, **kwargs: Any
-    ) -> IndexQA:
+    ) -> BaseIndexQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
@@ -94,7 +78,7 @@ class IndexQA(Chain, BaseModel):
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         **kwargs: Any,
-    ) -> IndexQA:
+    ) -> BaseIndexQA:
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
@@ -102,8 +86,9 @@ class IndexQA(Chain, BaseModel):
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
+    @abstractmethod
     def _get_docs(self, question: str) -> List[Document]:
-        return self.index.get_relevant_texts(question, **self.search_kwargs)
+        """Get documents to do question answering over."""
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
@@ -128,7 +113,27 @@ class IndexQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class VectorDBQA(IndexQA, BaseModel):
+class IndexQA(BaseIndexQA, BaseModel):
+    """Chain for question-answering against an index.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import OpenAI
+            from langchain.chains import IndexQA
+            from langchain.faiss import FAISS
+            vectordb = FAISS(...)
+            indexQA = IndexQA.from_llm(llm=OpenAI(), index=vectordb)
+
+    """
+
+    index: BaseIndexInterface = Field(exclude=True)
+
+    def _get_docs(self, question: str) -> List[Document]:
+        return self.index.get_relevant_texts(question)
+
+
+class VectorDBQA(BaseIndexQA, BaseModel):
     """Chain for question-answering against a vector database."""
 
     index: VectorStore = Field(exclude=True, alias="vectorstore")
@@ -137,6 +142,8 @@ class VectorDBQA(IndexQA, BaseModel):
     """Number of documents to query for."""
     search_type: str = "similarity"
     """Search type to use over vectorstore. `similarity` or `mmr`."""
+    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Extra search args."""
 
     @property
     def vectorstore(self) -> VectorStore:

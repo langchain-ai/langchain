@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import warnings
+from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -13,7 +14,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseIndex, BaseLanguageModel, Document
+from langchain.schema import BaseIndexInterface, BaseLanguageModel, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -26,15 +27,13 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     return buffer
 
 
-class ChatIndexChain(Chain, BaseModel):
+class BaseChatIndexChain(Chain, BaseModel):
     """Chain for chatting with an index."""
 
-    index: BaseIndex
     combine_docs_chain: BaseCombineDocumentsChain
     question_generator: LLMChain
     output_key: str = "answer"
     return_source_documents: bool = False
-    search_kwargs: dict = Field(default_factory=dict)
     get_chat_history: Optional[Callable[[Tuple[str, str]], str]] = None
     """Return the source documents."""
 
@@ -65,12 +64,12 @@ class ChatIndexChain(Chain, BaseModel):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        index: BaseIndex,
+        index: BaseIndexInterface,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
         **kwargs: Any,
-    ) -> ChatIndexChain:
+    ) -> BaseChatIndexChain:
         """Load chain from LLM."""
         doc_chain = load_qa_chain(
             llm,
@@ -85,10 +84,9 @@ class ChatIndexChain(Chain, BaseModel):
             **kwargs,
         )
 
+    @abstractmethod
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        indexkwargs = inputs.get("indexkwargs", {})
-        full_index_kwargs = {**self.search_kwargs, **indexkwargs}
-        return self.index.get_relevant_texts(question, **full_index_kwargs)
+        """Get docs."""
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
@@ -138,11 +136,21 @@ class ChatIndexChain(Chain, BaseModel):
         super().save(file_path)
 
 
-class ChatVectorDBChain(ChatIndexChain, BaseModel):
+class ChatIndexChain(BaseChatIndexChain, BaseModel):
+    """Chain for chatting with an index."""
+
+    index: BaseIndexInterface
+
+    def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        return self.index.get_relevant_texts(question)
+
+
+class ChatVectorDBChain(BaseChatIndexChain, BaseModel):
     """Chain for chatting with a vector database."""
 
     index: VectorStore = Field(alias="vectorstore")
     top_k_docs_for_context: int = 4
+    search_kwargs: dict = Field(default_factory=dict)
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:

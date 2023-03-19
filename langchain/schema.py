@@ -275,7 +275,7 @@ class Document(BaseModel):
             return f"{result_prefix} {lookups[self.lookup_index]}"
 
 
-class BaseIndex(ABC):
+class BaseIndexInterface(ABC):
     @abstractmethod
     def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
         """Get texts relevant for a query.
