@@ -80,7 +80,10 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         combine_document_chain: Any = load_qa_with_sources_chain(
             llm, chain_type=chain_type, **_chain_kwargs
         )
-        if sources_variable not in combine_document_chain.document_prompt.input_variables:
+        if (
+            sources_variable
+            not in combine_document_chain.document_prompt.input_variables
+        ):
             combine_document_chain.document_prompt.rename_variable(
                 "source", sources_variable
             )
