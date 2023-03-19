@@ -182,13 +182,17 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        return {
+        params = {
             "model": self.model_name,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
             **self.model_kwargs,
         }
+        if params.get("max_tokens") == -1:
+            # for ChatGPT api, omitting max_tokens is equivalent to having no limit
+            del params["max_tokens"]
+        return params
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
         import openai
