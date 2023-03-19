@@ -213,8 +213,8 @@ class BasePromptTemplate(BaseModel, ABC):
         # Find and replace variable in input_variables
         index = self.input_variables.index(variable)
         self.input_variables[index] = new_variable
-        # Find and replace variable in format_prompt
-        self.format_prompt = self.format_prompt.replace("{"+variable+"}", "{"+new_variable+"}")
+        # Find and replace variable in prompt template
+        self.template = self.template.replace("{"+variable+"}", "{"+new_variable+"}")
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
     def format_prompt(self, **kwargs: Any) -> PromptValue:
