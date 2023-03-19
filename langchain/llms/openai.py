@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-import warnings
 import sys
+import warnings
 from typing import (
     Any,
     Callable,
@@ -29,7 +29,6 @@ from tenacity import (
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
-from langchain.chat_models.openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
