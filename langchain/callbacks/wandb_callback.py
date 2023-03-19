@@ -5,8 +5,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-import spacy
-
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -20,6 +18,17 @@ def import_wandb() -> Any:
             "package installed. Please install it with `pip install wandb`"
         )
     return wandb
+
+
+def import_spacy() -> Any:
+    try:
+        import spacy  # noqa: F401
+    except ImportError:
+        raise ImportError(
+            "To use the wandb callback manager you need to have the `spacy` python "
+            "package installed. Please install it with `pip install spacy`"
+        )
+    return spacy
 
 
 def import_pandas() -> Any:
@@ -135,6 +144,7 @@ def analyze_text(
     resp = {}
     textstat = import_textstat()
     wandb = import_wandb()
+    spacy = import_spacy()
     if complexity_metrics:
         text_complexity_metrics = {
             "flesch_reading_ease": textstat.flesch_reading_ease(text),
@@ -394,6 +404,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         wandb = import_wandb()
         import_pandas()
         import_textstat()
+        spacy = import_spacy()
         super().__init__()
 
         self.job_type = job_type
