@@ -42,7 +42,7 @@ class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
         return {self.memory_key: final_buffer}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer. pruned"""
+        """Save context from this conversation to buffer. Pruned."""
         super().save_context(inputs, outputs)
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
