@@ -1,6 +1,7 @@
 """Chain for question-answering against a vector database."""
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -11,7 +12,6 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
-from langchain.deprecated import deprecated
 from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseIndex, Document
@@ -48,6 +48,7 @@ class IndexQA(Chain, BaseModel):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+        allow_population_by_field_name = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -127,9 +128,6 @@ class IndexQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-@deprecated(
-    "`VectorDBQA` is deprecated - please use `from langchain.chains import IndexQA`"
-)
 class VectorDBQA(IndexQA, BaseModel):
     """Chain for question-answering against a vector database."""
 
@@ -147,6 +145,14 @@ class VectorDBQA(IndexQA, BaseModel):
     @vectorstore.setter
     def vectorstore(self, vectorstore: VectorStore) -> None:
         self.index = vectorstore
+
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "`VectorDBQA` is deprecated - "
+            "please use `from langchain.chains import IndexQA`"
+        )
+        return values
 
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:

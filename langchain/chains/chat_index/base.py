@@ -1,17 +1,17 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.chat_index.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.deprecated import deprecated
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseIndex, BaseLanguageModel, Document
 from langchain.vectorstores.base import VectorStore
@@ -37,6 +37,13 @@ class ChatIndexChain(Chain, BaseModel):
     search_kwargs: dict = Field(default_factory=dict)
     get_chat_history: Optional[Callable[[Tuple[str, str]], str]] = None
     """Return the source documents."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+        allow_population_by_field_name = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -131,15 +138,19 @@ class ChatIndexChain(Chain, BaseModel):
         super().save(file_path)
 
 
-@deprecated(
-    "`ChatVectorDBChain` is deprecated - "
-    "please use `from langchain.chains import ChatIndexChain`"
-)
 class ChatVectorDBChain(ChatIndexChain, BaseModel):
     """Chain for chatting with a vector database."""
 
     index: VectorStore = Field(alias="vectorstore")
     top_k_docs_for_context: int = 4
+
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "`ChatVectorDBChain` is deprecated - "
+            "please use `from langchain.chains import ChatIndexChain`"
+        )
+        return values
 
     @property
     def vectorstore(self) -> VectorStore:
