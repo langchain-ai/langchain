@@ -13,10 +13,10 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLanguageModel,
     LLMResult,
+    ModelOutputGuard,
+    ModelOutputParserGuard,
     PromptValue,
 )
-from langchain.guardrails import Guardrail
-from langchain.guardrails.utils import dumb_davinci_retry
 
 
 class LLMChain(Chain, BaseModel):
@@ -38,8 +38,8 @@ class LLMChain(Chain, BaseModel):
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
     output_parser: Optional[BaseOutputParser] = None
-    output_parser_retry_enabled: bool = False
-    guardrails: List[Guardrail] = Field(default_factory=list)
+    guards: List[ModelOutputGuard] = Field(default_factory=list)
+    output_parser_guard: Optional[ModelOutputParserGuard] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -145,33 +145,18 @@ class LLMChain(Chain, BaseModel):
 
         TODO: actually, reasonable to do the parsing first so that guardrail.evaluate gets the reified data structure.
         """
-        for guardrail in self.guardrails:
-            evaluation, ok = guardrail.evaluate(prompt_value, completion)
-            if evaluation.revised_output:
-                assert isinstance(evaluation.revised_output, str)
-                completion = evaluation.revised_output
-            elif not ok and not evaluation.revised_output:
-                # TODO: consider associating customer exception w/ guardrail
-                # as suggested in https://github.com/hwchase17/langchain/pull/1683/files#r1139987185
-                raise RuntimeError(evaluation.error_msg)
+        for guard in self.guards:
+            completion = guard.evaluate(prompt_value, completion)
 
         if self.output_parser:
-            try:
-                parsed_completion = self.output_parser.parse(completion)
-            except OutputParserException as e:
-                if self.output_parser_retry_enabled:
-                    _text = f"Uh-oh! Got {e}. Retrying with DaVinci."
-                    self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
-
-                    retried_completion = dumb_davinci_retry(prompt_value.to_string(), completion)
-                    parsed_completion = self.output_parser.parse(retried_completion)
-                else:
-                    raise e
-
-            completion = parsed_completion
+            if self.output_parser_guard:
+                completion = self.output_parser_guard.evaluate(
+                    prompt_value, completion, self.output_parser
+                )
+            else:
+                completion = self.output_parser.parse(completion)
 
         return completion
-
 
     def create_outputs(
         self, response: LLMResult, prompts: List[PromptValue]

@@ -6,6 +6,8 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.output_parsers import BaseOutputParser
+
 
 def get_buffer_string(
     messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
@@ -244,3 +246,17 @@ class BaseMemory(BaseModel, ABC):
 
 
 Memory = BaseMemory
+
+
+class ModelOutputGuard(ABC, BaseModel):
+    @abstractmethod
+    def evaluate(self, prompt_value: PromptValue, output: str) -> str:
+        """Evaluate and fix model output. Should still return a string."""
+
+
+class ModelOutputParserGuard(ABC, BaseModel):
+    @abstractmethod
+    def evaluate(
+        self, prompt_value: PromptValue, output: str, output_parser: BaseOutputParser
+    ) -> Any:
+        """Evaluate and fix model output. Should parse output."""
