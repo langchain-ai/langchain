@@ -11,6 +11,10 @@ class CSVLoader(BaseLoader):
     Each document represents one row of the CSV file. Every row is converted into a
     key/value pair and outputted to a new line in the document's page_content.
 
+    The source for each document loaded from csv is set to the value of the `file_path` argument for all doucments by default.
+    You can override this by setting the `source_column` argument to the name of a column in the CSV file.
+    The source of each document will then be set to the value of the column with the name specified in `source_column`.
+
     Output Example:
         .. code-block:: txt
 
@@ -19,8 +23,9 @@ class CSVLoader(BaseLoader):
             column3: value3
     """
 
-    def __init__(self, file_path: str, csv_args: Optional[Dict] = None):
+    def __init__(self, file_path: str, source_column: str = None, csv_args: Optional[Dict] = None):
         self.file_path = file_path
+        self.source_column = source_column
         if csv_args is None:
             self.csv_args = {
                 "delimiter": ",",
@@ -40,7 +45,7 @@ class CSVLoader(BaseLoader):
                         page_content="\n".join(
                             f"{k.strip()}: {v.strip()}" for k, v in row.items()
                         ),
-                        metadata={"source": self.file_path, "row": i},
+                        metadata={"source": row[self.source_column] if self.source_column else self.file_path, "row": i},
                     )
                 )
 
