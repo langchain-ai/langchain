@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import warnings
 from typing import (
     Any,
     Callable,
@@ -163,7 +164,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
-        if data.get("model_name", "").startswith("gpt-3.5-turbo"):
+        model_name = data.get("model_name", "")
+        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+            warnings.warn(
+                "You are trying to use a chat model. This way of initializing it is "
+                "no longer supported. Instead, please use: "
+                "`from langchain.chat_models import ChatOpenAI`"
+            )
             return OpenAIChat(**data)
         return super().__new__(cls)
 
@@ -598,6 +605,11 @@ class OpenAIChat(BaseLLM, BaseModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        warnings.warn(
+            "You are trying to use a chat model. This way of initializing it is "
+            "no longer supported. Instead, please use: "
+            "`from langchain.chat_models import ChatOpenAI`"
+        )
         return values
 
     @property

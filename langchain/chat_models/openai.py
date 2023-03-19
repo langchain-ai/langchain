@@ -97,7 +97,8 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         message = _convert_dict_to_message(res["message"])
         gen = ChatGeneration(message=message)
         generations.append(gen)
-    return ChatResult(generations=generations)
+    llm_output = {"token_usage": response["usage"]}
+    return ChatResult(generations=generations, llm_output=llm_output)
 
 
 class ChatOpenAI(BaseChatModel, BaseModel):
@@ -128,7 +129,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
     class Config:
@@ -220,6 +221,19 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                raise ValueError("Should always be something for OpenAI.")
+            token_usage = output["token_usage"]
+            for k, v in token_usage.items():
+                if k in overall_token_usage:
+                    overall_token_usage[k] += v
+                else:
+                    overall_token_usage[k] = v
+        return {"token_usage": overall_token_usage}
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
