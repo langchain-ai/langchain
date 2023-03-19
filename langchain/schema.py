@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -244,29 +244,3 @@ class BaseMemory(BaseModel, ABC):
 
 
 Memory = BaseMemory
-
-
-class ValidationError(BaseModel):
-    error_message: str
-
-
-class Guardrail(ABC):
-    @abstractmethod
-    def check(
-        self, prompt_value: PromptValue, result: Any
-    ) -> Optional[ValidationError]:
-        """Check whether there's a validation error."""
-
-    @abstractmethod
-    def fix(
-        self, prompt_value: PromptValue, result: Any, error: ValidationError
-    ) -> Any:
-        """"""
-
-
-class Fixer(ABC):
-    @abstractmethod
-    def fix(
-        self, prompt_value: PromptValue, result: Any, error: ValidationError
-    ) -> Any:
-        """"""

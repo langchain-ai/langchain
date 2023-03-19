@@ -7,16 +7,16 @@ from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
-from langchain.output_parsers.base import OutputGuardrail
+from langchain.output_parsers.base import BaseOutputParser, OutputParserException
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLanguageModel,
-    Guardrail,
     LLMResult,
     PromptValue,
-    ValidationError,
 )
+from langchain.guardrails import Guardrail
+from langchain.guardrails.utils import dumb_davinci_retry
 
 
 class LLMChain(Chain, BaseModel):
@@ -37,7 +37,8 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
-    output_parser: Optional[OutputGuardrail] = None
+    output_parser: Optional[BaseOutputParser] = None
+    output_parser_retry_enabled: bool = False
     guardrails: List[Guardrail] = Field(default_factory=list)
 
     class Config:
@@ -136,20 +137,39 @@ class LLMChain(Chain, BaseModel):
         response, prompts = await self.agenerate(input_list)
         return self.create_outputs(response, prompts)
 
-    def _get_final_output(self, text: str, prompt_value: PromptValue) -> Any:
-        result: Any = text
+    def _get_final_output(self, completion: str, prompt_value: PromptValue) -> Any:
+        """Validate raw completion (guardrails) + extract structured data from it (parser).
+
+        We may want to apply guardrails not just to raw string completions, but also to structured parsed completions.
+        For this 1st attempt, we'll keep this simple.
+        """
         for guardrail in self.guardrails:
-            if isinstance(guardrail, OutputGuardrail):
-                try:
-                    result = guardrail.output_parser.parse(result)
-                    error = None
-                except Exception as e:
-                    error = ValidationError(text=e)
-            else:
-                error = guardrail.check(prompt_value, result)
-            if error is not None:
-                result = guardrail.fix(prompt_value, result, error)
-        return result
+            evaluation, ok = guardrail.evaluate(prompt_value, completion)
+            if not ok:
+                # TODO: consider associating customer exception w/ guardrail
+                # as suggested in https://github.com/hwchase17/langchain/pull/1683/files#r1139987185
+                raise RuntimeError(evaluation.error_msg)
+            if evaluation.revised_output:
+                assert isinstance(evaluation.revised_output, str)
+                completion = evaluation.revised_output
+
+        if self.output_parser:
+            try:
+                parsed_completion = self.output_parser.parse(completion)
+            except OutputParserException as e:
+                if self.output_parser_retry_enabled:
+                    _text = f"Uh-oh! Got {e}. Retrying with DaVinci."
+                    self.callback_manager.on_text(_text, end="\n", verbose=self.verbose)
+
+                    retried_completion = dumb_davinci_retry(prompt_value.to_string(), completion)
+                    parsed_completion = self.output_parser.parse(retried_completion)
+                else:
+                    raise e
+
+            completion = parsed_completion
+
+        return completion
+
 
     def create_outputs(
         self, response: LLMResult, prompts: List[PromptValue]
@@ -196,6 +216,7 @@ class LLMChain(Chain, BaseModel):
         """
         return (await self.acall(kwargs))[self.output_key]
 
+    # TODO: if an output_parser is provided, it should always be applied. remove these methods.
     def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)

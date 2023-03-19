@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from langchain.output_parsers.base import BaseOutputParser
+from langchain.output_parsers.base import BaseOutputParser, OutputParserException
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
 
 
@@ -24,7 +24,7 @@ class PydanticOutputParser(BaseOutputParser):
         except (json.JSONDecodeError, ValidationError) as e:
             name = self.pydantic_object.__name__
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
-            raise ValueError(msg)
+            raise OutputParserException(msg)
 
     def get_format_instructions(self) -> str:
         schema = self.pydantic_object.schema()
