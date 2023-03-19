@@ -128,7 +128,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    max_tokens: int = 256
+    max_tokens: int = -1
     """Maximum number of tokens to generate."""
 
     class Config:
