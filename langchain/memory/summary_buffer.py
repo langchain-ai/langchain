@@ -12,7 +12,6 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
 
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
-    summary_message_role: str = "system"
     memory_key: str = "history"
 
     @property
