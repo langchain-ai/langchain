@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 
 from pydantic import BaseModel, root_validator
 
@@ -19,6 +19,7 @@ class SummarizerMixin(BaseModel):
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
     prompt: BasePromptTemplate = SUMMARY_PROMPT
+    summary_message_cls: Type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
         self, messages: List[BaseMessage], existing_summary: str
@@ -50,7 +51,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
-            buffer: Any = [SystemMessage(content=self.buffer)]
+            buffer: Any = [self.summary_message_cls(content=self.buffer)]
         else:
             buffer = self.buffer
         return {self.memory_key: buffer}
