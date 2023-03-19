@@ -4,7 +4,7 @@ from pydantic import BaseModel, root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
-from langchain.schema import BaseMessage, SystemMessage, get_buffer_string
+from langchain.schema import BaseMessage, get_buffer_string
 
 
 class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel):
@@ -12,6 +12,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
 
     max_token_limit: int = 2000
     moving_summary_buffer: str = ""
+    summary_message_role: str = "system"
     memory_key: str = "history"
 
     @property
@@ -31,7 +32,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         buffer = self.buffer
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
-                SystemMessage(content=self.moving_summary_buffer)
+                self.summary_message_cls(content=self.moving_summary_buffer)
             ]
             buffer = first_messages + buffer
         if self.return_messages:
