@@ -26,3 +26,7 @@ class BaseOutputParser(BaseModel, ABC):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+class OutputParserException(Exception):
+    pass
