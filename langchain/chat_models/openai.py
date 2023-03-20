@@ -123,6 +123,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    request_timeout: int = 60
+    """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -185,6 +187,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
+            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
