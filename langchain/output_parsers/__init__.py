@@ -1,4 +1,4 @@
-from langchain.output_parsers.base import BaseOutputParser
+from langchain.output_parsers.base import BaseOutputParser, OutputParserException
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
@@ -19,4 +19,5 @@ __all__ = [
     "ResponseSchema",
     "GuardrailsOutputParser",
     "PydanticOutputParser",
+    "OutputParserException",
 ]

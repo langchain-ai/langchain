@@ -1,9 +1,7 @@
 from typing import Optional
 
-from langchain.chains.llm import LLMChain
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLanguageModel
-from langchain.schema import PromptValue
+from langchain.schema import BaseLanguageModel, PromptValue
 
 
 NAIVE_COMPLETION_RETRY = """Prompt:
@@ -36,5 +34,5 @@ def naive_retry(llm: BaseLanguageModel, prompt: PromptValue, completion: str, er
     else:
         prompt_template = PromptTemplate.from_template(NAIVE_COMPLETION_RETRY)
 
-    llm_chain = LLMChain(llm=llm, prompt=prompt_template)
-    return llm_chain.predict(**{template_vars})
+    retry_prompt = prompt_template.format_prompt(**template_vars)
+    return llm(retry_prompt.to_string())

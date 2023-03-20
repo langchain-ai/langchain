@@ -12,10 +12,11 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLanguageModel,
     Generation,
-    GuardedOutputParser,
     LLMResult,
     PromptValue,
 )
+from langchain.output_parsers import BaseOutputParser
+from langchain.guardrails.parsing import GuardedOutputParser
 
 
 class LLMChain(Chain, BaseModel):
@@ -36,7 +37,6 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
-    guarded_output_parser: Optional[GuardedOutputParser] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -140,12 +140,12 @@ class LLMChain(Chain, BaseModel):
         """Get the final output from a list of generations for a prompt."""
         completion = generations[0].text
         if self.prompt.output_parser:
-            if self.guarded_output_parser:
-                completion = self.guarded_output_parser.parse(
-                    prompt_value, completion, self.prompt.output_parser
-                )
-            else:
-                completion = self.prompt.output_parser.parse(completion)
+            parser = self.prompt.output_parser
+            if isinstance(parser, BaseOutputParser):
+                completion = parser.parse(completion)
+            elif isinstance(parser, GuardedOutputParser):
+                # TODO: not ideal to hide retry calls from user. can we expose it in colored log?
+                completion = parser.parse(prompt_value, completion)
 
         return completion
 
