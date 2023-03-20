@@ -226,7 +226,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         overall_token_usage: dict = {}
         for output in llm_outputs:
             if output is None:
-                raise ValueError("Should always be something for OpenAI.")
+                # Happens in streaming
+                continue
             token_usage = output["token_usage"]
             for k, v in token_usage.items():
                 if k in overall_token_usage:
