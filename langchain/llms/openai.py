@@ -94,6 +94,8 @@ def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> 
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
+        if kwargs["prompt"] is None:
+            del kwargs["prompt"]
         return llm.client.create(**kwargs)
 
     return _completion_with_retry(**kwargs)
@@ -162,18 +164,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
-    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
-        """Initialize the OpenAI object."""
-        model_name = data.get("model_name", "")
-        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
-            warnings.warn(
-                "You are trying to use a chat model. This way of initializing it is "
-                "no longer supported. Instead, please use: "
-                "`from langchain.chat_models import ChatOpenAI`"
-            )
-            return OpenAIChat(**data)
-        return super().__new__(cls)
-
     class Config:
         """Configuration for this pydantic object."""
 
@@ -209,6 +199,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
             openai.api_key = openai_api_key
             values["client"] = openai.Completion
+            values["chat_client"] = openai.ChatCompletion
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
@@ -265,6 +256,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
             if self.streaming:
                 if len(_prompts) > 1:
                     raise ValueError("Cannot stream results with multiple prompts.")
+                if params["model"].startswith("gpt-3.5-turbo") or params["model"].startswith("gpt-4"):
+                    raise ValueError("Cannot stream results with gpt-3.5-turbo or gpt-4, use chat.")
                 params["stream"] = True
                 response = _streaming_response_template()
                 for stream_resp in completion_with_retry(
@@ -278,8 +271,22 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = completion_with_retry(self, prompt=_prompts, **params)
-                choices.extend(response["choices"])
+                if params["model"].startswith("gpt-3.5-turbo") or params["model"].startswith("gpt-4"):
+                    self.client = self.chat_client
+                    if "logprobs" in params:
+                        del params["logprobs"]
+                    if "best_of" in params:
+                        del params["best_of"]
+                    for _prompt in _prompts:
+                        params["messages"] = [{"role": "user", "content": _prompt}]
+                        response = completion_with_retry(self, prompt=None, **params).to_dict_recursive()
+                        for c in response["choices"]:
+                            c["text"] = c["message"]["content"]
+                            del c["message"]
+                        choices.extend(response["choices"])
+                else:
+                    response = completion_with_retry(self, prompt=_prompts, **params)
+                    choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
                 update_token_usage(_keys, response, token_usage)
