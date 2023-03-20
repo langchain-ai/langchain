@@ -68,17 +68,17 @@ class AzureChatOpenAI(ChatOpenAI):
             "OPENAI_API_KEY",
         )
         openai_api_base = get_from_dict_or_env(
-            values,
+            values["model_kwargs"],
             "openai_api_base",
             "OPENAI_API_BASE",
         )
         openai_api_version = get_from_dict_or_env(
-            values,
+            values["model_kwargs"],
             "openai_api_version",
             "OPENAI_API_VERSION",
         )
         openai_api_type = get_from_dict_or_env(
-            values,
+            values["model_kwargs"],
             "openai_api_type",
             "OPENAI_API_TYPE",
         )
