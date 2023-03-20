@@ -12,7 +12,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
 
     """Model name to use."""
-    model_name: str = "ViT-B-32"
+    model_name: str = "ViT-B-32::openai"
 
     jina_auth_token: Optional[str] = None
 
@@ -22,7 +22,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
         # TODO: validate model name
 
-        values["endpoint"] = f"https://api.jina.ai/model/{values['model_name']}"
+        values["model_host"] = f"https://api.jina.ai/model/{values['model_name']}"
         return values
 
     @root_validator()
@@ -34,15 +34,18 @@ class JinaEmbeddings(BaseModel, Embeddings):
         try:
             import jina
 
-            values["client"] = jina.Client(
-                host=values["endpoint"], token=jina_auth_token
-            )
+            values["meta_data"] = (("authorization", jina_auth_token),)
+            values["client"] = jina.Client(host=values["model_host"])
         except ImportError:
             raise ValueError(
                 "Could not import `jina` python package. "
                 "Please it install it with `pip install jina`."
             )
         return values
+
+    def _post(self, docs, **kwargs):
+        payload = dict(inputs=docs, metadata=self.meta_data, **kwargs)
+        return self.client.post(on="/encode", **payload)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Jina's embedding endpoint.
@@ -51,8 +54,10 @@ class JinaEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.embed(
-            model=self.model, texts=texts, truncate=self.truncate
+        from docarray import Document, DocumentArray
+
+        embeddings = self._post(
+            docs=DocumentArray([Document(text=t) for t in texts])
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
@@ -63,7 +68,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(
-            model=self.model, texts=[text], truncate=self.truncate
-        ).embeddings[0]
+        from docarray import Document, DocumentArray
+
+        embedding = self._post(docs=DocumentArray([Document(text=text)])).embeddings[0]
         return list(map(float, embedding))
