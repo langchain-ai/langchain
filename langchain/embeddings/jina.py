@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
+import jina
 from pydantic import BaseModel, root_validator
 
 from langchain.embeddings.base import Embeddings
@@ -15,27 +16,53 @@ class JinaEmbeddings(BaseModel, Embeddings):
     model_name: str = "ViT-B-32::openai"
 
     jina_auth_token: Optional[str] = None
+    jina_api_url: str = "https://api.clip.jina.ai/api/v1/models/"
+    request_headers: Optional[dict] = None
 
-    @root_validator(pre=True)
-    def get_endpoint(cls, values: Dict) -> Dict:
-        """Get the endpoint from the model name."""
+    def __init__(self, **kwargs: Any):
+        """Initialize the jina embeddings."""
+        super().__init__(**kwargs)
 
-        # TODO: validate model name
+        import os
 
-        values["model_host"] = f"https://api.jina.ai/model/{values['model_name']}"
-        return values
+        import requests
+
+        jina_api_url = os.environ.get("JINA_API_URL", self.jina_api_url)
+
+        try:
+            resp = requests.get(
+                jina_api_url + f"?model_name={self.model_name}",
+                headers={"Authorization": self.jina_auth_token},
+            )
+
+            if resp.status_code == 401:
+                raise ValueError(
+                    "The given Jina auth token is invalid. Please check your Jina auth token."
+                )
+            elif resp.status_code == 404:
+                raise ValueError(
+                    f"The given model name `{self.model_name}` is not valid. "
+                    f"Please go to https://cloud.jina.ai/user/inference "
+                    f"and create a model with the given model name."
+                )
+            resp.raise_for_status()
+
+            endpoint = resp.json()["endpoints"]["grpc"]
+            self.client = jina.Client(host=endpoint)
+        except requests.exceptions.HTTPError as err:
+            raise ValueError(f"Error: {err!r}")
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that auth token and python package exists in environment."""
+        """Validate that auth token exists in environment."""
         jina_auth_token = get_from_dict_or_env(
-            values, "jina_auth_token", "JIAN_AUTH_TOKEN"
+            values, "jina_auth_token", "JINA_AUTH_TOKEN"
         )
         try:
             import jina
 
-            values["meta_data"] = (("authorization", jina_auth_token),)
-            values["client"] = jina.Client(host=values["model_host"])
+            values["jina_auth_token"] = jina_auth_token
+            values["request_headers"] = (("authorization", jina_auth_token),)
         except ImportError:
             raise ValueError(
                 "Could not import `jina` python package. "
@@ -44,7 +71,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
         return values
 
     def _post(self, docs, **kwargs):
-        payload = dict(inputs=docs, metadata=self.meta_data, **kwargs)
+        payload = dict(inputs=docs, metadata=self.request_headers, **kwargs)
         return self.client.post(on="/encode", **payload)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
