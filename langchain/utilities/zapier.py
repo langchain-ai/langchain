@@ -38,7 +38,6 @@ class ZapierNLAWrapper(BaseModel):
 
     zapier_nla_api_key: str
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
-    zapier_nla_api_dynamic_base: str = "https://nla.zapier.com/api/v1/dynamic/"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -101,7 +100,7 @@ class ZapierNLAWrapper(BaseModel):
         https://nla.zapier.com/api/v1/dynamic/docs)
         """
         session = self._get_session()
-        response = session.get(self.zapier_nla_api_dynamic_base + "exposed/")
+        response = session.get(self.zapier_nla_api_base + "exposed/")
         response.raise_for_status()
         return response.json()["results"]
 
@@ -148,8 +147,8 @@ class ZapierNLAWrapper(BaseModel):
         data = self.preview(*args, **kwargs)
         return json.dumps(data)
 
-    def list_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    def list_as_str(self) -> str:  # type: ignore[no-untyped-def]
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
-        actions = self.list(*args, **kwargs)
+        actions = self.list()
         return json.dumps(actions)
