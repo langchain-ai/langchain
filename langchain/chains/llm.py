@@ -135,10 +135,10 @@ class LLMChain(Chain, BaseModel):
         return self.create_outputs(response, prompts)
 
     def _get_final_output(
-        self, generation: List[Generation], prompt_value: PromptValue
+        self, generations: List[Generation], prompt_value: PromptValue
     ) -> Any:
         """Get the final output from a list of generations for a prompt."""
-        completion = generation[0].text
+        completion = generations[0].text
         if self.prompt.output_parser:
             if self.guarded_output_parser:
                 completion = self.guarded_output_parser.parse(
