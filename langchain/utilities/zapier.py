@@ -1,6 +1,6 @@
 """Util that can interact with Zapier NLA.
 
-Full docs here: https://nla.zapier.com/api/v1/docs
+Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
 
 Note: this wrapper currently only implemented the `api_key` auth method for testing
 and server-side production use cases (using the developer's connected accounts on
@@ -24,7 +24,7 @@ from langchain.utils import get_from_dict_or_env
 class ZapierNLAWrapper(BaseModel):
     """Wrapper for Zapier NLA.
 
-    Full docs here: https://nla.zapier.com/api/v1/docs
+    Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
 
     Note: this wrapper currently only implemented the `api_key` auth method for
     testingand server-side production use cases (using the developer's connected
@@ -97,7 +97,7 @@ class ZapierNLAWrapper(BaseModel):
         `params` will always contain an `instructions` key, the only required
         param. All others optional and if provided will override any AI guesses
         (see "understanding the AI guessing flow" here:
-        https://nla.zapier.com/api/v1/docs)
+        https://nla.zapier.com/api/v1/dynamic/docs)
         """
         session = self._get_session()
         response = session.get(self.zapier_nla_api_base + "exposed/")
