@@ -1,6 +1,6 @@
 """## Zapier Natural Language Actions API
 \
-Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
+Full docs here: https://nla.zapier.com/api/v1/docs
 
 **Zapier Natural Language Actions** gives you access to the 5k+ apps, 20k+ actions
 on Zapier's platform through a natural language API interface.
@@ -24,7 +24,7 @@ NLA offers both API Key and OAuth for signing NLA API requests.
     connected accounts on Zapier.com
 
 This quick start will focus on the server-side use case for brevity.
-Review [full docs](https://nla.zapier.com/api/v1/dynamic/docs) or reach out to
+Review [full docs](https://nla.zapier.com/api/v1/docs) or reach out to
 nla@zapier.com for user-facing oauth developer support.
 
 Typically you'd use SequentialChain, here's a basic example:
@@ -92,7 +92,7 @@ class ZapierNLARunAction(BaseTool):
             (eg. "get the latest email from Mike Knoop" for "Gmail: find email" action)
         params: a dict, optional. Any params provided will *override* AI guesses
             from `instructions` (see "understanding the AI guessing flow" here:
-            https://nla.zapier.com/api/v1/dynamic/docs)
+            https://nla.zapier.com/api/v1/docs)
     """
 
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
