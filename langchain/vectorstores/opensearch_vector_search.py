@@ -35,11 +35,11 @@ def _import_bulk() -> Any:
     return bulk
 
 
-def _get_opensearch_client(opensearch_url: str) -> Any:
+def _get_opensearch_client(opensearch_url: str, **kwargs) -> Any:
     """Get OpenSearch client from the opensearch_url, otherwise raise error."""
     try:
         opensearch = _import_opensearch()
-        client = opensearch(opensearch_url)
+        client = opensearch(opensearch_url, **kwargs)
     except ValueError as e:
         raise ValueError(
             f"OpenSearch client string provided is not in proper format. "
@@ -218,12 +218,12 @@ class OpenSearchVectorSearch(VectorStore):
     """
 
     def __init__(
-        self, opensearch_url: str, index_name: str, embedding_function: Embeddings
+        self, opensearch_url: str, index_name: str, embedding_function: Embeddings, **kwargs
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        self.client = _get_opensearch_client(opensearch_url)
+        self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     def add_texts(
         self,
