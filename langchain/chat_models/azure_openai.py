@@ -57,7 +57,7 @@ class AzureChatOpenAI(ChatOpenAI):
     """
 
     deployment_name: str = ""
-    stop: List[str] = ["<|im_end|>"]
+    stop: List[str] | None = ["<|im_end|>"]
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -144,8 +144,10 @@ class AzureChatOpenAI(ChatOpenAI):
         }
         if stop is not None:
             if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
+                params['stop'].extend(stop)
+                # raise ValueError("`stop` found in both the input and default params.")
+            else:
+                params["stop"] = stop
         prompt = _create_chat_prompt(messages)
         return prompt, params
 

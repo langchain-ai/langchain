@@ -39,6 +39,8 @@ class AgentOutputParser(BaseOutputParser):
         cleaned_output = text.strip()
         if "```json" in cleaned_output:
             _, cleaned_output = cleaned_output.split("```json")
+        if '<|im_end|>' in cleaned_output:
+            cleaned_output, _ = cleaned_output.split('<|im_end|>')
         if "```" in cleaned_output:
             cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
