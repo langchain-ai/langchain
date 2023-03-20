@@ -8,8 +8,8 @@ from pydantic import BaseModel, Extra, Field
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 
 
@@ -24,7 +24,7 @@ class SQLDatabaseChain(Chain, BaseModel):
             db_chain = SQLDatabaseChain(llm=OpenAI(), database=db)
     """
 
-    llm: BaseLLM
+    llm: BaseLanguageModel
     """LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
@@ -122,7 +122,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         database: SQLDatabase,
         query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,

@@ -11,8 +11,8 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
-from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -103,7 +103,10 @@ class VectorDBQA(Chain, BaseModel):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLLM, prompt: Optional[PromptTemplate] = None, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: Optional[PromptTemplate] = None,
+        **kwargs: Any,
     ) -> VectorDBQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
@@ -122,7 +125,7 @@ class VectorDBQA(Chain, BaseModel):
     @classmethod
     def from_chain_type(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         **kwargs: Any,
