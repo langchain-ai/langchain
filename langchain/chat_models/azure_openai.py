@@ -143,7 +143,7 @@ class AzureChatOpenAI(ChatOpenAI):
             **self._default_params,
         }
         if stop is not None:
-            if "stop" in params:
+            if "stop" in params and params['stop'] is not None:
                 params['stop'].extend(stop)
                 # raise ValueError("`stop` found in both the input and default params.")
             else:
