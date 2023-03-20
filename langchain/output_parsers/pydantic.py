@@ -14,7 +14,7 @@ class PydanticOutputParser(BaseOutputParser):
     def parse(self, text: str) -> BaseModel:
         try:
             # Greedy search for 1st json candidate.
-            match = re.search("\{.*\}", text.strip())
+            match = re.search("\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL)
             json_str = ""
             if match:
                 json_str = match.group()
@@ -30,10 +30,11 @@ class PydanticOutputParser(BaseOutputParser):
         schema = self.pydantic_object.schema()
 
         # Remove extraneous fields.
-        reduced_schema = {
-            prop: {"description": data["description"], "type": data["type"]}
-            for prop, data in schema["properties"].items()
-        }
+        reduced_schema = schema
+        if "title" in reduced_schema:
+            del reduced_schema["title"]
+        if "type" in reduced_schema:
+            del reduced_schema["type"]
         # Ensure json in context is well-formed with double quotes.
         schema = json.dumps(reduced_schema)
 
