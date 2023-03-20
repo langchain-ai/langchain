@@ -265,7 +265,7 @@ Memory = BaseMemory
 
 class GuardedOutputParser(ABC, BaseModel):
     @abstractmethod
-    def evaluate(
+    def parse(
         self, prompt_value: PromptValue, output: str, output_parser: BaseOutputParser
     ) -> Any:
         """Evaluate and fix model output. Should parse output."""

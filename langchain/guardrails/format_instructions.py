@@ -27,7 +27,7 @@ class FormatInstructionsGuard(GuardedOutputParser):
     def from_llm(cls, llm: BaseLanguageModel) -> FormatInstructionsGuard:
         return cls(fixer_chain=LLMChain(llm=llm, prompt=PROMPT))
 
-    def evaluate(
+    def parse(
         self, prompt_value: PromptValue, output: str, output_parser: BaseOutputParser
     ) -> Any:
         try:

@@ -36,7 +36,7 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
-    output_parser_guard: Optional[GuardedOutputParser] = None
+    guarded_output_parser: Optional[GuardedOutputParser] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -140,8 +140,8 @@ class LLMChain(Chain, BaseModel):
         """Get the final output from a list of generations for a prompt."""
         completion = generation[0].text
         if self.prompt.output_parser:
-            if self.output_parser_guard:
-                completion = self.output_parser_guard.evaluate(
+            if self.guarded_output_parser:
+                completion = self.guarded_output_parser.parse(
                     prompt_value, completion, self.prompt.output_parser
                 )
             else:
