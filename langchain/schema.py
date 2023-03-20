@@ -6,8 +6,6 @@ from typing import Any, Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.output_parsers import BaseOutputParser
-
 
 def get_buffer_string(
     messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"

@@ -1,4 +1,3 @@
-from pydantic import BaseModel
 from typing import Any
 
 from langchain.guardrails.retry import naive_retry
@@ -6,13 +5,13 @@ from langchain.output_parsers import BaseOutputParser, OutputParserException
 from langchain.schema import BaseLanguageModel, PromptValue
 
 
-class GuardedOutputParser(BaseModel):
+class RetriableOutputParser(BaseOutputParser):
     """Wraps a parser and tries to fix parsing errors."""
 
     parser: BaseOutputParser
     retry_llm: BaseLanguageModel
 
-    def parse(self, prompt_value: PromptValue, completion: str) -> Any:
+    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> Any:
         try:
             parsed_completion = self.parser.parse(completion)
         except OutputParserException as e:
@@ -23,3 +22,9 @@ class GuardedOutputParser(BaseModel):
             parsed_completion = self.parser.parse(new_completion)
         
         return parsed_completion
+
+    def parse(self, completion: str):
+        raise NotImplementedError
+
+    def get_format_instructions(self) -> str:
+        return self.parser.get_format_instructions()

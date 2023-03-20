@@ -15,8 +15,6 @@ from langchain.schema import (
     LLMResult,
     PromptValue,
 )
-from langchain.output_parsers import BaseOutputParser
-from langchain.guardrails.parsing import GuardedOutputParser
 
 
 class LLMChain(Chain, BaseModel):
@@ -140,13 +138,7 @@ class LLMChain(Chain, BaseModel):
         """Get the final output from a list of generations for a prompt."""
         completion = generations[0].text
         if self.prompt.output_parser:
-            parser = self.prompt.output_parser
-            if isinstance(parser, BaseOutputParser):
-                completion = parser.parse(completion)
-            elif isinstance(parser, GuardedOutputParser):
-                # TODO: not ideal to hide retry calls from user. can we expose it in colored log?
-                completion = parser.parse(prompt_value, completion)
-
+            completion = self.prompt.output_parser.parse_with_prompt(completion, prompt_value)
         return completion
 
     def create_outputs(
