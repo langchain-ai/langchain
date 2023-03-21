@@ -2,11 +2,11 @@
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
-from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
+from langchain.document_loaders.college_confidential import \
+    CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv import CSVLoader
 from langchain.document_loaders.directory import DirectoryLoader
-from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -24,13 +24,9 @@ from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
-from langchain.document_loaders.pdf import (
-    OnlinePDFLoader,
-    PDFMinerLoader,
-    PyMuPDFLoader,
-    PyPDFLoader,
-    UnstructuredPDFLoader,
-)
+from langchain.document_loaders.pdf import (OnlinePDFLoader, PDFMinerLoader,
+                                            PyMuPDFLoader, PyPDFLoader,
+                                            UnstructuredPDFLoader)
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
@@ -39,18 +35,15 @@ from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
-from langchain.document_loaders.unstructured import (
-    UnstructuredFileIOLoader,
-    UnstructuredFileLoader,
-)
+from langchain.document_loaders.unstructured import (UnstructuredFileIOLoader,
+                                                     UnstructuredFileLoader)
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
-from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
-from langchain.document_loaders.youtube import (
-    GoogleApiClient,
-    GoogleApiYoutubeLoader,
-    YoutubeLoader,
-)
+from langchain.document_loaders.word_document import \
+    UnstructuredWordDocumentLoader
+from langchain.document_loaders.youtube import (GoogleApiClient,
+                                                GoogleApiYoutubeLoader,
+                                                YoutubeLoader)
 
 """Legacy: only for backwards compat. use PyPDFLoader instead"""
 PagedPDFSplitter = PyPDFLoader
@@ -69,7 +62,6 @@ __all__ = [
     "UnstructuredPDFLoader",
     "UnstructuredImageLoader",
     "ObsidianLoader",
-    "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
     "UnstructuredMarkdownLoader",
     "RoamLoader",
