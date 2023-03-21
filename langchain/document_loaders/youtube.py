@@ -114,7 +114,7 @@ class YoutubeLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         try:
-            from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
+            from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
         except ImportError:
             raise ImportError(
                 "Could not import youtube_transcript_api python package. "
@@ -133,9 +133,9 @@ class YoutubeLoader(BaseLoader):
         try:
             transcript = transcript_list.find_transcript([self.language])
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(['en'])
+            en_transcript = transcript_list.find_transcript(["en"])
             transcript = en_transcript.translate(self.language)
- 
+
         transcript_pieces = transcript.fetch()
 
         transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
@@ -239,15 +239,15 @@ class GoogleApiYoutubeLoader(BaseLoader):
         return values
 
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
-        from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
+        from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
 
-        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_id)
+        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_ids)
         try:
-            transcript = transcript_list.find_transcript([self.language])
+            transcript = transcript_list.find_transcript([self.captions_language])
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(['en'])
-            transcript = en_transcript.translate(self.language)
- 
+            en_transcript = transcript_list.find_transcript(["en"])
+            transcript = en_transcript.translate(self.captions_language)
+
         transcript_pieces = transcript.fetch()
         return " ".join([t["text"].strip(" ") for t in transcript_pieces])
 
