@@ -33,7 +33,7 @@ class VectorStoreIndexWrapper(BaseModel):
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
-            llm, index=self.vectorstore.as_retriever(), **kwargs
+            llm, retriver=self.vectorstore.as_retriever(), **kwargs
         )
         return chain.run(question)
 
@@ -43,7 +43,7 @@ class VectorStoreIndexWrapper(BaseModel):
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            llm, index=self.vectorstore.as_retriever(), **kwargs
+            llm, retriever=self.vectorstore.as_retriever(), **kwargs
         )
         return chain({chain.question_key: question})
 
