@@ -38,7 +38,7 @@ class LLMChain(Chain, BaseModel):
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
     output_parser: Optional[BaseOutputParser] = None
-    debug: bool = True
+    debug: bool = False
 
     @root_validator()
     def validate_output_parser(cls, values: Dict) -> Dict:
