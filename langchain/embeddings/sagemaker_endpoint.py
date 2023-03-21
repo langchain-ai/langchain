@@ -1,5 +1,5 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -71,6 +71,8 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """
      Example:
         .. code-block:: python
+        
+        from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
         class ContentHandler(ContentHandlerBase):
                 content_type = "application/json"
@@ -159,14 +161,15 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         return self.content_handler.transform_output(response["Body"])
 
     def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 64
+        self, texts: List[str], chunk_size: int = 64
     ) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size how many text will be grouped together as request. If None, will use the chunk size
-                specified by the class.
+            chunk_size: The chunk size defines how many input texts will
+                be grouped together as request. If None, will use the
+                chunk size specified by the class.
 
 
         Returns:
