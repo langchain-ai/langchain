@@ -221,6 +221,38 @@ class FAISS(VectorStore):
         docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
         return docs
 
+    def merge_from(self, target: FAISS) -> None:
+        """Merge another FAISS object with the current one.
+
+        Add the target FAISS to the current one.
+
+        Args:
+            target: FAISS object you wish to merge into the current one
+
+        Returns:
+            None.
+        """
+        if not isinstance(self.docstore, AddableMixin):
+            raise ValueError("Cannot merge with this type of docstore")
+        # Numerical index for target docs are incremental on existing ones
+        starting_len = len(self.index_to_docstore_id)
+
+        # Merge two IndexFlatL2
+        self.index.merge_from(target.index)
+
+        # Create new id for docs from target FAISS object
+        full_info = []
+        for i in target.index_to_docstore_id:
+            doc = target.docstore.search(target.index_to_docstore_id[i])
+            if not isinstance(doc, Document):
+                raise ValueError("Document should be returned")
+            full_info.append((starting_len + i, str(uuid.uuid4()), doc))
+
+        # Add information to docstore and index_to_docstore_id.
+        self.docstore.add({_id: doc for _, _id, doc in full_info})
+        index_to_id = {index: _id for index, _id, _ in full_info}
+        self.index_to_docstore_id.update(index_to_id)
+
     @classmethod
     def from_texts(
         cls,

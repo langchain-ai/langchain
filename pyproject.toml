@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.108"
+version = "0.0.117"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 pydantic = "^1"
 SQLAlchemy = "^1"
 requests = "^2"
-PyYAML = "^6"
+PyYAML = ">=5.4.1"
 numpy = "^1"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
@@ -51,6 +51,9 @@ pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.2.9", optional = true}
+pgvector = {version = "^0.1.6", optional = true}
+psycopg2-binary = {version = "^2.9.5", optional = true}
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -71,7 +74,7 @@ sphinx-copybutton = "^0.5.1"
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.6.6"
+duckdb-engine = "^0.7.0"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
@@ -97,7 +100,7 @@ playwright = "^1.28.0"
 
 [tool.poetry.extras]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", ]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary"]
 
 [tool.ruff]
 select = [

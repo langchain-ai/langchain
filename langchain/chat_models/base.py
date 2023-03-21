@@ -43,19 +43,26 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         """
         return callback_manager or get_callback_manager()
 
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        return {}
+
     def generate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
         results = [self._generate(m, stop=stop) for m in messages]
-        return LLMResult(generations=[res.generations for res in results])
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
+        generations = [res.generations for res in results]
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     async def agenerate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
         results = [await self._agenerate(m, stop=stop) for m in messages]
-        return LLMResult(generations=[res.generations for res in results])
+        llm_output = self._combine_llm_outputs([res.llm_output for res in results])
+        generations = [res.generations for res in results]
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
@@ -127,7 +134,7 @@ class SimpleChatModel(BaseChatModel):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         output_str = self._call(messages, stop=stop)
-        message = AIMessage(text=output_str)
+        message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 

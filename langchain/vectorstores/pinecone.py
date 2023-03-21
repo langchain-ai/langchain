@@ -32,6 +32,7 @@ class Pinecone(VectorStore):
         index: Any,
         embedding_function: Callable,
         text_key: str,
+        namespace: Optional[str] = None,
     ):
         """Initialize with Pinecone client."""
         try:
@@ -49,6 +50,7 @@ class Pinecone(VectorStore):
         self._index = index
         self._embedding_function = embedding_function
         self._text_key = text_key
+        self._namespace = namespace
 
     def add_texts(
         self,
@@ -56,6 +58,7 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
+        batch_size: int = 32,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -70,6 +73,8 @@ class Pinecone(VectorStore):
             List of ids from adding the texts into the vectorstore.
 
         """
+        if namespace is None:
+            namespace = self._namespace
         # Embed and create the documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
@@ -79,7 +84,7 @@ class Pinecone(VectorStore):
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
         # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace)
+        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
 
     def similarity_search_with_score(
@@ -100,6 +105,8 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        if namespace is None:
+            namespace = self._namespace
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
@@ -134,6 +141,8 @@ class Pinecone(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
+        if namespace is None:
+            namespace = self._namespace
         query_obj = self._embedding_function(query)
         docs = []
         results = self._index.query(
@@ -221,7 +230,7 @@ class Pinecone(VectorStore):
                 index = pinecone.Index(_index_name)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embedding.embed_query, text_key)
+        return cls(index, embedding.embed_query, text_key, namespace)
 
     @classmethod
     def from_existing_index(
@@ -241,5 +250,5 @@ class Pinecone(VectorStore):
             )
 
         return cls(
-            pinecone.Index(index_name, namespace), embedding.embed_query, text_key
+            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
         )

@@ -8,6 +8,7 @@ import yaml
 from langchain.agents.agent import Agent
 from langchain.agents.chat.base import ChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
+from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
@@ -22,6 +23,7 @@ AGENT_TO_CLASS = {
     "self-ask-with-search": SelfAskWithSearchAgent,
     "conversational-react-description": ConversationalAgent,
     "chat-zero-shot-react-description": ChatAgent,
+    "chat-conversational-react-description": ConversationalChatAgent,
 }
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
