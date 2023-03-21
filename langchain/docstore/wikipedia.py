@@ -17,7 +17,7 @@ class Wikipedia(Docstore):
         except ImportError:
             raise ValueError(
                 "Could not import wikipedia python package. "
-                "Please it install it with `pip install wikipedia`."
+                "Please install it with `pip install wikipedia`."
             )
 
     def search(self, search: str) -> Union[str, Document]:
