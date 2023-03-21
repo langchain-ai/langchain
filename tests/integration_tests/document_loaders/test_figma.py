@@ -1,8 +1,8 @@
 from langchain.document_loaders.figma import FigmaFileLoader
 
-ACCESS_TOKEN = "figd_Buj8TSTDYrvH1FwIzOqT6NUNEdZ5i1Cxo2J_tEPN"
-IDS = "2:104"
-KEY = "UXKwV2DyPaXCgBSufVIXZy"
+ACCESS_TOKEN = ""
+IDS = ""
+KEY = ""
 
 
 def test_figma_file_loader() -> None:
