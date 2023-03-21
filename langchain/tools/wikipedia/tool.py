@@ -1,4 +1,4 @@
-"""Tool for the Wolfram Alpha API."""
+"""Tool for the Wikipedia API."""
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.wikipedia import WikipediaAPIWrapper

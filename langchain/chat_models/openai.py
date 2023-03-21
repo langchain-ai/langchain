@@ -97,7 +97,8 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         message = _convert_dict_to_message(res["message"])
         gen = ChatGeneration(message=message)
         generations.append(gen)
-    return ChatResult(generations=generations)
+    llm_output = {"token_usage": response["usage"]}
+    return ChatResult(generations=generations, llm_output=llm_output)
 
 
 class ChatOpenAI(BaseChatModel, BaseModel):
@@ -122,13 +123,15 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    request_timeout: int = 60
+    """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
     class Config:
@@ -184,6 +187,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
+            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
@@ -220,6 +224,20 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             return self.client.create(**kwargs)
 
         return _completion_with_retry(**kwargs)
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            for k, v in token_usage.items():
+                if k in overall_token_usage:
+                    overall_token_usage[k] += v
+                else:
+                    overall_token_usage[k] = v
+        return {"token_usage": overall_token_usage}
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None

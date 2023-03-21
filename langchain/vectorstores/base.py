@@ -139,5 +139,5 @@ class VectorstoreIndex(BaseIndexInterface, BaseModel):
 
         arbitrary_types_allowed = True
 
-    def get_relevant_texts(self, query: str, **kwargs: Any) -> List[Document]:
+    def get_relevant_texts(self, query: str) -> List[Document]:
         return self.vectorstore.similarity_search(query, **self.search_kwargs)
