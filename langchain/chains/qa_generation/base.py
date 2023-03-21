@@ -47,7 +47,7 @@ class QAGenerationChain(Chain):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
-        results, _ = self.llm_chain.generate([{"text": d.page_content} for d in docs])
+        results = self.llm_chain.generate([{"text": d.page_content} for d in docs])
         qa = [json.loads(res[0].text) for res in results.generations]
         return {self.output_key: qa}
 

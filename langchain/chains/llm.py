@@ -1,22 +1,15 @@
 """Chain that just formats a prompt and calls an LLM."""
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import (
-    BaseLanguageModel,
-    BaseOutputParser,
-    Generation,
-    LLMResult,
-    PromptValue,
-)
+from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
 class LLMChain(Chain, BaseModel):
@@ -37,25 +30,6 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
-    output_parser: Optional[BaseOutputParser] = None
-
-    @root_validator()
-    def validate_output_parser(cls, values: Dict) -> Dict:
-        """Validate output parser."""
-        prompt: BasePromptTemplate = values["prompt"]
-        output_parser = values["output_parser"]
-        if prompt.output_parser is not None:
-            warnings.warn(
-                "Got an output parser on the prompt "
-                "- please transition this to being passed into the LLMChain."
-            )
-            if output_parser is not None:
-                raise ValueError(
-                    "Got an output parser on the prompt as well on the LLMChain - "
-                    "should only be provided in one place."
-                )
-            values["output_parser"] = prompt.output_parser
-        return values
 
     class Config:
         """Configuration for this pydantic object."""
@@ -82,19 +56,15 @@ class LLMChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return self.apply([inputs])[0]
 
-    def generate(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[LLMResult, List[PromptValue]]:
+    def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = self.prep_prompts(input_list)
-        return self.llm.generate_prompt(prompts, stop), prompts
+        return self.llm.generate_prompt(prompts, stop)
 
-    async def agenerate(
-        self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[LLMResult, List[PromptValue]]:
+    async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
         prompts, stop = await self.aprep_prompts(input_list)
-        return await self.llm.agenerate_prompt(prompts, stop), prompts
+        return await self.llm.agenerate_prompt(prompts, stop)
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
@@ -145,31 +115,20 @@ class LLMChain(Chain, BaseModel):
 
     def apply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response, prompts = self.generate(input_list)
-        return self.create_outputs(response, prompts)
+        response = self.generate(input_list)
+        return self.create_outputs(response)
 
     async def aapply(self, input_list: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response, prompts = await self.agenerate(input_list)
-        return self.create_outputs(response, prompts)
+        response = await self.agenerate(input_list)
+        return self.create_outputs(response)
 
-    def _get_final_output(
-        self, generations: List[Generation], prompt_value: PromptValue
-    ) -> Any:
-        """Get the final output from a list of generations for a prompt."""
-        completion = generations[0].text
-        if self.output_parser is not None:
-            completion = self.output_parser.parse_with_prompt(completion, prompt_value)
-        return completion
-
-    def create_outputs(
-        self, response: LLMResult, prompts: List[PromptValue]
-    ) -> List[Dict[str, str]]:
+    def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
         return [
             # Get the text of the top generated string.
-            {self.output_key: self._get_final_output(generation, prompts[i])}
-            for i, generation in enumerate(response.generations)
+            {self.output_key: generation[0].text}
+            for generation in response.generations
         ]
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
@@ -207,23 +166,37 @@ class LLMChain(Chain, BaseModel):
         """
         return (await self.acall(kwargs))[self.output_key]
 
-    # If an output_parser is provided, it should always be applied.
-    # TODO: remove these methods.
     def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
-        return self.predict(**kwargs)
+        result = self.predict(**kwargs)
+        if self.prompt.output_parser is not None:
+            return self.prompt.output_parser.parse(result)
+        else:
+            return result
 
     def apply_and_parse(
         self, input_list: List[Dict[str, Any]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        return self.apply(input_list)
+        result = self.apply(input_list)
+        return self._parse_result(result)
+
+    def _parse_result(
+        self, result: List[Dict[str, str]]
+    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        if self.prompt.output_parser is not None:
+            return [
+                self.prompt.output_parser.parse(res[self.output_key]) for res in result
+            ]
+        else:
+            return result
 
     async def aapply_and_parse(
         self, input_list: List[Dict[str, Any]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        return await self.aapply(input_list)
+        result = await self.aapply(input_list)
+        return self._parse_result(result)
 
     @property
     def _chain_type(self) -> str:
