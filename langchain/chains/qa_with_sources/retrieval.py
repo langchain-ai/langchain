@@ -7,13 +7,13 @@ from pydantic import BaseModel, Field
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.docstore.document import Document
-from langchain.schema import RetrievalInterface
+from langchain.schema import BaseRetriever
 
 
 class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Question-answering with sources over an index."""
 
-    index: RetrievalInterface = Field(exclude=True)
+    retriever: BaseRetriever = Field(exclude=True)
     """Index to connect to."""
     reduce_k_below_max_tokens: bool = False
     """Reduce the number of results to return from store based on tokens limit"""
@@ -42,5 +42,5 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        docs = self.index.get_relevant_texts(question)
+        docs = self.retriever.get_relevant_texts(question)
         return self._reduce_tokens_below_limit(docs)

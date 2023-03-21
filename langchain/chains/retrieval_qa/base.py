@@ -14,7 +14,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel, Document, RetrievalInterface
+from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -125,20 +125,20 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
             from langchain.chains import RetrievalQA
             from langchain.faiss import FAISS
             vectordb = FAISS(...)
-            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), index=vectordb)
+            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=vectordb)
 
     """
 
-    index: RetrievalInterface = Field(exclude=True)
+    retriever: BaseRetriever = Field(exclude=True)
 
     def _get_docs(self, question: str) -> List[Document]:
-        return self.index.get_relevant_texts(question)
+        return self.retriever.get_relevant_texts(question)
 
 
 class VectorDBQA(BaseRetrievalQA, BaseModel):
     """Chain for question-answering against a vector database."""
 
-    index: VectorStore = Field(exclude=True, alias="vectorstore")
+    vectorstore: VectorStore = Field(exclude=True, alias="vectorstore")
     """Vector Database to connect to."""
     k: int = 4
     """Number of documents to query for."""
@@ -146,14 +146,6 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
     """Search type to use over vectorstore. `similarity` or `mmr`."""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
-
-    @property
-    def vectorstore(self) -> VectorStore:
-        return self.index
-
-    @vectorstore.setter
-    def vectorstore(self, vectorstore: VectorStore) -> None:
-        self.index = vectorstore
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -174,11 +166,11 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
 
     def _get_docs(self, question: str) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.index.similarity_search(
+            docs = self.vectorstore.similarity_search(
                 question, k=self.k, **self.search_kwargs
             )
         elif self.search_type == "mmr":
-            docs = self.index.max_marginal_relevance_search(
+            docs = self.vectorstore.max_marginal_relevance_search(
                 question, k=self.k, **self.search_kwargs
             )
         else:

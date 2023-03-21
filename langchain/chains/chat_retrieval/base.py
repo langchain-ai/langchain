@@ -14,7 +14,7 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, Document, RetrievalInterface
+from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -64,7 +64,7 @@ class BaseChatRetrievalChain(Chain, BaseModel):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        index: RetrievalInterface,
+        retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
@@ -78,7 +78,7 @@ class BaseChatRetrievalChain(Chain, BaseModel):
         )
         condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
-            index=index,
+            retriever=retriever,
             combine_docs_chain=doc_chain,
             question_generator=condense_question_chain,
             **kwargs,
@@ -139,10 +139,10 @@ class BaseChatRetrievalChain(Chain, BaseModel):
 class ChatRetrievalChain(BaseChatRetrievalChain, BaseModel):
     """Chain for chatting with an index."""
 
-    index: RetrievalInterface
+    retriever: BaseRetriever
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        return self.index.get_relevant_texts(question)
+        return self.retriever.get_relevant_texts(question)
 
 
 class ChatVectorDBChain(BaseChatRetrievalChain, BaseModel):
