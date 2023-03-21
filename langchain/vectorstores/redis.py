@@ -180,7 +180,7 @@ class Redis(VectorStore):
         # name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
-        prefix = "doc"  # prefix for the document keys
+        prefix = f"doc:{index_name}"  # prefix for the document keys
         distance_metric = (
             "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
         )
@@ -211,7 +211,7 @@ class Redis(VectorStore):
 
         pipeline = client.pipeline()
         for i, text in enumerate(texts):
-            key = f"{prefix}:{str(uuid.uuid4().hex)}"
+            key = f"{prefix}:{i}"
             metadata = metadatas[i] if metadatas else {}
             pipeline.hset(
                 key,
@@ -225,3 +225,34 @@ class Redis(VectorStore):
             )
         pipeline.execute()
         return cls(redis_url, index_name, embedding.embed_query)
+
+    @staticmethod
+    def drop_index(
+        index_name: str,
+        delete_documents: bool,
+        **kwargs: Any,
+    ) -> bool:
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+
+        # Check if index exists
+        try:
+            client.ft(index_name).dropindex(delete_documents)
+            print("Drop index")
+            return True
+        except:  # noqa
+            # Index not exist
+            return False
