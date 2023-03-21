@@ -27,7 +27,7 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     return buffer
 
 
-class BaseChatRetrievalChain(Chain, BaseModel):
+class BaseConversationalRetrievalChain(Chain, BaseModel):
     """Chain for chatting with an index."""
 
     combine_docs_chain: BaseCombineDocumentsChain
@@ -69,7 +69,7 @@ class BaseChatRetrievalChain(Chain, BaseModel):
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
         **kwargs: Any,
-    ) -> BaseChatRetrievalChain:
+    ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
         doc_chain = load_qa_chain(
             llm,
@@ -136,7 +136,7 @@ class BaseChatRetrievalChain(Chain, BaseModel):
         super().save(file_path)
 
 
-class ChatRetrievalChain(BaseChatRetrievalChain, BaseModel):
+class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
     """Chain for chatting with an index."""
 
     retriever: BaseRetriever
@@ -145,7 +145,7 @@ class ChatRetrievalChain(BaseChatRetrievalChain, BaseModel):
         return self.retriever.get_relevant_texts(question)
 
 
-class ChatVectorDBChain(BaseChatRetrievalChain, BaseModel):
+class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
     """Chain for chatting with a vector database."""
 
     index: VectorStore = Field(alias="vectorstore")
@@ -156,7 +156,7 @@ class ChatVectorDBChain(BaseChatRetrievalChain, BaseModel):
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
-            "please use `from langchain.chains import ChatRetrievalChain`"
+            "please use `from langchain.chains import ConversationalRetrievalChain`"
         )
         return values
 
