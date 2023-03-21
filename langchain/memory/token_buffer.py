@@ -46,9 +46,18 @@ class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
         super().save_context(inputs, outputs)
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
-        curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+        # Avoid AttributeError
+        try:
+            model_name = self.llm.model_name
+        except AttributeError:
+            model_name = ""
+        curr_buffer_length = self.llm.get_num_tokens_from_messages(
+            messages=buffer, model=model_name
+        )
         if curr_buffer_length > self.max_token_limit:
             pruned_memory = []
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
-                curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+                curr_buffer_length = self.llm.get_num_tokens_from_messages(
+                    messages=buffer, model=model_name
+                )

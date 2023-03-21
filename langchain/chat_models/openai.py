@@ -337,9 +337,9 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return len(tokenized_text)
 
     def get_num_tokens_from_messages(
-        self, messages: List[BaseMessage], model: str = "gpt-3.5-turbo-0301"
+        self, messages: List[BaseMessage], model: str
     ) -> int:
-        """Calculate num tokens for gpt-3.5-turbo with tiktoken package."""
+        """Calculate num tokens for gpt-3.5-turbo nad gpt-4 with tiktoken package."""
         try:
             import tiktoken
         except ImportError:
@@ -353,19 +353,26 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
+            print("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
-        if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
-            num_tokens = 0
-            messages_dict = [_convert_message_to_dict(m) for m in messages]
-            for message in messages_dict:
-                # every message follows <im_start>{role/name}\n{content}<im_end>\n
-                num_tokens += 4
-                for key, value in message.items():
-                    num_tokens += len(encoding.encode(value))
-                    if key == "name":  # if there's a name, the role is omitted
-                        num_tokens += -1  # role is always required and always 1 token
-            num_tokens += 2  # every reply is primed with <im_start>assistant
-            return num_tokens
+
+        if model == "gpt-3.5-turbo":
+            """gpt-3.5-turbo may change over time."""
+            """Returning num tokens assuming gpt-3.5-turbo-0301."""
+            return self.get_num_tokens_from_messages(
+                messages, model="gpt-3.5-turbo-0301"
+            )
+        elif model == "gpt-4":
+            """gpt-4 may change over time. Returning num tokens assuming gpt-4-0314."""
+            return self.get_num_tokens_from_messages(messages, model="gpt-4-0314")
+        elif model == "gpt-3.5-turbo-0301":
+            # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            tokens_per_message = 4
+            # if there's a name, the role is omitted
+            tokens_per_name = -1
+        elif model == "gpt-4-0314":
+            tokens_per_message = 3
+            tokens_per_name = 1
         else:
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
@@ -373,3 +380,14 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "See https://github.com/openai/openai-python/blob/main/chatml.md for "
                 "information on how messages are converted to tokens."
             )
+        num_tokens = 0
+        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        for message in messages_dict:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        # every reply is primed with <im_start>assistant
+        num_tokens += 2
+        return num_tokens
