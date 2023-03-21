@@ -66,7 +66,7 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine, only=self._include_tables)
+        self._metadata.reflect(bind=self._engine, only=self._all_tables)
 
     @classmethod
     def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
