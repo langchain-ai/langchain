@@ -26,7 +26,7 @@ def test_incorrect_command_return_err_output() -> None:
     """Test optional returning of shell output on incorrect command."""
     session = BashProcess(return_err_output=True)
     output = session.run(["invalid_command"])
-    assert re.match(r'^/bin/sh:.*invalid_command.*not found.*$', output)
+    assert re.match(r"^/bin/sh:.*invalid_command.*not found.*$", output)
 
 
 def test_create_directory_and_files(tmp_path: Path) -> None:
