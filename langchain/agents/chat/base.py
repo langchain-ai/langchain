@@ -46,11 +46,16 @@ class ChatAgent(Agent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
+
+        split_text = text.split("```")
+        if len(split_text) == 1:
+            # If there's no "```" in the text, return the text as is
+            return None, text.strip()
+        
         try:
-            _, action, _ = text.split("```")
+            _, action, _ = split_text
             response = json.loads(action.strip())
             return response["action"], response["action_input"]
-
         except Exception:
             raise ValueError(f"Could not parse LLM output: {text}")
 
