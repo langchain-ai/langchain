@@ -8,7 +8,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
 
 
-class FixOutputParser(BaseOutputParser):
+class OutputFixingParser(BaseOutputParser):
     """Wraps a parser and tries to fix parsing errors."""
 
     parser: BaseOutputParser
@@ -20,7 +20,7 @@ class FixOutputParser(BaseOutputParser):
         llm: BaseLanguageModel,
         parser: BaseOutputParser,
         prompt: BasePromptTemplate = NAIVE_FIX_PROMPT,
-    ) -> FixOutputParser:
+    ) -> OutputFixingParser:
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 

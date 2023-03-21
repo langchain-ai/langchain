@@ -1,4 +1,4 @@
-from langchain.output_parsers.fix import FixOutputParser
+from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.list import (
     CommaSeparatedListOutputParser,
     ListOutputParser,
@@ -21,5 +21,5 @@ __all__ = [
     "PydanticOutputParser",
     "RetryOutputParser",
     "RetryWithErrorOutputParser",
-    "FixOutputParser",
+    "OutputFixingParser",
 ]
