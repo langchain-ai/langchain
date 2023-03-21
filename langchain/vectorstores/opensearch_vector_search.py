@@ -218,7 +218,11 @@ class OpenSearchVectorSearch(VectorStore):
     """
 
     def __init__(
-        self, opensearch_url: str, index_name: str, embedding_function: Embeddings, **kwargs
+        self,
+        opensearch_url: str,
+        index_name: str,
+        embedding_function: Embeddings,
+        **kwargs,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
