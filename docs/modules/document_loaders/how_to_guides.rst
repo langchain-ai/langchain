@@ -75,7 +75,7 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `URL <./examples/url.html>`_: A walkthrough of how to load HTML documents from a list of URLs into a document format that we can use downstream.
 
-`Word_document <./examples/word_document.html>`_: A walkthrough of how to load data from Microsoft Word files.
+`Word Document <./examples/word_document.html>`_: A walkthrough of how to load data from Microsoft Word files.
 
 .. toctree::
    :maxdepth: 1
