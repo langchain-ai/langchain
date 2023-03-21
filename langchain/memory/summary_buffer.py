@@ -60,10 +60,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
         # Avoid AttributeError
-        try:
-            model_name = self.llm.model_name
-        except AttributeError:
-            model_name = ""
+        model_name = getattr(self.llm, "model_name", "")
         curr_buffer_length = self.llm.get_num_tokens_from_messages(
             messages=buffer, model=model_name
         )
