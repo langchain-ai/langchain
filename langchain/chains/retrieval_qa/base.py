@@ -14,11 +14,11 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseIndexInterface, BaseLanguageModel, Document
+from langchain.schema import BaseLanguageModel, Document, RetrievalInterface
 from langchain.vectorstores.base import VectorStore
 
 
-class BaseIndexQA(Chain, BaseModel):
+class BaseRetrievalQA(Chain, BaseModel):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -58,7 +58,7 @@ class BaseIndexQA(Chain, BaseModel):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         **kwargs: Any,
-    ) -> BaseIndexQA:
+    ) -> BaseRetrievalQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
@@ -80,7 +80,7 @@ class BaseIndexQA(Chain, BaseModel):
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         **kwargs: Any,
-    ) -> BaseIndexQA:
+    ) -> BaseRetrievalQA:
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
@@ -115,27 +115,27 @@ class BaseIndexQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class IndexQA(BaseIndexQA, BaseModel):
+class RetrievalQA(BaseRetrievalQA, BaseModel):
     """Chain for question-answering against an index.
 
     Example:
         .. code-block:: python
 
             from langchain.llms import OpenAI
-            from langchain.chains import IndexQA
+            from langchain.chains import RetrievalQA
             from langchain.faiss import FAISS
             vectordb = FAISS(...)
-            indexQA = IndexQA.from_llm(llm=OpenAI(), index=vectordb)
+            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), index=vectordb)
 
     """
 
-    index: BaseIndexInterface = Field(exclude=True)
+    index: RetrievalInterface = Field(exclude=True)
 
     def _get_docs(self, question: str) -> List[Document]:
         return self.index.get_relevant_texts(question)
 
 
-class VectorDBQA(BaseIndexQA, BaseModel):
+class VectorDBQA(BaseRetrievalQA, BaseModel):
     """Chain for question-answering against a vector database."""
 
     index: VectorStore = Field(exclude=True, alias="vectorstore")
@@ -159,7 +159,7 @@ class VectorDBQA(BaseIndexQA, BaseModel):
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import IndexQA`"
+            "please use `from langchain.chains import RetrievalQA`"
         )
         return values
 

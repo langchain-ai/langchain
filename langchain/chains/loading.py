@@ -12,7 +12,6 @@ from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChai
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain.chains.index_qa.base import VectorDBQA
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
@@ -21,6 +20,7 @@ from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import VectorDBQA
 from langchain.chains.sql_database.base import SQLDatabaseChain
 from langchain.llms.loading import load_llm, load_llm_from_config
 from langchain.prompts.loading import load_prompt, load_prompt_from_config

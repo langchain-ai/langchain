@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
-from langchain.schema import BaseIndexInterface
+from langchain.schema import RetrievalInterface
 
 
 class VectorStore(ABC):
@@ -130,7 +130,7 @@ class VectorStore(ABC):
         return VectorstoreIndex(vectorstore=self)
 
 
-class VectorstoreIndex(BaseIndexInterface, BaseModel):
+class VectorstoreIndex(RetrievalInterface, BaseModel):
     vectorstore: VectorStore
     search_kwargs: dict = Field(default_factory=dict)
 

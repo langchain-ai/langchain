@@ -9,12 +9,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
-from langchain.chains.chat_index.prompts import CONDENSE_QUESTION_PROMPT
+from langchain.chains.chat_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseIndexInterface, BaseLanguageModel, Document
+from langchain.schema import BaseLanguageModel, Document, RetrievalInterface
 from langchain.vectorstores.base import VectorStore
 
 
@@ -27,7 +27,7 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     return buffer
 
 
-class BaseChatIndexChain(Chain, BaseModel):
+class BaseChatRetrievalChain(Chain, BaseModel):
     """Chain for chatting with an index."""
 
     combine_docs_chain: BaseCombineDocumentsChain
@@ -64,12 +64,12 @@ class BaseChatIndexChain(Chain, BaseModel):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        index: BaseIndexInterface,
+        index: RetrievalInterface,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
         **kwargs: Any,
-    ) -> BaseChatIndexChain:
+    ) -> BaseChatRetrievalChain:
         """Load chain from LLM."""
         doc_chain = load_qa_chain(
             llm,
@@ -136,16 +136,16 @@ class BaseChatIndexChain(Chain, BaseModel):
         super().save(file_path)
 
 
-class ChatIndexChain(BaseChatIndexChain, BaseModel):
+class ChatRetrievalChain(BaseChatRetrievalChain, BaseModel):
     """Chain for chatting with an index."""
 
-    index: BaseIndexInterface
+    index: RetrievalInterface
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         return self.index.get_relevant_texts(question)
 
 
-class ChatVectorDBChain(BaseChatIndexChain, BaseModel):
+class ChatVectorDBChain(BaseChatRetrievalChain, BaseModel):
     """Chain for chatting with a vector database."""
 
     index: VectorStore = Field(alias="vectorstore")
@@ -156,7 +156,7 @@ class ChatVectorDBChain(BaseChatIndexChain, BaseModel):
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
-            "please use `from langchain.chains import ChatIndexChain`"
+            "please use `from langchain.chains import ChatRetrievalChain`"
         )
         return values
 

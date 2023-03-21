@@ -290,7 +290,7 @@ class Document(BaseModel):
             return f"{result_prefix} {lookups[self.lookup_index]}"
 
 
-class BaseIndexInterface(ABC):
+class RetrievalInterface(ABC):
     @abstractmethod
     def get_relevant_texts(self, query: str) -> List[Document]:
         """Get texts relevant for a query.
