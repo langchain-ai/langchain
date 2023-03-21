@@ -10,13 +10,13 @@ from langchain.embeddings.huggingface import (
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
-from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 
 logger = logging.getLogger(__name__)
 

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
+
 class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
@@ -95,6 +96,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
@@ -156,7 +158,9 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
 
         return self.content_handler.transform_output(response["Body"])
 
-    def embed_documents(self, texts: List[str], chunk_size: Optional[int] = 64) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], chunk_size: Optional[int] = 64
+    ) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
         Args:
@@ -185,4 +189,3 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self._embedding_func([text])
- 
