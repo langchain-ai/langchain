@@ -339,7 +339,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     def get_num_tokens_from_messages(
         self, messages: List[BaseMessage], model: str
     ) -> int:
-        """Calculate num tokens for gpt-3.5-turbo nad gpt-4 with tiktoken package."""
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package."""
         try:
             import tiktoken
         except ImportError:
