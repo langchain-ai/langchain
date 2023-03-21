@@ -16,6 +16,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ __all__ = [
     "CohereEmbeddings",
     "HuggingFaceHubEmbeddings",
     "TensorflowHubEmbeddings",
+    "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
     "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",
