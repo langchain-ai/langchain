@@ -1,9 +1,10 @@
 """Chain that just formats a prompt and calls an LLM."""
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
@@ -11,6 +12,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     BaseLanguageModel,
+    BaseOutputParser,
     Generation,
     LLMResult,
     PromptValue,
@@ -35,6 +37,25 @@ class LLMChain(Chain, BaseModel):
     """Prompt object to use."""
     llm: BaseLanguageModel
     output_key: str = "text"  #: :meta private:
+    output_parser: Optional[BaseOutputParser] = None
+
+    @root_validator()
+    def validate_output_parser(cls, values: Dict) -> Dict:
+        """Validate output parser."""
+        prompt: BasePromptTemplate = values["prompt"]
+        output_parser = values["output_parser"]
+        if prompt.output_parser is not None:
+            warnings.warn(
+                "Got an output parser on the prompt "
+                "- please transition this to being passed into the LLMChain."
+            )
+            if output_parser is not None:
+                raise ValueError(
+                    "Got an output parser on the prompt as well on the LLMChain - "
+                    "should only be provided in one place."
+                )
+            values["output_parser"] = prompt.output_parser
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
@@ -137,8 +158,8 @@ class LLMChain(Chain, BaseModel):
     ) -> Any:
         """Get the final output from a list of generations for a prompt."""
         completion = generations[0].text
-        if self.prompt.output_parser:
-            completion = self.prompt.output_parser.parse_with_prompt(completion, prompt_value)
+        if self.output_parser is not None:
+            completion = self.output_parser.parse_with_prompt(completion, prompt_value)
         return completion
 
     def create_outputs(
@@ -190,35 +211,19 @@ class LLMChain(Chain, BaseModel):
     # TODO: remove these methods.
     def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
-        result = self.predict(**kwargs)
-        if self.prompt.output_parser is not None:
-            return self.prompt.output_parser.parse(result)
-        else:
-            return result
+        return self.predict(**kwargs)
 
     def apply_and_parse(
         self, input_list: List[Dict[str, Any]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = self.apply(input_list)
-        return self._parse_result(result)
-
-    def _parse_result(
-        self, result: List[Dict[str, str]]
-    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
-        if self.prompt.output_parser is not None:
-            return [
-                self.prompt.output_parser.parse(res[self.output_key]) for res in result
-            ]
-        else:
-            return result
+        return self.apply(input_list)
 
     async def aapply_and_parse(
         self, input_list: List[Dict[str, Any]]
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = await self.aapply(input_list)
-        return self._parse_result(result)
+        return await self.aapply(input_list)
 
     @property
     def _chain_type(self) -> str:

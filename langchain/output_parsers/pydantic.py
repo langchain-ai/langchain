@@ -4,8 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from langchain.output_parsers.base import BaseOutputParser, OutputParserException
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
+from langchain.schema import BaseOutputParser, OutputParserException
 
 
 class PydanticOutputParser(BaseOutputParser):
@@ -14,7 +14,9 @@ class PydanticOutputParser(BaseOutputParser):
     def parse(self, text: str) -> BaseModel:
         try:
             # Greedy search for 1st json candidate.
-            match = re.search("\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL)
+            match = re.search(
+                "\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
+            )
             json_str = ""
             if match:
                 json_str = match.group()

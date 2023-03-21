@@ -5,8 +5,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from langchain.output_parsers.base import BaseOutputParser, OutputParserException
 from langchain.output_parsers.format_instructions import STRUCTURED_FORMAT_INSTRUCTIONS
+from langchain.schema import BaseOutputParser, OutputParserException
 
 line_template = '\t"{name}": {type}  // {description}'
 
