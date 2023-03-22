@@ -255,7 +255,7 @@ class BaseMemory(BaseModel, ABC):
         """Clear memory contents."""
 
 
-class ChatMessageHistoryBase(ABC):
+class BaseChatMessageHistory(ABC):
     messages: List[BaseMessage]
     session_id: str
 

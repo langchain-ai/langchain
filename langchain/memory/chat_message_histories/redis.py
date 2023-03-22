@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from langchain.schema import (
     AIMessage,
+    BaseChatMessageHistory,
     BaseMessage,
-    ChatMessageHistoryBase,
     HumanMessage,
     _message_to_dict,
     messages_from_dict,
@@ -15,7 +15,7 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 
-class RedisChatMessageHistory(ChatMessageHistoryBase):
+class RedisChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         session_id: str,

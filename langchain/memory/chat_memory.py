@@ -6,14 +6,14 @@ from pydantic import Field
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import (
     AIMessage,
+    BaseChatMessageHistory,
     BaseMemory,
     BaseMessage,
-    ChatMessageHistoryBase,
     HumanMessage,
 )
 
 
-class ChatMessageHistory(ChatMessageHistoryBase):
+class ChatMessageHistory(BaseChatMessageHistory):
     messages: List[BaseMessage] = []
     session_id: str = "default"
 
@@ -28,7 +28,7 @@ class ChatMessageHistory(ChatMessageHistoryBase):
 
 
 class BaseChatMemory(BaseMemory, ABC):
-    chat_memory: ChatMessageHistoryBase = Field(default_factory=ChatMessageHistory)
+    chat_memory: BaseChatMessageHistory = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     return_messages: bool = False

@@ -6,8 +6,8 @@ from botocore.exceptions import ClientError
 
 from langchain.schema import (
     AIMessage,
+    BaseChatMessageHistory,
     BaseMessage,
-    ChatMessageHistoryBase,
     HumanMessage,
     _message_to_dict,
     messages_from_dict,
@@ -17,7 +17,7 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 
-class DynamoDBChatMessageHistory(ChatMessageHistoryBase):
+class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     def __init__(self, table_name: str, session_id: str):
         client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
