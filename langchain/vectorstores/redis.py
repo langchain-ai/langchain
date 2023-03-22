@@ -228,16 +228,14 @@ class Redis(VectorStore):
 
     @classmethod
     def from_existing_index(
-            cls,
-            embedding: Embeddings,
-            index_name: str,
-            **kwargs: Any,
+        cls,
+        embedding: Embeddings,
+        index_name: str,
+        **kwargs: Any,
     ) -> Redis:
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
             import redis
-            from redis.commands.search.field import TextField, VectorField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
