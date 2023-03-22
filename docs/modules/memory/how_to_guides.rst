@@ -44,7 +44,7 @@ The examples here all highlight how to use memory in different ways.
 
 `Adding Memory to Agents <./examples/agent_with_memory.html>`_: How to add a memory component to any agent.
 
-`Adding Message Store-backed Memory to Agents <./examples/agent_with_message_store_memory.html>`_: How to add an external message store-backed memory component to any agent.
+`Adding Memory backed by a database to Agents <./examples/agent_with_memory_in_db.html>`_: How to add an external message history memory component to any agent.
 
 `Conversation Agent <./examples/conversational_agent.html>`_: Example of a conversation agent, which combines memory with agents and a conversation focused prompt.
 

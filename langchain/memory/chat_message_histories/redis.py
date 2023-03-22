@@ -1,10 +1,12 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional
 
 from langchain.schema import (
+    AIMessage,
     BaseMessage,
-    MessageDB,
+    ChatMessageHistoryBase,
+    HumanMessage,
     _message_to_dict,
     messages_from_dict,
     messages_to_dict,
@@ -13,9 +15,10 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 
-class RedisMessageDB(MessageDB):
+class RedisChatMessageHistory(ChatMessageHistoryBase):
     def __init__(
         self,
+        session_id: str,
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
@@ -33,6 +36,7 @@ class RedisMessageDB(MessageDB):
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
+        self.session_id = session_id
         self.key_prefix = key_prefix
         self.ttl = ttl
 
@@ -40,33 +44,34 @@ class RedisMessageDB(MessageDB):
         """Construct the record key to use"""
         return self.key_prefix + session_id
 
-    def read(
-        self, session_id: str, as_dict: bool = False
-    ) -> Union[List[BaseMessage], List[Dict[str, Any]]]:
+    @property
+    def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from Redis"""
-        if self.redis_client.exists(self.get_key(session_id)):
-            items = json.loads(
-                self.redis_client.get(self.get_key(session_id)).decode("utf-8")
-            )
+        if self.redis_client.exists(self.get_key(self.session_id)):
+            _r = self.redis_client.get(self.get_key(self.session_id))
+            items = json.loads(_r.decode("utf-8")) if _r else []
         else:
             items = []
-
-        if as_dict:
-            return items
 
         messages = messages_from_dict(items)
         return messages
 
-    def append(self, session_id: str, message: BaseMessage) -> None:
+    def add_user_message(self, message: str) -> None:
+        self.append(HumanMessage(content=message))
+
+    def add_ai_message(self, message: str) -> None:
+        self.append(AIMessage(content=message))
+
+    def append(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""
-        messages = self.read(session_id, as_dict=True)
+        messages = messages_to_dict(self.messages)
         _message = _message_to_dict(message)
         messages.append(_message)
 
         self.redis_client.set(
-            name=self.get_key(session_id), value=json.dumps(messages), ex=self.ttl
+            name=self.get_key(self.session_id), value=json.dumps(messages), ex=self.ttl
         )
 
-    def clear(self, session_id: str) -> None:
+    def clear(self) -> None:
         """Clear session memory from Redis"""
-        self.redis_client.delete(self.get_key(session_id))
+        self.redis_client.delete(self.get_key(self.session_id))

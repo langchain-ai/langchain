@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -255,42 +255,16 @@ class BaseMemory(BaseModel, ABC):
         """Clear memory contents."""
 
 
-class MessageDB(ABC):
-    """Base interface for the buffer memory to be stored in a database."""
-
-    @abstractmethod
-    def __init__(self) -> None:
-        """Initialize the database."""
-
-    @abstractmethod
-    def read(
-        self, session_id: str
-    ) -> Union[str, List[BaseMessage], List[Dict[str, Any]]]:
-        """Retrieve history buffer from the database"""
-
-    @abstractmethod
-    def append(self, session_id: str, message: Union[HumanMessage, AIMessage]) -> None:
-        """Save conversation history to the database."""
-
-    @abstractmethod
-    def clear(self, session_id: str) -> None:
-        """Clear memory contents from the database for this session."""
-
-
-class MessageStore(ABC):
+class ChatMessageHistoryBase(ABC):
+    messages: List[BaseMessage]
     session_id: str
-    message_db: Optional[MessageDB] = None
 
     @abstractmethod
-    def read(self) -> List[BaseMessage]:
-        """Retrieve the messages"""
-
-    @abstractmethod
-    def add_user_message(self, message: HumanMessage) -> None:
+    def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
 
     @abstractmethod
-    def add_ai_message(self, message: AIMessage) -> None:
+    def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
 
     @abstractmethod

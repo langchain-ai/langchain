@@ -1,41 +1,34 @@
 from abc import ABC
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from langchain.memory.message_stores import DefaultMessageStore
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import (
     AIMessage,
     BaseMemory,
     BaseMessage,
+    ChatMessageHistoryBase,
     HumanMessage,
-    MessageStore,
 )
 
 
-class ChatMessageHistory(BaseModel):
-    store: MessageStore = Field(default_factory=DefaultMessageStore)
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @property
-    def messages(self) -> List[BaseMessage]:
-        return self.store.read()
+class ChatMessageHistory(ChatMessageHistoryBase):
+    messages: List[BaseMessage] = []
+    session_id: str = "default"
 
     def add_user_message(self, message: str) -> None:
-        self.store.add_user_message(HumanMessage(content=message))
+        self.messages.append(HumanMessage(content=message))
 
     def add_ai_message(self, message: str) -> None:
-        self.store.add_ai_message(AIMessage(content=message))
+        self.messages.append(AIMessage(content=message))
 
     def clear(self) -> None:
-        self.store.clear()
+        self.messages = []
 
 
 class BaseChatMemory(BaseMemory, ABC):
-    chat_memory: ChatMessageHistory = Field(default_factory=ChatMessageHistory)
+    chat_memory: ChatMessageHistoryBase = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     return_messages: bool = False
