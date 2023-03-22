@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.dialects.postgresql import UUID, JSON
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
