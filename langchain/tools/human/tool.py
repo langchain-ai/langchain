@@ -1,8 +1,7 @@
 """Tool for asking human input."""
 
-import sys
-from typing import Callable
 from langchain.tools.base import BaseTool
+from typing import Callable
 
 
 class HumanInputRun(BaseTool):
