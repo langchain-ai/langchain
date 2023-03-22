@@ -1,8 +1,11 @@
 """Wrapper around OpenSearch vector database."""
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any, Dict, Iterable, List, Optional
+
+import opensearchpy
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -379,6 +382,12 @@ class OpenSearchVectorSearch(VectorStore):
         else:
             mapping = _default_scripting_text_mapping(dim)
 
-        client.indices.create(index=index_name, body=mapping)
+        try:
+            client.indices.create(index=index_name, body=mapping)
+        except opensearchpy.exceptions.RequestError as err:
+            if err.args[1] != 'resource_already_exists_exception':
+                raise err
+            else:
+                logging.info('Skipping creating index "%s" as it already exists: %s ' % (index_name, err))
         _bulk_ingest_embeddings(client, index_name, embeddings, texts, metadatas)
         return cls(opensearch_url, index_name, embedding)
