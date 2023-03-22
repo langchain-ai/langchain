@@ -13,7 +13,6 @@ from langchain.agents.conversational_chat.prompt import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.output_parsers.base import BaseOutputParser
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -26,6 +25,7 @@ from langchain.schema import (
     AIMessage,
     BaseLanguageModel,
     BaseMessage,
+    BaseOutputParser,
     HumanMessage,
 )
 from langchain.tools.base import BaseTool

@@ -158,14 +158,14 @@ Open Source
 
     ---
 
-    .. link-button:: https://github.com/jerryjliu/gpt_index
+    .. link-button:: https://github.com/jerryjliu/llama_index
         :type: url
-        :text: GPT Index
+        :text: LlamaIndex
         :classes: stretched-link btn-lg
     
     +++
 
-    GPT Index is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+    LlamaIndex (formerly GPT Index) is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
     ---
 
