@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Mapping, Optional
 
@@ -12,6 +13,8 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+
+logger = logging.getLogger()
 
 
 def _check_redis_module_exist(client: RedisType, module: str) -> bool:
@@ -201,7 +204,7 @@ class Redis(VectorStore):
         # Check if index exists
         try:
             client.ft(index_name).info()
-            print("Index already exists")
+            logger.info("Index already exists")
         except:  # noqa
             # Create Redis Index
             client.ft(index_name).create_index(
@@ -251,7 +254,7 @@ class Redis(VectorStore):
         # Check if index exists
         try:
             client.ft(index_name).dropindex(delete_documents)
-            print("Drop index")
+            logger.info("Drop index")
             return True
         except:  # noqa
             # Index not exist
