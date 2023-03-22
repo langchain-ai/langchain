@@ -59,6 +59,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `iFixit <./examples/ifixit.html>`_: A walkthrough of how to search and load data like guides, technical Q&A's, and device wikis from iFixit.com
 
+`Blackboard <./examples/blackboard.html>`_: A walkthrough of how to load data from a Blackboard course.
+
 .. toctree::
    :maxdepth: 1
    :glob:

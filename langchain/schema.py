@@ -7,6 +7,26 @@ from typing import Any, Dict, List, NamedTuple, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 
+def get_buffer_string(
+    messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+) -> str:
+    """Get buffer string of messages."""
+    string_messages = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            role = human_prefix
+        elif isinstance(m, AIMessage):
+            role = ai_prefix
+        elif isinstance(m, SystemMessage):
+            role = "System"
+        elif isinstance(m, ChatMessage):
+            role = m.role
+        else:
+            raise ValueError(f"Got unsupported message type: {m}")
+        string_messages.append(f"{role}: {m.content}")
+    return "\n".join(string_messages)
+
+
 class AgentAction(NamedTuple):
     """Agent's action to take."""
 
@@ -200,6 +220,10 @@ class BaseLanguageModel(BaseModel, ABC):
         # calculate the number of tokens in the tokenized text
         return len(tokenized_text)
 
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Get the number of tokens in the message."""
+        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
+
 
 class BaseMemory(BaseModel, ABC):
     """Base interface for memory in chains."""
@@ -235,3 +259,40 @@ class BaseMemory(BaseModel, ABC):
 
 
 Memory = BaseMemory
+
+
+class BaseOutputParser(BaseModel, ABC):
+    """Class to parse the output of an LLM call."""
+
+    @abstractmethod
+    def parse(self, text: str) -> Any:
+        """Parse the output of an LLM call."""
+
+    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
+        return self.parse(completion)
+
+    def get_format_instructions(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def _type(self) -> str:
+        """Return the type key."""
+        raise NotImplementedError
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of output parser."""
+        output_parser_dict = super().dict()
+        output_parser_dict["_type"] = self._type
+        return output_parser_dict
+
+
+class OutputParserException(Exception):
+    """Exception that output parsers should raise to signify a parsing error.
+
+    This exists to differentiate parsing errors from other code or execution errors
+    that also may arise inside the output parser. OutputParserExceptions will be
+    available to catch and handle in ways to fix the parsing error, while other
+    errors will be raised.
+    """
+
+    pass

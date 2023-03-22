@@ -13,7 +13,6 @@ from langchain.agents.conversational_chat.prompt import (
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.output_parsers.base import BaseOutputParser
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -26,6 +25,7 @@ from langchain.schema import (
     AIMessage,
     BaseLanguageModel,
     BaseMessage,
+    BaseOutputParser,
     HumanMessage,
 )
 from langchain.tools.base import BaseTool
@@ -39,6 +39,8 @@ class AgentOutputParser(BaseOutputParser):
         cleaned_output = text.strip()
         if "```json" in cleaned_output:
             _, cleaned_output = cleaned_output.split("```json")
+        if "```" in cleaned_output:
+            cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
             cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):

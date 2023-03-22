@@ -4,7 +4,7 @@ Indexes
 Indexes refer to ways to structure documents so that LLMs can best interact with them.
 This module contains utility functions for working with documents, different types of indexes, and then examples for using those indexes in chains.
 LangChain provides common indices for working with data (most prominently support for vector databases).
-For more complicated index structures, it is worth checking out `GPTIndex <https://gpt-index.readthedocs.io/en/latest/index.html>`_.
+For more complicated index structures, it is worth checking out `LlamaIndex <https://gpt-index.readthedocs.io/en/latest/index.html>`_.
 
 The following sections of documentation are provided:
 
