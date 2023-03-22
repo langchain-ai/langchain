@@ -46,6 +46,8 @@ In the below guides, we cover different types of vectorstores and how to use the
 
 `Milvus <./vectorstore_examples/milvus.html>`_: A walkthrough of how to use the Milvus vectorstore wrapper.
 
+`Open Search <./vectorstore_examples/opensearch.html>`_: A walkthrough of how to use the OpenSearch wrapper.
+
 `Pinecone <./vectorstore_examples/pinecone.html>`_: A walkthrough of how to use the Pinecone vectorstore wrapper.
 
 `Qdrant <./vectorstore_examples/qdrant.html>`_: A walkthrough of how to use the Qdrant vectorstore wrapper.
