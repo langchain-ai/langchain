@@ -11,7 +11,7 @@ class HumanInputRun(BaseTool):
     name = "Human"
     description = (
         "A human. "
-        "Useful for clarification, confirmation, or anything other tools cannot help."
+        "Useful for clarification, confirmation, or anything other tools cannot help. "
         "Input should be a question you need help with."
     )
     prompt_func: Callable[[str], None]
