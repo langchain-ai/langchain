@@ -60,9 +60,6 @@ class BaseMessage(BaseModel):
     content: str
     additional_kwargs: dict = Field(default_factory=dict)
 
-    def format_chatml(self) -> str:
-        raise NotImplementedError()
-
     @property
     @abstractmethod
     def type(self) -> str:
@@ -71,9 +68,6 @@ class BaseMessage(BaseModel):
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>user\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -84,9 +78,6 @@ class HumanMessage(BaseMessage):
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
 
-    def format_chatml(self) -> str:
-        return f"<|im_start|>assistant\n{self.content}\n<|im_end|>"
-
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -95,9 +86,6 @@ class AIMessage(BaseMessage):
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>system\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -109,9 +97,6 @@ class ChatMessage(BaseMessage):
     """Type of message with arbitrary speaker."""
 
     role: str
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>{self.role}\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
