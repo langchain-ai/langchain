@@ -1,4 +1,4 @@
-"""Loading logic for loading documents from an Azure Blob Storage file."""
+"""Loading logic for loading documents from an Azure Blob Storage container."""
 from typing import List
 
 from langchain.docstore.document import Document
