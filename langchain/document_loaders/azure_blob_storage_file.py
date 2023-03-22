@@ -34,7 +34,6 @@ class AzureBlobStorageFileLoader(BaseLoader):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.container}/{self.blob}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            print(file_path)
             with open(f"{file_path}", "wb") as file:
                 blob_data = client.download_blob()
                 blob_data.readinto(file)
