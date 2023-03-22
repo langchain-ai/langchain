@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, root_validator
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts import BasePromptTemplate
 from langchain.requests import RequestsWrapper
+from langchain.schema import BaseLanguageModel
 
 
 class APIChain(Chain, BaseModel):
@@ -84,7 +84,7 @@ class APIChain(Chain, BaseModel):
     @classmethod
     def from_llm_and_api_docs(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         api_docs: str,
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,

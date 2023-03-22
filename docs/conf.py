@@ -23,7 +23,7 @@ with open("../pyproject.toml") as f:
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2022, Harrison Chase"
+copyright = "2023, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]

@@ -7,19 +7,21 @@ from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.summarize import map_reduce_prompt, refine_prompts, stuff_prompt
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 
 
 class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
-    def __call__(self, llm: BaseLLM, **kwargs: Any) -> BaseCombineDocumentsChain:
+    def __call__(
+        self, llm: BaseLanguageModel, **kwargs: Any
+    ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_stuff_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "text",
     verbose: Optional[bool] = None,
@@ -36,14 +38,14 @@ def _load_stuff_chain(
 
 
 def _load_map_reduce_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     map_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_document_variable_name: str = "text",
     map_reduce_document_variable_name: str = "text",
     collapse_prompt: Optional[BasePromptTemplate] = None,
-    reduce_llm: Optional[BaseLLM] = None,
-    collapse_llm: Optional[BaseLLM] = None,
+    reduce_llm: Optional[BaseLanguageModel] = None,
+    collapse_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
@@ -84,12 +86,12 @@ def _load_map_reduce_chain(
 
 
 def _load_refine_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     question_prompt: BasePromptTemplate = refine_prompts.PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.REFINE_PROMPT,
     document_variable_name: str = "text",
     initial_response_name: str = "existing_answer",
-    refine_llm: Optional[BaseLLM] = None,
+    refine_llm: Optional[BaseLanguageModel] = None,
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
@@ -107,7 +109,7 @@ def _load_refine_chain(
 
 
 def load_summarize_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     chain_type: str = "stuff",
     verbose: Optional[bool] = None,
     **kwargs: Any,

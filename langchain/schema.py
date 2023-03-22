@@ -7,6 +7,26 @@ from typing import Any, Dict, List, NamedTuple, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 
+def get_buffer_string(
+    messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+) -> str:
+    """Get buffer string of messages."""
+    string_messages = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            role = human_prefix
+        elif isinstance(m, AIMessage):
+            role = ai_prefix
+        elif isinstance(m, SystemMessage):
+            role = "System"
+        elif isinstance(m, ChatMessage):
+            role = m.role
+        else:
+            raise ValueError(f"Got unsupported message type: {m}")
+        string_messages.append(f"{role}: {m.content}")
+    return "\n".join(string_messages)
+
+
 class AgentAction(NamedTuple):
     """Agent's action to take."""
 
@@ -40,6 +60,9 @@ class BaseMessage(BaseModel):
     content: str
     additional_kwargs: dict = Field(default_factory=dict)
 
+    def format_chatml(self) -> str:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def type(self) -> str:
@@ -48,6 +71,9 @@ class BaseMessage(BaseModel):
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
+
+    def format_chatml(self) -> str:
+        return f"<|im_start|>user\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -58,6 +84,9 @@ class HumanMessage(BaseMessage):
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
 
+    def format_chatml(self) -> str:
+        return f"<|im_start|>assistant\n{self.content}\n<|im_end|>"
+
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -66,6 +95,9 @@ class AIMessage(BaseMessage):
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
+
+    def format_chatml(self) -> str:
+        return f"<|im_start|>system\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -77,6 +109,9 @@ class ChatMessage(BaseMessage):
     """Type of message with arbitrary speaker."""
 
     role: str
+
+    def format_chatml(self) -> str:
+        return f"<|im_start|>{self.role}\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -184,6 +219,10 @@ class BaseLanguageModel(BaseModel, ABC):
 
         # calculate the number of tokens in the tokenized text
         return len(tokenized_text)
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Get the number of tokens in the message."""
+        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
 
 class BaseMemory(BaseModel, ABC):

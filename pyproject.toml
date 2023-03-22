@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.113"
+version = "0.0.118"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,7 +15,7 @@ python = ">=3.8.1,<4.0"
 pydantic = "^1"
 SQLAlchemy = "^1"
 requests = "^2"
-PyYAML = "^6"
+PyYAML = ">=5.4.1"
 numpy = "^1"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
@@ -74,7 +74,7 @@ sphinx-copybutton = "^0.5.1"
 pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.6.6"
+duckdb-engine = "^0.7.0"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"

@@ -77,6 +77,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Word Document <./examples/word_document.html>`_: A walkthrough of how to load data from Microsoft Word files.
 
+`Blackboard <./examples/blackboard.html>`_: A walkthrough of how to load data from a Blackboard course.
+
 .. toctree::
    :maxdepth: 1
    :glob:

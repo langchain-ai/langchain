@@ -72,7 +72,7 @@ class StringPromptValue(PromptValue):
 
 
 class BasePromptTemplate(BaseModel, ABC):
-    """Base prompt should expose the format method, returning a prompt."""
+    """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
@@ -196,6 +196,8 @@ class BasePromptTemplate(BaseModel, ABC):
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
+    """String prompt should expose the format method, returning a prompt."""
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))

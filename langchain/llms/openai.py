@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import warnings
 from typing import (
     Any,
     Callable,
@@ -163,7 +164,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
-        if data.get("model_name", "").startswith("gpt-3.5-turbo"):
+        model_name = data.get("model_name", "")
+        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+            warnings.warn(
+                "You are trying to use a chat model. This way of initializing it is "
+                "no longer supported. Instead, please use: "
+                "`from langchain.chat_models import ChatOpenAI`"
+            )
             return OpenAIChat(**data)
         return super().__new__(cls)
 
@@ -362,9 +369,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
-        return LLMResult(
-            generations=generations, llm_output={"token_usage": token_usage}
-        )
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
@@ -599,6 +605,11 @@ class OpenAIChat(BaseLLM, BaseModel):
                 "due to an old version of the openai package. Try upgrading it "
                 "with `pip install --upgrade openai`."
             )
+        warnings.warn(
+            "You are trying to use a chat model. This way of initializing it is "
+            "no longer supported. Instead, please use: "
+            "`from langchain.chat_models import ChatOpenAI`"
+        )
         return values
 
     @property
@@ -643,11 +654,15 @@ class OpenAIChat(BaseLLM, BaseModel):
             )
         else:
             full_response = completion_with_retry(self, messages=messages, **params)
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
             return LLMResult(
                 generations=[
                     [Generation(text=full_response["choices"][0]["message"]["content"])]
                 ],
-                llm_output={"token_usage": full_response["usage"]},
+                llm_output=llm_output,
             )
 
     async def _agenerate(
@@ -679,11 +694,15 @@ class OpenAIChat(BaseLLM, BaseModel):
             full_response = await acompletion_with_retry(
                 self, messages=messages, **params
             )
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
             return LLMResult(
                 generations=[
                     [Generation(text=full_response["choices"][0]["message"]["content"])]
                 ],
-                llm_output={"token_usage": full_response["usage"]},
+                llm_output=llm_output,
             )
 
     @property
