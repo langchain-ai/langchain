@@ -5,7 +5,7 @@ It is broken into two parts: installation and setup, and then references to spec
 
 ## Installation and Setup
 - Install the Python SDK with `pip install jina`
-- Get a Jina Cloud auth token and set it as an environment variable (`JINA_AUTH_TOKEN`)
+- Get a Jina AI Cloud auth token from [here](https://cloud.jina.ai/settings/tokens) and set it as an environment variable (`JINA_AUTH_TOKEN`)
 
 ## Wrappers
 
