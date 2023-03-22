@@ -1,5 +1,5 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
@@ -7,6 +7,7 @@ from langchain.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
+from langchain.chains.constitutional_ai.principles import PRINCIPLES
 
 
 class ConstitutionalChain(Chain):
@@ -41,6 +42,13 @@ class ConstitutionalChain(Chain):
     constitutional_principles: List[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
+
+    @classmethod
+    def get_principles(cls, names: Optional[List[str]] = None):
+        if names is None:
+            return list(PRINCIPLES.values())
+        else:
+            return [PRINCIPLES[name] for name in names]
 
     @classmethod
     def from_llm(
