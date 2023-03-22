@@ -36,7 +36,11 @@ NAIVE_RETRY_WITH_ERROR_PROMPT = PromptTemplate.from_template(
 
 
 class RetryOutputParser(BaseOutputParser):
-    """Wraps a parser and tries to fix parsing errors."""
+    """Wraps a parser and tries to fix parsing errors.
+
+    Does this by passing the original prompt and the completion to another
+    LLM, and telling it the completion did not satisfy criteria in the prompt.
+    """
 
     parser: BaseOutputParser
     retry_chain: LLMChain
@@ -72,7 +76,14 @@ class RetryOutputParser(BaseOutputParser):
 
 
 class RetryWithErrorOutputParser(BaseOutputParser):
-    """Wraps a parser and tries to fix parsing errors."""
+    """Wraps a parser and tries to fix parsing errors.
+
+    Does this by passing the original prompt, the completion, AND the error
+    that was raised to another language and telling it that the completion
+    did not work, and raised the given error. Differs from RetryOutputParser
+    in that this implementation provides the error that was raised back to the
+    LLM, which in theory should give it more information on how to fix it.
+    """
 
     parser: BaseOutputParser
     retry_chain: LLMChain
