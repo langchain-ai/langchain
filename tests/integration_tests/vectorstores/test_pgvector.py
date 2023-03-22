@@ -2,6 +2,8 @@
 import os
 from typing import List
 
+from sqlalchemy.orm import Session
+
 from langchain.docstore.document import Document
 from langchain.vectorstores.pgvector import PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -79,3 +81,21 @@ def test_pgvector_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
+def test_pgvector_collection_with_metadata() -> None:
+    """Test end to end collection construction"""
+    pgvector = PGVector(
+        collection_name="test_collection",
+        collection_metadata={"foo": "bar"},
+        embedding_function=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    session = Session(pgvector.connect())
+    collection = pgvector.get_collection(session)
+    if collection is None:
+        assert False, "Expected a CollectionStore object but received None"
+    else:
+        assert collection.name == "test_collection"
+        assert collection.cmetadata == {"foo": "bar"}
