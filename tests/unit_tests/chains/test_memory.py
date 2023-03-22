@@ -45,7 +45,7 @@ def test_readonly_memory(memory: BaseMemory) -> None:
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup Redis as a message store
-    redis_message_db = RedisMessageDB(url="redis://localhost:6379/0")
+    redis_message_db = RedisMessageDB(url="redis://localhost:6379/0", ttl=10)
     store = DBMessageStore(message_db=redis_message_db, session_id="my-test-session")
     message_store = ChatMessageHistory(store=store)
     memory = ConversationBufferMemory(
@@ -62,3 +62,6 @@ def test_memory_with_message_store() -> None:
 
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json
+
+    # remove the record from Redis, so the next test run won't pick it up
+    memory.chat_memory.store.clear()
