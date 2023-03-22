@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -253,6 +253,47 @@ class BaseMemory(BaseModel, ABC):
     @abstractmethod
     def clear(self) -> None:
         """Clear memory contents."""
+
+
+class MessageDB(ABC):
+    """Base interface for the buffer memory to be stored in a database."""
+
+    @abstractmethod
+    def __init__(self, table_name) -> None:
+        """Initialize the database."""
+
+    @abstractmethod
+    def read(self, session_id: str) -> str:
+        """Retrieve history buffer from the database"""
+
+    @abstractmethod
+    def append(self, session_id: str, message: Union[HumanMessage, AIMessage]) -> None:
+        """Save conversation history to the database."""
+
+    @abstractmethod
+    def clear(self, session_id: str) -> None:
+        """Clear memory contents from the database for this session."""
+
+
+class MessageStore(ABC):
+    session_id: str
+    message_db: Optional[MessageDB] = None
+
+    @abstractmethod
+    def read(self) -> List[BaseMessage]:
+        """Retrieve the messages"""
+
+    @abstractmethod
+    def add_user_message(self, message: HumanMessage) -> None:
+        """Add a user message to the store"""
+
+    @abstractmethod
+    def add_ai_message(self, message: AIMessage) -> None:
+        """Add an AI message to the store"""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Remove all messages from the store"""
 
 
 # For backwards compatibility
