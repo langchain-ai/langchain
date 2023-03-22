@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel
 
-from langchain.output_parsers.base import BaseOutputParser
+from langchain.schema import BaseOutputParser
 
 
 class RegexDictParser(BaseOutputParser, BaseModel):

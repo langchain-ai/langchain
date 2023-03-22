@@ -1294,20 +1294,20 @@ files = [
 
 [[package]]
 name = "duckdb-engine"
-version = "0.6.9"
+version = "0.7.0"
 description = "SQLAlchemy driver for duckdb"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "duckdb_engine-0.6.9-py3-none-any.whl", hash = "sha256:3df47a4cc262afc18644d2c899c37637126af623046c60070135456eff9b2383"},
-    {file = "duckdb_engine-0.6.9.tar.gz", hash = "sha256:b161c1baafb8233ccc56d533290d0076fd8063a676b08be0bc6d24947d50dad5"},
+    {file = "duckdb_engine-0.7.0-py3-none-any.whl", hash = "sha256:272f8cb27cf7599372f6b2628c147c41cd656a316272d8ababdcc81447a5455c"},
+    {file = "duckdb_engine-0.7.0.tar.gz", hash = "sha256:3c17b2dba582fe7d74731d6cb52d73eaba7555a31ca602f7837dfc40f9db90c4"},
 ]
 
 [package.dependencies]
 duckdb = ">=0.4.0"
 numpy = "*"
-sqlalchemy = ">=1.3.19,<2.0.0"
+sqlalchemy = ">=1.3.19"
 
 [[package]]
 name = "elastic-transport"
@@ -7714,4 +7714,4 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d28f15cee77d4d5c69fa395a40f0fd129530ed97472739531974eb4b377d8348"
+content-hash = "4b000f7a33e41b87556c6e9b5294c04f6e26401b2e048eff448ae8189f78e9be"

@@ -27,7 +27,9 @@ def initialize_agent(
             `react-docstore`
             `self-ask-with-search`
             `conversational-react-description`
-            If None and agent_path is also None, will default to
+            `chat-zero-shot-react-description`,
+            `chat-conversational-react-description`,
+           If None and agent_path is also None, will default to
             `zero-shot-react-description`.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.

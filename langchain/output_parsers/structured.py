@@ -5,8 +5,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from langchain.output_parsers.base import BaseOutputParser
 from langchain.output_parsers.format_instructions import STRUCTURED_FORMAT_INSTRUCTIONS
+from langchain.schema import BaseOutputParser, OutputParserException
 
 line_template = '\t"{name}": {type}  // {description}'
 
@@ -42,7 +42,7 @@ class StructuredOutputParser(BaseOutputParser):
         json_obj = json.loads(json_string)
         for schema in self.response_schemas:
             if schema.name not in json_obj:
-                raise ValueError(
+                raise OutputParserException(
                     f"Got invalid return object. Expected key `{schema.name}` "
                     f"to be present, but got {json_obj}"
                 )

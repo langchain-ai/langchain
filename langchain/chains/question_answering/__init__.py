@@ -155,7 +155,7 @@ def _load_refine_chain(
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     _question_prompt = (
-        question_prompt or refine_prompts.REFINE_PROMPT_SELECTOR.get_prompt(llm)
+        question_prompt or refine_prompts.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
     _refine_prompt = refine_prompt or refine_prompts.REFINE_PROMPT_SELECTOR.get_prompt(
         llm

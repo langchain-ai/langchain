@@ -10,13 +10,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
-from langchain.output_parsers.base import BaseOutputParser
-from langchain.output_parsers.list import (  # noqa: F401
-    CommaSeparatedListOutputParser,
-    ListOutputParser,
-)
-from langchain.output_parsers.regex import RegexParser  # noqa: F401
-from langchain.schema import BaseMessage, HumanMessage, PromptValue
+from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -72,7 +66,7 @@ class StringPromptValue(PromptValue):
 
 
 class BasePromptTemplate(BaseModel, ABC):
-    """Base prompt should expose the format method, returning a prompt."""
+    """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
@@ -196,6 +190,8 @@ class BasePromptTemplate(BaseModel, ABC):
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):
+    """String prompt should expose the format method, returning a prompt."""
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))

@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
+from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs, podcast_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
@@ -118,6 +118,20 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
+def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+    listen_api_key = kwargs["listen_api_key"]
+    chain = APIChain.from_llm_and_api_docs(
+        llm,
+        podcast_docs.PODCAST_DOCS,
+        headers={"X-ListenAPI-Key": listen_api_key},
+    )
+    return Tool(
+        name="Podcast API",
+        description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
+        func=chain.run,
+    )
+
+
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
     return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
@@ -166,6 +180,7 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+    "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
 
 _EXTRA_OPTIONAL_TOOLS = {
