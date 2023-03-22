@@ -57,7 +57,7 @@ class CollectionStore(BaseModel):
         if collection:
             return collection, created
 
-        collection = cls(name=name, metadata=cmetadata)
+        collection = cls(name=name, cmetadata=cmetadata)
         session.add(collection)
         session.commit()
         created = True
@@ -121,6 +121,7 @@ class PGVector(VectorStore):
         connection_string: str,
         embedding_function: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
@@ -128,6 +129,7 @@ class PGVector(VectorStore):
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self.collection_name = collection_name
+        self.collection_metadata = collection_metadata
         self.distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
@@ -168,7 +170,9 @@ class PGVector(VectorStore):
         if self.pre_delete_collection:
             self.delete_collection()
         with Session(self._conn) as session:
-            CollectionStore.get_or_create(session, self.collection_name)
+            CollectionStore.get_or_create(
+                session, self.collection_name, cmetadata=self.collection_metadata
+            )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
