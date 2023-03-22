@@ -1,6 +1,12 @@
 from typing import List
 
-from langchain.schema import AIMessage, BaseMessage, HumanMessage, MessageStore, MessageDB
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    MessageDB,
+    MessageStore,
+)
 
 
 class DBMessageStore(MessageStore):

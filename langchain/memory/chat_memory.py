@@ -5,15 +5,24 @@ from pydantic import BaseModel, Field
 
 from langchain.memory.message_stores import DefaultMessageStore
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import AIMessage, BaseMemory, BaseMessage, HumanMessage, MessageStore
+from langchain.schema import (
+    AIMessage,
+    BaseMemory,
+    BaseMessage,
+    HumanMessage,
+    MessageStore,
+)
 
 
 class ChatMessageHistory(BaseModel):
     store: MessageStore = Field(default_factory=DefaultMessageStore)
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @property
     def messages(self) -> List[BaseMessage]:
-        self.store.read()
+        return self.store.read()
 
     def add_user_message(self, message: str) -> None:
         self.store.add_user_message(HumanMessage(content=message))

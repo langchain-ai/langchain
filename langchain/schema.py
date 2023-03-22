@@ -259,11 +259,13 @@ class MessageDB(ABC):
     """Base interface for the buffer memory to be stored in a database."""
 
     @abstractmethod
-    def __init__(self, table_name) -> None:
+    def __init__(self) -> None:
         """Initialize the database."""
 
     @abstractmethod
-    def read(self, session_id: str) -> str:
+    def read(
+        self, session_id: str
+    ) -> Union[str, List[BaseMessage], List[Dict[str, Any]]]:
         """Retrieve history buffer from the database"""
 
     @abstractmethod
