@@ -147,7 +147,9 @@ class Chroma(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        results = self._collection.query(query_embeddings=embedding, n_results=k, where=filter)
+        results = self._collection.query(
+            query_embeddings=embedding, n_results=k, where=filter
+        )
         return _results_to_docs(results)
 
     def similarity_search_with_score(
