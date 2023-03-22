@@ -1,8 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import logging
-from time import time
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.schema import BaseMessage,  MessageDB, messages_from_dict, messages_to_dict, _message_to_dict
 
@@ -15,7 +14,7 @@ class DynamoDBMessageDB(MessageDB):
         client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
 
-    def read(self, session_id: str) -> List[BaseMessage]:
+    def read(self, session_id: str, as_dict: bool = False) -> Union[List[BaseMessage], List[Dict[str, Any]]]:
         """Retrieve the messages from DynamoDB"""
         try:
             response = self.table.get_item(
@@ -32,12 +31,15 @@ class DynamoDBMessageDB(MessageDB):
         else:
             items = []
 
+        if as_dict:
+            return items
+
         messages = messages_from_dict(items)
         return messages
 
     def append(self, session_id, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
-        messages = self.read(session_id)
+        messages = self.read(session_id, as_dict=True)
         _message = _message_to_dict(message)
         messages.append(_message)
 

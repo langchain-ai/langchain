@@ -2,7 +2,7 @@ import logging
 import json
 import redis
 from time import time
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 from langchain.schema import BaseMessage,  MessageDB, messages_from_dict, messages_to_dict, _message_to_dict
@@ -29,7 +29,7 @@ class RedisMessageDB(MessageDB):
         """Construct the record key to use"""
         return self.key_prefix + session_id
 
-    def read(self, session_id: str, as_dict: bool = False) -> List[BaseMessage]:
+    def read(self, session_id: str, as_dict: bool = False) -> Union[List[BaseMessage], List[Dict[str, Any]]]:
         """Retrieve the messages from Redis"""
         if self.redis.exists(self.get_key(session_id)):
             items = json.loads(self.redis.get(self.get_key(session_id)).decode('utf-8'))
