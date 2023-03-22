@@ -27,11 +27,15 @@ class AzureChatOpenAI(ChatOpenAI):
     - ``OPENAI_API_VERSION``
 
     For exmaple, if you have `gpt-35-turbo` deployed, with the deployment name
-    `35-turbo-dev`, the constructor should look like
-    `AzureChatOpenAI(deployment_name="35-turbo-dev", openai_api_version="2023-03-15-preview")`.
-    Be aware the API version may change. Check
-    `Azure OpenAI documentation <https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference>`_
-    for more details.
+    `35-turbo-dev`, the constructor should look like:
+
+    .. code-block:: python
+        AzureChatOpenAI(
+            deployment_name="35-turbo-dev",
+            openai_api_version="2023-03-15-preview",
+        )
+
+    Be aware the API version may change.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
