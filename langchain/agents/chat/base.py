@@ -50,7 +50,7 @@ class ChatAgent(Agent):
         split_text = text.split("```")
         if len(split_text) == 1:
             # If there's no "```" in the text, return the text as is
-            return None, text.strip()
+            return "Cant return Final Answer", text.strip()
         
         try:
             _, action, _ = split_text
