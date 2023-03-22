@@ -110,7 +110,9 @@ def test_pgvector_with_filter_distant_match() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
-    assert output == [(Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406)]
+    assert output == [
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406)
+    ]
 
 
 def test_pgvector_with_filter_no_match() -> None:
