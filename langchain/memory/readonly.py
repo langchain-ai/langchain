@@ -24,3 +24,8 @@ class ReadOnlySharedMemory(BaseMemory):
     def clear(self) -> None:
         """Nothing to clear, got a memory like a vault."""
         pass
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "read_only_shared"

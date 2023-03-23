@@ -39,3 +39,8 @@ class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
                 ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: buffer}
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_buffer_window"

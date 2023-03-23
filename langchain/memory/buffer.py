@@ -38,6 +38,11 @@ class ConversationBufferMemory(BaseChatMemory, BaseModel):
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_buffer"
+
 
 class ConversationStringBufferMemory(BaseMemory, BaseModel):
     """Buffer for storing conversation memory."""
@@ -89,3 +94,8 @@ class ConversationStringBufferMemory(BaseMemory, BaseModel):
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = ""
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_string_buffer"

@@ -32,6 +32,11 @@ class FakeMemory(BaseMemory, BaseModel):
         """Pass."""
         pass
 
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "fake"
+
 
 class FakeChain(Chain, BaseModel):
     """Fake chain class for testing purposes."""

@@ -68,6 +68,12 @@ class BaseMessage(BaseModel):
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of base memory."""
+        _dict = super().dict()
+        _dict["_type"] = self.type
+        return _dict
+
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
@@ -120,7 +126,7 @@ class ChatMessage(BaseMessage):
 
 
 def _message_to_dict(message: BaseMessage) -> dict:
-    return {"type": message.type, "data": message.dict()}
+    return message.dict()
 
 
 def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
@@ -128,15 +134,15 @@ def messages_to_dict(messages: List[BaseMessage]) -> List[dict]:
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
-    _type = message["type"]
+    _type = message.pop("_type")
     if _type == "human":
-        return HumanMessage(**message["data"])
+        return HumanMessage(**message)
     elif _type == "ai":
-        return AIMessage(**message["data"])
+        return AIMessage(**message)
     elif _type == "system":
-        return SystemMessage(**message["data"])
+        return SystemMessage(**message)
     elif _type == "chat":
-        return ChatMessage(**message["data"])
+        return ChatMessage(**message)
     else:
         raise ValueError(f"Got unexpected type: {_type}")
 
@@ -253,6 +259,17 @@ class BaseMemory(BaseModel, ABC):
     @abstractmethod
     def clear(self) -> None:
         """Clear memory contents."""
+
+    @property
+    @abstractmethod
+    def _memory_type(self) -> str:
+        """Return memory type."""
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return a dictionary of the Memory."""
+        _dict = super().dict()
+        _dict["_type"] = self._memory_type
+        return _dict
 
 
 # For backwards compatibility

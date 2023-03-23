@@ -47,3 +47,8 @@ class CombinedMemory(BaseMemory, BaseModel):
         """Clear context from this session for every memory."""
         for memory in self.memories:
             memory.clear()
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "combined"

@@ -52,3 +52,8 @@ class ConversationTokenBufferMemory(BaseChatMemory, BaseModel):
             while curr_buffer_length > self.max_token_limit:
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_token_buffer"

@@ -135,3 +135,8 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
         """Clear memory contents."""
         super().clear()
         self.kg.clear()
+
+    @property
+    def _memory_type(self) -> str:
+        """Return the memory type."""
+        return "conversation_kg"

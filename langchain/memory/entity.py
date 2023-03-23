@@ -100,3 +100,8 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
         """Clear memory contents."""
         self.chat_memory.clear()
         self.store = {}
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_entity"

@@ -73,3 +73,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel
         """Clear memory contents."""
         super().clear()
         self.moving_summary_buffer = ""
+
+    @property
+    def _memory_type(self) -> str:
+        """Return memory type."""
+        return "conversation_summary_buffer"
