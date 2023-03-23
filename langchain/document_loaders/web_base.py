@@ -44,9 +44,10 @@ class WebBaseLoader(BaseLoader):
     def _scrape(self, url: str) -> Any:
         from bs4 import BeautifulSoup
 
-        html_doc = self.session.get(url)
-        soup = BeautifulSoup(html_doc.text, "html.parser")
-        return soup
+        doc = self.session.get(url)
+        if url.endswith(".xml"):
+            return BeautifulSoup(doc.text, features="xml")
+        return BeautifulSoup(doc.text, "html.parser")
 
     def scrape(self) -> Any:
         """Scrape data from webpage and return it in BeautifulSoup format."""
