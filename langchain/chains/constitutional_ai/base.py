@@ -56,7 +56,7 @@ class ConstitutionalChain(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        chain: LLMChain,
+        chain: Chain,
         critique_prompt: BasePromptTemplate = CRITIQUE_PROMPT,
         revision_prompt: BasePromptTemplate = REVISION_PROMPT,
         **kwargs: Any,
