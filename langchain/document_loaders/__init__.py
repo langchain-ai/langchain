@@ -13,7 +13,6 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.directory import DirectoryLoader
-from langchain.document_loaders.docx import UnstructuredDocxLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -78,7 +77,6 @@ __all__ = [
     "UnstructuredPDFLoader",
     "UnstructuredImageLoader",
     "ObsidianLoader",
-    "UnstructuredDocxLoader",
     "UnstructuredEmailLoader",
     "UnstructuredMarkdownLoader",
     "RoamLoader",

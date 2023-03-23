@@ -60,9 +60,6 @@ class BaseMessage(BaseModel):
     content: str
     additional_kwargs: dict = Field(default_factory=dict)
 
-    def format_chatml(self) -> str:
-        raise NotImplementedError()
-
     @property
     @abstractmethod
     def type(self) -> str:
@@ -71,9 +68,6 @@ class BaseMessage(BaseModel):
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>user\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -84,9 +78,6 @@ class HumanMessage(BaseMessage):
 class AIMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
 
-    def format_chatml(self) -> str:
-        return f"<|im_start|>assistant\n{self.content}\n<|im_end|>"
-
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -95,9 +86,6 @@ class AIMessage(BaseMessage):
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>system\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -109,9 +97,6 @@ class ChatMessage(BaseMessage):
     """Type of message with arbitrary speaker."""
 
     role: str
-
-    def format_chatml(self) -> str:
-        return f"<|im_start|>{self.role}\n{self.content}\n<|im_end|>"
 
     @property
     def type(self) -> str:
@@ -253,6 +238,54 @@ class BaseMemory(BaseModel, ABC):
     @abstractmethod
     def clear(self) -> None:
         """Clear memory contents."""
+
+
+class Document(BaseModel):
+    """Interface for interacting with a document."""
+
+    page_content: str
+    lookup_str: str = ""
+    lookup_index = 0
+    metadata: dict = Field(default_factory=dict)
+
+    @property
+    def paragraphs(self) -> List[str]:
+        """Paragraphs of the page."""
+        return self.page_content.split("\n\n")
+
+    @property
+    def summary(self) -> str:
+        """Summary of the page (the first paragraph)."""
+        return self.paragraphs[0]
+
+    def lookup(self, string: str) -> str:
+        """Lookup a term in the page, imitating cmd-F functionality."""
+        if string.lower() != self.lookup_str:
+            self.lookup_str = string.lower()
+            self.lookup_index = 0
+        else:
+            self.lookup_index += 1
+        lookups = [p for p in self.paragraphs if self.lookup_str in p.lower()]
+        if len(lookups) == 0:
+            return "No Results"
+        elif self.lookup_index >= len(lookups):
+            return "No More Results"
+        else:
+            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+            return f"{result_prefix} {lookups[self.lookup_index]}"
+
+
+class BaseRetriever(ABC):
+    @abstractmethod
+    def get_relevant_texts(self, query: str) -> List[Document]:
+        """Get texts relevant for a query.
+
+        Args:
+            query: string to find relevant tests for
+
+        Returns:
+            List of relevant documents
+        """
 
 
 # For backwards compatibility
