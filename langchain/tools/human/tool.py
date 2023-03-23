@@ -2,7 +2,14 @@
 
 from typing import Callable
 
+from pydantic import Field
+
 from langchain.tools.base import BaseTool
+
+
+def _print_func(text: str) -> None:
+    print("\n")
+    print(text)
 
 
 class HumanInputRun(BaseTool):
@@ -10,12 +17,12 @@ class HumanInputRun(BaseTool):
 
     name = "Human"
     description = (
-        "A human. "
-        "Useful for clarification, confirmation, or anything other tools cannot help. "
-        "Input should be a question you need help with."
+        "You can ask a human for guidance when you think you "
+        "got stuck or you are not sure what to do next. "
+        "The input should be a question for the human."
     )
-    prompt_func: Callable[[str], None]
-    input_func: Callable
+    prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
+    input_func: Callable = Field(default_factory=lambda: input)
 
     def _run(self, query: str) -> str:
         """Use the Human input tool."""
