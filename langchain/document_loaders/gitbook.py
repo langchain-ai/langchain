@@ -1,5 +1,6 @@
 """Loader that loads GitBook."""
 from typing import Any, List, Optional
+from urllib.parse import urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -32,6 +33,7 @@ class GitbookLoader(WebBaseLoader):
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
             self.base_url = self.base_url[:-1]
+        self.web_path = f"{self.base_url}/sitemap.xml"
         self.load_all_paths = load_all_paths
 
     def load(self) -> List[Document]:
@@ -61,7 +63,4 @@ class GitbookLoader(WebBaseLoader):
 
     def _get_paths(self, soup: Any) -> List[str]:
         """Fetch all relative paths in the navbar."""
-        nav = soup.find("nav")
-        links = nav.findAll("a")
-        # only return relative links
-        return [link.get("href") for link in links if link.get("href")[0] == "/"]
+        return [urlparse(loc.text).path for loc in soup.find_all('loc')]
