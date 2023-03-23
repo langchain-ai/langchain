@@ -12,6 +12,7 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
+from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 
@@ -70,6 +71,7 @@ __all__ = [
     "OpenAICallbackHandler",
     "SharedCallbackManager",
     "StdOutCallbackHandler",
+    "AimCallbackHandler",
     "WandbCallbackHandler",
     "get_openai_callback",
     "set_tracing_callback_manager",
