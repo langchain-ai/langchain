@@ -18,7 +18,7 @@ class FakeEmbeddings(Embeddings):
         """Return random floats."""
         return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Return random floats."""
         return list(np.random.uniform(0, 1, 10))
 

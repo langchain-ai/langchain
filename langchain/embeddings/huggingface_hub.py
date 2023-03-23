@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace Hub embedding models."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
@@ -10,7 +10,7 @@ DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
-class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
+class HuggingFaceHubEmbeddings(Embeddings):
     """Wrapper around HuggingFaceHub embedding models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -92,7 +92,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         responses = self.client(inputs=texts, params=_model_kwargs)
         return responses
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:

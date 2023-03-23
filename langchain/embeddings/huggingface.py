@@ -1,7 +1,7 @@
 """Wrapper around HuggingFace embedding models."""
 from typing import Any, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.embeddings.base import Embeddings
 
@@ -13,7 +13,7 @@ DEFAULT_QUERY_INSTRUCTION = (
 )
 
 
-class HuggingFaceEmbeddings(BaseModel, Embeddings):
+class HuggingFaceEmbeddings(Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
@@ -61,7 +61,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(texts)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
@@ -75,7 +75,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
-class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
+class HuggingFaceInstructEmbeddings(Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers``
@@ -125,7 +125,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(instruction_pairs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
         Args:

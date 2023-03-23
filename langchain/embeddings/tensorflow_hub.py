@@ -1,14 +1,14 @@
 """Wrapper around TensorflowHub embedding models."""
 from typing import Any, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.embeddings.base import Embeddings
 
 DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 
 
-class TensorflowHubEmbeddings(BaseModel, Embeddings):
+class TensorflowHubEmbeddings(Embeddings):
     """Wrapper around tensorflow_hub embedding models.
 
     To use, you should have the ``tensorflow_text`` python package installed.
@@ -56,7 +56,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         embeddings = self.embed(texts).numpy()
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a TensorflowHub embedding model.
 
         Args:

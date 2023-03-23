@@ -3,8 +3,6 @@ import importlib
 import logging
 from typing import Any, Callable, List, Optional
 
-from pydantic import BaseModel
-
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
@@ -59,7 +57,7 @@ def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0)
     return client
 
 
-class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings, BaseModel):
+class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
     """Runs sentence_transformers embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -157,7 +155,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         embeddings = self.client(self.pipeline_ref, instruction_pairs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace instruct model.
 
         Args:

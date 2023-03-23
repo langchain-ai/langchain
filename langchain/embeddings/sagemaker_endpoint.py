@@ -1,13 +1,13 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
 
-class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
+class SagemakerEndpointEmbeddings(Embeddings):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed
@@ -182,7 +182,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
             results.append(response)
         return results
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a SageMaker inference endpoint.
 
         Args:

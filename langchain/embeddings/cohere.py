@@ -1,13 +1,13 @@
 """Wrapper around Cohere embedding models."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
-class CohereEmbeddings(BaseModel, Embeddings):
+class CohereEmbeddings(Embeddings):
     """Wrapper around Cohere embedding models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -66,7 +66,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
 
         Args:

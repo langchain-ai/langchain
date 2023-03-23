@@ -53,7 +53,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
-class OpenAIEmbeddings(BaseModel, Embeddings):
+class OpenAIEmbeddings(Embeddings):
     """Wrapper around OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -259,7 +259,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 results += [r["embedding"] for r in response["data"]]
             return results
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
 
         Args:
@@ -268,5 +268,4 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self._embedding_func(text, engine=self.query_model_name)
-        return embedding
+        return self._embedding_func(text, engine=self.query_model_name)

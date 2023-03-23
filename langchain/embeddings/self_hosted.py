@@ -1,7 +1,7 @@
 """Running custom embedding models on self-hosted remote hardware."""
 from typing import Any, Callable, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.embeddings.base import Embeddings
 from langchain.llms import SelfHostedPipeline
@@ -16,7 +16,7 @@ def _embed_documents(pipeline: Any, *args: Any, **kwargs: Any) -> List[List[floa
     return pipeline(*args, **kwargs)
 
 
-class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings, BaseModel):
+class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
     """Runs custom embedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -87,7 +87,7 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings, BaseModel):
             return embeddings.tolist()
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
