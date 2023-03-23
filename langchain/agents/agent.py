@@ -231,11 +231,10 @@ class Agent(BaseModel):
                 "\n\nI now need to return a final answer based on the previous steps:"
             )
             new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
-            # We try to extract a final answer
             full_inputs = {**kwargs, **new_inputs}
             full_output = self.llm_chain.predict(**full_inputs)
+            # We try to extract a final answer
             parsed_output = self._extract_tool_and_input(full_output)
-
             if parsed_output is None:
                 # If we cannot extract, we just return the full output
                 return AgentFinish({"output": full_output}, full_output)
