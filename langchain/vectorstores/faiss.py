@@ -62,6 +62,11 @@ class FAISS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        if not isinstance(self.docstore, AddableMixin):
+            raise ValueError(
+                "If trying to add texts, the underlying docstore should support "
+                f"adding items, which {self.docstore} does not"
+            )
         documents = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
@@ -113,7 +118,8 @@ class FAISS(VectorStore):
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
-            text_embeddingss: Iterable pairs of string and embedding to add to the vectorstore.
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
 
         Returns:
