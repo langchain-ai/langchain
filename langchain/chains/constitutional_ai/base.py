@@ -38,7 +38,7 @@ class ConstitutionalChain(Chain):
             constitutional_chain.run(question="What is the meaning of life?")
     """
 
-    chain: LLMChain
+    chain: Chain 
     constitutional_principles: List[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
