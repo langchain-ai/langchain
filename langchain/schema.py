@@ -292,7 +292,6 @@ class BaseChatMessageHistory(ABC):
     """    
 
     messages: List[BaseMessage]
-    session_id: str
 
     @abstractmethod
     def add_user_message(self, message: str) -> None:
