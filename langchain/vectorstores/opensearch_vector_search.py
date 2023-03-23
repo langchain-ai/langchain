@@ -243,7 +243,7 @@ class OpenSearchVectorSearch(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         embeddings = [
-            self.embedding_function.embed_documents(list(text))[0] for text in texts
+            self.embedding_function.embed_documents([text])[0] for text in texts
         ]
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         return _bulk_ingest_embeddings(
