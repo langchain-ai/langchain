@@ -59,10 +59,12 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         # Get relevant information from each document.
         doc_dicts = []
         for doc in docs:
+            page_content = doc.page_content
             if doc.metadata['source']:
-                base_info = {"page_content": "{" + doc.page_content+"  SOURCE:"+doc.metadata['source'] +"}"}
-            else:
-                base_info = {"page_content": doc.page_content}
+                page_content = page_content + "{SOURCE:" + str(doc.metadata['source']) + "}"
+            if doc.metadata['relevance']:
+                page_content = page_content + "{RELEVANCE:" + str(doc.metadata['relevance']) + "}"
+            base_info = {"page_content": page_content}
             base_info.update(doc.metadata)
             document_info = {
                 k: base_info[k] for k in self.document_prompt.input_variables
