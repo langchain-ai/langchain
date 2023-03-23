@@ -250,7 +250,6 @@ class Redis(VectorStore):
             client = redis.from_url(url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
-
         # Check if index exists
         try:
             client.ft(index_name).dropindex(delete_documents)
@@ -259,3 +258,35 @@ class Redis(VectorStore):
         except:  # noqa
             # Index not exist
             return False
+
+    @classmethod
+    def from_existing_index(
+        cls,
+        embedding: Embeddings,
+        index_name: str,
+        **kwargs: Any,
+    ) -> Redis:
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+
+        # check if redis add redisearch module
+        if not _check_redis_module_exist(client, "search"):
+            raise ValueError(
+                "Could not use redis directly, you need to add search module"
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
+            )
+
+        return cls(redis_url, index_name, embedding.embed_query)
