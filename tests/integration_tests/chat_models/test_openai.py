@@ -2,6 +2,7 @@
 
 import pytest
 
+from langchain.callbacks import get_openai_callback
 from langchain.callbacks.base import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
@@ -19,9 +20,11 @@ def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
     chat = ChatOpenAI(max_tokens=10)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    with get_openai_callback() as cb:
+        response = chat([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+    assert cb.total_tokens > 0
 
 
 def test_chat_openai_system_message() -> None:
@@ -29,9 +32,11 @@ def test_chat_openai_system_message() -> None:
     chat = ChatOpenAI(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    with get_openai_callback() as cb:
+        response = chat([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+    assert cb.total_tokens > 0
 
 
 def test_chat_openai_generate() -> None:
