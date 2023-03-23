@@ -26,11 +26,11 @@ def _stringify_dict(data: dict) -> str:
 
 
 class FigmaFileLoader(BaseLoader):
-    """Loader that loads local Figma file json."""
+    """Loader that loads Figma file json."""
 
-    def __init__(self, acces_token: str, ids: str, key: str):
-        """Initialize with bucket and key name."""
-        self.acces_token = acces_token
+    def __init__(self, access_token: str, ids: str, key: str):
+        """Initialize with access token, ids, and key."""
+        self.access_token = access_token
         self.ids = ids
         self.key = key
 
@@ -41,9 +41,9 @@ class FigmaFileLoader(BaseLoader):
         )
         return api_url
 
-    def _get_fima_file(self) -> Any:
+    def _get_figma_file(self) -> Any:
         """Get Figma file from Figma REST API."""
-        headers = {"X-Figma-Token": self.acces_token}
+        headers = {"X-Figma-Token": self.access_token}
         request = urllib.request.Request(
             self._construct_figma_api_url(), headers=headers
         )
@@ -53,7 +53,7 @@ class FigmaFileLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load file"""
-        data = self._get_fima_file()
+        data = self._get_figma_file()
         text = _stringify_dict(data)
         metadata = {"source": self._construct_figma_api_url()}
         return [Document(page_content=text, metadata=metadata)]
