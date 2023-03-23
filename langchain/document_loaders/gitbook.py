@@ -33,7 +33,9 @@ class GitbookLoader(WebBaseLoader):
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
             self.base_url = self.base_url[:-1]
-        self.web_path = f"{self.base_url}/sitemap.xml"
+        if load_all_paths:
+            # set web_path to the sitemap if we want to crawl all paths
+            self.web_path = f"{self.base_url}/sitemap.xml"
         self.load_all_paths = load_all_paths
 
     def load(self) -> List[Document]:
@@ -63,4 +65,4 @@ class GitbookLoader(WebBaseLoader):
 
     def _get_paths(self, soup: Any) -> List[str]:
         """Fetch all relative paths in the navbar."""
-        return [urlparse(loc.text).path for loc in soup.find_all('loc')]
+        return [urlparse(loc.text).path for loc in soup.find_all("loc")]
