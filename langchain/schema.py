@@ -259,7 +259,7 @@ class BaseChatMessageHistory(ABC):
     """Base interface for chat message history
     See `ChatMessageHistory` for default implementation.
     """
-    
+
     """
     Example:
         .. code-block:: python
@@ -289,7 +289,7 @@ class BaseChatMessageHistory(ABC):
                def clear(self):
                    with open(os.path.join(storage_path, session_id), 'w') as f:
                        f.write("[]")
-    """    
+    """
 
     messages: List[BaseMessage]
 
