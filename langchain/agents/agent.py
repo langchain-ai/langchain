@@ -65,7 +65,6 @@ class Agent(BaseModel):
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
         full_output = self.llm_chain.predict(**full_inputs)
         parsed_output = self._extract_tool_and_input(full_output)
-
         while parsed_output is None:
             full_output = self._fix_text(full_output)
             full_inputs["agent_scratchpad"] += full_output
@@ -104,7 +103,6 @@ class Agent(BaseModel):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         action = self._get_next_action(full_inputs)
-
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -233,6 +231,7 @@ class Agent(BaseModel):
                 "\n\nI now need to return a final answer based on the previous steps:"
             )
             new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
+            # We try to extract a final answer
             full_inputs = {**kwargs, **new_inputs}
             full_output = self.llm_chain.predict(**full_inputs)
             parsed_output = self._extract_tool_and_input(full_output)
