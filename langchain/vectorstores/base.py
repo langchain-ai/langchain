@@ -4,8 +4,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, List, Optional
 
+from pydantic import BaseModel, Field
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.schema import BaseRetriever
 
 
 class VectorStore(ABC):
@@ -122,3 +125,19 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> VectorStore:
         """Return VectorStore initialized from texts and embeddings."""
+
+    def as_retriever(self) -> VectorStoreRetriever:
+        return VectorStoreRetriever(vectorstore=self)
+
+
+class VectorStoreRetriever(BaseRetriever, BaseModel):
+    vectorstore: VectorStore
+    search_kwargs: dict = Field(default_factory=dict)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def get_relevant_texts(self, query: str) -> List[Document]:
+        return self.vectorstore.similarity_search(query, **self.search_kwargs)
