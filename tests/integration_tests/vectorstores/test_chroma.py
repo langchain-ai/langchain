@@ -29,7 +29,7 @@ def test_chroma_with_metadatas() -> None:
 
 
 def test_chroma_with_metadatas_with_scores() -> None:
-    """Test end to end construction and search."""
+    """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = Chroma.from_texts(
@@ -39,7 +39,47 @@ def test_chroma_with_metadatas_with_scores() -> None:
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
+def test_chroma_search_filter() -> None:
+    """Test end to end construction and search with metadata filtering."""
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
+    assert output == [Document(page_content="far", metadata={"first_letter": "f"})]
+    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
+    assert output == [Document(page_content="bar", metadata={"first_letter": "b"})]
+
+
+def test_chroma_search_filter_with_scores() -> None:
+    """Test end to end construction and scored search with metadata filtering."""
+    texts = ["far", "bar", "baz"]
+    metadatas = [{"first_letter": "{}".format(text[0])} for text in texts]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search_with_score(
+        "far", k=1, filter={"first_letter": "f"}
+    )
+    assert output == [
+        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+    ]
+    output = docsearch.similarity_search_with_score(
+        "far", k=1, filter={"first_letter": "b"}
+    )
+    assert output == [
+        (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
+    ]
 
 
 def test_chroma_with_persistence() -> None:
