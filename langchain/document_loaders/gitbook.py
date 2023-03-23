@@ -56,10 +56,7 @@ class GitbookLoader(WebBaseLoader):
         content = page_content_raw.get_text(separator="\n").strip()
         title_if_exists = page_content_raw.find("h1")
         title = title_if_exists.text if title_if_exists else ""
-        metadata = {
-            "source": custom_url if custom_url else self.web_path,
-            "title": title,
-        }
+        metadata = {"source": custom_url or self.web_path, "title": title}
         return Document(page_content=content, metadata=metadata)
 
     def _get_paths(self, soup: Any) -> List[str]:
