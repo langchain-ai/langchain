@@ -363,7 +363,8 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
-        index_name = uuid.uuid4().hex
+        # Get the index name from either from kwargs or ENV Variable before falling back to random generation
+        index_name = get_from_dict_or_env(kwargs, "index_name", "OPENSEARCH_INDEX_NAME", default=uuid.uuid4().hex)
         is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")
