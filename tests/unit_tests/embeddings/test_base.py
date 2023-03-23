@@ -22,13 +22,13 @@ def test_redis_caching() -> None:
         def __init__(self) -> None:
             self.cache = {} # type: ignore
     
-        def ft(self) -> Any: # type: ignore
+        def ft(self, *args) -> Any: # type: ignore
             return self
 
         def info(self) -> None: # type: ignore
             return None
         
-        def create_index(self) -> None:
+        def create_index(self, *args, **kwargs) -> None: # type: ignore
             return None
         
         def hset(self, key, mapping) -> None: # type: ignore
