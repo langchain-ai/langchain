@@ -337,7 +337,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return len(tokenized_text)
 
     def get_num_tokens_from_messages(
-        self, messages: List[BaseMessage], model: str
+        self, messages: List[BaseMessage], model: str = None
     ) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package."""
         try:
@@ -348,6 +348,9 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
+
+        if model is None:
+            model = self.model_name
 
         """Returns the number of tokens used by a list of messages."""
         try:
