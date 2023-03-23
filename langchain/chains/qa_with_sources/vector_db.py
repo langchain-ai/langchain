@@ -1,9 +1,8 @@
 """Question-answering with sources over a vector database."""
 
-import warnings
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -51,14 +50,6 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
             question, k=self.k, **self.search_kwargs
         )
         return self._reduce_tokens_below_limit(docs)
-
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "`VectorDBQAWithSourcesChain` is deprecated - "
-            "please use `from langchain.chains import RetrievalQAWithSourcesChain`"
-        )
-        return values
 
     @property
     def _chain_type(self) -> str:

@@ -1,12 +1,11 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
-import warnings
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -151,14 +150,6 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
     vectorstore: VectorStore = Field(alias="vectorstore")
     top_k_docs_for_context: int = 4
     search_kwargs: dict = Field(default_factory=dict)
-
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "`ChatVectorDBChain` is deprecated - "
-            "please use `from langchain.chains import ConversationalRetrievalChain`"
-        )
-        return values
 
     @property
     def _chain_type(self) -> str:

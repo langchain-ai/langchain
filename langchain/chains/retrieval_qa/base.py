@@ -1,7 +1,6 @@
 """Chain for question-answering against a vector database."""
 from __future__ import annotations
 
-import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -146,14 +145,6 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
     """Search type to use over vectorstore. `similarity` or `mmr`."""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
-
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import RetrievalQA`"
-        )
-        return values
 
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:
