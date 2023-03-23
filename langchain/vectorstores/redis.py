@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any, Callable, Iterable, List, Mapping, Optional
 
@@ -12,6 +13,8 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
+
+logger = logging.getLogger()
 
 
 def _check_redis_module_exist(client: RedisType, module: str) -> bool:
@@ -180,7 +183,7 @@ class Redis(VectorStore):
         # name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
-        prefix = "doc"  # prefix for the document keys
+        prefix = f"doc:{index_name}"  # prefix for the document keys
         distance_metric = (
             "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
         )
@@ -201,7 +204,7 @@ class Redis(VectorStore):
         # Check if index exists
         try:
             client.ft(index_name).info()
-            print("Index already exists")
+            logger.info("Index already exists")
         except:  # noqa
             # Create Redis Index
             client.ft(index_name).create_index(
@@ -211,7 +214,7 @@ class Redis(VectorStore):
 
         pipeline = client.pipeline()
         for i, text in enumerate(texts):
-            key = f"{prefix}:{str(uuid.uuid4().hex)}"
+            key = f"{prefix}:{i}"
             metadata = metadatas[i] if metadatas else {}
             pipeline.hset(
                 key,
@@ -224,4 +227,66 @@ class Redis(VectorStore):
                 },
             )
         pipeline.execute()
+        return cls(redis_url, index_name, embedding.embed_query)
+
+    @staticmethod
+    def drop_index(
+        index_name: str,
+        delete_documents: bool,
+        **kwargs: Any,
+    ) -> bool:
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+        # Check if index exists
+        try:
+            client.ft(index_name).dropindex(delete_documents)
+            logger.info("Drop index")
+            return True
+        except:  # noqa
+            # Index not exist
+            return False
+
+    @classmethod
+    def from_existing_index(
+        cls,
+        embedding: Embeddings,
+        index_name: str,
+        **kwargs: Any,
+    ) -> Redis:
+        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+        try:
+            # We need to first remove redis_url from kwargs,
+            # otherwise passing it to Redis will result in an error.
+            kwargs.pop("redis_url")
+            client = redis.from_url(url=redis_url, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Your redis connected error: {e}")
+
+        # check if redis add redisearch module
+        if not _check_redis_module_exist(client, "search"):
+            raise ValueError(
+                "Could not use redis directly, you need to add search module"
+                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
+            )
+
         return cls(redis_url, index_name, embedding.embed_query)
