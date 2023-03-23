@@ -64,7 +64,15 @@ class Agent(BaseModel):
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
         full_output = self.llm_chain.predict(**full_inputs)
-        parsed_output = self._extract_tool_and_input(full_output)
+        try:
+            parsed_output = self._extract_tool_and_input(full_output)
+        except ValueError:
+            # Try again, but this time using the produced output
+            print("Model failed to return enough text. Appending and trying again.")
+            full_inputs["agent_scratchpad"] += full_output
+            new_output = self.llm_chain.predict(**full_inputs)
+            parsed_output = self._extract_tool_and_input(new_output)
+
         while parsed_output is None:
             full_output = self._fix_text(full_output)
             full_inputs["agent_scratchpad"] += full_output
@@ -103,6 +111,7 @@ class Agent(BaseModel):
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         action = self._get_next_action(full_inputs)
+
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -233,8 +242,8 @@ class Agent(BaseModel):
             new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
             full_inputs = {**kwargs, **new_inputs}
             full_output = self.llm_chain.predict(**full_inputs)
-            # We try to extract a final answer
             parsed_output = self._extract_tool_and_input(full_output)
+
             if parsed_output is None:
                 # If we cannot extract, we just return the full output
                 return AgentFinish({"output": full_output}, full_output)
