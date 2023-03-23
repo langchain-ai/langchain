@@ -43,7 +43,7 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     regex = r"Action: (.*?)[\n]*Action Input: (.*)"
     match = re.search(regex, llm_output, re.DOTALL)
     if not match:
-        raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+        return None
     action = match.group(1).strip()
     action_input = match.group(2)
     return action, action_input.strip(" ").strip('"')
@@ -133,6 +133,9 @@ class ZeroShotAgent(Agent):
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
+
+    def _fix_text(self, text: str) -> str:
+        return text + f"\n"
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         return get_action_and_input(text)
