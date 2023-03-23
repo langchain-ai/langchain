@@ -122,7 +122,9 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     def __call__(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> BaseMessage:
-        return self._generate(messages, stop=stop).generations[0].message
+        output = self._generate(messages, stop=stop)
+        self.callback_manager.on_llm_end(output, verbose=self.verbose)
+        return output.generations[0].message
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)
