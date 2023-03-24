@@ -30,7 +30,7 @@ To use a the wrapper for a model hosted on Hugging Face Hub:
 ```python
 from langchain.llms import HuggingFaceHub
 ```
-For a more detailed walkthrough of the Hugging Face Hub wrapper, see [this notebook](../modules/llms/integrations/huggingface_hub.ipynb)
+For a more detailed walkthrough of the Hugging Face Hub wrapper, see [this notebook](../modules/models/llms/integrations/huggingface_hub.ipynb)
 
 
 ### Embeddings
@@ -47,7 +47,7 @@ To use a the wrapper for a model hosted on Hugging Face Hub:
 ```python
 from langchain.embeddings import HuggingFaceHubEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/indexes/examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/embeddings.ipynb)
 
 ### Tokenizer
 

@@ -46,10 +46,9 @@ There are several main modules that LangChain provides support for.
 For each module we provide some examples to get started, how-to guides, reference docs, and conceptual guides.
 These modules are, in increasing order of complexity:
 
+- `Models <./modules/models.html>`_: The various model types and model integrations LangChain supports.
 
 - `Prompts <./modules/prompts.html>`_: This includes prompt management, prompt optimization, and prompt serialization.
-
-- `LLMs <./modules/llms.html>`_: This includes a generic interface for all LLMs, and common utilities for working with LLMs.
 
 - `Document Loaders <./modules/document_loaders.html>`_: This includes a standard interface for loading documents, as well as specific integrations to all types of text data sources.
 
@@ -72,8 +71,8 @@ These modules are, in increasing order of complexity:
    :name: modules
    :hidden:
 
-   ./modules/prompts.md
-   ./modules/llms.md
+   ./modules/models.rst
+   ./modules/prompts.rst
    ./modules/document_loaders.md
    ./modules/utils.md
    ./modules/indexes.md

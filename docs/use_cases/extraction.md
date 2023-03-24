@@ -8,7 +8,7 @@ Examples of this include:
 - Extracting multiple rows to insert into a database from a long document
 - Extracting the correct API parameters from a user query
 
-This work is extremely related to [output parsing](../modules/prompts/examples/output_parsers.ipynb).
+This work is extremely related to [output parsing](../modules/prompts/output_parsers.rst).
 Output parsers are responsible for instructing the LLM to respond in a specific format.
 In this case, the output parsers specify the format of the data you would like to extract from the document.
 Then, in addition to the output format instructions, the prompt should also contain the data you would like to extract information from.
