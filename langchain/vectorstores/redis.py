@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Callable, Iterable, List, Mapping, Optional
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
 from redis.client import Redis as RedisType
@@ -84,6 +84,33 @@ class Redis(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [doc for doc, _ in docs_and_scores]
+
+    def similarity_search_limit_score(
+        self, query: str, k: int = 4, score_thread: float = 0.2, **kwargs: Any
+    ) -> List[Document]:
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+
+        docs = []
+        for doc in docs_and_scores:
+            if doc[1] < score_thread:
+                docs.append(doc[0])
+
+        return docs
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -118,12 +145,17 @@ class Redis(VectorStore):
         # perform vector search
         results = self.client.ft(self.index_name).search(redis_query, params_dict)
 
-        documents = [
-            Document(page_content=result.content, metadata=json.loads(result.metadata))
+        docs = [
+            (
+                Document(
+                    page_content=result.content, metadata=json.loads(result.metadata)
+                ),
+                float(result.vector_score),
+            )
             for result in results.docs
         ]
 
-        return documents
+        return docs
 
     @classmethod
     def from_texts(
