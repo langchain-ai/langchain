@@ -88,16 +88,27 @@ class Redis(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_thread: float = 0.2, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+            score_threshold (float): The minimum matching score required for a document to be considered a match. Defaults to 0.2.
+            Because the similarity calculation algorithm is based on cosine similarity, the smaller the angle, the higher the similarity.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text, including the match score for each document.
+
+        Note:
+            If there are no documents that satisfy the score_threshold value, an empty list is returned.
+
+        """
         docs_and_scores = self.similarity_search_with_score(query, k=k)
 
-        docs = []
-        for doc in docs_and_scores:
-            if doc[1] < score_thread:
-                docs.append(doc[0])
-
-        return docs
+        return [doc for doc, score in docs_and_scores if score < score_threshold]
 
     def similarity_search_with_score(
         self, query: str, k: int = 4
