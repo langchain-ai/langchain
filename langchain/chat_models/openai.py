@@ -91,16 +91,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
-    generations = []
-    for res in response["choices"]:
-        message = _convert_dict_to_message(res["message"])
-        gen = ChatGeneration(message=message)
-        generations.append(gen)
-    llm_output = {"token_usage": response["usage"]}
-    return ChatResult(generations=generations, llm_output=llm_output)
-
-
 class ChatOpenAI(BaseChatModel, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
@@ -237,7 +227,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                     overall_token_usage[k] += v
                 else:
                     overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage}
+        return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -262,7 +252,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
-        return _create_chat_result(response)
+        return self._create_chat_result(response)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -274,6 +264,15 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
+
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            gen = ChatGeneration(message=message)
+            generations.append(gen)
+        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -307,7 +306,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params
             )
-            return _create_chat_result(response)
+            return self._create_chat_result(response)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
