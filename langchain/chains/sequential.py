@@ -41,13 +41,13 @@ class SequentialChain(Chain, BaseModel):
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
-        input_variables = values["input_variables"]
+        input_variables = values.get("input_variables", [])
         memory_keys = list()
         if "memory" in values and values["memory"] is not None:
             """Validate that prompt input variables are consistent."""
             memory_keys = values["memory"].memory_variables
-            if any(input_variables) in memory_keys:
-                overlapping_keys = input_variables & memory_keys
+            if set(input_variables).intersection(set(memory_keys)):
+                overlapping_keys = set(input_variables) & set(memory_keys)
                 raise ValueError(
                     f"The the input key(s) {''.join(overlapping_keys)} are found "
                     f"in the Memory keys ({memory_keys}) - please use input and "
