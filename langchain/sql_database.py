@@ -171,8 +171,10 @@ class SQLDatabase:
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.begin() as connection:
-            if self._schema is not None:
+            if (self._schema is not None) and (("mariadb" not in self.dialect) or ("mysql" not in self.dialect)): ## added this to try improve mariadb and mysql support ## PLEASE TEST THIS MORE
                 connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+            if (self._schema is not None) and (("mariadb" in self.dialect) or ("mysql" in self.dialect)):
+                connection.exec_driver_sql(f"USE {self._schema}")
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
