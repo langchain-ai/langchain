@@ -1,9 +1,12 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
-from langchain.chains.chat_vector_db.base import ChatVectorDBChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
+from langchain.chains.conversational_retrieval.base import (
+    ChatVectorDBChain,
+    ConversationalRetrievalChain,
+)
 from langchain.chains.graph_qa.base import GraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
@@ -18,7 +21,9 @@ from langchain.chains.moderation import OpenAIModerationChain
 from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
+from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.parallel import SimpleParallelChain
 from langchain.chains.sql_database.base import (
@@ -26,7 +31,6 @@ from langchain.chains.sql_database.base import (
     SQLDatabaseSequentialChain,
 )
 from langchain.chains.transform import TransformChain
-from langchain.chains.vector_db_qa.base import VectorDBQA
 
 __all__ = [
     "ConversationChain",
@@ -55,5 +59,8 @@ __all__ = [
     "GraphQAChain",
     "ConstitutionalChain",
     "QAGenerationChain",
+    "RetrievalQA",
+    "RetrievalQAWithSourcesChain",
+    "ConversationalRetrievalChain",
     "SimpleParallelChain",
 ]

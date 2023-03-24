@@ -2,8 +2,8 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
-from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
+from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -32,7 +32,9 @@ class VectorStoreIndexWrapper(BaseModel):
     def query(self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
-        chain = VectorDBQA.from_chain_type(llm, vectorstore=self.vectorstore, **kwargs)
+        chain = RetrievalQA.from_chain_type(
+            llm, retriever=self.vectorstore.as_retriever(), **kwargs
+        )
         return chain.run(question)
 
     def query_with_sources(
@@ -40,8 +42,8 @@ class VectorStoreIndexWrapper(BaseModel):
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
-        chain = VectorDBQAWithSourcesChain.from_chain_type(
-            llm, vectorstore=self.vectorstore, **kwargs
+        chain = RetrievalQAWithSourcesChain.from_chain_type(
+            llm, retriever=self.vectorstore.as_retriever(), **kwargs
         )
         return chain({chain.question_key: question})
 

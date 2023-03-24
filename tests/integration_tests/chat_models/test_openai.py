@@ -1,5 +1,6 @@
 """Test ChatOpenAI wrapper."""
 
+
 import pytest
 
 from langchain.callbacks.base import CallbackManager
@@ -76,6 +77,24 @@ def test_chat_openai_streaming() -> None:
     response = chat([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
+
+
+def test_chat_openai_llm_output_contains_model_name() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatOpenAI(max_tokens=10)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert llm_result.llm_output["model_name"] == chat.model_name
+
+
+def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatOpenAI(max_tokens=10, streaming=True)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert llm_result.llm_output["model_name"] == chat.model_name
 
 
 def test_chat_openai_invalid_streaming_params() -> None:

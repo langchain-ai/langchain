@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs
+from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs, podcast_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
@@ -13,6 +13,7 @@ from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import RequestsGetTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
@@ -118,6 +119,20 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
+def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+    listen_api_key = kwargs["listen_api_key"]
+    chain = APIChain.from_llm_and_api_docs(
+        llm,
+        podcast_docs.PODCAST_DOCS,
+        headers={"X-ListenAPI-Key": listen_api_key},
+    )
+    return Tool(
+        name="Podcast API",
+        description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
+        func=chain.run,
+    )
+
+
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
     return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
@@ -163,9 +178,14 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
 
+def _get_human_tool(**kwargs: Any) -> BaseTool:
+    return HumanInputRun(**kwargs)
+
+
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
+    "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
 
 _EXTRA_OPTIONAL_TOOLS = {
@@ -180,6 +200,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
+    "human": (_get_human_tool, ["prompt_func", "input_func"]),
 }
 
 
