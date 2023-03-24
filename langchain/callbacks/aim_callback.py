@@ -1,9 +1,6 @@
-import hashlib
-import json
 import os
 import tempfile
 from copy import deepcopy
-from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -18,21 +15,10 @@ def import_spacy() -> Any:
         import spacy  # noqa: F401
     except ImportError:
         raise ImportError(
-            "To use the aim callback manager you need to have the `spacy` python "
-            "package installed. Please install it with `pip install spacy`"
+            "To use the aim callback manager you need to have the `spacy` package installed."
+            "Please install it with `pip install spacy`"
         )
     return spacy
-
-
-def import_pandas() -> Any:
-    try:
-        import pandas  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the aim callback manager you need to have the `pandas` python "
-            "package installed. Please install it with `pip install pandas`"
-        )
-    return pandas
 
 
 def import_textstat() -> Any:
@@ -40,114 +26,10 @@ def import_textstat() -> Any:
         import textstat  # noqa: F401
     except ImportError:
         raise ImportError(
-            "The `textstat` packae is required."
+            "To use the aim callback manager you need to have the `textstat` package installed."
             "Please install it with `pip install textstat`"
         )
     return textstat
-
-
-def _flatten_dict(
-    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-) -> Iterable[Tuple[str, Any]]:
-    """
-    Generator that yields flattened items from a nested dictionary for a flat dict.
-
-    Parameters:
-        nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dict.
-        sep (str): The separator to use between the parent key and the key of the
-            flattened dictionary.
-
-    Yields:
-        (str, any): A key-value pair from the flattened dictionary.
-    """
-    for key, value in nested_dict.items():
-        new_key = parent_key + sep + key if parent_key else key
-        if isinstance(value, dict):
-            yield from _flatten_dict(value, new_key, sep)
-        else:
-            yield new_key, value
-
-
-def flatten_dict(
-    nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-) -> Dict[str, Any]:
-    """Flattens a nested dictionary into a flat dictionary.
-
-    Parameters:
-        nested_dict (dict): The nested dictionary to flatten.
-        parent_key (str): The prefix to prepend to the keys of the flattened dict.
-        sep (str): The separator to use between the parent key and the key of the
-            flattened dictionary.
-
-    Returns:
-        (dict): A flat dictionary.
-
-    """
-    flat_dict = {k: v for k, v in _flatten_dict(nested_dict, parent_key, sep)}
-    return flat_dict
-
-
-def hash_string(s: str) -> str:
-    """Hash a string using sha1.
-
-    Parameters:
-        s (str): The string to hash.
-
-    Returns:
-        (str): The hashed string.
-    """
-    return hashlib.sha1(s.encode("utf-8")).hexdigest()
-
-
-def load_json_to_dict(json_path: Union[str, Path]) -> dict:
-    """Load json file to a dictionary.
-
-    Parameters:
-        json_path (str): The path to the json file.
-
-    Returns:
-        (dict): The dictionary representation of the json file.
-    """
-    with open(json_path, "r") as f:
-        data = json.load(f)
-    return data
-
-
-def analyze_text(
-    text: str,
-    complexity_metrics: bool = True,
-) -> dict:
-    """Analyze text using textstat and spacy.
-
-    Parameters:
-        text (str): The text to analyze.
-        complexity_metrics (bool): Whether to compute complexity metrics.
-
-    Returns:
-        (dict): A dictionary containing the complexity metrics.
-    """
-    textstat = import_textstat()
-    if complexity_metrics:
-        return {
-            "flesch_reading_ease": textstat.flesch_reading_ease(text),
-            "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
-            "smog_index": textstat.smog_index(text),
-            "coleman_liau_index": textstat.coleman_liau_index(text),
-            "automated_readability_index": textstat.automated_readability_index(text),
-            "dale_chall_readability_score": textstat.dale_chall_readability_score(text),
-            "difficult_words": textstat.difficult_words(text),
-            "linsear_write_formula": textstat.linsear_write_formula(text),
-            "gunning_fog": textstat.gunning_fog(text),
-            "text_standard": textstat.text_standard(text),
-            "fernandez_huerta": textstat.fernandez_huerta(text),
-            "szigriszt_pazos": textstat.szigriszt_pazos(text),
-            "gutierrez_polini": textstat.gutierrez_polini(text),
-            "crawford": textstat.crawford(text),
-            "gulpease_index": textstat.gulpease_index(text),
-            "osman": textstat.osman(text),
-        }
-    return {}
 
 
 class BaseMetadataCallbackHandler:
@@ -347,7 +229,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
 
-        import_pandas()
         import_textstat()
         spacy = import_spacy()
         super().__init__()
@@ -390,6 +271,118 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             os.system("python -m spacy download en_core_web_sm")
         self.nlp = spacy.load("en_core_web_sm")
 
+    @property
+    def experiment(self) -> Run:
+        if self._run is not None:
+            return self._run
+
+    def setup(self, args=None):
+        if not self._run:
+            if self._run_hash:
+                self._run = Run(
+                    self._run_hash,
+                    repo=self.repo,
+                    system_tracking_interval=self.system_tracking_interval,
+                )
+            else:
+                self._run = Run(
+                    repo=self.repo,
+                    experiment=self.experiment_name,
+                    system_tracking_interval=self.system_tracking_interval,
+                    log_system_params=self.log_system_params,
+                )
+                self._run_hash = self._run.hash
+
+        if args:
+            for key, value in args.items():
+                self._run.set(key, value, strict=False)
+
+    @classmethod
+    def _flatten_dict(
+        cls, nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
+    ) -> Iterable[Tuple[str, Any]]:
+        """
+        Generator that yields flattened items from a nested dictionary for a flat dict.
+
+        Parameters:
+            nested_dict (dict): The nested dictionary to flatten.
+            parent_key (str): The prefix to prepend to the keys of the flattened dict.
+            sep (str): The separator to use between the parent key and the key of the
+                flattened dictionary.
+
+        Yields:
+            (str, any): A key-value pair from the flattened dictionary.
+        """
+        for key, value in nested_dict.items():
+            new_key = parent_key + sep + key if parent_key else key
+            if isinstance(value, dict):
+                yield from AimCallbackHandler._flatten_dict(value, new_key, sep)
+            else:
+                yield new_key, value
+
+    @classmethod
+    def flatten_dict(
+        cls, nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
+    ) -> Dict[str, Any]:
+        """Flattens a nested dictionary into a flat dictionary.
+
+        Parameters:
+            nested_dict (dict): The nested dictionary to flatten.
+            parent_key (str): The prefix to prepend to the keys of the flattened dict.
+            sep (str): The separator to use between the parent key and the key of the
+                flattened dictionary.
+
+        Returns:
+            (dict): A flat dictionary.
+
+        """
+        flat_dict = {
+            k: v
+            for k, v in AimCallbackHandler._flatten_dict(nested_dict, parent_key, sep)
+        }
+        return flat_dict
+
+    @classmethod
+    def get_text_stats(
+        cls,
+        text: str,
+        complexity_metrics: bool = True,
+    ) -> dict:
+        """Analyze text using textstat and spacy.
+
+        Parameters:
+            text (str): The text to analyze.
+            complexity_metrics (bool): Whether to compute complexity metrics.
+
+        Returns:
+            (dict): A dictionary containing the complexity metrics.
+        """
+        textstat = import_textstat()
+        if complexity_metrics:
+            return {
+                "flesch_reading_ease": textstat.flesch_reading_ease(text),
+                "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
+                "smog_index": textstat.smog_index(text),
+                "coleman_liau_index": textstat.coleman_liau_index(text),
+                "automated_readability_index": textstat.automated_readability_index(
+                    text
+                ),
+                "dale_chall_readability_score": textstat.dale_chall_readability_score(
+                    text
+                ),
+                "difficult_words": textstat.difficult_words(text),
+                "linsear_write_formula": textstat.linsear_write_formula(text),
+                "gunning_fog": textstat.gunning_fog(text),
+                "text_standard": textstat.text_standard(text),
+                "fernandez_huerta": textstat.fernandez_huerta(text),
+                "szigriszt_pazos": textstat.szigriszt_pazos(text),
+                "gutierrez_polini": textstat.gutierrez_polini(text),
+                "crawford": textstat.crawford(text),
+                "gulpease_index": textstat.gulpease_index(text),
+                "osman": textstat.osman(text),
+            }
+        return {}
+
     def _init_resp(self) -> Dict:
         return {k: None for k in self.callback_columns}
 
@@ -403,7 +396,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp = self._init_resp()
         resp.update({"action": "on_llm_start"})
-        resp.update(flatten_dict(serialized))
+        resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
         for prompt in prompts:
@@ -429,19 +422,19 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp = self._init_resp()
         resp.update({"action": "on_llm_end"})
-        resp.update(flatten_dict(response.llm_output or {}))
+        resp.update(AimCallbackHandler.flatten_dict(response.llm_output or {}))
         resp.update(self.get_custom_callback_meta())
 
         for generations in response.generations:
             for generation in generations:
                 generation_resp = deepcopy(resp)
-                generation_resp.update(flatten_dict(generation.dict()))
                 generation_resp.update(
-                    analyze_text(
+                    AimCallbackHandler.flatten_dict(generation.dict())
+                )
+                generation_resp.update(
+                    AimCallbackHandler.get_text_stats(
                         generation.text,
-                        complexity_metrics=self.complexity_metrics,
-                        nlp=self.nlp,
-                        output_dir=self.temp_dir.name,
+                        self.complexity_metrics,
                     )
                 )
 
@@ -487,7 +480,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp = self._init_resp()
         resp.update({"action": "on_chain_start"})
-        resp.update(flatten_dict(serialized))
+        resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
         chain_input = inputs["input"]
@@ -556,7 +549,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         resp = self._init_resp()
         resp.update({"action": "on_tool_start", "input_str": input_str})
-        resp.update(flatten_dict(serialized))
+        resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
         self._run.track(Text(resp["input_str"]), name=resp["action"], context=resp)
@@ -652,32 +645,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.action_records.append(resp)
         if self.stream_logs:
             self.run.log(resp)
-
-    @property
-    def experiment(self) -> Run:
-        if self._run is not None:
-            return self._run
-
-    def setup(self, args=None):
-        if not self._run:
-            if self._run_hash:
-                self._run = Run(
-                    self._run_hash,
-                    repo=self.repo,
-                    system_tracking_interval=self.system_tracking_interval,
-                )
-            else:
-                self._run = Run(
-                    repo=self.repo,
-                    experiment=self.experiment_name,
-                    system_tracking_interval=self.system_tracking_interval,
-                    log_system_params=self.log_system_params,
-                )
-                self._run_hash = self._run.hash
-
-        if args:
-            for key, value in args.items():
-                self._run.set(key, value, strict=False)
 
     def flush_tracker(
         self,
