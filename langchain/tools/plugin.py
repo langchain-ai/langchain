@@ -5,11 +5,11 @@ import requests
 from langchain.tools.base import BaseTool
 
 
-class PluginTool(BaseTool):
+class AIPluginTool(BaseTool):
     api_spec: str
 
     @classmethod
-    def from_plugin_url(cls, url: str) -> PluginTool:
+    def from_plugin_url(cls, url: str) -> AIPluginTool:
         response = requests.get(url).json()
         description = (
             f"Call this tool to get the OpenAPI spec (and usage guide) "

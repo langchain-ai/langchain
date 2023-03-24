@@ -2,6 +2,6 @@
 
 from langchain.tools.base import BaseTool
 from langchain.tools.ifttt import IFTTTWebhook
-from langchain.tools.plugin import PluginTool
+from langchain.tools.plugin import AIPluginTool
 
-__all__ = ["BaseTool", "IFTTTWebhook", "PluginTool"]
+__all__ = ["BaseTool", "IFTTTWebhook", "AIPluginTool"]
