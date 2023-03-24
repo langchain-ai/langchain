@@ -1,5 +1,3 @@
-import os
-import tempfile
 from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
@@ -8,28 +6,6 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 from aim import Run, Text
 from aim.ext.resource.configs import DEFAULT_SYSTEM_TRACKING_INT
-
-
-def import_spacy() -> Any:
-    try:
-        import spacy  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the aim callback manager you need to have the `spacy` package installed."
-            "Please install it with `pip install spacy`"
-        )
-    return spacy
-
-
-def import_textstat() -> Any:
-    try:
-        import textstat  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the aim callback manager you need to have the `textstat` package installed."
-            "Please install it with `pip install textstat`"
-        )
-    return textstat
 
 
 class BaseMetadataCallbackHandler:
@@ -182,20 +158,9 @@ class BaseMetadataCallbackHandler:
 
 
 class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
-    """Callback Handler that logs to Weights and Biases.
+    """Callback Handler that logs to Aim.
 
     Parameters:
-        job_type (str): The type of job.
-        project (str): The project to log to.
-        entity (str): The entity to log to.
-        tags (list): The tags to log.
-        group (str): The group to log to.
-        name (str): The name of the run.
-        notes (str): The notes to log.
-        complexity_metrics (bool): Whether to log complexity metrics.
-        stream_logs (bool): Whether to stream callback actions to W&B
-
-
         repo (:obj:`str`, optional): Aim repository path or Repo object to which Run object is bound.
             If skipped, default Repo is used.
         experiment_name (:obj:`str`, optional): Sets Run's `experiment` property. 'default' if not specified.
@@ -204,44 +169,25 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
         log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
             git info, environment variables, etc.
+        complexity_metrics (bool): Whether to log complexity metrics.
 
     This handler will utilize the associated callback method called and formats
     the input of each callback function with metadata regarding the state of LLM run,
     and adds the response to the list of records for both the {method}_records and
-    action. It then logs the response using the run.log() method to Weights and Biases.
+    action. It then logs the response using the run.log() method to Aim.
     """
 
     def __init__(
         self,
-        job_type: Optional[str] = None,
-        project: Optional[str] = "langchain_callback_demo",
-        entity: Optional[str] = None,
-        tags: Optional[Sequence] = None,
-        group: Optional[str] = None,
-        name: Optional[str] = None,
-        notes: Optional[str] = None,
-        complexity_metrics: bool = False,
-        stream_logs: bool = False,
         repo: Optional[str] = None,
         experiment_name: Optional[str] = None,
         system_tracking_interval: Optional[int] = DEFAULT_SYSTEM_TRACKING_INT,
         log_system_params: bool = True,
+        complexity_metrics: bool = False,
     ) -> None:
         """Initialize callback handler."""
 
-        import_textstat()
-        spacy = import_spacy()
         super().__init__()
-
-        self.job_type = job_type
-        self.project = project
-        self.entity = entity
-        self.tags = tags
-        self.group = group
-        self.name = name
-        self.notes = notes
-        self.complexity_metrics = complexity_metrics
-        self.stream_logs = stream_logs
 
         self.repo = repo
         self.experiment_name = experiment_name
@@ -249,27 +195,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.log_system_params = log_system_params
         self._run = None
         self._run_hash = None
+        self.complexity_metrics = complexity_metrics
 
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.setup(
-            {
-                "job_type": self.job_type,
-                "project": self.project,
-                "entity": self.entity,
-                "tags": self.tags,
-                "group": self.group,
-                "name": self.name,
-                "notes": self.notes,
-            }
-        )
-
-        self.callback_columns: list = []
+        self.setup()
         self.action_records: list = []
-        try:
-            spacy.load("en_core_web_sm")
-        except Exception:
-            os.system("python -m spacy download en_core_web_sm")
-        self.nlp = spacy.load("en_core_web_sm")
 
     @property
     def experiment(self) -> Run:
@@ -348,7 +277,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         text: str,
         complexity_metrics: bool = True,
     ) -> dict:
-        """Analyze text using textstat and spacy.
+        """Analyze text using textstat.
 
         Parameters:
             text (str): The text to analyze.
@@ -357,7 +286,14 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         Returns:
             (dict): A dictionary containing the complexity metrics.
         """
-        textstat = import_textstat()
+        try:
+            import textstat  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "To use the aim callback manager you need to have the `textstat` package installed."
+                "Please install it with `pip install textstat`"
+            )
+
         if complexity_metrics:
             return {
                 "flesch_reading_ease": textstat.flesch_reading_ease(text),
@@ -383,9 +319,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             }
         return {}
 
-    def _init_resp(self) -> Dict:
-        return {k: None for k in self.callback_columns}
-
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
@@ -394,8 +327,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.llm_starts += 1
         self.starts += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_llm_start"})
+        resp = {"action": "on_llm_start"}
         resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
@@ -411,8 +343,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
             self.on_llm_start_records.append(prompt_resp)
             self.action_records.append(prompt_resp)
-            if self.stream_logs:
-                self.run.log(prompt_resp)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -420,8 +350,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.llm_ends += 1
         self.ends += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_llm_end"})
+        resp = {"action": "on_llm_end"}
         resp.update(AimCallbackHandler.flatten_dict(response.llm_output or {}))
         resp.update(self.get_custom_callback_meta())
 
@@ -446,22 +375,17 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
                 self.on_llm_end_records.append(generation_resp)
                 self.action_records.append(generation_resp)
-                if self.stream_logs:
-                    self.run.log(generation_resp)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
         self.step += 1
         self.llm_streams += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_llm_new_token", "token": token})
+        resp = {"action": "on_llm_new_token", "token": token}
         resp.update(self.get_custom_callback_meta())
 
         self.on_llm_token_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -478,8 +402,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.chain_starts += 1
         self.starts += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_chain_start"})
+        resp = {"action": "on_chain_start"}
         resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
@@ -495,8 +418,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
             self.on_chain_start_records.append(input_resp)
             self.action_records.append(input_resp)
-            if self.stream_logs:
-                self.run.log(input_resp)
         elif isinstance(chain_input, list):
             for inp in chain_input:
                 input_resp = deepcopy(resp)
@@ -510,8 +431,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
                 self.on_chain_start_records.append(input_resp)
                 self.action_records.append(input_resp)
-                if self.stream_logs:
-                    self.run.log(input_resp)
         else:
             raise ValueError("Unexpected data format provided!")
 
@@ -521,16 +440,13 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.chain_ends += 1
         self.ends += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_chain_end", "outputs": outputs["output"]})
+        resp = {"action": "on_chain_end", "outputs": outputs["output"]}
         resp.update(self.get_custom_callback_meta())
 
         self._run.track(Text(resp["outputs"]), name=resp["action"], context=resp)
 
         self.on_chain_end_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -547,8 +463,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_starts += 1
         self.starts += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_tool_start", "input_str": input_str})
+        resp = {"action": "on_tool_start", "input_str": input_str}
         resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
@@ -556,8 +471,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self.on_tool_start_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -565,16 +478,13 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_ends += 1
         self.ends += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_tool_end", "output": output})
+        resp = {"action": "on_tool_end", "output": output}
         resp.update(self.get_custom_callback_meta())
 
         self._run.track(Text(resp["output"]), name=resp["action"], context=resp)
 
         self.on_tool_end_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -590,14 +500,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.step += 1
         self.text_ctr += 1
 
-        resp = self._init_resp()
-        resp.update({"action": "on_text", "text": text})
+        resp = {"action": "on_text", "text": text}
         resp.update(self.get_custom_callback_meta())
 
         self.on_text_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
@@ -605,22 +512,17 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.agent_ends += 1
         self.ends += 1
 
-        resp = self._init_resp()
-        resp.update(
-            {
-                "action": "on_agent_finish",
-                "output": finish.return_values["output"],
-                "log": finish.log,
-            }
-        )
+        resp = {
+            "action": "on_agent_finish",
+            "output": finish.return_values["output"],
+            "log": finish.log,
+        }
         resp.update(self.get_custom_callback_meta())
 
         self._run.track(Text(resp["output"]), name=resp["action"], context=resp)
 
         self.on_agent_finish_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -628,56 +530,45 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_starts += 1
         self.starts += 1
 
-        resp = self._init_resp()
-        resp.update(
-            {
-                "action": "on_agent_action",
-                "tool": action.tool,
-                "tool_input": action.tool_input,
-                "log": action.log,
-            }
-        )
+        resp = {
+            "action": "on_agent_action",
+            "tool": action.tool,
+            "tool_input": action.tool_input,
+            "log": action.log,
+        }
         resp.update(self.get_custom_callback_meta())
 
         self._run.track(Text(resp["tool_input"]), name=resp["action"], context=resp)
 
         self.on_agent_action_records.append(resp)
         self.action_records.append(resp)
-        if self.stream_logs:
-            self.run.log(resp)
 
     def flush_tracker(
         self,
-        langchain_asset: Any = None,
-        reset: bool = True,
-        finish: bool = False,
-        job_type: Optional[str] = None,
-        project: Optional[str] = None,
-        entity: Optional[str] = None,
-        tags: Optional[Sequence] = None,
-        group: Optional[str] = None,
-        name: Optional[str] = None,
-        notes: Optional[str] = None,
-        complexity_metrics: Optional[bool] = None,
         repo: Optional[str] = None,
         experiment_name: Optional[str] = None,
         system_tracking_interval: Optional[int] = DEFAULT_SYSTEM_TRACKING_INT,
         log_system_params: bool = True,
+        complexity_metrics: Optional[bool] = None,
+        langchain_asset: Any = None,
+        reset: bool = True,
+        finish: bool = False,
     ) -> None:
         """Flush the tracker and reset the session.
 
         Args:
+            repo (:obj:`str`, optional): Aim repository path or Repo object to which Run object is bound.
+                If skipped, default Repo is used.
+            experiment_name (:obj:`str`, optional): Sets Run's `experiment` property. 'default' if not specified.
+                Can be used later to query runs/sequences.
+            system_tracking_interval (:obj:`int`, optional): Sets the tracking interval in seconds for system usage
+                metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
+            log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
+                git info, environment variables, etc.
+            complexity_metrics: Whether to compute complexity metrics.
             langchain_asset: The langchain asset to save.
             reset: Whether to reset the session.
             finish: Whether to finish the run.
-            job_type: The job type.
-            project: The project.
-            entity: The entity.
-            tags: The tags.
-            group: The group.
-            name: The name.
-            notes: The notes.
-            complexity_metrics: Whether to compute complexity metrics.
 
             Returns:
                 None
@@ -692,20 +583,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         if finish or reset:
             self._run.close()
-            self.temp_dir.cleanup()
             self.reset_callback_meta()
         if reset:
             self.__init__(  # type: ignore
-                job_type=job_type if job_type else self.job_type,
-                project=project if project else self.project,
-                entity=entity if entity else self.entity,
-                tags=tags if tags else self.tags,
-                group=group if group else self.group,
-                name=name if name else self.name,
-                notes=notes if notes else self.notes,
-                complexity_metrics=complexity_metrics
-                if complexity_metrics
-                else self.complexity_metrics,
                 repo=repo if repo else self.repo,
                 experiment_name=experiment_name
                 if experiment_name
@@ -716,4 +596,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 log_system_params=log_system_params
                 if log_system_params
                 else self.log_system_params,
+                complexity_metrics=complexity_metrics
+                if complexity_metrics
+                else self.complexity_metrics,
             )
