@@ -72,8 +72,10 @@ Retrievers
 
 
 The retriever interface is a generic interface that makes it easy to combine documents with
-language models. This interface exposes a `get_relevant_texts` method which takes in a query
+language models. This interface exposes a `get_relevant_documents` method which takes in a query
 (a string) and returns a list of documents.
+
+`Vectorstore Retriever <./retriever_examples/vectorstore-retriever.html>`_: A walkthrough of how to use a VectorStore as a Retriever.
 
 `ChatGPT Plugin Retriever <./retriever_examples/chatgpt-plugin-retriever.html>`_: A walkthrough of how to use the ChatGPT Plugin Retriever within the LangChain framework.
 
