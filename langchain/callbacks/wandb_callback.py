@@ -203,8 +203,8 @@ def construct_html_from_prompt_and_generation(prompt: str, generation: str) -> A
     Returns:
         (wandb.Html): The html element."""
     wandb = import_wandb()
-    formatted_prompt = prompt#.replace("\n", "<br>")
-    formatted_generation = generation#.replace("\n", "<br>")
+    formatted_prompt = prompt.replace("\n", "<br>")
+    formatted_generation = generation.replace("\n", "<br>")
 
     style = """<style type="text/css">
     body {
