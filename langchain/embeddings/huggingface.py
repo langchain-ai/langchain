@@ -36,7 +36,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         try:
             import sentence_transformers
 
-            self.client = sentence_transformers.SentenceTransformer(self.model_name)
+            self.client = sentence_transformers.SentenceTransformer(
+                self.model_name, **kwargs
+            )
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
