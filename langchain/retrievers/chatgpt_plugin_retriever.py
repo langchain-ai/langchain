@@ -10,7 +10,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     url: str
     bearer_token: str
 
-    def get_relevant_texts(self, query: str) -> List[Document]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         response = requests.post(
             f"{self.url}/query",
             json={"queries": [{"query": query}]},

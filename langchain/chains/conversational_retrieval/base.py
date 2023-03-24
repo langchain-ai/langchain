@@ -1,11 +1,12 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -117,7 +118,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
     retriever: BaseRetriever
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        return self.retriever.get_relevant_texts(question)
+        return self.retriever.get_relevant_documents(question)
 
     @classmethod
     def from_llm(
@@ -154,6 +155,14 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
     @property
     def _chain_type(self) -> str:
         return "chat-vector-db"
+
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "`ChatVectorDBChain` is deprecated - "
+            "please use `from langchain.chains import ConversationalRetrievalChain`"
+        )
+        return values
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         vectordbkwargs = inputs.get("vectordbkwargs", {})
