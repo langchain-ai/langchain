@@ -148,7 +148,7 @@ class Chroma(VectorStore):
             List of Documents most similar to the query vector.
         """
         results = self._collection.query(
-            query_embeddings=embedding, n_results=k, filter=filter
+            query_embeddings=embedding, n_results=k, where=filter
         )
         return _results_to_docs(results)
 
