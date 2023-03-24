@@ -8,6 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.llms.openai import BaseOpenAI, OpenAIChat
 
 
@@ -830,13 +831,14 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 if len(self.on_chain_start_records) == len(self.on_llm_start_records):
                     chain_inputs = pd.DataFrame(self.on_chain_start_records)[list(self.input_keys)]
                     session_analysis_df = pd.concat([chain_inputs, session_analysis_df], axis=1)
-                if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
-                    openai_token_info = pd.DataFrame(self.on_llm_end_records)[[
-                        "token_usage_total_tokens",
-                        "token_usage_prompt_tokens",
-                        "token_usage_completion_tokens"
-                    ]]
-                    session_analysis_df = pd.concat([session_analysis_df, openai_token_info], axis=1)
+                if isinstance(langchain_asset, LLMChain):
+                    if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
+                        openai_token_info = pd.DataFrame(self.on_llm_end_records)[[
+                            "token_usage_total_tokens",
+                            "token_usage_prompt_tokens",
+                            "token_usage_completion_tokens"
+                        ]]
+                        session_analysis_df = pd.concat([session_analysis_df, openai_token_info], axis=1)
             
             #TODO: DRY
             if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
