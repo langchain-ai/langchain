@@ -76,7 +76,7 @@ Examples of vector database companies include [Pinecone](https://www.pinecone.io
 
 Although this is perhaps the most common way of document retrieval, people are starting to think about alternative
 data structures and indexing techniques specifically for working with language models. For a leading example of this,
-check out [GPT Index](https://github.com/jerryjliu/gpt_index) - a collection of data structures created by and optimized
+check out [LlamaIndex](https://github.com/jerryjliu/llama_index) - a collection of data structures created by and optimized
 for language models.
 
 ## Augmenting
