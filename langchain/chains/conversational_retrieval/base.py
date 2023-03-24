@@ -9,8 +9,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains.base import Chain
-from langchain.chains.chat_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
@@ -59,30 +59,6 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         if self.return_source_documents:
             _output_keys = _output_keys + ["source_documents"]
         return _output_keys
-
-    @classmethod
-    def from_llm(
-        cls,
-        llm: BaseLanguageModel,
-        retriever: BaseRetriever,
-        condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
-        qa_prompt: Optional[BasePromptTemplate] = None,
-        chain_type: str = "stuff",
-        **kwargs: Any,
-    ) -> BaseConversationalRetrievalChain:
-        """Load chain from LLM."""
-        doc_chain = load_qa_chain(
-            llm,
-            chain_type=chain_type,
-            prompt=qa_prompt,
-        )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
-        return cls(
-            retriever=retriever,
-            combine_docs_chain=doc_chain,
-            question_generator=condense_question_chain,
-            **kwargs,
-        )
 
     @abstractmethod
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
@@ -144,13 +120,41 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         return self.retriever.get_relevant_texts(question)
 
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLanguageModel,
+        retriever: BaseRetriever,
+        condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
+        qa_prompt: Optional[BasePromptTemplate] = None,
+        chain_type: str = "stuff",
+        **kwargs: Any,
+    ) -> BaseConversationalRetrievalChain:
+        """Load chain from LLM."""
+        doc_chain = load_qa_chain(
+            llm,
+            chain_type=chain_type,
+            prompt=qa_prompt,
+        )
+        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        return cls(
+            retriever=retriever,
+            combine_docs_chain=doc_chain,
+            question_generator=condense_question_chain,
+            **kwargs,
+        )
+
 
 class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
     """Chain for chatting with a vector database."""
 
-    index: VectorStore = Field(alias="vectorstore")
+    vectorstore: VectorStore = Field(alias="vectorstore")
     top_k_docs_for_context: int = 4
     search_kwargs: dict = Field(default_factory=dict)
+
+    @property
+    def _chain_type(self) -> str:
+        return "chat-vector-db"
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -160,21 +164,33 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
         )
         return values
 
-    @property
-    def vectorstore(self) -> VectorStore:
-        return self.index
-
-    @vectorstore.setter
-    def vectorstore(self, vectorstore: VectorStore) -> None:
-        self.index = vectorstore
-
-    @property
-    def _chain_type(self) -> str:
-        return "chat-vector-db"
-
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         full_kwargs = {**self.search_kwargs, **vectordbkwargs}
-        return self.index.similarity_search(
+        return self.vectorstore.similarity_search(
             question, k=self.top_k_docs_for_context, **full_kwargs
+        )
+
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLanguageModel,
+        vectorstore: VectorStore,
+        condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
+        qa_prompt: Optional[BasePromptTemplate] = None,
+        chain_type: str = "stuff",
+        **kwargs: Any,
+    ) -> BaseConversationalRetrievalChain:
+        """Load chain from LLM."""
+        doc_chain = load_qa_chain(
+            llm,
+            chain_type=chain_type,
+            prompt=qa_prompt,
+        )
+        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        return cls(
+            vectorstore=vectorstore,
+            combine_docs_chain=doc_chain,
+            question_generator=condense_question_chain,
+            **kwargs,
         )
