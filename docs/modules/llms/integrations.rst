@@ -39,6 +39,8 @@ The examples here are all "how-to" guides for how to integrate with various LLM 
 
 `Self-Hosted Models (via Runhouse) <./integrations/self_hosted_examples.html>`_: Covers how to run models on existing or on-demand remote compute with LangChain.
 
+`Replicate <./integrations/replicate_example.html>`_: Covers how to utilize the Replicate wrapper.
+
 
 .. toctree::
    :maxdepth: 1
