@@ -67,6 +67,27 @@ In the below guides, we cover different types of vectorstores and how to use the
    vectorstore_examples/*
 
 
+Retrievers
+------------
+
+
+The retriever interface is a generic interface that makes it easy to combine documents with
+language models. This interface exposes a `get_relevant_texts` method which takes in a query
+(a string) and returns a list of documents.
+
+`ChatGPT Plugin Retriever <./retriever_examples/chatgpt-plugin-retriever.html>`_: A walkthrough of how to use the ChatGPT Plugin Retriever within the LangChain framework.
+
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Retrievers
+   :name: retrievers
+   :hidden:
+
+   retriever_examples/*
+
+
 Chains
 ------
 
