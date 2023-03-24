@@ -130,7 +130,7 @@ class Chroma(VectorStore):
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, where=filter)
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
