@@ -118,7 +118,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
     retriever: BaseRetriever
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        return self.retriever.get_relevant_texts(question)
+        return self.retriever.get_relevant_documents(question)
 
     @classmethod
     def from_llm(

@@ -132,7 +132,7 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
     retriever: BaseRetriever = Field(exclude=True)
 
     def _get_docs(self, question: str) -> List[Document]:
-        return self.retriever.get_relevant_texts(question)
+        return self.retriever.get_relevant_documents(question)
 
 
 class VectorDBQA(BaseRetrievalQA, BaseModel):
