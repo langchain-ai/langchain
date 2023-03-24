@@ -4,11 +4,15 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 VALID_TASKS = ("text2text-generation", "text-generation")
+
+class HfEndpointAuthStrategy(EnvAuthStrategy):
+    name = "HUGGINGFACEHUB_API_TOKEN"
 
 
 class HuggingFaceEndpoint(LLM, BaseModel):
@@ -28,13 +32,31 @@ class HuggingFaceEndpoint(LLM, BaseModel):
                 "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
             )
             hf = HuggingFaceEndpoint(
-                endpoint_url=endpoint_url,
+                model_id=endpoint_url,
                 huggingfacehub_api_token="my-api-key"
             )
     """
 
-    endpoint_url: str = ""
-    """Endpoint URL to use."""
+    id = "huggingface_endpoint"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For HF Endpoint, this is just the endpoint URL.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["huggingface_hub"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = HfEndpointAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
     model_kwargs: Optional[dict] = None
@@ -79,14 +101,9 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_url": self.endpoint_url, "task": self.task},
+            **{"model_id": self.model_id, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "huggingface_endpoint"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
@@ -117,7 +134,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         # send request
         try:
             response = requests.post(
-                self.endpoint_url, headers=headers, json=parameter_payload
+                self.model_id, headers=headers, json=parameter_payload
             )
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             raise ValueError(f"Error raised by inference endpoint: {e}")

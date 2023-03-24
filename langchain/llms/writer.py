@@ -7,7 +7,10 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
+from langchain.schema import EnvAuthStrategy
 
+class WriterAuthStrategy(EnvAuthStrategy):
+    name = "WRITER_API_KEY"
 
 class Writer(LLM, BaseModel):
     """Wrapper around Writer large language models.
@@ -22,8 +25,28 @@ class Writer(LLM, BaseModel):
             writer = Writer(model_id="palmyra-base")
     """
 
+    id = "writer"
+    """Unique ID for this provider class."""
+
     model_id: str = "palmyra-base"
-    """Model name to use."""
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For StochasticAI, this is the API URL to the model. 
+    """
+
+    # TODO: There appear to be a limited set of models, but I can't find them
+    # within the documentation. I don't have a paid account so I cannot call the
+    # ListModels endpoint either.
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = []
+    """List of PyPi package dependencies."""
+
+    auth_strategy = WriterAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     tokens_to_generate: int = 24
     """Max number of tokens to generate."""
@@ -111,11 +134,6 @@ class Writer(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_id": self.model_id}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "writer"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Writer's complete endpoint.

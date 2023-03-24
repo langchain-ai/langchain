@@ -5,8 +5,11 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from langchain.llms import OpenAI, OpenAIChat
-from langchain.schema import LLMResult
+from langchain.schema import LLMResult, MultiEnvAuthStrategy
 
+
+class PromptLayerOaiAuthStrategy(MultiEnvAuthStrategy):
+    names = ["OPENAI_API_KEY", "PROMPTLAYER_API_KEY"]
 
 class PromptLayerOpenAI(OpenAI, BaseModel):
     """Wrapper around OpenAI large language models.
@@ -28,8 +31,18 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         .. code-block:: python
 
             from langchain.llms import PromptLayerOpenAI
-            openai = PromptLayerOpenAI(model_name="text-davinci-003")
+            openai = PromptLayerOpenAI(model_id="text-davinci-003")
     """
+
+    id = "promptlayer-openai"
+    """Unique ID for this provider class."""
+
+    pypi_package_deps = ["openai", "promptlayer"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = PromptLayerOaiAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     pl_tags: Optional[List[str]]
     return_pl_id: Optional[bool] = False
@@ -126,8 +139,18 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
         .. code-block:: python
 
             from langchain.llms import PromptLayerOpenAIChat
-            openaichat = PromptLayerOpenAIChat(model_name="gpt-3.5-turbo")
+            openaichat = PromptLayerOpenAIChat(model_id="gpt-3.5-turbo")
     """
+
+    id = "promptlayer-openai-chat"
+    """Unique ID for this provider class."""
+
+    pypi_package_deps = ["openai", "promptlayer"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = PromptLayerOaiAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     pl_tags: Optional[List[str]]
     return_pl_id: Optional[bool] = False

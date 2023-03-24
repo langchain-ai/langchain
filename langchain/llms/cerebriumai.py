@@ -4,12 +4,15 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+class CerebriumAuthStrategy(EnvAuthStrategy):
+    name = "CEREBRIUMAI_API_KEY"
 
 class CerebriumAI(LLM, BaseModel):
     """Wrapper around CerebriumAI large language models.
@@ -27,8 +30,25 @@ class CerebriumAI(LLM, BaseModel):
 
     """
 
-    endpoint_url: str = ""
-    """model endpoint to use"""
+    id = "cerebriumai"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Cerebrium, this is the endpoint URL.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["cerebrium"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = CerebriumAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not
@@ -72,14 +92,9 @@ class CerebriumAI(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"endpoint_url": self.endpoint_url},
+            **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "cerebriumai"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call to CerebriumAI endpoint."""
@@ -93,7 +108,7 @@ class CerebriumAI(LLM, BaseModel):
 
         params = self.model_kwargs or {}
         response = model_api_request(
-            self.endpoint_url, {"prompt": prompt, **params}, self.cerebriumai_api_key
+            self.model_id, {"prompt": prompt, **params}, self.cerebriumai_api_key
         )
         text = response["data"]["result"]
         if stop is not None:

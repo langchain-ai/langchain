@@ -4,9 +4,12 @@ from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
+class AnthropicAuthStrategy(EnvAuthStrategy):
+    name = "ANTHROPIC_API_KEY"
 
 class Anthropic(LLM, BaseModel):
     r"""Wrapper around Anthropic large language models.
@@ -32,9 +35,27 @@ class Anthropic(LLM, BaseModel):
             response = model(prompt)
     """
 
+    id = "anthropic"
+    """Unique ID for this provider class."""
+
+    model_id = "claude-v1"
+    """Model ID to invoke by this provider via generate/agenerate."""
+
+    # Anthropic model provider supports any model available via
+    # `anthropic.Client#completion()`.
+    # Reference: https://console.anthropic.com/docs/api/reference
+    models = ["claude-v1", "claude-v1.0", "claude-v1.2", "claude-instant-v1", "claude-instant-v1.0"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["anthropic"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = AnthropicAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    model: str = "claude-v1"
-    """Model name to use."""
 
     max_tokens_to_sample: int = 256
     """Denotes the number of tokens to predict per generation."""
@@ -90,12 +111,7 @@ class Anthropic(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "anthropic"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
@@ -144,7 +160,7 @@ class Anthropic(LLM, BaseModel):
         """
         stop = self._get_anthropic_stop(stop)
         response = self.client.completion(
-            model=self.model,
+            model=self.model_id,
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **self._default_params,
@@ -177,7 +193,7 @@ class Anthropic(LLM, BaseModel):
         """
         stop = self._get_anthropic_stop(stop)
         return self.client.completion_stream(
-            model=self.model,
+            model=self.model_id,
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **self._default_params,

@@ -149,8 +149,25 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
                 model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
     """
 
-    model_id: str = DEFAULT_MODEL_ID
-    """Hugging Face model_id to load the model."""
+    id = "selfhosted_huggingface_pipeline"
+    """Unique ID for this provider class."""
+
+    model_id = DEFAULT_MODEL_ID
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["runhouse"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = None
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     task: str = DEFAULT_TASK
     """Hugging Face task (either "text-generation" or "text2text-generation")."""
     device: int = 0
@@ -193,10 +210,6 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline, BaseModel):
             **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        return "selfhosted_huggingface_pipeline"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         return self.client(pipeline=self.pipeline_ref, prompt=prompt, stop=stop)

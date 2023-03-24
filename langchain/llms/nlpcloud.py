@@ -1,11 +1,14 @@
 """Wrapper around NLPCloud APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
+from langchain.schema import EnvAuthStrategy
 
+class NlpCloudAuthStrategy(EnvAuthStrategy):
+    name = "NLPCLOUD_API_KEY"
 
 class NLPCloud(LLM, BaseModel):
     """Wrapper around NLPCloud large language models.
@@ -17,12 +20,70 @@ class NLPCloud(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import NLPCloud
-            nlpcloud = NLPCloud(model="gpt-neox-20b")
+            nlpcloud = NLPCloud(model_id="gpt-neox-20b")
     """
 
+    id = "nlpcloud"
+    """Unique ID for this provider class."""
+
+    model_id: str = "finetuned-gpt-neox-20b"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Modal, this is the endpoint URL.
+    """
+
+    # Reference: https://docs.nlpcloud.com/#models-list
+    models = [
+        "en_core_web_lg",
+        "fr_core_news_lg",
+        "zh_core_web_lg",
+        "da_core_news_lg",
+        "nl_core_news_lg",
+        "de_core_news_lg",
+        "el_core_news_lg",
+        "it_core_news_lg",
+        "ja_ginza_electra",
+        "ja_core_news_lg",
+        "lt_core_news_lg"
+        "nb_core_news_lg",
+        "pl_core_news_lg",
+        "pt_core_news_lg",
+        "ro_core_news_lg",
+        "es_core_news_lg",
+        "bart-large-mnli-yahoo-answers",
+        "xlm-roberta-large-xnli",
+        "bart-large-cnn",
+        "bart-large-samsum",
+        "t5-base-en-generate-headline",
+        "roberta-base-squad2",
+        "distilbert-base-uncased-finetuned-sst-2-english",
+        "distilbert-base-uncased-emotion",
+        "finbert",
+        "gpt-j",
+        "gpt-neox-20b",
+        "fast-gpt-j",
+        "finetuned-gpt-neox-20b",
+        "nllb-200-3-3b",
+        "paraphrase-multilingual-mpnet-base-v2",
+        "python-langdetect",
+        "stable-diffusion",
+        "whisper"
+    ]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["nlpcloud"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = NlpCloudAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not
+    explicitly specified."""
+
     client: Any  #: :meta private:
-    model_name: str = "finetuned-gpt-neox-20b"
-    """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     min_length: int = 1
@@ -71,7 +132,7 @@ class NLPCloud(LLM, BaseModel):
             import nlpcloud
 
             values["client"] = nlpcloud.Client(
-                values["model_name"], nlpcloud_api_key, gpu=True, lang="en"
+                values["model_id"], nlpcloud_api_key, gpu=True, lang="en"
             )
         except ImportError:
             raise ValueError(
@@ -104,12 +165,7 @@ class NLPCloud(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "nlpcloud"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to NLPCloud's create endpoint.

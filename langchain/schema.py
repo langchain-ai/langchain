@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, ClassVar, Dict, List, Literal, NamedTuple, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -170,8 +170,43 @@ class PromptValue(BaseModel, ABC):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
 
+class EnvAuthStrategy(BaseModel):
+    """Require one auth token via an environment variable."""
+    type: ClassVar[Literal["env"]] = 'env'
+    name: ClassVar[str]
+
+class MultiEnvAuthStrategy(BaseModel):
+    """Require multiple auth tokens via multiple environment variables."""
+    type: ClassVar[Literal["file"]] = 'file'
+    names: ClassVar[List[str]]
+
+class AwsAuthStrategy(BaseModel):
+    """Require AWS authentication via Boto3"""
+    type: ClassVar[Literal["aws"]] = 'aws'
+
+AuthStrategy = Union[
+    EnvAuthStrategy,
+    MultiEnvAuthStrategy,
+]
 
 class BaseLanguageModel(BaseModel, ABC):
+    id: ClassVar[str]
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """Model ID to invoke by this provider via generate/agenerate."""
+
+    models: ClassVar[List[str]]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps: ClassVar[List[str]]
+    """List of PyPi package dependencies."""
+
+    auth_strategy: ClassVar[Optional[AuthStrategy]]
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     @abstractmethod
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None

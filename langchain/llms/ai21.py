@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
@@ -18,6 +19,8 @@ class AI21PenaltyData(BaseModel):
     applyToStopwords: bool = True
     applyToEmojis: bool = True
 
+class AI21AuthStrategy(EnvAuthStrategy):
+    name = "AI21_API_KEY"
 
 class AI21(LLM, BaseModel):
     """Wrapper around AI21 large language models.
@@ -32,8 +35,25 @@ class AI21(LLM, BaseModel):
             ai21 = AI21(model="j1-jumbo")
     """
 
-    model: str = "j1-jumbo"
-    """Model name to use."""
+    id = "ai21"
+    """Unique ID for this provider class."""
+
+    model_id = "j1-jumbo"
+    """Model ID to invoke by this provider via generate/agenerate."""
+
+    # AI21 model provider currently only provides its prompt via the `prompt`
+    # key, which limits the models that can actually be used.
+    # Reference: https://docs.ai21.com/reference/j2-complete-api
+    models = ["j1-large", "j1-grande", "j1-jumbo", "j1-grande-instruct", "j2-large", "j2-grande", "j2-jumbo", "j2-grande-instruct", "j2-jumbo-instruct"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["ai21"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = AI21AuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -99,12 +119,7 @@ class AI21(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "ai21"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to AI21's complete endpoint.
@@ -130,12 +145,12 @@ class AI21(LLM, BaseModel):
         if self.base_url is not None:
             base_url = self.base_url
         else:
-            if self.model in ("j1-grande-instruct",):
+            if self.model_id in ("j1-grande-instruct",):
                 base_url = "https://api.ai21.com/studio/v1/experimental"
             else:
                 base_url = "https://api.ai21.com/studio/v1"
         response = requests.post(
-            url=f"{base_url}/{self.model}/complete",
+            url=f"{base_url}/{self.model_id}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
             json={"prompt": prompt, "stopSequences": stop, **self._default_params},
         )

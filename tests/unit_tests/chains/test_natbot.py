@@ -1,14 +1,13 @@
 """Test functionality related to natbot."""
 
-from typing import Any, List, Mapping, Optional
+from typing import List, Optional
 
-from pydantic import BaseModel
 
 from langchain.chains.natbot.base import NatBotChain
-from langchain.llms.base import LLM
+from tests.unit_tests.llms.fake_llm import FakeLLM as BaseFakeLLM
 
 
-class FakeLLM(LLM, BaseModel):
+class FakeLLM(BaseFakeLLM):
     """Fake LLM wrapper for testing purposes."""
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
@@ -17,15 +16,6 @@ class FakeLLM(LLM, BaseModel):
             return "foo"
         else:
             return "bar"
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "fake"
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        return {}
 
 
 def test_proper_inputs() -> None:

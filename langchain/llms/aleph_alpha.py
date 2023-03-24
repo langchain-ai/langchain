@@ -3,10 +3,13 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
+class AlephAlphaAuthStrategy(EnvAuthStrategy):
+    name = "ALEPH_ALPHA_API_KEY"
 
 class AlephAlpha(LLM, BaseModel):
     """Wrapper around Aleph Alpha large language models.
@@ -25,9 +28,25 @@ class AlephAlpha(LLM, BaseModel):
             alpeh_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
+    id = "aleph-alpha"
+    """Unique ID for this provider class."""
+
+    model_id = "luminous-base"
+    """Model ID to invoke by this provider via generate/agenerate."""
+
+    # Reference: https://docs.aleph-alpha.com/docs/introduction/luminous/
+    models = ["luminous-base", "luminous-extended", "luminous-supreme", "luminous-supreme-control"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["aleph_alpha_client"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = AlephAlphaAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    model: Optional[str] = "luminous-base"
-    """Model name to use."""
 
     maximum_tokens: int = 64
     """The maximum number of tokens to be generated."""
@@ -193,12 +212,7 @@ class AlephAlpha(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "alpeh_alpha"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Aleph Alpha's completion endpoint.
@@ -227,7 +241,7 @@ class AlephAlpha(LLM, BaseModel):
         else:
             params["stop_sequences"] = stop
         request = CompletionRequest(prompt=Prompt.from_text(prompt), **params)
-        response = self.client.complete(model=self.model, request=request)
+        response = self.client.complete(model=self.model_id, request=request)
         text = response.completions[0].completion
         # If stop tokens are provided, Aleph Alpha's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.

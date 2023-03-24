@@ -7,9 +7,12 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
+from langchain.schema import EnvAuthStrategy
 
 logger = logging.getLogger(__name__)
 
+class PetalsAuthStrategy(EnvAuthStrategy):
+    name = "HUGGINGFACE_API_KEY"
 
 class Petals(LLM, BaseModel):
     """Wrapper around Petals Bloom models.
@@ -27,14 +30,31 @@ class Petals(LLM, BaseModel):
 
     """
 
+    id = "petals"
+    """Unique ID for this provider class."""
+
+    model_id = "bigscience/bloom-petals"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Petals, this is the HuggingFace repo ID.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["transformers", "petals"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = PetalsAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any
     """The client to use for the API calls."""
 
     tokenizer: Any
     """The tokenizer to use for the API calls."""
-
-    model_name: str = "bigscience/bloom-petals"
-    """The model to use."""
 
     temperature: float = 0.7
     """What sampling temperature to use"""
@@ -95,9 +115,9 @@ class Petals(LLM, BaseModel):
             from petals import DistributedBloomForCausalLM
             from transformers import BloomTokenizerFast
 
-            model_name = values["model_name"]
-            values["tokenizer"] = BloomTokenizerFast.from_pretrained(model_name)
-            values["client"] = DistributedBloomForCausalLM.from_pretrained(model_name)
+            model_id = values["model_id"]
+            values["tokenizer"] = BloomTokenizerFast.from_pretrained(model_id)
+            values["client"] = DistributedBloomForCausalLM.from_pretrained(model_id)
             values["huggingface_api_key"] = huggingface_api_key
 
         except ImportError:
@@ -123,12 +143,7 @@ class Petals(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "petals"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the Petals API."""

@@ -124,6 +124,26 @@ class SelfHostedPipeline(LLM, BaseModel):
             )
     """
 
+    id = "self_hosted_llm"
+    """Unique ID for this provider class."""
+
+    model_id: str = ""
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For SelfHostedPipeline, this is not used.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["runhouse"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = None
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     pipeline_ref: Any  #: :meta private:
     client: Any  #: :meta private:
     inference_fn: Callable = _generate_text  #: :meta private:
@@ -203,10 +223,6 @@ class SelfHostedPipeline(LLM, BaseModel):
         return {
             **{"hardware": self.hardware},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        return "self_hosted_llm"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         return self.client(pipeline=self.pipeline_ref, prompt=prompt, stop=stop)

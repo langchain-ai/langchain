@@ -3,12 +3,16 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
-DEFAULT_REPO_ID = "gpt2"
+DEFAULT_MODEL_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
+
+class HfHubAuthStrategy(EnvAuthStrategy):
+    name = "HUGGINGFACEHUB_API_TOKEN"
 
 
 class HuggingFaceHub(LLM, BaseModel):
@@ -24,11 +28,30 @@ class HuggingFaceHub(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import HuggingFaceHub
-            hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
+            hf = HuggingFaceHub(model_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
+    id = "huggingface_hub"
+    """Unique ID for this provider class."""
+
+    model_id: str = DEFAULT_MODEL_ID
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For HF Hub, this is the repo ID, e.g. `gpt2`.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["huggingface_hub"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = HfHubAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    repo_id: str = DEFAULT_REPO_ID
     """Model name to use."""
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
@@ -51,9 +74,9 @@ class HuggingFaceHub(LLM, BaseModel):
         try:
             from huggingface_hub.inference_api import InferenceApi
 
-            repo_id = values["repo_id"]
+            model_id = values["model_id"]
             client = InferenceApi(
-                repo_id=repo_id,
+                repo_id=model_id,
                 token=huggingfacehub_api_token,
                 task=values.get("task"),
             )
@@ -75,14 +98,9 @@ class HuggingFaceHub(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"repo_id": self.repo_id, "task": self.task},
+            **{"model_id": self.model_id, "task": self.task},
             **{"model_kwargs": _model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "huggingface_hub"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to HuggingFace Hub's inference endpoint.

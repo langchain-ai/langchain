@@ -1,38 +1,12 @@
 """Unit tests for agents."""
 
-from typing import Any, List, Mapping, Optional
-
-from pydantic import BaseModel
+from typing import Any
 
 from langchain.agents import AgentExecutor, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
-from langchain.llms.base import LLM
+from langchain.llms.fake import FakeListLLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-
-
-class FakeListLLM(LLM, BaseModel):
-    """Fake LLM for testing that outputs elements of a list."""
-
-    responses: List[str]
-    i: int = -1
-
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Increment counter, and then return response in that index."""
-        self.i += 1
-        print(f"=== Mock Response #{self.i} ===")
-        print(self.responses[self.i])
-        return self.responses[self.i]
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        return {}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "fake_list"
-
 
 def _get_agent(**kwargs: Any) -> AgentExecutor:
     """Get agent for testing."""

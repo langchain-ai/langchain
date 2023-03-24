@@ -4,10 +4,13 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
+class ForefrontAuthStrategy(EnvAuthStrategy):
+    name = "FOREFRONTAI_API_KEY"
 
 class ForefrontAI(LLM, BaseModel):
     """Wrapper around ForefrontAI large language models.
@@ -19,11 +22,28 @@ class ForefrontAI(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import ForefrontAI
-            forefrontai = ForefrontAI(endpoint_url="")
+            forefrontai = ForefrontAI(model_id="<endpoint-url>")
     """
 
-    endpoint_url: str = ""
-    """Model name to use."""
+    id = "forefrontai"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Forefront, this is the endpoint URL.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = []
+    """List of PyPi package dependencies."""
+
+    auth_strategy = ForefrontAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -74,12 +94,7 @@ class ForefrontAI(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"endpoint_url": self.endpoint_url}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "forefrontai"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to ForefrontAI's complete endpoint.
@@ -97,7 +112,7 @@ class ForefrontAI(LLM, BaseModel):
                 response = ForefrontAI("Tell me a joke.")
         """
         response = requests.post(
-            url=self.endpoint_url,
+            url=self.model_id,
             headers={
                 "Authorization": f"Bearer {self.forefrontai_api_key}",
                 "Content-Type": "application/json",

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import AwsAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -88,16 +89,34 @@ class SagemakerEndpoint(LLM, BaseModel):
                 "default"
             )
             se = SagemakerEndpoint(
-                endpoint_name=endpoint_name,
+                model_id=endpoint_name,
                 region_name=region_name,
                 credentials_profile_name=credentials_profile_name
             )
     """
-    client: Any  #: :meta private:
 
-    endpoint_name: str = ""
-    """The name of the endpoint from the deployed Sagemaker model.
-    Must be unique within an AWS Region."""
+    id = "sagemaker_endpoint"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For SageMaker Endpoints, this is the endpoint name. This must be unique
+    within an AWS region.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["boto3"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = AwsAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
+    client: Any  #: :meta private:
 
     region_name: str = ""
     """The aws region where the Sagemaker model is deployed, eg. `us-west-2`."""
@@ -185,14 +204,9 @@ class SagemakerEndpoint(LLM, BaseModel):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint_name": self.endpoint_name},
+            **{"model_id": self.model_id},
             **{"model_kwargs": _model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "sagemaker_endpoint"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Sagemaker inference endpoint.
@@ -219,7 +233,7 @@ class SagemakerEndpoint(LLM, BaseModel):
         # send request
         try:
             response = self.client.invoke_endpoint(
-                EndpointName=self.endpoint_name,
+                EndpointName=self.model_id,
                 Body=body,
                 ContentType=content_type,
                 Accept=accepts,

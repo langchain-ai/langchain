@@ -4,12 +4,15 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+class CohereAuthStrategy(EnvAuthStrategy):
+    name = "COHERE_API_KEY"
 
 class Cohere(LLM, BaseModel):
     """Wrapper around Cohere large language models.
@@ -25,9 +28,29 @@ class Cohere(LLM, BaseModel):
             cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
     """
 
+    id = "cohere"
+    """Unique ID for this provider class."""
+
+    model_id = "medium"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    # Cohere model provider supports any model available via
+    # `cohere.Client#generate()`.`
+    # Reference: https://docs.cohere.ai/reference/generate
+    models = ["medium", "xlarge"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["cohere"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = CohereAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    model: Optional[str] = None
-    """Model name to use."""
 
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
@@ -93,12 +116,7 @@ class Cohere(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "cohere"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Cohere's generate endpoint.
@@ -123,7 +141,7 @@ class Cohere(LLM, BaseModel):
         else:
             params["stop_sequences"] = stop
 
-        response = self.client.generate(model=self.model, prompt=prompt, **params)
+        response = self.client.generate(model=self.model_id, prompt=prompt, **params)
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.

@@ -255,15 +255,10 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
         cls_name = f"\033[1m{self.__class__.__name__}\033[0m"
         return f"{cls_name}\nParams: {self._identifying_params}"
 
-    @property
-    @abstractmethod
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-
     def dict(self, **kwargs: Any) -> Dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
-        starter_dict["_type"] = self._llm_type
+        starter_dict["_type"] = self.id
         return starter_dict
 
     def save(self, file_path: Union[Path, str]) -> None:

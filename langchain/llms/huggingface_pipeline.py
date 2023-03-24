@@ -44,8 +44,26 @@ class HuggingFacePipeline(LLM, BaseModel):
             hf = HuggingFacePipeline(pipeline=pipe)
     """
 
-    pipeline: Any  #: :meta private:
+    id = "huggingface_pipeline"
+    """Unique ID for this provider class."""
+
     model_id: str = DEFAULT_MODEL_ID
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["transformers"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = None
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
+    pipeline: Any  #: :meta private:
     """Model name to use."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
@@ -141,10 +159,6 @@ class HuggingFacePipeline(LLM, BaseModel):
             **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        return "huggingface_pipeline"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         response = self.pipeline(prompt)

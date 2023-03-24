@@ -9,6 +9,26 @@ from langchain.llms.base import LLM
 class ManifestWrapper(LLM, BaseModel):
     """Wrapper around HazyResearch's Manifest library."""
 
+    id = "manifest"
+    """Unique ID for this provider class."""
+
+    model_id: str = ""
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    Not currently supported by Manifest provider.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["manifest-ml"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = None
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
     llm_kwargs: Optional[Dict] = None
 
@@ -36,11 +56,6 @@ class ManifestWrapper(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         kwargs = self.llm_kwargs or {}
         return {**self.client.client.get_model_params(), **kwargs}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "manifest"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to LLM through Manifest."""

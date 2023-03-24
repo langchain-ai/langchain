@@ -9,8 +9,12 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
+from langchain.schema import EnvAuthStrategy
 
 logger = logging.getLogger(__name__)
+
+class StochasticAuthStrategy(EnvAuthStrategy):
+    name = "STOCHASTICAI_API_KEY"
 
 
 class StochasticAI(LLM, BaseModel):
@@ -23,11 +27,29 @@ class StochasticAI(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import StochasticAI
-            stochasticai = StochasticAI(api_url="")
+            api_url = "https://api-dev.stochastic.ai/v1/modelApi/submit/flan-t5"
+            stochasticai = StochasticAI(model_id=api_url)
     """
 
-    api_url: str = ""
-    """Model name to use."""
+    id = "stochasticai"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For StochasticAI, this is the API URL to the model. 
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = []
+    """List of PyPi package dependencies."""
+
+    auth_strategy = StochasticAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not
@@ -71,14 +93,9 @@ class StochasticAI(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"endpoint_url": self.api_url},
+            **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "stochasticai"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to StochasticAI's complete endpoint.
@@ -97,7 +114,7 @@ class StochasticAI(LLM, BaseModel):
         """
         params = self.model_kwargs or {}
         response_post = requests.post(
-            url=self.api_url,
+            url=self.model_id,
             json={"prompt": prompt, "params": params},
             headers={
                 "apiKey": f"{self.stochasticai_api_key}",

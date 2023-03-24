@@ -4,12 +4,15 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+class BananaAuthStrategy(EnvAuthStrategy):
+    name = "BANANA_API_KEY"
 
 class Banana(LLM, BaseModel):
     """Wrapper around Banana large language models.
@@ -23,11 +26,27 @@ class Banana(LLM, BaseModel):
     Example:
         .. code-block:: python
             from langchain.llms import Banana
-            banana = Banana(model_key="")
+            banana = Banana(model_id="...")
+    """
+    id = "banana"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Banana, this is the model key.
     """
 
-    model_key: str = ""
-    """model endpoint to use"""
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["banana_dev"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = BananaAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not
@@ -71,14 +90,9 @@ class Banana(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"model_key": self.model_key},
+            **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "banana"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call to Banana endpoint."""
@@ -91,7 +105,7 @@ class Banana(LLM, BaseModel):
             )
         params = self.model_kwargs or {}
         api_key = self.banana_api_key
-        model_key = self.model_key
+        model_key = self.model_id
         model_inputs = {
             # a json specific to your model.
             "prompt": prompt,

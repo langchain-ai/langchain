@@ -4,11 +4,14 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+class GooseAuthStrategy(EnvAuthStrategy):
+    name = "GOOSEAI_API_KEY"
 
 class GooseAI(LLM, BaseModel):
     """Wrapper around OpenAI large language models.
@@ -22,14 +25,32 @@ class GooseAI(LLM, BaseModel):
     Example:
         .. code-block:: python
             from langchain.llms import GooseAI
-            gooseai = GooseAI(model_name="gpt-neo-20b")
+            gooseai = GooseAI(model_id="gpt-neo-20b")
 
     """
 
-    client: Any
+    id = "gooseai"
+    """Unique ID for this provider class."""
 
-    model_name: str = "gpt-neo-20b"
-    """Model name to use"""
+    model_id: str = "gpt-neo-20b"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Goose, this is the engine ID.
+    """
+
+    # Reference: https://goose.ai/docs/api/engines
+    models = ["gpt-neo-20b", "gpt-j-6b", "gpt-neo-2-7b", "gpt-neo-1-3b", "gpt-neo-125m", "fairseq-13b", "fairseq-6-7b", "fairseq-2-7b", "fairseq-1-3b", "fairseq-125m"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["openai"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = GooseAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
+    client: Any
 
     temperature: float = 0.7
     """What sampling temperature to use"""
@@ -123,12 +144,7 @@ class GooseAI(LLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "gooseai"
+        return {**{"model_id", self.model_id}, **self._default_params}
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the GooseAI API."""
@@ -138,6 +154,6 @@ class GooseAI(LLM, BaseModel):
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
 
-        response = self.client.create(engine=self.model_name, prompt=prompt, **params)
+        response = self.client.create(engine=self.model_id, prompt=prompt, **params)
         text = response.choices[0].text
         return text

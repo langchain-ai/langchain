@@ -22,12 +22,30 @@ class Modal(LLM, BaseModel):
     Example:
         .. code-block:: python
             from langchain.llms import Modal
-            modal = Modal(endpoint_url="")
+            endpoint_url = "..."
+            modal = Modal(model_id=endpoint_url)
 
     """
 
-    endpoint_url: str = ""
-    """model endpoint to use"""
+    id = "modal"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Modal, this is the endpoint URL.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["modal-client"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = None
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not
@@ -60,14 +78,9 @@ class Modal(LLM, BaseModel):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"endpoint_url": self.endpoint_url},
+            **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "modal"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call to Modal endpoint."""

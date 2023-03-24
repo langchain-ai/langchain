@@ -4,12 +4,15 @@ from typing import Any, Dict, List, Mapping, Optional
 import requests
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 DEFAULT_MODEL_ID = "google/flan-t5-xl"
 
+class DeepInfraAuthStrategy(EnvAuthStrategy):
+    name = "DEEPINFRA_API_TOKEN"
 
 class DeepInfra(LLM, BaseModel):
     """Wrapper around DeepInfra deployed models.
@@ -28,7 +31,25 @@ class DeepInfra(LLM, BaseModel):
                                 deepinfra_api_token="my-api-key")
     """
 
+    id = "deepinfra"
+    """Unique ID for this provider class."""
+
     model_id: str = DEFAULT_MODEL_ID
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = []
+    """List of PyPi package dependencies."""
+
+    auth_strategy = DeepInfraAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     model_kwargs: Optional[dict] = None
 
     deepinfra_api_token: Optional[str] = None
@@ -54,11 +75,6 @@ class DeepInfra(LLM, BaseModel):
             **{"model_id": self.model_id},
             **{"model_kwargs": self.model_kwargs},
         }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "deepinfra"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to DeepInfra's inference API endpoint.

@@ -27,7 +27,7 @@ from tenacity import (
 )
 
 from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult
+from langchain.schema import Generation, LLMResult, EnvAuthStrategy
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -112,6 +112,8 @@ async def acompletion_with_retry(
 
     return await _completion_with_retry(**kwargs)
 
+class OpenAIAuthStrategy(EnvAuthStrategy):
+    name = "OPENAI_API_KEY"
 
 class BaseOpenAI(BaseLLM, BaseModel):
     """Wrapper around OpenAI large language models.
@@ -126,12 +128,17 @@ class BaseOpenAI(BaseLLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import OpenAI
-            openai = OpenAI(model_name="text-davinci-003")
+            openai = OpenAI(model_id="text-davinci-003")
     """
 
+    pypi_package_deps = ["openai"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = OpenAIAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    model_name: str = "text-davinci-003"
-    """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     max_tokens: int = 256
@@ -164,8 +171,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
-        model_name = data.get("model_name", "")
-        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+        model_id = data.get("model_id", "")
+        if model_id.startswith("gpt-3.5-turbo") or model_id.startswith("gpt-4"):
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
@@ -369,7 +376,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
-        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        llm_output = {"token_usage": token_usage, "model_id": self.model_id}
         return LLMResult(generations=generations, llm_output=llm_output)
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
@@ -417,12 +424,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "openai"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
@@ -438,9 +440,9 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "Please it install it with `pip install tiktoken`."
             )
         encoder = "gpt2"
-        if self.model_name in ("text-davinci-003", "text-davinci-002"):
+        if self.model_id in ("text-davinci-003", "text-davinci-002"):
             encoder = "p50k_base"
-        if self.model_name.startswith("code"):
+        if self.model_id.startswith("code"):
             encoder = "p50k_base"
         # create a GPT-3 encoder instance
         enc = tiktoken.get_encoding(encoder)
@@ -504,34 +506,62 @@ class BaseOpenAI(BaseLLM, BaseModel):
         num_tokens = self.get_num_tokens(prompt)
 
         # get max context size for model by name
-        max_size = self.modelname_to_contextsize(self.model_name)
+        max_size = self.modelname_to_contextsize(self.model_id)
         return max_size - num_tokens
 
 
 class OpenAI(BaseOpenAI):
-    """Generic OpenAI class that uses model name."""
+    """Generic OpenAI class that uses model ID."""
+
+    id = "openai"
+    """Unique ID for this provider class."""
+
+    model_id: str = "text-davinci-003"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    # OpenAI model provider supports any model available via
+    # `openai.Completion`.
+    # Reference: https://platform.openai.com/docs/models/model-endpoint-compatibility
+    models = ['text-davinci-003', 'text-davinci-002', 'text-curie-001', 'text-babbage-001', 'text-ada-001', 'davinci', 'curie', 'babbage', 'ada']
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"model": self.model_name}, **super()._invocation_params}
+        return {**{"model": self.model_id}, **super()._invocation_params}
 
 
 class AzureOpenAI(BaseOpenAI):
-    """Azure specific OpenAI class that uses deployment name."""
+    """
+    Azure specific OpenAI class that uses deployment name.
+    See `azure_openai_example.ipynb` for more info.
+    """
 
-    deployment_name: str = ""
-    """Deployment name to use."""
+    id = "openai-azure"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Azure OpenAI, this is the deployment name.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {
-            **{"deployment_name": self.deployment_name},
+            **{"model_id": self.model_id},
             **super()._identifying_params,
         }
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"engine": self.deployment_name}, **super()._invocation_params}
+        return {**{"engine": self.model_id}, **super()._invocation_params}
 
 
 class OpenAIChat(BaseLLM, BaseModel):
@@ -547,11 +577,26 @@ class OpenAIChat(BaseLLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import OpenAIChat
-            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
+            openaichat = OpenAIChat(model_id="gpt-3.5-turbo")
     """
 
+    id = "openai-chat"
+    """Unique ID for this provider class."""
+
+    model_id: str = "gpt-3.5-turbo"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For Azure OpenAI, this is the deployment name.
+    """
+
+    # OpenAI chat model provider supports any model available via
+    # `openai.ChatCompletion`.
+    # Reference: https://platform.openai.com/docs/models/model-endpoint-compatibility
+    models = ['gpt-4', 'gpt-4-0314', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301']
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -625,7 +670,7 @@ class OpenAIChat(BaseLLM, BaseModel):
                 f"OpenAIChat currently only supports single prompt, got {prompts}"
             )
         messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
-        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        params: Dict[str, Any] = {**{"model": self.model_id}, **self._default_params}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -656,7 +701,7 @@ class OpenAIChat(BaseLLM, BaseModel):
             full_response = completion_with_retry(self, messages=messages, **params)
             llm_output = {
                 "token_usage": full_response["usage"],
-                "model_name": self.model_name,
+                "model_id": self.model_id,
             }
             return LLMResult(
                 generations=[
@@ -696,7 +741,7 @@ class OpenAIChat(BaseLLM, BaseModel):
             )
             llm_output = {
                 "token_usage": full_response["usage"],
-                "model_name": self.model_name,
+                "model_id": self.model_id,
             }
             return LLMResult(
                 generations=[
@@ -708,12 +753,7 @@ class OpenAIChat(BaseLLM, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "openai-chat"
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
