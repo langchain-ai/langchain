@@ -91,15 +91,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
-    generations = []
-    for res in response["choices"]:
-        message = _convert_dict_to_message(res["message"])
-        gen = ChatGeneration(message=message)
-        generations.append(gen)
-    return ChatResult(generations=generations)
-
-
 class ChatOpenAI(BaseChatModel, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
@@ -122,13 +113,15 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    request_timeout: int = 60
+    """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
     class Config:
@@ -184,6 +177,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
+            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
@@ -221,6 +215,20 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         return _completion_with_retry(**kwargs)
 
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            for k, v in token_usage.items():
+                if k in overall_token_usage:
+                    overall_token_usage[k] += v
+                else:
+                    overall_token_usage[k] = v
+        return {"token_usage": overall_token_usage, "model_name": self.model_name}
+
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
@@ -244,7 +252,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
-        return _create_chat_result(response)
+        return self._create_chat_result(response)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -256,6 +264,15 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
+
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            gen = ChatGeneration(message=message)
+            generations.append(gen)
+        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -289,7 +306,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params
             )
-            return _create_chat_result(response)
+            return self._create_chat_result(response)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -317,3 +334,41 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
+
+    def get_num_tokens_from_messages(
+        self, messages: List[BaseMessage], model: str = "gpt-3.5-turbo-0301"
+    ) -> int:
+        """Calculate num tokens for gpt-3.5-turbo with tiktoken package."""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please it install it with `pip install tiktoken`."
+            )
+
+        """Returns the number of tokens used by a list of messages."""
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+        if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
+            num_tokens = 0
+            messages_dict = [_convert_message_to_dict(m) for m in messages]
+            for message in messages_dict:
+                # every message follows <im_start>{role/name}\n{content}<im_end>\n
+                num_tokens += 4
+                for key, value in message.items():
+                    num_tokens += len(encoding.encode(value))
+                    if key == "name":  # if there's a name, the role is omitted
+                        num_tokens += -1  # role is always required and always 1 token
+            num_tokens += 2  # every reply is primed with <im_start>assistant
+            return num_tokens
+        else:
+            raise NotImplementedError(
+                f"get_num_tokens_from_messages() is not presently implemented "
+                f"for model {model}."
+                "See https://github.com/openai/openai-python/blob/main/chatml.md for "
+                "information on how messages are converted to tokens."
+            )

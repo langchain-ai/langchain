@@ -7,9 +7,11 @@ from langchain.memory.chat_memory import ChatMessageHistory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import ConversationEntityMemory
 from langchain.memory.kg import ConversationKGMemory
+from langchain.memory.readonly import ReadOnlySharedMemory
 from langchain.memory.simple import SimpleMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
+from langchain.memory.token_buffer import ConversationTokenBufferMemory
 
 __all__ = [
     "CombinedMemory",
@@ -22,4 +24,6 @@ __all__ = [
     "ConversationSummaryMemory",
     "ChatMessageHistory",
     "ConversationStringBufferMemory",
+    "ReadOnlySharedMemory",
+    "ConversationTokenBufferMemory",
 ]

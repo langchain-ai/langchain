@@ -9,3 +9,4 @@ sphinx-typlog-theme==0.8.0
 sphinx-panels
 toml
 myst_nb
+sphinx_copybutton

@@ -21,8 +21,6 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `GoogleDrive <./examples/googledrive.html>`_: A walkthrough of how to load data from Google drive.
 
-`Microsoft Word <./examples/microsoft_word.html>`_: A walkthrough of how to load data from Microsoft Word files.
-
 `Obsidian <./examples/obsidian.html>`_: A walkthrough of how to load data from an Obsidian file dump.
 
 `Roam <./examples/roam.html>`_: A walkthrough of how to load data from a Roam file export.
@@ -55,11 +53,31 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Airbyte Json <./examples/airbyte_json.html>`_: A walkthrough of how to load data from a local Airbyte JSON file.
 
-`Online PDF <./examples/online_pdf.html>`_: A walkthrough of how to load data from an online PDF.
-
 `CoNLL-U <./examples/CoNLL-U.html>`_: A walkthrough of how to load data from a ConLL-U file.
 
 `iFixit <./examples/ifixit.html>`_: A walkthrough of how to search and load data like guides, technical Q&A's, and device wikis from iFixit.com
+
+`Notebook <./examples/notebook.html>`_: A walkthrough of how to load data from .ipynb notebook.
+
+`Copypaste <./examples/copypaste.html>`_: A walkthrough of how to load a document object from something you just want to copy and paste.
+
+`CSV <./examples/csv.html>`_: A walkthrough of how to load data from a .csv file.
+
+`Facebook Chat <./examples/facebook_chat.html>`_: A walkthrough of how to load data from a Facebook Chat json file.
+
+`Image <./examples/image.html>`_: A walkthrough of how to load images such as JPGs PNGs into a document format that can be used downstream.
+
+`Markdown <./examples/markdown.html>`_: A walkthrough of how to load data from a markdown file.
+
+`SRT <./examples/srt.html>`_: A walkthrough of how to load data from a subtitle (`.srt`) file.
+
+`Telegram <./examples/telegram.html>`_: A walkthrough of how to load data from a Telegram Chat json file.
+
+`URL <./examples/url.html>`_: A walkthrough of how to load HTML documents from a list of URLs into a document format that we can use downstream.
+
+`Word Document <./examples/word_document.html>`_: A walkthrough of how to load data from Microsoft Word files.
+
+`Blackboard <./examples/blackboard.html>`_: A walkthrough of how to load data from a Blackboard course.
 
 .. toctree::
    :maxdepth: 1

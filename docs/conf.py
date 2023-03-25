@@ -23,7 +23,7 @@ with open("../pyproject.toml") as f:
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2022, Harrison Chase"
+copyright = "2023, Harrison Chase"
 author = "Harrison Chase"
 
 version = data["tool"]["poetry"]["version"]
@@ -46,6 +46,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
     "myst_nb",
+    "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
