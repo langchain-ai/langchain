@@ -1,4 +1,5 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from copy import deepcopy
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -9,7 +10,7 @@ def import_aim() -> Any:
         import aim
     except ImportError:
         raise ImportError(
-            "To use the aim callback manager you need to have the `aim` python package installed."
+            "To use the Aim callback manager you need to have the `aim` python package installed."
             "Please install it with `pip install aim`"
         )
     return aim
@@ -253,12 +254,13 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_llm_start"}
         resp.update(self.get_custom_callback_meta())
 
-        for prompt in prompts:
-            self._run.track(
-                aim.Text(prompt),
-                name="on_llm_start",
-                context=resp,
-            )
+        prompts_res = deepcopy(prompts)
+
+        self._run.track(
+            [aim.Text(prompt) for prompt in prompts_res],
+            name="on_llm_start",
+            context=resp,
+        )
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -270,13 +272,16 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_llm_end"}
         resp.update(self.get_custom_callback_meta())
 
-        for generations in response.generations:
-            for generation in generations:
-                self._run.track(
-                    aim.Text(generation.text),
-                    name="on_llm_end",
-                    context=resp,
-                )
+        response_res = deepcopy(response)
+
+        generated = [aim.Text(generation.text)
+                     for generations in response_res.generations
+                     for generation in generations]
+        self._run.track(
+            generated,
+            name="on_llm_end",
+            context=resp,
+        )
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
@@ -302,7 +307,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_chain_start"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(aim.Text(inputs["input"]), name="on_chain_start", context=resp)
+        inputs_res = deepcopy(inputs)
+
+        self._run.track(aim.Text(inputs_res["input"]), name="on_chain_start", context=resp)
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -314,7 +321,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_chain_end"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(aim.Text(outputs["output"]), name="on_chain_end", context=resp)
+        outputs_res = deepcopy(outputs)
+
+        self._run.track(aim.Text(outputs_res["output"]), name="on_chain_end", context=resp)
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -373,8 +382,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_agent_finish"}
         resp.update(self.get_custom_callback_meta())
 
-        text = "OUTPUT:\n{}\n\nLOG:\n{}".format(finish.return_values["output"], finish.log)
-        self._run.track(aim.Text(text), name=resp["action"], context=resp)
+        finish_res = deepcopy(finish)
+
+        text = "OUTPUT:\n{}\n\nLOG:\n{}".format(finish_res.return_values["output"], finish_res.log)
+        self._run.track(aim.Text(text), name="on_agent_finish", context=resp)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
@@ -389,8 +400,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         }
         resp.update(self.get_custom_callback_meta())
 
-        text = "TOOL INPUT:\n{}\n\nLOG:\n{}".format(action.tool_input, action.log)
-        self._run.track(aim.Text(text), name=resp["action"], context=resp)
+        action_res = deepcopy(action)
+
+        text = "TOOL INPUT:\n{}\n\nLOG:\n{}".format(action_res.tool_input, action_res.log)
+        self._run.track(aim.Text(text), name="on_agent_action", context=resp)
 
     def flush_tracker(
         self,
