@@ -21,36 +21,28 @@ We then split the documentation into the following sections:
 
 An overview of the various tools LangChain supports.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./agents/tools.rst
 
 **Agents**
 
 An overview of the different agent types.
-
-.. toctree::
-   :maxdepth: 1
-
-   ./agents/agents.rst
 
 
 **Toolkits**
 
 An overview of toolkits, and examples of the different ones LangChain supports.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./agents/agent_toolkits.rst
-
 
 **Agent Executor**
 
 An overview of the Agent Executor class and examples of how to use it.
 
+Go Deeper
+---------
+
 .. toctree::
    :maxdepth: 1
 
+   ./agents/tools.rst
+   ./agents/agents.rst
+   ./agents/agent_toolkits.rst
    ./agents/agent_executors.rst

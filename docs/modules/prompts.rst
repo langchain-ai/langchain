@@ -13,19 +13,9 @@ This section of documentation is split into four sections:
 
 How to use PromptTemplates to prompt Language Models.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./prompts/prompt_templates.rst
-
 **Chat Prompt Templates**
 
 How to use PromptTemplates to prompt Chat Models.
-
-.. toctree::
-   :maxdepth: 1
-
-   ./prompts/chat_prompt_template.ipynb
 
 **Example Selectors**
 
@@ -33,10 +23,6 @@ Often times it is useful to include examples in prompts.
 These examples can be hardcoded, but it is often more powerful if they are dynamically selected.
 This section goes over example selection.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./prompts/example_selectors.rst
 
 **Output Parsers**
 
@@ -47,7 +33,13 @@ Output Parsers are responsible for (1) instructing the model how output should b
 (2) parsing output into the desired formatting (including retrying if necessary).
 
 
+Go Deeper
+---------
+
 .. toctree::
    :maxdepth: 1
 
+   ./prompts/prompt_templates.rst
+   ./prompts/chat_prompt_template.ipynb
+   ./prompts/example_selectors.rst
    ./prompts/output_parsers.rst

@@ -27,35 +27,29 @@ We then provide a deep dive on the four main components.
 
 How to load documents from a variety of sources.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./indexes/document_loaders.rst
-
 **Text Splitters**
 
 An overview of the abstractions and implementions around splitting text.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./indexes/text_splitters.rst
 
 **VectorStores**
 
 An overview of VectorStores and the many integrations LangChain provides.
 
-.. toctree::
-   :maxdepth: 1
-
-   ./indexes/vectorstores.rst
 
 **Retrievers**
 
 An overview of Retrievers and the implementations LangChain provides.
 
+Go Deeper
+---------
+
+
 .. toctree::
    :maxdepth: 1
 
+   ./indexes/document_loaders.rst
+   ./indexes/text_splitters.rst
+   ./indexes/vectorstores.rst
    ./indexes/retrievers.rst
 
