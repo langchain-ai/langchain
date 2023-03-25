@@ -87,7 +87,7 @@ class Pinecone(VectorStore):
         ids_iter = iter(ids)
         metadatas = metadatas or [{}]*len(ids)
         metadatas_iter = iter(metadatas)
-        # Initialize the tqdm progress bar
+        # Initialize progress bar
         progress_bar = tqdm(total=len(ids), desc="Processing texts")
         # Process incoming texts in batches
         texts_iter = iter(texts)
@@ -109,11 +109,9 @@ class Pinecone(VectorStore):
             docs_batch: list = list(zip(
                 ids_batch, self._embedding.embed_documents(text_batch), metadata_batch
             ))
-            # upsert to Pinecone
+            # Upsert to Pinecone
             self._index.upsert(vectors=docs_batch, namespace=namespace)
-            # Update the progress bar
             progress_bar.update(len(text_batch))
-        # Close the progress bar
         progress_bar.close()
         return ids
 
