@@ -1,15 +1,15 @@
 """Wrapper around Pinecone vector database."""
 from __future__ import annotations
-import itertools
 
+import itertools
 import uuid
 from typing import Any, Iterable, List, Optional, Tuple, cast
+
+from tqdm.auto import tqdm
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
-
-from tqdm.auto import tqdm
 
 
 class Pinecone(VectorStore):
