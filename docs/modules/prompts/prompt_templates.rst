@@ -11,7 +11,7 @@ The following sections of documentation are provided:
 
 - `How-To Guides <./prompt_templates/how_to_guides.html>`_: A collection of how-to guides. These highlight how to accomplish various objectives with our prompt class.
 
-- `Reference <../reference/prompts.html>`_: API reference documentation for all prompt classes.
+- `Reference <../../reference/prompts.html>`_: API reference documentation for all prompt classes.
 
 
 
@@ -23,4 +23,4 @@ The following sections of documentation are provided:
 
    ./prompt_templates/getting_started.md
    ./prompt_templates/how_to_guides.rst
-   Reference<../../../reference/prompts.rst>
+   Reference<../../reference/prompts.rst>

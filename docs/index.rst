@@ -8,7 +8,7 @@ LangChain is a framework for developing differentiated applications powered by l
 
 As such, the LangChain framework is designed with the objective in mind to enable those types of applications.
 
-This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <docs.langchain.com>`_. For the JavaScript documentation, see `here <js.langchain.com>`_.
+This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 
 Getting Started
 ----------------

@@ -13,7 +13,7 @@ The following sections of documentation are provided:
 
 - `Integrations <./llms/integrations.html>`_: A collection of examples on how to integrate different LLM providers with LangChain (OpenAI, Hugging Face, etc).
 
-- `Reference <../reference/modules/llms.html>`_: API reference documentation for all LLM classes.
+- `Reference <../../reference/modules/llms.html>`_: API reference documentation for all LLM classes.
 
 
 .. toctree::

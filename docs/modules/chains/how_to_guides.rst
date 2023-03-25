@@ -2,7 +2,7 @@ How-To Guides
 =============
 
 A chain is made up of links, which can be either primitives or other chains.
-Primitives can be either `prompts <../prompts.html>`_, `llms <../llms.html>`_, `utils <../utils.html>`_, or other chains.
+Primitives can be either `prompts <../prompts.html>`_, `models <../models.html>`_, arbitrary functions, or other chains.
 The examples here are broken up into three sections:
 
 **Generic Functionality**
