@@ -1,4 +1,4 @@
-# Question Answering
+# Question Answering over Docs
 
 Question answering in this context refers to question answering over your document data. 
 For question answering over other types of data, like [SQL databases](../modules/chains/examples/sqlite.html) or [APIs](../modules/chains/examples/api.html), please see [here](../modules/chains/utility_how_to.html)
@@ -72,4 +72,3 @@ The following resources exist:
 Additional related resources include:
 - [Utilities for working with Documents](/modules/utils/how_to_guides.rst): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents) and Embeddings & Vectorstores (useful for the above Vector DB example).
 - [CombineDocuments Chains](/modules/indexes/combine_docs.md): A conceptual overview of specific types of chains by which you can accomplish this task.
-- [Data Augmented Generation](combine_docs.md): An overview of data augmented generation, which is the general concept of combining external data with LLMs (of which this is a subset).

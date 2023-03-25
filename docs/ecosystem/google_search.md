@@ -18,7 +18,7 @@ There exists a GoogleSearchAPIWrapper utility which wraps this API. To import th
 from langchain.utilities import GoogleSearchAPIWrapper
 ```
 
-For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/google_search.ipynb).
+For a more detailed walkthrough of this wrapper, see [this notebook](../modules/agents/tools/examples/google_search.ipynb).
 
 ### Tool
 
@@ -29,4 +29,4 @@ from langchain.agents import load_tools
 tools = load_tools(["google-search"])
 ```
 
-For more information on this, see [this page](../modules/agents/tools.md)
+For more information on this, see [this page](../modules/agents/tools/getting_started.md)

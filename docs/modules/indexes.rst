@@ -14,20 +14,48 @@ For interacting with structured data (SQL tables, etc) or APIs, please see the c
 The primary index and retrieval types supported by LangChain are currently centered around vector databases, and therefore
 a lot of the functionality we dive deep on those topics.
 
-The following sections of documentation are provided:
-
-- `Getting Started <./indexes/getting_started.html>`_: An overview of the base "Retriever" interface, and then all the functionality LangChain provides for working with indexes.
-
-- `Key Concepts <./indexes/key_concepts.html>`_: A conceptual guide going over the various concepts related to indexes and the tools needed to create them.
-
-- `How-To Guides <./indexes/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use all the relevant tools, the different types of vector databases, different types of retrievers, and how to use retrievers and indexes in chains.
-
+For an overview of everything related to this, please see the below notebook for getting started:
 
 .. toctree::
    :maxdepth: 1
-   :name: LLMs
-   :hidden:
 
    ./indexes/getting_started.ipynb
-   ./indexes/key_concepts.md
-   ./indexes/how_to_guides.rst
+
+We then provide a deep dive on the four main components.
+
+**Document Loaders**
+
+How to load documents from a variety of sources.
+
+.. toctree::
+   :maxdepth: 1
+
+   ./indexes/document_loaders.rst
+
+**Text Splitters**
+
+An overview of the abstractions and implementions around splitting text.
+
+.. toctree::
+   :maxdepth: 1
+
+   ./indexes/text_splitters.rst
+
+**VectorStores**
+
+An overview of VectorStores and the many integrations LangChain provides.
+
+.. toctree::
+   :maxdepth: 1
+
+   ./indexes/vectorstores.rst
+
+**Retrievers**
+
+An overview of Retrievers and the implementations LangChain provides.
+
+.. toctree::
+   :maxdepth: 1
+
+   ./indexes/retrievers.rst
+
