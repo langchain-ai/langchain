@@ -316,6 +316,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
+        """Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         # tiktoken NOT supported for Python 3.8 or below
         if sys.version_info[1] <= 8:
             return super().get_num_tokens(text)
