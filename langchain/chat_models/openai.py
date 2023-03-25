@@ -316,8 +316,6 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        """Official documentation: https://github.com/openai/openai-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         # tiktoken NOT supported for Python 3.8 or below
         if sys.version_info[1] <= 8:
             return super().get_num_tokens(text)
@@ -339,7 +337,9 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return len(tokenized_text)
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package."""
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         try:
             import tiktoken
         except ImportError:
