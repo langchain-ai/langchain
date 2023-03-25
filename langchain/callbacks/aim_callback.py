@@ -1,11 +1,16 @@
-from copy import deepcopy
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-from aim import Run, Text
-from aim.ext.resource.configs import DEFAULT_SYSTEM_TRACKING_INT
+try:
+    from aim import Run, Text
+    from aim.ext.resource.configs import DEFAULT_SYSTEM_TRACKING_INT
+except ImportError:
+    raise ImportError(
+        "To use the aim callback manager you need to have the `aim` python package installed."
+        "Please install it with `pip install aim`"
+    )
 
 
 class BaseMetadataCallbackHandler:
@@ -333,7 +338,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         for prompt in prompts:
             self._run.track(
                 Text(prompt),
-                name='on_llm_start',
+                name="on_llm_start",
                 context=resp,
             )
 
@@ -350,7 +355,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             for generation in generations:
                 self._run.track(
                     Text(generation.text),
-                    name='on_llm_end',
+                    name="on_llm_end",
                     context=resp,
                 )
 
@@ -377,9 +382,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_chain_start"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(
-            Text(inputs["input"]), name='on_chain_start', context=resp
-        )
+        self._run.track(Text(inputs["input"]), name="on_chain_start", context=resp)
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -390,9 +393,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_chain_end"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(
-            Text(outputs["output"]), name='on_chain_end', context=resp
-        )
+        self._run.track(Text(outputs["output"]), name="on_chain_end", context=resp)
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -412,7 +413,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_tool_start"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(input_str), name='on_tool_start', context=resp)
+        self._run.track(Text(input_str), name="on_tool_start", context=resp)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -423,7 +424,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {"action": "on_tool_end"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(output), name='on_tool_end', context=resp)
+        self._run.track(Text(output), name="on_tool_end", context=resp)
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
