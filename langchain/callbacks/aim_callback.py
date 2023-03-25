@@ -445,14 +445,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.agent_ends += 1
         self.ends += 1
 
-        resp = {
-            "action": "on_agent_finish",
-            "output": finish.return_values["output"],
-            "log": finish.log,
-        }
+        resp = {"action": "on_agent_finish"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(resp["output"]), name=resp["action"], context=resp)
+        text = "OUTPUT:\n{}\n\nLOG:\n{}".format(finish.return_values["output"], finish.log)
+        self._run.track(Text(text), name=resp["action"], context=resp)
 
         self.on_agent_finish_records.append(resp)
         self.action_records.append(resp)
@@ -466,15 +463,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         resp = {
             "action": "on_agent_action",
             "tool": action.tool,
-            "tool_input": action.tool_input,
-            "log": action.log,
         }
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(resp["tool_input"]), name=resp["action"], context=resp)
-
-        self.on_agent_action_records.append(resp)
-        self.action_records.append(resp)
+        text = "TOOL INPUT:\n{}\n\nLOG:\n{}".format(action.tool_input, action.log)
+        self._run.track(Text(text), name=resp["action"], context=resp)
 
     def flush_tracker(
         self,
