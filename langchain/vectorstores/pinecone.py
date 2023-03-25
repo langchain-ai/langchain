@@ -8,6 +8,8 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
+from tqdm.auto import tqdm
+
 
 class Pinecone(VectorStore):
     """Wrapper around Pinecone vector database.
@@ -24,13 +26,13 @@ class Pinecone(VectorStore):
             pinecone.init(api_key="***", environment="us-west1-gcp")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings.embed_query, "text")
+            vectorstore = Pinecone(index, embeddings, "text")
     """
 
     def __init__(
         self,
         index: Any,
-        embedding_function: Callable,
+        embedding: Embeddings,
         text_key: str,
         namespace: Optional[str] = None,
     ):
@@ -48,7 +50,7 @@ class Pinecone(VectorStore):
                 f"got {type(index)}"
             )
         self._index = index
-        self._embedding_function = embedding_function
+        self._embedding = embedding
         self._text_key = text_key
         self._namespace = namespace
 
@@ -58,7 +60,7 @@ class Pinecone(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
-        batch_size: Optional[int] = None,
+        batch_size: int = 32,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -69,7 +71,9 @@ class Pinecone(VectorStore):
             ids: Optional list of ids to associate with the texts.
             namespace: Optional pinecone namespace to add the texts to.
             batch_size: Optional batch size to use when embedding texts. Requires
-                embedding function to support batching.
+                embedding function to support batching, during vector store
+                initialization, can usually switch `embed.embed_query` to
+                `embed.embed_documents` to enable batching.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -78,21 +82,21 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
         # Embed and create the documents
-        docs: list = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        # If a batch_size value is provided, we will batch the embeddings
-        if batch_size is not None:
-            embeddings = self._embedding_function(texts)
-        else:
-            embeddings = []
-        for i, text in enumerate(texts):
-            if batch_size is None:
-                embeddings.append(self._embedding_function(text))
-            metadata = metadatas[i] if metadatas else {}
-            metadata[self._text_key] = text
-            docs.append((ids[i], embeddings[i], metadata))
-        # upsert to Pinecone
-        self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
+        # Process incoming texts in batches
+        for i in tqdm(range(0, len(texts), batch_size)):
+            i_end = min(i + batch_size, len(texts))
+            text_batch = texts[i:i_end]
+            ids_batch = ids[i:i_end]
+            metadata_batch = metadatas[i:i_end] if metadatas else [{}]*(i_end-i)
+            metadata_batch = [{
+                **metadata, self._text_key: text
+            } for metadata, text in zip(metadata_batch, text_batch)]
+            docs_batch: list = list(zip(
+                ids_batch, self._embedding.embed_documents(text_batch), metadata_batch
+            ))
+            # upsert to Pinecone
+            self._index.upsert(vectors=docs_batch, namespace=namespace)
         return ids
 
     def similarity_search_with_score(
@@ -115,7 +119,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding_function(query)
+        query_obj = self._embedding.embed_query(query)
         docs = []
         results = self._index.query(
             [query_obj],
@@ -151,7 +155,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding_function(query)
+        query_obj = self._embedding.embed_query(query)
         docs = []
         results = self._index.query(
             [query_obj],
