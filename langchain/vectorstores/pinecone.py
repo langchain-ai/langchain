@@ -85,7 +85,7 @@ class Pinecone(VectorStore):
         # Embed and create the documents
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         ids_iter = iter(ids)
-        metadatas = metadatas or [{}]*len(ids)
+        metadatas = metadatas or [{}] * len(ids)
         metadatas_iter = iter(metadatas)
         # Initialize progress bar
         progress_bar = tqdm(total=len(ids), desc="Processing texts")
@@ -103,18 +103,22 @@ class Pinecone(VectorStore):
                 break
             ids_batch = list(itertools.islice(ids_iter, len(text_batch)))
             metadata_batch = list(itertools.islice(metadatas_iter, len(text_batch)))
-            metadata_batch = [{
-                **metadata, self._text_key: text
-            } for metadata, text in zip(metadata_batch, text_batch)]
-            docs_batch: list = list(zip(
-                ids_batch, self._embedding.embed_documents(text_batch), metadata_batch
-            ))
+            metadata_batch = [
+                {**metadata, self._text_key: text}
+                for metadata, text in zip(metadata_batch, text_batch)
+            ]
+            docs_batch: list = list(
+                zip(
+                    ids_batch,
+                    self._embedding.embed_documents(text_batch),
+                    metadata_batch,
+                )
+            )
             # Upsert to Pinecone
             self._index.upsert(vectors=docs_batch, namespace=namespace)
             progress_bar.update(len(text_batch))
         progress_bar.close()
         return ids
-
 
     def similarity_search_with_score(
         self,
@@ -278,6 +282,4 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        return cls(
-            pinecone.Index(index_name), embedding, text_key, namespace
-        )
+        return cls(pinecone.Index(index_name), embedding, text_key, namespace)
