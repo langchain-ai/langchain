@@ -336,9 +336,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
 
-    def get_num_tokens_from_messages(
-        self, messages: List[BaseMessage], model: Optional[str] = None
-    ) -> int:
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package."""
         try:
             import tiktoken
@@ -349,8 +347,15 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "Please it install it with `pip install tiktoken`."
             )
 
-        if model is None:
-            model = self.model_name
+        model = self.model_name
+        if model == "gpt-3.5-turbo":
+            """gpt-3.5-turbo may change over time."""
+            """Returning num tokens assuming gpt-3.5-turbo-0301."""
+            model = "gpt-3.5-turbo-0301"
+        elif model == "gpt-4":
+            """gpt-4 may change over time."""
+            """Returning num tokens assuming gpt-4-0314."""
+            model = "gpt-4-0314"
 
         """Returns the number of tokens used by a list of messages."""
         try:
@@ -359,16 +364,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             print("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-3.5-turbo":
-            """gpt-3.5-turbo may change over time."""
-            """Returning num tokens assuming gpt-3.5-turbo-0301."""
-            return self.get_num_tokens_from_messages(
-                messages, model="gpt-3.5-turbo-0301"
-            )
-        elif model == "gpt-4":
-            """gpt-4 may change over time. Returning num tokens assuming gpt-4-0314."""
-            return self.get_num_tokens_from_messages(messages, model="gpt-4-0314")
-        elif model == "gpt-3.5-turbo-0301":
+        if model == "gpt-3.5-turbo-0301":
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
