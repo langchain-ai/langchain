@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 from copy import deepcopy
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -274,9 +274,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         response_res = deepcopy(response)
 
-        generated = [aim.Text(generation.text)
-                     for generations in response_res.generations
-                     for generation in generations]
+        generated = [
+            aim.Text(generation.text)
+            for generations in response_res.generations
+            for generation in generations
+        ]
         self._run.track(
             generated,
             name="on_llm_end",
@@ -309,7 +311,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         inputs_res = deepcopy(inputs)
 
-        self._run.track(aim.Text(inputs_res["input"]), name="on_chain_start", context=resp)
+        self._run.track(
+            aim.Text(inputs_res["input"]), name="on_chain_start", context=resp
+        )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -323,7 +327,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         outputs_res = deepcopy(outputs)
 
-        self._run.track(aim.Text(outputs_res["output"]), name="on_chain_end", context=resp)
+        self._run.track(
+            aim.Text(outputs_res["output"]), name="on_chain_end", context=resp
+        )
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -384,7 +390,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         finish_res = deepcopy(finish)
 
-        text = "OUTPUT:\n{}\n\nLOG:\n{}".format(finish_res.return_values["output"], finish_res.log)
+        text = "OUTPUT:\n{}\n\nLOG:\n{}".format(
+            finish_res.return_values["output"], finish_res.log
+        )
         self._run.track(aim.Text(text), name="on_agent_finish", context=resp)
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
@@ -402,7 +410,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         action_res = deepcopy(action)
 
-        text = "TOOL INPUT:\n{}\n\nLOG:\n{}".format(action_res.tool_input, action_res.log)
+        text = "TOOL INPUT:\n{}\n\nLOG:\n{}".format(
+            action_res.tool_input, action_res.log
+        )
         self._run.track(aim.Text(text), name="on_agent_action", context=resp)
 
     def flush_tracker(
