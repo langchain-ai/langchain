@@ -1,8 +1,9 @@
 """Wrapper around Pinecone vector database."""
 from __future__ import annotations
+import itertools
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, cast
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -83,18 +84,25 @@ class Pinecone(VectorStore):
             namespace = self._namespace
         # Embed and create the documents
         ids = ids or [str(uuid.uuid4()) for _ in texts]
+        ids_iter = iter(ids)
+        metadatas = metadatas or [{}]*len(ids)
+        metadatas_iter = iter(metadatas)
+        # Initialize the tqdm progress bar
+        progress_bar = tqdm(total=len(ids), desc="Processing texts")
         # Process incoming texts in batches
+        texts_iter = iter(texts)
+        is_list = isinstance(texts, list)
         while True:
-            text_batch: list = []
-            idx_list = []
-            for i, text in tqdm(texts):
-                text_batch.append(text)
-                idx_list.append(i)
-            # get batch start and end
-            i = idx_list[0]
-            i_end = idx_list[-1]
-            ids_batch = ids[i:i_end]
-            metadata_batch = metadatas[i:i_end] if metadatas else [{}]*(i_end-i)
+            if is_list:
+                texts_list = cast(List[str], texts)
+                text_batch = texts_list[:batch_size]
+                texts = texts_list[batch_size:]
+            else:
+                text_batch = list(itertools.islice(texts_iter, batch_size))
+            if not text_batch:
+                break
+            ids_batch = list(itertools.islice(ids_iter, len(text_batch)))
+            metadata_batch = list(itertools.islice(metadatas_iter, len(text_batch)))
             metadata_batch = [{
                 **metadata, self._text_key: text
             } for metadata, text in zip(metadata_batch, text_batch)]
@@ -103,7 +111,12 @@ class Pinecone(VectorStore):
             ))
             # upsert to Pinecone
             self._index.upsert(vectors=docs_batch, namespace=namespace)
+            # Update the progress bar
+            progress_bar.update(len(text_batch))
+        # Close the progress bar
+        progress_bar.close()
         return ids
+
 
     def similarity_search_with_score(
         self,
