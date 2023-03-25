@@ -43,6 +43,8 @@ There are a lot of different document loaders that LangChain supports. Below are
 
 `Web Base <./examples/web_base.html>`_: A walkthrough of how to load all text data from webpages.
 
+`Sitemaps <./examples/sitemap.html>`_: A walkthrough of how to load data from webpages found in a sitemap.
+
 `IMSDb <./examples/imsdb.html>`_: A walkthrough of how to load all text data from IMSDb webpage.
 
 `AZLyrics <./examples/azlyrics.html>`_: A walkthrough of how to load all text data from AZLyrics webpage.
