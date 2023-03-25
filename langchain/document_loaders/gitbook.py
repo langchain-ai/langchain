@@ -1,5 +1,5 @@
 """Loader that loads GitBook."""
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
