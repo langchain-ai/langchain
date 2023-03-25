@@ -36,14 +36,6 @@ class BaseMetadataCallbackHandler:
         tool_starts (int): The number of times the tool start method has been called.
         tool_ends (int): The number of times the tool end method has been called.
         agent_ends (int): The number of times the agent end method has been called.
-        on_llm_start_records (list): A list of records of the on_llm_start method.
-        on_llm_token_records (list): A list of records of the on_llm_token method.
-        on_llm_end_records (list): A list of records of the on_llm_end method.
-        on_chain_start_records (list): A list of records of the on_chain_start method.
-        on_chain_end_records (list): A list of records of the on_chain_end method.
-        on_tool_start_records (list): A list of records of the on_tool_start method.
-        on_tool_end_records (list): A list of records of the on_tool_end method.
-        on_agent_finish_records (list): A list of records of the on_agent_end method.
     """
 
     def __init__(self) -> None:
@@ -70,20 +62,6 @@ class BaseMetadataCallbackHandler:
         self.tool_ends = 0
 
         self.agent_ends = 0
-
-        self.on_llm_start_records: list = []
-        self.on_llm_token_records: list = []
-        self.on_llm_end_records: list = []
-
-        self.on_chain_start_records: list = []
-        self.on_chain_end_records: list = []
-
-        self.on_tool_start_records: list = []
-        self.on_tool_end_records: list = []
-
-        self.on_text_records: list = []
-        self.on_agent_finish_records: list = []
-        self.on_agent_action_records: list = []
 
     @property
     def always_verbose(self) -> bool:
@@ -148,19 +126,6 @@ class BaseMetadataCallbackHandler:
 
         self.agent_ends = 0
 
-        self.on_llm_start_records = []
-        self.on_llm_token_records = []
-        self.on_llm_end_records = []
-
-        self.on_chain_start_records = []
-        self.on_chain_end_records = []
-
-        self.on_tool_start_records = []
-        self.on_tool_end_records = []
-
-        self.on_text_records = []
-        self.on_agent_finish_records = []
-        self.on_agent_action_records = []
         return None
 
 
@@ -176,12 +141,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
         log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
             git info, environment variables, etc.
-        complexity_metrics (bool): Whether to log complexity metrics.
 
     This handler will utilize the associated callback method called and formats
-    the input of each callback function with metadata regarding the state of LLM run,
-    and adds the response to the list of records for both the {method}_records and
-    action. It then logs the response using the run.log() method to Aim.
+    the input of each callback function with metadata regarding the state of LLM run
+    and then logs the response to Aim.
     """
 
     def __init__(
@@ -190,7 +153,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         experiment_name: Optional[str] = None,
         system_tracking_interval: Optional[int] = 10,
         log_system_params: bool = True,
-        complexity_metrics: bool = False,
     ) -> None:
         """Initialize callback handler."""
 
@@ -202,15 +164,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.log_system_params = log_system_params
         self._run = None
         self._run_hash = None
-        self.complexity_metrics = complexity_metrics
+        self.complexity_metrics = False
 
         self.setup()
         self.action_records: list = []
-
-    @property
-    def experiment(self):
-        if self._run is not None:
-            return self._run
 
     def setup(self, args=None):
         aim = import_aim()
@@ -234,51 +191,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if args:
             for key, value in args.items():
                 self._run.set(key, value, strict=False)
-
-    @classmethod
-    def _flatten_dict(
-        cls, nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-    ) -> Iterable[Tuple[str, Any]]:
-        """
-        Generator that yields flattened items from a nested dictionary for a flat dict.
-
-        Parameters:
-            nested_dict (dict): The nested dictionary to flatten.
-            parent_key (str): The prefix to prepend to the keys of the flattened dict.
-            sep (str): The separator to use between the parent key and the key of the
-                flattened dictionary.
-
-        Yields:
-            (str, any): A key-value pair from the flattened dictionary.
-        """
-        for key, value in nested_dict.items():
-            new_key = parent_key + sep + key if parent_key else key
-            if isinstance(value, dict):
-                yield from AimCallbackHandler._flatten_dict(value, new_key, sep)
-            else:
-                yield new_key, value
-
-    @classmethod
-    def flatten_dict(
-        cls, nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
-    ) -> Dict[str, Any]:
-        """Flattens a nested dictionary into a flat dictionary.
-
-        Parameters:
-            nested_dict (dict): The nested dictionary to flatten.
-            parent_key (str): The prefix to prepend to the keys of the flattened dict.
-            sep (str): The separator to use between the parent key and the key of the
-                flattened dictionary.
-
-        Returns:
-            (dict): A flat dictionary.
-
-        """
-        flat_dict = {
-            k: v
-            for k, v in AimCallbackHandler._flatten_dict(nested_dict, parent_key, sep)
-        }
-        return flat_dict
 
     @classmethod
     def get_text_stats(
@@ -486,7 +398,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         experiment_name: Optional[str] = None,
         system_tracking_interval: Optional[int] = 10,
         log_system_params: bool = True,
-        complexity_metrics: Optional[bool] = None,
         langchain_asset: Any = None,
         reset: bool = True,
         finish: bool = False,
@@ -502,7 +413,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
             log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
                 git info, environment variables, etc.
-            complexity_metrics: Whether to compute complexity metrics.
             langchain_asset: The langchain asset to save.
             reset: Whether to reset the session.
             finish: Whether to finish the run.
@@ -533,7 +443,4 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 log_system_params=log_system_params
                 if log_system_params
                 else self.log_system_params,
-                complexity_metrics=complexity_metrics
-                if complexity_metrics
-                else self.complexity_metrics,
             )
