@@ -91,11 +91,11 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 
 - `Chatbots <./use_cases/chatbots.html>`_: Since language models are good at producing text, that makes them ideal for creating chatbots.
 
-- `Data Augmented Generation <./use_cases/combine_docs.html>`_: Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+- `Retrieval Augmented Generation <./use_cases/combine_docs.html>`_: Retrieval Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
-- `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Data Augmented Generation.
+- `Question Answering <./use_cases/question_answering.html>`_: Answering questions over specific documents, only utilizing the information in those documents to construct an answer. A type of Retrieval Augmented Generation.
 
-- `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Data Augmented Generation.
+- `Summarization <./use_cases/summarization.html>`_: Summarizing longer documents into shorter, more condensed chunks of information. A type of Retrieval Augmented Generation.
 
 - `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
 

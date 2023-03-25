@@ -57,9 +57,9 @@ This includes prompt management, prompt optimization, generic interface for all 
 
 Chains go beyond just a single LLM call, and are sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
 
-**📚 Data Augmented Generation:**
+**📚 Retrieval Augmented Generation:**
 
-Data Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
+Retrieval Augmented Generation involves specific types of chains that first interact with an external datasource to fetch data to use in the generation step. Examples of this include summarization of long pieces of text and question/answering over specific data sources.
 
 **🤖 Agents:**
 

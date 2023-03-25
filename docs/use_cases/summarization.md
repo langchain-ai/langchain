@@ -17,4 +17,4 @@ The following resources exist:
 Additional related resources include:
 - [Utilities for working with Documents](../reference/utils.rst): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents).
 - [CombineDocuments Chains](../modules/indexes/combine_docs.md): A conceptual overview of specific types of chains by which you can accomplish this task.
-- [Data Augmented Generation](./combine_docs.md): An overview of data augmented generation, which is the general concept of combining external data with LLMs (of which this is a subset).
+- [Retrieval Augmented Generation](./combine_docs.md): An overview of retrieval Augmented generation, which is the general concept of combining external data with LLMs (of which this is a subset).

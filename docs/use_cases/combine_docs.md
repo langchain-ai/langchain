@@ -1,4 +1,4 @@
-# Data Augmented Generation
+# Retrieval Augmented Generation
 
 ## Overview
 
@@ -27,7 +27,7 @@ To capture knowledge in a more modular and interpretable way, this paper augment
 
 **[HayStack](https://haystack.deepset.ai/):** This is not a paper, but rather an open source library aimed at semantic search, question answering, summarization, and document ranking for a wide range of NLP applications. The underpinnings of this library are focused on the same `fetching` and `augmenting` concepts discussed here, and incorporate some methods in the above papers.
 
-These papers/open-source projects are centered around retrieval of documents, which is important for question-answering tasks over a large corpus of documents (which is how they are evaluated). However, we use the terminology of `Data Augmented Generation` to highlight that retrieval from some document store is only one possible way of fetching relevant data to include. Other methods to fetch relevant data could involve hitting an API, querying a database, or just working with user provided data (eg a specific document that they want to summarize).
+These papers/open-source projects are centered around retrieval of documents, which is important for question-answering tasks over a large corpus of documents (which is how they are evaluated). However, we use the terminology of `Retrieval Augmented Generation` to highlight that retrieval from some document store is only one possible way of fetching relevant data to include. Other methods to fetch relevant data could involve hitting an API, querying a database, or just working with user provided data (eg a specific document that they want to summarize).
 
 Let's now deep dive on the two steps involved: fetching and augmenting.
 
