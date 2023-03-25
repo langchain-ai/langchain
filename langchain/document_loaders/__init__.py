@@ -37,6 +37,7 @@ from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
+from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
@@ -104,4 +105,5 @@ __all__ = [
     "GoogleApiClient",
     "CSVLoader",
     "BlackboardLoader",
+    "SitemapLoader",
 ]
