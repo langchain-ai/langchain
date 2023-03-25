@@ -1,7 +1,7 @@
 Welcome to LangChain
 ==========================
 
-LangChain is a framework for developing differentiated applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an api, but will also:
+LangChain is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an api, but will also:
 
 - Be data-aware: connect a language model to other sources of data
 - Be agentic: Allow a language model to interact with its environment
@@ -145,7 +145,7 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
-- `Model Laboratory<./use_cases/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+- `Model Laboratory <./use_cases/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 

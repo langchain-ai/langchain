@@ -1,7 +1,7 @@
 # Question Answering over Docs
 
 Question answering in this context refers to question answering over your document data. 
-For question answering over other types of data, like [SQL databases](../modules/chains/examples/sqlite.html) or [APIs](../modules/chains/examples/api.html), please see [here](../modules/chains/utility_how_to.html)
+For question answering over other types of data, please see other sources documentation like [SQL database Question Answering](./tabular.md) or [Interacting with APIs](./apis.md).
 
 For question answering over many documents, you almost always want to create an index over the data.
 This can be used to smartly access the most relevant documents for a given question, allowing you to avoid having to pass all the documents to the LLM (saving you time and money).
