@@ -40,6 +40,7 @@ from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.ipynb import IpynbLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileIOLoader,
     UnstructuredFileLoader,
