@@ -93,7 +93,7 @@ class DocstoreExplorer:
         result = self.docstore.search(term)
         if isinstance(result, Document):
             self.document = result
-            return self.document.summary
+            return self._summary(self.document)
         else:
             self.document = None
             return result
@@ -102,7 +102,33 @@ class DocstoreExplorer:
         """Lookup a term in document (if saved)."""
         if self.document is None:
             raise ValueError("Cannot lookup without a successful search first")
-        return self.document.lookup(term)
+        if term.lower() != self.lookup_str:
+            self.lookup_str = string.lower()
+            self.lookup_index = 0
+        else:
+            self.lookup_index += 1
+        lookups = [
+            p for p in self._paragraphs(self.document) if self.lookup_str in p.lower()
+        ]
+        if len(lookups) == 0:
+            return "No Results"
+        elif self.lookup_index >= len(lookups):
+            return "No More Results"
+        else:
+            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+            return f"{result_prefix} {lookups[self.lookup_index]}"
+
+    @classmethod
+    def _summary(cls, document: Document) -> str:
+        if "summary" in document.metadata:
+            return document.metadata["summary"]
+        return cls._paragraphs(document)[0]
+
+    @classmethod
+    def _paragraphs(cls, document: Document) -> List[str]:
+        if "paragraphs" not in dir(document):
+            document.paragraphs = document.text.split("\n\n")
+        return document.pagaraphs
 
 
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):

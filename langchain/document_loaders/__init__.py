@@ -6,6 +6,7 @@ from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader
+from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.evernote import EverNoteLoader
@@ -104,4 +105,5 @@ __all__ = [
     "GoogleApiClient",
     "CSVLoader",
     "BlackboardLoader",
+    "DataFrameLoader",
 ]
