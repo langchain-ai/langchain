@@ -84,9 +84,15 @@ class Pinecone(VectorStore):
         # Embed and create the documents
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         # Process incoming texts in batches
-        for i in tqdm(range(0, len(texts), batch_size)):
-            i_end = min(i + batch_size, len(texts))
-            text_batch = texts[i:i_end]
+        while True:
+            text_batch: list = []
+            idx_list = []
+            for i, text in tqdm(texts):
+                text_batch.append(text)
+                idx_list.append(i)
+            # get batch start and end
+            i = idx_list[0]
+            i_end = idx_list[-1]
             ids_batch = ids[i:i_end]
             metadata_batch = metadatas[i:i_end] if metadatas else [{}]*(i_end-i)
             metadata_batch = [{
@@ -242,7 +248,7 @@ class Pinecone(VectorStore):
                 index = pinecone.Index(_index_name)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embedding.embed_query, text_key, namespace)
+        return cls(index, embedding, text_key, namespace)
 
     @classmethod
     def from_existing_index(
@@ -262,5 +268,5 @@ class Pinecone(VectorStore):
             )
 
         return cls(
-            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
+            pinecone.Index(index_name), embedding, text_key, namespace
         )
