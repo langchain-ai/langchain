@@ -328,21 +328,14 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.starts += 1
 
         resp = {"action": "on_llm_start"}
-        resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
         for prompt in prompts:
-            prompt_resp = deepcopy(resp)
-            prompt_resp["prompts"] = prompt
-
             self._run.track(
-                Text(prompt_resp["prompts"]),
-                name=prompt_resp["action"],
-                context=prompt_resp,
+                Text(prompt),
+                name='on_llm_start',
+                context=resp,
             )
-
-            self.on_llm_start_records.append(prompt_resp)
-            self.action_records.append(prompt_resp)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
@@ -351,41 +344,20 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.ends += 1
 
         resp = {"action": "on_llm_end"}
-        resp.update(AimCallbackHandler.flatten_dict(response.llm_output or {}))
         resp.update(self.get_custom_callback_meta())
 
         for generations in response.generations:
             for generation in generations:
-                generation_resp = deepcopy(resp)
-                generation_resp.update(
-                    AimCallbackHandler.flatten_dict(generation.dict())
-                )
-                generation_resp.update(
-                    AimCallbackHandler.get_text_stats(
-                        generation.text,
-                        self.complexity_metrics,
-                    )
-                )
-
                 self._run.track(
-                    Text(generation_resp["text"]),
-                    name=generation_resp["action"],
-                    context=generation_resp,
+                    Text(generation.text),
+                    name='on_llm_end',
+                    context=resp,
                 )
-
-                self.on_llm_end_records.append(generation_resp)
-                self.action_records.append(generation_resp)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
         self.step += 1
         self.llm_streams += 1
-
-        resp = {"action": "on_llm_new_token", "token": token}
-        resp.update(self.get_custom_callback_meta())
-
-        self.on_llm_token_records.append(resp)
-        self.action_records.append(resp)
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -403,36 +375,11 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.starts += 1
 
         resp = {"action": "on_chain_start"}
-        resp.update(AimCallbackHandler.flatten_dict(serialized))
         resp.update(self.get_custom_callback_meta())
 
-        chain_input = inputs["input"]
-
-        if isinstance(chain_input, str):
-            input_resp = deepcopy(resp)
-            input_resp["input"] = chain_input
-
-            self._run.track(
-                Text(input_resp["input"]), name=input_resp["action"], context=input_resp
-            )
-
-            self.on_chain_start_records.append(input_resp)
-            self.action_records.append(input_resp)
-        elif isinstance(chain_input, list):
-            for inp in chain_input:
-                input_resp = deepcopy(resp)
-                input_resp.update(inp)
-
-                self._run.track(
-                    Text(input_resp["input"]),
-                    name=input_resp["action"],
-                    context=input_resp,
-                )
-
-                self.on_chain_start_records.append(input_resp)
-                self.action_records.append(input_resp)
-        else:
-            raise ValueError("Unexpected data format provided!")
+        self._run.track(
+            Text(inputs["input"]), name='on_chain_start', context=resp
+        )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -440,13 +387,12 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.chain_ends += 1
         self.ends += 1
 
-        resp = {"action": "on_chain_end", "outputs": outputs["output"]}
+        resp = {"action": "on_chain_end"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(resp["outputs"]), name=resp["action"], context=resp)
-
-        self.on_chain_end_records.append(resp)
-        self.action_records.append(resp)
+        self._run.track(
+            Text(outputs["output"]), name='on_chain_end', context=resp
+        )
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -463,14 +409,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_starts += 1
         self.starts += 1
 
-        resp = {"action": "on_tool_start", "input_str": input_str}
-        resp.update(AimCallbackHandler.flatten_dict(serialized))
+        resp = {"action": "on_tool_start"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(resp["input_str"]), name=resp["action"], context=resp)
-
-        self.on_tool_start_records.append(resp)
-        self.action_records.append(resp)
+        self._run.track(Text(input_str), name='on_tool_start', context=resp)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
@@ -478,13 +420,10 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_ends += 1
         self.ends += 1
 
-        resp = {"action": "on_tool_end", "output": output}
+        resp = {"action": "on_tool_end"}
         resp.update(self.get_custom_callback_meta())
 
-        self._run.track(Text(resp["output"]), name=resp["action"], context=resp)
-
-        self.on_tool_end_records.append(resp)
-        self.action_records.append(resp)
+        self._run.track(Text(output), name='on_tool_end', context=resp)
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -499,12 +438,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """
         self.step += 1
         self.text_ctr += 1
-
-        resp = {"action": "on_text", "text": text}
-        resp.update(self.get_custom_callback_meta())
-
-        self.on_text_records.append(resp)
-        self.action_records.append(resp)
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent ends running."""
