@@ -277,11 +277,11 @@ class Document(BaseModel):
 
 class BaseRetriever(ABC):
     @abstractmethod
-    def get_relevant_texts(self, query: str) -> List[Document]:
-        """Get texts relevant for a query.
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
 
         Args:
-            query: string to find relevant tests for
+            query: string to find relevant documents for
 
         Returns:
             List of relevant documents

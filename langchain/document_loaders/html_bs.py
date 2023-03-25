@@ -3,8 +3,6 @@
 import logging
 from typing import Dict, List, Union
 
-from bs4 import BeautifulSoup
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -15,9 +13,18 @@ class BSHTMLLoader(BaseLoader):
     """Loader that uses beautiful soup to parse HTML files."""
 
     def __init__(self, file_path: str) -> None:
+        try:
+            import bs4  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "bs4 package not found, please install it with " "`pip install bs4`"
+            )
+
         self.file_path = file_path
 
     def load(self) -> List[Document]:
+        from bs4 import BeautifulSoup
+
         """Load HTML document into document objects."""
         with open(self.file_path, "r") as f:
             soup = BeautifulSoup(f, features="lxml")
