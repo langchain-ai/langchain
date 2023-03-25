@@ -165,7 +165,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.log_system_params = log_system_params
         self._run = None
         self._run_hash = None
-        self.complexity_metrics = False
 
         self.setup()
         self.action_records: list = []
@@ -192,54 +191,6 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if args:
             for key, value in args.items():
                 self._run.set(key, value, strict=False)
-
-    @classmethod
-    def get_text_stats(
-        cls,
-        text: str,
-        complexity_metrics: bool = True,
-    ) -> dict:
-        """Analyze text using textstat.
-
-        Parameters:
-            text (str): The text to analyze.
-            complexity_metrics (bool): Whether to compute complexity metrics.
-
-        Returns:
-            (dict): A dictionary containing the complexity metrics.
-        """
-        try:
-            import textstat  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "To use the aim callback manager you need to have the `textstat` package installed."
-                "Please install it with `pip install textstat`"
-            )
-
-        if complexity_metrics:
-            return {
-                "flesch_reading_ease": textstat.flesch_reading_ease(text),
-                "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
-                "smog_index": textstat.smog_index(text),
-                "coleman_liau_index": textstat.coleman_liau_index(text),
-                "automated_readability_index": textstat.automated_readability_index(
-                    text
-                ),
-                "dale_chall_readability_score": textstat.dale_chall_readability_score(
-                    text
-                ),
-                "difficult_words": textstat.difficult_words(text),
-                "linsear_write_formula": textstat.linsear_write_formula(text),
-                "gunning_fog": textstat.gunning_fog(text),
-                "text_standard": textstat.text_standard(text),
-                "fernandez_huerta": textstat.fernandez_huerta(text),
-                "szigriszt_pazos": textstat.szigriszt_pazos(text),
-                "gutierrez_polini": textstat.gutierrez_polini(text),
-                "crawford": textstat.crawford(text),
-                "gulpease_index": textstat.gulpease_index(text),
-                "osman": textstat.osman(text),
-            }
-        return {}
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
