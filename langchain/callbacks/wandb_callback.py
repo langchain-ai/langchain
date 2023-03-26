@@ -870,12 +870,16 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             try:
                 langchain_asset.save(langchain_asset_path)
                 model_artifact.add_file(str(langchain_asset_path))
-                model_artifact.metadata = load_json_to_dict(langchain_asset_path)
+                model_meta = load_json_to_dict(langchain_asset_path)
+                model_artifact.metadata = model_meta
+                self.run.config.update(model_meta)
             except ValueError:
                 #TODO: Replace with check of agent as opposed to this try catch
                 langchain_asset.save_agent(langchain_asset_path)
                 model_artifact.add_file(str(langchain_asset_path))
-                model_artifact.metadata = load_json_to_dict(langchain_asset_path)
+                model_meta = load_json_to_dict(langchain_asset_path)
+                model_artifact.metadata = model_meta
+                self.run.config.update(model_meta)
             except NotImplementedError as e:
                 wandb.termlog("Could not save model.")
                 wandb.termlog(repr(e))
