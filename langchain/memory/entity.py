@@ -72,7 +72,7 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
             "entities": entity_summaries,
         }
 
-    def save_context_optimized(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
 
