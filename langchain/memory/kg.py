@@ -48,7 +48,7 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
             if knowledge:
                 summary = f"On {entity}: {'. '.join(knowledge)}."
                 summary_strings.append(summary)
-
+        context: Union[str, List]
         if not summary_strings:
             context = [] if self.return_messages else ""
         elif self.return_messages:
