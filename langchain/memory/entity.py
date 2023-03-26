@@ -71,32 +71,42 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
             "entities": entity_summaries,
         }
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save context from this conversation to buffer."""
-        super().save_context(inputs, outputs)
-        if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-        for entity in self.entity_cache:
-            chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
-            # key value store for entity
-            existing_summary = self.store.get(entity, "")
-            buffer_string = get_buffer_string(
-                self.buffer[-self.k * 2 :],
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
+        def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+            """Save context from this conversation to buffer."""
+            super().save_context(inputs, outputs)
+            if self.input_key is None:
+                prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+            else:
+                prompt_input_key = self.input_key
 
-            output = chain.predict(
-                summary=existing_summary,
-                history=buffer_string,
-                input=inputs[prompt_input_key],
-                entity=entity,
-            )
-            self.store[entity] = output.strip()
+            # Create a cache for get_buffer_string
+            buffer_string_cache = {}
 
-    def clear(self) -> None:
-        """Clear memory contents."""
-        self.chat_memory.clear()
-        self.store = {}
+            def get_buffer_string_cached(buffer_slice):
+                if buffer_slice not in buffer_string_cache:
+                    buffer_string_cache[buffer_slice] = get_buffer_string(
+                        buffer_slice,
+                        human_prefix=self.human_prefix,
+                        ai_prefix=self.ai_prefix,
+                    )
+                return buffer_string_cache[buffer_slice]
+
+            # Function to process a single entity
+            def process_entity(entity):
+                chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
+                existing_summary = self.store.get(entity, "")
+                buffer_string = get_buffer_string_cached(
+                    tuple(self.buffer[-self.k * 2 :])
+                )
+
+                output = chain.predict(
+                    summary=existing_summary,
+                    history=buffer_string,
+                    input=inputs[prompt_input_key],
+                    entity=entity,
+                )
+                self.store[entity] = output.strip()
+
+            # Process the entities sequentially
+            for entity in self.entity_cache:
+                process_entity(entity)
