@@ -54,6 +54,4 @@ TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 USER'S INPUT
 --------------------
 
-Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES!
-If no question is asked just continue the conversation.
-Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""
+Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""
