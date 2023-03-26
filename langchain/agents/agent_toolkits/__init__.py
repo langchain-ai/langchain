@@ -15,6 +15,7 @@ from langchain.agents.agent_toolkits.vectorstore.base import (
 )
 from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreInfo,
+    VectorStoreMemoryToolkit,
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "SQLDatabaseToolkit",
     "OpenAPIToolkit",
     "VectorStoreToolkit",
+    "VectorStoreMemoryToolkit",
     "create_vectorstore_router_agent",
     "VectorStoreInfo",
     "VectorStoreRouterToolkit",

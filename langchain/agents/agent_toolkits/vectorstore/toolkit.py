@@ -8,6 +8,9 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 from langchain.tools import BaseTool
 from langchain.tools.vectorstore.tool import (
+    VectorStoreMemoryDeletionTool,
+    VectorStoreMemoryRetrieverTool,
+    VectorStoreMemorySaverTool,
     VectorStoreQATool,
     VectorStoreQAWithSourcesTool,
 )
@@ -87,3 +90,24 @@ class VectorStoreRouterToolkit(BaseToolkit):
             )
             tools.append(qa_tool)
         return tools
+
+
+class VectorStoreMemoryToolkit(BaseToolkit):
+    num_results: int = 4
+    vectorstore: VectorStore = Field(exclude=True)
+    """Toolkit to save and retrieve memories from a vectorstore."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def get_tools(self) -> List[BaseTool]:
+        return [
+            VectorStoreMemorySaverTool(vectorstore=self.vectorstore),
+            VectorStoreMemoryRetrieverTool(
+                vectorstore=self.vectorstore,
+                num_results=self.num_results,
+            ),
+            VectorStoreMemoryDeletionTool(vectorstore=self.vectorstore),
+        ]

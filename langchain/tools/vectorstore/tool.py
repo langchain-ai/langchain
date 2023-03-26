@@ -71,11 +71,79 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        chain = VectorDBQAWithSourcesChain.from_chain_type(
-            self.llm, vectorstore=self.vectorstore
-        )
+        chain = VectorDBQAWithSourcesChain.from_chain_type(self.llm, vectorstore=self.vectorstore)
         return json.dumps(chain({chain.question_key: query}, return_only_outputs=True))
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("VectorDBQATool does not support async")
+
+
+class VectorStoreMemorySaverTool(BaseTool):
+    name = "Vector Store Memory Saver"
+    description = (
+        "A wrapper around a vector store to save memories based on its embedding. "
+        "Useful to store information you want to remember long term. "
+        "You don't need to save something you already know. "
+        "Input is a string you want to remember and be able to retrieve based on embedding similarity."
+        "Output is a string with a confirmation that the memory was saved, you don't need to do "
+        "anything else except maybe acknowledging it."
+    )
+    vectorstore: VectorStore = Field(exclude=True)
+
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        self.vectorstore.add_texts(texts=[query])
+        return "Answer: Remembered this fact."
+
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("GoogleSearchRun does not support async")
+
+
+class VectorStoreMemoryRetrieverTool(BaseTool):
+    num_results: int = 4
+
+    name = "Vector Store Memory Retriever"
+    description = (
+        "A wrapper around a vector store to retrieve memories. "
+        "Useful to retrieve information you previously decided to remember. You should always check "
+        "if you remember something relevant to the current user input. "
+        "Input is a query for which you want to retrieve related memories based on its embedding similarity."
+        f"Output is a json array with the top {num_results} results. "
+        "You may or may not use this information."
+    )
+
+    vectorstore: VectorStore = Field(exclude=True)
+
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        try:
+            documents = self.vectorstore.similarity_search(query, k=self.num_results)
+            return "Answer: " + json.dumps([doc.page_content for doc in documents])
+        except ValueError:
+            return "Answer: No memories found."
+
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("GoogleSearchRun does not support async")
+
+
+class VectorStoreMemoryDeletionTool(BaseTool):
+    num_results: int = 4
+
+    name = "Vector Store Memory Deletion"
+    description = (
+        "Something you previously decided to remember but now you don't want to remember anymore."
+    )
+
+    vectorstore: VectorStore = Field(exclude=True)
+
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        documents = self.vectorstore.similarity_search(query, k=self.num_results)
+        return "Answer: Deleted this fact."
+
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("GoogleSearchRun does not support async")
