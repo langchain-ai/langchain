@@ -36,7 +36,7 @@ os.environ["OPENAI_API_KEY"] = "..."
 ```
 
 
-## Building a Language Model Application
+## Building a Language Model Application: LLMs
 
 Now that we have installed LangChain and set up our environment, we can start building our language model application.
 
@@ -160,7 +160,7 @@ This is one of the simpler types of chains, but understanding how it works will 
 `````
 
 
-`````{dropdown} Agents: Dynamically call chains based on user input
+`````{dropdown} Agents: Dynamically Call Chains Based on User Input
 
 So far the chains we've looked at run in a predetermined order.
 
@@ -238,7 +238,7 @@ Final Answer: Jason Sudeikis, Olivia Wilde's boyfriend, is 47 years old and his 
 `````
 
 
-`````{dropdown} Memory: Add state to chains and agents
+`````{dropdown} Memory: Add State to Chains and Agents
 
 So far, all the chains and agents we've gone through have been stateless. But often, you may want a chain or agent to have some concept of "memory" so that it may remember information about its previous interactions. The clearest and simple example of this is when designing a chatbot - you want it to remember previous messages so it can use context from that to have a better conversation. This would be a type of "short-term memory". On the more complex side, you could imagine a chain/agent remembering key pieces of information over time - this would be a form of "long-term memory". For more concrete ideas on the latter, see this [awesome paper](https://memprompt.com/).
 
@@ -288,3 +288,230 @@ AI:
 > Finished chain.
 " That's great! What would you like to talk about?"
 ```
+`````
+
+## Building a Language Model Application: Chat Models
+
+Similarly, you can use chat models instead of LLMs. Chat models are a variation on language models. While chat models use language models under the hood, the interface they expose is a bit different: rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.
+
+Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
+
+
+`````{dropdown} Get message completions from a chat model
+You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are AIMessage, HumanMessage, SystemMessage, and ChatMessage -- ChatMessage takes in an arbitrary role parameter. Most of the time, you'll just be dealing with HumanMessage, AIMessage, and SystemMessage.
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+
+chat = ChatOpenAI(temperature=0)
+```
+
+You can get completions by passing in a single message.
+
+```python
+chat([HumanMessage(content="Translate this sentence from English to French. I love programming.")])
+# -> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+
+You can also pass in multiple messages for OpenAI's gpt-3.5-turbo and gpt-4 models.
+
+```python
+messages = [
+    SystemMessage(content="You are a helpful assistant that translates English to French."),
+    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+]
+chat(messages)
+# -> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+
+You can go one step further and generate completions for multiple sets of messages using `generate`. This returns an `LLMResult` with an additional `message` parameter:
+```python
+batch_messages = [
+    [
+        SystemMessage(content="You are a helpful assistant that translates English to French."),
+        HumanMessage(content="Translate this sentence from English to French. I love programming.")
+    ],
+    [
+        SystemMessage(content="You are a helpful assistant that translates English to French."),
+        HumanMessage(content="Translate this sentence from English to French. I love artificial intelligence.")
+    ],
+]
+result = chat.generate(batch_messages)
+result
+# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}})
+```
+
+You can recover things like token usage from this LLMResult:
+```
+result.llm_output['token_usage']
+# -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
+```
+`````
+
+`````{dropdown} Chat Prompt Templates
+Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
+
+For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
+
+```python
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+
+template="You are a helpful assistant that translates {input_language} to {output_language}."
+system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+human_template="{text}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+
+# get a chat completion from the formatted messages
+chat(chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages())
+# -> AIMessage(content="J'aime programmer.", additional_kwargs={})
+```
+`````
+
+`````{dropdown} Chains with Chat Models
+The `LLMChain` discussed in the above section can be used with chat models as well:
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain import PromptTemplate, LLMChain
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+
+chat = ChatOpenAI(temperature=0)
+
+template="You are a helpful assistant that translates {input_language} to {output_language}."
+system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+human_template="{text}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+
+chain = LLMChain(llm=chat, prompt=chat_prompt)
+chain.run(input_language="English", output_language="French", text="I love programming.")
+# - "J'aime programmer."
+```
+`````
+
+`````{dropdown} Agents with Chat Models
+Agents can also be used with chat models.
+
+```python
+from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
+from langchain.chains import LLMChain
+from langchain.utilities import SerpAPIWrapper
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+
+search = SerpAPIWrapper()
+tools = [
+    Tool(
+        name = "Search",
+        func=search.run,
+        description="useful for when you need to answer questions about current events"
+    )
+]
+
+prefix = """Answer the following questions as best you can, but speaking as a pirate might speak. You have access to the following tools:"""
+suffix = """Begin! Remember to speak as a pirate when giving your final answer. Use lots of "Args"""
+
+prompt = ZeroShotAgent.create_prompt(
+    tools, 
+    prefix=prefix, 
+    suffix=suffix, 
+    input_variables=[]
+)
+
+messages = [
+    SystemMessagePromptTemplate(prompt=prompt),
+    HumanMessagePromptTemplate.from_template("{input}\n\nThis was your previous work "
+                f"(but I haven't seen any of it! I only see what "
+                "you return as final answer):\n{agent_scratchpad}")
+]
+
+prompt = ChatPromptTemplate.from_messages(messages)
+llm_chain = LLMChain(llm=ChatOpenAI(temperature=0), prompt=prompt)
+tool_names = [tool.name for tool in tools]
+agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names)
+agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+
+
+agent_executor.run("How many people live in canada as of 2023?")
+
+```pycon
+
+> Entering new AgentExecutor chain...
+Arrr, ye be in luck, matey! I'll find ye the answer to yer question.
+
+Thought: I need to search for the current population of Canada.
+Action: Search
+Action Input: "current population of Canada 2023"
+
+Observation: The current population of Canada is 38,623,091 as of Saturday, March 4, 2023, based on Worldometer elaboration of the latest United Nations data.
+Thought:Ahoy, me hearties! I've found the answer to yer question.
+
+Final Answer: As of March 4, 2023, the population of Canada be 38,623,091. Arrr!
+
+> Finished chain.
+'As of March 4, 2023, the population of Canada be 38,623,091. Arrr!'
+```
+`````
+
+`````{dropdown} Memory: Add State to Chains and Agents
+You can use Memory with chains and agents initialized with chat models. The main difference between this and Memory for LLMs is that rather than trying to condense all previous messages into a string, we can keep them as their own unique memory object.
+
+```python
+from langchain.prompts import (
+    ChatPromptTemplate, 
+    MessagesPlaceholder, 
+    SystemMessagePromptTemplate, 
+    HumanMessagePromptTemplate
+)
+from langchain.chains import ConversationChain
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+
+prompt = ChatPromptTemplate.from_messages([
+    SystemMessagePromptTemplate.from_template("The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know."),
+    MessagesPlaceholder(variable_name="history"),
+    HumanMessagePromptTemplate.from_template("{input}")
+])
+
+llm = ChatOpenAI(temperature=0)
+memory = ConversationBufferMemory(return_messages=True)
+conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm)
+
+conversation.predict(input="Hi there!")
+# -> 'Hello! How can I assist you today?'
+
+
+conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+# -> "That sounds like fun! I'm happy to chat with you. Is there anything specific you'd like to talk about?"
+
+conversation.predict(input="Tell me about yourself.")
+# -> "Sure! I am an AI language model created by OpenAI. I was trained on a large dataset of text from the internet, which allows me to understand and generate human-like language. I can answer questions, provide information, and even have conversations like this one. Is there anything else you'd like to know about me?"
+```
+`````
