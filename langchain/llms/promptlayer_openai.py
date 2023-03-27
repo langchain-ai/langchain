@@ -73,7 +73,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(prompts, stop)
@@ -85,7 +85,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            pl_request_id = promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerOpenAI.async",
                 "langchain",
                 [prompt],
@@ -171,7 +171,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(prompts, stop)
@@ -183,7 +183,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
                 "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            pl_request_id = promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerOpenAIChat.async",
                 "langchain",
                 [prompt],
