@@ -117,6 +117,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+    prefix_messages: List[BaseMessage] = Field(default_factory=list)
+    """Series of messages for Chat input."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -262,7 +264,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = [_convert_message_to_dict(m) for m in self.prefix_messages + messages]
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
