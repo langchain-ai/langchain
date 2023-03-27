@@ -35,7 +35,7 @@ def _import_bulk() -> Any:
     return bulk
 
 
-def _get_opensearch_client(opensearch_url: str, **kwargs) -> Any:
+def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     """Get OpenSearch client from the opensearch_url, otherwise raise error."""
     try:
         opensearch = _import_opensearch()
@@ -222,7 +222,7 @@ class OpenSearchVectorSearch(VectorStore):
         opensearch_url: str,
         index_name: str,
         embedding_function: Embeddings,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
