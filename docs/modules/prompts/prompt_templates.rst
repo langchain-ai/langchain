@@ -1,6 +1,10 @@
 Prompt Templates
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/prompts/prompt-template>`_
+
+
 Language models take text as input - that text is commonly referred to as a prompt.
 Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
 LangChain provides several classes and functions to make constructing and working with prompts easy.

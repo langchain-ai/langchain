@@ -1,6 +1,10 @@
 Tools
 =============
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/agents/tool>`_
+
+
 
 Tools are ways that an agent can use to interact with the outside world.
 

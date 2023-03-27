@@ -1,6 +1,10 @@
 LLMs
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/models/language-model>`_
+
+
 Large Language Models (LLMs) are a core component of LangChain.
 LangChain is not a provider of LLMs, but rather provides a standard interface through which
 you can interact with a variety of LLMs.

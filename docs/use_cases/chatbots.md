@@ -1,5 +1,9 @@
 # Chatbots
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/chatbots>`_
+
+
 Since language models are good at producing text, that makes them ideal for creating chatbots.
 Aside from the base prompts/LLMs, an important concept to know for Chatbots is `memory`.
 Most chat based applications rely on remembering what happened in previous interactions, which is `memory` is designed to help with.

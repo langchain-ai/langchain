@@ -1,6 +1,10 @@
 Document Loaders
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing/document-loaders>`_
+
+
 Combining language models with your own text data is a powerful way to differentiate them.
 The first step in doing this is to load the data into "documents" - a fancy way of say some pieces of text.
 This module is aimed at making this easy.

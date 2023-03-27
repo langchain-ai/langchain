@@ -1,6 +1,10 @@
 Agents
 =============
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/agents/agent>`_
+
+
 In this part of the documentation we cover the different types of agents, disregarding which specific tools they are used with.
 
 For a high level overview of the different types of agents, see the below documentation.

@@ -1,5 +1,9 @@
 # Personal Assistants
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/personal-assistants>`_
+
+
 We use "personal assistant" here in a very broad sense.
 Personal assistants have a few characteristics:
 

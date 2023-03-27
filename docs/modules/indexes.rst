@@ -1,6 +1,10 @@
 Indexes
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing>`_
+
+
 Indexes refer to ways to structure documents so that LLMs can best interact with them.
 This module contains utility functions for working with documents, different types of indexes, and then examples for using those indexes in chains.
 

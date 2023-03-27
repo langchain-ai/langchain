@@ -1,5 +1,9 @@
 # Question Answering over Docs
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/qa-docs>`_
+
+
 Question answering in this context refers to question answering over your document data. 
 For question answering over other types of data, please see other sources documentation like [SQL database Question Answering](./tabular.md) or [Interacting with APIs](./apis.md).
 

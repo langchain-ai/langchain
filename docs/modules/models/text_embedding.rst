@@ -1,6 +1,10 @@
 Text Embedding Models
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/models/text-embedding-model>`_
+
+
 This documentation goes over how to use the Embedding class in LangChain.
 
 The Embedding class is a class designed for interfacing with embeddings. There are lots of Embedding providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.

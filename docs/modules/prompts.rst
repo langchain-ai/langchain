@@ -1,6 +1,10 @@
 Prompts
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/prompts>`_
+
+
 The new way of programming models is through prompts.
 A "prompt" refers to the input to the model.
 This input is rarely hard coded, but rather is often constructed from multiple components.

@@ -1,6 +1,10 @@
 Example Selectors
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/prompts/example-selectors>`_
+
+
 If you have a large number of examples, you may need to select which ones to include in the prompt. The ExampleSelector is the class responsible for doing so.
 
 The base interface is defined as below::
