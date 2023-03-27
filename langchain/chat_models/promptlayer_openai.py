@@ -5,7 +5,11 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import BaseMessage, ChatResult
+from langchain.schema import BaseMessage, ChatResult, MultiEnvAuthStrategy
+
+
+class PromptLayerOaiAuthStrategy(MultiEnvAuthStrategy):
+    names = ["OPENAI_API_KEY", "PROMPTLAYER_API_KEY"]
 
 
 class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
@@ -28,8 +32,21 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
         .. code-block:: python
 
             from langchain.chat_models import PromptLayerChatOpenAI
-            openai = PromptLayerChatOpenAI(model_name="gpt-3.5-turbo")
+            openai = PromptLayerChatOpenAI(model_id="gpt-3.5-turbo")
     """
+
+    id = "promptlayer-openai-chat"
+    """Unique ID for this provider class."""
+
+    pypi_package_deps = ["openai", "promptlayer"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = PromptLayerOaiAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
+    pypi_package_deps = ["openai"]
+    """List of PyPi package dependencies."""
 
     pl_tags: Optional[List[str]]
     return_pl_id: Optional[bool] = False

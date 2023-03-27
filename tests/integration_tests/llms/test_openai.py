@@ -35,12 +35,12 @@ def test_openai_extra_kwargs() -> None:
         OpenAI(foo=3, model_kwargs={"foo": 2})
 
 
-def test_openai_llm_output_contains_model_name() -> None:
-    """Test llm_output contains model_name."""
+def test_openai_llm_output_contains_model_id() -> None:
+    """Test llm_output contains model_id."""
     llm = OpenAI(max_tokens=10)
     llm_result = llm.generate(["Hello, how are you?"])
     assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model_name"] == llm.model_name
+    assert llm_result.llm_output["model_id"] == llm.model_id
 
 
 def test_openai_stop_valid() -> None:

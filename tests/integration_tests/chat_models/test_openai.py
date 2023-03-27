@@ -79,22 +79,22 @@ def test_chat_openai_streaming() -> None:
     assert isinstance(response, BaseMessage)
 
 
-def test_chat_openai_llm_output_contains_model_name() -> None:
-    """Test llm_output contains model_name."""
+def test_chat_openai_llm_output_contains_model_id() -> None:
+    """Test llm_output contains model_id."""
     chat = ChatOpenAI(max_tokens=10)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model_name"] == chat.model_name
+    assert llm_result.llm_output["model_id"] == chat.model_id
 
 
-def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
-    """Test llm_output contains model_name."""
+def test_chat_openai_streaming_llm_output_contains_model_id() -> None:
+    """Test llm_output contains model_id."""
     chat = ChatOpenAI(max_tokens=10, streaming=True)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
-    assert llm_result.llm_output["model_name"] == chat.model_name
+    assert llm_result.llm_output["model_id"] == chat.model_id
 
 
 def test_chat_openai_invalid_streaming_params() -> None:

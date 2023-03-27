@@ -8,6 +8,7 @@ from pydantic import root_validator
 
 from langchain.chat_models.openai import (
     ChatOpenAI,
+    OpenAIAuthStrategy
 )
 from langchain.utils import get_from_dict_or_env
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__file__)
 
 class AzureChatOpenAI(ChatOpenAI):
     """Wrapper around Azure OpenAI Chat Completion API. To use this class you
-    must have a deployed model on Azure OpenAI. Use `deployment_name` in the
+    must have a deployed model on Azure OpenAI. Use `model_id` in the
     constructor to refer to the "Model deployment name" in the Azure portal.
 
     In addition, you should have the ``openai`` python package installed, and the
@@ -30,8 +31,9 @@ class AzureChatOpenAI(ChatOpenAI):
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
+        deployment_name = "35-turbo-dev"
         AzureChatOpenAI(
-            deployment_name="35-turbo-dev",
+            model_id=deployment_name,
             openai_api_version="2023-03-15-preview",
         )
 
@@ -41,7 +43,26 @@ class AzureChatOpenAI(ChatOpenAI):
     in, even if not explicitly saved on this class.
     """
 
-    deployment_name: str = ""
+    id = "azure-openai-chat"
+    """Unique ID for this provider class."""
+
+    model_id: str
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    For AzureChatOpenAI, this is the deployment name.
+    """
+
+    models = ["*"]
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["openai"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = OpenAIAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     openai_api_type: str = "azure"
     openai_api_base: str = ""
     openai_api_version: str = ""
@@ -101,5 +122,5 @@ class AzureChatOpenAI(ChatOpenAI):
         """Get the default parameters for calling OpenAI API."""
         return {
             **super()._default_params,
-            "engine": self.deployment_name,
+            "engine": self.model_id,
         }

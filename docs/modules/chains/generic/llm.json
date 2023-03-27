@@ -1,5 +1,5 @@
 {
-    "model_name": "text-davinci-003",
+    "model_id": "text-davinci-003",
     "temperature": 0.0,
     "max_tokens": 256,
     "top_p": 1,

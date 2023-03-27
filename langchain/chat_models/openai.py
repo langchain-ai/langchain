@@ -21,6 +21,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    EnvAuthStrategy,
     HumanMessage,
     SystemMessage,
 )
@@ -91,6 +92,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+class OpenAIAuthStrategy(EnvAuthStrategy):
+    name = "OPENAI_API_KEY"
+
+
 class ChatOpenAI(BaseChatModel, BaseModel):
     """Wrapper around OpenAI Chat large language models.
 
@@ -104,11 +109,32 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         .. code-block:: python
 
             from langchain.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            openai = ChatOpenAI(model_id="gpt-3.5-turbo")
     """
 
+    id = "openai-chat"
+    """Unique ID for this provider class."""
+
+    model_id = "gpt-3.5-turbo"
+    """
+    Model ID to invoke by this provider via generate/agenerate.
+    """
+
+    # OpenAI chat model provider supports any model available via
+    # `openai.ChatCompletion`.
+    # Reference: https://platform.openai.com/docs/models/model-endpoint-compatibility
+    models = ['gpt-4', 'gpt-4-0314', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0301']
+    """List of supported models by their IDs. For registry providers, this will
+    be just ["*"]."""
+
+    pypi_package_deps = ["openai"]
+    """List of PyPi package dependencies."""
+
+    auth_strategy = OpenAIAuthStrategy
+    """Authentication/authorization strategy. Declares what credentials are
+    required to use this model provider. Generally should not be `None`."""
+
     client: Any  #: :meta private:
-    model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -176,7 +202,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         return {
-            "model": self.model_name,
+            "model": self.model_id,
             "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
@@ -227,7 +253,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                     overall_token_usage[k] += v
                 else:
                     overall_token_usage[k] = v
-        return {"token_usage": overall_token_usage, "model_name": self.model_name}
+        return {"token_usage": overall_token_usage, "model_id": self.model_id}
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -257,7 +283,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        params: Dict[str, Any] = {**{"model": self.model_id}, **self._default_params}
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
@@ -271,7 +297,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(message=message)
             generations.append(gen)
-        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        llm_output = {"token_usage": response["usage"], "model_id": self.model_id}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
@@ -311,7 +337,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model_name": self.model_name}, **self._default_params}
+        return {**{"model_id": self.model_id}, **self._default_params}
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
@@ -327,7 +353,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "Please it install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
-        enc = tiktoken.encoding_for_model(self.model_name)
+        enc = tiktoken.encoding_for_model(self.model_id)
 
         # encode the text using the GPT-3.5-Turbo encoder
         tokenized_text = enc.encode(text)
