@@ -3,13 +3,13 @@ import json
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import BaseOpenAI, OpenAIChat
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 def import_wandb() -> Any:
@@ -260,7 +260,6 @@ def construct_html_from_prompt_and_generation(prompt: str, generation: str) -> A
     </div>
 </body>
     """
-    
 
     return wandb.Html(
         f"""
@@ -501,7 +500,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.complexity_metrics = complexity_metrics
         self.visualize = visualize
         self.nlp = spacy.load("en_core_web_sm")
-        self.input_keys = set()
+        self.input_keys: Set[str] = set()
 
     def _init_resp(self) -> Dict:
         return {k: None for k in self.callback_columns}
@@ -595,7 +594,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.action_records.append(resp)
         if self.stream_logs:
             self.run.log(resp)
-        
+
         self.input_keys.update(inputs.keys())
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
@@ -720,7 +719,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self.run.log(resp)
 
     def _create_common_session_analysis_df(self) -> Any:
-        """Create a dataframe with all the information from the session as is allowed for the minimal LLM"""
+        """Create a dataframe with all the information from the session."""
         pd = import_pandas()
         on_llm_start_records_df = pd.DataFrame(self.on_llm_start_records)
         on_llm_end_records_df = pd.DataFrame(self.on_llm_end_records)
@@ -815,52 +814,69 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """
         pd = import_pandas()
         wandb = import_wandb()
-        
+
         table_records = {}
-        
+
         if len(self.action_records) > 0:
-            action_records_table = wandb.Table(dataframe=pd.DataFrame(self.action_records))
+            action_records_table = wandb.Table(
+                dataframe=pd.DataFrame(self.action_records)
+            )
             table_records["action_records"] = action_records_table
         else:
             wandb.termlog("No actions were run.")
 
-        if len(self.on_llm_start_records) == len(self.on_llm_end_records) and len(self.on_llm_start_records) > 0:
+        if (
+            len(self.on_llm_start_records) == len(self.on_llm_end_records)
+            and len(self.on_llm_start_records) > 0
+        ):
             session_analysis_df = self._create_common_session_analysis_df()
-            
+
             if isinstance(langchain_asset, Chain):
                 if len(self.on_chain_start_records) == len(self.on_llm_start_records):
-                    chain_inputs = pd.DataFrame(self.on_chain_start_records)[list(self.input_keys)]
-                    session_analysis_df = pd.concat([chain_inputs, session_analysis_df], axis=1)
+                    chain_inputs = pd.DataFrame(self.on_chain_start_records)[
+                        list(self.input_keys)
+                    ]
+                    session_analysis_df = pd.concat(
+                        [chain_inputs, session_analysis_df], axis=1
+                    )
                 if isinstance(langchain_asset, LLMChain):
                     if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
-                        openai_token_info = pd.DataFrame(self.on_llm_end_records)[[
-                            "token_usage_total_tokens",
-                            "token_usage_prompt_tokens",
-                            "token_usage_completion_tokens"
-                        ]]
-                        session_analysis_df = pd.concat([session_analysis_df, openai_token_info], axis=1)
-            
-            #TODO: DRY
-            if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
-                openai_token_info = pd.DataFrame(self.on_llm_end_records)[[
-                    "token_usage_total_tokens",
-                    "token_usage_prompt_tokens",
-                    "token_usage_completion_tokens"
-                ]]
-                session_analysis_df = pd.concat([session_analysis_df, openai_token_info], axis=1)
+                        openai_token_info = pd.DataFrame(self.on_llm_end_records)[
+                            [
+                                "token_usage_total_tokens",
+                                "token_usage_prompt_tokens",
+                                "token_usage_completion_tokens",
+                            ]
+                        ]
+                        session_analysis_df = pd.concat(
+                            [session_analysis_df, openai_token_info], axis=1
+                        )
 
-            session_analysis_table = wandb.Table(
-                dataframe=session_analysis_df
-            )
+            # TODO: DRY
+            if isinstance(langchain_asset.llm, (BaseOpenAI, OpenAIChat)):
+                openai_token_info = pd.DataFrame(self.on_llm_end_records)[
+                    [
+                        "token_usage_total_tokens",
+                        "token_usage_prompt_tokens",
+                        "token_usage_completion_tokens",
+                    ]
+                ]
+                session_analysis_df = pd.concat(
+                    [session_analysis_df, openai_token_info], axis=1
+                )
+
+            session_analysis_table = wandb.Table(dataframe=session_analysis_df)
             table_records["session_analysis"] = session_analysis_table
         else:
-            wandb.termlog(f"Record mismatch: (on_llm_start_records - {len(self.on_llm_start_records)}) != (on_llm_end_records - {len(self.on_llm_end_records)})")
+            wandb.termlog(
+                f"Record mismatch: (on_llm_start_records - "
+                f"{len(self.on_llm_start_records)}) != (on_llm_end_records "
+                f"- {len(self.on_llm_end_records)})"
+            )
             wandb.termlog("or")
             wandb.termlog("No records run.")
 
-        self.run.log(
-            table_records
-        )
+        self.run.log(table_records)
 
         if langchain_asset:
             langchain_asset_path = Path(self.temp_dir.name, "model.json")
@@ -874,7 +890,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 model_artifact.metadata = model_meta
                 self.run.config.update(model_meta)
             except ValueError:
-                #TODO: Replace with check of agent as opposed to this try catch
+                # TODO: Replace with check of agent as opposed to this try catch
                 langchain_asset.save_agent(langchain_asset_path)
                 model_artifact.add_file(str(langchain_asset_path))
                 model_meta = load_json_to_dict(langchain_asset_path)
