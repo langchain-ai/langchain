@@ -1,12 +1,12 @@
 Welcome to LangChain
 ==========================
 
-LangChain is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an api, but will also:
+LangChain is a framework for developing applications powered by language models. We believe that the most powerful and differentiated applications will not only call out to a language model via an API, but will also:
 
-- Be data-aware: connect a language model to other sources of data
-- Be agentic: Allow a language model to interact with its environment
+- *Be data-aware*: connect a language model to other sources of data
+- *Be agentic*: Allow a language model to interact with its environment
 
-As such, the LangChain framework is designed with the objective in mind to enable those types of applications.
+The LangChain framework is designed with above objectives in mind.
 
 This is the Python specific portion of the documentation. For a purely conceptual guide to LangChain, see `here <https://docs.langchain.com/docs/>`_. For the JavaScript documentation, see `here <https://js.langchain.com/docs/>`_.
 

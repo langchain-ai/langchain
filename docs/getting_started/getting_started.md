@@ -298,7 +298,7 @@ Chat model APIs are fairly new, so we are still figuring out the correct abstrac
 
 
 `````{dropdown} Get Message Completions from a Chat Model
-You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are AIMessage, HumanMessage, SystemMessage, and ChatMessage -- ChatMessage takes in an arbitrary role parameter. Most of the time, you'll just be dealing with HumanMessage, AIMessage, and SystemMessage.
+You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are `AIMessage`, `HumanMessage`, `SystemMessage`, and `ChatMessage` -- `ChatMessage` takes in an arbitrary role parameter. Most of the time, you'll just be dealing with `HumanMessage`, `AIMessage`, and `SystemMessage`.
 
 ```python
 from langchain.chat_models import ChatOpenAI
@@ -435,33 +435,26 @@ agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to th
 > Entering new AgentExecutor chain...
 Thought: I need to use a search engine to find Olivia Wilde's boyfriend and a calculator to raise his age to the 0.23 power.
 Action:
-```
 {
   "action": "Search",
   "action_input": "Olivia Wilde boyfriend"
 }
-```
 
 Observation: Sudeikis and Wilde's relationship ended in November 2020. Wilde was publicly served with court documents regarding child custody while she was presenting Don't Worry Darling at CinemaCon 2022. In January 2021, Wilde began dating singer Harry Styles after meeting during the filming of Don't Worry Darling.
 Thought:I need to use a search engine to find Harry Styles' current age.
 Action:
-```
 {
   "action": "Search",
   "action_input": "Harry Styles age"
 }
-```
 
 Observation: 29 years
 Thought:Now I need to calculate 29 raised to the 0.23 power.
 Action:
-```
 {
   "action": "Calculator",
   "action_input": "29^0.23"
 }
-```
-
 
 Observation: Answer: 2.169459462491557
 
