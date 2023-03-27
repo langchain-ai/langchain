@@ -48,5 +48,5 @@ Go Deeper
 
    ./agents/tools.rst
    ./agents/agents.rst
-   ./agents/agent_toolkits.rst
+   ./agents/toolkits.rst
    ./agents/agent_executors.rst
