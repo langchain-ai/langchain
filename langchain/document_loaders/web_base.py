@@ -26,9 +26,6 @@ default_header_template = {
 class WebBaseLoader(BaseLoader):
     """Loader that uses urllib and beautiful soup to load webpages."""
 
-    web_path: str
-    """Legacy: first or only url to load from constructor."""
-
     web_paths: List[str]
 
     requests_per_second: int = 2
@@ -45,11 +42,9 @@ class WebBaseLoader(BaseLoader):
         # TODO: Deprecate web_path in favor of web_paths, and remove this
         # left like this because there are a number of loaders that expect single
         # urls
-        if type(web_path) == str:
-            self.web_path = web_path
+        if isinstance(web_path, str):
             self.web_paths = [web_path]
-        elif type(web_path) == list:
-            self.web_path = web_path[0]
+        elif isinstance(web_path, List):
             self.web_paths = web_path
 
         self.session = requests.Session()
@@ -71,6 +66,12 @@ class WebBaseLoader(BaseLoader):
                 "fake_useragent not found, using default user agent."
                 "To get a realistic header for requests, `pip install fake_useragent`."
             )
+
+    @property
+    def web_path(self) -> str:
+        if len(self.web_paths) > 1:
+            raise ValueError("Multiple webpaths found.")
+        return self.web_paths[0]
 
     async def _fetch(self, url: str) -> str:
         async with aiohttp.ClientSession() as session:
