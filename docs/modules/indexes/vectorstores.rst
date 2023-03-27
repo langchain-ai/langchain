@@ -1,6 +1,10 @@
 Vectorstores
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing/vectorstore>`_
+
+
 Vectorstores are one of the most important components of building indexes.
 
 For an introduction to vectorstores and generic functionality see:

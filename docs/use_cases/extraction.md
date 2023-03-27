@@ -1,5 +1,9 @@
 # Extraction
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/extraction>`_
+
+
 Most APIs and databases still deal with structured information.
 Therefore, in order to better work with those, it can be useful to extract structured information from text.
 Examples of this include:

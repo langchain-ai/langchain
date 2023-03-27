@@ -1,6 +1,10 @@
 Agents
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/agents>`_
+
+
 Some applications will require not just a predetermined chain of calls to LLMs/other tools,
 but potentially an unknown chain that depends on the user's input.
 In these types of chains, there is a “agent” which has access to a suite of tools.

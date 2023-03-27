@@ -1,5 +1,9 @@
 # Summarization
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/summarization>`_
+
+
 Summarization involves creating a smaller summary of multiple longer documents.
 This can be useful for distilling long documents into the core pieces of information.
 

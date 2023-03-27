@@ -1,5 +1,9 @@
 # Interacting with APIs
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/apis>`_
+
+
 Lots of data and information is stored behind APIs.
 This page covers all resources available in LangChain for working with APIs.
 

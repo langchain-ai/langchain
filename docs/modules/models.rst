@@ -1,6 +1,10 @@
 Models
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/models>`_
+
+
 This section of the documentation deals with different types of models that are used in LangChain.
 On this page we will go over the model types at a high level,
 but we have individual pages for each model type.

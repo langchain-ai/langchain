@@ -1,6 +1,10 @@
 Output Parsers
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/prompts/output-parser>`_
+
+
 Language models output text. But many times you may want to get more structured information than just text back. This is where output parsers come in.
 
 Output parsers are classes that help structure language model responses. There are two main methods an output parser must implement:

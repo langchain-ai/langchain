@@ -1,6 +1,9 @@
 Toolkits
 ==============
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/agents/toolkit>`_
+
 
 This section of documentation covers agents with toolkits - eg an agent applied to a particular use case.
 

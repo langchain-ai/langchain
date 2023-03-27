@@ -1,6 +1,10 @@
 Chat Models
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/models/chat-model>`_
+
+
 Chat models are a variation on language models.
 While chat models use language models under the hood, the interface they expose is a bit different.
 Rather than expose a "text in, text out" API, they expose an interface where "chat messages" are the inputs and outputs.

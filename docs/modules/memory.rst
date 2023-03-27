@@ -1,6 +1,10 @@
 Memory
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/memory>`_
+
+
 By default, Chains and Agents are stateless,
 meaning that they treat each incoming query independently (as are the underlying LLMs and chat models).
 In some applications (chatbots being a GREAT example) it is highly important

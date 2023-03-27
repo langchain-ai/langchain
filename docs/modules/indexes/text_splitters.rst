@@ -1,6 +1,10 @@
 Text Splitters
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing/text-splitter>`_
+
+
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks.
 As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text.
 This notebook showcases several ways to do that.
