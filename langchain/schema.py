@@ -200,10 +200,10 @@ class BaseLanguageModel(BaseModel, ABC):
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""
 
-    pypi_package_deps: ClassVar[List[str]]
+    pypi_package_deps: ClassVar[List[str]] = []
     """List of PyPi package dependencies."""
 
-    auth_strategy: ClassVar[Optional[AuthStrategy]]
+    auth_strategy: ClassVar[Optional[AuthStrategy]] = None
     """Authentication/authorization strategy. Declares what credentials are
     required to use this model provider. Generally should not be `None`."""
 
