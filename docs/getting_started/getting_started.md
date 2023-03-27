@@ -297,7 +297,7 @@ Similarly, you can use chat models instead of LLMs. Chat models are a variation 
 Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
 
 
-`````{dropdown} Get message completions from a chat model
+`````{dropdown} Get Message Completions from a Chat Model
 You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are AIMessage, HumanMessage, SystemMessage, and ChatMessage -- ChatMessage takes in an arbitrary role parameter. Most of the time, you'll just be dealing with HumanMessage, AIMessage, and SystemMessage.
 
 ```python
@@ -402,7 +402,7 @@ chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_mes
 
 chain = LLMChain(llm=chat, prompt=chat_prompt)
 chain.run(input_language="English", output_language="French", text="I love programming.")
-# - "J'aime programmer."
+# -> "J'aime programmer."
 ```
 `````
 
@@ -460,6 +460,7 @@ agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, ve
 
 
 agent_executor.run("How many people live in canada as of 2023?")
+```
 
 ```pycon
 
