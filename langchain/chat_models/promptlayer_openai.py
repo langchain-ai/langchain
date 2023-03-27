@@ -72,7 +72,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         """Call ChatOpenAI agenerate and then call PromptLayer to log."""
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(messages, stop)
@@ -82,7 +82,7 @@ class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
             response_dict, params = super()._create_message_dicts(
                 [generation.message], stop
             )
-            pl_request_id = promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerChatOpenAI.async",
                 "langchain",
                 message_dicts,
