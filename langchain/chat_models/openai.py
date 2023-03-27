@@ -337,6 +337,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+
         Official documentation: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         try:
@@ -350,19 +351,19 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         model = self.model_name
         if model == "gpt-3.5-turbo":
-            """gpt-3.5-turbo may change over time."""
-            """Returning num tokens assuming gpt-3.5-turbo-0301."""
+            # gpt-3.5-turbo may change over time.
+            # Returning num tokens assuming gpt-3.5-turbo-0301.
             model = "gpt-3.5-turbo-0301"
         elif model == "gpt-4":
-            """gpt-4 may change over time."""
-            """Returning num tokens assuming gpt-4-0314."""
+            # gpt-4 may change over time.
+            # Returning num tokens assuming gpt-4-0314.
             model = "gpt-4-0314"
 
-        """Returns the number of tokens used by a list of messages."""
+        # Returns the number of tokens used by a list of messages.
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            print("Warning: model not found. Using cl100k_base encoding.")
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
 
         if model == "gpt-3.5-turbo-0301":
