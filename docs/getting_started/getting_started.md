@@ -407,77 +407,69 @@ chain.run(input_language="English", output_language="French", text="I love progr
 `````
 
 `````{dropdown} Agents with Chat Models
-Agents can also be used with chat models.
+Agents can also be used with chat models, you can initialize one using `"chat-zero-shot-react-description"` as the agent type.
 
 ```python
-from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
-from langchain.chains import LLMChain
-from langchain.utilities import SerpAPIWrapper
+from langchain.agents import load_tools
+from langchain.agents import initialize_agent
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
-    HumanMessagePromptTemplate,
-)
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage
-)
+from langchain.llms import OpenAI
 
-search = SerpAPIWrapper()
-tools = [
-    Tool(
-        name = "Search",
-        func=search.run,
-        description="useful for when you need to answer questions about current events"
-    )
-]
+# First, let's load the language model we're going to use to control the agent.
+chat = ChatOpenAI(temperature=0)
 
-prefix = """Answer the following questions as best you can, but speaking as a pirate might speak. You have access to the following tools:"""
-suffix = """Begin! Remember to speak as a pirate when giving your final answer. Use lots of "Args"""
-
-prompt = ZeroShotAgent.create_prompt(
-    tools, 
-    prefix=prefix, 
-    suffix=suffix, 
-    input_variables=[]
-)
-
-messages = [
-    SystemMessagePromptTemplate(prompt=prompt),
-    HumanMessagePromptTemplate.from_template("{input}\n\nThis was your previous work "
-                f"(but I haven't seen any of it! I only see what "
-                "you return as final answer):\n{agent_scratchpad}")
-]
-
-prompt = ChatPromptTemplate.from_messages(messages)
-llm_chain = LLMChain(llm=ChatOpenAI(temperature=0), prompt=prompt)
-tool_names = [tool.name for tool in tools]
-agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names)
-agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+# Next, let's load some tools to use. Note that the `llm-math` tool uses an LLM, so we need to pass that in.
+llm = OpenAI(temperature=0)
+tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 
-agent_executor.run("How many people live in canada as of 2023?")
+# Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
+agent = initialize_agent(tools, chat, agent="chat-zero-shot-react-description", verbose=True)
+
+# Now let's test it out!
+agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")
 ```
 
 ```pycon
 
 > Entering new AgentExecutor chain...
-Arrr, ye be in luck, matey! I'll find ye the answer to yer question.
+Thought: I need to use a search engine to find Olivia Wilde's boyfriend and a calculator to raise his age to the 0.23 power.
+Action:
+```
+{
+  "action": "Search",
+  "action_input": "Olivia Wilde boyfriend"
+}
+```
 
-Thought: I need to search for the current population of Canada.
-Action: Search
-Action Input: "current population of Canada 2023"
+Observation: Sudeikis and Wilde's relationship ended in November 2020. Wilde was publicly served with court documents regarding child custody while she was presenting Don't Worry Darling at CinemaCon 2022. In January 2021, Wilde began dating singer Harry Styles after meeting during the filming of Don't Worry Darling.
+Thought:I need to use a search engine to find Harry Styles' current age.
+Action:
+```
+{
+  "action": "Search",
+  "action_input": "Harry Styles age"
+}
+```
 
-Observation: The current population of Canada is 38,623,091 as of Saturday, March 4, 2023, based on Worldometer elaboration of the latest United Nations data.
-Thought:Ahoy, me hearties! I've found the answer to yer question.
+Observation: 29 years
+Thought:Now I need to calculate 29 raised to the 0.23 power.
+Action:
+```
+{
+  "action": "Calculator",
+  "action_input": "29^0.23"
+}
+```
 
-Final Answer: As of March 4, 2023, the population of Canada be 38,623,091. Arrr!
+
+Observation: Answer: 2.169459462491557
+
+Thought:I now know the final answer.
+Final Answer: 2.169459462491557
 
 > Finished chain.
-'As of March 4, 2023, the population of Canada be 38,623,091. Arrr!'
+'2.169459462491557'
 ```
 `````
 
