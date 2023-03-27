@@ -63,7 +63,7 @@ Use Cases
 
 The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
-- `Personal Assistants <./use_cases/agents.html>`_: The main LangChain use case. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
+- `Personal Assistants <./use_cases/personal_assistants.html>`_: The main LangChain use case. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
 
 - `Question Answering <./use_cases/question_answering.html>`_: The second big LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
 
@@ -145,7 +145,7 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Tracing <./tracing.html>`_: A guide on using tracing in LangChain to visualize the execution of chains and agents.
 
-- `Model Laboratory <./use_cases/model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
+- `Model Laboratory <./model_laboratory.html>`_: Experimenting with different prompts, models, and chains is a big part of developing the best possible application. The ModelLaboratory makes it easy to do so.
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
