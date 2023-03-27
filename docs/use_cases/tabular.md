@@ -1,7 +1,6 @@
 # Querying Tabular Data
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/qa-tabular>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/qa-tabular)
 
 
 Lots of data and information is stored in tabular data, whether it be csvs, excel sheets, or SQL tables.

@@ -1,7 +1,6 @@
 # Summarization
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/summarization>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/summarization)
 
 
 Summarization involves creating a smaller summary of multiple longer documents.
