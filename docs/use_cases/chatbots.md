@@ -1,7 +1,6 @@
 # Chatbots
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/chatbots>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/chatbots)
 
 
 Since language models are good at producing text, that makes them ideal for creating chatbots.

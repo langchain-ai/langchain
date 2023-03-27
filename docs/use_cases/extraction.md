@@ -1,7 +1,6 @@
 # Extraction
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/extraction>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/extraction)
 
 
 Most APIs and databases still deal with structured information.
