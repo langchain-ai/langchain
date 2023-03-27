@@ -16,7 +16,7 @@ See [this notebook](../modules/indexes/getting_started.ipynb) for a more detaile
 from langchain.document_loaders import TextLoader
 loader = TextLoader('../state_of_the_union.txt')
 ```
-See [here](../modules/document_loaders/how_to_guides.rst) for more information on how to get started with document loading.
+See [here](../modules/indexes/document_loaders.rst) for more information on how to get started with document loading.
 
 **Create Your Index**
 ```python
