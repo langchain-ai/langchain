@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, Literal, NamedTuple, Optional, Union
+from typing import Any, ClassVar, Dict, List, Literal, NamedTuple, Optional, Union, Type
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -184,10 +184,11 @@ class AwsAuthStrategy(BaseModel):
     """Require AWS authentication via Boto3"""
     type: ClassVar[Literal["aws"]] = 'aws'
 
-AuthStrategy = Union[
-    EnvAuthStrategy,
-    MultiEnvAuthStrategy,
-]
+AuthStrategy = Optional[Union[
+    Type[EnvAuthStrategy],
+    Type[MultiEnvAuthStrategy],
+    Type[AwsAuthStrategy],
+]]
 
 class BaseLanguageModel(BaseModel, ABC):
     id: ClassVar[str]
@@ -203,7 +204,7 @@ class BaseLanguageModel(BaseModel, ABC):
     pypi_package_deps: ClassVar[List[str]] = []
     """List of PyPi package dependencies."""
 
-    auth_strategy: ClassVar[Optional[AuthStrategy]] = None
+    auth_strategy: ClassVar[AuthStrategy] = None
     """Authentication/authorization strategy. Declares what credentials are
     required to use this model provider. Generally should not be `None`."""
 

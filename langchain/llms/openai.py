@@ -7,6 +7,7 @@ import warnings
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Generator,
     List,
@@ -27,7 +28,7 @@ from tenacity import (
 )
 
 from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult, EnvAuthStrategy
+from langchain.schema import Generation, LLMResult, EnvAuthStrategy, AuthStrategy
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     pypi_package_deps = ["openai"]
     """List of PyPi package dependencies."""
 
-    auth_strategy = OpenAIAuthStrategy
+    auth_strategy: ClassVar[AuthStrategy] = OpenAIAuthStrategy
     """Authentication/authorization strategy. Declares what credentials are
     required to use this model provider. Generally should not be `None`."""
 

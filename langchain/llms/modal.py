@@ -86,7 +86,7 @@ class Modal(LLM, BaseModel):
         """Call to Modal endpoint."""
         params = self.model_kwargs or {}
         response = requests.post(
-            url=self.endpoint_url,
+            url=self.model_id,
             headers={
                 "Content-Type": "application/json",
             },

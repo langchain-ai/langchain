@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from tenacity import (
@@ -21,6 +21,7 @@ from langchain.schema import (
     ChatGeneration,
     ChatMessage,
     ChatResult,
+    AuthStrategy,
     EnvAuthStrategy,
     HumanMessage,
     SystemMessage,
@@ -130,7 +131,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     pypi_package_deps = ["openai"]
     """List of PyPi package dependencies."""
 
-    auth_strategy = OpenAIAuthStrategy
+    auth_strategy: ClassVar[AuthStrategy] = OpenAIAuthStrategy
     """Authentication/authorization strategy. Declares what credentials are
     required to use this model provider. Generally should not be `None`."""
 
@@ -375,7 +376,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 "Please it install it with `pip install tiktoken`."
             )
 
-        model = self.model_name
+        model = self.model_id
         if model == "gpt-3.5-turbo":
             # gpt-3.5-turbo may change over time.
             # Returning num tokens assuming gpt-3.5-turbo-0301.
