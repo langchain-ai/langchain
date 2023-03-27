@@ -2,6 +2,12 @@
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
+from langchain.document_loaders.azure_blob_storage_container import (
+    AzureBlobStorageContainerLoader,
+)
+from langchain.document_loaders.azure_blob_storage_file import (
+    AzureBlobStorageFileLoader,
+)
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -106,4 +112,6 @@ __all__ = [
     "CSVLoader",
     "BlackboardLoader",
     "DataFrameLoader",
+    "AzureBlobStorageFileLoader",
+    "AzureBlobStorageContainerLoader",
 ]

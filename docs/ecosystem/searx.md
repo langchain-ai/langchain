@@ -55,4 +55,4 @@ from langchain.agents import load_tools
 tools = load_tools(["searx-search"], searx_host="http://localhost:8888")
 ```
 
-For more information on tools, see [this page](../modules/agents/tools.md)
+For more information on tools, see [this page](../modules/agents/tools/getting_started.md)
