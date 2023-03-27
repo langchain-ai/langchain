@@ -62,11 +62,12 @@ class Redis(VectorStore):
     ) -> List[str]:
         # `prefix`: Maybe in the future we can let the user choose the index_name.
         prefix = "doc"  # prefix for the document keys
+        keys = {i:v for i, v in enumerate(kwargs.get('keys'))} if kwargs.get('keys') else {}
 
         ids = []
         # Check if index exists
         for i, text in enumerate(texts):
-            key = f"{prefix}:{uuid.uuid4().hex}"
+            key = f"{prefix}:{keys.get(i, uuid.uuid4().hex)}"
             metadata = metadatas[i] if metadatas else {}
             self.client.hset(
                 key,
