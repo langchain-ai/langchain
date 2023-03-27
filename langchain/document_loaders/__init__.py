@@ -14,6 +14,7 @@ from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.directory import DirectoryLoader
+from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -61,7 +62,7 @@ from langchain.document_loaders.youtube import (
     YoutubeLoader,
 )
 
-"""Legacy: only for backwards compat. use PyPDFLoader instead"""
+# Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
 
 __all__ = [
@@ -116,4 +117,5 @@ __all__ = [
     "AzureBlobStorageFileLoader",
     "AzureBlobStorageContainerLoader",
     "SitemapLoader",
+    "DuckDBLoader",
 ]

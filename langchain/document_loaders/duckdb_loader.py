@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -39,10 +39,13 @@ class DuckDBLoader(BaseLoader):
             )
 
         docs = []
-        with duckdb.connect(database=self.database, read_only=self.read_only, config=self.config) as con:
+        with duckdb.connect(
+            database=self.database, read_only=self.read_only, config=self.config
+        ) as con:
             query_result = con.execute(self.query)
             results = query_result.fetchall()
-            field_names = [c[0] for c in query_result.description]
+            description = cast(list, query_result.description)
+            field_names = [c[0] for c in description]
 
             if self.page_content_columns is None:
                 page_content_columns = field_names
