@@ -10,6 +10,7 @@ from langchain.embeddings.huggingface import (
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
@@ -25,6 +26,7 @@ __all__ = [
     "CohereEmbeddings",
     "HuggingFaceHubEmbeddings",
     "TensorflowHubEmbeddings",
+    "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
     "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",

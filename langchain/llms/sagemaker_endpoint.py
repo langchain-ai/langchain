@@ -1,6 +1,6 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -39,7 +39,9 @@ class ContentHandlerBase(ABC):
     """The MIME type of the response data returned from endpoint"""
 
     @abstractmethod
-    def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def transform_input(
+        self, prompt: Union[str, List[str]], model_kwargs: Dict
+    ) -> bytes:
         """Transforms the input to a format that model can accept
         as the request Body. Should return bytes or seekable file
         like object in the format specified in the content_type
@@ -47,7 +49,7 @@ class ContentHandlerBase(ABC):
         """
 
     @abstractmethod
-    def transform_output(self, output: bytes) -> str:
+    def transform_output(self, output: bytes) -> Any:
         """Transforms the output from the model to string that
         the LLM class expects.
         """
