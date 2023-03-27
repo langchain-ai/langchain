@@ -17,7 +17,7 @@ There exists a SerpAPI utility which wraps this API. To import this utility:
 from langchain.utilities import SerpAPIWrapper
 ```
 
-For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/serpapi.ipynb).
+For a more detailed walkthrough of this wrapper, see [this notebook](../modules/agents/tools/examples/serpapi.ipynb).
 
 ### Tool
 
@@ -28,4 +28,4 @@ from langchain.agents import load_tools
 tools = load_tools(["serpapi"])
 ```
 
-For more information on this, see [this page](../modules/agents/tools.md)
+For more information on this, see [this page](../modules/agents/tools/getting_started.md)
