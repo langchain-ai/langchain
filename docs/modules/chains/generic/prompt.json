@@ -3,6 +3,9 @@
         "question"
     ],
     "output_parser": null,
+    "partial_variables": {},
     "template": "Question: {question}\n\nAnswer: Let's think step by step.",
-    "template_format": "f-string"
+    "template_format": "f-string",
+    "validate_template": true,
+    "_type": "prompt"
 }

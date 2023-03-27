@@ -25,7 +25,7 @@ class AlephAlpha(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import AlephAlpha
-            alpeh_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
+            aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 
     id = "aleph-alpha"
@@ -227,7 +227,7 @@ class AlephAlpha(LLM, BaseModel):
         Example:
             .. code-block:: python
 
-                response = alpeh_alpha("Tell me a joke.")
+                response = aleph_alpha("Tell me a joke.")
         """
         from aleph_alpha_client import CompletionRequest, Prompt
 

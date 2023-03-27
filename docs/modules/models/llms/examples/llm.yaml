@@ -1,6 +1,7 @@
 _type: openai
 best_of: 1
 frequency_penalty: 0.0
+logit_bias: {}
 max_tokens: 256
 model_id: text-davinci-003
 n: 1

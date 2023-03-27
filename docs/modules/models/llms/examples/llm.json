@@ -8,5 +8,6 @@
     "n": 1,
     "best_of": 1,
     "request_timeout": null,
+    "logit_bias": {},
     "_type": "openai"
 }
