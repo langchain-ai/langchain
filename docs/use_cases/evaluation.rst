@@ -1,6 +1,10 @@
 Evaluation
 ==============
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/evaluation>`_
+
+
 This section of documentation covers how we approach and think about evaluation in LangChain.
 Both evaluation of internal chains/agents, but also how we would recommend people building on top of LangChain approach evaluation.
 
