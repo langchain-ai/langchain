@@ -87,13 +87,15 @@ class DocstoreExplorer:
         """Initialize with a docstore, and set initial document to None."""
         self.docstore = docstore
         self.document: Optional[Document] = None
+        self.lookup_str = ""
+        self.lookup_index = 0
 
     def search(self, term: str) -> str:
         """Search for a term in the docstore, and if found save."""
         result = self.docstore.search(term)
         if isinstance(result, Document):
             self.document = result
-            return self._summary(self.document)
+            return self._summary
         else:
             self.document = None
             return result
@@ -103,13 +105,11 @@ class DocstoreExplorer:
         if self.document is None:
             raise ValueError("Cannot lookup without a successful search first")
         if term.lower() != self.lookup_str:
-            self.lookup_str = string.lower()
+            self.lookup_str = term.lower()
             self.lookup_index = 0
         else:
             self.lookup_index += 1
-        lookups = [
-            p for p in self._paragraphs(self.document) if self.lookup_str in p.lower()
-        ]
+        lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
         if len(lookups) == 0:
             return "No Results"
         elif self.lookup_index >= len(lookups):
@@ -118,17 +118,15 @@ class DocstoreExplorer:
             result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
             return f"{result_prefix} {lookups[self.lookup_index]}"
 
-    @classmethod
-    def _summary(cls, document: Document) -> str:
-        if "summary" in document.metadata:
-            return document.metadata["summary"]
-        return cls._paragraphs(document)[0]
+    @property
+    def _summary(self) -> str:
+        return self._paragraphs[0]
 
-    @classmethod
-    def _paragraphs(cls, document: Document) -> List[str]:
-        if "paragraphs" not in dir(document):
-            document.paragraphs = document.text.split("\n\n")
-        return document.pagaraphs
+    @property
+    def _paragraphs(self) -> List[str]:
+        if self.document is None:
+            raise ValueError("Cannot get paragraphs without a document")
+        return self.document.page_content.split("\n\n")
 
 
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
