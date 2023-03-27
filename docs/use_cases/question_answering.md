@@ -1,7 +1,6 @@
 # Question Answering over Docs
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/qa-docs>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/qa-docs)
 
 
 Question answering in this context refers to question answering over your document data. 

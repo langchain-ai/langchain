@@ -1,7 +1,6 @@
 # Personal Assistants
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/personal-assistants>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/personal-assistants)
 
 
 We use "personal assistant" here in a very broad sense.

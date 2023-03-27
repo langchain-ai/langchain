@@ -1,7 +1,6 @@
 # Interacting with APIs
 
-.. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/apis>`_
+> [Conceptual Guide](https://docs.langchain.com/docs/use-cases/apis)
 
 
 Lots of data and information is stored behind APIs.
