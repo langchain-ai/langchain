@@ -154,7 +154,7 @@ async def test_openai_async_streaming_callback() -> None:
 
 def test_openai_chat_wrong_class() -> None:
     """Test OpenAIChat with wrong class still works."""
-    llm = OpenAI(model_name="gpt-3.5-turbo")
+    llm = OpenAI(model_id="gpt-3.5-turbo")
     output = llm("Say foo:")
     assert isinstance(output, str)
 

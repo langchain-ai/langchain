@@ -105,13 +105,13 @@ class Banana(LLM, BaseModel):
             )
         params = self.model_kwargs or {}
         api_key = self.banana_api_key
-        model_key = self.model_id
+        model_id = self.model_id
         model_inputs = {
             # a json specific to your model.
             "prompt": prompt,
             **params,
         }
-        response = banana.run(api_key, model_key, model_inputs)
+        response = banana.run(api_key, model_id, model_inputs)
         try:
             text = response["modelOutputs"][0]["output"]
         except (KeyError, TypeError):

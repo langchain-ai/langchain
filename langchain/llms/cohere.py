@@ -25,7 +25,7 @@ class Cohere(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import Cohere
-            cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
+            cohere = Cohere(model_id="gptd-instruct-tft", cohere_api_key="my-api-key")
     """
 
     id = "cohere"

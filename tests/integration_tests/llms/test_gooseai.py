@@ -12,7 +12,7 @@ def test_gooseai_call() -> None:
 
 def test_gooseai_call_fairseq() -> None:
     """Test valid call to gooseai with fairseq model."""
-    llm = GooseAI(model_name="fairseq-1-3b", max_tokens=10)
+    llm = GooseAI(model_id="fairseq-1-3b", max_tokens=10)
     output = llm("Say foo:")
     assert isinstance(output, str)
 

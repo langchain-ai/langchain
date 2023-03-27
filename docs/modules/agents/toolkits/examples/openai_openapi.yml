@@ -245,7 +245,7 @@ paths:
             import openai
             openai.api_key = os.getenv("OPENAI_API_KEY")
             openai.Edit.create(
-              model="VAR_model_id",
+              model_id="VAR_model_id",
               input="What day of the wek is it?",
               instruction="Fix the spelling mistakes"
             )

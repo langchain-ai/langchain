@@ -22,7 +22,7 @@ class Anthropic(LLM, BaseModel):
         .. code-block:: python
             import anthropic
             from langchain.llms import Anthropic
-            model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
+            model = Anthropic(model_id="<model_name>", anthropic_api_key="my-api-key")
 
             # Simplest invocation, automatically wrapped with HUMAN_PROMPT
             # and AI_PROMPT.

@@ -15,7 +15,7 @@ def test_ai21_call() -> None:
 
 def test_ai21_call_experimental() -> None:
     """Test valid call to ai21 with an experimental model."""
-    llm = AI21(maxTokens=10, model="j1-grande-instruct")
+    llm = AI21(maxTokens=10, model_id="j1-grande-instruct")
     output = llm("Say foo:")
     assert isinstance(output, str)
 

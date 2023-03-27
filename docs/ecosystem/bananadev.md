@@ -75,5 +75,5 @@ from langchain.llms import Banana
 You need to provide a model key located in the dashboard:
 
 ```python
-llm = Banana(model_key="YOUR_MODEL_KEY")
+llm = Banana(model_id="YOUR_MODEL_KEY")
 ```
