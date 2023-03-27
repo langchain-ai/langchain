@@ -17,6 +17,7 @@ What isn't there to love about langchain?
 
 Made in 2022."""
 
+
 class FakeDocstore(Docstore):
     """Fake docstore for testing purposes."""
 

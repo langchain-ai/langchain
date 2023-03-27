@@ -9,8 +9,10 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
+
 class ForefrontAuthStrategy(EnvAuthStrategy):
     name = "FOREFRONTAI_API_KEY"
+
 
 class ForefrontAI(LLM, BaseModel):
     """Wrapper around ForefrontAI large language models.

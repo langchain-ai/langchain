@@ -8,8 +8,10 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
+
 class AlephAlphaAuthStrategy(EnvAuthStrategy):
     name = "ALEPH_ALPHA_API_KEY"
+
 
 class AlephAlpha(LLM, BaseModel):
     """Wrapper around Aleph Alpha large language models.
@@ -35,7 +37,12 @@ class AlephAlpha(LLM, BaseModel):
     """Model ID to invoke by this provider via generate/agenerate."""
 
     # Reference: https://docs.aleph-alpha.com/docs/introduction/luminous/
-    models = ["luminous-base", "luminous-extended", "luminous-supreme", "luminous-supreme-control"]
+    models = [
+        "luminous-base",
+        "luminous-extended",
+        "luminous-supreme",
+        "luminous-supreme-control",
+    ]
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""
 

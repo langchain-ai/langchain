@@ -11,8 +11,10 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+
 class CohereAuthStrategy(EnvAuthStrategy):
     name = "COHERE_API_KEY"
+
 
 class Cohere(LLM, BaseModel):
     """Wrapper around Cohere large language models.

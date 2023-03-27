@@ -9,8 +9,10 @@ from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 from langchain.schema import EnvAuthStrategy
 
+
 class WriterAuthStrategy(EnvAuthStrategy):
     name = "WRITER_API_KEY"
+
 
 class Writer(LLM, BaseModel):
     """Wrapper around Writer large language models.

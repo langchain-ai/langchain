@@ -7,8 +7,10 @@ from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 from langchain.schema import EnvAuthStrategy
 
+
 class NlpCloudAuthStrategy(EnvAuthStrategy):
     name = "NLPCLOUD_API_KEY"
+
 
 class NLPCloud(LLM, BaseModel):
     """Wrapper around NLPCloud large language models.
@@ -44,7 +46,7 @@ class NLPCloud(LLM, BaseModel):
         "it_core_news_lg",
         "ja_ginza_electra",
         "ja_core_news_lg",
-        "lt_core_news_lg"
+        "lt_core_news_lg",
         "nb_core_news_lg",
         "pl_core_news_lg",
         "pt_core_news_lg",
@@ -67,7 +69,7 @@ class NLPCloud(LLM, BaseModel):
         "paraphrase-multilingual-mpnet-base-v2",
         "python-langdetect",
         "stable-diffusion",
-        "whisper"
+        "whisper",
     ]
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""

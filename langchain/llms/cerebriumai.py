@@ -11,8 +11,10 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+
 class CerebriumAuthStrategy(EnvAuthStrategy):
     name = "CEREBRIUMAI_API_KEY"
+
 
 class CerebriumAI(LLM, BaseModel):
     """Wrapper around CerebriumAI large language models.

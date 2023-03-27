@@ -19,8 +19,10 @@ class AI21PenaltyData(BaseModel):
     applyToStopwords: bool = True
     applyToEmojis: bool = True
 
+
 class AI21AuthStrategy(EnvAuthStrategy):
     name = "AI21_API_KEY"
+
 
 class AI21(LLM, BaseModel):
     """Wrapper around AI21 large language models.
@@ -44,7 +46,17 @@ class AI21(LLM, BaseModel):
     # AI21 model provider currently only provides its prompt via the `prompt`
     # key, which limits the models that can actually be used.
     # Reference: https://docs.ai21.com/reference/j2-complete-api
-    models = ["j1-large", "j1-grande", "j1-jumbo", "j1-grande-instruct", "j2-large", "j2-grande", "j2-jumbo", "j2-grande-instruct", "j2-jumbo-instruct"]
+    models = [
+        "j1-large",
+        "j1-grande",
+        "j1-jumbo",
+        "j1-grande-instruct",
+        "j2-large",
+        "j2-grande",
+        "j2-jumbo",
+        "j2-grande-instruct",
+        "j2-jumbo-instruct",
+    ]
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""
 

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from langchain.llms.base import LLM
 
+
 class FakeListLLM(LLM, BaseModel):
     """Fake LLM wrapper for testing purposes."""
 

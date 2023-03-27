@@ -11,6 +11,7 @@ from langchain.utils import get_from_dict_or_env
 
 VALID_TASKS = ("text2text-generation", "text-generation")
 
+
 class HfEndpointAuthStrategy(EnvAuthStrategy):
     name = "HUGGINGFACEHUB_API_TOKEN"
 

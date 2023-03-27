@@ -11,6 +11,7 @@ from langchain.utils import get_from_dict_or_env
 DEFAULT_MODEL_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
+
 class HfHubAuthStrategy(EnvAuthStrategy):
     name = "HUGGINGFACEHUB_API_TOKEN"
 

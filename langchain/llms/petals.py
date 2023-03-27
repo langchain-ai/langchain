@@ -11,8 +11,10 @@ from langchain.schema import EnvAuthStrategy
 
 logger = logging.getLogger(__name__)
 
+
 class PetalsAuthStrategy(EnvAuthStrategy):
     name = "HUGGINGFACE_API_KEY"
+
 
 class Petals(LLM, BaseModel):
     """Wrapper around Petals Bloom models.

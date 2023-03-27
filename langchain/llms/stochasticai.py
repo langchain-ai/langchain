@@ -13,6 +13,7 @@ from langchain.schema import EnvAuthStrategy
 
 logger = logging.getLogger(__name__)
 
+
 class StochasticAuthStrategy(EnvAuthStrategy):
     name = "STOCHASTICAI_API_KEY"
 

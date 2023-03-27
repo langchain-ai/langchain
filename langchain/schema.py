@@ -170,25 +170,35 @@ class PromptValue(BaseModel, ABC):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
 
+
 class EnvAuthStrategy(BaseModel):
     """Require one auth token via an environment variable."""
-    type: ClassVar[Literal["env"]] = 'env'
+
+    type: ClassVar[Literal["env"]] = "env"
     name: ClassVar[str]
+
 
 class MultiEnvAuthStrategy(BaseModel):
     """Require multiple auth tokens via multiple environment variables."""
-    type: ClassVar[Literal["file"]] = 'file'
+
+    type: ClassVar[Literal["file"]] = "file"
     names: ClassVar[List[str]]
+
 
 class AwsAuthStrategy(BaseModel):
     """Require AWS authentication via Boto3"""
-    type: ClassVar[Literal["aws"]] = 'aws'
 
-AuthStrategy = Optional[Union[
-    Type[EnvAuthStrategy],
-    Type[MultiEnvAuthStrategy],
-    Type[AwsAuthStrategy],
-]]
+    type: ClassVar[Literal["aws"]] = "aws"
+
+
+AuthStrategy = Optional[
+    Union[
+        Type[EnvAuthStrategy],
+        Type[MultiEnvAuthStrategy],
+        Type[AwsAuthStrategy],
+    ]
+]
+
 
 class BaseLanguageModel(BaseModel, ABC):
     id: ClassVar[str]

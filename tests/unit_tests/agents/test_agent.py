@@ -8,6 +8,7 @@ from langchain.callbacks.base import CallbackManager
 from langchain.llms.fake import FakeListLLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
+
 def _get_agent(**kwargs: Any) -> AgentExecutor:
     """Get agent for testing."""
     bad_action_name = "BadAction"

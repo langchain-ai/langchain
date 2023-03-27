@@ -11,6 +11,7 @@ from langchain.schema import LLMResult, MultiEnvAuthStrategy
 class PromptLayerOaiAuthStrategy(MultiEnvAuthStrategy):
     names = ["OPENAI_API_KEY", "PROMPTLAYER_API_KEY"]
 
+
 class PromptLayerOpenAI(OpenAI, BaseModel):
     """Wrapper around OpenAI large language models.
 

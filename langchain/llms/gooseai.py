@@ -10,8 +10,10 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+
 class GooseAuthStrategy(EnvAuthStrategy):
     name = "GOOSEAI_API_KEY"
+
 
 class GooseAI(LLM, BaseModel):
     """Wrapper around OpenAI large language models.
@@ -39,7 +41,18 @@ class GooseAI(LLM, BaseModel):
     """
 
     # Reference: https://goose.ai/docs/api/engines
-    models = ["gpt-neo-20b", "gpt-j-6b", "gpt-neo-2-7b", "gpt-neo-1-3b", "gpt-neo-125m", "fairseq-13b", "fairseq-6-7b", "fairseq-2-7b", "fairseq-1-3b", "fairseq-125m"]
+    models = [
+        "gpt-neo-20b",
+        "gpt-j-6b",
+        "gpt-neo-2-7b",
+        "gpt-neo-1-3b",
+        "gpt-neo-125m",
+        "fairseq-13b",
+        "fairseq-6-7b",
+        "fairseq-2-7b",
+        "fairseq-1-3b",
+        "fairseq-125m",
+    ]
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""
 

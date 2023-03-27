@@ -11,8 +11,10 @@ from langchain.utils import get_from_dict_or_env
 
 DEFAULT_MODEL_ID = "google/flan-t5-xl"
 
+
 class DeepInfraAuthStrategy(EnvAuthStrategy):
     name = "DEEPINFRA_API_TOKEN"
+
 
 class DeepInfra(LLM, BaseModel):
     """Wrapper around DeepInfra deployed models.

@@ -11,8 +11,10 @@ from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
+
 class BananaAuthStrategy(EnvAuthStrategy):
     name = "BANANA_API_KEY"
+
 
 class Banana(LLM, BaseModel):
     """Wrapper around Banana large language models.
@@ -28,6 +30,7 @@ class Banana(LLM, BaseModel):
             from langchain.llms import Banana
             banana = Banana(model_id="...")
     """
+
     id = "banana"
     """Unique ID for this provider class."""
 

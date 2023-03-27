@@ -8,8 +8,10 @@ from langchain.schema import EnvAuthStrategy
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
+
 class AnthropicAuthStrategy(EnvAuthStrategy):
     name = "ANTHROPIC_API_KEY"
+
 
 class Anthropic(LLM, BaseModel):
     r"""Wrapper around Anthropic large language models.
@@ -44,7 +46,13 @@ class Anthropic(LLM, BaseModel):
     # Anthropic model provider supports any model available via
     # `anthropic.Client#completion()`.
     # Reference: https://console.anthropic.com/docs/api/reference
-    models = ["claude-v1", "claude-v1.0", "claude-v1.2", "claude-instant-v1", "claude-instant-v1.0"]
+    models = [
+        "claude-v1",
+        "claude-v1.0",
+        "claude-v1.2",
+        "claude-instant-v1",
+        "claude-instant-v1.0",
+    ]
     """List of supported models by their IDs. For registry providers, this will
     be just ["*"]."""
 
