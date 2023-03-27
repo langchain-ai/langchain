@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.schema import AwsAuthStrategy
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
+from langchain.schema import AwsAuthStrategy
 
 
 class ContentHandlerBase(ABC):

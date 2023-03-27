@@ -17,11 +17,11 @@ from tenacity import (
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
+    AuthStrategy,
     BaseMessage,
     ChatGeneration,
     ChatMessage,
     ChatResult,
-    AuthStrategy,
     EnvAuthStrategy,
     HumanMessage,
     SystemMessage,

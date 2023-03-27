@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Dict, List, Literal, NamedTuple, Optional, Union, Type
+from typing import Any, ClassVar, Dict, List, Literal, NamedTuple, Optional, Type, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 

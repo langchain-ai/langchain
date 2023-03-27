@@ -8,8 +8,8 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
 from langchain.schema import EnvAuthStrategy
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 

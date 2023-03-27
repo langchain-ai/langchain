@@ -28,7 +28,7 @@ from tenacity import (
 )
 
 from langchain.llms.base import BaseLLM
-from langchain.schema import Generation, LLMResult, EnvAuthStrategy, AuthStrategy
+from langchain.schema import AuthStrategy, EnvAuthStrategy, Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@
 
 from typing import List, Optional
 
-
 from langchain.chains.natbot.base import NatBotChain
 from tests.unit_tests.llms.fake_llm import FakeLLM as BaseFakeLLM
 
