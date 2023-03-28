@@ -52,7 +52,9 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
         if not summary_strings:
             context = [] if self.return_messages else ""
         elif self.return_messages:
-            context = [self.summary_message_cls(content=text) for text in summary_strings]
+            context = [
+                self.summary_message_cls(content=text) for text in summary_strings
+            ]
         else:
             context = "\n".join(summary_strings)
 
