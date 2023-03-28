@@ -37,3 +37,6 @@ A minimal example on how to run LangChain on Vercel using Flask.
 ## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
 This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
 This includes: production ready endpoints, horizontal scaling across dependencies, persistant storage of app state, multi-tenancy support, etc.
+
+## [Langchain-serve](https://github.com/jina-ai/langchain-serve)
+This repository allows users to serve local chains and agents as RESTful, gRPC, or Websocket APIs thanks to [Jina](https://docs.jina.ai/). Deploy your chains & agents with ease and enjoy independent scaling, serverless and autoscaling APIs, as well as a Streamlit playground on Jina AI Cloud.
