@@ -11,11 +11,14 @@ logger = logging.getLogger(__file__)
 class UnstructuredURLLoader(BaseLoader):
     """Loader that uses unstructured to load HTML files."""
 
-    def __init__(self, urls: List[str], continue_on_failure: bool = True, headers: dict = {}):
+    def __init__(
+        self, urls: List[str], continue_on_failure: bool = True, headers: dict = {}
+    ):
         """Initialize with file path."""
         try:
             import unstructured  # noqa:F401
             from unstructured.__version__ import __version__ as __unstructured_version__
+
             self.__version = __unstructured_version__
         except ImportError:
             raise ValueError(
@@ -24,7 +27,10 @@ class UnstructuredURLLoader(BaseLoader):
             )
 
         if not self.__is_headers_available() and len(headers.keys()) != 0:
-            logger.warning("You are using old version of unstructured. The headers parameter is ignored")
+            logger.warning(
+                "You are using old version of unstructured. "
+                "The headers parameter is ignored"
+            )
 
         self.urls = urls
         self.continue_on_failure = continue_on_failure
