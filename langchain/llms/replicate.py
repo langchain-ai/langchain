@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.llms.base import LLM
-from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -94,7 +93,7 @@ class Replicate(LLM, BaseModel):
         model = replicate_python.models.get(model_str)
         version = model.versions.get(version_str)
 
-        # sort through the openapi schema to get the name of the first input (it isn't always "prompt")
+        # sort through the openapi schema to get the name of the first input
         input_properties = sorted(
             version.openapi_schema["components"]["schemas"]["Input"][
                 "properties"
