@@ -1,6 +1,10 @@
 Evaluation
 ==============
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/evaluation>`_
+
+
 This section of documentation covers how we approach and think about evaluation in LangChain.
 Both evaluation of internal chains/agents, but also how we would recommend people building on top of LangChain approach evaluation.
 
@@ -83,7 +87,7 @@ In addition, we also have some more generic resources for evaluation.
 
 `Question Answering <./evaluation/question_answering.html>`_: An overview of LLMs aimed at evaluating question answering systems in general.
 
-`Data Augmented Question Answering <./evaluation/data_augmented_question_answering.html>`_: An end-to-end example of evaluating a question answering system focused on a specific document (a VectorDBQAChain to be precise). This example highlights how to use LLMs to come up with question/answer examples to evaluate over, and then highlights how to use LLMs to evaluate performance on those generated examples.
+`Data Augmented Question Answering <./evaluation/data_augmented_question_answering.html>`_: An end-to-end example of evaluating a question answering system focused on a specific document (a RetrievalQAChain to be precise). This example highlights how to use LLMs to come up with question/answer examples to evaluate over, and then highlights how to use LLMs to evaluate performance on those generated examples.
 
 `Hugging Face Datasets <./evaluation/huggingface_datasets.html>`_: Covers an example of loading and using a dataset from Hugging Face for evaluation.
 

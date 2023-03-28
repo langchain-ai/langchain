@@ -124,7 +124,7 @@ class SQLDatabase:
 
             if self._sample_rows_in_table_info:
                 # build the select command
-                command = select(table).limit(self._sample_rows_in_table_info)
+                command = select([table]).limit(self._sample_rows_in_table_info)
 
                 # save the columns in string format
                 columns_str = "\t".join([col.name for col in table.columns])

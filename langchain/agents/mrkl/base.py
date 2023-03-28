@@ -40,7 +40,8 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     """
     if FINAL_ANSWER_ACTION in llm_output:
         return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
-    regex = r"Action: (.*?)[\n]*Action Input: (.*)"
+    # \s matches against tab/newline/whitespace
+    regex = r"Action: (.*?)[\n]*Action Input:[\s]*(.*)"
     match = re.search(regex, llm_output, re.DOTALL)
     if not match:
         raise ValueError(f"Could not parse LLM output: `{llm_output}`")

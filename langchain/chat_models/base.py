@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -59,7 +60,9 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
-        results = [await self._agenerate(m, stop=stop) for m in messages]
+        results = await asyncio.gather(
+            *[self._agenerate(m, stop=stop) for m in messages]
+        )
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         return LLMResult(generations=generations, llm_output=llm_output)

@@ -42,5 +42,5 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         question = inputs[self.question_key]
-        docs = self.retriever.get_relevant_texts(question)
+        docs = self.retriever.get_relevant_documents(question)
         return self._reduce_tokens_below_limit(docs)

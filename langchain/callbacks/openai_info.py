@@ -9,6 +9,8 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks OpenAI info."""
 
     total_tokens: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
 
     @property
     def always_verbose(self) -> bool:
@@ -32,6 +34,10 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 token_usage = response.llm_output["token_usage"]
                 if "total_tokens" in token_usage:
                     self.total_tokens += token_usage["total_tokens"]
+                if "prompt_tokens" in token_usage:
+                    self.prompt_tokens += token_usage["prompt_tokens"]
+                if "completion_tokens" in token_usage:
+                    self.completion_tokens += token_usage["completion_tokens"]
 
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any

@@ -15,7 +15,7 @@ custom LLMs, you can use the `SelfHostedPipeline` parent class.
 from langchain.llms import SelfHostedPipeline, SelfHostedHuggingFaceLLM
 ```
 
-For a more detailed walkthrough of the Self-hosted LLMs, see [this notebook](../modules/llms/integrations/self_hosted_examples.ipynb)
+For a more detailed walkthrough of the Self-hosted LLMs, see [this notebook](../modules/models/llms/integrations/self_hosted_examples.ipynb)
 
 ## Self-hosted Embeddings
 There are several ways to use self-hosted embeddings with LangChain via Runhouse.
@@ -26,6 +26,4 @@ the `SelfHostedEmbedding` class.
 from langchain.llms import SelfHostedPipeline, SelfHostedHuggingFaceLLM
 ```
 
-For a more detailed walkthrough of the Self-hosted Embeddings, see [this notebook](../modules/indexes/examples/embeddings.ipynb)
-
-##
+For a more detailed walkthrough of the Self-hosted Embeddings, see [this notebook](../modules/models/text_embedding/examples/self-hosted.ipynb)

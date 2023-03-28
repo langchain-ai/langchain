@@ -165,7 +165,7 @@ class Qdrant(VectorStore):
             query_vector=embedding,
             with_payload=True,
             with_vectors=True,
-            limit=k,
+            limit=fetch_k,
         )
         embeddings = [result.vector for result in results]
         mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
