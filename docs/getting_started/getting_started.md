@@ -362,6 +362,8 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 
+chat = ChatOpenAI(temperature=0)
+
 template="You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
 human_template="{text}"
