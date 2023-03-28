@@ -12,6 +12,7 @@ DATABASE_URL = NOTION_BASE_URL + "/databases/{database_id}/query"
 PAGE_URL = NOTION_BASE_URL + "/pages/{page_id}"
 BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
+
 class NotionDBLoader(BaseLoader):
     """Notion DB Loader.
     Reads content from pages within a Noton Database.
@@ -35,9 +36,7 @@ class NotionDBLoader(BaseLoader):
             "Notion-Version": "2022-06-28",
         }
 
-    def load(
-        self
-    ) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load documents from the Notion database.
         Returns:
             List[Document]: List of documents.
@@ -46,12 +45,18 @@ class NotionDBLoader(BaseLoader):
 
         return list(self.load_page(page_id) for page_id in page_ids)
 
-    def _retrieve_page_ids(self, query_dict: Dict[str, Any] = {"page_size": 100}) -> List[str]:
+    def _retrieve_page_ids(
+        self, query_dict: Dict[str, Any] = {"page_size": 100}
+    ) -> List[str]:
         """Get all the pages from a Notion database."""
         pages: List[Dict[str, Any]] = []
 
         while True:
-            data = self._request(DATABASE_URL.format(database_id=self.database_id), method="POST", query_dict=query_dict)
+            data = self._request(
+                DATABASE_URL.format(database_id=self.database_id),
+                method="POST",
+                query_dict=query_dict,
+            )
 
             pages.extend(data.get("results"))
 
@@ -71,21 +76,31 @@ class NotionDBLoader(BaseLoader):
         # load properties as metadata
         metadata: Dict[str, Any] = {}
 
-        for prop_name, prop_data in data['properties'].items():
-            prop_type = prop_data['type']
+        for prop_name, prop_data in data["properties"].items():
+            prop_type = prop_data["type"]
 
-            if prop_type == 'rich_text':
-                value = prop_data['rich_text'][0]['plain_text'] if prop_data['rich_text'] else None
-            elif prop_type == 'title':
-                value = prop_data['title'][0]['plain_text'] if prop_data['title'] else None
-            elif prop_type == 'multi_select':
-                value = [item['name'] for item in prop_data['multi_select']] if prop_data['multi_select'] else []
+            if prop_type == "rich_text":
+                value = (
+                    prop_data["rich_text"][0]["plain_text"]
+                    if prop_data["rich_text"]
+                    else None
+                )
+            elif prop_type == "title":
+                value = (
+                    prop_data["title"][0]["plain_text"] if prop_data["title"] else None
+                )
+            elif prop_type == "multi_select":
+                value = (
+                    [item["name"] for item in prop_data["multi_select"]]
+                    if prop_data["multi_select"]
+                    else []
+                )
             else:
                 value = None
 
             metadata[prop_name.lower()] = value
 
-        metadata['id'] = page_id
+        metadata["id"] = page_id
 
         return Document(page_content=self._load_blocks(page_id), metadata=metadata)
 
@@ -107,7 +122,9 @@ class NotionDBLoader(BaseLoader):
 
                 for rich_text in result_obj["rich_text"]:
                     if "text" in rich_text:
-                        cur_result_text_arr.append("\t" * num_tabs + rich_text["text"]["content"])
+                        cur_result_text_arr.append(
+                            "\t" * num_tabs + rich_text["text"]["content"]
+                        )
 
                 if result["has_children"]:
                     children_text = self._load_blocks(
@@ -121,13 +138,15 @@ class NotionDBLoader(BaseLoader):
 
         return "\n".join(result_lines_arr)
 
-    def _request(self, url: str, method: str = "GET", query_dict: Dict[str, Any] = {}) -> Any:
+    def _request(
+        self, url: str, method: str = "GET", query_dict: Dict[str, Any] = {}
+    ) -> Any:
         res = requests.request(
-                method,
-                url,
-                headers=self.headers,
-                json=query_dict,
-                timeout=10,
-            )
+            method,
+            url,
+            headers=self.headers,
+            json=query_dict,
+            timeout=10,
+        )
         res.raise_for_status()
         return res.json()
