@@ -55,6 +55,8 @@ from langchain.document_loaders.unstructured import (
 )
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
+from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
+
 from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
@@ -113,6 +115,7 @@ __all__ = [
     "GoogleApiClient",
     "CSVLoader",
     "BlackboardLoader",
+    "WhatsAppChatLoader",
     "DataFrameLoader",
     "AzureBlobStorageFileLoader",
     "AzureBlobStorageContainerLoader",
