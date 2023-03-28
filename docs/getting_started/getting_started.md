@@ -355,6 +355,7 @@ Similar to LLMs, you can make use of templating by using a `MessagePromptTemplat
 For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
