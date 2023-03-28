@@ -46,4 +46,4 @@ This LLM is identical to the [OpenAI LLM](./openai), except that
 - you can add `return_pl_id` when instantializing to return a PromptLayer request id to use [while tracking requests](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
 
 
-PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/chat/examples/promptlayer_chat_openai.ipynb) and `PromptLayerOpenAIChat`
+PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/models/chat/examples/promptlayer_chat_openai.ipynb) and `PromptLayerOpenAIChat`

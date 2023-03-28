@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+
 from typing import Optional
 
 import requests
 from pydantic import BaseModel
+import json
+
+import requests
+import yaml
 
 from langchain.tools.base import BaseTool
 
@@ -25,6 +30,13 @@ class AIPlugin(BaseModel):
     logo_url: Optional[str]
     contact_email: Optional[str]
     legal_info_url: Optional[str]
+    
+def marshal_spec(txt: str) -> dict:
+    """Convert the yaml or json serialized spec to a dict."""
+    try:
+        return json.loads(txt)
+    except json.JSONDecodeError:
+        return yaml.safe_load(txt)
 
 
 class AIPluginTool(BaseTool):
@@ -33,6 +45,8 @@ class AIPluginTool(BaseTool):
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
+        open_api_spec_str = requests.get(url).text
+        open_api_spec = marshal_spec(open_api_spec_str)
         cls.plugin = AIPlugin(**requests.get(url).json())
         description = (
             f"Call this tool to get the OpenAPI spec (and usage guide) "
