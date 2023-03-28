@@ -11,17 +11,16 @@ Find a model on the [replicate explore page](https://replicate.com/explore), and
 
 For example, for this [flan-t5 model]( https://replicate.com/daanelson/flan-t5), click on the API tab. The model name/version would be: `daanelson/flan-t5:04e422a9b85baed86a4f24981d7f9953e20c5fd82f6103b74ebc431588e1cec8`
 
-Only the `model` param is required, but we can add other model params when initializing.
+Only the `model` param is required, but any other model parameters can also be passed in with the format input={model_param: value, ...}
+
 
 For example, if we were running stable diffusion and wanted to change the image dimensions:
 
 ```
-Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-          image_dimensions='512x512')
+Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf", input={'image_dimensions': '512x512'})
 ```
 
 *Note that only the first output of a model will be returned.*
-
 From here, we can initialize our model:
 
 ```python
@@ -42,8 +41,7 @@ We can call any replicate model (not just LLMs) using this syntax. For example, 
 
 ```python
 text2image = Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-                       image_dimensions='512x512'
+                       input={'image_dimensions'='512x512'}
 
 image_output = text2image("A cat riding a motorcycle by Picasso")
-image_output
 ```
