@@ -18,4 +18,4 @@ To import this vectorstore:
 from langchain.vectorstores import OpenSearchVectorSearch
 ```
 
-For a more detailed walkthrough of the OpenSearch wrapper, see [this notebook](../modules/indexes/vectorstore_examples/opensearch.ipynb)
+For a more detailed walkthrough of the OpenSearch wrapper, see [this notebook](../modules/indexes/vectorstores/examples/opensearch.ipynb)
