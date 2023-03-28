@@ -1,5 +1,6 @@
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
+
 def test_openweathermap_api_wrapper() -> None:
     """Test that OpenWeatherMapAPIWrapper returns correct data for London, GB."""
 
