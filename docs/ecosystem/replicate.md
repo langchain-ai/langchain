@@ -1,5 +1,5 @@
 # Replicate
-This page covers how to use the Replicate ecosystem within LangChain.
+This page covers how to run models on Replicate within LangChain.
 
 ## Installation and Setup
 - Create a [Replicate](https://replicate.com) account. Get your api key and set it as an environment variable (`REPLICATE_API_TOKEN`)
