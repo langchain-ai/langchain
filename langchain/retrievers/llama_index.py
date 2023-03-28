@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, cast
 
-import requests
 from pydantic import BaseModel, Field
 
 from langchain.schema import BaseRetriever, Document
@@ -35,7 +34,7 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
         return docs
 
 
-class LlamaGraphRetriever(BaseRetriever, BaseModel):
+class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
     """Question-answering with sources over an LlamaIndex graph data structure."""
 
     graph: Any
