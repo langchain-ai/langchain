@@ -1,9 +1,7 @@
 """Util that calls OpenWeatherMap using PyOWM."""
-
 from typing import Any, Dict, Optional
 
 from pydantic import Extra, root_validator
-from pyowm import OWM
 
 from langchain.tools.base import BaseModel
 from langchain.utils import get_from_dict_or_env
