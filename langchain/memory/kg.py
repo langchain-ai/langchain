@@ -41,27 +41,23 @@ class ConversationKGMemory(BaseChatMemory, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         entities = self._get_current_entities(inputs)
-        summaries = {}
+
+        summary_strings = []
         for entity in entities:
             knowledge = self.kg.get_entity_knowledge(entity)
             if knowledge:
-                summaries[entity] = ". ".join(knowledge) + "."
+                summary = f"On {entity}: {'. '.join(knowledge)}."
+                summary_strings.append(summary)
         context: Union[str, List]
-        if summaries:
-            summary_strings = [
-                f"On {entity}: {summary}" for entity, summary in summaries.items()
+        if not summary_strings:
+            context = [] if self.return_messages else ""
+        elif self.return_messages:
+            context = [
+                self.summary_message_cls(content=text) for text in summary_strings
             ]
-            if self.return_messages:
-                context = [
-                    self.summary_message_cls(content=text) for text in summary_strings
-                ]
-            else:
-                context = "\n".join(summary_strings)
         else:
-            if self.return_messages:
-                context = []
-            else:
-                context = ""
+            context = "\n".join(summary_strings)
+
         return {self.memory_key: context}
 
     @property
