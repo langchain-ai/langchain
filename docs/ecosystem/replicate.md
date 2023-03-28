@@ -2,7 +2,7 @@
 This page covers how to run models on Replicate within LangChain.
 
 ## Installation and Setup
-- Create a [Replicate](https://replicate.com) account. Get your api key and set it as an environment variable (`REPLICATE_API_TOKEN`)
+- Create a [Replicate](https://replicate.com) account. Get your API key and set it as an environment variable (`REPLICATE_API_TOKEN`)
 - Install the [Replicate python client](https://github.com/replicate/replicate-python) with `pip install replicate`
 
 ## Calling a model
