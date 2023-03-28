@@ -4,13 +4,15 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
+from pydantic import BaseModel, Field, root_validator
 from redis.client import Redis as RedisType
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
@@ -339,3 +341,37 @@ class Redis(VectorStore):
             )
 
         return cls(redis_url, index_name, embedding.embed_query)
+
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
+
+
+class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
+    vectorstore: Redis
+    search_type: str = "similarity"
+    search_kwargs: dict = Field(default_factory=dict)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    @root_validator()
+    def validate_search_type(cls, values: Dict) -> Dict:
+        """Validate search type."""
+        if "search_type" in values:
+            search_type = values["search_type"]
+            if search_type not in ("similarity", "similarity_limit"):
+                raise ValueError(f"search_type of {search_type} not allowed.")
+        return values
+
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        if self.search_type == "similarity":
+            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+        elif self.search_type == "similarity_limit":
+            docs = self.vectorstore.similarity_search_limit_score(
+                query, **self.search_kwargs
+            )
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
