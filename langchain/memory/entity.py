@@ -74,25 +74,27 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
+
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
         else:
             prompt_input_key = self.input_key
-        for entity in self.entity_cache:
-            chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
-            # key value store for entity
-            existing_summary = self.store.get(entity, "")
-            buffer_string = get_buffer_string(
-                self.buffer[-self.k * 2 :],
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
-            )
 
+        buffer_string = get_buffer_string(
+            self.buffer[-self.k * 2 :],
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+        input_data = inputs[prompt_input_key]
+        chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
+
+        for entity in self.entity_cache:
+            existing_summary = self.store.get(entity, "")
             output = chain.predict(
                 summary=existing_summary,
-                history=buffer_string,
-                input=inputs[prompt_input_key],
                 entity=entity,
+                history=buffer_string,
+                input=input_data,
             )
             self.store[entity] = output.strip()
 
