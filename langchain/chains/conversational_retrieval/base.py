@@ -118,16 +118,14 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
 
     retriever: BaseRetriever
     """Index to connect to."""
-    reduce_k_below_max_tokens: bool = False
-    """Reduce the number of results to return from store based on tokens limit"""
-    max_tokens_limit: int = 3375
-    """Restrict the docs to return from store based on tokens,
-    enforced only for StuffDocumentChain and if reduce_k_below_max_tokens is to true"""
+    max_tokens_limit: Optional[int] = None
+    """If set, restricts the docs to return from store based on tokens, enforced only
+    for StuffDocumentChain"""
 
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
         num_docs = len(docs)
 
-        if self.reduce_k_below_max_tokens and isinstance(
+        if self.max_tokens_limit and isinstance(
             self.combine_docs_chain, StuffDocumentsChain
         ):
             tokens = [
