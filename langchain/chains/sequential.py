@@ -41,7 +41,7 @@ class SequentialChain(Chain, BaseModel):
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
-        input_variables = values.get("input_variables", [])
+        input_variables = values["input_variables"]
         memory_keys = list()
         if "memory" in values and values["memory"] is not None:
             """Validate that prompt input variables are consistent."""

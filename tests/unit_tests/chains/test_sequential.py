@@ -72,11 +72,9 @@ def test_sequential_usage_memory() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(ValueError):
-        chain = SequentialChain(
+        SequentialChain(
             memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
         )
-        output = chain({"foo": "123"})
-        assert output == expected_output
 
 
 def test_sequential_usage_multiple_outputs() -> None:
