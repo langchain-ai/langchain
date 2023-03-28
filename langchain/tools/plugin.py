@@ -43,19 +43,19 @@ class AIPluginTool(BaseTool):
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
-        open_api_spec_str = requests.get(url).text
-        open_api_spec = marshal_spec(open_api_spec_str)
-        plugin = AIPlugin(**open_api_spec)
+        response = requests.get(url).json()
+        plugin = AIPlugin(**response)
         description = (
             f"Call this tool to get the OpenAPI spec (and usage guide) "
             f"for interacting with the {plugin.name_for_human} API. "
             f"You should only call this ONCE! What is the "
             f"{plugin.name_for_human} API useful for? "
         ) + plugin.description_for_human
-
+        open_api_spec_str = requests.get(plugin.api.url).text
+        open_api_spec = marshal_spec(open_api_spec_str)
         api_spec = (
             f"Usage Guide: {plugin.description_for_model}\n\n"
-            f"OpenAPI Spec: {requests.get(plugin.api.url).json()}"
+            f"OpenAPI Spec: {open_api_spec}"
         )
 
         return cls(
