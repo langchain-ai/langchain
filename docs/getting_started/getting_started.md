@@ -74,7 +74,7 @@ print(llm(text))
 Feetful of Fun
 ```
 
-For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/llms/getting_started.ipynb).
+For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
 `````
 
 
@@ -111,7 +111,7 @@ What is a good name for a company that makes colorful socks?
 ```
 
 
-[For more details, check out the getting started guide for prompts.](../modules/prompts/getting_started.ipynb)
+[For more details, check out the getting started guide for prompts.](../modules/prompts/chat_prompt_template.ipynb)
 
 `````
 
@@ -210,28 +210,24 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 agent = initialize_agent(tools, llm, agent="zero-shot-react-description", verbose=True)
 
 # Now let's test it out!
-agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")
+agent.run("What was the high temperature in SF yesterday in Fahrenheit? What is that number raised to the .023 power?")
 ```
 
 ```pycon
-Entering new AgentExecutor chain...
- I need to find out who Olivia Wilde's boyfriend is and then calculate his age raised to the 0.23 power.
+> Entering new AgentExecutor chain...
+ I need to find the temperature first, then use the calculator to raise it to the .023 power.
 Action: Search
-Action Input: "Olivia Wilde boyfriend"
-Observation: Jason Sudeikis
-Thought: I need to find out Jason Sudeikis' age
-Action: Search
-Action Input: "Jason Sudeikis age"
-Observation: 47 years
-Thought: I need to calculate 47 raised to the 0.23 power
+Action Input: "High temperature in SF yesterday"
+Observation: San Francisco Temperature Yesterday. Maximum temperature yesterday: 57 °F (at 1:56 pm) Minimum temperature yesterday: 49 °F (at 1:56 am) Average temperature ...
+Thought: I now have the temperature, so I can use the calculator to raise it to the .023 power.
 Action: Calculator
-Action Input: 47^0.23
-Observation: Answer: 2.4242784855673896
+Action Input: 57^.023
+Observation: Answer: 1.0974509573251117
 
 Thought: I now know the final answer
-Final Answer: Jason Sudeikis, Olivia Wilde's boyfriend, is 47 years old and his age raised to the 0.23 power is 2.4242784855673896.
-> Finished AgentExecutor chain.
-"Jason Sudeikis, Olivia Wilde's boyfriend, is 47 years old and his age raised to the 0.23 power is 2.4242784855673896."
+Final Answer: The high temperature in SF yesterday in Fahrenheit raised to the .023 power is 1.0974509573251117.
+
+> Finished chain.
 ```
 
 

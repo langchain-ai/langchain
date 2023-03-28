@@ -363,6 +363,10 @@ class AgentExecutor(Chain, BaseModel):
         else:
             return self.agent.return_values
 
+    def lookup_tool(self, name: str) -> BaseTool:
+        """Lookup tool by name."""
+        return {tool.name: tool for tool in self.tools}[name]
+
     def _should_continue(self, iterations: int) -> bool:
         if self.max_iterations is None:
             return True

@@ -289,3 +289,25 @@ def test_agent_with_new_prefix_suffix() -> None:
     prompt_str = agent.agent.llm_chain.prompt.template
     assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
     assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
+
+
+def test_agent_lookup_tool() -> None:
+    """Test agent lookup tool."""
+    fake_llm = FakeListLLM(
+        responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
+    )
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
+    ]
+    agent = initialize_agent(
+        tools=tools,
+        llm=fake_llm,
+        agent="zero-shot-react-description",
+    )
+
+    assert agent.lookup_tool("Search") == tools[0]

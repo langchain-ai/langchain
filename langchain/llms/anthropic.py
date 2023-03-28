@@ -48,6 +48,9 @@ class Anthropic(LLM, BaseModel):
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
 
+    streaming: bool = False
+    """Whether to stream the results."""
+
     anthropic_api_key: Optional[str] = None
 
     HUMAN_PROMPT: Optional[str] = None
@@ -143,14 +146,29 @@ class Anthropic(LLM, BaseModel):
 
         """
         stop = self._get_anthropic_stop(stop)
+        if self.streaming:
+            stream_resp = self.client.completion_stream(
+                model=self.model,
+                prompt=self._wrap_prompt(prompt),
+                stop_sequences=stop,
+                stream=True,
+                **self._default_params,
+            )
+            current_completion = ""
+            for data in stream_resp:
+                delta = data["completion"][len(current_completion) :]
+                current_completion = data["completion"]
+                self.callback_manager.on_llm_new_token(
+                    delta, verbose=self.verbose, **data
+                )
+            return current_completion
         response = self.client.completion(
             model=self.model,
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **self._default_params,
         )
-        text = response["completion"]
-        return text
+        return response["completion"]
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         r"""Call Anthropic completion_stream and return the resulting generator.
