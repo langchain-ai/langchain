@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-
+import json
 from typing import Optional
 
 import requests
-from pydantic import BaseModel
-import json
-
-import requests
 import yaml
+from pydantic import BaseModel
 
 from langchain.tools.base import BaseTool
 
@@ -30,7 +27,8 @@ class AIPlugin(BaseModel):
     logo_url: Optional[str]
     contact_email: Optional[str]
     legal_info_url: Optional[str]
-    
+
+
 def marshal_spec(txt: str) -> dict:
     """Convert the yaml or json serialized spec to a dict."""
     try:
@@ -47,23 +45,23 @@ class AIPluginTool(BaseTool):
     def from_plugin_url(cls, url: str) -> AIPluginTool:
         open_api_spec_str = requests.get(url).text
         open_api_spec = marshal_spec(open_api_spec_str)
-        cls.plugin = AIPlugin(**requests.get(url).json())
+        plugin = AIPlugin(**open_api_spec)
         description = (
             f"Call this tool to get the OpenAPI spec (and usage guide) "
-            f"for interacting with the {cls.plugin.name_for_human} API. "
+            f"for interacting with the {plugin.name_for_human} API. "
             f"You should only call this ONCE! What is the "
-            f"{cls.plugin.name_for_human} API useful for? "
-        ) + cls.plugin.description_for_human
+            f"{plugin.name_for_human} API useful for? "
+        ) + plugin.description_for_human
 
         api_spec = (
-            f"Usage Guide: {cls.plugin.description_for_model}\n\n"
-            f"OpenAPI Spec: {requests.get(cls.plugin.api.url).json()}"
+            f"Usage Guide: {plugin.description_for_model}\n\n"
+            f"OpenAPI Spec: {requests.get(plugin.api.url).json()}"
         )
 
         return cls(
-            name=cls.plugin.name_for_model,
+            name=plugin.name_for_model,
             description=description,
-            plugin=cls.plugin,
+            plugin=plugin,
             api_spec=api_spec,
         )
 
