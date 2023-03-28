@@ -106,19 +106,28 @@ class WebBaseLoader(BaseLoader):
         """Fetch all urls, then return soups for all results."""
         from bs4 import BeautifulSoup
 
-        if parser is None:
-            parser = self.default_parser
-
-        self._check_parser(parser)
-
         results = asyncio.run(self.fetch_all(urls))
-        return [BeautifulSoup(result, parser) for result in results]
+        final_results = []
+        for i, result in enumerate(results):
+            url = urls[i]
+            if parser is None:
+                if url.endswith(".xml"):
+                    parser = "xml"
+                else:
+                    parser = self.default_parser
+                self._check_parser(parser)
+            final_results.append(BeautifulSoup(result, parser))
+
+        return final_results
 
     def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
         from bs4 import BeautifulSoup
 
         if parser is None:
-            parser = self.default_parser
+            if url.endswith(".xml"):
+                parser = "xml"
+            else:
+                parser = self.default_parser
 
         self._check_parser(parser)
 
