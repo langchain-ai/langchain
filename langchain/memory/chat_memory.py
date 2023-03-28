@@ -1,30 +1,14 @@
 from abc import ABC
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field
 
+from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
     BaseMemory,
-    BaseMessage,
-    HumanMessage,
 )
-
-
-class ChatMessageHistory(BaseChatMessageHistory):
-    messages: List[BaseMessage] = []
-    session_id: str = "default"
-
-    def add_user_message(self, message: str) -> None:
-        self.messages.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.messages.append(AIMessage(content=message))
-
-    def clear(self) -> None:
-        self.messages = []
 
 
 class BaseChatMemory(BaseMemory, ABC):

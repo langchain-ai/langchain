@@ -1,9 +1,6 @@
 import logging
 from typing import List
 
-import boto3
-from botocore.exceptions import ClientError
-
 from langchain.schema import (
     AIMessage,
     BaseChatMessageHistory,
@@ -19,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     def __init__(self, table_name: str, session_id: str):
+        import boto3
+
         client = boto3.resource("dynamodb")
         self.table = client.Table(table_name)
         self.session_id = session_id
@@ -26,6 +25,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from DynamoDB"""
+        from botocore.exceptions import ClientError
+
         try:
             response = self.table.get_item(Key={"SessionId": self.session_id})
         except ClientError as error:
@@ -50,6 +51,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
+        from botocore.exceptions import ClientError
+
         messages = messages_to_dict(self.messages)
         _message = _message_to_dict(message)
         messages.append(_message)
@@ -63,6 +66,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
+        from botocore.exceptions import ClientError
+
         try:
             self.table.delete_item(Key={"SessionId": self.session_id})
         except ClientError as err:
