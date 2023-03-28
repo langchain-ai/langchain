@@ -25,7 +25,7 @@ def test_anthropic_streaming() -> None:
         assert isinstance(token["completion"], str)
 
 
-def test_anthropic_streaming_call() -> None:
+def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
