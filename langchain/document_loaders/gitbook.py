@@ -1,5 +1,6 @@
 """Loader that loads GitBook."""
 from typing import Any, List, Optional
+from urllib.parse import urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -28,10 +29,15 @@ class GitbookLoader(WebBaseLoader):
             base_url: If `load_all_paths` is True, the relative paths are
                 appended to this base url. Defaults to `web_page` if not set.
         """
-        super().__init__(web_page)
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
             self.base_url = self.base_url[:-1]
+        if load_all_paths:
+            # set web_path to the sitemap if we want to crawl all paths
+            web_paths = f"{self.base_url}/sitemap.xml"
+        else:
+            web_paths = web_page
+        super().__init__(web_paths)
         self.load_all_paths = load_all_paths
 
     def load(self) -> List[Document]:
@@ -56,15 +62,9 @@ class GitbookLoader(WebBaseLoader):
         content = page_content_raw.get_text(separator="\n").strip()
         title_if_exists = page_content_raw.find("h1")
         title = title_if_exists.text if title_if_exists else ""
-        metadata = {
-            "source": custom_url if custom_url else self.web_path,
-            "title": title,
-        }
+        metadata = {"source": custom_url or self.web_path, "title": title}
         return Document(page_content=content, metadata=metadata)
 
     def _get_paths(self, soup: Any) -> List[str]:
         """Fetch all relative paths in the navbar."""
-        nav = soup.find("nav")
-        links = nav.findAll("a")
-        # only return relative links
-        return [link.get("href") for link in links if link.get("href")[0] == "/"]
+        return [urlparse(loc.text).path for loc in soup.find_all("loc")]
