@@ -1,7 +1,5 @@
 """Load from Dataframe object"""
-from typing import List
-
-import pandas as pd
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -10,8 +8,14 @@ from langchain.document_loaders.base import BaseLoader
 class DataFrameLoader(BaseLoader):
     """Load Pandas DataFrames."""
 
-    def __init__(self, data_frame: pd.DataFrame, page_content_column: str = "text"):
+    def __init__(self, data_frame: Any, page_content_column: str = "text"):
         """Initialize with dataframe object."""
+        import pandas as pd
+
+        if not isinstance(data_frame, pd.DataFrame):
+            raise ValueError(
+                f"Expected data_frame to be a pd.DataFrame, got {type(data_frame)}"
+            )
         self.data_frame = data_frame
         self.page_content_column = page_content_column
 
