@@ -359,7 +359,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 
@@ -383,11 +382,10 @@ The `LLMChain` discussed in the above section can be used with chat models as we
 
 ```python
 from langchain.chat_models import ChatOpenAI
-from langchain import PromptTemplate, LLMChain
+from langchain import LLMChain
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 
