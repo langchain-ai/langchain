@@ -2,7 +2,9 @@
 
 from typing import Generator
 
+from langchain.callbacks.base import CallbackManager
 from langchain.llms.anthropic import Anthropic
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 def test_anthropic_call() -> None:
@@ -21,3 +23,17 @@ def test_anthropic_streaming() -> None:
 
     for token in generator:
         assert isinstance(token["completion"], str)
+
+
+def test_anthropic_streaming_call() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    llm = Anthropic(
+        model="claude-v1",
+        streaming=True,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    llm("Write me a sentence with 100 words.")
+    assert callback_handler.llm_streams > 1
