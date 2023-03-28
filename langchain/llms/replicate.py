@@ -26,6 +26,7 @@ class Replicate(LLM, BaseModel):
             replicate = Replicate(model="stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
                                   input={"image_dimensions": "512x512"})
     """
+
     model: str
     input: Dict[str, Any] = Field(default_factory=dict)
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -92,15 +93,14 @@ class Replicate(LLM, BaseModel):
 
         # sort through the openapi schema to get the name of the first input (it isn't always "prompt")
         input_properties = sorted(
-            version.openapi_schema["components"]["schemas"]["Input"]["properties"].items(),
+            version.openapi_schema["components"]["schemas"]["Input"][
+                "properties"
+            ].items(),
             key=lambda item: item[1].get("x-order", 0),
         )
         first_input_name = input_properties[0][0]
 
-        inputs = {
-            first_input_name: prompt,
-            **self.input
-        }
+        inputs = {first_input_name: prompt, **self.input}
 
         outputs = replicate_python.run(self.model, input={**inputs})
         return outputs[0]
