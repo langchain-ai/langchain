@@ -9,6 +9,7 @@ from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 __all__ = [
     "BashProcess",
@@ -21,4 +22,5 @@ __all__ = [
     "SearxSearchWrapper",
     "BingSearchAPIWrapper",
     "WikipediaAPIWrapper",
+    "OpenWeatherMapAPIWrapper"
 ]

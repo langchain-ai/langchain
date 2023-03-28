@@ -51,6 +51,7 @@ from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
 
 verbose: bool = False
@@ -72,6 +73,7 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
+    "OpenWeatherMapAPIWrapper",
     "WikipediaAPIWrapper",
     "Anthropic",
     "Banana",
