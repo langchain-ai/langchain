@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
-from functools import partial
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -82,18 +81,22 @@ class ConversationEntityMemory(BaseChatMemory, BaseModel):
             prompt_input_key = self.input_key
 
         buffer_string = get_buffer_string(
-            self.buffer[-self.k * 2:],
+            self.buffer[-self.k * 2 :],
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
         input_data = inputs[prompt_input_key]
         chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
-        predict_summary = partial(chain.predict, history=buffer_string, input=input_data)
 
         for entity in self.entity_cache:
             existing_summary = self.store.get(entity, "")
-            output = predict_summary(summary=existing_summary, entity=entity).strip()
-            self.store[entity] = output
+            output = chain.predict(
+                summary=existing_summary,
+                entity=entity,
+                history=buffer_string,
+                input=input_data,
+            )
+            self.store[entity] = output.strip()
 
     def clear(self) -> None:
         """Clear memory contents."""
