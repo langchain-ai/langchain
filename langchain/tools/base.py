@@ -70,7 +70,7 @@ class BaseTool(BaseModel):
             self.callback_manager.on_tool_error(e, verbose=verbose)
             raise e
         self.callback_manager.on_tool_end(
-            observation, verbose=verbose, color=color, **kwargs
+            observation, verbose=verbose, color=color, name=self.name, **kwargs
         )
         return observation
 
@@ -112,10 +112,10 @@ class BaseTool(BaseModel):
             raise e
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_end(
-                observation, verbose=verbose, color=color, **kwargs
+                observation, verbose=verbose, color=color, name=self.name, **kwargs
             )
         else:
             self.callback_manager.on_tool_end(
-                observation, verbose=verbose, color=color, **kwargs
+                observation, verbose=verbose, color=color, name=self.name, **kwargs
             )
         return observation
