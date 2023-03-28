@@ -74,7 +74,7 @@ print(llm(text))
 Feetful of Fun
 ```
 
-For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/llms/getting_started.ipynb).
+For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
 `````
 
 
@@ -111,7 +111,7 @@ What is a good name for a company that makes colorful socks?
 ```
 
 
-[For more details, check out the getting started guide for prompts.](../modules/prompts/getting_started.ipynb)
+[For more details, check out the getting started guide for prompts.](../modules/prompts/chat_prompt_template.ipynb)
 
 `````
 
