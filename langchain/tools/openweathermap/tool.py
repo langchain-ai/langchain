@@ -16,8 +16,9 @@ class OpenWeatherMapQueryRun(BaseTool):
         "Input should be a location string (e.g. 'London,GB')."
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_wrapper = OpenWeatherMapAPIWrapper()
+        return
 
     def _run(self, location: str) -> str:
         """Use the OpenWeatherMap tool."""
