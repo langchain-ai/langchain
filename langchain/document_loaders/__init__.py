@@ -32,6 +32,7 @@ from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
+from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
@@ -72,6 +73,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
+    "NotionDBLoader",
     "ReadTheDocsLoader",
     "GoogleDriveLoader",
     "UnstructuredHTMLLoader",
