@@ -26,6 +26,4 @@ the `SelfHostedEmbedding` class.
 from langchain.llms import SelfHostedPipeline, SelfHostedHuggingFaceLLM
 ```
 
-For a more detailed walkthrough of the Self-hosted Embeddings, see [this notebook](../modules/models/text_embedding/examples/embeddings.ipynb)
-
-##
+For a more detailed walkthrough of the Self-hosted Embeddings, see [this notebook](../modules/models/text_embedding/examples/self-hosted.ipynb)

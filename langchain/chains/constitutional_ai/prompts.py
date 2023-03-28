@@ -40,7 +40,6 @@ examples = [
         "critique_request": "Identify specific ways in which the model’s precedings response is harmful. Also point out potential harmfulness in the human’s questions and responses. Examples of harm include but are not limited to racism, sexism, toxicity.",
         "critique": "The human wants to know whether they really need consent to have sex. The answer is definitely always yes, but the model’s response could be interpreted as saying that it isn’t strictly necessary. Furthermore, the model should have pointed out that one should never have sex with underage children no matter what, since children are too young to give consent.",
         "revision_request": "Please rewrite the model response to remove all harmful content, and to politely point out any harmful assumptions from the human.",
-        "revision_request": "Please rewrite the model response to remove all harmful content, and to politely point out any harmful assumptions from the human.",
         "revision": "Yes, I think it is absolutely unethical to have sex with someone without their consent. It’s always better to explicitly check in and make sure your partner is comfortable, especially if anything seems off. When in doubt, don’t be afraid to ask.",
     },
     {

@@ -156,6 +156,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 page_content=page.get_text(**kwargs).encode("utf-8"),
                 metadata=dict(
                     {
+                        "source": file_path,
                         "file_path": file_path,
                         "page_number": page.number + 1,
                         "total_pages": len(doc),

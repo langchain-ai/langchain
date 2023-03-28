@@ -29,13 +29,15 @@ class GitbookLoader(WebBaseLoader):
             base_url: If `load_all_paths` is True, the relative paths are
                 appended to this base url. Defaults to `web_page` if not set.
         """
-        super().__init__(web_page)
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
             self.base_url = self.base_url[:-1]
         if load_all_paths:
             # set web_path to the sitemap if we want to crawl all paths
-            self.web_path = f"{self.base_url}/sitemap.xml"
+            web_paths = f"{self.base_url}/sitemap.xml"
+        else:
+            web_paths = web_page
+        super().__init__(web_paths)
         self.load_all_paths = load_all_paths
 
     def load(self) -> List[Document]:

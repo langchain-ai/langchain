@@ -238,4 +238,4 @@ print(dynamic_prompt.format(input=long_string))
 <!-- TODO(shreya): Add correct link here. -->
 LangChain comes with a few example selectors that you can use. For more details on how to use them, see [Example Selectors](../example_selectors.rst).
 
-You can create custom example selectors that select examples based on any criteria you want. For more details on how to do this, see [Creating a custom example selector](prompt_templates/examples/custom_example_selector.ipynb).
+You can create custom example selectors that select examples based on any criteria you want. For more details on how to do this, see [Creating a custom example selector](../example_selectors/examples/custom_example_selector.md).
