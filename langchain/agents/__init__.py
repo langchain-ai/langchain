@@ -10,6 +10,7 @@ from langchain.agents.agent_toolkits import (
     create_vectorstore_router_agent,
 )
 from langchain.agents.conversational.base import ConversationalAgent
+from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import get_all_tool_names, load_tools
 from langchain.agents.loading import load_agent
@@ -32,6 +33,7 @@ __all__ = [
     "load_tools",
     "get_all_tool_names",
     "ConversationalAgent",
+    "ConversationalChatAgent",
     "load_agent",
     "create_sql_agent",
     "create_json_agent",
