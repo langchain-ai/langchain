@@ -276,7 +276,10 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
+    @property
+    @abstractmethod
+    def messages(self) -> List[BaseMessage]:
+        """Return a list of messages."""
 
     @abstractmethod
     def add_user_message(self, message: str) -> None:

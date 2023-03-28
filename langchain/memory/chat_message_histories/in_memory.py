@@ -1,5 +1,7 @@
 from typing import List
 
+from pydantic import BaseModel, Field
+
 from langchain.schema import (
     AIMessage,
     BaseChatMessageHistory,
@@ -8,8 +10,12 @@ from langchain.schema import (
 )
 
 
-class ChatMessageHistory(BaseChatMessageHistory):
-    messages: List[BaseMessage] = []
+class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    chat_messages: List[BaseMessage] = Field(default_factory=list, alias="messages")
+
+    @property
+    def messages(self) -> List[BaseMessage]:
+        return self.chat_messages
 
     def add_user_message(self, message: str) -> None:
         self.messages.append(HumanMessage(content=message))
@@ -18,4 +24,4 @@ class ChatMessageHistory(BaseChatMessageHistory):
         self.messages.append(AIMessage(content=message))
 
     def clear(self) -> None:
-        self.messages = []
+        self.chat_messages = []
