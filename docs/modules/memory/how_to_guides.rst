@@ -18,7 +18,6 @@ Usage
 -----
 
 The examples here all highlight how to use memory in different ways.
-
 .. toctree::
    :maxdepth: 1
    :glob:
