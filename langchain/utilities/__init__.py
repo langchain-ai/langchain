@@ -5,11 +5,11 @@ from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 
 __all__ = [
     "BashProcess",
@@ -22,5 +22,5 @@ __all__ = [
     "SearxSearchWrapper",
     "BingSearchAPIWrapper",
     "WikipediaAPIWrapper",
-    "OpenWeatherMapAPIWrapper"
+    "OpenWeatherMapAPIWrapper",
 ]
