@@ -126,8 +126,8 @@ class VectorStore(ABC):
     ) -> VectorStore:
         """Return VectorStore initialized from texts and embeddings."""
 
-    def as_retriever(self) -> VectorStoreRetriever:
-        return VectorStoreRetriever(vectorstore=self)
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
 class VectorStoreRetriever(BaseRetriever, BaseModel):
