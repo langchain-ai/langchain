@@ -18,12 +18,15 @@ class Replicate(LLM, BaseModel):
     and the environment variable ``REPLICATE_API_TOKEN`` set with your API token.
     You can find your token here: https://replicate.com/account
 
-    The model param is required, but any other model parameters can also be passed in with the format input={model_param: value, ...}
+    The model param is required, but any other model parameters can also
+    be passed in with the format input={model_param: value, ...}
 
     Example:
         .. code-block:: python
             from langchain.llms import Replicate
-            replicate = Replicate(model="stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+            replicate = Replicate(model="stability-ai/stable-diffusion: \
+                                         27b93a2413e7f36cd83da926f365628\
+                                         0b2931564ff050bf9575f1fdf9bcd7478",
                                   input={"image_dimensions": "512x512"})
     """
 
