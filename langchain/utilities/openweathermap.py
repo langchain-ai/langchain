@@ -33,7 +33,15 @@ class OpenWeatherMapAPIWrapper(BaseModel):
         )
         values["openweathermap_api_key"] = openweathermap_api_key
 
-        owm = OWM(openweathermap_api_key)
+        try:
+            import pyowm
+
+        except ImportError:
+            raise ImportError(
+                "pyowm is not installed. " "Please install it with `pip install pyowm`"
+            )
+
+        owm = pyowm.OWM(openweathermap_api_key)
         values["owm"] = owm
 
         return values
