@@ -14,12 +14,10 @@ from aleph_alpha_client import (
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """
-    Wrapper around Aleph Alpha Asymmetric Embeddings
-    AA provides you with an endpoint for to embed the Document and a Query.
-    The models were optimized to make the embeddings of document and the query for
-    a document as similar to each other as possible.
-
-    To learn more check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+Wrapper for Aleph Alpha Asymmetric Embeddings
+AA provides you with an endpoint to embed a document and a query.
+The models were optimized to make the embeddings of documents and the query for a document as similar to each other
+as possible. To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
     """
 
     client: Any  #: :meta private:
@@ -27,10 +25,17 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     model: Optional[str] = "luminous-base"
     """Model name to use."""
     hosting: Optional[str] = ("https://api.aleph-alpha.com",)
+    """Optional parameter that specifies which datacenters may process the request."""
     normalize: Optional[bool] = True
+    """Should returned embeddings be normalized"""
     compress_to_size: Optional[int] = 128
+    """
+    Should the returned embeddings come back as an original 5120-dim vector, or should it be compressed to 128-dim
+    """
     contextual_control_threshold: Optional[int] = None
+    """Attention control parameters only apply to those tokens that have explicitly been set in the request"""
     control_log_additive: Optional[bool] = True
+    """Apply controls on prompt items by adding the log(control_factor) to attention scores"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
