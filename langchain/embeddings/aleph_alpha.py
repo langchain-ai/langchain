@@ -1,26 +1,24 @@
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
-
-from aleph_alpha_client import (
-    Client,
-    Prompt,
-    SemanticRepresentation,
-    SemanticEmbeddingRequest,
-)
 
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """
     Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.
-    The models were optimized to make the embeddings of a document and the query about the document as similar to each other
-    as possible.Wrapper for Aleph Alpha's Asymmetric Embeddings
+    The models were optimized to make the embeddings of a document and
+    the query about the document as similar to each other
+    as possible. Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.
-    The models were optimized to make the embeddings of documents and the query for a document as similar as possible.
-    To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/ To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+    The models were optimized to make the embeddings of documents and
+    the query for a document as similar as possible.
+    To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+    To learn more, check out:
+    https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
 
     Example:
         .. code-block:: python
@@ -46,13 +44,14 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     normalize: Optional[bool] = True
     """Should returned embeddings be normalized"""
     compress_to_size: Optional[int] = 128
-    """
-    Should the returned embeddings come back as an original 5120-dim vector, or should it be compressed to 128-dim
-    """
+    """Should the returned embeddings come back as an original 5120-dim vector, 
+    or should it be compressed to 128-dim."""
     contextual_control_threshold: Optional[int] = None
-    """Attention control parameters only apply to those tokens that have explicitly been set in the request"""
+    """Attention control parameters only apply to those tokens that have 
+    explicitly been set in the request."""
     control_log_additive: Optional[bool] = True
-    """Apply controls on prompt items by adding the log(control_factor) to attention scores"""
+    """Apply controls on prompt items by adding the log(control_factor) 
+    to attention scores."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -61,12 +60,15 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
             values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
         )
         try:
-            values["client"] = Client(token=aleph_alpha_api_key)
+            from aleph_alpha_client import (
+                Client,
+            )
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
                 "Please it install it with `pip install aleph_alpha_client`."
             )
+        values["client"] = Client(token=aleph_alpha_api_key)
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -78,6 +80,17 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        try:
+            from aleph_alpha_client import (
+                Prompt,
+                SemanticEmbeddingRequest,
+                SemanticRepresentation,
+            )
+        except ImportError:
+            raise ValueError(
+                "Could not import aleph_alpha_client python package. "
+                "Please it install it with `pip install aleph_alpha_client`."
+            )
         document_embeddings = []
 
         for text in texts:
@@ -107,6 +120,17 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+        try:
+            from aleph_alpha_client import (
+                Prompt,
+                SemanticEmbeddingRequest,
+                SemanticRepresentation,
+            )
+        except ImportError:
+            raise ValueError(
+                "Could not import aleph_alpha_client python package. "
+                "Please it install it with `pip install aleph_alpha_client`."
+            )
         symmetric_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Query,
@@ -125,8 +149,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
 
 class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
-    """
-    The symmetric version of the Aleph Alpha's semantic embeddings. The main difference is that here, both the documents and
+    """The symmetric version of the Aleph Alpha's semantic embeddings.
+
+    The main difference is that here, both the documents and
     queries are embedded with a SemanticRepresentation.Symmetric
     Example:
         .. code-block:: python
@@ -138,7 +163,19 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
             doc_result = embeddings.embed_documents([text])
             query_result = embeddings.embed_query(text)
     """
+
     def _embed(self, text: str) -> List[float]:
+        try:
+            from aleph_alpha_client import (
+                Prompt,
+                SemanticEmbeddingRequest,
+                SemanticRepresentation,
+            )
+        except ImportError:
+            raise ValueError(
+                "Could not import aleph_alpha_client python package. "
+                "Please it install it with `pip install aleph_alpha_client`."
+            )
         query_params = {
             "prompt": Prompt.from_text(text),
             "representation": SemanticRepresentation.Symmetric,

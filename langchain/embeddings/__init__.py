@@ -2,6 +2,10 @@
 import logging
 from typing import Any
 
+from langchain.embeddings.aleph_alpha import (
+    AlephAlphaAsymmetricSemanticEmbedding,
+    AlephAlphaSymmetricSemanticEmbedding,
+)
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.huggingface import (
@@ -18,7 +22,6 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
-from langchain.embeddings.aleph_alpha import AlephAlphaAsymmetricSemanticEmbedding, AlephAlphaSymmetricSemanticEmbedding
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,7 @@ __all__ = [
     "SelfHostedHuggingFaceInstructEmbeddings",
     "FakeEmbeddings",
     "AlephAlphaAsymmetricSemanticEmbedding",
-    "AlephAlphaSymmetricSemanticEmbedding"
+    "AlephAlphaSymmetricSemanticEmbedding",
 ]
 
 
