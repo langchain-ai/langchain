@@ -37,7 +37,7 @@ Can a dog drive a car?
 llm(prompt)
 ```
 
-We can call any replicate model (not just LLMs) using this syntax. For example, we can call stable diffusion:
+We can call any Replicate model (not just LLMs) using this syntax. For example, we can call [Stable Diffusion](https://replicate.com/stability-ai/stable-diffusion):
 
 ```python
 text2image = Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
