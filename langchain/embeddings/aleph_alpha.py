@@ -14,10 +14,24 @@ from aleph_alpha_client import (
 
 class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """
-Wrapper for Aleph Alpha Asymmetric Embeddings
-AA provides you with an endpoint to embed a document and a query.
-The models were optimized to make the embeddings of documents and the query for a document as similar to each other
-as possible. To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+    Wrapper for Aleph Alpha Asymmetric Embeddings
+    AA provides you with an endpoint to embed a document and a query.
+    The models were optimized to make the embeddings of documents and the query for a document as similar to each other
+    as possible. To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
+
+    Example:
+        .. code-block:: python
+
+            from aleph_alpha import AlephAlphaAsymmetricSemanticEmbedding
+
+            embeddings = AlephAlphaSymmetricSemanticEmbedding()
+
+            document = "This is a content of the document"
+            query = "What is the content of the document?"
+
+            doc_result = embeddings.embed_documents([document])
+            query_result = embeddings.embed_query(query)
+
     """
 
     client: Any  #: :meta private:
@@ -108,8 +122,19 @@ as possible. To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/s
 
 
 class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
-    # The symmetric version of the Aleph Alpha's embeddings. The main difference is that here, both the documents and
-    # queries are embedded with a SemanticRepresentation.Symmetric
+    """
+    The symmetric version of the Aleph Alpha's embeddings. The main difference is that here, both the documents and
+    queries are embedded with a SemanticRepresentation.Symmetric
+    Example:
+        .. code-block:: python
+            from aleph_alpha import AlephAlphaSymmetricSemanticEmbedding
+
+            embeddings = AlephAlphaAsymmetricSemanticEmbedding()
+            text = "This is a test text"
+
+            doc_result = embeddings.embed_documents([text])
+            query_result = embeddings.embed_query(text)
+    """
     def _embed(self, text: str) -> List[float]:
         query_params = {
             "prompt": Prompt.from_text(text),
