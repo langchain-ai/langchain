@@ -17,6 +17,7 @@ SQLAlchemy = "^1"
 requests = "^2"
 PyYAML = ">=5.4.1"
 numpy = "^1"
+pandas = ">=1.5.3"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
 elasticsearch = {version = "^8", optional = true}

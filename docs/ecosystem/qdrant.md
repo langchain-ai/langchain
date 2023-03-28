@@ -17,4 +17,4 @@ To import this vectorstore:
 from langchain.vectorstores import Qdrant
 ```
 
-For a more detailed walkthrough of the Qdrant wrapper, see [this notebook](../modules/indexes/vectorstore_examples/qdrant.ipynb)
+For a more detailed walkthrough of the Qdrant wrapper, see [this notebook](../modules/indexes/vectorstores/examples/qdrant.ipynb)

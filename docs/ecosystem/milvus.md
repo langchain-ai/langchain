@@ -17,4 +17,4 @@ To import this vectorstore:
 from langchain.vectorstores import Milvus
 ```
 
-For a more detailed walkthrough of the Miluvs wrapper, see [this notebook](../modules/indexes/vectorstore_examples/milvus.ipynb)
+For a more detailed walkthrough of the Miluvs wrapper, see [this notebook](../modules/indexes/vectorstores/examples/milvus.ipynb)

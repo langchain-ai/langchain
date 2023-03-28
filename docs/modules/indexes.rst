@@ -1,6 +1,10 @@
 Indexes
 ==========================
 
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing>`_
+
+
 Indexes refer to ways to structure documents so that LLMs can best interact with them.
 This module contains utility functions for working with documents, different types of indexes, and then examples for using those indexes in chains.
 
@@ -14,20 +18,42 @@ For interacting with structured data (SQL tables, etc) or APIs, please see the c
 The primary index and retrieval types supported by LangChain are currently centered around vector databases, and therefore
 a lot of the functionality we dive deep on those topics.
 
-The following sections of documentation are provided:
+For an overview of everything related to this, please see the below notebook for getting started:
 
-- `Getting Started <./indexes/getting_started.html>`_: An overview of the base "Retriever" interface, and then all the functionality LangChain provides for working with indexes.
+.. toctree::
+   :maxdepth: 1
 
-- `Key Concepts <./indexes/key_concepts.html>`_: A conceptual guide going over the various concepts related to indexes and the tools needed to create them.
+   ./indexes/getting_started.ipynb
 
-- `How-To Guides <./indexes/how_to_guides.html>`_: A collection of how-to guides. These highlight how to use all the relevant tools, the different types of vector databases, different types of retrievers, and how to use retrievers and indexes in chains.
+We then provide a deep dive on the four main components.
+
+**Document Loaders**
+
+How to load documents from a variety of sources.
+
+**Text Splitters**
+
+An overview of the abstractions and implementions around splitting text.
+
+
+**VectorStores**
+
+An overview of VectorStores and the many integrations LangChain provides.
+
+
+**Retrievers**
+
+An overview of Retrievers and the implementations LangChain provides.
+
+Go Deeper
+---------
 
 
 .. toctree::
    :maxdepth: 1
-   :name: LLMs
-   :hidden:
 
-   ./indexes/getting_started.ipynb
-   ./indexes/key_concepts.md
-   ./indexes/how_to_guides.rst
+   ./indexes/document_loaders.rst
+   ./indexes/text_splitters.rst
+   ./indexes/vectorstores.rst
+   ./indexes/retrievers.rst
+

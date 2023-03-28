@@ -87,13 +87,15 @@ class DocstoreExplorer:
         """Initialize with a docstore, and set initial document to None."""
         self.docstore = docstore
         self.document: Optional[Document] = None
+        self.lookup_str = ""
+        self.lookup_index = 0
 
     def search(self, term: str) -> str:
         """Search for a term in the docstore, and if found save."""
         result = self.docstore.search(term)
         if isinstance(result, Document):
             self.document = result
-            return self.document.summary
+            return self._summary
         else:
             self.document = None
             return result
@@ -102,7 +104,29 @@ class DocstoreExplorer:
         """Lookup a term in document (if saved)."""
         if self.document is None:
             raise ValueError("Cannot lookup without a successful search first")
-        return self.document.lookup(term)
+        if term.lower() != self.lookup_str:
+            self.lookup_str = term.lower()
+            self.lookup_index = 0
+        else:
+            self.lookup_index += 1
+        lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
+        if len(lookups) == 0:
+            return "No Results"
+        elif self.lookup_index >= len(lookups):
+            return "No More Results"
+        else:
+            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+            return f"{result_prefix} {lookups[self.lookup_index]}"
+
+    @property
+    def _summary(self) -> str:
+        return self._paragraphs[0]
+
+    @property
+    def _paragraphs(self) -> List[str]:
+        if self.document is None:
+            raise ValueError("Cannot get paragraphs without a document")
+        return self.document.page_content.split("\n\n")
 
 
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
