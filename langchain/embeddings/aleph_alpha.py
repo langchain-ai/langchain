@@ -41,7 +41,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
     model: Optional[str] = "luminous-base"
     """Model name to use."""
-    hosting: Optional[str] = ("https://api.aleph-alpha.com",)
+    hosting: Optional[str] = "https://api.aleph-alpha.com"
     """Optional parameter that specifies which datacenters may process the request."""
     normalize: Optional[bool] = True
     """Should returned embeddings be normalized"""
