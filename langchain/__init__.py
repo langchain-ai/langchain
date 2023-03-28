@@ -40,6 +40,7 @@ from langchain.llms import (
     Writer,
 )
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.powerbi import PowerBIDataset
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -100,6 +101,7 @@ __all__ = [
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",
+    "PowerBIDataset",
     "FAISS",
     "MRKLChain",
     "VectorDBQA",

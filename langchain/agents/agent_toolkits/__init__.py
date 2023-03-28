@@ -7,6 +7,8 @@ from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
 from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
 from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
 from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
+from langchain.agents.agent_toolkits.powerbi.base import create_pbi_agent
+from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.python.base import create_python_agent
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
@@ -25,11 +27,13 @@ __all__ = [
     "create_json_agent",
     "create_sql_agent",
     "create_openapi_agent",
+    "create_pbi_agent",
     "create_python_agent",
     "create_vectorstore_agent",
     "JsonToolkit",
     "SQLDatabaseToolkit",
     "NLAToolkit",
+    "PowerBIToolkit",
     "OpenAPIToolkit",
     "VectorStoreToolkit",
     "create_vectorstore_router_agent",
