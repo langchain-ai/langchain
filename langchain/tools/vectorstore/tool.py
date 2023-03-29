@@ -71,7 +71,9 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        chain = VectorDBQAWithSourcesChain.from_chain_type(self.llm, vectorstore=self.vectorstore)
+        chain = VectorDBQAWithSourcesChain.from_chain_type(
+            self.llm, vectorstore=self.vectorstore
+        )
         return json.dumps(chain({chain.question_key: query}, return_only_outputs=True))
 
     async def _arun(self, query: str) -> str:
@@ -133,9 +135,7 @@ class VectorStoreMemoryDeletionTool(BaseTool):
     num_results: int = 4
 
     name = "Vector Store Memory Deletion"
-    description = (
-        "Something you previously decided to remember but now you don't want to remember anymore."
-    )
+    description = "Something you previously decided to remember but now you don't want to remember anymore."
 
     vectorstore: VectorStore = Field(exclude=True)
 
