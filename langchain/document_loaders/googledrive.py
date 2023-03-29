@@ -96,12 +96,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         return creds
 
-    def _load_sheet_from_id(self, id: str) -> Document:
+    def _load_sheet_from_id(self, id: str) -> List[Document]:
         """Load a sheet and all tabs from an ID."""
-        from io import BytesIO
 
         from googleapiclient.discovery import build
-        from googleapiclient.http import MediaIoBaseDownload
 
         creds = self._load_credentials()
         sheets_service = build("sheets", "v4", credentials=creds)
@@ -111,13 +109,21 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         documents = []
         for sheet in sheets:
             sheet_name = sheet["properties"]["title"]
-            result = sheets_service.spreadsheets().values().get(spreadsheetId=id, range=sheet_name).execute()
+            result = (
+                sheets_service.spreadsheets()
+                .values()
+                .get(spreadsheetId=id, range=sheet_name)
+                .execute()
+            )
             values = result.get("values", [])
 
             header = values[0]
             for i, row in enumerate(values[1:], start=1):
                 metadata = {
-                    "source": f"https://docs.google.com/spreadsheets/d/{id}/edit?gid={sheet['properties']['sheetId']}",
+                    "source": (
+                        f"https://docs.google.com/spreadsheets/d/{id}/"
+                        f"edit?gid={sheet['properties']['sheetId']}"
+                    ),
                     "title": f"{spreadsheet['properties']['title']} - {sheet_name}",
                     "row": i,
                 }
