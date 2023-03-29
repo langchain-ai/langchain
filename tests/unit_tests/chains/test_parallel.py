@@ -135,19 +135,20 @@ def test_parallel_concurrency_speedup() -> None:
             )
             for i in range(num_child_chains)
         },
+        concurrent=True,
     )
 
     inputs = {"input1": "foo", "input2": "bar"}
 
     # measure time with concurrency
     start_time_concurrent = time.time()
-    chain(inputs)
+    concurrent_output = chain(inputs)
     end_time_concurrent = time.time()
 
     # measure time without concurrency
     chain.concurrent = False
     start_time_serial = time.time()
-    chain(inputs)
+    serial_output = chain(inputs)
     end_time_serial = time.time()
 
     # check that concurrent execution is faster.
@@ -157,6 +158,75 @@ def test_parallel_concurrency_speedup() -> None:
         end_time_concurrent - start_time_concurrent
         < end_time_serial - start_time_serial
     )
+    assert concurrent_output == serial_output
+
+
+def test_parallel_nested_speedup() -> None:
+    """Test nested concurrent ParallelChains."""
+    num_child_chains = 3
+
+    input_variables = ["input1", "input2"]
+
+    chain_concurrent = SimpleParallelChain(
+        input_variables=input_variables,
+        chains={
+            f"output{i}": SimpleParallelChain(
+                input_variables=input_variables,
+                chains={
+                    f"output{i}_{j}": FakeChain(
+                        input_variables=input_variables,
+                        output_variables=[f"chain_out{i}_{j}"],
+                        chain_id=i * num_child_chains + j,
+                    )
+                    for j in range(num_child_chains)
+                },
+                concurrent=True,
+            )
+            for i in range(num_child_chains)
+        },
+        concurrent=True,
+    )
+
+    chain_serial = SimpleParallelChain(
+        input_variables=input_variables,
+        chains={
+            f"output{i}": SimpleParallelChain(
+                input_variables=input_variables,
+                chains={
+                    f"output{i}_{j}": FakeChain(
+                        input_variables=input_variables,
+                        output_variables=[f"chain_out{i}_{j}"],
+                        chain_id=i * num_child_chains + j,
+                    )
+                    for j in range(num_child_chains)
+                },
+                concurrent=False,
+            )
+            for i in range(num_child_chains)
+        },
+        concurrent=False,
+    )
+
+    inputs = {"input1": "foo", "input2": "bar"}
+
+    # measure time with concurrency
+    start_time_concurrent = time.time()
+    output_concurrent = chain_concurrent(inputs)
+    end_time_concurrent = time.time()
+
+    # measure time without concurrency
+    start_time_serial = time.time()
+    output_serial = chain_serial(inputs)
+    end_time_serial = time.time()
+
+    # check that concurrent execution is faster.
+    # Serial execution will run for >= 10 sec because each child chain sleeps >= sec.
+    # Parallel execution will run for <= 2 sec because each child chain sleeps <= 2 sec.
+    assert (
+        end_time_concurrent - start_time_concurrent
+        < end_time_serial - start_time_serial
+    )
+    assert output_concurrent == output_serial
 
 
 # if we allow child chains to have different inputs, we should remove the following tests
