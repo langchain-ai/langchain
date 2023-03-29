@@ -174,7 +174,9 @@ class LLMChain(Chain, BaseModel):
         else:
             return result
 
-    async def apredict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
+    async def apredict_and_parse(
+        self, **kwargs: Any
+    ) -> Union[str, List[str], Dict[str, str]]:
         """Call apredict and then parse the results."""
         result = await self.apredict(**kwargs)
         if self.prompt.output_parser is not None:
