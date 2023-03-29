@@ -207,6 +207,9 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        raise NotImplementedError("VectorDBQA does not support async")
+
     @property
     def _chain_type(self) -> str:
         """Return the chain type."""
