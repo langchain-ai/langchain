@@ -25,7 +25,7 @@ from langchain.tools.base import BaseTool
 logger = logging.getLogger()
 
 
-class BaseAgent(BaseModel):
+class BaseSingleActionAgent(BaseModel):
     """Base Agent class."""
 
     @property
@@ -143,7 +143,7 @@ class AgentOutputParser(BaseOutputParser):
         """Parse text into agent action/finish."""
 
 
-class LLMAgent(BaseAgent):
+class LLMSingleActionAgent(BaseSingleActionAgent):
     llm_chain: LLMChain
     output_parser: AgentOutputParser
     stop: List[str]
@@ -195,7 +195,7 @@ class LLMAgent(BaseAgent):
         }
 
 
-class Agent(BaseAgent):
+class Agent(BaseSingleActionAgent):
     """Class responsible for calling the language model and deciding the action.
 
     This is driven by an LLMChain. The prompt in the LLMChain MUST include
@@ -434,7 +434,7 @@ class Agent(BaseAgent):
 class AgentExecutor(Chain, BaseModel):
     """Consists of an agent using tools."""
 
-    agent: BaseAgent
+    agent: BaseSingleActionAgent
     tools: Sequence[BaseTool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
@@ -443,7 +443,7 @@ class AgentExecutor(Chain, BaseModel):
     @classmethod
     def from_agent_and_tools(
         cls,
-        agent: BaseAgent,
+        agent: BaseSingleActionAgent,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
