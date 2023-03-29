@@ -58,7 +58,7 @@ class SitemapLoader(WebBaseLoader):
 
         els = self.parse_sitemap(soup)
 
-        results = self.scrape_all([el["loc"] for el in els if "loc" in el])
+        results = self.scrape_all([el["loc"].strip() for el in els if "loc" in el])
 
         return [
             Document(
