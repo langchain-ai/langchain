@@ -82,7 +82,7 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
@@ -128,7 +128,9 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
         }
-        return cls(input_variables=list(sorted(input_variables)), template=template, **kwargs)
+        return cls(
+            input_variables=list(sorted(input_variables)), template=template, **kwargs
+        )
 
 
 # For backwards compatibility.
