@@ -1,11 +1,10 @@
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import functools
-import time
+import concurrent.futures
 import random
+import time
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Extra, root_validator
+
 from langchain.chains.base import Chain
 
 
@@ -67,48 +66,114 @@ class SimpleParallelChain(Chain, BaseModel):
     def _run_child(
         self, inputs: Dict[str, str], key: str, chain: Chain
     ) -> Dict[str, str]:
+        if self.verbose:
+            print(f'Child chain for key="{key}" started.')
+            t0 = time.time()
         result = chain(inputs, return_only_outputs=True)
+        if self.verbose:
+            print(
+                f'Child chain for key="{key}" finished after {time.time() - t0:.2f} seconds.'
+            )
         return {f"{key}/{k}": v for k, v in result.items()}
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         if self.concurrent:
-            loop = asyncio.get_event_loop()
-            outputs = loop.run_until_complete(self._acall(inputs))
+            outputs = {}
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=len(self.chains)
+            ) as executor:
+                futures = {
+                    executor.submit(self._run_child, inputs, key, chain): key
+                    for key, chain in self.chains.items()
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    key = futures[future]
+                    try:
+                        outputs.update(future.result())
+                    except Exception as exc:
+                        print(f"Chain {key} generated an exception: {exc}")
         else:
             outputs = {}
             for key, chain in self.chains.items():
                 outputs.update(self._run_child(inputs, key, chain))
         return outputs
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        loop = asyncio.get_event_loop()
-        tasks = []
-        for key, chain in self.chains.items():
-            tasks.append(loop.create_task(self._arun_child(loop, key, chain, inputs)))
-        results = await asyncio.gather(*tasks)
-        if self.verbose:
-            print("All chains have finished.")
-        outputs = {}
-        for result in results:
-            outputs.update(result)
-        return outputs
 
-    async def _arun_child(
-        self,
-        loop: asyncio.AbstractEventLoop,
-        key: str,
-        chain: Chain,
-        inputs: Dict[str, str],
-    ) -> Dict[str, str]:
-        if self.verbose:
-            print(f'Child chain for key="{key}" started.')
-            t0 = time.time()
-        # Run blocking function in a thread pool
-        func = functools.partial(self._run_child, key=key, chain=chain)
-        with ThreadPoolExecutor() as pool:
-            result = await loop.run_in_executor(pool, func, inputs)
-        if self.verbose:
-            print(
-                f'Child chain for key="{key}" finished after {time.time() - t0:.2f} seconds.'
+if __name__ == "__main__":
+    import pprint
+
+    class FakeChain(Chain, BaseModel):
+        """Fake Chain for testing purposes."""
+
+        input_variables: List[str]
+        output_variables: List[str]
+        chain_id: int
+
+        @property
+        def input_keys(self) -> List[str]:
+            """Input keys this chain returns."""
+            return self.input_variables
+
+        @property
+        def output_keys(self) -> List[str]:
+            """Input keys this chain returns."""
+            return self.output_variables
+
+        def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+            time.sleep(random.uniform(1, 2))
+            outputs = {}
+            for var in self.output_variables:
+                variables = [inputs[k] for k in self.input_variables]
+                outputs[var] = f"{' '.join(variables)} {self.chain_id}"
+            return outputs
+
+    num_child_chains = 3
+
+    input_variables = ["input1", "input2"]
+
+    chain = SimpleParallelChain(
+        input_variables=input_variables,
+        chains={
+            f"output{i}": SimpleParallelChain(
+                input_variables=input_variables,
+                chains={
+                    f"output{i}_{j}": FakeChain(
+                        input_variables=input_variables,
+                        output_variables=[f"chain_out{i}_{j}"],
+                        chain_id=i * num_child_chains + j,
+                    )
+                    for j in range(num_child_chains)
+                },
+                verbose=True,
+                concurrent=False,
             )
-        return result
+            for i in range(num_child_chains)
+        },
+        verbose=True,
+        concurrent=False,
+    )
+
+    inputs = {"input1": "foo", "input2": "bar"}
+
+    # measure time with concurrency
+    start_time_concurrent = time.time()
+    output = chain(inputs)
+    end_time_concurrent = time.time()
+
+    expected_output = {
+        "input1": "foo",
+        "input2": "bar",
+        "output0/output0_0/chain_out0_0": "foo bar 0",
+        "output0/output0_1/chain_out0_1": "foo bar 1",
+        "output0/output0_2/chain_out0_2": "foo bar 2",
+        "output1/output1_0/chain_out1_0": "foo bar 3",
+        "output1/output1_1/chain_out1_1": "foo bar 4",
+        "output1/output1_2/chain_out1_2": "foo bar 5",
+        "output2/output2_0/chain_out2_0": "foo bar 6",
+        "output2/output2_1/chain_out2_1": "foo bar 7",
+        "output2/output2_2/chain_out2_2": "foo bar 8",
+    }
+
+    pprint.pprint(output)
+    pprint.pprint(expected_output)
+    print(f"That took {end_time_concurrent - start_time_concurrent:.2f} seconds")
