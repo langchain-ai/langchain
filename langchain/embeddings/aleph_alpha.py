@@ -10,15 +10,9 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     """
     Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.
-    The models were optimized to make the embeddings of a document and
-    the query about the document as similar to each other
-    as possible. Wrapper for Aleph Alpha's Asymmetric Embeddings
-    AA provides you with an endpoint to embed a document and a query.
     The models were optimized to make the embeddings of documents and
     the query for a document as similar as possible.
     To learn more, check out: https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
-    To learn more, check out:
-    https://docs.aleph-alpha.com/docs/tasks/semantic_embed/
 
     Example:
         .. code-block:: python
