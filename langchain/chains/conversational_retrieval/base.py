@@ -86,9 +86,9 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         else:
             return {self.output_key: answer}
 
+    @abstractmethod
     async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs."""
-        raise NotImplementedError
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
@@ -200,6 +200,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
         return self.vectorstore.similarity_search(
             question, k=self.top_k_docs_for_context, **full_kwargs
         )
+
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        raise NotImplementedError("ChatVectorDBChain does not support async")
 
     @classmethod
     def from_llm(
