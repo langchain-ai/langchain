@@ -20,7 +20,7 @@ class RequestsWrapper(BaseModel):
 
     def get(self, url: str, **kwargs: Any) -> str:
         """GET the URL and return the text."""
-        return requests.get(url, headers=self.headers, **kwargs).text
+        return requests.get(url, headers=self.headers, **kwargs).json()
 
     def post(self, url: str, data: Dict[str, Any]) -> str:
         """POST to the URL and return the text."""
