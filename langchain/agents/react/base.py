@@ -44,7 +44,7 @@ class ReActDocstoreAgent(Agent, BaseModel):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         action_prefix = "Action: "
         if not text.strip().split("\n")[-1].startswith(action_prefix):
-            raise ValueError
+            return None
         action_block = text.strip().split("\n")[-1]
 
         action_str = action_block[len(action_prefix) :]
