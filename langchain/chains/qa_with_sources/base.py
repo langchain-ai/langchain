@@ -129,6 +129,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             result["source_documents"] = docs
         return result
 
+    @abstractmethod
     async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs to run questioning over."""
 
