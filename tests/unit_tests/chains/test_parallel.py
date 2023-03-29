@@ -219,6 +219,20 @@ def test_parallel_nested_speedup() -> None:
     output_serial = chain_serial(inputs)
     end_time_serial = time.time()
 
+    expected_output = {
+        "input1": "foo",
+        "input2": "bar",
+        "output0/output0_0/chain_out0_0": "foo bar 0",
+        "output0/output0_1/chain_out0_1": "foo bar 1",
+        "output0/output0_2/chain_out0_2": "foo bar 2",
+        "output1/output1_0/chain_out1_0": "foo bar 3",
+        "output1/output1_1/chain_out1_1": "foo bar 4",
+        "output1/output1_2/chain_out1_2": "foo bar 5",
+        "output2/output2_0/chain_out2_0": "foo bar 6",
+        "output2/output2_1/chain_out2_1": "foo bar 7",
+        "output2/output2_2/chain_out2_2": "foo bar 8",
+    }
+
     # check that concurrent execution is faster.
     # Serial execution will run for >= 10 sec because each child chain sleeps >= sec.
     # Parallel execution will run for <= 2 sec because each child chain sleeps <= 2 sec.
@@ -226,7 +240,7 @@ def test_parallel_nested_speedup() -> None:
         end_time_concurrent - start_time_concurrent
         < end_time_serial - start_time_serial
     )
-    assert output_concurrent == output_serial
+    assert output_concurrent == output_serial == expected_output
 
 
 # if we allow child chains to have different inputs, we should remove the following tests
