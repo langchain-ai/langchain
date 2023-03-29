@@ -313,7 +313,7 @@ class OpenSearchVectorSearch(VectorStore):
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         if search_type == "approximate_search":
             size = _get_kwargs_value(kwargs, "size", 4)
-            search_query = _default_approximate_search_query(embedding, size, k)
+            search_query = _default_approximate_search_query(embedding, k, size)
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
