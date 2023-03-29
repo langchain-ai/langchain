@@ -12,6 +12,11 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     bearer_token: str
     aiosession: Optional[aiohttp.ClientSession] = None
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def get_relevant_documents(self, query: str) -> List[Document]:
         response = requests.post(
             f"{self.url}/query",
