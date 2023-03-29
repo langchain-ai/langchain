@@ -225,6 +225,12 @@ class Chroma(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        if self._embedding_function is None:
+            raise ValueError(
+                "For MMR search, you must specify an embedding function on"
+                "creation."
+            )
+        
         embedding = self._embedding_function.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
             embedding, k, fetch_k, filter)
