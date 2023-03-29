@@ -135,10 +135,6 @@ class Agent(BaseModel):
         full_inputs = {**kwargs, **new_inputs}
         return full_inputs
 
-    def prepare_for_new_call(self) -> None:
-        """Prepare the agent for new call, if needed."""
-        pass
-
     @property
     def finish_tool_name(self) -> str:
         """Name of the tool to use to finish the chain."""
@@ -493,8 +489,6 @@ class AgentExecutor(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
-        # Do any preparation necessary when receiving a new input.
-        self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
@@ -525,8 +519,6 @@ class AgentExecutor(Chain, BaseModel):
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Run text through and get agent response."""
-        # Do any preparation necessary when receiving a new input.
-        self.agent.prepare_for_new_call()
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
