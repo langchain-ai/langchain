@@ -259,6 +259,17 @@ class BaseRetriever(ABC):
             List of relevant documents
         """
 
+    @abstractmethod
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        """Get documents relevant for a query.
+
+        Args:
+            query: string to find relevant documents for
+
+        Returns:
+            List of relevant documents
+        """
+
 
 # For backwards compatibility
 

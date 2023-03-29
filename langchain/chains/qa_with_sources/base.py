@@ -129,6 +129,24 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             result["source_documents"] = docs
         return result
 
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs to run questioning over."""
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        docs = await self._aget_docs(inputs)
+        answer, _ = await self.combine_documents_chain.acombine_docs(docs, **inputs)
+        if re.search(r"SOURCES:\s", answer):
+            answer, sources = re.split(r"SOURCES:\s", answer)
+        else:
+            sources = ""
+        result: Dict[str, Any] = {
+            self.answer_key: answer,
+            self.sources_answer_key: sources,
+        }
+        if self.return_source_documents:
+            result["source_documents"] = docs
+        return result
+
 
 class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
     """Question answering with sources over documents."""
@@ -144,6 +162,9 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         return [self.input_docs_key, self.question_key]
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        return inputs.pop(self.input_docs_key)
+
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)
 
     @property
