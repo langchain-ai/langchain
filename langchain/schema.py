@@ -240,6 +240,57 @@ class BaseMemory(BaseModel, ABC):
         """Clear memory contents."""
 
 
+class BaseChatMessageHistory(ABC):
+    """Base interface for chat message history
+    See `ChatMessageHistory` for default implementation.
+    """
+
+    """
+    Example:
+        .. code-block:: python
+
+            class FileChatMessageHistory(BaseChatMessageHistory):
+                storage_path:  str
+                session_id: str
+               
+               @property
+               def messages(self):
+                   with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
+                       messages = json.loads(f.read())
+                    return messages_from_dict(messages)     
+                
+               def add_user_message(self, message: str):
+                   message_ = HumanMessage(content=message)
+                   messages = self.messages.append(_message_to_dict(_message))
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       json.dump(f, messages)
+               
+               def add_ai_message(self, message: str):
+                   message_ = AIMessage(content=message)
+                   messages = self.messages.append(_message_to_dict(_message))
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       json.dump(f, messages)
+                       
+               def clear(self):
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       f.write("[]")
+    """
+
+    messages: List[BaseMessage]
+
+    @abstractmethod
+    def add_user_message(self, message: str) -> None:
+        """Add a user message to the store"""
+
+    @abstractmethod
+    def add_ai_message(self, message: str) -> None:
+        """Add an AI message to the store"""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Remove all messages from the store"""
+
+
 class Document(BaseModel):
     """Interface for interacting with a document."""
 

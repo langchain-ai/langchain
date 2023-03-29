@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.125"
+version = "0.0.126"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -54,6 +54,7 @@ aleph-alpha-client = {version="^2.15.0", optional = true}
 deeplake = {version = "^3.2.9", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
+boto3 = {version = "^1.26.96", optional = true}
 pyowm = {version = "^3.3.0", optional = true}
 
 [tool.poetry.group.docs.dependencies]
