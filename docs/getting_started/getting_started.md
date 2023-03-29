@@ -74,7 +74,7 @@ print(llm(text))
 Feetful of Fun
 ```
 
-For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/llms/getting_started.ipynb).
+For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
 `````
 
 
@@ -111,7 +111,7 @@ What is a good name for a company that makes colorful socks?
 ```
 
 
-[For more details, check out the getting started guide for prompts.](../modules/prompts/getting_started.ipynb)
+[For more details, check out the getting started guide for prompts.](../modules/prompts/chat_prompt_template.ipynb)
 
 `````
 
@@ -355,12 +355,14 @@ Similar to LLMs, you can make use of templating by using a `MessagePromptTemplat
 For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
+
+chat = ChatOpenAI(temperature=0)
 
 template="You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
@@ -380,11 +382,10 @@ The `LLMChain` discussed in the above section can be used with chat models as we
 
 ```python
 from langchain.chat_models import ChatOpenAI
-from langchain import PromptTemplate, LLMChain
+from langchain import LLMChain
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 

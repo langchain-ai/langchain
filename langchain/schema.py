@@ -240,39 +240,62 @@ class BaseMemory(BaseModel, ABC):
         """Clear memory contents."""
 
 
+class BaseChatMessageHistory(ABC):
+    """Base interface for chat message history
+    See `ChatMessageHistory` for default implementation.
+    """
+
+    """
+    Example:
+        .. code-block:: python
+
+            class FileChatMessageHistory(BaseChatMessageHistory):
+                storage_path:  str
+                session_id: str
+               
+               @property
+               def messages(self):
+                   with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
+                       messages = json.loads(f.read())
+                    return messages_from_dict(messages)     
+                
+               def add_user_message(self, message: str):
+                   message_ = HumanMessage(content=message)
+                   messages = self.messages.append(_message_to_dict(_message))
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       json.dump(f, messages)
+               
+               def add_ai_message(self, message: str):
+                   message_ = AIMessage(content=message)
+                   messages = self.messages.append(_message_to_dict(_message))
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       json.dump(f, messages)
+                       
+               def clear(self):
+                   with open(os.path.join(storage_path, session_id), 'w') as f:
+                       f.write("[]")
+    """
+
+    messages: List[BaseMessage]
+
+    @abstractmethod
+    def add_user_message(self, message: str) -> None:
+        """Add a user message to the store"""
+
+    @abstractmethod
+    def add_ai_message(self, message: str) -> None:
+        """Add an AI message to the store"""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Remove all messages from the store"""
+
+
 class Document(BaseModel):
     """Interface for interacting with a document."""
 
     page_content: str
-    lookup_str: str = ""
-    lookup_index = 0
     metadata: dict = Field(default_factory=dict)
-
-    @property
-    def paragraphs(self) -> List[str]:
-        """Paragraphs of the page."""
-        return self.page_content.split("\n\n")
-
-    @property
-    def summary(self) -> str:
-        """Summary of the page (the first paragraph)."""
-        return self.paragraphs[0]
-
-    def lookup(self, string: str) -> str:
-        """Lookup a term in the page, imitating cmd-F functionality."""
-        if string.lower() != self.lookup_str:
-            self.lookup_str = string.lower()
-            self.lookup_index = 0
-        else:
-            self.lookup_index += 1
-        lookups = [p for p in self.paragraphs if self.lookup_str in p.lower()]
-        if len(lookups) == 0:
-            return "No Results"
-        elif self.lookup_index >= len(lookups):
-            return "No More Results"
-        else:
-            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
-            return f"{result_prefix} {lookups[self.lookup_index]}"
 
 
 class BaseRetriever(ABC):
