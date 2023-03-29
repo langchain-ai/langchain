@@ -28,8 +28,6 @@ class ReActDocstoreAgent(Agent, BaseModel):
         """Return default prompt."""
         return WIKI_PROMPT
 
-    i: int = 1
-
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 2:
@@ -40,18 +38,14 @@ class ReActDocstoreAgent(Agent, BaseModel):
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
 
-    def _prepare_for_new_call(self) -> None:
-        self.i = 1
-
     def _fix_text(self, text: str) -> str:
-        return text + f"\nAction {self.i}:"
+        return text + "\nAction:"
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        action_prefix = f"Action {self.i}: "
-        if not text.split("\n")[-1].startswith(action_prefix):
+        action_prefix = "Action: "
+        if not text.strip().split("\n")[-1].startswith(action_prefix):
             return None
-        self.i += 1
-        action_block = text.split("\n")[-1]
+        action_block = text.strip().split("\n")[-1]
 
         action_str = action_block[len(action_prefix) :]
         # Parse out the action and the directive.
@@ -68,16 +62,16 @@ class ReActDocstoreAgent(Agent, BaseModel):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return f"Observation {self.i - 1}: "
+        return "Observation: "
 
     @property
     def _stop(self) -> List[str]:
-        return [f"\nObservation {self.i}:"]
+        return ["\nObservation:"]
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
-        return f"Thought {self.i}:"
+        return "Thought:"
 
 
 class DocstoreExplorer:
