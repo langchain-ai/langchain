@@ -114,6 +114,7 @@ class BaseRetrievalQA(Chain, BaseModel):
         else:
             return {self.output_key: answer}
 
+    @abstractmethod
     async def _aget_docs(self, question: str) -> List[Document]:
         """Get documents to do question answering over."""
 
@@ -207,7 +208,7 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
-    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+    async def _aget_docs(self, question: str) -> List[Document]:
         raise NotImplementedError("VectorDBQA does not support async")
 
     @property
