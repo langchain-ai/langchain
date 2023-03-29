@@ -18,9 +18,9 @@ class RequestsWrapper(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def get(self, url: str) -> str:
+    def get(self, url: str, **kwargs: Any) -> str:
         """GET the URL and return the text."""
-        return requests.get(url, headers=self.headers).text
+        return requests.get(url, headers=self.headers, **kwargs).text
 
     def post(self, url: str, data: Dict[str, Any]) -> str:
         """POST to the URL and return the text."""
