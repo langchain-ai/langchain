@@ -8,11 +8,11 @@ from pydantic import BaseModel, Extra, root_validator
 from langchain.chains.base import Chain
 
 
-class SimpleParallelChain(Chain, BaseModel):
+class ParallelChain(Chain, BaseModel):
     """
     Chain pipeline where multiple independent chains process the same inputs to produce multiple outputs.
     Each chain is run in parallel and their outputs are merged together,
-    with each output key of SimpleParallelChain corresponding to a different chain's output.
+    with each output key of ParallelChain corresponding to a different chain's output.
     """
 
     input_variables: List[str]  #: :meta private:
@@ -131,10 +131,10 @@ if __name__ == "__main__":
 
     input_variables = ["input1", "input2"]
 
-    chain = SimpleParallelChain(
+    chain = ParallelChain(
         input_variables=input_variables,
         chains={
-            f"output{i}": SimpleParallelChain(
+            f"output{i}": ParallelChain(
                 input_variables=input_variables,
                 chains={
                     f"output{i}_{j}": FakeChain(
