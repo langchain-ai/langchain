@@ -9,7 +9,6 @@ from langchain.schema import (
     HumanMessage,
     _message_to_dict,
     messages_from_dict,
-    messages_to_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,19 +39,16 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         self.key_prefix = key_prefix
         self.ttl = ttl
 
-    def get_key(self, session_id: str) -> str:
+    @property
+    def key(self) -> str:
         """Construct the record key to use"""
-        return self.key_prefix + session_id
+        return self.key_prefix + self.session_id
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from Redis"""
-        if self.redis_client.exists(self.get_key(self.session_id)):
-            _r = self.redis_client.get(self.get_key(self.session_id))
-            items = json.loads(_r.decode("utf-8")) if _r else []
-        else:
-            items = []
-
+        _items = self.redis_client.lrange(self.key, 0, -1)
+        items = [json.loads(m.decode("utf-8")) for m in _items]
         messages = messages_from_dict(items)
         return messages
 
@@ -64,14 +60,8 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""
-        messages = messages_to_dict(self.messages)
-        _message = _message_to_dict(message)
-        messages.append(_message)
-
-        self.redis_client.set(
-            name=self.get_key(self.session_id), value=json.dumps(messages), ex=self.ttl
-        )
+        self.redis_client.lpush(self.key, json.dumps(_message_to_dict(message)))
 
     def clear(self) -> None:
         """Clear session memory from Redis"""
-        self.redis_client.delete(self.get_key(self.session_id))
+        self.redis_client.delete(self.key)

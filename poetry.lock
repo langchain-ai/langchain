@@ -230,17 +230,18 @@ types = ["mypy", "types-requests"]
 
 [[package]]
 name = "anthropic"
-version = "0.2.3"
+version = "0.2.4"
 description = "Library for accessing the anthropic API"
 category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "anthropic-0.2.3-py3-none-any.whl", hash = "sha256:51cc9e3c5c0fc39b62af64b0607fd0da1622c7815fed89d0a52d80ebe0e60f3a"},
-    {file = "anthropic-0.2.3.tar.gz", hash = "sha256:3d4f8d21c54d23d476d5ef72510b50126108f9b0bdc45b9d5d2e2b34204d56ad"},
+    {file = "anthropic-0.2.4-py3-none-any.whl", hash = "sha256:2f955435bfdecc94e5432d72492c38fd22a55647026de1518461b707dd3ae808"},
+    {file = "anthropic-0.2.4.tar.gz", hash = "sha256:2041546470a9a2e897d6317627fdd7ea585245a3ff1ed1b054a47f63b4daa893"},
 ]
 
 [package.dependencies]
+aiohttp = "*"
 httpx = "*"
 requests = "*"
 tokenizers = "*"
@@ -640,18 +641,18 @@ numpy = ">=1.15.0"
 
 [[package]]
 name = "boto3"
-version = "1.26.96"
+version = "1.26.101"
 description = "The AWS SDK for Python"
 category = "main"
 optional = true
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.26.96-py3-none-any.whl", hash = "sha256:f961aa704bd7aeefc186ede52cabc3ef4c336979bb4098d3aad7ca922d55fc27"},
-    {file = "boto3-1.26.96.tar.gz", hash = "sha256:7017102c58b9984749bef3b9f476940593c311504354b9ee9dd7bb0b4657a77d"},
+    {file = "boto3-1.26.101-py3-none-any.whl", hash = "sha256:5f5279a63b359ba8889e9a81b319e745b14216608ffb5a39fcbf269d1af1ea83"},
+    {file = "boto3-1.26.101.tar.gz", hash = "sha256:670ae4d1875a2162e11c6e941888817c3e9cf1bb9a3335b3588d805b7d24da31"},
 ]
 
 [package.dependencies]
-botocore = ">=1.29.96,<1.30.0"
+botocore = ">=1.29.101,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -660,14 +661,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.96"
+version = "1.29.101"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = true
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.29.96-py3-none-any.whl", hash = "sha256:c449d7050e9bc4a8b8a62ae492cbdc931b786bf5752b792867f1276967fadaed"},
-    {file = "botocore-1.29.96.tar.gz", hash = "sha256:b9781108810e33f8406942c3e3aab748650c59d5cddb7c9d323f4e2682e7b0b6"},
+    {file = "botocore-1.29.101-py3-none-any.whl", hash = "sha256:60c7a7bf8e2a288735e507007a6769be03dc24815f7dc5c7b59b12743f4a31cf"},
+    {file = "botocore-1.29.101.tar.gz", hash = "sha256:7bb60d9d4c49500df55dfb6005c16002703333ff5f69dada565167c8d493dfd5"},
 ]
 
 [package.dependencies]
@@ -8491,4 +8492,4 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5ba29c1fd5f64fb98540fbd27ccba1226854bdcd75887b26b4278b4d8c6e281e"
+content-hash = "3dd7ff0edb145aff1ba1ea7e35ffa4b224fb71f934be0e13d4427fd796e54869"

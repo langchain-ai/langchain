@@ -11,6 +11,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     total_tokens: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    successful_requests: int = 0
 
     @property
     def always_verbose(self) -> bool:
@@ -30,6 +31,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
         if response.llm_output is not None:
+            self.successful_requests += 1
             if "token_usage" in response.llm_output:
                 token_usage = response.llm_output["token_usage"]
                 if "total_tokens" in token_usage:
