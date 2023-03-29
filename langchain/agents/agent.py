@@ -19,7 +19,7 @@ from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish, BaseMessage
+from langchain.schema import AgentAction, AgentFinish, BaseMessage, BaseOutputParser
 from langchain.tools.base import BaseTool
 
 logger = logging.getLogger()
@@ -32,6 +32,9 @@ class BaseAgent(BaseModel):
     def return_values(self) -> List[str]:
         """Return values of the agent."""
         return ["output"]
+
+    def get_allowed_tools(self) -> Optional[List[str]]:
+        return None
 
     @abstractmethod
     def plan(
@@ -134,6 +137,64 @@ class BaseAgent(BaseModel):
         return {}
 
 
+class AgentOutputParser(BaseOutputParser):
+    @abstractmethod
+    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Parse text into agent action/finish."""
+
+
+class LLMAgent(BaseAgent):
+    llm_chain: LLMChain
+    output_parser: AgentOutputParser
+    stop: List[str]
+
+    @property
+    def input_keys(self) -> List[str]:
+        return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
+
+    def plan(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Union[AgentAction, AgentFinish]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            **kwargs: User inputs.
+
+        Returns:
+            Action specifying what tool to use.
+        """
+        output = self.llm_chain.run(
+            intermediate_steps=intermediate_steps, stop=self.stop, **kwargs
+        )
+        return self.output_parser.parse(output)
+
+    async def aplan(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Union[AgentAction, AgentFinish]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            **kwargs: User inputs.
+
+        Returns:
+            Action specifying what tool to use.
+        """
+        output = await self.llm_chain.arun(
+            intermediate_steps=intermediate_steps, stop=self.stop, **kwargs
+        )
+        return self.output_parser.parse(output)
+
+    def tool_run_logging_kwargs(self) -> Dict:
+        return {
+            "llm_prefix": "",
+            "observation_prefix": "" if len(self.stop) == 0 else self.stop[0],
+        }
+
+
 class Agent(BaseAgent):
     """Class responsible for calling the language model and deciding the action.
 
@@ -144,6 +205,9 @@ class Agent(BaseAgent):
 
     llm_chain: LLMChain
     allowed_tools: Optional[List[str]] = None
+
+    def get_allowed_tools(self) -> Optional[List[str]]:
+        return self.allowed_tools
 
     @property
     def return_values(self) -> List[str]:
@@ -394,10 +458,11 @@ class AgentExecutor(Chain, BaseModel):
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
         tools = values["tools"]
-        if agent.allowed_tools is not None:
-            if set(agent.allowed_tools) != set([tool.name for tool in tools]):
+        allowed_tools = agent.get_allowed_tools()
+        if allowed_tools is not None:
+            if set(allowed_tools) != set([tool.name for tool in tools]):
                 raise ValueError(
-                    f"Allowed tools ({agent.allowed_tools}) different than "
+                    f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
         return values
