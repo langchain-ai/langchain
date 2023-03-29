@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 class DynamoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in AWS DynamoDB.
-    This class expects that a DynamoDB table with name `table_name` 
-    and a partition Key of `SessionId` is present. 
-    
-    Args: 
+    This class expects that a DynamoDB table with name `table_name`
+    and a partition Key of `SessionId` is present.
+
+    Args:
         table_name: name of the DynamoDB table
         session_id: arbitrary key that is used to store the messages
-            of a single chat session. 
+            of a single chat session.
     """
 
     def __init__(self, table_name: str, session_id: str):
