@@ -30,6 +30,7 @@ from langchain.llms import (
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    LlamaCpp,
     Modal,
     OpenAI,
     Petals,
@@ -106,4 +107,5 @@ __all__ = [
     "PALChain",
     "set_handler",
     "set_tracing_callback_manager",
+    "LlamaCpp"
 ]
