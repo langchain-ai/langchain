@@ -199,7 +199,7 @@ class Chain(BaseModel, ABC):
         """Call the chain on all inputs in the list."""
         return [self(inputs) for inputs in input_list]
 
-    def run(self, *args: str, **kwargs: str) -> str:
+    def run(self, *args: Any, **kwargs: Any) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 1:
             raise ValueError(
@@ -220,7 +220,7 @@ class Chain(BaseModel, ABC):
             f" but not both. Got args: {args} and kwargs: {kwargs}."
         )
 
-    async def arun(self, *args: str, **kwargs: str) -> str:
+    async def arun(self, *args: Any, **kwargs: Any) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
         if len(self.output_keys) != 1:
             raise ValueError(
