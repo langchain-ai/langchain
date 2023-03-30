@@ -3,6 +3,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
+from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -71,6 +72,7 @@ __all__ = [
     "OpenAICallbackHandler",
     "SharedCallbackManager",
     "StdOutCallbackHandler",
+    "AimCallbackHandler",
     "WandbCallbackHandler",
     "ClearMLCallbackHandler",
     "get_openai_callback",
