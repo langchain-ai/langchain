@@ -69,9 +69,12 @@ class SQLDatabase:
         self._metadata.reflect(bind=self._engine)
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
+    def from_uri(
+        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+    ) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
-        return cls(create_engine(database_uri), **kwargs)
+        _engine_args = engine_args or {}
+        return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @property
     def dialect(self) -> str:
