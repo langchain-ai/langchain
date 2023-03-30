@@ -86,6 +86,10 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         else:
             return {self.output_key: answer}
 
+    @abstractmethod
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs."""
+
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
@@ -96,8 +100,7 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
             )
         else:
             new_question = question
-        # TODO: This blocks the event loop, but it's not clear how to avoid it.
-        docs = self._get_docs(new_question, inputs)
+        docs = await self._aget_docs(new_question, inputs)
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
@@ -141,6 +144,10 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         docs = self.retriever.get_relevant_documents(question)
+        return self._reduce_tokens_below_limit(docs)
+
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        docs = await self.retriever.aget_relevant_documents(question)
         return self._reduce_tokens_below_limit(docs)
 
     @classmethod
@@ -193,6 +200,9 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
         return self.vectorstore.similarity_search(
             question, k=self.top_k_docs_for_context, **full_kwargs
         )
+
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        raise NotImplementedError("ChatVectorDBChain does not support async")
 
     @classmethod
     def from_llm(
