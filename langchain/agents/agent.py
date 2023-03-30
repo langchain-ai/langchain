@@ -64,7 +64,14 @@ class Agent(BaseModel):
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
         full_output = self.llm_chain.predict(**full_inputs)
-        parsed_output = self._extract_tool_and_input(full_output)
+        try:
+            parsed_output = self._extract_tool_and_input(full_output)
+        except Exception:
+            # Workaround: ReAct agent generates Thought but not Action fairly frequently. Retry once.
+            print(f"""!! Could not _extract_tool_and_input from "{full_output}" in _get_next_action""")
+            full_inputs["agent_scratchpad"] += full_output
+            full_output_retried = self.llm_chain.predict(**full_inputs)
+            parsed_output = self._extract_tool_and_input(full_output_retried)
         while parsed_output is None:
             full_output = self._fix_text(full_output)
             full_inputs["agent_scratchpad"] += full_output
