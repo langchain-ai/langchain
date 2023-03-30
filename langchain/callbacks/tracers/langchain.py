@@ -35,7 +35,6 @@ class BaseLangChainTracer(BaseTracer, ABC):
             endpoint = f"{self._endpoint}/chain-runs"
         else:
             endpoint = f"{self._endpoint}/tool-runs"
-
         try:
             requests.post(
                 endpoint,
