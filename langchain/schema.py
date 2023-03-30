@@ -318,16 +318,43 @@ Memory = BaseMemory
 
 
 class BaseOutputParser(BaseModel, ABC):
-    """Class to parse the output of an LLM call."""
+    """Class to parse the output of an LLM call.
+
+    Output parsers help structure language model responses.
+    """
 
     @abstractmethod
     def parse(self, text: str) -> Any:
-        """Parse the output of an LLM call."""
+        """Parse the output of an LLM call.
+
+        A method which takes in a string (assumed output of language model )
+        and parses it into some structure.
+
+        Args:
+            text: output of language model
+
+        Returns:
+            structured output
+        """
 
     def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
+        """Optional method to parse the output of an LLM call with a prompt.
+
+        The prompt is largely provided in the event the OutputParser wants
+        to retry or fix the output in some way, and needs information from
+        the prompt to do so.
+
+        Args:
+            completion: output of language model
+            prompt: prompt value
+
+        Returns:
+            structured output
+        """
         return self.parse(completion)
 
     def get_format_instructions(self) -> str:
+        """Instructions on how the LLM output should be formatted."""
         raise NotImplementedError
 
     @property
