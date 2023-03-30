@@ -7,6 +7,7 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
     _message_to_dict,
     messages_from_dict,
 )
@@ -51,6 +52,9 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         items = [json.loads(m.decode("utf-8")) for m in _items[::-1]]
         messages = messages_from_dict(items)
         return messages
+
+    def add_system_message(self, message: str) -> None:
+        self.append(SystemMessage(content=message))
 
     def add_user_message(self, message: str) -> None:
         self.append(HumanMessage(content=message))

@@ -7,11 +7,15 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
 )
 
 
 class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
     messages: List[BaseMessage] = []
+
+    def add_system_message(self, message: str) -> None:
+        self.messages.append(SystemMessage(content=message))
 
     def add_user_message(self, message: str) -> None:
         self.messages.append(HumanMessage(content=message))
