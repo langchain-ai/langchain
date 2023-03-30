@@ -5,10 +5,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.utils import (BaseMetadataCallbackHandler,
-                                       flatten_dict, hash_string,
-                                       import_pandas, import_spacy,
-                                       import_textstat)
+from langchain.callbacks.utils import (
+    BaseMetadataCallbackHandler,
+    flatten_dict,
+    hash_string,
+    import_pandas,
+    import_spacy,
+    import_textstat,
+)
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 

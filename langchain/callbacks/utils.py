@@ -3,34 +3,34 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple, Union
 
 
-def import_spacy(callback_name) -> Any:
+def import_spacy() -> Any:
     try:
-        import spacy  # noqa: F401
+        import spacy
     except ImportError:
         raise ImportError(
-            f"To use the {callback_name} callback manager you need to have the `spacy` python "
+            "This callback manager requires the `spacy` python "
             "package installed. Please install it with `pip install spacy`"
         )
     return spacy
 
 
-def import_pandas(callback_name) -> Any:
+def import_pandas() -> Any:
     try:
-        import pandas  # noqa: F401
+        import pandas
     except ImportError:
         raise ImportError(
-            f"To use the {callback_name} callback manager you need to have the `pandas` python "
+            "This callback manager requires the `pandas` python "
             "package installed. Please install it with `pip install pandas`"
         )
     return pandas
 
 
-def import_textstat(callback_name) -> Any:
+def import_textstat() -> Any:
     try:
-        import textstat  # noqa: F401
+        import textstat
     except ImportError:
         raise ImportError(
-            f"To use the {callback_name} callback manager you need to have the `textstat` python "
+            "This callback manager requires the `textstat` python "
             "package installed. Please install it with `pip install textstat`"
         )
     return textstat

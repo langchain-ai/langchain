@@ -4,9 +4,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.utils import (BaseMetadataCallbackHandler, flatten_dict, hash_string,
-                                       import_pandas, import_spacy,
-                                       import_textstat, load_json)
+from langchain.callbacks.utils import (
+    BaseMetadataCallbackHandler,
+    flatten_dict,
+    hash_string,
+    import_pandas,
+    import_spacy,
+    import_textstat,
+    load_json,
+)
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
@@ -52,8 +58,6 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """Initialize callback handler."""
 
         clearml = import_clearml()
-        # import_pandas()
-        # import_textstat()
         spacy = import_spacy()
         super().__init__()
 
@@ -66,7 +70,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.stream_logs = stream_logs
 
         self.temp_dir = tempfile.TemporaryDirectory()
-        
+
         # Check if ClearML task already exists (e.g. in pipeline)
         if clearml.Task.current_task():
             self.task = clearml.Task.current_task()
@@ -76,7 +80,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 project_name=self.project_name,
                 tags=self.tags,
                 task_name=self.task_name,
-                output_uri=True
+                output_uri=True,
             )
         self.logger = self.task.get_logger()
         warning = (
@@ -84,11 +88,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "based on updates to `langchain`. Please report any issues to "
             "https://github.com/allegroai/clearml/issues with the tag `langchain`."
         )
-        self.logger.report_text(
-            warning,
-            level=30,
-            print_console=True
-        )
+        self.logger.report_text(warning, level=30, print_console=True)
         self.callback_columns: list = []
         self.action_records: list = []
         self.complexity_metrics = complexity_metrics
@@ -148,11 +148,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             for generation in generations:
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
-                generation_resp.update(
-                    self.analyze_text(
-                        generation.text
-                    )
-                )
+                generation_resp.update(self.analyze_text(generation.text))
                 self.on_llm_end_records.append(generation_resp)
                 self.action_records.append(generation_resp)
                 if self.stream_logs:
@@ -317,12 +313,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.action_records.append(resp)
         if self.stream_logs:
             self.logger.report_text(resp)
-    
 
-    def analyze_text(
-        self,
-        text: str
-    ) -> dict:
+    def analyze_text(self, text: str) -> dict:
         """Analyze text using textstat and spacy.
 
         Parameters:
@@ -340,8 +332,12 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 "flesch_kincaid_grade": textstat.flesch_kincaid_grade(text),
                 "smog_index": textstat.smog_index(text),
                 "coleman_liau_index": textstat.coleman_liau_index(text),
-                "automated_readability_index": textstat.automated_readability_index(text),
-                "dale_chall_readability_score": textstat.dale_chall_readability_score(text),
+                "automated_readability_index": textstat.automated_readability_index(
+                    text
+                ),
+                "dale_chall_readability_score": textstat.dale_chall_readability_score(
+                    text
+                ),
                 "difficult_words": textstat.difficult_words(text),
                 "linsear_write_formula": textstat.linsear_write_formula(text),
                 "gunning_fog": textstat.gunning_fog(text),
@@ -361,28 +357,25 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             dep_out = spacy.displacy.render(  # type: ignore
                 doc, style="dep", jupyter=False, page=True
             )
-            dep_output_path = Path(self.temp_dir.name, hash_string(f"dep-{text}") + ".html")
+            dep_output_path = Path(
+                self.temp_dir.name, hash_string(f"dep-{text}") + ".html"
+            )
             dep_output_path.open("w", encoding="utf-8").write(dep_out)
 
             ent_out = spacy.displacy.render(  # type: ignore
                 doc, style="ent", jupyter=False, page=True
             )
-            ent_output_path = Path(self.temp_dir.name, hash_string(f"ent-{text}") + ".html")
+            ent_output_path = Path(
+                self.temp_dir.name, hash_string(f"ent-{text}") + ".html"
+            )
             ent_output_path.open("w", encoding="utf-8").write(ent_out)
 
             self.logger.report_media(
-                "Dependencies Plot",
-                text,
-                local_path=dep_output_path
+                "Dependencies Plot", text, local_path=dep_output_path
             )
-            self.logger.report_media(
-                "Entities Plot",
-                text,
-                local_path=ent_output_path
-            )
+            self.logger.report_media("Entities Plot", text, local_path=ent_output_path)
 
         return resp
-
 
     def _create_session_analysis_df(self) -> Any:
         """Create a dataframe with all the information from the session."""
@@ -396,7 +389,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             .rename({"step": "prompt_step"}, axis=1)
         )
         complexity_metrics_columns = []
-        visualizations_columns = []
+        visualizations_columns: List = []
 
         if self.complexity_metrics:
             complexity_metrics_columns = [
@@ -448,9 +441,11 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self,
         name: Optional[str] = None,
         langchain_asset: Any = None,
-        finish: bool = False
+        finish: bool = False,
     ) -> None:
-        """Flush the tracker and setup the session so everything after this will be a new table.
+        """Flush the tracker and setup the session.
+
+        Everything after this will be a new table.
 
         Args:
             name: Name of the preformed session so far so it is identifyable
@@ -465,19 +460,15 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         # Log the action records
         self.logger.report_table(
-            "Action Records",
-            name,
-            table_plot=pd.DataFrame(self.action_records)
+            "Action Records", name, table_plot=pd.DataFrame(self.action_records)
         )
-        
+
         # Session analysis
         session_analysis_df = self._create_session_analysis_df()
         self.logger.report_table(
-            "Session Analysis",
-            name,
-            table_plot=session_analysis_df
+            "Session Analysis", name, table_plot=session_analysis_df
         )
-        
+
         if self.stream_logs:
             self.logger.report_text(
                 {
@@ -491,17 +482,29 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             try:
                 langchain_asset.save(langchain_asset_path)
                 # Create output model and connect it to the task
-                output_model = clearml.OutputModel(task=self.task, config_text=load_json(langchain_asset_path))
-                output_model.update_weights(weights_filename=str(langchain_asset_path), auto_delete_file=False, target_filename=name)
+                output_model = clearml.OutputModel(
+                    task=self.task, config_text=load_json(langchain_asset_path)
+                )
+                output_model.update_weights(
+                    weights_filename=str(langchain_asset_path),
+                    auto_delete_file=False,
+                    target_filename=name,
+                )
             except ValueError:
                 langchain_asset.save_agent(langchain_asset_path)
-                output_model = clearml.OutputModel(task=self.task, config_text=load_json(langchain_asset_path))
-                output_model.update_weights(weights_filename=str(langchain_asset_path), auto_delete_file=False, target_filename=name)
+                output_model = clearml.OutputModel(
+                    task=self.task, config_text=load_json(langchain_asset_path)
+                )
+                output_model.update_weights(
+                    weights_filename=str(langchain_asset_path),
+                    auto_delete_file=False,
+                    target_filename=name,
+                )
             except NotImplementedError as e:
                 print("Could not save model.")
                 print(repr(e))
                 pass
-        
+
         # Cleanup after adding everything to ClearML
         self.task.flush(wait_for_uploads=True)
         self.temp_dir.cleanup()
