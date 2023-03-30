@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional, Union
 from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -10,7 +10,8 @@ def import_aim() -> Any:
         import aim
     except ImportError:
         raise ImportError(
-            "To use the Aim callback manager you need to have the `aim` python package installed."
+            "To use the Aim callback manager you need to have the"
+            " `aim` python package installed."
             "Please install it with `pip install aim`"
         )
     return aim
@@ -134,14 +135,15 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     """Callback Handler that logs to Aim.
 
     Parameters:
-        repo (:obj:`str`, optional): Aim repository path or Repo object to which Run object is bound.
-            If skipped, default Repo is used.
-        experiment_name (:obj:`str`, optional): Sets Run's `experiment` property. 'default' if not specified.
-            Can be used later to query runs/sequences.
-        system_tracking_interval (:obj:`int`, optional): Sets the tracking interval in seconds for system usage
-            metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
-        log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
-            git info, environment variables, etc.
+        repo (:obj:`str`, optional): Aim repository path or Repo object to which
+            Run object is bound. If skipped, default Repo is used.
+        experiment_name (:obj:`str`, optional): Sets Run's `experiment` property.
+            'default' if not specified. Can be used later to query runs/sequences.
+        system_tracking_interval (:obj:`int`, optional): Sets the tracking interval
+            in seconds for system usage metrics (CPU, Memory, etc.). Set to `None`
+             to disable system metrics tracking.
+        log_system_params (:obj:`bool`, optional): Enable/Disable logging of system
+            params such as installed packages, git info, environment variables, etc.
 
     This handler will utilize the associated callback method called and formats
     the input of each callback function with metadata regarding the state of LLM run
@@ -159,17 +161,21 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         super().__init__()
 
+        aim = import_aim()
         self.repo = repo
         self.experiment_name = experiment_name
         self.system_tracking_interval = system_tracking_interval
         self.log_system_params = log_system_params
-        self._run = None
-        self._run_hash = None
-
-        self.setup()
+        self._run = aim.Run(
+            repo=self.repo,
+            experiment=self.experiment_name,
+            system_tracking_interval=self.system_tracking_interval,
+            log_system_params=self.log_system_params,
+        )
+        self._run_hash = self._run.hash
         self.action_records: list = []
 
-    def setup(self, args=None):
+    def setup(self, **kwargs: Any) -> None:
         aim = import_aim()
 
         if not self._run:
@@ -188,8 +194,8 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 )
                 self._run_hash = self._run.hash
 
-        if args:
-            for key, value in args.items():
+        if kwargs:
+            for key, value in kwargs.items():
                 self._run.set(key, value, strict=False)
 
     def on_llm_start(
@@ -379,14 +385,15 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         """Flush the tracker and reset the session.
 
         Args:
-            repo (:obj:`str`, optional): Aim repository path or Repo object to which Run object is bound.
-                If skipped, default Repo is used.
-            experiment_name (:obj:`str`, optional): Sets Run's `experiment` property. 'default' if not specified.
-                Can be used later to query runs/sequences.
-            system_tracking_interval (:obj:`int`, optional): Sets the tracking interval in seconds for system usage
-                metrics (CPU, Memory, etc.). Set to `None` to disable system metrics tracking.
-            log_system_params (:obj:`bool`, optional): Enable/Disable logging of system params such as installed packages,
-                git info, environment variables, etc.
+            repo (:obj:`str`, optional): Aim repository path or Repo object to which
+                Run object is bound. If skipped, default Repo is used.
+            experiment_name (:obj:`str`, optional): Sets Run's `experiment` property.
+                'default' if not specified. Can be used later to query runs/sequences.
+            system_tracking_interval (:obj:`int`, optional): Sets the tracking interval
+                in seconds for system usage metrics (CPU, Memory, etc.). Set to `None`
+                 to disable system metrics tracking.
+            log_system_params (:obj:`bool`, optional): Enable/Disable logging of system
+                params such as installed packages, git info, environment variables, etc.
             langchain_asset: The langchain asset to save.
             reset: Whether to reset the session.
             finish: Whether to finish the run.

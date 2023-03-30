@@ -3,6 +3,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
+from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -12,7 +13,6 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
-from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 
