@@ -47,7 +47,7 @@ class WikipediaAPIWrapper(BaseModel):
 
     def fetch_formatted_page_summary(self, page: str) -> Optional[str]:
         try:
-            wiki_page = self.wiki_client.page(title=page)
+            wiki_page = self.wiki_client.page(pageid=page)
             return f"Page: {page}\nSummary: {wiki_page.summary}"
         except (
             self.wiki_client.exceptions.PageError,
