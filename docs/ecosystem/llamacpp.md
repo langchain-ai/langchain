@@ -15,6 +15,7 @@ There exists a LlamaCpp LLM wrapper, which you can access with
 ```python
 from langchain.llms import LlamaCpp
 ```
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/llamacpp.ipynb)
 
 ### Embeddings
 
@@ -22,4 +23,4 @@ There exists a LlamaCpp Embeddings wrapper, which you can access with
 ```python
 from langchain.embeddings import LlamaCppEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/indexes/examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/llms/integrations/examples/llamacpp.ipynb)
