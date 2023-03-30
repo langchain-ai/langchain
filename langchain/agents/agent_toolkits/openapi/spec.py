@@ -48,7 +48,7 @@ class ReducedOpenAPISpec:
     endpoints: List[Tuple[str, str, dict]]
 
 
-def reduce_openapi_spec(spec: dict) -> ReducedOpenAPISpec:
+def reduce_openapi_spec(spec: dict, dereference: bool = False) -> ReducedOpenAPISpec:
     """Simplify/distill/minify a spec somehow.
     I want a smaller target for retrieval and (more importantly) I want smaller results from retrieval.
     I was hoping https://openapi.tools/ would have some useful bits to this end, but doesn't seem so.
@@ -71,11 +71,12 @@ def reduce_openapi_spec(spec: dict) -> ReducedOpenAPISpec:
     ]
 
     # 2. Replace any refs so that complete docs are retrieved.
-    # Note: proabably want to do this post-retrieval, it blows up the size of the spec.
-    endpoints = [
-        (name, description, dereference_refs(docs, spec))
-        for name, description, docs in endpoints
-    ]
+    # Note: probably want to do this post-retrieval, it blows up the size of the spec.
+    if dereference:
+        endpoints = [
+            (name, description, dereference_refs(docs, spec))
+            for name, description, docs in endpoints
+        ]
     # 3. Strip docs down to required request args + happy path response.
     def reduce_endpoint_docs(docs: dict) -> dict:
         out = {}
