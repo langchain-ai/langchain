@@ -142,8 +142,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         from io import BytesIO
 
         from googleapiclient.discovery import build
-        from googleapiclient.http import MediaIoBaseDownload
         from googleapiclient.errors import HttpError
+        from googleapiclient.http import MediaIoBaseDownload
 
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
@@ -155,13 +155,12 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         try:
             while done is False:
                 status, done = downloader.next_chunk()
-            
+
         except HttpError as e:
             if e.resp.status == 404:
                 print("File not found: {}".format(id))
             else:
                 print("An error occurred: {}".format(e))
-            return None
 
         text = fh.getvalue().decode("utf-8")
         metadata = {"source": f"https://docs.google.com/document/d/{id}/edit"}
