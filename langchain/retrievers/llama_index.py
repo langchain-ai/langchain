@@ -33,6 +33,9 @@ class LlamaIndexRetriever(BaseRetriever, BaseModel):
             )
         return docs
 
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError("LlamaIndexRetriever does not support async")
+
 
 class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
     """Question-answering with sources over an LlamaIndex graph data structure."""
@@ -69,3 +72,6 @@ class LlamaIndexGraphRetriever(BaseRetriever, BaseModel):
                 Document(page_content=source_node.source_text, metadata=metadata)
             )
         return docs
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError("LlamaIndexGraphRetriever does not support async")
