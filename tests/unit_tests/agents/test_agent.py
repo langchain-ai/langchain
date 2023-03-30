@@ -149,7 +149,7 @@ def test_agent_with_callbacks_local() -> None:
         callback_manager=manager,
     )
 
-    agent.agent.llm_chain.verbose = True
+    agent.agent.llm_chain.verbose = True  # type: ignore
 
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
@@ -285,8 +285,8 @@ def test_agent_with_new_prefix_suffix() -> None:
     )
 
     # avoids "BasePromptTemplate" has no attribute "template" error
-    assert hasattr(agent.agent.llm_chain.prompt, "template")
-    prompt_str = agent.agent.llm_chain.prompt.template
+    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore
+    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore
     assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
     assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
 
