@@ -123,3 +123,22 @@ def test_sql_database_run_update() -> None:
     output = db.run(command)
     expected_output = ""
     assert output == expected_output
+
+
+def test_sql_database_include_tables() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj.create_all(engine)
+    db = SQLDatabase(engine, include_tables=["user"])
+    output = db.table_info
+    expected_output = """
+    CREATE TABLE user (
+            user_id INTEGER NOT NULL,
+            user_name VARCHAR(16) NOT NULL,
+            PRIMARY KEY (user_id)
+    )
+    /*
+    3 rows from user table:
+    user_id user_name
+    /*
+    """
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))

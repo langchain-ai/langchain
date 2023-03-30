@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import MetaData, create_engine, inspect, select, text
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -66,7 +66,18 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
+        if self._include_tables:
+            [
+                Table(
+                    table_name,
+                    self._metadata,
+                    autoload=True,
+                    autoload_with=self._engine,
+                )
+                for table_name in self._include_tables
+            ]
+        else:
+            self._metadata.reflect(bind=self._engine)
 
     @classmethod
     def from_uri(
