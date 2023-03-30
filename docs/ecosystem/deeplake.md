@@ -22,4 +22,4 @@ from langchain.vectorstores import DeepLake
 ```
 
 
-For a more detailed walkthrough of the Deep Lake wrapper, see [this notebook](../modules/indexes/vectorstore_examples/deeplake.ipynb)
+For a more detailed walkthrough of the Deep Lake wrapper, see [this notebook](../modules/indexes/vectorstores/examples/deeplake.ipynb)

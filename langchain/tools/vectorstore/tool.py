@@ -6,7 +6,7 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field
 
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.vector_db_qa.base import VectorDBQA
+from langchain.chains.retrieval_qa.base import VectorDBQA
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 from langchain.tools.base import BaseTool

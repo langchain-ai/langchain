@@ -35,11 +35,11 @@ def _import_bulk() -> Any:
     return bulk
 
 
-def _get_opensearch_client(opensearch_url: str) -> Any:
+def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     """Get OpenSearch client from the opensearch_url, otherwise raise error."""
     try:
         opensearch = _import_opensearch()
-        client = opensearch(opensearch_url)
+        client = opensearch(opensearch_url, **kwargs)
     except ValueError as e:
         raise ValueError(
             f"OpenSearch client string provided is not in proper format. "
@@ -218,12 +218,16 @@ class OpenSearchVectorSearch(VectorStore):
     """
 
     def __init__(
-        self, opensearch_url: str, index_name: str, embedding_function: Embeddings
+        self,
+        opensearch_url: str,
+        index_name: str,
+        embedding_function: Embeddings,
+        **kwargs: Any,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        self.client = _get_opensearch_client(opensearch_url)
+        self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     def add_texts(
         self,
@@ -243,7 +247,7 @@ class OpenSearchVectorSearch(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         embeddings = [
-            self.embedding_function.embed_documents(list(text))[0] for text in texts
+            self.embedding_function.embed_documents([text])[0] for text in texts
         ]
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         return _bulk_ingest_embeddings(
@@ -363,7 +367,11 @@ class OpenSearchVectorSearch(VectorStore):
         embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
-        index_name = uuid.uuid4().hex
+        # Get the index name from either from kwargs or ENV Variable
+        # before falling back to random generation
+        index_name = get_from_dict_or_env(
+            kwargs, "index_name", "OPENSEARCH_INDEX_NAME", default=uuid.uuid4().hex
+        )
         is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")

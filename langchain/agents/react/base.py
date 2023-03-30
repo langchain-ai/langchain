@@ -28,8 +28,6 @@ class ReActDocstoreAgent(Agent, BaseModel):
         """Return default prompt."""
         return WIKI_PROMPT
 
-    i: int = 1
-
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 2:
@@ -40,18 +38,14 @@ class ReActDocstoreAgent(Agent, BaseModel):
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
 
-    def _prepare_for_new_call(self) -> None:
-        self.i = 1
-
     def _fix_text(self, text: str) -> str:
-        return text + f"\nAction {self.i}:"
+        return text + "\nAction:"
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        action_prefix = f"Action {self.i}: "
-        if not text.split("\n")[-1].startswith(action_prefix):
+        action_prefix = "Action: "
+        if not text.strip().split("\n")[-1].startswith(action_prefix):
             return None
-        self.i += 1
-        action_block = text.split("\n")[-1]
+        action_block = text.strip().split("\n")[-1]
 
         action_str = action_block[len(action_prefix) :]
         # Parse out the action and the directive.
@@ -68,16 +62,16 @@ class ReActDocstoreAgent(Agent, BaseModel):
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
-        return f"Observation {self.i - 1}: "
+        return "Observation: "
 
     @property
     def _stop(self) -> List[str]:
-        return [f"\nObservation {self.i}:"]
+        return ["\nObservation:"]
 
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
-        return f"Thought {self.i}:"
+        return "Thought:"
 
 
 class DocstoreExplorer:
@@ -87,13 +81,15 @@ class DocstoreExplorer:
         """Initialize with a docstore, and set initial document to None."""
         self.docstore = docstore
         self.document: Optional[Document] = None
+        self.lookup_str = ""
+        self.lookup_index = 0
 
     def search(self, term: str) -> str:
         """Search for a term in the docstore, and if found save."""
         result = self.docstore.search(term)
         if isinstance(result, Document):
             self.document = result
-            return self.document.summary
+            return self._summary
         else:
             self.document = None
             return result
@@ -102,7 +98,29 @@ class DocstoreExplorer:
         """Lookup a term in document (if saved)."""
         if self.document is None:
             raise ValueError("Cannot lookup without a successful search first")
-        return self.document.lookup(term)
+        if term.lower() != self.lookup_str:
+            self.lookup_str = term.lower()
+            self.lookup_index = 0
+        else:
+            self.lookup_index += 1
+        lookups = [p for p in self._paragraphs if self.lookup_str in p.lower()]
+        if len(lookups) == 0:
+            return "No Results"
+        elif self.lookup_index >= len(lookups):
+            return "No More Results"
+        else:
+            result_prefix = f"(Result {self.lookup_index + 1}/{len(lookups)})"
+            return f"{result_prefix} {lookups[self.lookup_index]}"
+
+    @property
+    def _summary(self) -> str:
+        return self._paragraphs[0]
+
+    @property
+    def _paragraphs(self) -> List[str]:
+        if self.document is None:
+            raise ValueError("Cannot get paragraphs without a document")
+        return self.document.page_content.split("\n\n")
 
 
 class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):

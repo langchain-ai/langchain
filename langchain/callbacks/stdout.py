@@ -74,9 +74,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        print_text(f"\n{observation_prefix}")
+        if observation_prefix:
+            print_text(f"\n{observation_prefix}")
         print_text(output, color=color if color else self.color)
-        print_text(f"\n{llm_prefix}")
+        if llm_prefix:
+            print_text(f"\n{llm_prefix}")
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any

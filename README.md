@@ -32,7 +32,7 @@ This library is aimed at assisting in the development of those types of applicat
 
 **🤖 Agents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/agents.html)
+- [Documentation](https://langchain.readthedocs.io/en/latest/modules/agents.html)
 - End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
 
 ## 📖 Documentation

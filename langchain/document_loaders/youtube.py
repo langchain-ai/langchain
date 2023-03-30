@@ -114,7 +114,7 @@ class YoutubeLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         try:
-            from youtube_transcript_api import YouTubeTranscriptApi
+            from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
         except ImportError:
             raise ImportError(
                 "Could not import youtube_transcript_api python package. "
@@ -129,9 +129,15 @@ class YoutubeLoader(BaseLoader):
             video_info = self._get_video_info()
             metadata.update(video_info)
 
-        transcript_pieces = YouTubeTranscriptApi.get_transcript(
-            self.video_id, languages=[self.language]
-        )
+        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_id)
+        try:
+            transcript = transcript_list.find_transcript([self.language])
+        except NoTranscriptFound:
+            en_transcript = transcript_list.find_transcript(["en"])
+            transcript = en_transcript.translate(self.language)
+
+        transcript_pieces = transcript.fetch()
+
         transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
 
         return [Document(page_content=transcript, metadata=metadata)]
@@ -177,7 +183,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
     As the service needs a google_api_client, you first have to initialize
     the GoogleApiClient.
 
-    Additonali you have to either provide a channel name or a list of videoids
+    Additionally you have to either provide a channel name or a list of videoids
     "https://developers.google.com/docs/api/quickstart/python"
 
 
@@ -233,9 +239,16 @@ class GoogleApiYoutubeLoader(BaseLoader):
         return values
 
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
-        from youtube_transcript_api import YouTubeTranscriptApi
+        from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
 
-        transcript_pieces = YouTubeTranscriptApi.get_transcript(video_id)
+        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_ids)
+        try:
+            transcript = transcript_list.find_transcript([self.captions_language])
+        except NoTranscriptFound:
+            en_transcript = transcript_list.find_transcript(["en"])
+            transcript = en_transcript.translate(self.captions_language)
+
+        transcript_pieces = transcript.fetch()
         return " ".join([t["text"].strip(" ") for t in transcript_pieces])
 
     def _get_document_for_video_id(self, video_id: str, **kwargs: Any) -> Document:

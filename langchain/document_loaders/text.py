@@ -14,7 +14,7 @@ class TextLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load from file path."""
-        with open(self.file_path) as f:
+        with open(self.file_path, encoding="utf-8") as f:
             text = f.read()
         metadata = {"source": self.file_path}
         return [Document(page_content=text, metadata=metadata)]
