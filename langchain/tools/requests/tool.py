@@ -11,7 +11,11 @@ from langchain.tools.base import BaseTool
 
 def _parse_input(text: str) -> Dict[str, Any]:
     """Parse the json string into a dict."""
-    return json.loads(text)
+    return json.loads(_preclean_input(text))
+
+
+def _preclean_input(text: str) -> str:
+    return text.replace("`", "").replace("\n", "").strip()
 
 
 class BaseRequestsTool(BaseModel):
