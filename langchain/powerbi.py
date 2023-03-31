@@ -85,4 +85,6 @@ class PowerBIDataset:
             },
             timeout=10,
         )
+        if result.status_code != 200:
+            return f"Issue with the call to PBI, {result.reason}"
         return result.json()
