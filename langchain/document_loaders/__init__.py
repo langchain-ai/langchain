@@ -17,6 +17,7 @@ from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import UnstructuredEmailLoader
+from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
@@ -85,6 +86,7 @@ __all__ = [
     "UnstructuredImageLoader",
     "ObsidianLoader",
     "UnstructuredEmailLoader",
+    "UnstructuredEPubLoader",
     "UnstructuredMarkdownLoader",
     "RoamLoader",
     "YoutubeLoader",
