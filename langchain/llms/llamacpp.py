@@ -27,7 +27,7 @@ class LlamaCpp(LLM, BaseModel):
     model_path: str
     """The path to the Llama model file."""
 
-    n_ctx: int = Field(2048, alias="n_ctx")
+    n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
