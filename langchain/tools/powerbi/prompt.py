@@ -11,6 +11,7 @@ Other common errors to check for, include:
 - Properly quoting identifiers
 - Using the correct number of arguments for functions
 - Using the proper columns for joins
+- Using the right names for tables and columns, use the list_tables_powerbi tool to get a list of tables and columns
 
 If there are any of the above or other mistakes, rewrite the query. If there are no mistakes, just reproduce the original query. Only return a single query and nothing else.
 
