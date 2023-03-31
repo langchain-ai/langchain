@@ -92,7 +92,9 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
             llm=OpenAI(temperature=0),
-            prompt=PromptTemplate(template=QUERY_CHECKER, input_variables=["query"]),
+            prompt=PromptTemplate(
+                template=QUERY_CHECKER, input_variables=["tool_input"]
+            ),
         )
     )
     name = "query_checker_powerbi"
@@ -112,7 +114,7 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
 
     def _run(self, tool_input: str) -> str:
         """Use the LLM to check the query."""
-        return self.llm_chain.predict(query=tool_input)
+        return self.llm_chain.predict(tool_input=tool_input)
 
     async def _arun(self, tool_input: str) -> str:
-        return await self.llm_chain.apredict(query=tool_input)
+        return await self.llm_chain.apredict(tool_input=tool_input)
