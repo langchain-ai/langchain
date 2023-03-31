@@ -37,7 +37,7 @@ class PowerBIToolkit(BaseToolkit):
             llmc = LLMChain(
                 llm=self.llm,
                 prompt=PromptTemplate(
-                    template=QUERY_CHECKER, input_variables=["query"]
+                    template=QUERY_CHECKER, input_variables=["tool_input"]
                 ),
             )
         return [
