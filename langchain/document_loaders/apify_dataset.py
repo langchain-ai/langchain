@@ -14,7 +14,8 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
     dataset_id: str
     """The ID of the dataset on the Apify platform."""
     dataset_mapping_function: Callable[[Dict], Document]
-    """A custom function that takes a single dictionary (an Apify dataset item) and converts it to an instance of the Document class."""
+    """A custom function that takes a single dictionary (an Apify dataset item)
+     and converts it to an instance of the Document class."""
 
     def __init__(
         self, dataset_id: str, dataset_mapping_function: Callable[[Dict], Document]
@@ -23,7 +24,9 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
 
         Args:
             dataset_id (str): The ID of the dataset on the Apify platform.
-            dataset_mapping_function (Callable): A function that takes a single dictionary (an Apify dataset item) and converts it to an instance of the Document class.
+            dataset_mapping_function (Callable): A function that takes a single
+                dictionary (an Apify dataset item) and converts it to an instance
+                of the Document class.
         """
         super().__init__(
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
@@ -31,7 +34,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that the apify-client Python package exists in the current environment."""
+        """Validate environment."""
 
         try:
             from apify_client import ApifyClient
