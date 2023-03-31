@@ -1,23 +1,42 @@
 # flake8: noqa
 QUERY_CHECKER = """
 query: {tool_input}
-Double check the DAX query above for common mistakes. For DAX you can provide any expression that evaluates to a scalar, or an expression that can be converted to a scalar. These include the following:
-A scalar constant, or expression that uses a scalar operator (+,-,*,/,>=,...,&&, ...). References to columns or tables. The DAX language always uses tables and columns as inputs to functions, never an array or arbitrary set of values.
-Operators, constants, and values provided as part of an expression. The result of a function and its required arguments. Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. Expressions. An expression can contain any or all of the following: operators, constants, or references to columns.
+Double check the DAX query above for common mistakes. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. 
 
-Other common errors to check for, include:
-- EVALUATE should always be used in combinations with a table expression not directly with a formula, for instance for a rowcount, this is the query: EVALUATE ROW("columname", COUNTROWS(tablename))
-- DEFINE can be used to do intermediate calculations
-- Properly quoting identifiers
-- Using the correct number of arguments for functions
-- Using the proper columns for joins
-- Using the right names for tables and columns, use the list_tables_powerbi tool to get a list of tables and columns
+Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. 
 
-If there are any of the above or other mistakes, rewrite the query. If there are no mistakes, just reproduce the original query. Only return a single query and nothing else.
+Some commonly used functions are:
+EVALUATE <table> - At the most basic level, a DAX query is an EVALUATE statement containing a table expression. At least one EVALUATE statement is required, however, a query can contain any number of EVALUATE statements.
+EVALUATE <table> ORDER BY <expression> ASC or DESC - The optional ORDER BY keyword defines one or more expressions used to sort query results. Any expression that can be evaluated for each row of the result is valid.
+EVALUATE <table> ORDER BY <expression> ASC or DESC START AT {<value>|<parameter>} - The optional START AT keyword is used inside an ORDER BY clause. It defines the value at which the query results begin.
+DEFINE MEASURE | VAR; EVALUATE <table> - The optional DEFINE keyword introduces one or more calculated entity definitions that exist only for the duration of the query. Definitions precede the EVALUATE statement and are valid for all EVALUATE statements in the query. Definitions can be variables, measures, tables1, and columns1. Definitions can reference other definitions that appear before or after the current definition. At least one definition is required if the DEFINE keyword is included in a query.
+MEASURE <table name>[<measure name>] = <scalar expression> - Introduces a measure definition in a DEFINE statement of a DAX query.
+VAR <name> = <expression> - Stores the result of an expression as a named variable, which can then be passed as an argument to other measure expressions. Once resultant values have been calculated for a variable expression, those values do not change, even if the variable is referenced in another expression.
+
+FILTER(<table>,<filter>) - Returns a table that represents a subset of another table or expression, where <filter> is a Boolean expression that is to be evaluated for each row of the table. For example, [Amount] > 0 or [Region] = "France"
+ROW(<name>, <expression>) - Returns a table with a single row containing values that result from the expressions given to each column.
+DISTINCT(<column>) - Returns a one-column table that contains the distinct values from the specified column. In other words, duplicate values are removed and only unique values are returned. This function cannot be used to Return values into a cell or column on a worksheet; rather, you nest the DISTINCT function within a formula, to get a list of distinct values that can be passed to another function and then counted, summed, or used for other operations.
+DISTINCT(<table>) - Returns a table by removing duplicate rows from another table or expression.
+
+Aggregation functions, names with a A in it, handle booleans and empty strings in appropriate ways, while the same function without A only uses the numeric values in a column. Functions names with an X in it can include a expression as an argument, this will be evaluated for each row in the table and the result will be used in the regular function calculation, these are the functions:
+COUNT(<column>), COUNTA(<column>), COUNTX(<table>,<expression>), COUNTAX(<table>,<expression>), COUNTROWS([<table>]), COUNTBLANK(<column>), DISTINCTCOUNT(<column>), DISTINCTCOUNTNOBLANK (<column>) - these are all variantions of count functions.
+AVERAGE(<column>), AVERAGEA(<column>), AVERAGEX(<table>,<expression>) - these are all variantions of average functions.
+MAX(<column>), MAXA(<column>), MAXX(<table>,<expression>) - these are all variantions of max functions.
+MIN(<column>), MINA(<column>), MINX(<table>,<expression>) - these are all variantions of min functions.
+PRODUCT(<column>), PRODUCTX(<table>,<expression>) - these are all variantions of product functions.
+SUM(<column>), SUMX(<table>,<expression>) - these are all variantions of sum functions.
+
+Date and time functions:
+DATE(year, month, day) - Returns a date value that represents the specified year, month, and day.
+DATEDIFF(date1, date2, <interval>) - Returns the difference between two date values, in the specified interval, that can be SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, QUARTER, YEAR.
+DATEVALUE(<date_text>) - Returns a date value that represents the specified date.
+YEAR(<date>), QUARTER(<date>), MONTH(<date>), DAY(<date>), HOUR(<date>), MINUTE(<date>), SECOND(<date>) - Returns the part of the date for the specified date.
+
+If there are any mistakes, rewrite the query. If there are no mistakes, just reproduce the original query. Only return a single query and nothing else.
 
 Examples:
-The query "EVALUATE COUNT(tablename)" is not correct and needs to be rewritten "EVALUATE ROW(""columname"", COUNTROWS(tablename))"
-The query "SELECT COUNT(DISTINCT VALUES tablename[columnname]) FROM tablename WHERE tablename[columnname2] = TRUE" is not correct and needs to be rewritten "DEFINE filteredTable = FILTER(tablename, tablename[columnname2] = TRUE) EVALUATE ROW(""columname"", DISTINCTCOUNT(filteredTable[groupcolumnname]))"
+The query "EVALUATE COUNT(<table>)" is not correct and needs to be rewritten "EVALUATE ROW(<name>, COUNTROWS(<table>))"
+The query "SELECT COUNT(DISTINCT VALUES <table>[<column>]) FROM tablename WHERE <table>[<column] = TRUE" is not correct and needs to be rewritten "DEFINE <temptable> = FILTER(<table>, <table>[<column>] = TRUE) EVALUATE ROW(<name>, DISTINCTCOUNT(<temptable>[<column>]))"
 
 rewritten query:
 
