@@ -5,7 +5,7 @@ import logging
 from typing import Any, Iterable, List
 
 import requests
-from azure.identity import DefaultAzureCredential
+from azure.identity import ChainedTokenCredential
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class PowerBIDataset:
         group_id: str | None,
         dataset_id: str,
         table_names: list[str],
-        credential: DefaultAzureCredential,
+        credential: ChainedTokenCredential,
         sample_rows_in_table_info: int = 1,
     ):
         """Create engine from database URI."""
