@@ -16,4 +16,7 @@ If there are any of the above mistakes, rewrite the query. If there are no mista
 
 Examples:
 The query "EVALUATE COUNT(tablename)" is not correct and needs to be rewritten "EVALUATE ROW(""columname"", COUNTROWS(tablename))"
+
+rewritten query:
+
 """
