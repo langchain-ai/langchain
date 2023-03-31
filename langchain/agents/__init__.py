@@ -1,5 +1,11 @@
 """Interface for agents."""
-from langchain.agents.agent import Agent, AgentExecutor, LLMSingleActionAgent, AgentOutputParser, BaseSingleActionAgent
+from langchain.agents.agent import (
+    Agent,
+    AgentExecutor,
+    AgentOutputParser,
+    BaseSingleActionAgent,
+    LLMSingleActionAgent,
+)
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
     create_json_agent,
