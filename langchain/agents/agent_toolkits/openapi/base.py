@@ -43,5 +43,8 @@ def create_openapi_agent(
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=toolkit.get_tools(), verbose=verbose, return_intermediate_steps=return_intermediate_steps
+        agent=agent,
+        tools=toolkit.get_tools(),
+        verbose=verbose,
+        return_intermediate_steps=return_intermediate_steps,
     )
