@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+import aiohttp
 import requests
 from pydantic import BaseModel
 
@@ -19,5 +20,10 @@ class RemoteLangChainRetriever(BaseRetriever, BaseModel):
         result = response.json()
         return [Document(**r) for r in result[self.response_key]]
 
-    def aget_relevant_documents(self, query: str) -> List[Document]:
-        raise NotImplementedError
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                "POST", self.url, headers=self.headers, json={self.input_key: query}
+            ) as response:
+                result = await response.json()
+        return [Document(**r) for r in result[self.response_key]]
