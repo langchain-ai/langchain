@@ -1,4 +1,5 @@
 """Test LLM Bash functionality."""
+import sys
 
 import pytest
 
@@ -17,6 +18,9 @@ def fake_llm_bash_chain() -> LLMBashChain:
     return LLMBashChain(llm=fake_llm, input_key="q", output_key="a")
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
 def test_simple_question(fake_llm_bash_chain: LLMBashChain) -> None:
     """Test simple question that should not need python."""
     question = "Please write a bash script that prints 'Hello World' to the console."
