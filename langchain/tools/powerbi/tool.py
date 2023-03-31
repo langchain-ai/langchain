@@ -40,15 +40,15 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         try:
             result = self.powerbi.run(command=tool_input)
         except Exception as exc:  # pylint: disable=broad-except
-            if "Bad request" in str(exc):
+            if "bad request" in str(exc).lower():
                 return "Bad request. Try rewriting the query and retrying then."
-            if "Unauthorized" in str(exc):
+            if "unauthorized" in str(exc).lower():
                 return "Unauthorized. Try changing your authentication, do not retry."
             return str(exc)
         return result
 
     async def _arun(self, tool_input: str) -> str:
-        raise NotImplementedError("QuerySqlDbTool does not support async")
+        raise NotImplementedError("QueryPowerBITool does not support async")
 
 
 class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
