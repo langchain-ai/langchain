@@ -11,7 +11,7 @@ Other common errors to check for, include:
 - Using the correct number of arguments for functions
 - Casting to the correct data type
 - Using the proper columns for joins
-- EVALUATE should always be used in combinations with a table expression, for instance for a rowcount, this is the query: EVALUATE ROW("columname", COUNTROWS(tablename))
+- EVALUATE should always be used in combinations with a table expression not directly with a formula, for instance for a rowcount, this is the query: EVALUATE ROW("columname", COUNTROWS(tablename))
 - DEFINE can be used to do intermediate calculations, this is the syntax: 
 "[DEFINE 
     (
@@ -23,4 +23,9 @@ Other common errors to check for, include:
 ]
 (EVALUATE <table expression>) +"
 
-If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query."""
+If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query.
+
+Examples:
+query: "EVALUATE COUNT(tablename)"
+rewritten query: "EVALUATE ROW(""columname"", COUNTROWS(tablename))"
+"""
