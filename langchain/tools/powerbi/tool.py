@@ -34,11 +34,15 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     If an error is returned, rewrite the query, check the query, and try again.
     """
 
-    def _run(self, query: str) -> str:
+    def _run(self, tool_input: str) -> str:
         """Execute the query, return the results or an error message."""
-        return self.powerbi.run(query)
+        try:
+            result = self.powerbi.run(command=tool_input)
+        except Exception as exc:  # pylint: disable=broad-except
+            return str(exc)
+        return result
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(self, tool_input: str) -> str:
         raise NotImplementedError("QuerySqlDbTool does not support async")
 
 
@@ -53,11 +57,11 @@ class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     Example Input: "table1, table2, table3"
     """
 
-    def _run(self, table_names: str) -> str:
+    def _run(self, tool_input: str) -> str:
         """Get the schema for tables in a comma-separated list."""
-        return self.powerbi.get_table_info(table_names.split(", "))
+        return self.powerbi.get_table_info(tool_input.split(", "))
 
-    async def _arun(self, table_name: str) -> str:
+    async def _arun(self, tool_input: str) -> str:
         raise NotImplementedError("SchemaSqlDbTool does not support async")
 
 
@@ -101,9 +105,9 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
             )
         return llm_chain
 
-    def _run(self, query: str) -> str:
+    def _run(self, tool_input: str) -> str:
         """Use the LLM to check the query."""
-        return self.llm_chain.predict(query=query)
+        return self.llm_chain.predict(query=tool_input)
 
-    async def _arun(self, query: str) -> str:
-        return await self.llm_chain.apredict(query=query)
+    async def _arun(self, tool_input: str) -> str:
+        return await self.llm_chain.apredict(query=tool_input)
