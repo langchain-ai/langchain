@@ -106,9 +106,9 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
     @validator("llm_chain")
     def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != ["query"]:
+        if llm_chain.prompt.input_variables != ["tool_input"]:
             raise ValueError(
-                "LLM chain for QueryCheckerTool must have input variables ['query']"
+                "LLM chain for QueryCheckerTool must have input variables ['tool_input']"
             )
         return llm_chain
 
