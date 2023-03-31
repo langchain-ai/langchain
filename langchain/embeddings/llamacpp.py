@@ -24,7 +24,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_path: str
 
-    n_ctx: int = Field(2048, alias="n_ctx")
+    n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
