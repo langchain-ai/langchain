@@ -49,7 +49,6 @@ class RequestsWrapper(BaseModel):
 
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
-    # If specified, must
     response_format_template: Optional[str] = None
 
     class Config:
