@@ -66,6 +66,11 @@ class PowerBIDataset:
             except requests.exceptions.Timeout:
                 _LOGGER.warning("Timeout while getting table info for %s", table)
                 continue
+            except requests.exceptions.HTTPError as err:
+                _LOGGER.warning(
+                    "HTTP error while getting table info for %s: %s", table, err
+                )
+                return "Error with the connection to PowerBI, please review your authentication credentials."
             rows = result["results"][0]["tables"][0]["rows"]
             tables.append(str(rows))
         return ", ".join(tables)
@@ -85,6 +90,5 @@ class PowerBIDataset:
             },
             timeout=10,
         )
-        if result.status_code != 200:
-            return f"Issue with the call to PBI, {result.reason}"
+        result.raise_for_status()
         return result.json()
