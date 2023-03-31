@@ -52,6 +52,9 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         )
         return self._reduce_tokens_below_limit(docs)
 
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
+
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
