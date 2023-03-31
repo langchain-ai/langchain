@@ -1,5 +1,5 @@
 """Wrapper around llama.cpp embedding models."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
