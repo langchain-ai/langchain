@@ -31,7 +31,8 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     description = """
     Input to this tool is a detailed and correct DAX query, output is a result from the database.
     If the query is not correct, an error message will be returned. 
-    If an error is returned, rewrite the query, check the query, and try again.
+    If an error is returned with Bad request in it, rewrite the query, check the query, and try again.
+    If an error is returned with Unauthorized in it, do not try again, but tell the user to change their authentication.
     """
 
     def _run(self, tool_input: str) -> str:
