@@ -1,6 +1,7 @@
 """SQLAlchemy wrapper around a database."""
 from __future__ import annotations
 
+import warnings
 from typing import Any, Iterable, List, Optional
 
 from sqlalchemy import MetaData, create_engine, inspect, select, text
@@ -88,6 +89,13 @@ class SQLDatabase:
         if self._include_tables:
             return self._include_tables
         return self._all_tables - self._ignore_tables
+
+    def get_table_names(self) -> Iterable[str]:
+        """Get names of tables available."""
+        warnings.warn(
+            "This method is deprecated - please use `get_usable_table_names`."
+        )
+        return self.get_usable_table_names()
 
     @property
     def table_info(self) -> str:
