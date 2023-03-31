@@ -141,7 +141,6 @@ class VectorStoreMemoryDeletionTool(BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        documents = self.vectorstore.similarity_search(query, k=self.num_results)
         return "Answer: Deletion is not yet implemented."
 
     async def _arun(self, query: str) -> str:
