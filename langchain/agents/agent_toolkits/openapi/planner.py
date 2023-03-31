@@ -1,7 +1,14 @@
 """Agent that interacts with OpenAPI spec'd APIs via a hierarchical planning approach,
 inspired by recent works on LLMs for robotics application.
 
-Code's dumped here so it's self-contained while I'm experimenting.
+We're iterating on approaches for solving multi-step queries against massive specs, so code's kept here self-contained for now.
+
+Observations on robustness across GPTs:
+- gpt-4 works very well with this approach; the advantage of the approach is separating computation so as not to eat too many tokens
+  (i.e. not stuffing a large and largely irrelevant spec into context)
+- gpt-3 completion models aren't as robust, but this approach allows for replanning at plan level + retrying at policy/step level, and
+  there's tons of room for improvement.
+- gpt-3 chat models haven't been tested in depth.
 """
 from langchain.agents.agent_toolkits.openapi.spec import (
     reduce_openapi_spec,
@@ -22,12 +29,6 @@ import json
 import re
 import yaml
 from typing import Optional
-
-
-# gpt-4 works very well with this approach, and the advantage is separating computation so as not to eat too many tokens.
-# gpt-3 completion models aren't as robust, but this approach allows for replanning at plan level + retrying at policy/step level.
-# I've not tried gpt-3 chat models as of yet.
-DEFAULT_LLM = OpenAI(model_name="gpt-4", temperature=0.0)
 
 
 #
@@ -75,7 +76,7 @@ Explanation: This plan did not look up the track id for the song. It also did no
 User query: {query}
 Plan:"""
 API_PLANNER_TOOL_NAME = "api_planner"
-API_PLANNER_TOOL_DESCRIPTION = f"Can be used generate the right API calls to assist with a user query, like {API_PLANNER_TOOL_NAME}(query). Should always be called before trying to calling the API controller."
+API_PLANNER_TOOL_DESCRIPTION = f"Can be used to generate the right API calls to assist with a user query, like {API_PLANNER_TOOL_NAME}(query). Should always be called before trying to calling the API controller."
 
 # Execution.
 API_CONTROLLER_PROMPT = """You are an agent that gets a sequence of API calls and given their documentation, should execute them and return the final response.
@@ -99,7 +100,7 @@ Action: the action to take, should be one of the tools [{tool_names}]
 Action Input: the input to the action
 Observation: the output of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I am finished executing the plan (or, I cannot finish executing the plan without knowing some other information.) 
+Thought: I am finished executing the plan (or, I cannot finish executing the plan without knowing some other information.)
 Final Answer: the final output from executing the plan or missing information I'd need to re-plan correctly.
 
 
@@ -113,10 +114,12 @@ Thought:
 """
 API_CONTROLLER_TOOL_NAME = "api_controller"
 API_CONTROLLER_TOOL_DESCRIPTION = (
-    f"Can be used execute a plan of API calls, like {API_CONTROLLER_TOOL_NAME}(plan)."
+    f"Can be used to execute a plan of API calls, like {API_CONTROLLER_TOOL_NAME}(plan)."
 )
 
 # Orchestrate planning + execution.
+# The goal is to have an agent at the top-level (e.g. so it can recover from errors and re-plan) while
+# keeping planning (and specifically the planning prompt) simple.
 API_ORCHESTRATOR_PROMPT = """You are an agent that assists with user queries against API, things like querying information or creating resources.
 Some user queries can be resolved in a single API call though some require several API call.
 You should always plan your API calls first, and then execute the plan second.
@@ -163,18 +166,21 @@ Thought: I should generate a plan to help with this query and then copy that pla
 #
 # Requests tools with LLM-instructed extraction of truncated responses.
 #
+# Of course, truncating so bluntly may lose a lot of valuable information in the response.
+# However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
 
 
-class RequestsGetToolWithSummary(BaseRequestsTool, BaseTool):
+class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
+
     name = "requests_get"
     description = """Use this to GET content from a website.
 Input to the tool should be a json string with 2 keys: "url" and "output_instructions".
 The value of "url" should be a string. The value of "output_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the GET request fetches.
 """
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = llm_chain = LLMChain(
-        llm=DEFAULT_LLM,
+    llm_chain = LLMChain(
+        llm=OpenAI(),
         prompt=PromptTemplate(
             template="""Here is an API response:\n\n{response}\n\n====
 Your task is to extract some information according to these instructions: {instructions}
@@ -187,20 +193,21 @@ Output:""",
     )
 
     def _run(self, text: str) -> str:
-        data = json.loads(text)
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
         response = self.requests_wrapper.get(data["url"])
-        response = response[: self.response_length]
-        # print(f"Request tool input: {data}\nResponse: {response}")
+        response = response[:self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
         ).strip()
 
     async def _arun(self, text: str) -> str:
-        pass
+        raise NotImplementedError()
 
 
-class RequestsPostToolWithSummary(BaseRequestsTool, BaseTool):
-    """Tool for making a POST request to an API endpoint."""
+class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
     name = "requests_post"
     description = """Use this when you want to POST to a website.
@@ -211,8 +218,8 @@ The value of "summary_instructions" should be instructions on what information t
 Always use double quotes for strings in the json string."""
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = llm_chain = LLMChain(
-        llm=DEFAULT_LLM,
+    llm_chain = LLMChain(
+        llm=OpenAI(),
         prompt=PromptTemplate(
             template="""Here is an API response:\n\n{response}\n\n====
 Your task is to extract some information according to these instructions: {instructions}
@@ -227,24 +234,23 @@ Output:""",
     def _run(self, text: str) -> str:
         try:
             data = json.loads(text)
-            response = self.requests_wrapper.post(data["url"], data["data"])
-            response = response[: self.response_length]
-            # print(f"Request tool input: {data}\nResponse: {response}")
-            return self.llm_chain.predict(
-                response=response, instructions=data["output_instructions"]
-            ).strip()
-        except Exception as e:
-            return repr(e)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.post(data["url"], data["data"])
+        response = response[:self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
 
     async def _arun(self, text: str) -> str:
-        pass
+        raise NotImplementedError()
 
 
 #
 # Orchestrator, planner, controller.
 #
 def _create_api_planner_tool(
-    api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel = DEFAULT_LLM
+    api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel
 ) -> Tool:
     endpoint_descriptions = [
         f"{name} {description}" for name, description, _ in api_spec.endpoints
@@ -267,15 +273,11 @@ def _create_api_controller_agent(
     api_url: str,
     api_docs: str,
     requests_wrapper: RequestsWrapper,
-    llm: BaseLanguageModel = DEFAULT_LLM,
+    llm: BaseLanguageModel,
 ) -> AgentExecutor:
     tools = [
-        RequestsGetToolWithSummary(
-            requests_wrapper=requests_wrapper, response_length=MAX_RESPONSE_LENGTH
-        ),
-        RequestsPostToolWithSummary(
-            requests_wrapper=requests_wrapper, response_length=MAX_RESPONSE_LENGTH
-        ),
+        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper),
+        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper),
     ]
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
@@ -297,7 +299,7 @@ def _create_api_controller_agent(
 
 
 def _create_api_controller_tool(
-    api_spec: ReducedOpenAPISpec, requests_wrapper: RequestsWrapper
+    api_spec: ReducedOpenAPISpec, requests_wrapper: RequestsWrapper, llm: BaseLanguageModel
 ) -> Tool:
     """Expose controller as a tool. The tool is invoked with a plan from the planner, and dynamically
     creates a controller agent with relevant documentation only to constrain the context.
@@ -306,9 +308,9 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST|PUT|DELETE)\s+(/\S+)*"
+        pattern = r"\b(GET|POST)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
-        endpoint_names = [f"{match[0]} {match[1]}" for match in matches]
+        endpoint_names = [f"{method} {route}" for method, route in matches]
         endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
         docs_str = ""
         for endpoint_name in endpoint_names:
@@ -317,7 +319,7 @@ def _create_api_controller_tool(
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
             docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
 
-        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper)
+        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
         return agent.run(plan_str)
 
     return Tool(
@@ -328,7 +330,7 @@ def _create_api_controller_tool(
 
 
 def create_openapi_agent(
-    api_spec: ReducedOpenAPISpec, requests_wrapper: RequestsWrapper
+    api_spec: ReducedOpenAPISpec, requests_wrapper: RequestsWrapper, llm: BaseLanguageModel
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec. Inject credentials via requests_wrapper.
 
@@ -336,8 +338,8 @@ def create_openapi_agent(
     that invokes a controller with its plan. This is to keep the planner simple.
     """
     tools = [
-        _create_api_planner_tool(api_spec),
-        _create_api_controller_tool(api_spec, requests_wrapper),
+        _create_api_planner_tool(api_spec, llm),
+        _create_api_controller_tool(api_spec, requests_wrapper, llm),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,
@@ -351,25 +353,8 @@ def create_openapi_agent(
     )
     agent = ZeroShotAgent(
         llm_chain=LLMChain(
-            llm=DEFAULT_LLM,
+            llm=llm,
             prompt=prompt),
         allowed_tools=[tool.name for tool in tools],
     )
     return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
-
-
-if __name__ == "__main__":
-    from langchain.agents.agent_toolkits.openapi.spotify import (
-        fetch_spotify_api_spec,
-        construct_spotify_auth_headers,
-    )
-    raw_spotify_api_spec = fetch_spotify_api_spec()
-    spotify_api_spec = reduce_openapi_spec(raw_spotify_api_spec, dereference=False)
-
-    headers = construct_spotify_auth_headers(raw_spotify_api_spec)
-    requests_wrapper = RequestsWrapper(headers=headers)
-    
-    agent = create_openapi_agent(spotify_api_spec, requests_wrapper)
-    user_query = "make me a playlist with songs from kind of blue. call it machine blues."
-    #user_query = "give me a song in the style of tobe nwige"
-    agent.run(user_query)

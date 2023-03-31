@@ -1,4 +1,7 @@
-"""Experimental (not tested) code to simplify an openapi spec for retrieving into a LM's context.
+"""Experimental (not well tested) code to simplify an OpenAPI spec so it can fit in context
+(or be a suitable target for retrieval before trying to fit in context).
+
+We're working on better representations for these specs, stay tuned.
 """
 
 from dataclasses import dataclass
@@ -11,7 +14,7 @@ def dereference_refs(spec_obj: dict, full_spec: dict):
     In the few OpenAPI specs I studied, $refs referenced models (or in OpenAPI terms, components)
     and could be nested. This code most likely misses lots of cases.
     """
-    def retrieve_ref_path(path: str, full_spec: dict):
+    def _retrieve_ref_path(path: str, full_spec: dict):
         components = path.split('/')
         if components[0] != '#':
             raise RuntimeError("All $refs I've seen so far are uri fragments (start with hash).")
@@ -25,7 +28,7 @@ def dereference_refs(spec_obj: dict, full_spec: dict):
         if isinstance(obj, dict):
             for k, v in obj.items():
                 if k == '$ref':
-                    return _dereference_refs(retrieve_ref_path(v, full_spec))
+                    return _dereference_refs(_retrieve_ref_path(v, full_spec))
                 elif isinstance(v, list):
                     obj_out[k] = [_dereference_refs(el) for el in v]
                 elif isinstance(v, dict):
@@ -41,7 +44,7 @@ def dereference_refs(spec_obj: dict, full_spec: dict):
     return _dereference_refs(spec_obj)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReducedOpenAPISpec:
     servers: List[dict]
     description: str
@@ -53,11 +56,6 @@ def reduce_openapi_spec(spec: dict, dereference: bool = False) -> ReducedOpenAPI
     I want a smaller target for retrieval and (more importantly) I want smaller results from retrieval.
     I was hoping https://openapi.tools/ would have some useful bits to this end, but doesn't seem so.
     """
-    out = ReducedOpenAPISpec(
-        servers=spec['servers'],
-        description=spec['info']['description'],
-        endpoints=[]
-    )
     # 1. Consider only get, post endpoints.
     endpoints = [
         (
@@ -96,9 +94,11 @@ def reduce_openapi_spec(spec: dict, dereference: bool = False) -> ReducedOpenAPI
         (name, description, reduce_endpoint_docs(docs))
         for name, description, docs in endpoints
     ]
-
-    out.endpoints = endpoints
-    return out
+    return ReducedOpenAPISpec(
+        servers=spec['servers'],
+        description=spec['info']['description'],
+        endpoints=endpoints
+    )
 
 
 if __name__ == "__main__":
