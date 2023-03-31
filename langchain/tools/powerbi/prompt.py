@@ -26,6 +26,6 @@ Other common errors to check for, include:
 If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query.
 
 Examples:
-query: "EVALUATE COUNT(tablename)"
-rewritten query: "EVALUATE ROW(""columname"", COUNTROWS(tablename))"
+EVALUATE COUNT(tablename)
+EVALUATE ROW("columname", COUNTROWS(tablename))
 """
