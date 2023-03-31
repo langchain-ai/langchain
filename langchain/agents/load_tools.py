@@ -13,6 +13,8 @@ from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import RequestsGetTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
@@ -166,15 +168,20 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 
 def _get_searx_search(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="SearX Search",
-        description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        func=SearxSearchWrapper(**kwargs).run,
-    )
+    return SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))
+
+
+def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
+    wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
+    return SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)
 
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
+
+
+def _get_human_tool(**kwargs: Any) -> BaseTool:
+    return HumanInputRun(**kwargs)
 
 
 _EXTRA_LLM_TOOLS = {
@@ -190,11 +197,16 @@ _EXTRA_OPTIONAL_TOOLS = {
         _get_google_search_results_json,
         ["google_api_key", "google_cse_id", "num_results"],
     ),
+    "searx-search-results-json": (
+        _get_searx_search_results_json,
+        ["searx_host", "engines", "num_results", "aiosession"],
+    ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "searx-search": (_get_searx_search, ["searx_host"]),
+    "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
+    "human": (_get_human_tool, ["prompt_func", "input_func"]),
 }
 
 

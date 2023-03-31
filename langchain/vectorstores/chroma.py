@@ -128,15 +128,16 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Document]: List of documents most simmilar to the query text.
+            List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k)
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -146,7 +147,9 @@ class Chroma(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        results = self._collection.query(query_embeddings=embedding, n_results=k)
+        results = self._collection.query(
+            query_embeddings=embedding, n_results=k, where=filter
+        )
         return _results_to_docs(results)
 
     def similarity_search_with_score(

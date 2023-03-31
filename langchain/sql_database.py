@@ -69,9 +69,12 @@ class SQLDatabase:
         self._metadata.reflect(bind=self._engine)
 
     @classmethod
-    def from_uri(cls, database_uri: str, **kwargs: Any) -> SQLDatabase:
+    def from_uri(
+        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+    ) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
-        return cls(create_engine(database_uri), **kwargs)
+        _engine_args = engine_args or {}
+        return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @property
     def dialect(self) -> str:
@@ -124,7 +127,7 @@ class SQLDatabase:
 
             if self._sample_rows_in_table_info:
                 # build the select command
-                command = select(table).limit(self._sample_rows_in_table_info)
+                command = select([table]).limit(self._sample_rows_in_table_info)
 
                 # save the columns in string format
                 columns_str = "\t".join([col.name for col in table.columns])

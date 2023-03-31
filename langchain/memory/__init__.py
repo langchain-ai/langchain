@@ -3,7 +3,9 @@ from langchain.memory.buffer import (
     ConversationStringBufferMemory,
 )
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.chat_memory import ChatMessageHistory
+from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessageHistory
+from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
+from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import ConversationEntityMemory
 from langchain.memory.kg import ConversationKGMemory
@@ -26,4 +28,6 @@ __all__ = [
     "ConversationStringBufferMemory",
     "ReadOnlySharedMemory",
     "ConversationTokenBufferMemory",
+    "RedisChatMessageHistory",
+    "DynamoDBChatMessageHistory",
 ]

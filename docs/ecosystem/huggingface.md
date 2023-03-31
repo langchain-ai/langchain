@@ -30,7 +30,7 @@ To use a the wrapper for a model hosted on Hugging Face Hub:
 ```python
 from langchain.llms import HuggingFaceHub
 ```
-For a more detailed walkthrough of the Hugging Face Hub wrapper, see [this notebook](../modules/llms/integrations/huggingface_hub.ipynb)
+For a more detailed walkthrough of the Hugging Face Hub wrapper, see [this notebook](../modules/models/llms/integrations/huggingface_hub.ipynb)
 
 
 ### Embeddings
@@ -47,7 +47,7 @@ To use a the wrapper for a model hosted on Hugging Face Hub:
 ```python
 from langchain.embeddings import HuggingFaceHubEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/indexes/examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/huggingfacehub.ipynb)
 
 ### Tokenizer
 
@@ -59,7 +59,7 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_huggingface_tokenizer(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/indexes/examples/textsplitter.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/indexes/text_splitters/examples/huggingface_length_function.ipynb)
 
 
 ### Datasets

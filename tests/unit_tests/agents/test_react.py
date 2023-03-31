@@ -55,7 +55,7 @@ class FakeDocstore(Docstore):
 
 def test_predict_until_observation_normal() -> None:
     """Test predict_until_observation when observation is made normally."""
-    outputs = ["foo\nAction 1: Search[foo]"]
+    outputs = ["foo\nAction: Search[foo]"]
     fake_llm = FakeListLLM(responses=outputs)
     tools = [
         Tool(name="Search", func=lambda x: x, description="foo"),
@@ -77,16 +77,16 @@ def test_predict_until_observation_repeat() -> None:
     ]
     agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
     output = agent.plan([], input="")
-    expected_output = AgentAction("Search", "foo", "foo\nAction 1: Search[foo]")
+    expected_output = AgentAction("Search", "foo", "foo\nAction: Search[foo]")
     assert output == expected_output
 
 
 def test_react_chain() -> None:
     """Test react chain."""
     responses = [
-        "I should probably search\nAction 1: Search[langchain]",
-        "I should probably lookup\nAction 2: Lookup[made]",
-        "Ah okay now I know the answer\nAction 3: Finish[2022]",
+        "I should probably search\nAction: Search[langchain]",
+        "I should probably lookup\nAction: Lookup[made]",
+        "Ah okay now I know the answer\nAction: Finish[2022]",
     ]
     fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())
@@ -98,8 +98,8 @@ def test_react_chain_bad_action() -> None:
     """Test react chain when bad action given."""
     bad_action_name = "BadAction"
     responses = [
-        f"I'm turning evil\nAction 1: {bad_action_name}[langchain]",
-        "Oh well\nAction 2: Finish[curses foiled again]",
+        f"I'm turning evil\nAction: {bad_action_name}[langchain]",
+        "Oh well\nAction: Finish[curses foiled again]",
     ]
     fake_llm = FakeListLLM(responses=responses)
     react_chain = ReActChain(llm=fake_llm, docstore=FakeDocstore())

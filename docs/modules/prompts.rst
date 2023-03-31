@@ -1,30 +1,49 @@
-Prompt Templates
+Prompts
 ==========================
 
-Language models take text as input - that text is commonly referred to as a prompt.
-Typically this is not simply a hardcoded string but rather a combination of a template, some examples, and user input.
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/components/prompts>`_
+
+
+The new way of programming models is through prompts.
+A "prompt" refers to the input to the model.
+This input is rarely hard coded, but rather is often constructed from multiple components.
+A PromptTemplate is responsible for the construction of this input.
 LangChain provides several classes and functions to make constructing and working with prompts easy.
 
-The following sections of documentation are provided:
+This section of documentation is split into four sections:
 
-- `Getting Started <./prompts/getting_started.html>`_: An overview of all the functionality LangChain provides for working with and constructing prompts.
+**LLM Prompt Templates**
 
-- `Key Concepts <./prompts/key_concepts.html>`_: A conceptual guide going over the various concepts related to prompts.
+How to use PromptTemplates to prompt Language Models.
 
-- `How-To Guides <./prompts/how_to_guides.html>`_: A collection of how-to guides. These highlight how to accomplish various objectives with our prompt class.
+**Chat Prompt Templates**
 
-- `Reference <../reference/prompts.html>`_: API reference documentation for all prompt classes.
+How to use PromptTemplates to prompt Chat Models.
+
+**Example Selectors**
+
+Often times it is useful to include examples in prompts.
+These examples can be hardcoded, but it is often more powerful if they are dynamically selected.
+This section goes over example selection.
 
 
+**Output Parsers**
 
+Language models (and Chat Models) output text.
+But many times you may want to get more structured information than just text back.
+This is where output parsers come in.
+Output Parsers are responsible for (1) instructing the model how output should be formatted,
+(2) parsing output into the desired formatting (including retrying if necessary).
+
+
+Go Deeper
+---------
 
 .. toctree::
    :maxdepth: 1
-   :caption: Prompt Templates
-   :name: Prompts
-   :hidden:
 
-   ./prompts/getting_started.md
-   ./prompts/key_concepts.md
-   ./prompts/how_to_guides.rst
-   Reference<../reference/prompts.rst>
+   ./prompts/prompt_templates.rst
+   ./prompts/chat_prompt_template.ipynb
+   ./prompts/example_selectors.rst
+   ./prompts/output_parsers.rst

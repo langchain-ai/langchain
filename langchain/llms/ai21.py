@@ -29,10 +29,10 @@ class AI21(LLM, BaseModel):
         .. code-block:: python
 
             from langchain.llms import AI21
-            ai21 = AI21(model="j1-jumbo")
+            ai21 = AI21(model="j2-jumbo-instruct")
     """
 
-    model: str = "j1-jumbo"
+    model: str = "j2-jumbo-instruct"
     """Model name to use."""
 
     temperature: float = 0.7
