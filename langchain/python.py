@@ -6,10 +6,21 @@ from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
 
-def remove_backticks_if_they_exist(command: str) -> str:
-    if (len(command) >= 6 and command[:3] == "```" and command[:3] == "```"):
+def remove_enclosing_markdown_for_python(command: str) -> str:
+    """
+    Removes any enclosing markdown for python code: inline markdown,
+    block markdown and formatted block code markdown
+    """
+    # Markdown with specified python
+    if command.startswith("```python") and command.endswith("```"):
+        command = command[9:-3]
+    elif command.startswith("```") and command.endswith("```") and len(command) > 6:
         command = command[3:-3]
-    return command
+    elif command.startswith("`") and command.endswith("`") and len(command) > 2:
+        command = command[1:-1]
+
+    # New lines can cause syntax errors
+    return command.strip()
 
 
 class PythonREPL(BaseModel):
@@ -18,13 +29,11 @@ class PythonREPL(BaseModel):
     globals: Optional[Dict] = Field(default_factory=dict, alias="_globals")
     locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
 
-    
-    
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
-        # Ignore any backticks if provided by chat models, ChatGPT does this
-        command = remove_backticks_if_they_exist(command)
-            
+        # Ignore any enclosing markdown, ChatGPT does this
+        command = remove_enclosing_markdown_for_python(command)
+
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         try:

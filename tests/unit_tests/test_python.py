@@ -1,6 +1,25 @@
 """Test functionality of Python REPL."""
+import pytest
 
-from langchain.python import PythonREPL
+from langchain.python import PythonREPL, remove_enclosing_markdown_for_python
+
+
+@pytest.mark.parametrize(
+    "enclosing_markdown",
+    [
+        "`{}`",
+        "```{}```",
+        "```python\n{}\n```",
+    ],
+)
+def test_markdown_removal(enclosing_markdown: str) -> None:
+    cmd = 'a="```"'  # Set a to be three backticks
+    enclosing_markdown = enclosing_markdown.format(cmd)
+    assert remove_enclosing_markdown_for_python(enclosing_markdown) == cmd
+    repl = PythonREPL()
+    repl.run(cmd)
+    assert repl.locals is not None
+    assert repl.locals["a"] == "```"
 
 
 def test_python_repl() -> None:
