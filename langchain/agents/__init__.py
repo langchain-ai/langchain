@@ -1,5 +1,5 @@
 """Interface for agents."""
-from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent import Agent, AgentExecutor, LLMSingleActionAgent, AgentOutputParser, BaseSingleActionAgent
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
     create_json_agent,
@@ -42,4 +42,7 @@ __all__ = [
     "create_vectorstore_agent",
     "create_pandas_dataframe_agent",
     "create_csv_agent",
+    "LLMSingleActionAgent",
+    "AgentOutputParser",
+    "BaseSingleActionAgent",
 ]
