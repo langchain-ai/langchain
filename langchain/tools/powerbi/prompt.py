@@ -12,11 +12,11 @@ Other common errors to check for, include:
 - Using the correct number of arguments for functions
 - Using the proper columns for joins
 
-If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query and return only the content of the query.
+If there are any of the above or other mistakes, rewrite the query. If there are no mistakes, just reproduce the original query. Only return a single query and nothing else.
 
 Examples:
 The query "EVALUATE COUNT(tablename)" is not correct and needs to be rewritten "EVALUATE ROW(""columname"", COUNTROWS(tablename))"
-
+The query "SELECT COUNT(DISTINCT VALUES tablename[columnname]) FROM tablename WHERE tablename[columnname2] = TRUE" is not correct and needs to be rewritten "DEFINE filteredTable = FILTER(tablename, tablename[columnname2] = TRUE) EVALUATE ROW(""columname"", DISTINCTCOUNT(filteredTable[groupcolumnname]))"
 rewritten query:
 
 """
