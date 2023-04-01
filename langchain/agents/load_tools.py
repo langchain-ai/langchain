@@ -258,10 +258,10 @@ def load_tools(
     for name in tool_names:
         if name == "requests":
             # expand requests into various methods
-            request_method_tools = [
+            requests_method_tools = [
                 _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
             ]
-            tool_names.extend(request_method_tools)
+            tool_names.extend(requests_method_tools)
         elif name in _BASE_TOOLS:
             tools.append(_BASE_TOOLS[name]())
         elif name in _LLM_TOOLS:
