@@ -2,8 +2,9 @@ import ai21
 import numpy as np
 from scipy.spatial.distance import cosine
 from typing import List, Union, Any, Optional, Dict
+from langchain.embeddings.base import Embeddings
 
-class AI21Embeddings:
+class AI21Embeddings(Embeddings):
     def __init__(self, api_key: str):
         """
         Initialize AI21Embeddings with the provided API key.
@@ -21,6 +22,14 @@ class AI21Embeddings:
         Close the AI21Embeddings instance when used with the 'with' statement.
         """
         pass
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embeddings = self.generate_embeddings(texts)
+        return [embedding.tolist() for embedding in embeddings]
+
+    def embed_query(self, text: str) -> List[float]:
+        embeddings = self.generate_embeddings([text])
+        return embeddings[0].tolist()
 
     def generate_embeddings(self, texts: List[str], model: str = "j2-grande-instruct") -> List[np.ndarray]:
         """
