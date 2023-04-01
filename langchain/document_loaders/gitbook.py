@@ -18,6 +18,7 @@ class GitbookLoader(WebBaseLoader):
         web_page: str,
         load_all_paths: bool = False,
         base_url: Optional[str] = None,
+        content_selector: str = "main",
     ):
         """Initialize with web page and whether to load all paths.
 
@@ -39,6 +40,7 @@ class GitbookLoader(WebBaseLoader):
             web_paths = web_page
         super().__init__(web_paths)
         self.load_all_paths = load_all_paths
+        self.content_selector = content_selector
 
     def load(self) -> List[Document]:
         """Fetch text from one single GitBook page."""
@@ -61,7 +63,7 @@ class GitbookLoader(WebBaseLoader):
         self, soup: Any, custom_url: Optional[str] = None
     ) -> Optional[Document]:
         """Fetch content from page and return Document."""
-        page_content_raw = soup.find("main")
+        page_content_raw = soup.find(self.content_selector)
         if not page_content_raw:
             return None
         content = page_content_raw.get_text(separator="\n").strip()
