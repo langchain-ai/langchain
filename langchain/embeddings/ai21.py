@@ -9,13 +9,14 @@ class AI21Embeddings:
         Initialize AI21Embeddings with the provided API key.
         """
         ai21.api_key = api_key
-    def __enter__(self):
+
+    def __enter__(self) -> 'AI21Embeddings':
         """
         Enable usage of the 'with' statement for this class.
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Close the AI21Embeddings instance when used with the 'with' statement.
         """
@@ -30,16 +31,16 @@ class AI21Embeddings:
         :return: A list of numpy arrays containing the embeddings.
         """
         prompt = "\n".join([f"Embed the following text as a 768-dimensional vector: {text}" for text in texts])
-        
+
         try:
-            response = self.client.completions.create(
+            response = ai21.Completion.execute(
                 model=model,
                 prompt=prompt,
-                num_results=1,
-                max_tokens=768 * len(texts),
+                numResults=1,
+                maxTokens=768 * len(texts),
                 temperature=0,
-                top_k_return=0,
-                top_p=1
+                topKReturn=0,
+                topP=1
             )
             tokens = response["completions"][0]["data"]["tokens"]
             embeddings = [np.array([token["generatedToken"]["logprob"] for token in tokens[i*768:(i+1)*768]]) for i in range(len(texts))]
