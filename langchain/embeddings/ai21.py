@@ -33,7 +33,7 @@ class AI21Embeddings:
         prompt = "\n".join([f"Embed the following text as a 768-dimensional vector: {text}" for text in texts])
 
         try:
-            response = ai21.Completion.execute(
+            response: dict = ai21.Completion.execute(
                 model=model,
                 prompt=prompt,
                 numResults=1,
