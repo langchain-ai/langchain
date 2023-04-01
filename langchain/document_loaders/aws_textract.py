@@ -22,7 +22,7 @@ class AwsTextractExtraction:
 
 
 
-    def get_text_from_pdf(self)-> List[Document]:
+    def get_text_from_image(self)-> List[Document]:
          output=[] 
          page_no=0
          
