@@ -208,12 +208,6 @@ class SearxSearchWrapper(BaseModel):
     k: int = 10
     aiosession: Optional[Any] = None
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
     @validator("unsecure")
     def disable_ssl_warnings(cls, v: bool) -> bool:
         """Disable SSL warnings."""
