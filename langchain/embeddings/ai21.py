@@ -1,7 +1,7 @@
 import ai21
 import numpy as np
 from scipy.spatial.distance import cosine
-from typing import List, Union
+from typing import List, Union, Any, Optional, Dict
 
 class AI21Embeddings:
     def __init__(self, api_key: str):
@@ -16,7 +16,7 @@ class AI21Embeddings:
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[Any]) -> None:
         """
         Close the AI21Embeddings instance when used with the 'with' statement.
         """
