@@ -69,7 +69,9 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine, only=self._usable_tables)
+        self._metadata.reflect(
+            bind=self._engine, only=self._usable_tables, schema=self._schema
+        )
 
     @classmethod
     def from_uri(
