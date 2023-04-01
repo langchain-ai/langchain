@@ -1,4 +1,3 @@
-import boto3
 import os
 from io import BytesIO
 from typing import Any, List, Optional
@@ -12,12 +11,12 @@ from langchain.utils import get_from_dict_or_env
 class AwsTextractExtraction:
 
 
-    def __init__(self,file_path):
+    def __init__(self,aws_region_name,aws_secret_key,aws_access_key,file_path):
    
 
-          self.aws_region_name  =  get_from_dict_or_env( key="aws_region_name", env_key="AWS_REGION")
-          self.aws_secret_key=  get_from_dict_or_env( key="aws_secret_key", env_key="AWS_SECRET_KEY")
-          self.aws_access_key =  get_from_dict_or_env( key="aws_access_key", env_key="AWS_ACCESS_KEY")
+          self.aws_region_name  =  aws_region_name
+          self.aws_secret_key=  aws_secret_key
+          self.aws_access_key =  aws_access_key
           self.file_path = file_path
           try:
             import boto3
