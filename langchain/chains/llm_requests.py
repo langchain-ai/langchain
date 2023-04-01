@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
-from langchain.schema import BaseLanguageModel
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain.requests import RequestsWrapper
+from langchain.schema import BaseLanguageModel
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
