@@ -16,7 +16,13 @@ from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearch
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
-from langchain.tools.requests.tool import RequestsGetTool
+from langchain.tools.requests.tool import (
+    RequestsGetTool,
+    RequestsPostTool,
+    RequestsPatchTool,
+    RequestsPutTool,
+    RequestsDeleteTool,
+)
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities.apify import ApifyWrapper
@@ -34,8 +40,24 @@ def _get_python_repl() -> BaseTool:
     return PythonREPLTool()
 
 
-def _get_requests() -> BaseTool:
+def _get_tools_requests_get() -> BaseTool:
     return RequestsGetTool(requests_wrapper=RequestsWrapper())
+
+
+def _get_tools_requests_post() -> BaseTool:
+    return RequestsPostTool(requests_wrapper=RequestsWrapper())
+
+
+def _get_tools_requests_patch() -> BaseTool:
+    return RequestsPatchTool(requests_wrapper=RequestsWrapper())
+
+
+def _get_tools_requests_put() -> BaseTool:
+    return RequestsPutTool(requests_wrapper=RequestsWrapper())
+
+
+def _get_tools_requests_delete() -> BaseTool:
+    return RequestsDeleteTool(requests_wrapper=RequestsWrapper())
 
 
 def _get_terminal() -> BaseTool:
@@ -48,7 +70,11 @@ def _get_terminal() -> BaseTool:
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
-    "requests": _get_requests,
+    "requests_get": _get_tools_requests_get,
+    "requests_post": _get_tools_requests_post,
+    "requests_patch": _get_tools_requests_patch,
+    "requests_put": _get_tools_requests_put,
+    "requests_delete": _get_tools_requests_delete,
     "terminal": _get_terminal,
 }
 
@@ -228,9 +254,16 @@ def load_tools(
         List of tools.
     """
     tools = []
+
     for name in tool_names:
-        if name in _BASE_TOOLS:
-            tools.append(_BASE_TOOLS[name]())
+        if name == "requests":
+            # expand requests into various methods
+            request_method_tools = [
+                _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
+            ]
+            tool_names.extend(request_method_tools)
+        elif name in _BASE_TOOLS:
+            tools.extend(_BASE_TOOLS[name]())
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
