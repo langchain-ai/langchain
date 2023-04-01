@@ -1,6 +1,6 @@
 """Loader that loads GitBook."""
 from typing import Any, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -47,7 +47,7 @@ class GitbookLoader(WebBaseLoader):
             relative_paths = self._get_paths(soup_info)
             documents = []
             for path in relative_paths:
-                url = self.base_url + path
+                url = urljoin(self.base_url, path)
                 print(f"Fetching text from {url}")
                 soup_info = self._scrape(url)
                 documents.append(self._get_document(soup_info, url))
