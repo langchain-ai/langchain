@@ -1,0 +1,71 @@
+# langchain/langchain/embeddings/AI21.py
+
+import ai21
+import numpy as np
+from scipy.spatial.distance import cosine
+
+class AI21Embeddings:
+    def __init__(self, api_key):
+        """
+        Initialize AI21Embeddings with the provided API key.
+        """
+        self.client = ai21.Client(api_key)
+
+    def __enter__(self):
+        """
+        Enable usage of the 'with' statement for this class.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Close the AI21Embeddings instance when used with the 'with' statement.
+        """
+        pass
+
+    def generate_embeddings(self, texts, model="j2-grande-instruct"):
+        """
+        Generate embeddings for a list of texts using the specified model.
+
+        :param texts: A list of texts for which to generate embeddings.
+        :param model: The name of the AI21 model to use for generating embeddings.
+        :return: A list of numpy arrays containing the embeddings.
+        """
+        prompt = "\n".join([f"Embed the following text as a 768-dimensional vector: {text}" for text in texts])
+        
+        try:
+            response = self.client.completions.create(
+                model=model,
+                prompt=prompt,
+                num_results=1,
+                max_tokens=768 * len(texts),
+                temperature=0,
+                top_k_return=0,
+                top_p=1
+            )
+            tokens = response["completions"][0]["data"]["tokens"]
+            embeddings = [np.array([token["generatedToken"]["logprob"] for token in tokens[i*768:(i+1)*768]]) for i in range(len(texts))]
+            return embeddings
+        except Exception as e:
+            print(f"Error while generating embeddings: {e}")
+            return []
+
+    def get_similarity(self, text1, text2, model="j2-grande-instruct"):
+        """
+        Calculate the similarity between two texts using the specified model.
+
+        :param text1: The first text.
+        :param text2: The second text.
+        :param model: The name of the AI21 model to use for generating embeddings.
+        :return: A float representing the similarity between the two texts.
+        """
+        emb1, emb2 = self.generate_embeddings([text1, text2], model=model)
+        if not emb1 or not emb2:
+            return None
+
+        try:
+            similarity = 1 - cosine(emb1, emb2)
+            return similarity
+        except Exception as e:
+            print(f"Error while calculating similarity: {e}")
+            return None
