@@ -19,6 +19,14 @@ class AwsTextractExtraction:
           self.aws_secret_key=  get_from_dict_or_env( key="aws_secret_key", env_key="AWS_SECRET_KEY")
           self.aws_access_key =  get_from_dict_or_env( key="aws_access_key", env_key="AWS_ACCESS_KEY")
           self.file_path = file_path
+          try:
+            import boto3
+
+          except ImportError:
+                raise ValueError(
+                    "Could not import aws boto3 package. "
+                    "Please install it with `pip install boto3`."
+                )
 
 
 
