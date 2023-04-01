@@ -1,8 +1,10 @@
 """A tool for running python code in a REPL."""
 
 import ast
+from io import StringIO
 import sys
 from typing import Dict, Optional
+import traceback
 
 from pydantic import Field, root_validator
 
@@ -67,13 +69,28 @@ class PythonAstREPLTool(BaseTool):
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
             module_end_str = ast.unparse(module_end)  # type: ignore
+
+            old_stdout = sys.stdout
+            sys.stdout = mystdout = StringIO()
+            '''
+            Let's try to handle the following cases for the final statement:
+                1. result # we ignore any stdout as a result of evaluating this expression
+                2. function(input) # Returns `None`, but prints to stdout -> capture stdout
+                3. throws exception: my_function(input) # raises `ValueError()`
+                4. a statement that does not fit our desired syntax: e.g. `x = 1` or `x = print(5)`
+            We can handle 1-2 but will throw an exception for 3-4.
+            4 is handled the same way as 3.
+            '''
             try:
-                return eval(module_end_str, self.globals, self.locals)
-            except Exception:
-                exec(module_end_str, self.globals, self.locals)
-                return ""
+                res = eval(module_end_str, self.globals, self.locals)
+            finally:
+                sys.stdout = old_stdout
+            if res is not None and res != '':
+                return str(res)
+            # Try to capture stdout
+            return mystdout.getvalue()
         except Exception as e:
-            return str(e)
+            return f"{type(e).__name__}: {e}"
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""

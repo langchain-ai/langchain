@@ -1,6 +1,7 @@
 """Test functionality of Python REPL."""
 
 from langchain.python import PythonREPL
+from langchain.tools.python.tool import PythonAstREPLTool
 
 
 def test_python_repl() -> None:
@@ -53,3 +54,33 @@ def test_function() -> None:
     code = "print(add(1, 2))"
     output = chain.run(code)
     assert output == "3\n"
+
+# TODO(jon-chuang): add new file and pytest skipif version < (3, 9, 0)?
+def test_tool_object_output() -> None:
+    """Test returning an object from an expression."""
+    chain  = PythonAstREPLTool()
+    code = "class A:\n  def __init__(self, x):\n    print(x); self.x = x\nA(1+122).x"
+    output = chain.run(code)
+    # Only return the final output
+    assert output == "123"
+
+def test_tool_stdout_output() -> None:
+    """Test returning an object from an expression."""
+    chain  = PythonAstREPLTool()
+    code = "def f(x): print(x+1)\nf(123)"
+    output = chain.run(code)
+    assert output == "124\n"
+
+def test_tool_throw_exception() -> None:
+    """Test returning an object from an expression."""
+    chain  = PythonAstREPLTool()
+    code = "def f(x): raise ValueError(f'{x}')\nf(123)"
+    output = chain.run(code)
+    assert output == "ValueError: 123"
+
+def test_tool_invalid_stmt() -> None:
+    """Test returning an object from an expression."""
+    chain  = PythonAstREPLTool()
+    code = "x = 5"
+    output = chain.run(code)
+    assert output == "SyntaxError: invalid syntax (<string>, line 1)"
