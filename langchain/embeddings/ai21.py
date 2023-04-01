@@ -1,8 +1,9 @@
+from typing import Any, List, Optional, Union
+
 import ai21
 import numpy as np
-from scipy.spatial.distance import cosine
-from typing import List, Union, Any, Optional, Dict
 from langchain.embeddings.base import Embeddings
+from scipy.spatial.distance import cosine
 
 
 class AI21Embeddings(Embeddings):
