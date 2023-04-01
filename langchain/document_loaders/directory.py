@@ -33,7 +33,7 @@ class DirectoryLoader(BaseLoader):
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
-        loader_kwargs: dict = None,
+        loader_kwargs: Union[dict, None] = None,
         recursive: bool = False,
     ):
         """Initialize with path to directory and how to glob over it."""

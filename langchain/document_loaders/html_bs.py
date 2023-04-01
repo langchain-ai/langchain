@@ -12,9 +12,14 @@ logger = logging.getLogger(__file__)
 class BSHTMLLoader(BaseLoader):
     """Loader that uses beautiful soup to parse HTML files."""
 
-    def __init__(self, file_path: str, open_encoding: str = None, bs_kwargs: dict = None) -> None:
-        """Initialise with path, and optionally, file encoding to use, and any kwargs to pass to the BeautifulSoup
-        object."""
+    def __init__(
+        self,
+        file_path: str,
+        open_encoding: Union[str, None] = None,
+        bs_kwargs: Union[dict, None] = None,
+    ) -> None:
+        """Initialise with path, and optionally, file encoding to use, and any kwargs
+        to pass to the BeautifulSoup object."""
         try:
             import bs4  # noqa:F401
         except ImportError:
@@ -25,9 +30,7 @@ class BSHTMLLoader(BaseLoader):
         self.file_path = file_path
         self.open_encoding = open_encoding
         if bs_kwargs is None:
-            bs_kwargs = {
-                "features": "lxml"
-            }
+            bs_kwargs = {"features": "lxml"}
         self.bs_kwargs = bs_kwargs
 
     def load(self) -> List[Document]:
