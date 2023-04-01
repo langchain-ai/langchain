@@ -28,7 +28,7 @@ class PythonREPLTool(BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        return self.python_repl.run(query)
+        return self.python_repl.run(query.replace('```', ''))
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
