@@ -1,7 +1,7 @@
-.PHONY: all clean format lint test tests test_watch integration_tests help
+.PHONY: all clean format lint test tests test_watch integration_tests docker_tests help
 
 all: help
-	
+
 coverage:
 	poetry run pytest --cov \
 		--cov-config=.coveragerc \
@@ -40,6 +40,10 @@ test_watch:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+docker_tests:
+	docker build -t my-langchain-image:test .
+	docker run --rm my-langchain-image:test
+
 help:
 	@echo '----'
 	@echo 'coverage            - run unit tests and generate coverage report'
@@ -51,3 +55,4 @@ help:
 	@echo 'test                - run unit tests'
 	@echo 'test_watch          - run unit tests in watch mode'
 	@echo 'integration_tests   - run integration tests'
+	@echo 'docker_tests        - run unit tests in docker'
