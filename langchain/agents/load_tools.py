@@ -263,7 +263,7 @@ def load_tools(
             ]
             tool_names.extend(request_method_tools)
         elif name in _BASE_TOOLS:
-            tools.extend(_BASE_TOOLS[name]())
+            tools.append(_BASE_TOOLS[name]())
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
