@@ -1,6 +1,7 @@
 import boto3
 import os
 from io import BytesIO
+from typing import Any, List, Optional
 from PIL import Image
 from langchain.docstore.document import Document
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +12,7 @@ from langchain.utils import get_from_dict_or_env
 class AwsTextractExtraction:
 
 
-    def __init__(self, aws_secret_key, aws_access_key, aws_region_name,file_path):
+    def __init__(self,file_path):
    
 
           self.aws_region_name  =  get_from_dict_or_env( key="aws_region_name", env_key="AWS_REGION")
@@ -21,7 +22,7 @@ class AwsTextractExtraction:
 
 
 
-    def get_text_from_pdf(self)-> List[str]:
+    def get_text_from_pdf(self)-> List[Document]:
          output=[] 
          page_no=0
          
