@@ -1,6 +1,15 @@
 """Test functionality of Python REPL."""
 
 from langchain.python import PythonREPL
+from langchain.tools.python.tool import PythonREPLTool
+
+_SAMPLE_CODE = """
+```
+def multiply():
+    print(5*6)
+multiply()
+```
+"""
 
 
 def test_python_repl() -> None:
@@ -41,19 +50,13 @@ def test_functionality() -> None:
     code = "print(1 + 1)"
     output = chain.run(code)
     assert output == "2\n"
-    
-    
+
+
 def test_functionality_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     chain = PythonREPL()
-    code = """
-    ```
-    def multiply():
-        print(5*6)
-    multiply()
-    ```
-    """
-    output = chain.run(code)
+    tool = PythonREPLTool(python_repl=chain)
+    output = tool.run(_SAMPLE_CODE)
     assert output == "30\n"
 
 
