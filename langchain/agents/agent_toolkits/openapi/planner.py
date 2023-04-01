@@ -159,7 +159,10 @@ def _create_api_controller_tool(
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
         pattern = r"\b(GET|POST)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
-        endpoint_names = [f"{method} {route}" for method, route in matches]
+        endpoint_names = [
+            "{method} {route}".format(method=method, route=route.split("?")[0])
+            for method, route in matches
+        ]
         endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
         docs_str = ""
         for endpoint_name in endpoint_names:

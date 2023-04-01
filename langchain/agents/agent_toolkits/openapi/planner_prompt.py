@@ -45,7 +45,7 @@ API_PLANNER_TOOL_DESCRIPTION = f"Can be used to generate the right API calls to 
 
 # Execution.
 API_CONTROLLER_PROMPT = """You are an agent that gets a sequence of API calls and given their documentation, should execute them and return the final response.
-If you cannot complete them and run into issues, you should explain the issue. When interacting with API objects, you should extract ids for inputs to other API calls but ids and names for outputs returned to the User.
+If you cannot complete them and run into issues, you should explain the issue. If you're able to resolve an API call call, you can retry the API call. When interacting with API objects, you should extract ids for inputs to other API calls but ids and names for outputs returned to the User.
 
 
 Here is documentation on the API:
@@ -68,8 +68,6 @@ Observation: the output of the action
 Thought: I am finished executing the plan (or, I cannot finish executing the plan without knowing some other information.)
 Final Answer: the final output from executing the plan or missing information I'd need to re-plan correctly.
 
-
-You can use US as a country code.
 
 Begin!
 

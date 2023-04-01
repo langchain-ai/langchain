@@ -1,4 +1,4 @@
-"""Code to create an OpenAPI spec."""
+"""Quick and dirty representation for OpenAPI specs."""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple, Union
@@ -98,6 +98,6 @@ def reduce_openapi_spec(spec: dict, dereference: bool = False) -> ReducedOpenAPI
     ]
     return ReducedOpenAPISpec(
         servers=spec["servers"],
-        description=spec["info"]["description"],
+        description=spec["info"].get("description", ""),
         endpoints=endpoints,
     )
