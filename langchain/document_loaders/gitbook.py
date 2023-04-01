@@ -51,14 +51,19 @@ class GitbookLoader(WebBaseLoader):
                 print(f"Fetching text from {url}")
                 soup_info = self._scrape(url)
                 documents.append(self._get_document(soup_info, url))
-            return documents
+            return [d for d in documents if d]
         else:
             soup_info = self.scrape()
-            return [self._get_document(soup_info, self.web_path)]
+            documents = [self._get_document(soup_info, self.web_path)]
+            return [d for d in documents if d]
 
-    def _get_document(self, soup: Any, custom_url: Optional[str] = None) -> Document:
+    def _get_document(
+        self, soup: Any, custom_url: Optional[str] = None
+    ) -> Optional[Document]:
         """Fetch content from page and return Document."""
         page_content_raw = soup.find("main")
+        if not page_content_raw:
+            return None
         content = page_content_raw.get_text(separator="\n").strip()
         title_if_exists = page_content_raw.find("h1")
         title = title_if_exists.text if title_if_exists else ""
