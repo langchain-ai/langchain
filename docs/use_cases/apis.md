@@ -8,7 +8,7 @@ This page covers all resources available in LangChain for working with APIs.
 
 ## Chains
 
-If you are just getting started, and you have relatively apis, you should get started with chains.
+If you are just getting started, and you have relatively simple apis, you should get started with chains.
 Chains are a sequence of predetermined steps, so they are good to get started with as they give you more control and let you 
 understand what is happening better.
 
