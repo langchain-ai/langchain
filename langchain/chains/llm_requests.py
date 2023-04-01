@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+from langchain.schema import BaseLanguageModel
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -88,16 +89,19 @@ class LLMRequestsChain(Chain, BaseModel):
     @property
     def _chain_type(self) -> str:
         return "llm_requests_chain"
-    
+
+
 class SummarizeContext:
-    def __init__(self, llm):
-        from langchain.text_splitter import CharacterTextSplitter
+    def __init__(self, llm: BaseLanguageModel) -> None:
         from langchain.chains.summarize import load_summarize_chain
+        from langchain.text_splitter import CharacterTextSplitter
+
         self.text_splitter = CharacterTextSplitter()
         self.summarize_chain = load_summarize_chain(llm, chain_type="map_reduce")
 
     def summarize(self, text: str) -> str:
         from langchain.docstore.document import Document
+
         texts = self.text_splitter.split_text(text)
         docs = [Document(page_content=t) for t in texts]
         return self.summarize_chain.run(docs)
