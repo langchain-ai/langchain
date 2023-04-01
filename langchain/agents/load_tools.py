@@ -1,6 +1,7 @@
 # flake8: noqa
 """Load tools."""
 from typing import Any, List, Optional
+import warnings
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -70,6 +71,7 @@ def _get_terminal() -> BaseTool:
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
+    "requests": _get_tools_requests_get,  # preserved for backwards compatability
     "requests_get": _get_tools_requests_get,
     "requests_post": _get_tools_requests_post,
     "requests_patch": _get_tools_requests_patch,
@@ -257,6 +259,12 @@ def load_tools(
 
     for name in tool_names:
         if name == "requests":
+            warnings.warn(
+                "tool name `requests` is deprecated - "
+                "please use `requests_all` or specify the requests method"
+            )
+
+        if name == "requests_all":
             # expand requests into various methods
             requests_method_tools = [
                 _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
