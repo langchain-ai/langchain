@@ -1,16 +1,14 @@
-# langchain/langchain/embeddings/AI21.py
-
 import ai21
 import numpy as np
 from scipy.spatial.distance import cosine
+from typing import List, Union
 
 class AI21Embeddings:
-    def __init__(self, api_key):
+    def __init__(self, api_key: str):
         """
         Initialize AI21Embeddings with the provided API key.
         """
-        self.client = ai21.Client(api_key)
-
+        ai21.api_key = api_key
     def __enter__(self):
         """
         Enable usage of the 'with' statement for this class.
@@ -23,7 +21,7 @@ class AI21Embeddings:
         """
         pass
 
-    def generate_embeddings(self, texts, model="j2-grande-instruct"):
+    def generate_embeddings(self, texts: List[str], model: str = "j2-grande-instruct") -> List[np.ndarray]:
         """
         Generate embeddings for a list of texts using the specified model.
 
@@ -50,7 +48,7 @@ class AI21Embeddings:
             print(f"Error while generating embeddings: {e}")
             return []
 
-    def get_similarity(self, text1, text2, model="j2-grande-instruct"):
+    def get_similarity(self, text1: str, text2: str, model: str = "j2-grande-instruct") -> Union[float, None]:
         """
         Calculate the similarity between two texts using the specified model.
 
