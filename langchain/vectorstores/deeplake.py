@@ -57,6 +57,7 @@ class DeepLake(VectorStore):
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
         token: Optional[str] = None,
         embedding_function: Optional[Embeddings] = None,
+        read_only: Optional[bool] = None,
     ) -> None:
         """Initialize with Deep Lake client."""
 
@@ -70,7 +71,7 @@ class DeepLake(VectorStore):
         self._deeplake = deeplake
 
         if deeplake.exists(dataset_path, token=token):
-            self.ds = deeplake.load(dataset_path, token=token)
+            self.ds = deeplake.load(dataset_path, token=token, read_only=read_only)
             logger.warning(
                 f"Deep Lake Dataset in {dataset_path} already exists, "
                 f"loading from the storage"

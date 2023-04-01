@@ -1,6 +1,7 @@
 """All different types of document loaders."""
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
+from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -119,6 +120,7 @@ __all__ = [
     "GoogleApiClient",
     "CSVLoader",
     "BlackboardLoader",
+    "ApifyDatasetLoader",
     "WhatsAppChatLoader",
     "DataFrameLoader",
     "AzureBlobStorageFileLoader",
