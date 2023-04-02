@@ -2,6 +2,7 @@
 from typing import Any, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.llms.base import BaseLLM
@@ -41,7 +42,7 @@ def initialize_agent(
         An agent executor
     """
     if agent is None and agent_path is None:
-        agent = "zero-shot-react-description"
+        agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:
         raise ValueError(
             "Both `agent` and `agent_path` are specified, "

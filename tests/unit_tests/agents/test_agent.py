@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, Optional
 from pydantic import BaseModel
 
 from langchain.agents import AgentExecutor, initialize_agent
+from langchain.agents.agent_types import AgentType
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
@@ -55,7 +56,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         ),
     ]
     agent = initialize_agent(
-        tools, fake_llm, agent="zero-shot-react-description", verbose=True, **kwargs
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True, **kwargs
     )
     return agent
 
@@ -98,7 +99,7 @@ def test_agent_with_callbacks_global() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
@@ -144,7 +145,7 @@ def test_agent_with_callbacks_local() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
@@ -191,7 +192,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         callback_manager=manager,
     )
 
@@ -223,7 +224,7 @@ def test_agent_tool_return_direct() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
     output = agent.run("when was langchain made")
@@ -249,7 +250,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         return_intermediate_steps=True,
     )
 
@@ -280,7 +281,7 @@ def test_agent_with_new_prefix_suffix() -> None:
     agent = initialize_agent(
         tools=tools,
         llm=fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         agent_kwargs={"prefix": prefix, "suffix": suffix},
     )
 
@@ -307,7 +308,7 @@ def test_agent_lookup_tool() -> None:
     agent = initialize_agent(
         tools=tools,
         llm=fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
     assert agent.lookup_tool("Search") == tools[0]
