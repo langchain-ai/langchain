@@ -39,9 +39,9 @@ class AwsTextractExtraction:
             aws_secret_access_key=self.aws_secret_key
             )
          textract_client =  session.client('textract')
-         Image=  Image.open(self.file_path)
+         Pil_Image_obj=  Image.open(self.file_path)
          buf = BytesIO()
-         Image.save(buf, format='PNG')
+         Pil_Image_obj.save(buf, format='PNG')
          image_bytes = buf.getvalue()
         
 
