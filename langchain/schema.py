@@ -129,31 +129,11 @@ def _message_from_dict(message: dict) -> BaseMessage:
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
+class LLMResult(BaseModel):
+    """Class that contains all relevant information for an LLM Result."""
 
-class ChatGeneration(Generation):
-    """Output of a single generation."""
-
-    text = ""
-    message: BaseMessage
-
-    @root_validator
-    def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values["text"] = values["message"].content
-        return values
-
-class BaseResult(BaseModel):
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
-
-
-class ChatResult(BaseResult):
-    """Class that contains all relevant information for a Chat Result."""
-
-    generations: List[List[ChatGeneration]]
-    """List of the things generated. It contains a list-of-prompts list-of-responses."""
-
-class LLMResult(BaseResult):
-    """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
     """List of the things generated. This is List[List[]] because

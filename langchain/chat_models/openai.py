@@ -18,10 +18,10 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
     BaseMessage,
-    ChatGeneration,
     ChatMessage,
-    ChatResult,
+    Generation,
     HumanMessage,
+    LLMResult,
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
@@ -61,18 +61,6 @@ async def acompletion_with_retry(llm: ChatOpenAI, **kwargs: Any) -> Any:
         return await llm.client.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
-
-
-def _convert_dict_to_message(_dict: dict) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        return AIMessage(content=_dict["content"])
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -233,7 +221,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
             inner_completion = ""
@@ -249,10 +237,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                     token,
                     verbose=self.verbose,
                 )
-            message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
-            )
-            return ChatResult(generations=[[ChatGeneration(message=message)]])
+            return LLMResult(generations=[[Generation(text=inner_completion)]])
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -267,18 +252,17 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations: list[ChatGeneration] = []
+    def _create_chat_result(self, response: Mapping[str, Any]) -> LLMResult:
+        generations: list[Generation] = []
         for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
-            gen = ChatGeneration(message=message)
+            gen = Generation(text=res["message"]["content"])
             generations.append(gen)
         llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
-        return ChatResult(generations=[generations], llm_output=llm_output)
+        return LLMResult(generations=[generations], llm_output=llm_output)
 
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
             inner_completion = ""
@@ -300,10 +284,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                         token,
                         verbose=self.verbose,
                     )
-            message = _convert_dict_to_message(
-                {"content": inner_completion, "role": role}
-            )
-            return ChatResult(generations=[[ChatGeneration(message=message)]])
+            return LLMResult(generations=[[Generation(text=inner_completion)]])
         else:
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params

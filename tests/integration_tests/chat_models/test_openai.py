@@ -7,8 +7,7 @@ from langchain.callbacks.base import CallbackManager
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.schema import (
     BaseMessage,
-    ChatGeneration,
-    ChatResult,
+    Generation,
     HumanMessage,
     LLMResult,
     SystemMessage,

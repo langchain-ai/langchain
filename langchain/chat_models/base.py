@@ -11,8 +11,8 @@ from langchain.schema import (
     AIMessage,
     BaseLanguageModel,
     BaseMessage,
-    ChatGeneration,
-    ChatResult,
+    Generation,
+    LLMResult,
     HumanMessage,
     PromptValue,
 )
@@ -48,27 +48,27 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     def generate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         """Top Level call"""
         results = [self._generate(m, stop=stop) for m in messages]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        return ChatResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     async def agenerate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         """Top Level call"""
         results = await asyncio.gather(
             *[self._agenerate(m, stop=stop) for m in messages]
         )
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        return ChatResult(generations=generations, llm_output=llm_output)
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         prompt_strings = [p.to_string() for p in prompts]
         self.callback_manager.on_llm_start(
@@ -84,7 +84,7 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     async def agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
         prompt_strings = [p.to_string() for p in prompts]
         if self.callback_manager.is_async:
@@ -112,13 +112,13 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     @abstractmethod
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         """Top Level call"""
 
     @abstractmethod
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         """Top Level call"""
 
     def __call__(
@@ -134,11 +134,10 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 class SimpleChatModel(BaseChatModel):
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
-    ) -> ChatResult:
+    ) -> LLMResult:
         output_str = self._call(messages, stop=stop)
-        message = AIMessage(content=output_str)
-        generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
+        generation = Generation(text=output_str)
+        return LLMResult(generations=[[generation]])
 
     @abstractmethod
     def _call(
