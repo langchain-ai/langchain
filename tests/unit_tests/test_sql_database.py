@@ -1,4 +1,5 @@
 # flake8: noqa=E501
+# TODO: add unit test showing that it will only bind to certain tables
 """Test SQL database wrapper."""
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
@@ -122,4 +123,15 @@ def test_sql_database_run_update() -> None:
     command = "update user set user_name='Updated' where user_id = 13"
     output = db.run(command)
     expected_output = ""
+    assert output == expected_output
+
+
+def test_sql_database_reflect_only() -> None:
+    """Test that only the tables specified in include_tables are being
+    reflected"""
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj.create_all(engine)
+    db = SQLDatabase(engine, include_tables=["user"], only_bind_include_tables=True)
+    output = list(db._metadata.tables.keys())
+    expected_output = ["user"]
     assert output == expected_output

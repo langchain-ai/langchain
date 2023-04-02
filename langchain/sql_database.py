@@ -21,12 +21,15 @@ class SQLDatabase:
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
         custom_table_info: Optional[dict] = None,
+        only_bind_include_tables: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
+        if only_bind_include_tables and not include_tables:
+            raise ValueError("Must specify which tables to bind")
 
         self._inspector = inspect(self._engine)
         self._all_tables = set(self._inspector.get_table_names(schema=schema))
@@ -66,7 +69,12 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
+        tables_to_bind = (
+            self._include_tables if only_bind_include_tables else self._all_tables
+        )
+        self._metadata.reflect(
+            bind=self._engine, schema=self._schema, only=tables_to_bind
+        )
 
     @classmethod
     def from_uri(
