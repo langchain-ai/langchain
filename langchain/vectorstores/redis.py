@@ -375,3 +375,6 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        raise NotImplementedError("RedisVectorStoreRetriever does not support async")

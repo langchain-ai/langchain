@@ -142,19 +142,32 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         from io import BytesIO
 
         from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseDownload
 
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id).execute()
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
-        while done is False:
-            status, done = downloader.next_chunk()
+        try:
+            while done is False:
+                status, done = downloader.next_chunk()
+
+        except HttpError as e:
+            if e.resp.status == 404:
+                print("File not found: {}".format(id))
+            else:
+                print("An error occurred: {}".format(e))
+
         text = fh.getvalue().decode("utf-8")
-        metadata = {"source": f"https://docs.google.com/document/d/{id}/edit"}
+        metadata = {
+            "source": f"https://docs.google.com/document/d/{id}/edit",
+            "title": f"{file.get('name')}",
+        }
         return Document(page_content=text, metadata=metadata)
 
     def _load_documents_from_folder(self) -> List[Document]:
@@ -204,6 +217,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id).execute()
         request = service.files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -221,6 +235,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 page_content=page.extract_text(),
                 metadata={
                     "source": f"https://drive.google.com/file/d/{id}/view",
+                    "title": f"{file.get('name')}",
                     "page": i,
                 },
             )

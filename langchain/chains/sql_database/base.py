@@ -162,7 +162,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
             return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        _table_names = self.sql_chain.database.get_table_names()
+        _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
         llm_inputs = {
             "query": inputs[self.input_key],

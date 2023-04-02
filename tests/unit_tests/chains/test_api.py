@@ -1,6 +1,7 @@
 """Test LLM Math functionality."""
 
 import json
+from typing import Any
 
 import pytest
 
@@ -16,7 +17,7 @@ class FakeRequestsChain(RequestsWrapper):
 
     output: str
 
-    def get(self, url: str) -> str:
+    def get(self, url: str, **kwargs: Any) -> str:
         """Just return the specified output."""
         return self.output
 
