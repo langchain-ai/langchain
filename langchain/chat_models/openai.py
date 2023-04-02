@@ -239,16 +239,20 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             inner_completion = ""
             role = "assistant"
             params["stream"] = True
-            for stream_resp in self.completion_with_retry(
-                messages=message_dicts, **params
-            ):
-                role = stream_resp["choices"][0]["delta"].get("role", role)
-                token = stream_resp["choices"][0]["delta"].get("content", "")
-                inner_completion += token
-                self.callback_manager.on_llm_new_token(
-                    token,
-                    verbose=self.verbose,
-                )
+            response = self.completion_with_retry(messages=message_dicts, **params)
+            try:
+                for stream_resp in response:
+                    role = stream_resp["choices"][0]["delta"].get("role", role)
+                    token = stream_resp["choices"][0]["delta"].get("content", "")
+                    inner_completion += token
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            except Exception as e:
+                logger.warning(e)
+            finally:
+                response.close()
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
