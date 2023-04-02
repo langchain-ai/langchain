@@ -1,16 +1,17 @@
 """Load agent."""
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.llms.base import BaseLLM
+from langchain.chat_models.base import BaseChatModel
 from langchain.tools.base import BaseTool
 
 
 def initialize_agent(
     tools: Sequence[BaseTool],
-    llm: BaseLLM,
+    llm: Union[BaseLLM, BaseChatModel],
     agent: Optional[str] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
