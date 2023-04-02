@@ -13,7 +13,8 @@ logger = logging.getLogger(__file__)
 
 
 class SeleniumURLLoader(BaseLoader):
-    """Loader that uses Selenium and to load a page.
+    """Loader that uses Selenium and to load a page and unstructured to load the html.
+    This is useful for loading pages that require javascript to render.
 
     Attributes:
         urls (List[str]): List of URLs to load.
