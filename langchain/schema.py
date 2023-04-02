@@ -65,6 +65,13 @@ class BaseMessage(BaseModel):
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
+    def _repr_markdown_(self) -> str:
+        """Generates a markdown representation for Jupyter frontends"""
+        # Since messages are part of a dialog, indent them to make it clear
+        # that they are part of a conversation.
+        blockquoted = "\n".join(f"> {line}" for line in self.content.splitlines())
+        return f"**{self.__class__.__name__}**:\n{blockquoted}"
+
 
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
