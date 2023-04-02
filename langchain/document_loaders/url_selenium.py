@@ -1,15 +1,19 @@
 """Loader that uses Selenium to load a page, then uses unstructured to load the html.
 """
 import logging
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Literal, Optional, Union
+
+if TYPE_CHECKING:
+    from selenium.webdriver import Chrome, Firefox
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__file__)
 
+
 class SeleniumURLLoader(BaseLoader):
-    """Loader that uses Selenium to load a page, then uses unstructured to load the html.
+    """Loader that uses Selenium and to load a page.
 
     Attributes:
         urls (List[str]): List of URLs to load.
@@ -23,7 +27,7 @@ class SeleniumURLLoader(BaseLoader):
         self,
         urls: List[str],
         continue_on_failure: bool = True,
-        browser: Union["chrome", "firefox"] = "chrome",
+        browser: Literal["chrome", "firefox"] = "chrome",
         executable_path: Optional[str] = None,
         headless: bool = True,
     ):
@@ -35,7 +39,7 @@ class SeleniumURLLoader(BaseLoader):
                 "selenium package not found, please install it with "
                 "`pip install selenium`"
             )
-        
+
         try:
             import unstructured  # noqa:F401
         except ImportError:
@@ -43,14 +47,14 @@ class SeleniumURLLoader(BaseLoader):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-            
+
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.browser = browser
         self.executable_path = executable_path
         self.headless = headless
 
-    def _get_driver(self):
+    def _get_driver(self) -> Union["Chrome", "Firefox"]:
         """Create and return a WebDriver instance based on the specified browser.
 
         Raises:
@@ -78,7 +82,9 @@ class SeleniumURLLoader(BaseLoader):
                 firefox_options.add_argument("--headless")
             if self.executable_path is None:
                 return Firefox(options=firefox_options)
-            return Firefox(executable_path=self.executable_path, options=firefox_options)
+            return Firefox(
+                executable_path=self.executable_path, options=firefox_options
+            )
         else:
             raise ValueError("Invalid browser specified. Use 'chrome' or 'firefox'.")
 
