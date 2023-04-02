@@ -44,7 +44,7 @@ def test_chat_openai_generate() -> None:
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:
-            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation, Generation)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
 
@@ -54,7 +54,7 @@ def test_chat_openai_multiple_completions() -> None:
     chat = ChatOpenAI(max_tokens=10, n=5)
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
-    assert isinstance(response, ChatResult)
+    assert isinstance(response, LLMResult)
     assert len(response.generations) == 5
     for generation in response.generations:
         assert isinstance(generation.message, BaseMessage)
@@ -118,7 +118,7 @@ async def test_async_chat_openai() -> None:
     for generations in response.generations:
         assert len(generations) == 2
         for generation in generations:
-            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation, Generation)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
 
@@ -143,6 +143,6 @@ async def test_async_chat_openai_streaming() -> None:
     for generations in response.generations:
         assert len(generations) == 1
         for generation in generations:
-            assert isinstance(generation, ChatGeneration)
+            assert isinstance(generation, Generation)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
