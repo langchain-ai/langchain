@@ -1,12 +1,16 @@
-# Credit to https://github.com/nsarrazin/serge - this is heavily copied from the API there and not very well yet but it might work.w
-from typing import List, Optional
+# Credit to https://github.com/nsarrazin/serge
+# - this is heavily copied from the API there and not very well yet but it might work.
+import asyncio
+import subprocess
+import threading
+from datetime import datetime
+from typing import Any, AsyncIterable, List, Mapping, Optional
 from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field
 
-from datetime import datetime
+from langchain.llms.base import BaseLLM, Generation, LLMResult
 
-import subprocess, os
-import asyncio
 
 class ChatParameters(BaseModel):
     model: str = Field(default="ggml-alpaca-13b-q4.bin")
@@ -33,7 +37,7 @@ class Chat(BaseModel):
     parameters: ChatParameters
 
 
-def remove_matching_end(a, b):
+def remove_matching_end(a: str, b: str) -> str:
     min_length = min(len(a), len(b))
 
     for i in range(min_length, 0, -1):
@@ -52,8 +56,9 @@ async def generate(
     top_p: float = 0.40,
     repeat_last_n: int = 100,
     repeat_penalty: float = 1.2,
-    chunk_size: int = 4,  # Define a chunk size (in bytes) for streaming the output bit by bit
-):
+    # Define a chunk size (in bytes) for streaming the output bit by bit
+    chunk_size: int = 4,
+) -> AsyncIterable[str]:
     args = (
         r"c:\users\robert\dalai\alpaca\build\Release\main.exe",
         "--model",
@@ -83,30 +88,23 @@ async def generate(
     answer = ""
 
     while True:
-        chunk = await procLlama.stdout.read(chunk_size)
+        chunk = await procLlama.stdout.read(chunk_size)  # type: ignore
         if not chunk:
             return_code = await procLlama.wait()
 
             if return_code != 0:
-                error_output = await procLlama.stderr.read()
+                error_output = await procLlama.stderr.read()  # type: ignore
                 raise ValueError(error_output.decode("utf-8"))
             else:
                 return
 
         chunk = chunk.decode("utf-8")
-        print(chunk, end="",flush=True)
+        print(chunk, end="", flush=True)
         answer += chunk
 
         if prompt in answer:
             yield remove_matching_end(prompt, chunk)
 
-import asyncio
-from typing import Generator, List, Optional, Mapping, Any, Union
-from langchain.llms.base import LLM, Generation, LLMResult, BaseLLM
-from pydantic import BaseModel
-from concurrent.futures import Future
-from concurrent.futures import ThreadPoolExecutor
-import threading
 
 class Llama(BaseLLM, BaseModel):
     async def _agenerate(
@@ -125,7 +123,7 @@ class Llama(BaseLLM, BaseModel):
     ) -> LLMResult:
         result = None
 
-        def run_coroutine_in_new_loop():
+        def run_coroutine_in_new_loop() -> None:
             nonlocal result
             new_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(new_loop)
@@ -138,7 +136,8 @@ class Llama(BaseLLM, BaseModel):
         result_thread.start()
         result_thread.join()
 
-        return result
+        return result  # type: ignore
+
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         result = self._generate([prompt], stop)
         return result.generations[0][0].text
@@ -149,4 +148,4 @@ class Llama(BaseLLM, BaseModel):
 
     @property
     def _llm_type(self) -> str:
-        return "llama"
+        return "alpaca"
