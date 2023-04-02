@@ -26,10 +26,9 @@ class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
         :meta private:
         """
         return [self.memory_key]
-
+    
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
-
         if self.return_messages:
             buffer: Any = self.buffer[-self.k * 2 :]
         else:
@@ -38,4 +37,6 @@ class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
                 human_prefix=self.human_prefix,
                 ai_prefix=self.ai_prefix,
             )
+        # The line of code added here is meant to prevent memory leaks. It simply removes any messages from the chat history that exceed the size of the buffer (calculated as `self.k * 2`). This helps to prevent the chat history from growing indefinitely and consuming too much memory over time.
+        self.chat_memory.messages = self.chat_memory.messages[-self.k * 2 :]
         return {self.memory_key: buffer}
