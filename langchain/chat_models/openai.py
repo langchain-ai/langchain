@@ -252,7 +252,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
-            return ChatResult(generations=[ChatGeneration(message=message)])
+            return ChatResult(generations=[[ChatGeneration(message=message)]])
         response = self.completion_with_retry(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -268,13 +268,13 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         return message_dicts, params
 
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
-        generations = []
+        generations: list[ChatGeneration] = []
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             gen = ChatGeneration(message=message)
             generations.append(gen)
         llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
-        return ChatResult(generations=generations, llm_output=llm_output)
+        return ChatResult(generations=[generations], llm_output=llm_output)
 
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
@@ -303,7 +303,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
-            return ChatResult(generations=[ChatGeneration(message=message)])
+            return ChatResult(generations=[[ChatGeneration(message=message)]])
         else:
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params

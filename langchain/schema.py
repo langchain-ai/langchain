@@ -141,24 +141,23 @@ class ChatGeneration(Generation):
         values["text"] = values["message"].content
         return values
 
-
-class ChatResult(BaseModel):
-    """Class that contains all relevant information for a Chat Result."""
-
-    generations: List[ChatGeneration]
-    """List of the things generated."""
+class BaseResult(BaseModel):
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output."""
 
 
-class LLMResult(BaseModel):
+class ChatResult(BaseResult):
+    """Class that contains all relevant information for a Chat Result."""
+
+    generations: List[List[ChatGeneration]]
+    """List of the things generated. It contains a list-of-prompts list-of-responses."""
+
+class LLMResult(BaseResult):
     """Class that contains all relevant information for an LLM Result."""
 
     generations: List[List[Generation]]
     """List of the things generated. This is List[List[]] because
     each input could have multiple generations."""
-    llm_output: Optional[dict] = None
-    """For arbitrary LLM provider specific output."""
 
 
 class PromptValue(BaseModel, ABC):

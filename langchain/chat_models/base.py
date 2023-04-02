@@ -14,7 +14,6 @@ from langchain.schema import (
     ChatGeneration,
     ChatResult,
     HumanMessage,
-    LLMResult,
     PromptValue,
 )
 
@@ -49,27 +48,27 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     def generate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    ) -> ChatResult:
         """Top Level call"""
         results = [self._generate(m, stop=stop) for m in messages]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return ChatResult(generations=generations, llm_output=llm_output)
 
     async def agenerate(
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    ) -> ChatResult:
         """Top Level call"""
         results = await asyncio.gather(
             *[self._agenerate(m, stop=stop) for m in messages]
         )
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        return LLMResult(generations=generations, llm_output=llm_output)
+        return ChatResult(generations=generations, llm_output=llm_output)
 
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    ) -> ChatResult:
         prompt_messages = [p.to_messages() for p in prompts]
         prompt_strings = [p.to_string() for p in prompts]
         self.callback_manager.on_llm_start(
@@ -85,7 +84,7 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
 
     async def agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    ) -> ChatResult:
         prompt_messages = [p.to_messages() for p in prompts]
         prompt_strings = [p.to_string() for p in prompts]
         if self.callback_manager.is_async:
@@ -125,7 +124,7 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
     def __call__(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> BaseMessage:
-        return self._generate(messages, stop=stop).generations[0].message
+        return self._generate(messages, stop=stop).generations[0][0].message
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)

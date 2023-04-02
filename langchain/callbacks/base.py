@@ -4,7 +4,7 @@ import functools
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, BaseResult, LLMResult
 
 
 class BaseCallbackHandler(ABC):
@@ -41,7 +41,7 @@ class BaseCallbackHandler(ABC):
         """Run on new LLM token. Only available when streaming is enabled."""
 
     @abstractmethod
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
+    def on_llm_end(self, response: BaseResult, **kwargs: Any) -> Any:
         """Run when LLM ends running."""
 
     @abstractmethod
@@ -150,7 +150,7 @@ class CallbackManager(BaseCallbackManager):
                     handler.on_llm_new_token(token, **kwargs)
 
     def on_llm_end(
-        self, response: LLMResult, verbose: bool = False, **kwargs: Any
+        self, response: BaseResult, verbose: bool = False, **kwargs: Any
     ) -> None:
         """Run when LLM ends running."""
         for handler in self.handlers:
