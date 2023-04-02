@@ -111,5 +111,5 @@ __all__ = [
     "PALChain",
     "set_handler",
     "set_tracing_callback_manager",
-    "LlamaCpp"
+    "LlamaCpp",
 ]

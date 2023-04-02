@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.embeddings.base import Embeddings
-from llama_cpp import Llama
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -28,7 +27,8 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
-    """Number of parts to split the model into. If -1, the number of parts is automatically determined."""
+    """Number of parts to split the model into. 
+    If -1, the number of parts is automatically determined."""
 
     seed: int = Field(-1, alias="seed")
     """Seed. If -1, a random seed is used."""
@@ -46,7 +46,8 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Force system to keep model in RAM."""
 
     n_threads: Optional[int] = Field(None, alias="n_threads")
-    """Number of threads to use. If None, the number of threads is automatically determined."""
+    """Number of threads to use. If None, the number 
+    of threads is automatically determined."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -55,7 +56,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that llama-cpp-python library is installed and that Llama model path exists."""
+        """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
         n_ctx = values["n_ctx"]
         n_parts = values["n_parts"]
@@ -67,19 +68,29 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         n_threads = values["n_threads"]
 
         try:
-            import llama_cpp
+            from llama_cpp import Llama
 
-            values["client"] = Llama(model_path=model_path, n_ctx=n_ctx, n_parts=n_parts, seed=seed, f16_kv=f16_kv, logits_all=logits_all, vocab_only=vocab_only, use_mlock=use_mlock, n_threads=n_threads, embedding=True)
+            values["client"] = Llama(
+                model_path=model_path,
+                n_ctx=n_ctx,
+                n_parts=n_parts,
+                seed=seed,
+                f16_kv=f16_kv,
+                logits_all=logits_all,
+                vocab_only=vocab_only,
+                use_mlock=use_mlock,
+                n_threads=n_threads,
+                embedding=True,
+            )
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import llama-cpp-python library. "
-                "Please install the llama-cpp-python library to use this embedding model: pip install llama-cpp-python"
+                "Please install the llama-cpp-python library to "
+                "use this embedding model: pip install llama-cpp-python"
             )
-        except:
-            raise NameError(
-                f"Could not load Llama model from path: {model_path}"
-            )
-        
+        except Exception:
+            raise NameError(f"Could not load Llama model from path: {model_path}")
+
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

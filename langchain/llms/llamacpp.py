@@ -2,12 +2,12 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator, Field
+from pydantic import BaseModel, Field, root_validator
 
 from langchain.llms.base import LLM
-from llama_cpp import Llama
 
 logger = logging.getLogger(__name__)
+
 
 class LlamaCpp(LLM, BaseModel):
     """Wrapper around the llama.cpp model.
@@ -22,7 +22,7 @@ class LlamaCpp(LLM, BaseModel):
             from langchain.llms import LlamaCppEmbeddings
             llm = LlamaCppEmbeddings(model_path="/path/to/llama/model")
     """
-    
+
     client: Any  #: :meta private:
     model_path: str
     """The path to the Llama model file."""
@@ -31,7 +31,8 @@ class LlamaCpp(LLM, BaseModel):
     """Token context window."""
 
     n_parts: int = Field(-1, alias="n_parts")
-    """Number of parts to split the model into. If -1, the number of parts is automatically determined."""
+    """Number of parts to split the model into. 
+    If -1, the number of parts is automatically determined."""
 
     seed: int = Field(-1, alias="seed")
     """Seed. If -1, a random seed is used."""
@@ -49,7 +50,8 @@ class LlamaCpp(LLM, BaseModel):
     """Force system to keep model in RAM."""
 
     n_threads: Optional[int] = Field(None, alias="n_threads")
-    """Number of threads to use. If None, the number of threads is automatically determined."""
+    """Number of threads to use. 
+    If None, the number of threads is automatically determined."""
 
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
@@ -78,10 +80,9 @@ class LlamaCpp(LLM, BaseModel):
     top_k: Optional[int] = 40
     """The top-k value to use for sampling."""
 
-
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that llama-cpp-python library is installed and that Llama model path exists."""
+        """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
         n_ctx = values["n_ctx"]
         n_parts = values["n_parts"]
@@ -93,21 +94,30 @@ class LlamaCpp(LLM, BaseModel):
         n_threads = values["n_threads"]
 
         try:
-            import llama_cpp
+            from llama_cpp import Llama
 
-            values["client"] = Llama(model_path=model_path, n_ctx=n_ctx, n_parts=n_parts, seed=seed, f16_kv=f16_kv, logits_all=logits_all, vocab_only=vocab_only, use_mlock=use_mlock, n_threads=n_threads)
+            values["client"] = Llama(
+                model_path=model_path,
+                n_ctx=n_ctx,
+                n_parts=n_parts,
+                seed=seed,
+                f16_kv=f16_kv,
+                logits_all=logits_all,
+                vocab_only=vocab_only,
+                use_mlock=use_mlock,
+                n_threads=n_threads,
+            )
         except ImportError:
             raise ModuleNotFoundError(
                 "Could not import llama-cpp-python library. "
-                "Please install the llama-cpp-python library to use this embedding model: pip install llama-cpp-python"
+                "Please install the llama-cpp-python library to "
+                "use this embedding model: pip install llama-cpp-python"
             )
-        except:
-            raise NameError(
-                f"Could not load Llama model from path: {model_path}"
-            )
-        
+        except Exception:
+            raise NameError(f"Could not load Llama model from path: {model_path}")
+
         return values
-    
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling llama_cpp."""
@@ -120,14 +130,14 @@ class LlamaCpp(LLM, BaseModel):
             "echo": self.echo,
             "stop_sequences": self.stop,
             "repeat_penalty": self.repeat_penalty,
-            "top_k": self.top_k
+            "top_k": self.top_k,
         }
-    
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model_path": self.model_path}, **self._default_params}
-    
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -135,17 +145,17 @@ class LlamaCpp(LLM, BaseModel):
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the Llama model and return the output.
-        
+
         Args:
             prompt: The prompt to use for generation.
             stop: A list of strings to stop generation when encountered.
-            
+
         Returns:
             The generated text.
-            
+
         Example:
             .. code-block:: python
-            
+
                 from langchain.llms import LlamaCppEmbeddings
                 llm = LlamaCppEmbeddings(model_path="/path/to/local/llama/model.bin")
                 llm("This is a prompt.")
@@ -169,6 +179,6 @@ class LlamaCpp(LLM, BaseModel):
             echo=params["echo"],
             stop=params["stop_sequences"],
             repeat_penalty=params["repeat_penalty"],
-            top_k=params["top_k"]
+            top_k=params["top_k"],
         )
         return text["choices"][0]["text"]
