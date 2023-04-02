@@ -90,7 +90,7 @@ class Pinecone(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 5,
+        k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
     ) -> List[Tuple[Document, float]]:
@@ -125,7 +125,7 @@ class Pinecone(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = 5,
+        k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
         **kwargs: Any,
