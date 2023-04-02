@@ -21,7 +21,7 @@ from langchain.schema import (
 
 
 class _AnthropicCommon(BaseModel):
-    client: Optional[Any] = None  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "claude-v1.2"
     """Model name to use."""
 
