@@ -48,7 +48,10 @@ def remove_matching_end(a: str, b: str) -> str:
 
 
 async def generate(
-    model: str = r"c:\users\robert\dalai\alpaca\models\7B\ggml-model-q4_0.bin",
+    # eg: r"c:\users\robert\dalai\alpaca\build\Release\main.exe"
+    executable: str,
+    # eg: r"c:\users\robert\dalai\alpaca\models\7B\ggml-model-q4_0.bin"
+    model: str,
     prompt: str = "The sky is blue because",
     n_predict: int = 300,
     temp: float = 0.8,
@@ -60,7 +63,7 @@ async def generate(
     chunk_size: int = 4,
 ) -> AsyncIterable[str]:
     args = (
-        r"c:\users\robert\dalai\alpaca\build\Release\main.exe",
+        executable,
         "--model",
         "" + model,
         "--prompt",
@@ -107,11 +110,16 @@ async def generate(
 
 
 class Llama(BaseLLM, BaseModel):
+    model: str
+    r"""EG: c:\users\robert\dalai\alpaca\models\7B\ggml-model-q4_0.bin"""
+    executable: str
+    r"""EG: c:\users\robert\dalai\alpaca\build\Release\main.exe"""
+
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
         response = ""
-        async for token in generate(prompt=prompts[0]):
+        async for token in generate(self.executable, self.model, prompt=prompts[0]):
             response += token
             self.callback_manager.on_llm_new_token(token, verbose=True)
 
