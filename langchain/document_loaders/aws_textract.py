@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 class AwsTextractExtraction:
 
 
-    def __init__(self,aws_region_name,aws_secret_key,aws_access_key,file_path):
+    def __init__(self,aws_region_name : str,aws_secret_key : str,aws_access_key,file_path : str):
    
 
           self.aws_region_name  =  aws_region_name
