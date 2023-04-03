@@ -100,6 +100,7 @@ class SequentialChain(Chain, BaseModel):
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
+
 class SimpleSequentialChain(Chain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
 
@@ -156,4 +157,21 @@ class SimpleSequentialChain(Chain, BaseModel):
             self.callback_manager.on_text(
                 _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
             )
+        return {self.output_key: _input}
+
+    def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        _input = inputs[self.input_key]
+        color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
+        for i, chain in enumerate(self.chains):
+            _input = chain.arun(_input)
+            if self.strip_outputs:
+                _input = _input.strip()
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_text(
+                    _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+                )
+            else:
+                self.callback_manager.on_text(
+                    _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+                )
         return {self.output_key: _input}
