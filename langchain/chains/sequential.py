@@ -163,7 +163,7 @@ class SimpleSequentialChain(Chain, BaseModel):
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            _input = chain.arun(_input)
+            _input = await chain.arun(_input)
             if self.strip_outputs:
                 _input = _input.strip()
             if self.callback_manager.is_async:
