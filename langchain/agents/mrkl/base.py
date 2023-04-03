@@ -10,8 +10,8 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -101,7 +101,7 @@ class ZeroShotAgent(Agent):
     @classmethod
     def from_llm_and_tools(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
@@ -156,7 +156,7 @@ class MRKLChain(AgentExecutor):
 
     @classmethod
     def from_chains(
-        cls, llm: BaseLLM, chains: List[ChainConfig], **kwargs: Any
+        cls, llm: BaseLanguageModel, chains: List[ChainConfig], **kwargs: Any
     ) -> AgentExecutor:
         """User friendly way to initialize the MRKL chain.
 

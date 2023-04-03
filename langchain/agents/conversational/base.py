@@ -9,8 +9,8 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.llms import BaseLLM
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
@@ -90,7 +90,7 @@ class ConversationalAgent(Agent):
     @classmethod
     def from_llm_and_tools(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,

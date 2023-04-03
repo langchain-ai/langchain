@@ -5,13 +5,13 @@ from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.llms.base import BaseLLM
+from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
 def initialize_agent(
     tools: Sequence[BaseTool],
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     agent: Optional[AgentType] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
