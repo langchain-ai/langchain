@@ -25,9 +25,12 @@ class PythonREPLTool(BaseTool):
         "with `print(...)`."
     )
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
+    sanitize_input: bool = True
 
     def _run(self, query: str) -> str:
         """Use the tool."""
+        if self.sanitize_input:
+            query = query.strip().strip("```")
         return self.python_repl.run(query)
 
     async def _arun(self, query: str) -> str:

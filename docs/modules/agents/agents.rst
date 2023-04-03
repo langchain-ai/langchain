@@ -17,13 +17,15 @@ For a high level overview of the different types of agents, see the below docume
 
 For documentation on how to create a custom agent, see the below.
 
-We also have documentation for an in-depth dive into each agent type.
 
 .. toctree::
    :maxdepth: 1
    :glob:
 
    ./agents/custom_agent.ipynb
+   ./agents/custom_llm_agent.ipynb
+   ./agents/custom_llm_chat_agent.ipynb
+   ./agents/custom_mrkl_agent.ipynb
 
 We also have documentation for an in-depth dive into each agent type.
 
