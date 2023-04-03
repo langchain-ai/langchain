@@ -56,7 +56,11 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         ),
     ]
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True, **kwargs
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        **kwargs,
     )
     return agent
 
