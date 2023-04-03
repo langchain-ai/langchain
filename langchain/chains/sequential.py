@@ -93,6 +93,12 @@ class SequentialChain(Chain, BaseModel):
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        known_values = inputs.copy()
+        for _, chain in enumerate(self.chains):
+            outputs = await chain.acall(known_values, return_only_outputs=True)
+            known_values.update(outputs)
+        return {k: known_values[k] for k in self.output_variables}
 
 class SimpleSequentialChain(Chain, BaseModel):
     """Simple chain where the outputs of one step feed directly into next."""
