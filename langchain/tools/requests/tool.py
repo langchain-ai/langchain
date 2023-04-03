@@ -1,9 +1,12 @@
 # flake8: noqa
 """Tools for making requests to an API endpoint."""
+import asyncio
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Union
+import aiohttp
 
 from pydantic import BaseModel
+import requests
 
 from langchain.requests import RequestsWrapper
 from langchain.tools.base import BaseTool
@@ -12,6 +15,22 @@ from langchain.tools.base import BaseTool
 def _parse_input(text: str) -> Dict[str, Any]:
     """Parse the json string into a dict."""
     return json.loads(text)
+
+
+def _get_text(response: Union[str, requests.Response]) -> str:
+    """Return the text from the response."""
+    if isinstance(response, str):
+        return response
+    else:
+        return response.text
+
+
+async def _get_text_async(response: Union[str, aiohttp.ClientResponse]) -> str:
+    """Return the text from the response."""
+    if isinstance(response, str):
+        return response
+    else:
+        return await response.text
 
 
 class BaseRequestsTool(BaseModel):
@@ -28,11 +47,11 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
 
     def _run(self, url: str) -> str:
         """Run the tool."""
-        return self.requests_wrapper.get(url)
+        return _get_text(self.requests_wrapper.get(url))
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
-        return await self.requests_wrapper.aget(url)
+        return await _get_text_async(self.requests_wrapper.aget(url))
 
 
 class RequestsPostTool(BaseRequestsTool, BaseTool):
@@ -51,7 +70,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.post(data["url"], data["data"])
+            return _get_text(self.requests_wrapper.post(data["url"], data["data"]))
         except Exception as e:
             return repr(e)
 
@@ -59,7 +78,9 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.apost(data["url"], data["data"])
+            return await _get_text_async(
+                self.requests_wrapper.apost(data["url"], data["data"])
+            )
         except Exception as e:
             return repr(e)
 
@@ -80,7 +101,9 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.patch(data["url"], data["data"])
+            return _get_text_async(
+                _get_text(self.requests_wrapper.patch(data["url"], data["data"]))
+            )
         except Exception as e:
             return repr(e)
 
@@ -88,7 +111,9 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.apatch(data["url"], data["data"])
+            return await _get_text_async(
+                self.requests_wrapper.apatch(data["url"], data["data"])
+            )
         except Exception as e:
             return repr(e)
 
@@ -109,7 +134,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return self.requests_wrapper.put(data["url"], data["data"])
+            return _get_text(self.requests_wrapper.put(data["url"], data["data"]))
         except Exception as e:
             return repr(e)
 
@@ -117,7 +142,9 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await self.requests_wrapper.aput(data["url"], data["data"])
+            return await _get_text_async(
+                self.requests_wrapper.aput(data["url"], data["data"])
+            )
         except Exception as e:
             return repr(e)
 
@@ -130,8 +157,8 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
 
     def _run(self, url: str) -> str:
         """Run the tool."""
-        return self.requests_wrapper.delete(url)
+        return _get_text(self.requests_wrapper.delete(url))
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
-        return await self.requests_wrapper.adelete(url)
+        return await _get_text_async(self.requests_wrapper.adelete(url))
