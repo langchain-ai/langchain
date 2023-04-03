@@ -30,40 +30,42 @@ class RequestsWrapper(BaseModel):
             return response.text
 
     def get(self, url: str, **kwargs: Any) -> Union[str, requests.Response]:
-        """GET the URL and return the text or the response object based on return_response."""
+        """GET the URL and return the text or the response object."""
         response = requests.get(url, headers=self.headers, **kwargs)
         return self._process_response(response)
 
     def post(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, requests.Response]:
-        """POST to the URL and return the text or the response object based on return_response."""
+        """POST to the URL and return the text or the response object."""
         response = requests.post(url, json=data, headers=self.headers, **kwargs)
         return self._process_response(response)
 
     def patch(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, requests.Response]:
-        """PATCH the URL and return the text or the response object based on return_response."""
+        """PATCH the URL and return the text or the response object."""
         response = requests.patch(url, json=data, headers=self.headers, **kwargs)
         return self._process_response(response)
 
     def put(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, requests.Response]:
-        """PUT the URL and return the text or the response object based on return_response."""
+        """PUT the URL and return the text or the response object."""
         response = requests.put(url, json=data, headers=self.headers, **kwargs)
         return self._process_response(response)
 
     def delete(self, url: str, **kwargs: Any) -> Union[str, requests.Response]:
-        """DELETE the URL and return the text or the response object based on return_response."""
+        """DELETE the URL and return the text or the response object."""
         response = requests.delete(url, headers=self.headers, **kwargs)
         return self._process_response(response)
 
     async def _arequest(
         self, method: str, url: str, **kwargs: Any
     ) -> Union[aiohttp.ClientResponse, str]:
-        """Make an async request and return the appropriate result based on the return_response attribute."""
+        """Make an async request and return the appropriate result.
+
+        Result type is determined by the return_response attribute."""
 
         async def _get_response():
             if not self.aiosession:
