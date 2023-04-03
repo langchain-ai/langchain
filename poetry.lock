@@ -230,14 +230,14 @@ types = ["mypy", "types-requests"]
 
 [[package]]
 name = "anthropic"
-version = "0.2.4"
+version = "0.2.6"
 description = "Library for accessing the anthropic API"
 category = "main"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "anthropic-0.2.4-py3-none-any.whl", hash = "sha256:2f955435bfdecc94e5432d72492c38fd22a55647026de1518461b707dd3ae808"},
-    {file = "anthropic-0.2.4.tar.gz", hash = "sha256:2041546470a9a2e897d6317627fdd7ea585245a3ff1ed1b054a47f63b4daa893"},
+    {file = "anthropic-0.2.6-py3-none-any.whl", hash = "sha256:bf4b69a9d25d573162accbe8aa9e022331c67a82519250ac30573ad506a1f663"},
+    {file = "anthropic-0.2.6.tar.gz", hash = "sha256:253dca8484bca13eab08afa6b1e1d3f3451d6b65cc2be31c5cd4dac1a49a03f7"},
 ]
 
 [package.dependencies]
