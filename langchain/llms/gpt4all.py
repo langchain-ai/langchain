@@ -1,10 +1,7 @@
 """Wrapper for the GPT4All model."""
-import asyncio
-import functools
 from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import BaseModel, Extra, Field, root_validator
-from langchain.callbacks.base import CallbackManager
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
