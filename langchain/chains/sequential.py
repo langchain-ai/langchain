@@ -159,7 +159,7 @@ class SimpleSequentialChain(Chain, BaseModel):
             )
         return {self.output_key: _input}
 
-    def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
