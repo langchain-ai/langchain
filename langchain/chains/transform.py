@@ -47,4 +47,3 @@ class TransformChain(Chain, BaseModel):
         else:
             transformed = self.transform(inputs)
         return transformed
-
