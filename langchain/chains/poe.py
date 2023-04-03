@@ -1,25 +1,29 @@
 import asyncio
 from typing import Any, Dict, List
 
+from fastapi_poe import PoeHandler
+
 from langchain.callbacks.base import BaseCallbackHandler, CallbackManager
 from langchain.chains.base import Chain
 from langchain.schema import BaseLanguageModel
 
 
-class LangChainPoeHandler(PoeHandler):
+class LangChainFastAPIPoeHandler(PoeHandler):
     def __init__(self, chain: Chain, llm: BaseLanguageModel):
         self.chain = chain
         self.llm = llm
 
     async def get_response(self, query):
         callback_handler = StreamCallbackHandler()
-        callback_manager = CallbackManager([callback_handler])
+        callback_manager = CallbackManager(
+            [callback_handler, *self.llm.callback_manager.callbacks]
+        )
 
         # TODO we need proper concurrency support here
         current_callback_manager = self.llm.callback_manager
         self.llm.callback_manager = callback_manager
 
-        run = asyncio.create_task(self.chain.acall(query))
+        run = asyncio.create_task(self.chain.arun(query))
 
         async for token in callback_handler.stream():
             yield token
@@ -30,6 +34,10 @@ class LangChainPoeHandler(PoeHandler):
 
 
 class StreamCallbackHandler(BaseCallbackHandler):
+    @property
+    def always_verbose(self):
+        return True
+
     def __init__(self):
         self.queue = asyncio.Queue()
         self.done = asyncio.Event()
