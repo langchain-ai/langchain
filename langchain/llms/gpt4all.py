@@ -157,7 +157,7 @@ class GPT4All(LLM, BaseModel):
         """Return the type of llm."""
         return "gpt4all"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = ...) -> str:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         r"""Call out to GPT4All's generate method.
 
         Args:
@@ -173,6 +173,7 @@ class GPT4All(LLM, BaseModel):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
+        super()._call(prompt, stop)
         text = self.client.generate(
             prompt,
             **self._default_params,
