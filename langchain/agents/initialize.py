@@ -1,10 +1,10 @@
 """Load agent."""
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chat_models.base import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 
 
