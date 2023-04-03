@@ -173,7 +173,6 @@ class GPT4All(LLM, BaseModel):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        super()._call(prompt, stop)
         text = self.client.generate(
             prompt,
             **self._default_params,
