@@ -1,5 +1,6 @@
 """Chain that runs an arbitrary python function."""
 from typing import Callable, Dict, List
+from asyncio import iscoroutinefunction
 
 from pydantic import BaseModel
 
@@ -42,5 +43,8 @@ class TransformChain(Chain, BaseModel):
 
     async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
         if iscoroutinefunction(self.transform):
-            return await self.transform(inputs)
-        return self.transform(inputs)
+            transformed = await self.transform(inputs)
+        else:
+            transformed = self.transform(inputs)
+        return transformed
+
