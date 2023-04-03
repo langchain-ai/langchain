@@ -15,11 +15,16 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish, BaseMessage, BaseOutputParser
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    BaseLanguageModel,
+    BaseMessage,
+    BaseOutputParser,
+)
 from langchain.tools.base import BaseTool
 
 logger = logging.getLogger()
@@ -365,7 +370,7 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     def from_llm_and_tools(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
