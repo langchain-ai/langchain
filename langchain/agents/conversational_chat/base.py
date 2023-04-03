@@ -56,6 +56,7 @@ class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     output_parser: BaseOutputParser
+    template_tool_response: str
 
     @property
     def _agent_type(self) -> str:
@@ -116,7 +117,7 @@ class ConversationalChatAgent(Agent):
         for action, observation in intermediate_steps:
             thoughts.append(AIMessage(content=action.log))
             human_message = HumanMessage(
-                content=TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+                content=self.template_tool_response.format(observation=observation)
             )
             thoughts.append(human_message)
         return thoughts
@@ -131,11 +132,13 @@ class ConversationalChatAgent(Agent):
         human_message: str = SUFFIX,
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
+        template_tool_response: Optional[str] = TEMPLATE_TOOL_RESPONSE,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         _output_parser = output_parser or AgentOutputParser()
+        cls.template_tool_response = template_tool_response
         prompt = cls.create_prompt(
             tools,
             system_message=system_message,
