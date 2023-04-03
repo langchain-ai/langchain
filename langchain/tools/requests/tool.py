@@ -30,7 +30,7 @@ async def _get_text_async(response: Union[str, aiohttp.ClientResponse]) -> str:
     if isinstance(response, str):
         return response
     else:
-        return await response.text
+        return await response.text()
 
 
 class BaseRequestsTool(BaseModel):
@@ -51,7 +51,8 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
-        return await _get_text_async(self.requests_wrapper.aget(url))
+        res = await self.requests_wrapper.aget(url)
+        return await _get_text_async(res)
 
 
 class RequestsPostTool(BaseRequestsTool, BaseTool):
@@ -78,9 +79,8 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await _get_text_async(
-                self.requests_wrapper.apost(data["url"], data["data"])
-            )
+            res = await self.requests_wrapper.apost(data["url"], data["data"])
+            return await _get_text_async(res)
         except Exception as e:
             return repr(e)
 
@@ -101,7 +101,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return _get_text_async(
+            return _get_text(
                 _get_text(self.requests_wrapper.patch(data["url"], data["data"]))
             )
         except Exception as e:
@@ -111,9 +111,8 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await _get_text_async(
-                self.requests_wrapper.apatch(data["url"], data["data"])
-            )
+            res = await self.requests_wrapper.apatch(data["url"], data["data"])
+            return await _get_text_async(res)
         except Exception as e:
             return repr(e)
 
@@ -142,9 +141,8 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         """Run the tool asynchronously."""
         try:
             data = _parse_input(text)
-            return await _get_text_async(
-                self.requests_wrapper.aput(data["url"], data["data"])
-            )
+            res = await self.requests_wrapper.aput(data["url"], data["data"])
+            return await _get_text_async(res)
         except Exception as e:
             return repr(e)
 
@@ -161,4 +159,5 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
-        return await _get_text_async(self.requests_wrapper.adelete(url))
+        res = await self.requests_wrapper.adelete(url)
+        return await _get_text_async(res)
