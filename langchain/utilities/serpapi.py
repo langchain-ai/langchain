@@ -72,7 +72,7 @@ class SerpAPIWrapper(BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import serpapi python package. "
-                "Please it install it with `pip install google-search-results`."
+                "Please install it with `pip install google-search-results`."
             )
         return values
 
