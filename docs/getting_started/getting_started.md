@@ -405,7 +405,7 @@ chain.run(input_language="English", output_language="French", text="I love progr
 `````
 
 `````{dropdown} Agents with Chat Models
-Agents can also be used with chat models, you can initialize one using `"chat-zero-shot-react-description"` as the agent type.
+Agents can also be used with chat models, you can initialize one using `AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION` as the agent type.
 
 ```python
 from langchain.agents import load_tools
