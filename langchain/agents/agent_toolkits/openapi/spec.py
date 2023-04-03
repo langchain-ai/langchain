@@ -25,7 +25,9 @@ def dereference_refs(spec_obj: dict, full_spec: dict) -> Union[dict, list]:
             out = out[component]
         return out
 
-    def _dereference_refs(obj: Union[dict, list], stop: bool = False) -> Union[dict, list]:
+    def _dereference_refs(
+        obj: Union[dict, list], stop: bool = False
+    ) -> Union[dict, list]:
         if stop:
             return obj
         obj_out: Dict[str, Any] = {}
@@ -33,7 +35,9 @@ def dereference_refs(spec_obj: dict, full_spec: dict) -> Union[dict, list]:
             for k, v in obj.items():
                 if k == "$ref":
                     # stop=True => don't dereference recursively.
-                    return _dereference_refs(_retrieve_ref_path(v, full_spec), stop=True)
+                    return _dereference_refs(
+                        _retrieve_ref_path(v, full_spec), stop=True
+                    )
                 elif isinstance(v, list):
                     obj_out[k] = [_dereference_refs(el) for el in v]
                 elif isinstance(v, dict):
