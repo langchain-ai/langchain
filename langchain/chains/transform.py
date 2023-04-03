@@ -39,3 +39,8 @@ class TransformChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         return self.transform(inputs)
+
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        if iscoroutinefunction(self.transform):
+            return await self.transform(inputs)
+        return self.transform(inputs)
