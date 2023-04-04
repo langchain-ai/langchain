@@ -11,13 +11,13 @@ import boto3
 class AwsTextractExtraction:
 
 
-    def __init__(self,aws_region_name : str,aws_secret_key : str,aws_access_key,file_path : str):
+    def __init__(self,aws_region_name : str,aws_secret_key : str,aws_access_key,aws_session_token,file_path : str):
    
 
           self.aws_region_name  =  aws_region_name
           self.aws_secret_key=  aws_secret_key
           self.aws_access_key =  aws_access_key
-          self.aws_secret_token_key = aws_secret_token_key
+          self.aws_session_token = aws_session_token
           self.file_path = file_path
           try:
             import boto3
@@ -34,7 +34,7 @@ class AwsTextractExtraction:
          output=[] 
          page_no=0
          
-         textract_client =  boto3.client('textract',region_name,aws_access_key,aws_secret_key,aws_secret_token_key)
+         textract_client =  boto3.client('textract',region_name,aws_access_key,aws_secret_key,aws_session_token)
          Pil_Image_obj=  Image.open(self.file_path)
          buf = BytesIO()
          Pil_Image_obj.save(buf, format='PNG')
