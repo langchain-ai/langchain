@@ -123,6 +123,12 @@ To run unit tests:
 make test
 ```
 
+To run unit tests in Docker:
+
+```bash
+make docker_tests
+```
+
 If you add new logic, please add a unit test.
 
 Integration tests cover logic that requires making calls to outside APIs (often integration with other services).
