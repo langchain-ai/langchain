@@ -26,6 +26,7 @@ from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
 from langchain.llms.writer import Writer
+from langchain.llms.gpt4all import GPT4All
 
 __all__ = [
     "Anthropic",
@@ -36,6 +37,7 @@ __all__ = [
     "DeepInfra",
     "ForefrontAI",
     "GooseAI",
+    "GPT4All",
     "LlamaCpp",
     "Modal",
     "NLPCloud",
@@ -67,6 +69,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "gooseai": GooseAI,
+    "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "llamacpp": LlamaCpp,
