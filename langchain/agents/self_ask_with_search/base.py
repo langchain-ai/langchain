@@ -2,7 +2,7 @@
 from typing import Any, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentExecutor
-from langchain.agents import AgentType
+from langchain.agents.agent_types import AgentType
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
