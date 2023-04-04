@@ -56,7 +56,7 @@ class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     output_parser: BaseOutputParser
-    template_tool_response: str
+    template_tool_response: str = TEMPLATE_TOOL_RESPONSE
 
     @property
     def _agent_type(self) -> str:
