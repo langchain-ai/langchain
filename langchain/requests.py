@@ -3,12 +3,18 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 
 class Requests(BaseModel):
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
@@ -79,6 +85,12 @@ class TextRequestsWrapper(BaseModel):
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
+        arbitrary_types_allowed = True
+
     @property
     def requests(self) -> Requests:
         return Requests(headers=self.headers, aiosession=self.aiosession)
@@ -125,7 +137,7 @@ class TextRequestsWrapper(BaseModel):
 
     async def adelete(self, url: str, **kwargs: Any) -> str:
         """DELETE the URL and return the text asynchronously."""
-        response = await self.requests.aget(url, **kwargs)
+        response = await self.requests.adelete(url, **kwargs)
         return await response.text()
 
 
