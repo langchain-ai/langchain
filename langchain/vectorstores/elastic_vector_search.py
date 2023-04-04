@@ -233,7 +233,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         except ImportError:
             raise ValueError(
                 "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticearch`."
+                "Please install it with `pip install elasticsearch`."
             )
         try:
             client = elasticsearch.Elasticsearch(elasticsearch_url)
