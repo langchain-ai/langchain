@@ -5,7 +5,7 @@ import re
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager

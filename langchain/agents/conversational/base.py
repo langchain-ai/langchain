@@ -5,7 +5,7 @@ import re
 from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain

@@ -197,7 +197,7 @@ Now we can get started!
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 from langchain.llms import OpenAI
 
 # First, let's load the language model we're going to use to control the agent.
@@ -410,7 +410,7 @@ Agents can also be used with chat models, you can initialize one using `AgentTyp
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 

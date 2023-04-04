@@ -5,7 +5,7 @@ from typing import Any, List, Mapping, Optional
 from pydantic import BaseModel
 
 from langchain.agents import AgentExecutor, initialize_agent
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
