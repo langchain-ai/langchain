@@ -7,6 +7,12 @@ from pydantic import BaseModel, Extra
 
 
 class Requests(BaseModel):
+    """Wrapper around requests to handle auth and async.
+
+    The main purpose of this wrapper is to handle authentication (by saving
+    headers) and enable easy async methods on the same base object.
+    """
+
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
@@ -80,7 +86,10 @@ class Requests(BaseModel):
 
 
 class TextRequestsWrapper(BaseModel):
-    """Lightweight wrapper around requests library."""
+    """Lightweight wrapper around requests library.
+
+    The main purpose of this wrapper is to always return a text output.
+    """
 
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
