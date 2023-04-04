@@ -90,7 +90,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return response when agent has been stopped due to max iterations."""
         if early_stopping_method == "force":
             # `force` just returns a constant string
-            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+            return AgentFinish({"output": "Agent stopped due to iteration limit or time limit."}, "")
         else:
             raise ValueError(
                 f"Got unsupported early_stopping_method `{early_stopping_method}`"
@@ -508,7 +508,7 @@ class Agent(BaseSingleActionAgent):
         """Return response when agent has been stopped due to max iterations."""
         if early_stopping_method == "force":
             # `force` just returns a constant string
-            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+            return AgentFinish({"output": "Agent stopped due to iteration limit or time limit."}, "")
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
             thoughts = ""
@@ -639,7 +639,10 @@ class AgentExecutor(Chain, BaseModel):
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
-        if self.max_execution_time is not None and time_elapsed >= self.max_execution_time:
+        if (
+            self.max_execution_time is not None
+            and time_elapsed >= self.max_execution_time
+        ):
             return False
 
         return True
