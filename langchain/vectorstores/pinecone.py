@@ -21,7 +21,8 @@ class Pinecone(VectorStore):
             from langchain.embeddings.openai import OpenAIEmbeddings
             import pinecone
 
-            pinecone.init(api_key="***", environment="us-west1-gcp")
+            # The environment should be the one specified next to the API key in your Pinecone console
+            pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
             vectorstore = Pinecone(index, embeddings.embed_query, "text")
@@ -184,6 +185,10 @@ class Pinecone(VectorStore):
 
                 from langchain import Pinecone
                 from langchain.embeddings import OpenAIEmbeddings
+                import pinecone
+
+                # The environment should be the one specified next to the API key in your Pinecone console
+                pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
                 pinecone = Pinecone.from_texts(
                     texts,
@@ -198,12 +203,20 @@ class Pinecone(VectorStore):
                 "Could not import pinecone python package. "
                 "Please install it with `pip install pinecone-client`."
             )
-        _index_name = index_name or str(uuid.uuid4())
+
         indexes = pinecone.list_indexes()  # checks if provided index exists
-        if _index_name in indexes:
-            index = pinecone.Index(_index_name)
+
+        if index_name in indexes:
+            index = pinecone.Index(index_name)
+        elif len(indexes) == 0:
+            raise ValueError(
+                f"No active indexes found in your Pinecone project, are you sure you're using the right API key and environment?"
+            )
         else:
-            index = None
+            raise ValueError(
+                f"Index '{index_name}' not found in your Pinecone project. Did you mean one of the following indexes: {', '.join(indexes)}"
+            )
+
         for i in range(0, len(texts), batch_size):
             # set end position of batch
             i_end = min(i + batch_size, len(texts))
@@ -224,10 +237,7 @@ class Pinecone(VectorStore):
             for j, line in enumerate(lines_batch):
                 metadata[j][text_key] = line
             to_upsert = zip(ids_batch, embeds, metadata)
-            # Create index if it does not exist
-            if index is None:
-                pinecone.create_index(_index_name, dimension=len(embeds[0]))
-                index = pinecone.Index(_index_name)
+
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key, namespace)
