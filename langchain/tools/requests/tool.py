@@ -1,12 +1,9 @@
 # flake8: noqa
 """Tools for making requests to an API endpoint."""
-import asyncio
 import json
-from typing import Any, Dict, Union
-import aiohttp
+from typing import Any, Dict
 
 from pydantic import BaseModel
-import requests
 
 from langchain.requests import (
     RequestsWrapper,
