@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from PIL import Image
 from langchain.docstore.document import Document
 from langchain.utils import get_from_dict_or_env
-
+import boto3
 
 
 
@@ -17,6 +17,7 @@ class AwsTextractExtraction:
           self.aws_region_name  =  aws_region_name
           self.aws_secret_key=  aws_secret_key
           self.aws_access_key =  aws_access_key
+          self.aws_secret_token_key = aws_secret_token_key
           self.file_path = file_path
           try:
             import boto3
@@ -33,12 +34,7 @@ class AwsTextractExtraction:
          output=[] 
          page_no=0
          
-         session = boto3.Session(
-            region_name=self.aws_region_name,
-            aws_access_key_id=self.aws_access_key,
-            aws_secret_access_key=self.aws_secret_key
-            )
-         textract_client =  session.client('textract')
+         textract_client =  boto3.client('textract',region_name,aws_access_key,aws_secret_key,aws_secret_token_key)
          Pil_Image_obj=  Image.open(self.file_path)
          buf = BytesIO()
          Pil_Image_obj.save(buf, format='PNG')
