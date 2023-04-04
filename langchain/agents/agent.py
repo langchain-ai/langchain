@@ -637,9 +637,9 @@ class AgentExecutor(Chain, BaseModel):
         return {tool.name: tool for tool in self.tools}[name]
 
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
-        if self.max_iterations and iterations >= self.max_iterations:
+        if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
-        if self.max_execution_time and time_elapsed >= self.max_execution_time:
+        if self.max_execution_time is not None and time_elapsed >= self.max_execution_time:
             return False
 
         return True
