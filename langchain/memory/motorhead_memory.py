@@ -1,20 +1,64 @@
 import os
-from pydantic import BaseModel
-from typing import Any, Dict, Optional
-from langchain.memory.chat_memory import BaseChatMemory
+import json
+from typing import List, Dict, Any, Optional
+import requests
+from chat_memory import BaseChatMemory
 
+MOTORHEAD_URL = os.environ.get("MOTORHEAD_URL", "http://localhost:8080")
 
-MOTORHEAD_URL = os.environ["MOTORHEAD_URL"] or "http://localhost:8080"
+class MotorheadMemoryMessage:
+    def __init__(self, role: str, content: str):
+        self.role = role
+        self.content = content
 
+class MotorheadMemoryInput:
+    def __init__(self, chat_history, return_messages: bool, session_id: str, input_key: Optional[str] = None, output_key: Optional[str] = None):
+        self.chat_history = chat_history
+        self.return_messages = return_messages
+        self.session_id = session_id
+        self.input_key = input_key
+        self.output_key = output_key
 
-class MotorheadMemory(BaseChatMemory, BaseModel):
-    motorhead_url: str = MOTORHEAD_URL
-    timeout: int = 3000
-    memory_key: str = "history"
-    session_id: str
-    context: Optional[str] = None
+class MotorheadMemory(BaseChatMemory):
+    def __init__(self, fields: Optional[MotorheadMemoryInput] = None):
+        if fields is None:
+            fields = MotorheadMemoryInput(None, False, '')
 
+        super().__init__(return_messages=fields.return_messages, input_key=fields.input_key, output_key=fields.output_key, chat_history=fields.chat_history)
 
-    def __init__(self, **data: Any) -> None:
-      super().__init__(**data)
-      self.session_id = self.chat_memory.get_session_id()
+        self.motorhead_url = MOTORHEAD_URL
+        self.timeout = 3000
+        self.memory_key = "history"
+        self.session_id = fields.session_id
+        self.context = None
+
+    def init(self):
+        res = requests.get(f"{MOTORHEAD_URL}/sessions/{self.session_id}/memory", timeout=self.timeout, headers={"Content-Type": "application/json"})
+        res_data = res.json()
+        messages = res_data.get("messages", [])
+        context = res_data.get("context", "NONE")
+
+        for message in messages:
+            if message["role"] == "AI":
+                self.chat_history.add_ai_chat_message(message["content"])
+            else:
+                self.chat_history.add_user_message(message["content"])
+
+        if context and context != "NONE":
+            self.context = context
+
+    def load_memory_variables(self, values):
+        if self.return_messages:
+            return {self.memory_key: self.chat_history.messages}
+        else:
+            return {self.memory_key: get_buffer_string(self.chat_history.messages)}
+
+    def save_context(self, input_values, output_values):
+        requests.post(f"{MOTORHEAD_URL}/sessions/{self.session_id}/memory", timeout=self.timeout, json={
+            "messages": [
+                {"role": "Human", "content": f"{input_values['input']}"},
+                {"role": "AI", "content": f"{output_values['response']}"}
+            ]
+        }, headers={"Content-Type": "application/json"})
+
+        super().save_context(input_values, output_values)
