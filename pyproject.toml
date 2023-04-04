@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.129"
+version = "0.0.130"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -99,6 +99,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
+setuptools = "^67.6.1"
 
 [tool.poetry.extras]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
