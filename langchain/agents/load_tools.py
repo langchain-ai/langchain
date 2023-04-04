@@ -10,7 +10,7 @@ from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
@@ -42,23 +42,23 @@ def _get_python_repl() -> BaseTool:
 
 
 def _get_tools_requests_get() -> BaseTool:
-    return RequestsGetTool(requests_wrapper=RequestsWrapper())
+    return RequestsGetTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_tools_requests_post() -> BaseTool:
-    return RequestsPostTool(requests_wrapper=RequestsWrapper())
+    return RequestsPostTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_tools_requests_patch() -> BaseTool:
-    return RequestsPatchTool(requests_wrapper=RequestsWrapper())
+    return RequestsPatchTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_tools_requests_put() -> BaseTool:
-    return RequestsPutTool(requests_wrapper=RequestsWrapper())
+    return RequestsPutTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_tools_requests_delete() -> BaseTool:
-    return RequestsDeleteTool(requests_wrapper=RequestsWrapper())
+    return RequestsDeleteTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_terminal() -> BaseTool:
