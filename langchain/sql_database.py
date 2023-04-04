@@ -22,6 +22,7 @@ class SQLDatabase:
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
         custom_table_info: Optional[dict] = None,
+        view_support: Optional[bool] = False
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -30,7 +31,10 @@ class SQLDatabase:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
         self._inspector = inspect(self._engine)
-        self._all_tables = set(self._inspector.get_table_names(schema=schema))
+        
+        # including view support by adding the views as well as tables to the all tables list if view_support is True
+        self._all_tables = set(self._inspector.get_table_names(schema=schema) + (self._inspector.get_view_names(schema=schema) if view_support else []))
+        
         self._include_tables = set(include_tables) if include_tables else set()
         if self._include_tables:
             missing_tables = self._include_tables - self._all_tables
@@ -69,8 +73,9 @@ class SQLDatabase:
             )
 
         self._metadata = metadata or MetaData()
+         #including view support if view_support = true
         self._metadata.reflect(
-            bind=self._engine, only=self._usable_tables, schema=self._schema
+            views=view_support, bind=self._engine, only=self._usable_tables, schema=self._schema
         )
 
     @classmethod
