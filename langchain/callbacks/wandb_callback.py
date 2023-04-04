@@ -18,7 +18,7 @@ from langchain.agents import Agent, AgentExecutor
 if TYPE_CHECKING:
     from wandb.wandb_run import Run as WBRun
     from wandb import Settings as WBSettings
-
+    from wandb.integration.langchain import LangChainTrace
 
 def import_wandb() -> Any:
     try:
@@ -198,7 +198,7 @@ class WandbCallbackHandler(BaseTracer):
             self._run = None
         self._run_args = None
 
-    def _log_trace(self, trace) # : LangChainTrace):
+    def _log_trace(self, trace: LangChainTrace):
         if self._run is None:
             raise ValueError("No wandb run set for current run")
         
