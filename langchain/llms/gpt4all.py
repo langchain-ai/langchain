@@ -15,6 +15,7 @@ class GPT4All(LLM, BaseModel):
 
     Example:
         .. code-block:: python
+        
             from langchain.llms import GPT4All
             model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8)
 
