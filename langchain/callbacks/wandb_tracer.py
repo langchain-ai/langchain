@@ -107,7 +107,7 @@ def _print_wandb_url(url: str):
         f"W&B Run initialized. View LangChain logs in W&B at {url}. "
         "To ensure that all data is uploaded, call `wandb_tracer.finish()` before "
         "terminating the notebook kernel or script."
-        "\n\nNote that theWandbLangChainTracer is currently in beta and is subject to change "
+        "\n\nNote that the WandbLangChainTracer is currently in beta and is subject to change "
         "based on updates to `langchain`. Please report any issues to "
         "https://github.com/wandb/wandb/issues with the tag `langchain`."
         )

@@ -35,7 +35,8 @@ class Chain(BaseModel, ABC):
 
     @property
     def _chain_type(self) -> str:
-        raise NotImplementedError("Saving not supported for this chain type.")
+        return self.__class__.__name__
+        # raise NotImplementedError("Saving not supported for this chain type.")
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(
