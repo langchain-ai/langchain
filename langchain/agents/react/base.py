@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 from pydantic import BaseModel
 
 from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent_types import AgentType
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
@@ -21,7 +22,7 @@ class ReActDocstoreAgent(Agent, BaseModel):
     @property
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
-        return "react-docstore"
+        return AgentType.REACT_DOCSTORE
 
     @classmethod
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:

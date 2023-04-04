@@ -6,6 +6,7 @@ from typing import Any, List, Optional, Union
 import yaml
 
 from langchain.agents.agent import Agent
+from langchain.agents.agent_types import AgentType
 from langchain.agents.chat.base import ChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
@@ -18,12 +19,12 @@ from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
 
 AGENT_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotAgent,
-    "react-docstore": ReActDocstoreAgent,
-    "self-ask-with-search": SelfAskWithSearchAgent,
-    "conversational-react-description": ConversationalAgent,
-    "chat-zero-shot-react-description": ChatAgent,
-    "chat-conversational-react-description": ConversationalChatAgent,
+    AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
+    AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
+    AgentType.SELF_ASK_WITH_SEARCH: SelfAskWithSearchAgent,
+    AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
+    AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
+    AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
 }
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"

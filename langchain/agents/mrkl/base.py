@@ -5,6 +5,7 @@ import re
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -56,7 +57,7 @@ class ZeroShotAgent(Agent):
     @property
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
-        return "zero-shot-react-description"
+        return AgentType.ZERO_SHOT_REACT_DESCRIPTION
 
     @property
     def observation_prefix(self) -> str:
