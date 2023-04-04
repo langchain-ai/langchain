@@ -9,7 +9,7 @@ from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts import BasePromptTemplate
-from langchain.requests import RequestsWrapper
+from langchain.requests import RequestsWrapper, get_text_from_response
 from langchain.schema import BaseLanguageModel
 
 
@@ -70,8 +70,9 @@ class APIChain(Chain, BaseModel):
             api_url, color="green", end="\n", verbose=self.verbose
         )
         api_response = self.requests_wrapper.get(api_url)
+        response_text = get_text_from_response(api_response)
         self.callback_manager.on_text(
-            api_response, color="yellow", end="\n", verbose=self.verbose
+            response_text, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
             question=question,

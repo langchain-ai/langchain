@@ -8,29 +8,17 @@ import aiohttp
 from pydantic import BaseModel
 import requests
 
-from langchain.requests import RequestsWrapper
+from langchain.requests import (
+    RequestsWrapper,
+    get_text_from_response,
+    get_text_from_response_async,
+)
 from langchain.tools.base import BaseTool
 
 
 def _parse_input(text: str) -> Dict[str, Any]:
     """Parse the json string into a dict."""
     return json.loads(text)
-
-
-def _get_text(response: Union[str, requests.Response]) -> str:
-    """Return the text from the response."""
-    if isinstance(response, str):
-        return response
-    else:
-        return response.text
-
-
-async def _get_text_async(response: Union[str, aiohttp.ClientResponse]) -> str:
-    """Return the text from the response."""
-    if isinstance(response, str):
-        return response
-    else:
-        return await response.text()
 
 
 class BaseRequestsTool(BaseModel):
@@ -47,12 +35,12 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
 
     def _run(self, url: str) -> str:
         """Run the tool."""
-        return _get_text(self.requests_wrapper.get(url))
+        return get_text_from_response(self.requests_wrapper.get(url))
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
         res = await self.requests_wrapper.aget(url)
-        return await _get_text_async(res)
+        return await get_text_from_response_async(res)
 
 
 class RequestsPostTool(BaseRequestsTool, BaseTool):
@@ -71,7 +59,9 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return _get_text(self.requests_wrapper.post(data["url"], data["data"]))
+            return get_text_from_response(
+                self.requests_wrapper.post(data["url"], data["data"])
+            )
         except Exception as e:
             return repr(e)
 
@@ -80,7 +70,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
         try:
             data = _parse_input(text)
             res = await self.requests_wrapper.apost(data["url"], data["data"])
-            return await _get_text_async(res)
+            return await get_text_from_response_async(res)
         except Exception as e:
             return repr(e)
 
@@ -101,8 +91,10 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return _get_text(
-                _get_text(self.requests_wrapper.patch(data["url"], data["data"]))
+            return get_text_from_response(
+                get_text_from_response(
+                    self.requests_wrapper.patch(data["url"], data["data"])
+                )
             )
         except Exception as e:
             return repr(e)
@@ -112,7 +104,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
         try:
             data = _parse_input(text)
             res = await self.requests_wrapper.apatch(data["url"], data["data"])
-            return await _get_text_async(res)
+            return await get_text_from_response_async(res)
         except Exception as e:
             return repr(e)
 
@@ -133,7 +125,9 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         """Run the tool."""
         try:
             data = _parse_input(text)
-            return _get_text(self.requests_wrapper.put(data["url"], data["data"]))
+            return get_text_from_response(
+                self.requests_wrapper.put(data["url"], data["data"])
+            )
         except Exception as e:
             return repr(e)
 
@@ -142,7 +136,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
         try:
             data = _parse_input(text)
             res = await self.requests_wrapper.aput(data["url"], data["data"])
-            return await _get_text_async(res)
+            return await get_text_from_response_async(res)
         except Exception as e:
             return repr(e)
 
@@ -155,9 +149,9 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
 
     def _run(self, url: str) -> str:
         """Run the tool."""
-        return _get_text(self.requests_wrapper.delete(url))
+        return get_text_from_response(self.requests_wrapper.delete(url))
 
     async def _arun(self, url: str) -> str:
         """Run the tool asynchronously."""
         res = await self.requests_wrapper.adelete(url)
-        return await _get_text_async(res)
+        return await get_text_from_response_async(res)

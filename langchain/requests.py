@@ -6,6 +6,24 @@ import requests
 from pydantic import BaseModel, Extra
 
 
+def get_text_from_response(response: Union[str, requests.Response]) -> str:
+    """Return the text from the response."""
+    if isinstance(response, str):
+        return response
+    else:
+        return response.text
+
+
+async def get_text_from_response_async(
+    response: Union[str, aiohttp.ClientResponse]
+) -> str:
+    """Return the text from the response."""
+    if isinstance(response, str):
+        return response
+    else:
+        return await response.text()
+
+
 class RequestsWrapper(BaseModel):
     """Lightweight wrapper around requests library."""
 
@@ -67,7 +85,7 @@ class RequestsWrapper(BaseModel):
 
         Result type is determined by the return_response attribute."""
 
-        async def _get_response():
+        async def _get_response() -> aiohttp.ClientResponse:
             if not self.aiosession:
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
