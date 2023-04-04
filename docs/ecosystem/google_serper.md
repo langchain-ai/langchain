@@ -23,7 +23,7 @@ You can use it as part of a Self Ask chain:
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
-from langchain.agents.agent_types import AgentType
+from langchain.agents import AgentType
 
 import os
 
