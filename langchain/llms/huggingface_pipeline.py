@@ -76,7 +76,7 @@ class HuggingFacePipeline(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
 
         _model_kwargs = model_kwargs or {}

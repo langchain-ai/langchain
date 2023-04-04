@@ -203,15 +203,10 @@ class SearxSearchWrapper(BaseModel):
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
     engines: Optional[List[str]] = []
+    categories: Optional[List[str]] = []
     query_suffix: Optional[str] = ""
     k: int = 10
     aiosession: Optional[Any] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     @validator("unsecure")
     def disable_ssl_warnings(cls, v: bool) -> bool:
@@ -238,6 +233,10 @@ class SearxSearchWrapper(BaseModel):
         if engines:
             values["params"]["engines"] = ",".join(engines)
 
+        categories = values.get("categories")
+        if categories:
+            values["params"]["categories"] = ",".join(categories)
+
         searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
         if not searx_host.startswith("http"):
             print(
@@ -251,6 +250,11 @@ class SearxSearchWrapper(BaseModel):
         values["searx_host"] = searx_host
 
         return values
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""
@@ -298,6 +302,7 @@ class SearxSearchWrapper(BaseModel):
         self,
         query: str,
         engines: Optional[List[str]] = None,
+        categories: Optional[List[str]] = None,
         query_suffix: Optional[str] = "",
         **kwargs: Any,
     ) -> str:
@@ -309,6 +314,7 @@ class SearxSearchWrapper(BaseModel):
             query: The query to search for.
             query_suffix: Extra suffix appended to the query.
             engines: List of engines to use for the query.
+            categories: List of categories to use for the query.
             **kwargs: extra parameters to pass to the searx API.
 
         Returns:
@@ -344,6 +350,9 @@ class SearxSearchWrapper(BaseModel):
 
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
+
+        if isinstance(categories, list) and len(categories) > 0:
+            params["categories"] = ",".join(categories)
 
         res = self._searx_api_query(params)
 
@@ -398,6 +407,7 @@ class SearxSearchWrapper(BaseModel):
         query: str,
         num_results: int,
         engines: Optional[List[str]] = None,
+        categories: Optional[List[str]] = None,
         query_suffix: Optional[str] = "",
         **kwargs: Any,
     ) -> List[Dict]:
@@ -411,6 +421,8 @@ class SearxSearchWrapper(BaseModel):
             num_results: Limit the number of results to return.
 
             engines: List of engines to use for the query.
+
+            categories: List of categories to use for the query.
 
             **kwargs: extra parameters to pass to the searx API.
 
@@ -441,6 +453,8 @@ class SearxSearchWrapper(BaseModel):
             params["q"] += " " + query_suffix
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
+        if isinstance(categories, list) and len(categories) > 0:
+            params["categories"] = ",".join(categories)
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]

@@ -69,7 +69,7 @@ class Redis(VectorStore):
         ids = []
         # Check if index exists
         for i, text in enumerate(texts):
-            _key = keys[i] if keys else uuid.uuid4().hex
+            _key = keys[i] if keys else self.index_name
             key = f"{prefix}:{_key}"
             metadata = metadatas[i] if metadatas else {}
             self.client.hset(

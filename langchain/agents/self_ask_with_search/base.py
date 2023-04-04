@@ -2,6 +2,7 @@
 from typing import Any, Optional, Sequence, Tuple, Union
 
 from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent_types import AgentType
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
@@ -17,7 +18,7 @@ class SelfAskWithSearchAgent(Agent):
     @property
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
-        return "self-ask-with-search"
+        return AgentType.SELF_ASK_WITH_SEARCH
 
     @classmethod
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:

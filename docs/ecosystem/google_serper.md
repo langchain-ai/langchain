@@ -23,6 +23,7 @@ You can use it as part of a Self Ask chain:
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
+from langchain.agents.agent_types import AgentType
 
 import os
 
@@ -39,7 +40,7 @@ tools = [
     )
 ]
 
-self_ask_with_search = initialize_agent(tools, llm, agent="self-ask-with-search", verbose=True)
+self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True)
 self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
 ```
 
