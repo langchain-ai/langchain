@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Sequence, TypedDict, Union
 
 import logging
@@ -135,7 +136,7 @@ class WandbTracer(SharedTracer):
         # We only want to start a new run if the run args differ. This will
         # reduce the number of W&B runs created, which is more ideal in a 
         # notebook setting
-        if wandb.run != None and self._run is not None and self._run_args == run_args:
+        if wandb.run != None and self._run is not None and json.dumps(self._run_args, sort_keys=True) == json.dumps(run_args, sort_keys=True):
             _print_wandb_url(self._run.settings.run_url)
             return
         self._run_args = run_args
