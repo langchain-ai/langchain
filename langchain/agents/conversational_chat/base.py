@@ -132,13 +132,12 @@ class ConversationalChatAgent(Agent):
         human_message: str = SUFFIX,
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
-        template_tool_response: Optional[str] = TEMPLATE_TOOL_RESPONSE,
+        tool_response: str = TEMPLATE_TOOL_RESPONSE,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         _output_parser = output_parser or AgentOutputParser()
-        cls.template_tool_response = template_tool_response
         prompt = cls.create_prompt(
             tools,
             system_message=system_message,
@@ -156,5 +155,6 @@ class ConversationalChatAgent(Agent):
             llm_chain=llm_chain,
             allowed_tools=tool_names,
             output_parser=_output_parser,
+            template_tool_response=tool_response,
             **kwargs,
         )
