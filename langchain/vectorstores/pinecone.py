@@ -21,7 +21,8 @@ class Pinecone(VectorStore):
             from langchain.embeddings.openai import OpenAIEmbeddings
             import pinecone
 
-            # The environment should be the one specified next to the API key in your Pinecone console
+            # The environment should be the one specified next to the API key 
+            # in your Pinecone console
             pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
@@ -187,7 +188,8 @@ class Pinecone(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
                 import pinecone
 
-                # The environment should be the one specified next to the API key in your Pinecone console
+                # The environment should be the one specified next to the API key 
+                # in your Pinecone console
                 pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
                 pinecone = Pinecone.from_texts(
@@ -210,11 +212,13 @@ class Pinecone(VectorStore):
             index = pinecone.Index(index_name)
         elif len(indexes) == 0:
             raise ValueError(
-                f"No active indexes found in your Pinecone project, are you sure you're using the right API key and environment?"
+                "No active indexes found in your Pinecone project, "
+                "are you sure you're using the right API key and environment?"
             )
         else:
             raise ValueError(
-                f"Index '{index_name}' not found in your Pinecone project. Did you mean one of the following indexes: {', '.join(indexes)}"
+                f"Index '{index_name}' not found in your Pinecone project. "
+                "Did you mean one of the following indexes: {', '.join(indexes)}"
             )
 
         for i in range(0, len(texts), batch_size):
