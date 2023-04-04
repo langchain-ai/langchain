@@ -98,13 +98,13 @@ def finish():
     url = tracer._run.settings.run_url
     tracer._run.finish()
     import_wandb().termlog((
-        f"All files uploaded. View LangChain logs in W&B at {url}/chains."
+        f"All files uploaded. View LangChain logs in W&B at {url}."
     ))
 
 
 def _print_wandb_url(run_url: str):
     import_wandb().termlog((
-        f"W&B Run initialized. View LangChain logs in W&B at {run_url}/chains. "
+        f"W&B Run initialized. View LangChain logs in W&B at {run_url}. "
         "To ensure that all data is uploaded, call `wandb_tracer.finish()` before "
         "terminating the notebook kernel or script."
         "\n\nNote that the WandbLangChainTracer is currently in beta and is subject to change "
