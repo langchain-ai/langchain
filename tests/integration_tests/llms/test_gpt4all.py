@@ -6,7 +6,7 @@ from urllib.request import urlretrieve
 from langchain.llms import GPT4All
 
 
-def get_model() -> str:
+def _download_model() -> str:
     """Download model.
     From https://the-eye.eu/public/AI/models/nomic-ai/gpt4all/gpt4all-lora-quantized.bin,
     convert to new ggml format and return model path."""
@@ -28,7 +28,7 @@ def get_model() -> str:
 
 def test_gpt4all_inference() -> None:
     """Test valid gpt4all inference."""
-    model_path = get_model()
+    model_path = _download_model()
     llm = GPT4All(model=model_path)
     output = llm("Say foo:")
     assert isinstance(output, str)
