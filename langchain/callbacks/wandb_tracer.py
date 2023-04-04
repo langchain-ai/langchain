@@ -88,10 +88,25 @@ def watch(run_args: Optional[WandbRunArgs] = None):
     manager = get_callback_manager()
     manager.set_handlers([tracer, StdOutCallbackHandler()])
 
+def finish():
+    """Waits for W&B data to upload. It is recommended to call this function 
+    before terminating the kernel or python script."""
+    tracer = WandbTracer()
+    if tracer._run is None:
+        return
+    url = tracer._run.settings.run_url
+    tracer._run.finish()
+    import_wandb().termlog((
+        f"All files uploaded. View LangChain logs in W&B at {url}."
+    ))
+
+
 def _print_wandb_url(url: str):
     import_wandb().termlog((
-        f"View LangChain logs in W&B at {url}. Note that "
-        "theWandbLangChainTracer is currently in beta and is subject to change "
+        f"W&B Run initialized. View LangChain logs in W&B at {url}. "
+        "To ensure that all data is uploaded, call `wandb_tracer.finish()` before "
+        "terminating the notebook kernel or script."
+        "\n\nNote that theWandbLangChainTracer is currently in beta and is subject to change "
         "based on updates to `langchain`. Please report any issues to "
         "https://github.com/wandb/wandb/issues with the tag `langchain`."
         )
