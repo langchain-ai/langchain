@@ -21,7 +21,7 @@ class Pinecone(VectorStore):
             from langchain.embeddings.openai import OpenAIEmbeddings
             import pinecone
 
-            # The environment should be the one specified next to the API key 
+            # The environment should be the one specified next to the API key
             # in your Pinecone console
             pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
@@ -188,7 +188,7 @@ class Pinecone(VectorStore):
                 from langchain.embeddings import OpenAIEmbeddings
                 import pinecone
 
-                # The environment should be the one specified next to the API key 
+                # The environment should be the one specified next to the API key
                 # in your Pinecone console
                 pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
