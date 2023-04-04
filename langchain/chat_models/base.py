@@ -73,7 +73,7 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         prompt_messages = [p.to_messages() for p in prompts]
         prompt_strings = [p.to_string() for p in prompts]
         self.callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+            {"name": self.__class__.__name__, "_self": self}, prompt_strings, verbose=self.verbose
         )
         try:
             output = self.generate(prompt_messages, stop=stop)
@@ -90,11 +90,11 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         prompt_strings = [p.to_string() for p in prompts]
         if self.callback_manager.is_async:
             await self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+                {"name": self.__class__.__name__, "_self": self}, prompt_strings, verbose=self.verbose
             )
         else:
             self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose
+                {"name": self.__class__.__name__, "_self": self}, prompt_strings, verbose=self.verbose
             )
         try:
             output = await self.agenerate(prompt_messages, stop=stop)

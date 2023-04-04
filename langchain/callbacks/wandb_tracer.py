@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
     from wandb.wandb_run import Run as WBRun
     from wandb import Settings as WBSettings
-    from wandb.integration.langchain.media_types import LangChainTrace
+    from wandb.integration.langchain.media_types import LangChainTrace, LangChainModel
     from wandb.integration.langchain.stream_table import StreamTable
 
 def import_wandb() -> Any:
@@ -123,6 +123,7 @@ class WandbTracer(SharedTracer):
     _run: Optional["WBRun"] = None
     _run_args: Optional[WandbRunArgs] = None
     _stream_table: Optional["StreamTable"] = None
+    _known_models: dict[int, "LangChainModel"] = {}
 
     def init(self, run_args: Optional[WandbRunArgs] = None) -> None:
         """Initialize wandb if it has not been initialized."""
@@ -171,12 +172,12 @@ class WandbTracer(SharedTracer):
         self._run_args = None
         self._stream_table = None
 
-    def _log_trace(self, trace: "LangChainTrace"):
+    def _log_trace(self, model: "LangChainModel", trace: "LangChainTrace"):
         if self._stream_table is None:
             logging.warning("Failed to log trace to W&B. No StreamTable found.")
         
         # self._stream_table.add_data(self._current_model, trace)
-        self._stream_table.add_data("", trace)
+        self._stream_table.add_data(model, trace)
 
 
     ###  Start of required methods
@@ -192,11 +193,20 @@ class WandbTracer(SharedTracer):
     def _persist_run(self, run: Union["LLMRun", "ChainRun", "ToolRun"]) -> None:
         """Persist a run."""
         import_wandb()
-        from wandb.integration.langchain.media_types import LangChainTrace
+        from wandb.integration.langchain.media_types import LangChainTrace, LangChainModel
         try:
-            self._log_trace(LangChainTrace(run))
+            wb_model = None
+            model = run.serialized.get('_self')
+            if model is not None:
+                key = id(model)
+                # warning: map of models is not thread safe and has unbounded memory usage
+                if key not in self._known_models or self._known_models[key]._model != model:
+                    self._known_models[key] = LangChainModel(model)
+                wb_model = self._known_models[key]
+            self._log_trace(wb_model, LangChainTrace(run))
         except Exception as e:
-            logging.warning(f"Failed to persist run: {e}")
+            raise e
+            # logging.warning(f"Failed to persist run: {e}")
 
     def _persist_session(self, session_create: "TracerSessionCreate") -> "TracerSession":
         """Persist a session."""

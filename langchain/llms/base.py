@@ -131,7 +131,7 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
             self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                {"name": self.__class__.__name__, "_self": self}, prompts, verbose=self.verbose
             )
             try:
                 output = self._generate(prompts, stop=stop)
@@ -150,7 +150,7 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
         ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
             self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, missing_prompts, verbose=self.verbose
+                {"name": self.__class__.__name__, "_self": self}, missing_prompts, verbose=self.verbose
             )
             try:
                 new_results = self._generate(missing_prompts, stop=stop)
@@ -179,11 +179,11 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
                 )
             if self.callback_manager.is_async:
                 await self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                    {"name": self.__class__.__name__, "_self": self}, prompts, verbose=self.verbose
                 )
             else:
                 self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__}, prompts, verbose=self.verbose
+                    {"name": self.__class__.__name__, "_self": self}, prompts, verbose=self.verbose
                 )
             try:
                 output = await self._agenerate(prompts, stop=stop)
@@ -209,13 +209,13 @@ class BaseLLM(BaseLanguageModel, BaseModel, ABC):
         if len(missing_prompts) > 0:
             if self.callback_manager.is_async:
                 await self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__},
+                    {"name": self.__class__.__name__, "_self": self},
                     missing_prompts,
                     verbose=self.verbose,
                 )
             else:
                 self.callback_manager.on_llm_start(
-                    {"name": self.__class__.__name__},
+                    {"name": self.__class__.__name__, "_self": self},
                     missing_prompts,
                     verbose=self.verbose,
                 )

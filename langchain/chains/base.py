@@ -105,7 +105,7 @@ class Chain(BaseModel, ABC):
         """
         inputs = self.prep_inputs(inputs)
         self.callback_manager.on_chain_start(
-            {"name": self.__class__.__name__},
+            {"name": self.__class__.__name__, "_self": self},
             inputs,
             verbose=self.verbose,
         )
@@ -134,13 +134,13 @@ class Chain(BaseModel, ABC):
         inputs = self.prep_inputs(inputs)
         if self.callback_manager.is_async:
             await self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__},
+                {"name": self.__class__.__name__, "_self": self},
                 inputs,
                 verbose=self.verbose,
             )
         else:
             self.callback_manager.on_chain_start(
-                {"name": self.__class__.__name__},
+                {"name": self.__class__.__name__, "_self": self},
                 inputs,
                 verbose=self.verbose,
             )
