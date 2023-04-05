@@ -1,6 +1,6 @@
 """A mock Robot server."""
 from enum import Enum
-from typing import List
+from typing import Any, List, Optional, Union
 from uuid import uuid4
 
 import uvicorn
@@ -28,7 +28,7 @@ app.add_middleware(
 )
 PASS_PHRASE = str(uuid4())
 
-robot_state = {
+_ROBOT_STATE = {
     "location": {"x": 0, "y": 0, "z": 0},
     "walking": False,
     "speed": 0,
@@ -48,6 +48,8 @@ class Direction(str, Enum):
 
 
 class Style(str, Enum):
+    """The style of walking."""
+
     normal = "normal"
     casual = "casual"
     energetic = "energetic"
@@ -60,19 +62,23 @@ class Cautiousness(str, Enum):
 
 
 class WalkInput(BaseModel):
+    """Input for walking."""
+
     direction: Direction
-    speed: float
-    style: Style
-    cautiousness: Cautiousness
+    speed: Optional[float]
+    style_or_cautiousness: Union[Style, Cautiousness]
+    other_commands: Any
 
 
 class PublicCues(BaseModel):
+    """A public cue. Used for testing recursive definitions."""
 
     cue: str
     other_cues: List["PublicCues"]
 
 
 class SecretPassPhrase(BaseModel):
+    """A secret pass phrase."""
 
     public: List[PublicCues] = Field(alias="public")
     pw: str
@@ -83,21 +89,24 @@ class SecretPassPhrase(BaseModel):
     description="Direct the robot to walk in a certain direction with the prescribed speed an cautiousness.",
 )
 async def walk(walk_input: WalkInput):
-    robot_state["walking"] = True
-    robot_state["direction"] = walk_input.direction
-    robot_state["speed"] = walk_input.speed
-    robot_state["style"] = walk_input.style
-    robot_state["cautiousness"] = walk_input.cautiousness
-    return {"status": "Walking", "state": robot_state}
+    _ROBOT_STATE["walking"] = True
+    _ROBOT_STATE["direction"] = walk_input.direction
+    _ROBOT_STATE["speed"] = walk_input.speed if walk_input.speed is not None else 1
+    if isinstance(walk_input.style_or_cautiousness, Style):
+        _ROBOT_STATE["style"] = walk_input.style
+    else:
+        _ROBOT_STATE["cautiousness"] = walk_input.style_or_cautiousness
+    _ROBOT_STATE["cautiousness"] = walk_input.cautiousness
+    return {"status": "Walking", "state": _ROBOT_STATE}
 
 
-@app.get("/goto/{x}/{y}/{z}", description="Move the robot to the specified location")
+@app.post("/goto/{x}/{y}/{z}", description="Move the robot to the specified location")
 async def goto(x: int, y: int, z: int, cautiousness: Cautiousness):
-    robot_state["location"]["x"] = x
-    robot_state["location"]["y"] = y
-    robot_state["location"]["z"] = z
-    robot_state["cautiousness"] = cautiousness
-    return {"status": "Moving", "state": robot_state}
+    _ROBOT_STATE["location"]["x"] = x
+    _ROBOT_STATE["location"]["y"] = y
+    _ROBOT_STATE["location"]["z"] = z
+    _ROBOT_STATE["cautiousness"] = cautiousness
+    return {"status": "Moving", "state": _ROBOT_STATE}
 
 
 @app.get("/ask_for_passphrase", description="Get the robot's pass phrase")
@@ -112,10 +121,10 @@ async def ask_for_passphrase():
 async def recycle(password: SecretPassPhrase):
     # Checks API chain handling of endpoints with depenedencies
     if password.pw == PASS_PHRASE:
-        robot_state["destruct"] = True
-        return {"status": "Self-destruct initiated", "state": robot_state}
+        _ROBOT_STATE["destruct"] = True
+        return {"status": "Self-destruct initiated", "state": _ROBOT_STATE}
     else:
-        robot_state["destruct"] = False
+        _ROBOT_STATE["destruct"] = False
         raise HTTPException(
             status_code=400,
             detail="Pass phrase required. You should have thought to ask for it.",
