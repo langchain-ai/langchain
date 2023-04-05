@@ -68,6 +68,7 @@ def test_functionality_multiline() -> None:
     output = tool.run(_SAMPLE_CODE)
     assert output == "30\n"
 
+
 def test_python_ast_repl_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
     if sys.version_info < (3, 9):
