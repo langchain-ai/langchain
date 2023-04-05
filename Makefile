@@ -1,6 +1,5 @@
 .PHONY: all clean format lint test tests test_watch integration_tests docker_tests help
 
-
 all: help
 
 coverage:
