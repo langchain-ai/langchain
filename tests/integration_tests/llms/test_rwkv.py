@@ -7,12 +7,15 @@ from langchain.llms import RWKV
 import warnings
 import pytest
 
+
 def _download_model() -> str:
     """Download model.
     From https://huggingface.co/BlinkDL/rwkv-4-pile-169m/resolve/main/RWKV-4-Pile-169M-20220807-8023.pth,
     """
     model_url = "https://huggingface.co/BlinkDL/rwkv-4-pile-169m/resolve/main/RWKV-4-Pile-169M-20220807-8023.pth"
-    tokenizer_url = "https://github.com/BlinkDL/ChatRWKV/blob/main/v2/20B_tokenizer.json?raw=true"
+    tokenizer_url = (
+        "https://github.com/BlinkDL/ChatRWKV/blob/main/v2/20B_tokenizer.json?raw=true"
+    )
     local_filename = model_url.split("/")[-1]
 
     if not os.path.exists("20B_tokenizer.json"):
@@ -21,6 +24,7 @@ def _download_model() -> str:
         urlretrieve(model_url, local_filename)
 
     return local_filename
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning:")
 def test_rwkv_inference() -> None:

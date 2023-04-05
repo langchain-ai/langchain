@@ -11,7 +11,6 @@ from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-
 class RWKV(LLM, BaseModel):
     r"""Wrapper around RWKV language models.
 
@@ -56,7 +55,7 @@ class RWKV(LLM, BaseModel):
     in the text so far, increasing the model's likelihood to talk about
     new topics.."""
 
-    CHUNK_LEN: int =  256
+    CHUNK_LEN: int = 256
     """Batch size for prompt processing."""
 
     max_tokens_per_generation: SupportsIndex = 256
@@ -66,7 +65,7 @@ class RWKV(LLM, BaseModel):
 
     tokenizer: Any = None  #: :meta private:
 
-    pipeline: Any = None   #: :meta private:
+    pipeline: Any = None  #: :meta private:
 
     model_state: Any = None  #: :meta private:
 
@@ -87,7 +86,7 @@ class RWKV(LLM, BaseModel):
             "penalty_alpha_frequency": self.penalty_alpha_frequency,
             "penalty_alpha_presence": self.penalty_alpha_presence,
             "CHUNK_LEN": self.CHUNK_LEN,
-            "max_tokens_per_generation": self.max_tokens_per_generation
+            "max_tokens_per_generation": self.max_tokens_per_generation,
         }
 
     @staticmethod
@@ -110,12 +109,15 @@ class RWKV(LLM, BaseModel):
         try:
             from rwkv.model import RWKV as RWKVMODEL
             from rwkv.utils import PIPELINE, PIPELINE_ARGS
+
             values["tokenizer"] = tokenizers.Tokenizer.from_file(values["tokens_path"])
 
             rwkv_keys = cls._rwkv_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in rwkv_keys}
             model_kwargs["verbose"] = values["rwkv_verbose"]
-            values["client"] = RWKVMODEL(values["model"], strategy=values["strategy"], **model_kwargs)
+            values["client"] = RWKVMODEL(
+                values["model"], strategy=values["strategy"], **model_kwargs
+            )
             values["pipeline"] = PIPELINE(values["client"], values["tokens_path"])
 
         except ImportError:
@@ -131,11 +133,7 @@ class RWKV(LLM, BaseModel):
         return {
             "model": self.model,
             **self._default_params,
-            **{
-                k: v
-                for k, v in self.__dict__.items()
-                if k in RWKV._rwkv_param_names()
-            },
+            **{k: v for k, v in self.__dict__.items() if k in RWKV._rwkv_param_names()},
         }
 
     @property
@@ -153,12 +151,14 @@ class RWKV(LLM, BaseModel):
 
         # Feed in the input string
         while len(tokens) > 0:
-            logits, state = self.client.forward(tokens[:self.CHUNK_LEN], state)
-            tokens = tokens[self.CHUNK_LEN:]
+            logits, state = self.client.forward(tokens[: self.CHUNK_LEN], state)
+            tokens = tokens[self.CHUNK_LEN :]
 
-        decoded = ''
+        decoded = ""
         for i in range(self.max_tokens_per_generation):
-            token = self.pipeline.sample_logits(logits, temperature=self.temperature, top_p=self.top_p)
+            token = self.pipeline.sample_logits(
+                logits, temperature=self.temperature, top_p=self.top_p
+            )
 
             if token not in occurrence:
                 occurrence[token] = 1
@@ -167,13 +167,16 @@ class RWKV(LLM, BaseModel):
 
             decoded += self.tokenizer.decode([token])
 
-            if '\n' in decoded:
+            if "\n" in decoded:
                 break
 
-            #feed back in
+            # feed back in
             logits, state = self.client.forward([token], state)
             for n in occurrence:
-                logits[n] -= (self.penalty_alpha_presence + occurrence[n] * self.penalty_alpha_frequency)
+                logits[n] -= (
+                    self.penalty_alpha_presence
+                    + occurrence[n] * self.penalty_alpha_frequency
+                )
 
         # Update state for future invocations
         self.model_state = state
