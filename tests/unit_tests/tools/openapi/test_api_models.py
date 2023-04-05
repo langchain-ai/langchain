@@ -40,7 +40,7 @@ _ROBOT_METHODS = [
     ("/ask_for_help", "post"),
     ("/ask_for_passphrase", "get"),
     ("/get_state", "get"),
-    ("/goto/{x}/{y}/{z}", "post"),
+    # ("/goto/{x}/{y}/{z}", "post"), # Private type definitions required.
     ("/recycle", "delete"),
     ("/walk", "post"),
 ]

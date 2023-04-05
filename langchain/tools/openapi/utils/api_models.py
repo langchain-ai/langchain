@@ -220,12 +220,14 @@ class APIOperation(BaseModel):
         if isinstance(type_, str):
             return {
                 "str": "string",
-                "int": "number",
+                "integer": "number",
                 "float": "number",
-                "bool": "boolean",
+                "date-time": "string",
             }.get(type_, type_)
         elif isinstance(type_, tuple):
             return f"Array<{APIOperation.ts_type_from_python(type_[0])}>"
+        elif issubclass(type_, Enum):
+            return " | ".join([f"'{e.value}'" for e in type_])
         else:
             return str(type_)
 
