@@ -241,7 +241,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
             )
-        index_name = uuid.uuid4().hex
+        index_name = kwargs.get("index_name", uuid.uuid4().hex)
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
