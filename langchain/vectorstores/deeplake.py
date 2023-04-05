@@ -53,7 +53,7 @@ def search(
 def dp_filter(x: dict, filter: Optional[Dict[str, str]] = None) -> bool:
     """Filter helper function for Deep Lake"""
     metadata = x['metadata'].data()["value"]
-    if any([str(v) != metadata[k] for k, v in filter.items() if k in metadata]):
+    if any([str(v) != str(metadata[k]) if k in metadata else True for k, v in filter.items()]):
         return False
     return True
 
@@ -231,6 +231,7 @@ class DeepLake(VectorStore):
                 indices = maximal_marginal_relevance(
                     query_emb, embeddings[indices], k=min(k, len(indices)))
                 view = view[indices]
+                scores = [scores[i] for i in indices]
 
         docs = [
             Document(
