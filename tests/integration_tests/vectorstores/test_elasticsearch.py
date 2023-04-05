@@ -76,6 +76,7 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
+    @pytest.mark.vcr()
     def test_default_index_from_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:

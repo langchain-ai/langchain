@@ -1426,7 +1426,7 @@ name = "elastic-transport"
 version = "8.4.0"
 description = "Transport classes and utilities shared among Python Elastic client libraries"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "elastic-transport-8.4.0.tar.gz", hash = "sha256:b9ad708ceb7fcdbc6b30a96f886609a109f042c0b9d9f2e44403b3133ba7ff10"},
@@ -1445,7 +1445,7 @@ name = "elasticsearch"
 version = "8.6.2"
 description = "Python client for Elasticsearch"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6, <4"
 files = [
     {file = "elasticsearch-8.6.2-py3-none-any.whl", hash = "sha256:8ccbebd9a0f6f523c7db67bb54863dde8bdb93daae4ff97f7c814e0500a73e84"},
@@ -1453,6 +1453,7 @@ files = [
 ]
 
 [package.dependencies]
+aiohttp = {version = ">=3,<4", optional = true, markers = "extra == \"async\""}
 elastic-transport = ">=8,<9"
 
 [package.extras]
@@ -5501,6 +5502,22 @@ pytest = ">=5.0.0"
 python-dotenv = ">=0.9.1"
 
 [[package]]
+name = "pytest-vcr"
+version = "1.0.2"
+description = "Plugin for managing VCR.py cassettes"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytest-vcr-1.0.2.tar.gz", hash = "sha256:23ee51b75abbcc43d926272773aae4f39f93aceb75ed56852d0bf618f92e1896"},
+    {file = "pytest_vcr-1.0.2-py2.py3-none-any.whl", hash = "sha256:2f316e0539399bea0296e8b8401145c62b6f85e9066af7e57b6151481b0d6d9c"},
+]
+
+[package.dependencies]
+pytest = ">=3.6.0"
+vcrpy = "*"
+
+[[package]]
 name = "pytest-watcher"
 version = "0.2.6"
 description = "Continiously runs pytest on changes in *.py files"
@@ -7915,6 +7932,24 @@ decorator = ">=3.4.0"
 test = ["flake8 (>=2.4.0)", "isort (>=4.2.2)", "pytest (>=2.2.3)"]
 
 [[package]]
+name = "vcrpy"
+version = "4.2.1"
+description = "Automatically mock your HTTP interactions to simplify and speed up testing"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "vcrpy-4.2.1-py2.py3-none-any.whl", hash = "sha256:efac3e2e0b2af7686f83a266518180af7a048619b2f696e7bad9520f5e2eac09"},
+    {file = "vcrpy-4.2.1.tar.gz", hash = "sha256:7cd3e81a2c492e01c281f180bcc2a86b520b173d2b656cb5d89d99475423e013"},
+]
+
+[package.dependencies]
+PyYAML = "*"
+six = ">=1.5"
+wrapt = "*"
+yarl = "*"
+
+[[package]]
 name = "wasabi"
 version = "1.1.1"
 description = "A lightweight console printing and formatting toolkit"
@@ -8275,7 +8310,7 @@ name = "wrapt"
 version = "1.15.0"
 description = "Module for decorators, wrappers and monkey patching."
 category = "main"
-optional = true
+optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 files = [
     {file = "wrapt-1.15.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:ca1cccf838cd28d5a0883b342474c630ac48cac5df0ee6eacc9c7290f76b11c1"},
@@ -8481,4 +8516,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "bd1c3cfb286c9e27e189bad22cfa272223234a38fec4f6c7220fe181d133aa78"
+content-hash = "6e968772451e961fb7bbb9ddec18fe180fde01a2952a48d67ebbb41813443976"
