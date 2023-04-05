@@ -292,7 +292,7 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
     data_models = set()
     for parameter in operation.parameters:
         if isinstance(parameter, Reference):
-            resolved = _resolve_reference(parameter.ref, spec)
+            parameter = _resolve_reference(parameter.ref, spec)
         if parameter.param_in == "path":
             pass
         elif  parameter.param_in == "query":
