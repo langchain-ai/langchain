@@ -6,7 +6,6 @@ import pytest
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 
-
 _ROBOT_METHODS = [
     ("/ask_for_help", "post"),
     ("/ask_for_passphrase", "get"),
