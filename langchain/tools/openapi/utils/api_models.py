@@ -19,13 +19,10 @@ PRIMITIVE_TYPES = {
     "null": None,
 }
 
-
+# See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#parameterIn
+# for more info.
 class APIPropertyLocation(Enum):
-    """The location of the property.
-
-    See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#parameterIn
-    for more information.
-    """
+    """The location of the property."""
 
     QUERY = "query"
     PATH = "path"
@@ -110,7 +107,7 @@ class APIProperty(APIPropertyBase):
                 raise ValueError(f"Unsupported array items: {items}")
             if isinstance(schema_type, str):
                 # TODO: recurse
-                schema_type = tuple(schema_type)
+                schema_type = (schema_type,)
         elif schema_type == "object":
             # TODO: Resolve array and object types to components.
             raise NotImplementedError(f"Objects not yet supported")

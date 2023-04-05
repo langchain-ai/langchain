@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import ContextManager
+from typing import Iterator
 
 import pytest
 
@@ -22,7 +22,7 @@ def robot_spec() -> OpenAPISpec:
 
 
 @contextmanager
-def _named_temp_file(suffix: str, content: str) -> ContextManager[str]:
+def _named_temp_file(suffix: str, content: str) -> Iterator[str]:
     """Create a temporary file and yield its name."""
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
         temp_file.write(content.encode())
