@@ -23,7 +23,6 @@ class ParallelChain(Chain, BaseModel):
     in the sense of being run on different threads or processes.
     """
 
-    # input_variables: List[str]  #: :meta private:
     chains: Dict[str, Chain]
     concurrent: bool = True
 
@@ -40,7 +39,6 @@ class ParallelChain(Chain, BaseModel):
         :meta private:
         """
         return list(set().union(*(chain.input_keys for chain in self.chains.values())))
-        # return self.input_variables
 
     @property
     def output_keys(self) -> List[str]:
@@ -57,14 +55,6 @@ class ParallelChain(Chain, BaseModel):
 
         if len(chains) == 0:
             raise ValueError("There must be at least one chain.")
-
-        # input_variables = values["input_variables"]
-        # for chain in chains.values():
-        #     if chain.input_keys != input_variables:
-        #         raise ValueError(
-        #             f"Chain {chain} has input keys {chain.input_keys} "
-        #             f"which do not match the expected input keys {input_variables}."
-        #         )
 
         return values
 
