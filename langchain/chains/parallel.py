@@ -1,5 +1,5 @@
-import concurrent.futures
-import random
+import asyncio
+import functools
 import time
 from typing import Any, Dict, List
 
@@ -78,22 +78,34 @@ class ParallelChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         if self.concurrent:
-            outputs = {}
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=len(self.chains)
-            ) as executor:
-                futures = {
-                    executor.submit(self._run_child, inputs, key, chain): key
-                    for key, chain in self.chains.items()
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    key = futures[future]
-                    try:
-                        outputs.update(future.result())
-                    except Exception as exc:
-                        print(f"Chain {key} generated an exception: {exc}")
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError as e:
+                # to handle nested event loops
+                if str(e).startswith("There is no current event loop in thread"):
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                else:
+                    raise
+            return loop.run_until_complete(self._acall(inputs))
         else:
             outputs = {}
             for key, chain in self.chains.items():
                 outputs.update(self._run_child(inputs, key, chain))
+            return outputs
+
+    async def arun_child(self, loop, key, chain, inputs):
+        func = functools.partial(self._run_child, key=key, chain=chain)
+        result = await loop.run_in_executor(None, func, inputs)
+        return result
+
+    async def _acall(self, inputs):
+        loop = asyncio.get_event_loop()
+        tasks = []
+        for key, chain in self.chains.items():
+            tasks.append(loop.create_task(self.arun_child(loop, key, chain, inputs)))
+        results = await asyncio.gather(*tasks)
+        outputs = {}
+        for result in results:
+            outputs.update(result)
         return outputs
