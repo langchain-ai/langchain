@@ -3,6 +3,7 @@ import copy
 import json
 import logging
 from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Union
 
 import requests
@@ -131,14 +132,28 @@ class OpenAPISpec(OpenAPI):
         return cls.parse_obj(spec_dict)
 
     @classmethod
+    def from_text(cls, text: str) -> "OpenAPISpec":
+        """Get an OpenAPI spec from a text."""
+        try:
+            spec_dict = json.loads(text)
+        except json.JSONDecodeError:
+            spec_dict = yaml.safe_load(text)
+        return cls.from_spec_dict(spec_dict)
+
+    @classmethod
+    def from_file(cls, path: str) -> "OpenAPISpec":
+        """Get an OpenAPI spec from a file path."""
+        path_ = Path(path)
+        if not path_.exists():
+            raise FileNotFoundError(f"{path} does not exist")
+        with path_.open("r") as f:
+            return cls.from_text(f.read())
+
+    @classmethod
     def from_url(cls, url: str) -> "OpenAPISpec":
         """Get an OpenAPI spec from a URL."""
         response = requests.get(url)
-        try:
-            open_api_spec = json.loads(response.text)
-        except json.JSONDecodeError:
-            open_api_spec = yaml.safe_load(response.text)
-        return cls.from_spec_dict(open_api_spec)
+        return cls.from_text(response.text)
 
     @property
     def base_url(self) -> str:

@@ -3,11 +3,10 @@
 from enum import Enum
 from typing import Dict, List, Optional, Sequence, Type, Union
 
-from langchain.tools.openapi.utils.typed_parser import HTTPVerb, OpenAPISpec
 from openapi_schema_pydantic import Parameter, Reference, Schema
-
 from pydantic import BaseModel, Field
 
+from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 PRIMITIVE_TYPES = {
     "integer": int,
@@ -21,9 +20,12 @@ PRIMITIVE_TYPES = {
 }
 
 
-# See: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#parameterIn
 class APIPropertyLocation(Enum):
-    """The location of the property."""
+    """The location of the property.
+
+    See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#parameterIn
+    for more information.
+    """
 
     QUERY = "query"
     PATH = "path"
@@ -47,15 +49,16 @@ SUPPORTED_LOCATIONS = {
 }
 
 
-# See: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md
 class APIPropertyBase(BaseModel):
     """Base model for an API property."""
 
-    # See Spec at above link.
     # The name of the parameter is required and is case sensitive.
-    # If "in" is "path", the "name" field must correspond to a template expression within the path field in the Paths Object.
-    # If "in" is "header" and the "name" field is "Accept", "Content-Type", or "Authorization", the parameter definition is ignored.
-    # For all other cases, the "name" corresponds to the parameter name used by the "in" property.
+    # If "in" is "path", the "name" field must correspond to a template expression
+    # within the path field in the Paths Object.
+    # If "in" is "header" and the "name" field is "Accept", "Content-Type",
+    # or "Authorization", the parameter definition is ignored.
+    # For all other cases, the "name" corresponds to the parameter
+    # name used by the "in" property.
     name: str = Field(alias="name")
     """The name of the property."""
 
@@ -246,13 +249,3 @@ type {operation_name} = (_: {{
 }}) => any;
 """
         return typescript_definition.strip()
-
-
-if __name__ == "__main__":
-    url = "http://127.0.0.1:7289/openapi.json"
-    spec = OpenAPISpec.from_url(url)
-    paths = list(spec._paths_strict)
-    for path in paths:
-        for method in spec.get_methods_for_path(path):
-            api_operation = APIOperation.from_openapi_spec(spec, path, method)
-            ts = api_operation.to_typescript()
