@@ -11,4 +11,5 @@ __all__ = [
     "PineconeHybridSearchRetriever",
     "MetalRetriever",
     "ElasticSearchBM25Retriever",
+    "TFIDFRetriever",
 ]
