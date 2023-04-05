@@ -19,3 +19,22 @@ GRADE:"""
 PROMPT = PromptTemplate(
     input_variables=["query", "result", "answer"], template=template
 )
+
+context_template = """You are a teacher grading a quiz.
+You are given a question, the contex the question is about, and the student's answer You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
+
+Example Format:
+QUESTION: question here
+CONTEXT: context the question is about here
+STUDENT ANSWER: student's answer here
+GRADE: CORRECT or INCORRECT here
+
+Please remember to grade them based on being factually accurate. Begin!
+
+QUESTION: {query}
+CONTEXT: {context}
+STUDENT ANSWER: {result}
+GRADE:"""
+CONTEXT_PROMPT = PromptTemplate(
+    input_variables=["query", "context", "result"], template=context_template
+)
