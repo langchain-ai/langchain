@@ -298,8 +298,10 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
         if isinstance(parameter, Reference):
             parameter = _resolve_reference(parameter.ref, spec)
         if parameter.param_in == "path":
+            path_params.append(parameter)
             pass
         elif parameter.param_in == "query":
+            query_params.append(parameter)
             pass
         elif parameter.param_in == "header":
             logger.warning("Header parameters not yet implemented")
@@ -310,11 +312,12 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
     path_params = extract_path_params(path)
     query_params, body_params = extract_query_and_body_params(operation, spec)
     # operation_schema, encoding_type = generate_resolved_schema(operation, spec)
-    operation.p
+    # operation.p
 
 
 if __name__ == "__main__":
     CACHED_OPENAPI_SPECS = ["http://127.0.0.1:7289/openapi.json"]
     spec = OpenAPISpec.from_url(CACHED_OPENAPI_SPECS[0])
-    op = foo("/foo", "get", spec)
+    # op = foo("/goto/{x}/{y}/{z}", "post", spec)
+    op = foo("/get_state", "get", spec)
     print(spec)
