@@ -110,19 +110,19 @@ class TextRequestsWrapper(BaseModel):
 
     def post(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """POST to the URL and return the text."""
-        return self.requests.post(url, json=data, headers=self.headers, **kwargs).text
+        return self.requests.post(url, data, **kwargs).text
 
     def patch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PATCH the URL and return the text."""
-        return self.requests.patch(url, json=data, headers=self.headers, **kwargs).text
+        return self.requests.patch(url, data, **kwargs).text
 
     def put(self, url: str, data: Dict[str, Any], **kwargs: Any) -> str:
         """PUT the URL and return the text."""
-        return self.requests.put(url, json=data, headers=self.headers, **kwargs).text
+        return self.requests.put(url, data, **kwargs).text
 
     def delete(self, url: str, **kwargs: Any) -> str:
         """DELETE the URL and return the text."""
-        return self.requests.delete(url, headers=self.headers, **kwargs).text
+        return self.requests.delete(url, **kwargs).text
 
     async def aget(self, url: str, **kwargs: Any) -> str:
         """GET the URL and return the text asynchronously."""
