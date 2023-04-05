@@ -1,5 +1,6 @@
 """Test LLM Bash functionality."""
 import sys
+from typing import Type
 
 import pytest
 
@@ -30,12 +31,11 @@ def test_eval_chain() -> None:
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
 @pytest.mark.parametrize("chain_cls", [ContextQAEvalChain, CotQAEvalChain])
-def test_context_eval_chain(chain_cls) -> None:
+def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
     """Test a simple eval chain."""
     example = {
         "query": "What's my name",
         "context": "The name of this person is John Doe",
-        "answer": "John Doe",
     }
     prediction = {"result": "John Doe"}
     fake_qa_eval_chain = chain_cls.from_llm(FakeLLM())

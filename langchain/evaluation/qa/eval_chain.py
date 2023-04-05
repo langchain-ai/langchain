@@ -64,6 +64,15 @@ class ContextQAEvalChain(LLMChain):
     """LLM Chain specifically for evaluating QA w/o GT based on context"""
 
     @classmethod
+    def _validate_input_vars(cls, prompt: PromptTemplate) -> None:
+        expected_input_vars = {"query", "context", "result"}
+        if expected_input_vars != set(prompt.input_variables):
+            raise ValueError(
+                f"Input variables should be {expected_input_vars}, "
+                f"but got {prompt.input_variables}"
+            )
+
+    @classmethod
     def from_llm(
         cls, llm: BaseLLM, prompt: PromptTemplate = CONTEXT_PROMPT, **kwargs: Any
     ) -> ContextQAEvalChain:
@@ -82,12 +91,7 @@ class ContextQAEvalChain(LLMChain):
         Returns:
             ContextQAEvalChain: the loaded QA eval chain.
         """
-        expected_input_vars = {"query", "context", "result"}
-        if expected_input_vars != set(prompt.input_variables):
-            raise ValueError(
-                f"Input variables should be {expected_input_vars}, "
-                f"but got {prompt.input_variables}"
-            )
+        cls._validate_input_vars(prompt)
         return cls(llm=llm, prompt=prompt, **kwargs)
 
     def evaluate(
@@ -118,4 +122,5 @@ class CotQAEvalChain(ContextQAEvalChain):
     def from_llm(
         cls, llm: BaseLLM, prompt: PromptTemplate = COT_PROMPT, **kwargs: Any
     ) -> CotQAEvalChain:
-        return super().from_llm(llm, prompt, **kwargs)
+        cls._validate_input_vars(prompt)
+        return cls(llm=llm, prompt=prompt, **kwargs)
