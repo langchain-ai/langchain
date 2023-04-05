@@ -145,7 +145,7 @@ class OpenAPISpec(OpenAPI):
     @classmethod
     def from_file(cls, path: Union[str, Path]) -> "OpenAPISpec":
         """Get an OpenAPI spec from a file path."""
-        path_ = Path(path) if isinstance(path, str) else path
+        path_ = path if isinstance(path, Path) else Path(path)
         if not path_.exists():
             raise FileNotFoundError(f"{path} does not exist")
         with path_.open("r") as f:

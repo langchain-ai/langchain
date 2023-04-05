@@ -129,7 +129,7 @@ class APIProperty(APIPropertyBase):
         location = APIPropertyLocation.from_str(parameter.param_in)
         if location not in SUPPORTED_LOCATIONS:
             raise NotImplementedError(
-                f"Unsupported APIPropertyLocation. "
+                f'Unsupported APIPropertyLocation "{location}". '
                 f"Valid values are {SUPPORTED_LOCATIONS}"
             )
         if parameter.content:
@@ -177,7 +177,7 @@ class APIOperation(BaseModel):
     operation_id: str = Field(alias="operation_id")
     """The unique identifier of the operation."""
 
-    description: str = Field(alias="description")
+    description: Optional[str] = Field(alias="description")
     """The description of the operation."""
 
     base_url: str = Field(alias="base_url")
@@ -261,8 +261,9 @@ class APIOperation(BaseModel):
             params.append(f"{prop_desc}\n\t\t{prop_name}{prop_required}: {prop_type},")
 
         formatted_params = "\n".join(params).strip()
+        description_str = f"/* {self.description} */" if self.description else ""
         typescript_definition = f"""
-// {self.description}
+{description_str}
 type {operation_name} = (_: {{
 {formatted_params}
 }}) => any;
