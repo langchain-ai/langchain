@@ -19,6 +19,7 @@ PRIMITIVE_TYPES = {
     "null": None,
 }
 
+
 # See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#parameterIn
 # for more info.
 class APIPropertyLocation(Enum):
