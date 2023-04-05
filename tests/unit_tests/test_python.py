@@ -1,5 +1,6 @@
 """Test functionality of Python REPL."""
-
+import sys
+import pytest
 from langchain.python import PythonREPL
 from langchain.tools.python.tool import PythonREPLTool, PythonAstREPLTool
 
@@ -69,6 +70,8 @@ def test_functionality_multiline() -> None:
 
 def test_python_ast_repl_multiline() -> None:
     """Test correct functionality for ChatGPT multiline commands."""
+    if sys.version_info < (3, 9):
+        pytest.skip("Python 3.9+ is required for this test")
     tool = PythonAstREPLTool()
     output = tool.run(_AST_SAMPLE_CODE)
     assert output == 30
