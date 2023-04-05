@@ -268,7 +268,6 @@ type {operation_name} = (_: {{
 }}) => any;
 """
         return typescript_definition.strip()
-<<<<<<< HEAD
 
     @property
     def query_params(self) -> List[str]:
@@ -285,5 +284,3 @@ type {operation_name} = (_: {{
             for property in self.properties
             if property.location == APIPropertyLocation.PATH
         ]
-=======
->>>>>>> upstream/harrison/openapi-parser
