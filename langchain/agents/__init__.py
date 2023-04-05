@@ -54,4 +54,5 @@ __all__ = [
     "AgentOutputParser",
     "BaseSingleActionAgent",
     "AgentType",
+    "BaseMultiActionAgent",
 ]
