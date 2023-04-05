@@ -110,7 +110,8 @@ class APIProperty(APIPropertyBase):
         elif type_ == "array":
             items = schema.items
             if isinstance(items, Reference):
-                type_ = items.ref.split("/")[-1]
+                ref_name = items.ref.split("/")[-1]
+                type_ = f'"{ref_name}"'  # To be valid typescript
             else:
                 type_ = items.type
             if isinstance(type_, list):

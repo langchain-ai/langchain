@@ -19,28 +19,46 @@ def robot_spec() -> OpenAPISpec:
 
 
 # Requires npm install -g typescript
-def _check_is_valid_ts(namespace_def: str) -> None:
-    with tempfile.NamedTemporaryFile(suffix=".ts", delete=False) as ts_file:
-        ts_file.write(namespace_def.encode())
-        ts_file_name = ts_file.name
+import os
+import subprocess
+import tempfile
+from contextlib import contextmanager
+
+
+@contextmanager
+def _named_temp_file(suffix: str, content: str):
+    """Create a temporary file and yield its name."""
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
+        temp_file.write(content.encode())
+        temp_file_name = temp_file.name
 
     try:
-        # Compile the TypeScript file
-        result = subprocess.run(["tsc", ts_file_name], capture_output=True, text=True)
+        yield temp_file_name
+    finally:
+        os.remove(temp_file_name)
+
+
+def _compile_typescript(ts_file_name: str) -> subprocess.CompletedProcess:
+    """Compile a typescript file using the tsc CLI post."""
+    return subprocess.run(["tsc", ts_file_name], capture_output=True, text=True)
+
+
+def _check_is_valid_ts(namespace_def: str) -> None:
+    """Check that the typescript file is valid."""
+    with _named_temp_file(".ts", namespace_def) as ts_file_name:
+        result = _compile_typescript(ts_file_name)
 
         if result.returncode != 0:
             raise ValueError(
                 f"TypeScript compilation failed:\n{result.stderr}\n\n{namespace_def}"
             )
-    finally:
-        os.remove(ts_file_name)
 
 
 _ROBOT_METHODS = [
     ("/ask_for_help", "post"),
     ("/ask_for_passphrase", "get"),
     ("/get_state", "get"),
-    # ("/goto/{x}/{y}/{z}", "post"), # Private type definitions required.
+    ("/goto/{x}/{y}/{z}", "post"),  # Private type definitions required.
     ("/recycle", "delete"),
     ("/walk", "post"),
 ]
