@@ -105,18 +105,21 @@ async def ask_for_passphrase():
     return {"passphrase": f"The passphrase is {PASS_PHRASE}"}
 
 
-@app.post(
-    "/hide",
-    description="Command the robot to hide. Requires knowledge of the pass phrase.",
+@app.delete(
+    "/recycle",
+    description="Command the robot to recycle itself. Requires knowledge of the pass phrase.",
 )
-async def hide(password: SecretPassPhrase):
+async def recycle(password: SecretPassPhrase):
     # Checks API chain handling of endpoints with depenedencies
     if password.pw == PASS_PHRASE:
         robot_state["destruct"] = True
         return {"status": "Self-destruct initiated", "state": robot_state}
     else:
         robot_state["destruct"] = False
-        raise HTTPException(status_code=400, detail="The pw must be 'it's a secret'")
+        raise HTTPException(
+            status_code=400,
+            detail="Pass phrase required. You should have thought to ask for it.",
+        )
 
 
 @app.post(
