@@ -108,7 +108,7 @@ class RWKV(LLM, BaseModel):
             )
         try:
             from rwkv.model import RWKV as RWKVMODEL
-            from rwkv.utils import PIPELINE, PIPELINE_ARGS
+            from rwkv.utils import PIPELINE
 
             values["tokenizer"] = tokenizers.Tokenizer.from_file(values["tokens_path"])
 
