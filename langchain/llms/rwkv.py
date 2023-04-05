@@ -5,7 +5,7 @@ Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.p
 """
 from typing import Any, Dict, List, Mapping, Optional, Set, SupportsIndex
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -101,7 +101,7 @@ class RWKV(LLM, BaseModel):
         """Validate that the python package exists in the environment."""
         try:
             import tokenizers
-        except:
+        except ImportError:
             raise ValueError(
                 "Could not import tokenizers python package. "
                 "Please install it with `pip install tokenizers`."
