@@ -102,7 +102,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             return {self.output_key: api_arguments[len("MESSAGE:") :]}
         try:
             request_args = self.deserialize_json_input(api_arguments)
-            method = getattr(self.requests, self.method.value)
+            method = getattr(self.requests, self.api_operation.method.value)
             api_response: Response = method(**request_args)
             if api_response.status_code != 200:
                 method_str = str(self.api_operation.method.value)
