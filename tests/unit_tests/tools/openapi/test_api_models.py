@@ -2,11 +2,14 @@
 
 
 import os
-from pathlib import Path
 import subprocess
 import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+from typing import ContextManager
 
 import pytest
+
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 
@@ -18,15 +21,8 @@ def robot_spec() -> OpenAPISpec:
     return OpenAPISpec.from_file(robot_spec_path)
 
 
-# Requires npm install -g typescript
-import os
-import subprocess
-import tempfile
-from contextlib import contextmanager
-
-
 @contextmanager
-def _named_temp_file(suffix: str, content: str):
+def _named_temp_file(suffix: str, content: str) -> ContextManager[str]:
     """Create a temporary file and yield its name."""
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
         temp_file.write(content.encode())
@@ -38,6 +34,7 @@ def _named_temp_file(suffix: str, content: str):
         os.remove(temp_file_name)
 
 
+# Requires npm install -g typescript
 def _compile_typescript(ts_file_name: str) -> subprocess.CompletedProcess:
     """Compile a typescript file using the tsc CLI post."""
     return subprocess.run(["tsc", ts_file_name], capture_output=True, text=True)
@@ -65,7 +62,7 @@ _ROBOT_METHODS = [
 
 
 @pytest.mark.parametrize("path, method", _ROBOT_METHODS)
-def test_parse_api_operations(robot_spec: OpenAPISpec, path: str, method: str):
+def test_parse_api_operations(robot_spec: OpenAPISpec, path: str, method: str) -> None:
     """Test the APIOperation class."""
     api_operation = APIOperation.from_openapi_spec(robot_spec, path, method)
     ts = api_operation.to_typescript()

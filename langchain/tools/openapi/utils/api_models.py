@@ -1,7 +1,7 @@
 """Pydantic models for parsing an OpenAPI spec."""
 
 from enum import Enum
-from typing import Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from openapi_schema_pydantic import Parameter, Reference, Schema
 from pydantic import BaseModel, Field
@@ -48,6 +48,8 @@ SUPPORTED_LOCATIONS = {
     APIPropertyLocation.PATH,
 }
 
+SCHEMA_TYPE = Union[str, Type, tuple, None, Enum]
+
 
 class APIPropertyBase(BaseModel):
     """Base model for an API property."""
@@ -65,13 +67,13 @@ class APIPropertyBase(BaseModel):
     required: bool = Field(alias="required")
     """Whether the property is required."""
 
-    type: Union[str, Type, tuple] = Field(alias="type")
+    type: SCHEMA_TYPE = Field(alias="type")
     """The type of the property.
     
     Either a primitive type, a component/parameter type,
     or an array or 'object' (dict) of the above."""
 
-    default: Optional[str] = Field(alias="default", default=None)
+    default: Optional[Any] = Field(alias="default", default=None)
     """The default value of the property."""
 
     description: Optional[str] = Field(alias="description", default=None)
@@ -83,6 +85,44 @@ class APIProperty(APIPropertyBase):
 
     location: APIPropertyLocation = Field(alias="location")
     """The path/how it's being passed to the endpoint."""
+
+    @staticmethod
+    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, tuple]]:
+        type_ = schema.type
+
+        if not isinstance(type_, list):
+            return type_
+        else:
+            return tuple(type_)
+
+    @staticmethod
+    def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
+        # TODO: recurse and differentiate between union vs. intersection types
+        schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
+        if schema_type == "array":
+            items = schema.items
+            if isinstance(items, Reference):
+                ref_name = items.ref.split("/")[-1]
+                schema_type = f'"{ref_name}"'  # To be valid typescript
+            elif isinstance(items, Schema):
+                schema_type = APIProperty._cast_schema_list_type(items)
+            else:
+                raise ValueError(f"Unsupported array items: {items}")
+            if isinstance(schema_type, str):
+                # TODO: recurse
+                schema_type = tuple(schema_type)
+        elif schema_type == "object":
+            # TODO: Resolve array and object types to components.
+            raise NotImplementedError(f"Objects not yet supported")
+        elif schema_type in PRIMITIVE_TYPES:
+            if schema.enum:
+                param_name = f"{parameter.name}Enum"
+                return Enum(param_name, schema.enum)
+            else:
+                pass
+        else:
+            raise NotImplementedError(f"Unsupported type: {schema_type}")
+        return schema_type
 
     @classmethod
     def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
@@ -100,43 +140,17 @@ class APIProperty(APIPropertyBase):
         schema = parameter.param_schema
         if isinstance(schema, Reference):
             schema = spec.get_referenced_schema(schema)
-            if not isinstance(schema, Schema):
-                raise ValueError(f"Error dereferencing schema: {schema}")
-            # raise NotImplementedError(f"References not yet supported")
-        type_ = schema.type
-        if isinstance(type_, list):
-            # TODO: recurse
-            type_ = Union[tuple(type_)]  # type: ignore
-        elif type_ == "array":
-            items = schema.items
-            if isinstance(items, Reference):
-                ref_name = items.ref.split("/")[-1]
-                type_ = f'"{ref_name}"'  # To be valid typescript
-            else:
-                type_ = items.type
-            if isinstance(type_, list):
-                # TODO: recurse
-                type_ = tuple(type_)  # type: ignore
-            else:
-                type_ = (type_,)
-        elif type_ == "object":
-            # TODO: Resolve array and object types to components.
-            raise NotImplementedError(f"Objects not yet supported")
-        elif type_ in PRIMITIVE_TYPES:
-            if schema.enum:
-                type_ = Enum(f"{parameter.name}Enum", schema.enum)
-            else:
-                pass
-        else:
-            raise NotImplementedError(f"Unsupported type: {type_}")
-        default_val = schema.default
+        if not isinstance(schema, Schema):
+            raise ValueError(f"Error dereferencing schema: {schema}")
+        schema_type = cls._get_schema_type(parameter, schema)
+        default_val = schema.default if schema is not None else None
         return cls(
             name=parameter.name,
             location=location,
             default=default_val,
             description=parameter.description,
             required=parameter.required,
-            type=type_,
+            type=schema_type,
         )
 
 
@@ -191,7 +205,7 @@ class APIOperation(BaseModel):
         spec_url: str,
         path: str,
         method: str,
-    ):
+    ) -> "APIOperation":
         """Create an APIOperation from an OpenAPI URL."""
         spec = OpenAPISpec.from_url(spec_url)
         return cls.from_openapi_spec(spec, path, method)
@@ -217,8 +231,10 @@ class APIOperation(BaseModel):
         )
 
     @staticmethod
-    def ts_type_from_python(type_: Union[str, Type, tuple]) -> str:
-        if isinstance(type_, str):
+    def ts_type_from_python(type_: SCHEMA_TYPE) -> str:
+        if type_ is None:
+            return "null"
+        elif isinstance(type_, str):
             return {
                 "str": "string",
                 "integer": "number",
@@ -227,7 +243,7 @@ class APIOperation(BaseModel):
             }.get(type_, type_)
         elif isinstance(type_, tuple):
             return f"Array<{APIOperation.ts_type_from_python(type_[0])}>"
-        elif issubclass(type_, Enum):
+        elif isinstance(type_, type) and issubclass(type_, Enum):
             return " | ".join([f"'{e.value}'" for e in type_])
         else:
             return str(type_)

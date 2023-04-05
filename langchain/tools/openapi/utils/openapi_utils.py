@@ -4,7 +4,7 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import requests
 import yaml
@@ -54,10 +54,10 @@ class OpenAPISpec(OpenAPI):
         return self.paths
 
     def _get_path_strict(self, path: str) -> PathItem:
-        path = self._paths_strict.get(path)
-        if not path:
+        path_item = self._paths_strict.get(path)
+        if not path_item:
             raise ValueError(f"No path found for {path}")
-        return path
+        return path_item
 
     @property
     def _components_strict(self) -> Components:
@@ -75,8 +75,8 @@ class OpenAPISpec(OpenAPI):
         return parameters
 
     @property
-    def _schema_strict(self) -> Dict[str, Schema]:
-        """Get the sch"""
+    def _schemas_strict(self) -> Dict[str, Schema]:
+        """Get the dictionary of schemas or err."""
         schemas = self._components_strict.schemas
         if schemas is None:
             raise ValueError("No schemas found in spec. ")
@@ -85,9 +85,10 @@ class OpenAPISpec(OpenAPI):
     def _get_referenced_parameter(self, ref: Reference) -> Union[Parameter, Reference]:
         """Get a parameter (or nested reference) or err."""
         ref_name = ref.ref.split("/")[-1]
-        if ref_name not in self._parameters_strict:
+        parameters = self._parameters_strict
+        if ref_name not in parameters:
             raise ValueError(f"No parameter found for {ref_name}")
-        return self.components.parameters[ref_name]
+        return parameters[ref_name]
 
     def _get_root_referenced_parameter(self, ref: Reference) -> Parameter:
         """Get the root reference or err."""
@@ -99,9 +100,10 @@ class OpenAPISpec(OpenAPI):
     def get_referenced_schema(self, ref: Reference) -> Schema:
         """Get a schema (or nested reference) or err."""
         ref_name = ref.ref.split("/")[-1]
-        if ref_name not in self._schema_strict:
+        schemas = self._schemas_strict
+        if ref_name not in schemas:
             raise ValueError(f"No schema found for {ref_name}")
-        return self.components.schemas[ref_name]
+        return schemas[ref_name]
 
     def _get_root_referenced_schema(self, ref: Reference) -> Schema:
         """Get the root reference or err."""
@@ -111,7 +113,7 @@ class OpenAPISpec(OpenAPI):
         return schema
 
     @classmethod
-    def parse_obj(cls, obj):
+    def parse_obj(cls, obj: Any) -> "OpenAPISpec":
         try:
             return super().parse_obj(obj)
         except ValidationError as e:
@@ -141,9 +143,9 @@ class OpenAPISpec(OpenAPI):
         return cls.from_spec_dict(spec_dict)
 
     @classmethod
-    def from_file(cls, path: str) -> "OpenAPISpec":
+    def from_file(cls, path: Union[str, Path]) -> "OpenAPISpec":
         """Get an OpenAPI spec from a file path."""
-        path_ = Path(path)
+        path_ = Path(path) if isinstance(path, str) else path
         if not path_.exists():
             raise FileNotFoundError(f"{path} does not exist")
         with path_.open("r") as f:
