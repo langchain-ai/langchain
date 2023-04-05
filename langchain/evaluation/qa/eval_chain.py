@@ -5,7 +5,7 @@ from typing import Any, List
 
 from langchain import PromptTemplate
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, PROMPT
+from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
 from langchain.llms.base import BaseLLM
 
 
@@ -93,6 +93,7 @@ class ContextQAEvalChain(LLMChain):
     def evaluate(
         self,
         examples: List[dict],
+        predictions: List[dict],
         question_key: str = "query",
         context_key: str = "context",
         prediction_key: str = "result",
@@ -102,9 +103,19 @@ class ContextQAEvalChain(LLMChain):
             {
                 "query": example[question_key],
                 "context": example[context_key],
-                "result": example[prediction_key],
+                "result": predictions[i][prediction_key],
             }
-            for example in examples
+            for i, example in enumerate(examples)
         ]
 
         return self.apply(inputs)
+
+
+class CotQAEvalChain(ContextQAEvalChain):
+    """LLM Chain specifically for evaluating QA using chain of thought reasoning."""
+
+    @classmethod
+    def from_llm(
+        cls, llm: BaseLLM, prompt: PromptTemplate = COT_PROMPT, **kwargs: Any
+    ) -> CotQAEvalChain:
+        return super().from_llm(llm, prompt, **kwargs)
