@@ -61,7 +61,7 @@ def dp_filter(x: dict, filter: Optional[Dict[str, str]] = None) -> bool:
 class DeepLake(VectorStore):
     """Wrapper around Deep Lake, a data lake for deep learning applications.
 
-    We implement naive similiarity search and filtering for fast prototyping, 
+    We implement naive similarity search and filtering for fast prototyping, 
     but it can be extended with Tensor Query Language (TQL) for production use cases over billion rows.
 
     Why Deep Lake?
@@ -189,7 +189,7 @@ class DeepLake(VectorStore):
             query: Text to look up documents similar to.
             embedding: Embedding function to use. Defaults to None.
             k: Number of Documents to return. Defaults to 4.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similiarity, 'dot' for dot product. Defaults to `L2`.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
             filter: Attribute filter by metadata example {'key': 'value'}. Defaults to None.
             maximal_marginal_relevance: Whether to use maximal marginal relevance. Defaults to False.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
@@ -258,7 +258,7 @@ class DeepLake(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similiarity, 'dot' for dot product. Defaults to `L2`.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -277,7 +277,7 @@ class DeepLake(VectorStore):
 
         Args:
             query (str): Query text to search for.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similiarity, 'dot' for dot product. Defaults to `L2`.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
@@ -299,7 +299,7 @@ class DeepLake(VectorStore):
         among selected documents.
         Args:
             embedding: Embedding to look up documents similar to.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similiarity, 'dot' for dot product. Defaults to `L2`.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
