@@ -8,16 +8,8 @@ from openapi_schema_pydantic import OpenAPI, Operation
 
 from pydantic import BaseModel, Field
 from requests import Response
-from langchain.chains.api.openapi.models import HTTPVerb
 from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain
-from langchain.chains.api.openapi.typed_parser import (
-    extract_path_params,
-    extract_query_and_body_params,
-    generate_resolved_schema,
-    get_openapi_spec,
-)
-
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
@@ -167,19 +159,6 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
-        http_verb = HTTPVerb.from_str(method)
-        path_item = spec.paths[path]
-        if not path_item:
-            raise ValueError(f"Path {path} not found for spec {spec}")
-        operation = getattr(path_item, http_verb.value, None)
-        if not isinstance(operation, Operation):
-            raise ValueError(f"Operation {http_verb.value} invalid for path {path}")
-
-        # TODO: Handle multiple servers
-        base_url = spec.servers[0].url
-        path_params = extract_path_params(path)
-        query_params, body_params = extract_query_and_body_params(operation, spec)
-        operation_schema, encoding_type = generate_resolved_schema(operation, spec)
         param_mapping = _ParamMapping(
             query_params=query_params,
             body_params=body_params,
