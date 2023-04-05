@@ -1,14 +1,14 @@
 """Test Deep Lake functionality."""
 import pytest
-
+from pytest import FixtureRequest
 import deeplake
 from langchain.docstore.document import Document
 from langchain.vectorstores import DeepLake
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
+from typing import Any, Dict, List
 
 @pytest.fixture
-def deeplake_datastore():
+def deeplake_datastore() -> DeepLake:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = DeepLake.from_texts(
@@ -18,7 +18,7 @@ def deeplake_datastore():
 
 
 @pytest.fixture(params=["L1", "L2", "max", "cos"])
-def distance_metric(request):
+def distance_metric(request: FixtureRequest) -> str:
     return request.param
 
 
@@ -79,7 +79,7 @@ def test_deeplakewith_persistence() -> None:
     # Or on program exit
 
 
-def test_similarity_search(deeplake_datastore, distance_metric) -> None:
+def test_similarity_search(deeplake_datastore: DeepLake, distance_metric: str) -> None:
     """Test similarity search."""
     output = deeplake_datastore.similarity_search(
         "foo", k=1, distance_metric=distance_metric)
@@ -87,7 +87,7 @@ def test_similarity_search(deeplake_datastore, distance_metric) -> None:
     deeplake_datastore.delete_dataset()
 
 
-def test_similarity_search_by_vector(deeplake_datastore, distance_metric) -> None:
+def test_similarity_search_by_vector(deeplake_datastore: DeepLake, distance_metric: str) -> None:
     """Test similarity search by vector."""
     embeddings = FakeEmbeddings().embed_documents(["foo", "bar", "baz"])
     output = deeplake_datastore.similarity_search_by_vector(
@@ -96,7 +96,7 @@ def test_similarity_search_by_vector(deeplake_datastore, distance_metric) -> Non
     deeplake_datastore.delete_dataset()
 
 
-def test_similarity_search_with_score(deeplake_datastore, distance_metric) -> None:
+def test_similarity_search_with_score(deeplake_datastore: DeepLake, distance_metric: str) -> None:
     """Test similarity search with score."""
     output, score = deeplake_datastore.similarity_search_with_score(
         "foo", k=1, distance_metric=distance_metric)[0]
@@ -108,7 +108,7 @@ def test_similarity_search_with_score(deeplake_datastore, distance_metric) -> No
     deeplake_datastore.delete_dataset()
 
 
-def test_similarity_search_with_filter(deeplake_datastore, distance_metric) -> None:
+def test_similarity_search_with_filter(deeplake_datastore: DeepLake, distance_metric: str) -> None:
     """Test similarity search."""
 
     output = deeplake_datastore.similarity_search(
@@ -117,25 +117,25 @@ def test_similarity_search_with_filter(deeplake_datastore, distance_metric) -> N
     deeplake_datastore.delete_dataset()
 
 
-def test_max_marginal_relevance_search(deeplake_datastore, distance_metric) -> None:
+def test_max_marginal_relevance_search(deeplake_datastore: DeepLake) -> None:
     """Test max marginal relevance search by vector."""
 
     output = deeplake_datastore.max_marginal_relevance_search(
-        "foo", k=1, distance_metric=distance_metric, fetch_k=2, filter={"page": "1"}
+        "foo", k=1, fetch_k=2
     )
 
-    assert output == [Document(page_content="bar", metadata={"page": "1"})]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     embeddings = FakeEmbeddings().embed_documents(["foo", "bar", "baz"])
     output = deeplake_datastore.max_marginal_relevance_search_by_vector(
-        embeddings[0], k=1, distance_metric=distance_metric, fetch_k=2
+        embeddings[0], k=1, fetch_k=2
     )
 
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
     deeplake_datastore.delete_dataset()
 
 
-def test_delete_dataset_by_ids(deeplake_datastore) -> None:
+def test_delete_dataset_by_ids(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
     id = deeplake_datastore.ds.ids.data()['value'][0]
     deeplake_datastore.delete(ids=[id])
@@ -145,7 +145,7 @@ def test_delete_dataset_by_ids(deeplake_datastore) -> None:
     deeplake_datastore.delete_dataset()
 
 
-def test_delete_dataset_by_filter(deeplake_datastore,) -> None:
+def test_delete_dataset_by_filter(deeplake_datastore: DeepLake) -> None:
     """Test delete dataset."""
     deeplake_datastore.delete(filter={"page": "1"})
     assert deeplake_datastore.similarity_search("bar", k=1, filter={"page": "1"}) == []

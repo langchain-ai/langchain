@@ -24,11 +24,11 @@ distance_metric_map = {
 }
 
 
-def search(
+def vector_search(
     query_embedding: np.ndarray,
     data_vectors: np.ndarray,
-    k: int = 4,
     distance_metric: str = 'L2',
+    k: Optional[int] = 4,
 ) -> Tuple[List, List]:
     """Naive search for nearest neighbors
 
@@ -50,12 +50,10 @@ def search(
     return nearest_indices.tolist(), distances[nearest_indices].tolist()
 
 
-def dp_filter(x: dict, filter: Optional[Dict[str, str]] = None) -> bool:
+def dp_filter(x: dict, filter: Dict[str, str]) -> bool:
     """Filter helper function for Deep Lake"""
     metadata = x['metadata'].data()["value"]
-    if any([str(v) != str(metadata[k]) if k in metadata else True for k, v in filter.items()]):
-        return False
-    return True
+    return all(k in metadata and v == metadata[k] for k, v in filter.items())
 
 
 class DeepLake(VectorStore):
@@ -152,7 +150,7 @@ class DeepLake(VectorStore):
             embeddings = self._embedding_function.embed_documents(text_list)
 
         if metadatas is None:
-            metadatas: Sequence[Optional[dict]] = [None] * len(text_list)
+            metadatas = [{}] * len(text_list)
 
         elements = zip(text_list, embeddings, metadatas, ids)
 
@@ -171,12 +169,12 @@ class DeepLake(VectorStore):
 
         return ids
 
-    def similarity_search(
+    def search(
         self,
-        query: Optional[str] = None,
-        embedding: Optional[Embeddings] = None,
+        query: Any[str, None] = None,
+        embedding: Any[float, None] = None,
         k: int = 4,
-        distance_metric: Optional[str] = 'L2',
+        distance_metric: str = 'L2',
         use_maximal_marginal_relevance: Optional[bool] = False,
         fetch_k: Optional[int] = 20,
         filter: Optional[Dict[str, str]] = None,
@@ -203,8 +201,7 @@ class DeepLake(VectorStore):
 
         # attribute based filtering
         if filter is not None:
-            filter = partial(dp_filter, filter=filter)
-            view = view.filter(filter)
+            view = view.filter(partial(dp_filter, filter=filter))
 
             if len(view) == 0:
                 return []
@@ -219,12 +216,14 @@ class DeepLake(VectorStore):
                 )
 
         else:
-            embedding = embedding or self._embedding_function.embed_query(query)
-            query_emb = np.array(embedding, dtype=np.float32)
+            emb = embedding or self._embedding_function.embed_query(
+                query)  # type: ignore
+            query_emb = np.array(emb, dtype=np.float32)
             embeddings = view.embedding.numpy()
+
             k_search = fetch_k if use_maximal_marginal_relevance else k
-            indices, scores = search(query_emb, embeddings, k=k_search,
-                                     distance_metric=distance_metric.lower())
+            indices, scores = vector_search(query_emb, embeddings, k=k_search,
+                                            distance_metric=distance_metric.lower())
             view = view[indices]
 
             if use_maximal_marginal_relevance:
@@ -242,34 +241,51 @@ class DeepLake(VectorStore):
         ]
 
         if return_score:
-            docs = [(doc, score) for doc, score in zip(docs, scores)]
+            return [(doc, score) for doc, score in zip(docs, scores)]
 
         return docs
 
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: text to embed and run the query on.
+            k: Number of Documents to return. Defaults to 4.
+            query: Text to look up documents similar to.
+            embedding: Embedding function to use. Defaults to None.
+            k: Number of Documents to return. Defaults to 4.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
+            filter: Attribute filter by metadata example {'key': 'value'}. Defaults to None.
+            maximal_marginal_relevance: Whether to use maximal marginal relevance. Defaults to False.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            return_score: Whether to return the score. Defaults to False.
+        
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        return self.search(query=query, k=k, **kwargs)
+
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        distance_metric: Optional[str] = 'L2',
-        k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+        self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.similarity_search(
-            embedding=embedding, k=k, filter=filter, distance_metric=distance_metric
+        return self.search(
+            embedding=embedding, k=k, **kwargs
         )
 
     def similarity_search_with_score(
         self,
         query: str,
-        distance_metric: Optional[str] = 'L2',
+        distance_metric: str = 'L2',
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
@@ -284,37 +300,25 @@ class DeepLake(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        return self.similarity_search(query=query, k=k, filter=filter, return_score=True, distance_metric=distance_metric)
+        return self.search(query=query, k=k, filter=filter, return_score=True, distance_metric=distance_metric)
 
     def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        distance_metric: Optional[str] = 'L2',
-        k: int = 4,
-        fetch_k: int = 20,
-        filter: Optional[Dict[str, str]] = None,
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
         Args:
             embedding: Embedding to look up documents similar to.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        return self.similarity_search(embedding=embedding, k=k, fetch_k=fetch_k, filter=filter, use_maximal_marginal_relevance=True, distance_metric=distance_metric)
+        return self.search(embedding=embedding, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True)
 
     def max_marginal_relevance_search(
-        self,
-        query: str,
-        distance_metric: Optional[str] = 'L2',
-        k: int = 4,
-        fetch_k: int = 20,
-        filter: Optional[Dict[str, str]] = None,
+        self, query: str, k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -323,7 +327,6 @@ class DeepLake(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -331,7 +334,7 @@ class DeepLake(VectorStore):
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
-        return self.similarity_search(query=query, k=k, fetch_k=fetch_k, filter=filter, use_maximal_marginal_relevance=True, distance_metric=distance_metric)
+        return self.search(query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True)
 
     @classmethod
     def from_texts(
@@ -380,9 +383,9 @@ class DeepLake(VectorStore):
 
     def delete(
         self,
-        ids: Optional[List[str]] = None,
-        filter: Optional[Dict[str, str]] = None,
-        delete_all: Optional[bool] = None,
+        ids: Any[List[str], None] = None,
+        filter: Any[Dict[str, str], None] = None,
+        delete_all: Any[bool, None] = None,
     ) -> bool:
         """Delete the entities in the dataset
 
@@ -403,13 +406,13 @@ class DeepLake(VectorStore):
         if filter:
             if view is None:
                 view = self.ds
-            filter = partial(dp_filter, filter=filter)
-            view = view.filter(filter)
+            view = view.filter(dp_filter, filter=filter)
             ids = list(view.sample_indices)
 
         with self.ds:
             for id in sorted(ids)[::-1]:
                 self.ds.pop(id)
+
             self.ds.commit(f'deleted {len(ids)} samples', allow_empty=True)
 
         return True
