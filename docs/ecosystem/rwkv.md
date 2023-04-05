@@ -5,6 +5,7 @@ It is broken into two parts: installation and setup, and then usage with an exam
 
 ## Installation and Setup
 - Install the Python package with `pip install rwkv`
+- Install the tokenizer Python package with `pip install tokenizer`
 - Download a [RWKV model](https://huggingface.co/BlinkDL/rwkv-4-raven/tree/main) and place it in your desired directory
 - Download the [tokens file](https://raw.githubusercontent.com/BlinkDL/ChatRWKV/main/20B_tokenizer.json)
 

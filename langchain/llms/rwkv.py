@@ -10,7 +10,6 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
-import tokenizers
 
 
 class RWKV(LLM, BaseModel):
@@ -101,6 +100,13 @@ class RWKV(LLM, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
+        try:
+            import tokenizers
+        except:
+            raise ValueError(
+                "Could not import tokenizers python package. "
+                "Please install it with `pip install tokenizers`."
+            )
         try:
             from rwkv.model import RWKV as RWKVMODEL
             from rwkv.utils import PIPELINE, PIPELINE_ARGS
