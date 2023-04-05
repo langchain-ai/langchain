@@ -5,10 +5,8 @@ import re
 from typing import Union
 
 import json5
-from openapi_schema_pydantic import OpenAPI, Schema
 
 from langchain import LLMChain, PromptTemplate
-from langchain.chains.api.openapi.typescript_utils import schema_to_typescript
 from langchain.llms import BaseLLM
 from langchain.schema import BaseOutputParser
 
