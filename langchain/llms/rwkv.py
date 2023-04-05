@@ -3,7 +3,7 @@
 Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.py
          https://github.com/BlinkDL/ChatRWKV/blob/main/v2/chat.py
 """
-from typing import Any, Dict, List, Mapping, Optional, Set
+from typing import Any, Dict, List, Mapping, Optional, Set, SupportsIndex
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -38,29 +38,29 @@ class RWKV(LLM, BaseModel):
     strategy: str = "cpu fp32"
     """Token context window."""
 
-    verbose: Optional[bool] = True
+    rwkv_verbose: bool = True
     """Print debug information."""
 
-    temperature: Optional[float] = 1.0
+    temperature: float = 1.0
     """The temperature to use for sampling."""
 
-    top_p: Optional[float] = 0.5
+    top_p: float = 0.5
     """The top-p value to use for sampling."""
 
-    penalty_alpha_frequency: Optional[float] = 0.4
+    penalty_alpha_frequency: float = 0.4
     """Positive values penalize new tokens based on their existing frequency
     in the text so far, decreasing the model's likelihood to repeat the same
     line verbatim.."""
 
-    penalty_alpha_presence: Optional[float] = 0.4
+    penalty_alpha_presence: float = 0.4
     """Positive values penalize new tokens based on whether they appear
     in the text so far, increasing the model's likelihood to talk about
     new topics.."""
 
-    CHUNK_LEN: Optional[int] = 256
+    CHUNK_LEN: int =  256
     """Batch size for prompt processing."""
 
-    max_tokens_per_generation: Optional[int] = 256
+    max_tokens_per_generation: SupportsIndex = 256
     """Maximum number of tokens to generate."""
 
     client: Any = None  #: :meta private:
@@ -85,8 +85,8 @@ class RWKV(LLM, BaseModel):
             "verbose": self.verbose,
             "top_p": self.top_p,
             "temperature": self.temperature,
-            "penalty_alpha_frequency": self.GEN_alpha_frequency,
-            "penalty_alpha_presence": self.GEN_alpha_presence,
+            "penalty_alpha_frequency": self.penalty_alpha_frequency,
+            "penalty_alpha_presence": self.penalty_alpha_presence,
             "CHUNK_LEN": self.CHUNK_LEN,
             "max_tokens_per_generation": self.max_tokens_per_generation
         }
@@ -108,6 +108,7 @@ class RWKV(LLM, BaseModel):
 
             rwkv_keys = cls._rwkv_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in rwkv_keys}
+            model_kwargs["verbose"] = values["rwkv_verbose"]
             values["client"] = RWKVMODEL(values["model"], strategy=values["strategy"], **model_kwargs)
             values["pipeline"] = PIPELINE(values["client"], values["tokens_path"])
 
