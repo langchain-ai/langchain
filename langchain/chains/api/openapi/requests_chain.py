@@ -13,8 +13,7 @@ from langchain.schema import BaseOutputParser
 request_template = """You are a helpful AI Assistant. Please provide JSON arguments to agentFunc() based on the user's instructions.
 
 API_SCHEMA: ```typescript
-type agentFunc = (_: {schema}
-) => any;
+{schema}
 ```
 
 USER_INSTRUCTIONS: "{instructions}"

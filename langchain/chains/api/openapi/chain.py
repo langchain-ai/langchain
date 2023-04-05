@@ -157,7 +157,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         """Create an OpenAPIEndpointChain from an operation and a spec."""
         param_mapping = _ParamMapping(
             query_params=operation.query_params,
-            # body_params=body_params,
+            body_params=[],  # TODO
             path_params=operation.path_params,
         )
         requests_chain = APIRequesterChain.from_llm_and_typescript(
@@ -187,9 +187,9 @@ from langchain.llms import Anthropic
 # llm = OpenAI()
 llm = Anthropic()
 requests = Requests()
-method = "post"
+method = "delete"
 twitter_url = "http://127.0.0.1:7289/openapi.json"
-path = "/hide"
+path = "/recycle"
 chain = OpenAPIEndpointChain.from_url_and_method(
     spec_url=twitter_url,
     path=path,
