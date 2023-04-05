@@ -16,23 +16,24 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 logger = logging.getLogger()
 
 distance_metric_map = {
-    'l2': lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
-    'l1': lambda a, b: np.linalg.norm(a - b, axis=1, ord=1),
-    'max': lambda a, b: np.linalg.norm(a - b, axis=1, ord=np.inf),
-    'cos': lambda a, b: np.dot(a, b.T) / (np.linalg.norm(a) * np.linalg.norm(b, axis=1)),
-    'dot': lambda a, b: np.dot(a, b.T),
+    "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
+    "l1": lambda a, b: np.linalg.norm(a - b, axis=1, ord=1),
+    "max": lambda a, b: np.linalg.norm(a - b, axis=1, ord=np.inf),
+    "cos": lambda a, b: np.dot(a, b.T)
+    / (np.linalg.norm(a) * np.linalg.norm(b, axis=1)),
+    "dot": lambda a, b: np.dot(a, b.T),
 }
 
 
 def vector_search(
     query_embedding: np.ndarray,
     data_vectors: np.ndarray,
-    distance_metric: str = 'L2',
+    distance_metric: str = "L2",
     k: Optional[int] = 4,
 ) -> Tuple[List, List]:
     """Naive search for nearest neighbors
 
-    args: 
+    args:
         query_embedding: np.ndarray
         data_vectors: np.ndarray
         k (int): number of nearest neighbors
@@ -44,22 +45,23 @@ def vector_search(
     # Calculate the distance between the query_vector and all data_vectors
     distances = distance_metric_map[distance_metric](query_embedding, data_vectors)
     nearest_indices = np.argsort(distances)
-    nearest_indices = nearest_indices[::-1][:k]\
-        if distance_metric in ['cos'] else nearest_indices[:k]
+    nearest_indices = (
+        nearest_indices[::-1][:k] if distance_metric in ["cos"] else nearest_indices[:k]
+    )
 
     return nearest_indices.tolist(), distances[nearest_indices].tolist()
 
 
 def dp_filter(x: dict, filter: Dict[str, str]) -> bool:
     """Filter helper function for Deep Lake"""
-    metadata = x['metadata'].data()["value"]
+    metadata = x["metadata"].data()["value"]
     return all(k in metadata and v == metadata[k] for k, v in filter.items())
 
 
 class DeepLake(VectorStore):
     """Wrapper around Deep Lake, a data lake for deep learning applications.
 
-    We implement naive similarity search and filtering for fast prototyping, 
+    We implement naive similarity search and filtering for fast prototyping,
     but it can be extended with Tensor Query Language (TQL) for production use cases over billion rows.
 
     Why Deep Lake?
@@ -91,6 +93,7 @@ class DeepLake(VectorStore):
     ) -> None:
         """Initialize with Deep Lake client."""
         import deeplake
+
         try:
             import deeplake
         except ImportError as e:
@@ -110,14 +113,34 @@ class DeepLake(VectorStore):
         else:
             self.ds = deeplake.empty(dataset_path, token=token, overwrite=True)
             with self.ds:
-                self.ds.create_tensor("text", htype="text", create_id_tensor=False,
-                                      create_sample_info_tensor=False, create_shape_tensor=False)
-                self.ds.create_tensor("metadata", htype="json", create_id_tensor=False,
-                                      create_sample_info_tensor=False, create_shape_tensor=False)
-                self.ds.create_tensor("embedding", htype="generic", create_id_tensor=False,
-                                      create_sample_info_tensor=False, create_shape_tensor=False)
-                self.ds.create_tensor("ids", htype="text", create_id_tensor=False,
-                                      create_sample_info_tensor=False, create_shape_tensor=False)
+                self.ds.create_tensor(
+                    "text",
+                    htype="text",
+                    create_id_tensor=False,
+                    create_sample_info_tensor=False,
+                    create_shape_tensor=False,
+                )
+                self.ds.create_tensor(
+                    "metadata",
+                    htype="json",
+                    create_id_tensor=False,
+                    create_sample_info_tensor=False,
+                    create_shape_tensor=False,
+                )
+                self.ds.create_tensor(
+                    "embedding",
+                    htype="generic",
+                    create_id_tensor=False,
+                    create_sample_info_tensor=False,
+                    create_shape_tensor=False,
+                )
+                self.ds.create_tensor(
+                    "ids",
+                    htype="text",
+                    create_id_tensor=False,
+                    create_sample_info_tensor=False,
+                    create_shape_tensor=False,
+                )
 
         self._embedding_function = embedding_function
 
@@ -174,12 +197,12 @@ class DeepLake(VectorStore):
         query: Any[str, None] = None,
         embedding: Any[float, None] = None,
         k: int = 4,
-        distance_metric: str = 'L2',
+        distance_metric: str = "L2",
         use_maximal_marginal_relevance: Optional[bool] = False,
         fetch_k: Optional[int] = 20,
         filter: Optional[Dict[str, str]] = None,
         return_score: Optional[bool] = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any[List[Document], List[Tuple[Document, float]]]:
         """Return docs most similar to query.
 
@@ -194,7 +217,7 @@ class DeepLake(VectorStore):
             return_score: Whether to return the score. Defaults to False.
 
         Returns:
-            List of Documents selected by the specified distance metric, 
+            List of Documents selected by the specified distance metric,
             if return_score True, return a tuple of (Document, score)
         """
         view = self.ds
@@ -212,23 +235,30 @@ class DeepLake(VectorStore):
 
             if use_maximal_marginal_relevance:
                 raise ValueError(
-                    "For MMR search, you must specify an embedding function on" "creation."
+                    "For MMR search, you must specify an embedding function on"
+                    "creation."
                 )
 
         else:
             emb = embedding or self._embedding_function.embed_query(
-                query)  # type: ignore
+                query
+            )  # type: ignore
             query_emb = np.array(emb, dtype=np.float32)
             embeddings = view.embedding.numpy()
 
             k_search = fetch_k if use_maximal_marginal_relevance else k
-            indices, scores = vector_search(query_emb, embeddings, k=k_search,
-                                            distance_metric=distance_metric.lower())
+            indices, scores = vector_search(
+                query_emb,
+                embeddings,
+                k=k_search,
+                distance_metric=distance_metric.lower(),
+            )
             view = view[indices]
 
             if use_maximal_marginal_relevance:
                 indices = maximal_marginal_relevance(
-                    query_emb, embeddings[indices], k=min(k, len(indices)))
+                    query_emb, embeddings[indices], k=min(k, len(indices))
+                )
                 view = view[indices]
                 scores = [scores[i] for i in indices]
 
@@ -261,7 +291,7 @@ class DeepLake(VectorStore):
             maximal_marginal_relevance: Whether to use maximal marginal relevance. Defaults to False.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
             return_score: Whether to return the score. Defaults to False.
-        
+
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -278,14 +308,12 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.search(
-            embedding=embedding, k=k, **kwargs
-        )
+        return self.search(embedding=embedding, k=k, **kwargs)
 
     def similarity_search_with_score(
         self,
         query: str,
-        distance_metric: str = 'L2',
+        distance_metric: str = "L2",
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Document, float]]:
@@ -300,7 +328,13 @@ class DeepLake(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        return self.search(query=query, k=k, filter=filter, return_score=True, distance_metric=distance_metric)
+        return self.search(
+            query=query,
+            k=k,
+            filter=filter,
+            return_score=True,
+            distance_metric=distance_metric,
+        )
 
     def max_marginal_relevance_search_by_vector(
         self, embedding: List[float], k: int = 4, fetch_k: int = 20
@@ -315,7 +349,12 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        return self.search(embedding=embedding, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True)
+        return self.search(
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            use_maximal_marginal_relevance=True,
+        )
 
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
@@ -334,7 +373,9 @@ class DeepLake(VectorStore):
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
-        return self.search(query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True)
+        return self.search(
+            query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True
+        )
 
     @classmethod
     def from_texts(
@@ -360,7 +401,7 @@ class DeepLake(VectorStore):
                 - AWS S3 path of the form ``s3://bucketname/path/to/dataset``.
                     Credentials are required in either the environment
                 - Google Cloud Storage path of the form ``gcs://bucketname/path/to/dataset``
-                    Credentials are required in either the environment  
+                    Credentials are required in either the environment
                 - Local file system path of the form ``./path/to/dataset`` or
                     ``~/path/to/dataset`` or ``path/to/dataset``.
                 - In-memory path of the form ``mem://path/to/dataset`` which doesn't
@@ -400,7 +441,7 @@ class DeepLake(VectorStore):
 
         view = None
         if ids:
-            view = self.ds.filter(lambda x: x['ids'].data()['value'] in ids)
+            view = self.ds.filter(lambda x: x["ids"].data()["value"] in ids)
             ids = list(view.sample_indices)
 
         if filter:
@@ -413,7 +454,7 @@ class DeepLake(VectorStore):
             for id in sorted(ids)[::-1]:
                 self.ds.pop(id)
 
-            self.ds.commit(f'deleted {len(ids)} samples', allow_empty=True)
+            self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
 
         return True
 
