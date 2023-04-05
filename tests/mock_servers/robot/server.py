@@ -126,10 +126,7 @@ async def goto(x: int, y: int, z: int, cautiousness: Cautiousness) -> Dict[str, 
 
 @app.get("/get_state", description="Get the robot's state")
 async def get_state(
-    fields: List[StateItems] = Query(..., description="List of state items to return"),
-    other_fields: Dict[str, int] = Query(
-        ..., description="Dictionary of state items to fetch from the robot"
-    ),
+    fields: List[StateItems] = Query(..., description="List of state items to return")
 ) -> Dict[str, Any]:
     state = {}
     for field in fields:
