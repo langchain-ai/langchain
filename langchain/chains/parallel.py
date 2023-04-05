@@ -10,9 +10,17 @@ from langchain.chains.base import Chain
 
 class ParallelChain(Chain, BaseModel):
     """
-    Chain pipeline where multiple independent chains process the same inputs to produce multiple outputs.
-    Each chain is run in parallel and their outputs are merged together,
-    with each output key of ParallelChain corresponding to a different chain's output.
+    Chain topology where independent chains process inputs to produce multiple outputs.
+    Each chain is run independently, possibly concurrently.
+    Their outputs are merged together, with each output key of ParallelChain
+    corresponding to a different chain's output.
+
+    The word "parallel" is to be interpreted as "independent" rather than "concurrent",
+    and refers to the topology of how the chains are connected (similar to how
+    SequentialChain refers to the topology of how the chains are connected in sequence).
+
+    Therefore, while the chains can be run concurrently, they are not run in parallel
+    in the sense of being run on different threads or processes.
     """
 
     input_variables: List[str]  #: :meta private:
@@ -39,11 +47,7 @@ class ParallelChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [
-            f"{key}/{k}"
-            for key in self.chains.keys()
-            for k in self.chains[key].output_keys
-        ]
+        return list(self.chains.keys())
 
     @root_validator(pre=True)
     def validate_chains(cls, values: Dict) -> Dict:
@@ -74,7 +78,7 @@ class ParallelChain(Chain, BaseModel):
             print(
                 f'Child chain for key="{key}" finished after {time.time() - t0:.2f} seconds.'
             )
-        return {f"{key}/{k}": v for k, v in result.items()}
+        return {key: result}
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         if self.concurrent:
@@ -94,7 +98,7 @@ class ParallelChain(Chain, BaseModel):
                 outputs.update(self._run_child(inputs, key, chain))
             return outputs
 
-    async def arun_child(self, loop, key, chain, inputs):
+    async def _arun_child(self, loop, key, chain, inputs):
         func = functools.partial(self._run_child, key=key, chain=chain)
         result = await loop.run_in_executor(None, func, inputs)
         return result
@@ -103,7 +107,7 @@ class ParallelChain(Chain, BaseModel):
         loop = asyncio.get_event_loop()
         tasks = []
         for key, chain in self.chains.items():
-            tasks.append(loop.create_task(self.arun_child(loop, key, chain, inputs)))
+            tasks.append(loop.create_task(self._arun_child(loop, key, chain, inputs)))
         results = await asyncio.gather(*tasks)
         outputs = {}
         for result in results:

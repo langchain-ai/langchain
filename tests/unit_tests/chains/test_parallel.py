@@ -57,8 +57,8 @@ def test_parallel_usage_single_input() -> None:
     output = chain("bar")
     expected_output = {
         "input": "bar",
-        "output1/chain_out1": "bar 1",
-        "output2/chain_out2": "bar 2",
+        "output1": {"chain_out1": "bar 1"},
+        "output2": {"chain_out2": "bar 2"},
     }
     assert output == expected_output
 
@@ -84,10 +84,11 @@ def test_parallel_usage_multiple_inputs() -> None:
     inputs = {"input1": "foo", "input2": "bar"}
     output = chain(inputs)
     expected_output = {
-        "output1/chain_out1": "foo bar 1",
-        "output2/chain_out2": "foo bar 2",
+        **inputs,
+        "output1": {"chain_out1": "foo bar 1"},
+        "output2": {"chain_out2": "foo bar 2"},
     }
-    assert output == {**inputs, **expected_output}
+    assert output == expected_output
 
 
 def test_parallel_usage_one_chain_single_output() -> None:
@@ -105,8 +106,11 @@ def test_parallel_usage_one_chain_single_output() -> None:
     )
     inputs = {"input1": "foo", "input2": "bar"}
     output = chain(inputs)
-    expected_output = {"output1/chain_out1": "foo bar 1"}
-    assert output == {**inputs, **expected_output}
+    expected_output = {
+        **inputs,
+        "output1": {"chain_out1": "foo bar 1"},
+    }
+    assert output == expected_output
 
 
 def test_parallel_error_zero_chains() -> None:
@@ -130,7 +134,7 @@ def test_parallel_concurrency_speedup() -> None:
         chains={
             f"output{i}": FakeChain(
                 input_variables=input_variables,
-                output_variables=["chain_out{i}"],
+                output_variables=[f"chain_out{i}"],
                 chain_id=i,
             )
             for i in range(num_child_chains)
@@ -142,14 +146,29 @@ def test_parallel_concurrency_speedup() -> None:
 
     # measure time with concurrency
     start_time_concurrent = time.time()
-    concurrent_output = chain(inputs)
+    output_concurrent = chain(inputs)
     end_time_concurrent = time.time()
 
     # measure time without concurrency
     chain.concurrent = False
     start_time_serial = time.time()
-    serial_output = chain(inputs)
+    output_serial = chain(inputs)
     end_time_serial = time.time()
+
+    expected_output = {
+        "input1": "foo",
+        "input2": "bar",
+        "output0": {"chain_out0": "foo bar 0"},
+        "output1": {"chain_out1": "foo bar 1"},
+        "output2": {"chain_out2": "foo bar 2"},
+        "output3": {"chain_out3": "foo bar 3"},
+        "output4": {"chain_out4": "foo bar 4"},
+        "output5": {"chain_out5": "foo bar 5"},
+        "output6": {"chain_out6": "foo bar 6"},
+        "output7": {"chain_out7": "foo bar 7"},
+        "output8": {"chain_out8": "foo bar 8"},
+        "output9": {"chain_out9": "foo bar 9"},
+    }
 
     # check that concurrent execution is faster.
     # Serial execution will run for >= 10 sec because each child chain sleeps >= sec.
@@ -158,7 +177,7 @@ def test_parallel_concurrency_speedup() -> None:
         end_time_concurrent - start_time_concurrent
         < end_time_serial - start_time_serial
     )
-    assert concurrent_output == serial_output
+    assert output_concurrent == output_serial == expected_output
 
 
 def test_parallel_nested_speedup() -> None:
@@ -220,17 +239,22 @@ def test_parallel_nested_speedup() -> None:
     end_time_serial = time.time()
 
     expected_output = {
-        "input1": "foo",
-        "input2": "bar",
-        "output0/output0_0/chain_out0_0": "foo bar 0",
-        "output0/output0_1/chain_out0_1": "foo bar 1",
-        "output0/output0_2/chain_out0_2": "foo bar 2",
-        "output1/output1_0/chain_out1_0": "foo bar 3",
-        "output1/output1_1/chain_out1_1": "foo bar 4",
-        "output1/output1_2/chain_out1_2": "foo bar 5",
-        "output2/output2_0/chain_out2_0": "foo bar 6",
-        "output2/output2_1/chain_out2_1": "foo bar 7",
-        "output2/output2_2/chain_out2_2": "foo bar 8",
+        **inputs,
+        "output0": {
+            "output0_0": {"chain_out0_0": "foo bar 0"},
+            "output0_1": {"chain_out0_1": "foo bar 1"},
+            "output0_2": {"chain_out0_2": "foo bar 2"},
+        },
+        "output1": {
+            "output1_0": {"chain_out1_0": "foo bar 3"},
+            "output1_1": {"chain_out1_1": "foo bar 4"},
+            "output1_2": {"chain_out1_2": "foo bar 5"},
+        },
+        "output2": {
+            "output2_0": {"chain_out2_0": "foo bar 6"},
+            "output2_1": {"chain_out2_1": "foo bar 7"},
+            "output2_2": {"chain_out2_2": "foo bar 8"},
+        },
     }
 
     # check that concurrent execution is faster.
