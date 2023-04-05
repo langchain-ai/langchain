@@ -12,7 +12,6 @@ from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.utilities.powerbi import PowerBIDataset
 
@@ -37,7 +36,7 @@ def create_pbi_agent(
         toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm)
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
-    prompt = ZeroShotAgent.create_prompt(
+    ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,
         suffix=suffix,
@@ -49,8 +48,7 @@ def create_pbi_agent(
         prompt=prompt,
         callback_manager=callback_manager,  # type: ignore
     )
-    tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    # ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
         agent=agent, tools=toolkit.get_tools(), verbose=verbose
     )
