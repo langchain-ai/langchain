@@ -11,9 +11,11 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
+from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
@@ -35,6 +37,8 @@ __all__ = [
     "DeepInfra",
     "ForefrontAI",
     "GooseAI",
+    "GPT4All",
+    "LlamaCpp",
     "Modal",
     "NLPCloud",
     "OpenAI",
@@ -65,8 +69,10 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "gooseai": GooseAI,
+    "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
+    "llamacpp": LlamaCpp,
     "modal": Modal,
     "sagemaker_endpoint": SagemakerEndpoint,
     "nlpcloud": NLPCloud,

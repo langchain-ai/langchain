@@ -39,7 +39,10 @@ class WikipediaAPIWrapper(BaseModel):
         """Run Wikipedia search and get page summaries."""
         search_results = self.wiki_client.search(query)
         summaries = []
-        for i in range(min(self.top_k_results, len(search_results))):
+        len_search_results = len(search_results)
+        if len_search_results == 0:
+            return "No good Wikipedia Search Result was found"
+        for i in range(min(self.top_k_results, len_search_results)):
             summary = self.fetch_formatted_page_summary(search_results[i])
             if summary is not None:
                 summaries.append(summary)
