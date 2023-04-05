@@ -4,7 +4,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Iterable, Iterator, List, Tuple
+from typing import Iterable, List, Tuple
 
 import pytest
 import yaml
@@ -13,14 +13,6 @@ from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 _DIR = Path(__file__).parent
-# _ROBOT_METHODS = [
-#     ("/ask_for_help", "post"),
-#     ("/ask_for_passphrase", "get"),
-#     ("/get_state", "get"),
-#     ("/goto/{x}/{y}/{z}", "post"),  # Private type definitions required.
-#     ("/recycle", "delete"),
-#     ("/walk", "post"),
-# ]
 
 
 def _get_test_specs() -> Iterable[Path]:
@@ -48,7 +40,7 @@ def _get_paths_and_methods_from_spec_dictionary(
 
 
 def http_paths_and_methods() -> List[Tuple[str, OpenAPISpec, str, str]]:
-    """Return a tuple (filename, path, http_method) for every method in every file from test_specs."""
+    """Return a args for every method in cached OpenAPI spec in test_specs."""
     http_paths_and_methods = []
     for test_spec in _get_test_specs():
         spec_name = test_spec.parent.name
