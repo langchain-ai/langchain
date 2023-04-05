@@ -50,6 +50,11 @@ The following use cases require specific installs and api keys:
 - _OpenSearch_:
   - Install requirements with `pip install opensearch-py`
   - If you want to set up OpenSearch on your local, [here](https://opensearch.org/docs/latest/)
+- _DeepLake_:
+  - Install requirements with `pip install deeplake`
+- _LlamaCpp_:
+  - Install requirements with `pip install llama-cpp-python`
+  - Download model and convert following [llama.cpp instructions](https://github.com/ggerganov/llama.cpp)
 
 
 If you are using the `NLTKTextSplitter` or the `SpacyTextSplitter`, you will also need to install the appropriate models. For example, if you want to use the `SpacyTextSplitter`, you will need to install the `en_core_web_sm` model with `python -m spacy download en_core_web_sm`. Similarly, if you want to use the `NLTKTextSplitter`, you will need to install the `punkt` model with `python -m nltk.downloader punkt`.

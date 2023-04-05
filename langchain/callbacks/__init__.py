@@ -3,11 +3,18 @@ import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.aim_callback import AimCallbackHandler
+from langchain.callbacks.base import (
+    BaseCallbackHandler,
+    BaseCallbackManager,
+    CallbackManager,
+)
+from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
+from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 
 def get_callback_manager() -> BaseCallbackManager:
@@ -58,3 +65,19 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
     manager.add_handler(handler)
     yield handler
     manager.remove_handler(handler)
+
+
+__all__ = [
+    "CallbackManager",
+    "OpenAICallbackHandler",
+    "SharedCallbackManager",
+    "StdOutCallbackHandler",
+    "AimCallbackHandler",
+    "WandbCallbackHandler",
+    "ClearMLCallbackHandler",
+    "get_openai_callback",
+    "set_tracing_callback_manager",
+    "set_default_callback_manager",
+    "set_handler",
+    "get_callback_manager",
+]

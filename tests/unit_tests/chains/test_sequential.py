@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain.memory.simple import SimpleMemory
 
 
 class FakeChain(Chain, BaseModel):
@@ -54,6 +55,26 @@ def test_sequential_usage_multiple_inputs() -> None:
         "test": "456",
     }
     assert output == expected_output
+
+
+def test_sequential_usage_memory() -> None:
+    """Test sequential usage with memory."""
+    memory = SimpleMemory(memories={"zab": "rab"})
+    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
+    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
+    chain = SequentialChain(
+        memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+    )
+    output = chain({"foo": "123"})
+    expected_output = {"baz": "123foofoo", "foo": "123", "zab": "rab"}
+    assert output == expected_output
+    memory = SimpleMemory(memories={"zab": "rab", "foo": "rab"})
+    chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
+    chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
+    with pytest.raises(ValueError):
+        SequentialChain(
+            memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
+        )
 
 
 def test_sequential_usage_multiple_outputs() -> None:

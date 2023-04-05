@@ -1,10 +1,17 @@
 """Test the bash utility."""
+import re
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from langchain.utilities.bash import BashProcess
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
 def test_pwd_command() -> None:
     """Test correct functionality."""
     session = BashProcess()
@@ -14,6 +21,9 @@ def test_pwd_command() -> None:
     assert output == subprocess.check_output("pwd", shell=True).decode()
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
 def test_incorrect_command() -> None:
     """Test handling of incorrect command."""
     session = BashProcess()
@@ -21,13 +31,19 @@ def test_incorrect_command() -> None:
     assert output == "Command 'invalid_command' returned non-zero exit status 127."
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
 def test_incorrect_command_return_err_output() -> None:
     """Test optional returning of shell output on incorrect command."""
     session = BashProcess(return_err_output=True)
     output = session.run(["invalid_command"])
-    assert output == "/bin/sh: 1: invalid_command: not found\n"
+    assert re.match(r"^/bin/sh:.*invalid_command.*not found.*$", output)
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
 def test_create_directory_and_files(tmp_path: Path) -> None:
     """Test creation of a directory and files in a temporary directory."""
     session = BashProcess(strip_newlines=True)

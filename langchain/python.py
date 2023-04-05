@@ -3,21 +3,21 @@ import sys
 from io import StringIO
 from typing import Dict, Optional
 
+from pydantic import BaseModel, Field
 
-class PythonREPL:
+
+class PythonREPL(BaseModel):
     """Simulates a standalone Python REPL."""
 
-    def __init__(self, _globals: Optional[Dict] = None, _locals: Optional[Dict] = None):
-        """Initialize with optional globals and locals."""
-        self._globals = _globals if _globals is not None else {}
-        self._locals = _locals if _locals is not None else {}
+    globals: Optional[Dict] = Field(default_factory=dict, alias="_globals")
+    locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
 
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         try:
-            exec(command, self._globals, self._locals)
+            exec(command, self.globals, self.locals)
             sys.stdout = old_stdout
             output = mystdout.getvalue()
         except Exception as e:

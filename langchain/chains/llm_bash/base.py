@@ -6,8 +6,8 @@ from pydantic import BaseModel, Extra
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.utilities.bash import BashProcess
 
 
@@ -21,7 +21,7 @@ class LLMBashChain(Chain, BaseModel):
             llm_bash = LLMBashChain(llm=OpenAI())
     """
 
-    llm: BaseLLM
+    llm: BaseLanguageModel
     """LLM wrapper to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:

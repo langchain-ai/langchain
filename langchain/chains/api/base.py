@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, root_validator
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts import BasePromptTemplate
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
+from langchain.schema import BaseLanguageModel
 
 
 class APIChain(Chain, BaseModel):
@@ -18,7 +18,7 @@ class APIChain(Chain, BaseModel):
 
     api_request_chain: LLMChain
     api_answer_chain: LLMChain
-    requests_wrapper: RequestsWrapper = Field(exclude=True)
+    requests_wrapper: TextRequestsWrapper = Field(exclude=True)
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -69,7 +69,7 @@ class APIChain(Chain, BaseModel):
         self.callback_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
-        api_response = self.requests_wrapper.run(api_url)
+        api_response = self.requests_wrapper.get(api_url)
         self.callback_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
@@ -84,7 +84,7 @@ class APIChain(Chain, BaseModel):
     @classmethod
     def from_llm_and_api_docs(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         api_docs: str,
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
@@ -93,7 +93,7 @@ class APIChain(Chain, BaseModel):
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
         get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
-        requests_wrapper = RequestsWrapper(headers=headers)
+        requests_wrapper = TextRequestsWrapper(headers=headers)
         get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
         return cls(
             api_request_chain=get_request_chain,

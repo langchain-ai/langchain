@@ -1,5 +1,6 @@
 """Main entrypoint into package."""
 
+from importlib import metadata
 from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
@@ -30,9 +31,11 @@ from langchain.llms import (
     ForefrontAI,
     GooseAI,
     HuggingFaceHub,
+    LlamaCpp,
     Modal,
     OpenAI,
     Petals,
+    SagemakerEndpoint,
     StochasticAI,
     Writer,
 )
@@ -48,8 +51,12 @@ from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
+from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain.vectorstores import FAISS, ElasticVectorSearch
+
+__version__ = metadata.version(__package__)
+del metadata  # optional, avoids polluting the results of dir(__package__)
 
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
@@ -70,6 +77,7 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "WolframAlphaAPIWrapper",
+    "WikipediaAPIWrapper",
     "Anthropic",
     "Banana",
     "CerebriumAI",
@@ -88,6 +96,7 @@ __all__ = [
     "ReActChain",
     "Wikipedia",
     "HuggingFaceHub",
+    "SagemakerEndpoint",
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",
@@ -102,4 +111,5 @@ __all__ = [
     "PALChain",
     "set_handler",
     "set_tracing_callback_manager",
+    "LlamaCpp",
 ]

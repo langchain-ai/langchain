@@ -106,6 +106,7 @@ celerybeat.pid
 
 # Environments
 .env
+.envrc
 .venv
 .venvs
 env/
@@ -134,3 +135,9 @@ dmypy.json
 
 # macOS display setting files
 .DS_Store
+
+# Wandb directory
+wandb/
+
+# asdf tool versions
+.tool-versions

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -19,8 +20,8 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
@@ -32,11 +33,13 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     input_docs_key: str = "docs"  #: :meta private:
     answer_key: str = "answer"  #: :meta private:
     sources_answer_key: str = "sources"  #: :meta private:
+    return_source_documents: bool = False
+    """Return the source documents."""
 
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
@@ -62,10 +65,17 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     @classmethod
     def from_chain_type(
-        cls, llm: BaseLLM, chain_type: str = "stuff", **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        chain_type: str = "stuff",
+        chain_type_kwargs: Optional[dict] = None,
+        **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
-        combine_document_chain = load_qa_with_sources_chain(llm, chain_type=chain_type)
+        _chain_kwargs = chain_type_kwargs or {}
+        combine_document_chain = load_qa_with_sources_chain(
+            llm, chain_type=chain_type, **_chain_kwargs
+        )
         return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:
@@ -88,7 +98,10 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.answer_key, self.sources_answer_key]
+        _output_keys = [self.answer_key, self.sources_answer_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
 
     @root_validator(pre=True)
     def validate_naming(cls, values: Dict) -> Dict:
@@ -101,14 +114,39 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs to run questioning over."""
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         docs = self._get_docs(inputs)
         answer, _ = self.combine_documents_chain.combine_docs(docs, **inputs)
-        if "SOURCES: " in answer:
-            answer, sources = answer.split("SOURCES: ")
+        if re.search(r"SOURCES:\s", answer):
+            answer, sources = re.split(r"SOURCES:\s", answer)
         else:
             sources = ""
-        return {self.answer_key: answer, self.sources_answer_key: sources}
+        result: Dict[str, Any] = {
+            self.answer_key: answer,
+            self.sources_answer_key: sources,
+        }
+        if self.return_source_documents:
+            result["source_documents"] = docs
+        return result
+
+    @abstractmethod
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs to run questioning over."""
+
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        docs = await self._aget_docs(inputs)
+        answer, _ = await self.combine_documents_chain.acombine_docs(docs, **inputs)
+        if re.search(r"SOURCES:\s", answer):
+            answer, sources = re.split(r"SOURCES:\s", answer)
+        else:
+            sources = ""
+        result: Dict[str, Any] = {
+            self.answer_key: answer,
+            self.sources_answer_key: sources,
+        }
+        if self.return_source_documents:
+            result["source_documents"] = docs
+        return result
 
 
 class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
@@ -125,6 +163,9 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
         return [self.input_docs_key, self.question_key]
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        return inputs.pop(self.input_docs_key)
+
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)
 
     @property

@@ -2,13 +2,21 @@
 import logging
 from typing import Any
 
+from langchain.embeddings.aleph_alpha import (
+    AlephAlphaAsymmetricSemanticEmbedding,
+    AlephAlphaSymmetricSemanticEmbedding,
+)
 from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings.fake import FakeEmbeddings
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
     HuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.huggingface_hub import HuggingFaceHubEmbeddings
+from langchain.embeddings.jina import JinaEmbeddings
+from langchain.embeddings.llamacpp import LlamaCppEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings.sagemaker_endpoint import SagemakerEndpointEmbeddings
 from langchain.embeddings.self_hosted import SelfHostedEmbeddings
 from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
@@ -22,12 +30,18 @@ __all__ = [
     "OpenAIEmbeddings",
     "HuggingFaceEmbeddings",
     "CohereEmbeddings",
+    "JinaEmbeddings",
+    "LlamaCppEmbeddings",
     "HuggingFaceHubEmbeddings",
     "TensorflowHubEmbeddings",
+    "SagemakerEndpointEmbeddings",
     "HuggingFaceInstructEmbeddings",
     "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
+    "FakeEmbeddings",
+    "AlephAlphaAsymmetricSemanticEmbedding",
+    "AlephAlphaSymmetricSemanticEmbedding",
 ]
 
 

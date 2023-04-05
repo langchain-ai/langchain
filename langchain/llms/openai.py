@@ -1,6 +1,9 @@
 """Wrapper around OpenAI APIs."""
+from __future__ import annotations
+
 import logging
 import sys
+import warnings
 from typing import (
     Any,
     Callable,
@@ -63,6 +66,53 @@ def _streaming_response_template() -> Dict[str, Any]:
     }
 
 
+def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
+    import openai
+
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return llm.client.create(**kwargs)
+
+    return _completion_with_retry(**kwargs)
+
+
+async def acompletion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+) -> Any:
+    """Use tenacity to retry the async completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+        return await llm.client.acreate(**kwargs)
+
+    return await _completion_with_retry(**kwargs)
+
+
 class BaseOpenAI(BaseLLM, BaseModel):
     """Wrapper around OpenAI large language models.
 
@@ -111,6 +161,18 @@ class BaseOpenAI(BaseLLM, BaseModel):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
+
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+        """Initialize the OpenAI object."""
+        model_name = data.get("model_name", "")
+        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+            warnings.warn(
+                "You are trying to use a chat model. This way of initializing it is "
+                "no longer supported. Instead, please use: "
+                "`from langchain.chat_models import ChatOpenAI`"
+            )
+            return OpenAIChat(**data)
+        return super().__new__(cls)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -174,48 +236,6 @@ class BaseOpenAI(BaseLLM, BaseModel):
         }
         return {**normal_params, **self.model_kwargs}
 
-    def _create_retry_decorator(self) -> Callable[[Any], Any]:
-        import openai
-
-        min_seconds = 4
-        max_seconds = 10
-        # Wait 2^x * 1 second between each retry starting with
-        # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-        return retry(
-            reraise=True,
-            stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-            retry=(
-                retry_if_exception_type(openai.error.Timeout)
-                | retry_if_exception_type(openai.error.APIError)
-                | retry_if_exception_type(openai.error.APIConnectionError)
-                | retry_if_exception_type(openai.error.RateLimitError)
-                | retry_if_exception_type(openai.error.ServiceUnavailableError)
-            ),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
-
-    def completion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
-            return self.client.create(**kwargs)
-
-        return _completion_with_retry(**kwargs)
-
-    async def acompletion_with_retry(self, **kwargs: Any) -> Any:
-        """Use tenacity to retry the async completion call."""
-        retry_decorator = self._create_retry_decorator()
-
-        @retry_decorator
-        async def _completion_with_retry(**kwargs: Any) -> Any:
-            # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-            return await self.client.acreate(**kwargs)
-
-        return await _completion_with_retry(**kwargs)
-
     def _generate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
@@ -247,8 +267,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
                 response = _streaming_response_template()
-                for stream_resp in self.completion_with_retry(
-                    prompt=_prompts, **params
+                for stream_resp in completion_with_retry(
+                    self, prompt=_prompts, **params
                 ):
                     self.callback_manager.on_llm_new_token(
                         stream_resp["choices"][0]["text"],
@@ -258,7 +278,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = self.completion_with_retry(prompt=_prompts, **params)
+                response = completion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -282,8 +302,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     raise ValueError("Cannot stream results with multiple prompts.")
                 params["stream"] = True
                 response = _streaming_response_template()
-                async for stream_resp in await self.acompletion_with_retry(
-                    prompt=_prompts, **params
+                async for stream_resp in await acompletion_with_retry(
+                    self, prompt=_prompts, **params
                 ):
                     if self.callback_manager.is_async:
                         await self.callback_manager.on_llm_new_token(
@@ -300,7 +320,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     _update_response(response, stream_resp)
                 choices.extend(response["choices"])
             else:
-                response = await self.acompletion_with_retry(prompt=_prompts, **params)
+                response = await acompletion_with_retry(self, prompt=_prompts, **params)
                 choices.extend(response["choices"])
             if not self.streaming:
                 # Can't update token usage if streaming
@@ -349,9 +369,8 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
-        return LLMResult(
-            generations=generations, llm_output={"token_usage": token_usage}
-        )
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        return LLMResult(generations=generations, llm_output=llm_output)
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
@@ -513,3 +532,207 @@ class AzureOpenAI(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
+
+
+class OpenAIChat(BaseLLM, BaseModel):
+    """Wrapper around OpenAI Chat large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import OpenAIChat
+            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
+    """
+
+    client: Any  #: :meta private:
+    model_name: str = "gpt-3.5-turbo"
+    """Model name to use."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
+    openai_api_key: Optional[str] = None
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
+    prefix_messages: List = Field(default_factory=list)
+    """Series of messages for Chat input."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.ignore
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name not in all_required_field_names:
+                if field_name in extra:
+                    raise ValueError(f"Found {field_name} supplied twice.")
+                extra[field_name] = values.pop(field_name)
+        values["model_kwargs"] = extra
+        return values
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        openai_api_key = get_from_dict_or_env(
+            values, "openai_api_key", "OPENAI_API_KEY"
+        )
+        try:
+            import openai
+
+            openai.api_key = openai_api_key
+        except ImportError:
+            raise ValueError(
+                "Could not import openai python package. "
+                "Please it install it with `pip install openai`."
+            )
+        try:
+            values["client"] = openai.ChatCompletion
+        except AttributeError:
+            raise ValueError(
+                "`openai` has no `ChatCompletion` attribute, this is likely "
+                "due to an old version of the openai package. Try upgrading it "
+                "with `pip install --upgrade openai`."
+            )
+        warnings.warn(
+            "You are trying to use a chat model. This way of initializing it is "
+            "no longer supported. Instead, please use: "
+            "`from langchain.chat_models import ChatOpenAI`"
+        )
+        return values
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        return self.model_kwargs
+
+    def _get_chat_params(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> Tuple:
+        if len(prompts) > 1:
+            raise ValueError(
+                f"OpenAIChat currently only supports single prompt, got {prompts}"
+            )
+        messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
+        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        if params.get("max_tokens") == -1:
+            # for ChatGPT api, omitting max_tokens is equivalent to having no limit
+            del params["max_tokens"]
+        return messages, params
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            for stream_resp in completion_with_retry(self, messages=messages, **params):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = completion_with_retry(self, messages=messages, **params)
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output=llm_output,
+            )
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            async for stream_resp in await acompletion_with_retry(
+                self, messages=messages, **params
+            ):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = await acompletion_with_retry(
+                self, messages=messages, **params
+            )
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output=llm_output,
+            )
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "openai-chat"
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        # tiktoken NOT supported for Python 3.8 or below
+        if sys.version_info[1] <= 8:
+            return super().get_num_tokens(text)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3.5-Turbo encoder instance
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+        # encode the text using the GPT-3.5-Turbo encoder
+        tokenized_text = enc.encode(text)
+
+        # calculate the number of tokens in the encoded text
+        return len(tokenized_text)

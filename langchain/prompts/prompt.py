@@ -1,19 +1,20 @@
 """Prompt schema definition."""
 from __future__ import annotations
 
+from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    StringPromptTemplate,
     check_valid_template,
 )
 
 
-class PromptTemplate(BasePromptTemplate, BaseModel):
+class PromptTemplate(StringPromptTemplate, BaseModel):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -60,14 +61,16 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
         if values["validate_template"]:
+            all_inputs = values["input_variables"] + list(values["partial_variables"])
             check_valid_template(
-                values["template"], values["template_format"], values["input_variables"]
+                values["template"], values["template_format"], all_inputs
             )
         return values
 
@@ -79,6 +82,7 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
+        **kwargs: Any,
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
@@ -99,11 +103,11 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
             The final prompt generated.
         """
         template = example_separator.join([prefix, *examples, suffix])
-        return cls(input_variables=input_variables, template=template)
+        return cls(input_variables=input_variables, template=template, **kwargs)
 
     @classmethod
     def from_file(
-        cls, template_file: str, input_variables: List[str]
+        cls, template_file: Union[str, Path], input_variables: List[str], **kwargs: Any
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
@@ -114,17 +118,19 @@ class PromptTemplate(BasePromptTemplate, BaseModel):
         Returns:
             The prompt loaded from the file.
         """
-        with open(template_file, "r") as f:
+        with open(str(template_file), "r") as f:
             template = f.read()
-        return cls(input_variables=input_variables, template=template)
+        return cls(input_variables=input_variables, template=template, **kwargs)
 
     @classmethod
-    def from_template(cls, template: str) -> PromptTemplate:
+    def from_template(cls, template: str, **kwargs: Any) -> PromptTemplate:
         """Load a prompt template from a template."""
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
         }
-        return cls(input_variables=list(sorted(input_variables)), template=template)
+        return cls(
+            input_variables=list(sorted(input_variables)), template=template, **kwargs
+        )
 
 
 # For backwards compatibility.
