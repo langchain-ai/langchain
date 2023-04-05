@@ -15,18 +15,6 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger()
 
-# Features
-# 1. added distance metric functions (L2, L1, Norm, Cosine) (done)
-# 2. return scores if necessary (done)
-# 3. added maximal marginal relevance (MMR) for ranking (done)
-# 4. altering delete by filter or id (done)
-
-# Use cases
-# 1. check RetrieveQA
-# 2. check continous data adding
-# 3. check multi-modal use case
-# 4. check logging use case
-
 distance_metric_map = {
     'l2': lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
     'l1': lambda a, b: np.linalg.norm(a - b, axis=1, ord=1),
@@ -177,7 +165,7 @@ class DeepLake(VectorStore):
                 "ids": sample_in[3],
             }
             sample_out.append(s)
-            
+
         ingest().eval(list(elements), self.ds)
         self.ds.commit(allow_empty=True)
 
