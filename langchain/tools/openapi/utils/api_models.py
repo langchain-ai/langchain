@@ -111,7 +111,7 @@ class APIProperty(APIPropertyBase):
                 schema_type = (schema_type,)
         elif schema_type == "object":
             # TODO: Resolve array and object types to components.
-            raise NotImplementedError(f"Objects not yet supported")
+            raise NotImplementedError("Objects not yet supported")
         elif schema_type in PRIMITIVE_TYPES:
             if schema.enum:
                 param_name = f"{parameter.name}Enum"
@@ -129,11 +129,13 @@ class APIProperty(APIPropertyBase):
         location = APIPropertyLocation.from_str(parameter.param_in)
         if location not in SUPPORTED_LOCATIONS:
             raise NotImplementedError(
-                f"Unsupported APIPropertyLocation. Valid values are {SUPPORTED_LOCATIONS}"
+                f"Unsupported APIPropertyLocation. "
+                f"Valid values are {SUPPORTED_LOCATIONS}"
             )
         if parameter.content:
             raise ValueError(
-                "API Properties with media content not supported. Media content only supported within APIRequestBodyProperty's"
+                "API Properties with media content not supported. "
+                "Media content only supported within APIRequestBodyProperty's"
             )
         schema = parameter.param_schema
         if isinstance(schema, Reference):
@@ -266,6 +268,7 @@ type {operation_name} = (_: {{
 }}) => any;
 """
         return typescript_definition.strip()
+<<<<<<< HEAD
 
     @property
     def query_params(self) -> List[str]:
@@ -282,3 +285,5 @@ type {operation_name} = (_: {{
             for property in self.properties
             if property.location == APIPropertyLocation.PATH
         ]
+=======
+>>>>>>> upstream/harrison/openapi-parser
