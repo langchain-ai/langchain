@@ -4,16 +4,30 @@ from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.unstructured import (
+    UnstructuredFileLoader, satisfies_min_unstructured_version
+)
 
 
 class UnstructuredEmailLoader(UnstructuredFileLoader):
     """Loader that uses unstructured to load email files."""
 
     def _get_elements(self) -> List:
-        from unstructured.partition.email import partition_email
+        from unstructured.file_utils.filetype import FileType, detect_filetype
 
-        return partition_email(filename=self.file_path)
+        filetype = detect_filetype(self.file_path)
+
+        if filetype == FileType.EML:
+            from unstructured.partition.email import partition_email
+
+            return partition_email(filename=self.file_path)
+        elif satisfies_min_unstructured_version("0.5.8") and filetype == FileType.MSG:
+            from unstructured.partition.msg import partition_msg
+
+            return partition_msg(filename=self.file_path)
+        else:
+            raise ValueError(f"Filetype {filetype} is not supported in UnstructuredEmailLoader.")
+
 
 
 class OutlookMessageLoader(BaseLoader):
