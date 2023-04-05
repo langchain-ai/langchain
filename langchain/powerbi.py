@@ -21,11 +21,13 @@ class PowerBIDataset:
         table_names: list[str],
         credential: ChainedTokenCredential | InteractiveCredential,
         sample_rows_in_table_info: int = 1,
+        schemas: dict[str, str] = {},
     ):
         """Create engine from database URI."""
         self._group_id = group_id
         self._dataset_id = dataset_id
         self._table_names = table_names
+        self._schemas = schemas
         if sample_rows_in_table_info < 1:
             raise ValueError("sample_rows_in_table_info must be >= 1")
         self._sample_rows_in_table_info = sample_rows_in_table_info
@@ -45,6 +47,15 @@ class PowerBIDataset:
         """Get names of tables available."""
         return self._table_names
 
+    def get_schemas(self) -> str:
+        """Get the available schema's."""
+        if self._schemas:
+            return ", ".join(
+                [f"{key}: {value}" for key, value in self._schemas.items()]
+            )
+        else:
+            return "No known schema's yet. Use the schema_powerbi tool first."
+
     @property
     def table_info(self) -> str:
         """Information about all tables in the database."""
@@ -61,6 +72,9 @@ class PowerBIDataset:
 
         tables = []
         for table in all_table_names:
+            if table in self._schemas:
+                tables.append(str(self._schemas[table]))
+                continue
             query = f"EVALUATE TOPN({self._sample_rows_in_table_info}, {table})"
             try:
                 result = self.run(query)
@@ -73,6 +87,7 @@ class PowerBIDataset:
                 )
                 return "Error with the connection to PowerBI, please review your authentication credentials."
             rows = result["results"][0]["tables"][0]["rows"]
+            self._schemas[table] = rows
             tables.append(str(rows))
         return ", ".join(tables)
 

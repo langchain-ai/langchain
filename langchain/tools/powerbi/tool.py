@@ -7,7 +7,7 @@ from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.powerbi import PowerBIDataset
 from langchain.tools.base import BaseTool
-from langchain.tools.powerbi.prompt import QUERY_CHECKER
+from langchain.tools.powerbi.prompt import QUERY_CHECKER, QUESTION_TO_QUERY
 
 
 class BasePowerBIDatabaseTool(BaseModel):
@@ -84,8 +84,52 @@ class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
 
 
+class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
+    """Use an LLM to parse the question to a DAX query.
+    Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
+
+    template: str = QUESTION_TO_QUERY
+    llm_chain: LLMChain = Field(
+        default_factory=lambda: LLMChain(
+            llm=OpenAI(temperature=0),
+            prompt=PromptTemplate(
+                template=QUESTION_TO_QUERY,
+                input_variables=["tool_input", "tables", "schemas"],
+            ),
+        )
+    )
+    name = "question_to_query_powerbi"
+    description = """
+    Use this tool to create the DAX query from the question, the input is a fully formed question related to the powerbi dataset.
+    """
+
+    @validator("llm_chain")
+    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
+        """Make sure the LLM chain has the correct input variables."""
+         if llm_chain.prompt.input_variables != ["tool_input", "tables", "schemas"]:
+            raise ValueError(
+                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas']"
+            )
+        return llm_chain
+
+    def _run(self, tool_input: str) -> str:
+        """Use the LLM to check the query."""
+        return self.llm_chain.predict(
+            tool_input=tool_input,
+            tables=self.powerbi.get_table_names(),
+            schemas=self.powerbi.get_schemas(),
+        )
+
+    async def _arun(self, tool_input: str) -> str:
+        return await self.llm_chain.apredict(
+            tool_input=tool_input,
+            tables=self.powerbi.get_table_names(),
+            schemas=self.powerbi.get_schemas(),
+        )
+
+
 class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
-    """Use an LLM to check if a query is correct.
+    """Use an LLM to create the query.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
