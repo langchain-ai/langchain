@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Iterable, List, Tuple, Optional, Sequence, Dict
+from functools import partial
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
-from functools import partial
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -96,7 +96,7 @@ class DeepLake(VectorStore):
 
         try:
             import deeplake
-        except ImportError as e:
+        except ImportError:
             raise ValueError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
