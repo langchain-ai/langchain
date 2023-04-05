@@ -115,7 +115,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         query_dict = {"query": {"match": {"content": query}}}
-        res = self.client.search(index="my_index", body=query_dict)
+        res = self.client.search(index=self.index_name, body=query_dict)
 
         docs = []
         for r in res["hits"]["hits"]:
