@@ -283,7 +283,8 @@ def resolve_schema(
     return _schema
 
 
-def foo(path: str, method: str, spec: OpenAPI) -> None:
+# Query params and Path params can't be nested deeply!
+def get_(path: str, method: str, spec: OpenAPI) -> None:
     """Foo."""
     path_item = spec.paths.get(path)
     if not path_item:
@@ -294,21 +295,22 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
     query_params = []
     path_params = []
     data_models = set()
-    for parameter in operation.parameters:
-        if isinstance(parameter, Reference):
-            parameter = _resolve_reference(parameter.ref, spec)
-        if parameter.param_in == "path":
-            path_params.append(parameter)
-            pass
-        elif parameter.param_in == "query":
-            query_params.append(parameter)
-            pass
-        elif parameter.param_in == "header":
-            logger.warning("Header parameters not yet implemented")
-            continue
-        else:  # parameter.param_in == "cookie"
-            logger.warning("Cookie parameters not yet implemented")
-            continue
+    if operation.parameters:
+        for parameter in operation.parameters:
+            if isinstance(parameter, Reference):
+                parameter = _resolve_reference(parameter.ref, spec)
+            if parameter.param_in == "path":
+                path_params.append(parameter)
+                pass
+            elif parameter.param_in == "query":
+                query_params.append(parameter)
+                pass
+            elif parameter.param_in == "header":
+                logger.warning("Header parameters not yet implemented")
+                continue
+            else:  # parameter.param_in == "cookie"
+                logger.warning("Cookie parameters not yet implemented")
+                continue
     path_params = extract_path_params(path)
     query_params, body_params = extract_query_and_body_params(operation, spec)
     # operation_schema, encoding_type = generate_resolved_schema(operation, spec)
