@@ -406,7 +406,7 @@ class DeepLake(VectorStore):
         if filter:
             if view is None:
                 view = self.ds
-            view = view.filter(dp_filter, filter=filter)
+            view = view.filter(partial(dp_filter, filter=filter))
             ids = list(view.sample_indices)
 
         with self.ds:
