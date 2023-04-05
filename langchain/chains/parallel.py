@@ -50,7 +50,7 @@ class ParallelChain(Chain, BaseModel):
 
     @root_validator(pre=True)
     def validate_chains(cls, values: Dict) -> Dict:
-        """Validate that there is at least one chain and all chains have the same input keys."""
+        """Validate that there is at least one chain."""
         chains = values["chains"]
 
         if len(chains) == 0:
@@ -71,7 +71,7 @@ class ParallelChain(Chain, BaseModel):
         )
         if self.verbose:
             print(
-                f'Child chain for key="{key}" finished after {time.time() - t0:.2f} seconds.'
+                f'Child chain for key="{key}" finished in {time.time()-t0:.2f} seconds.'
             )
         return {key: result}
 
