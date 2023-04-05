@@ -82,6 +82,13 @@ freezegun = "^1.2.2"
 responses = "^0.22.0"
 pytest-asyncio = "^0.20.3"
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+openai = "^0.27.4"
+elasticsearch = {extras = ["async"], version = "^8.6.2"}
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
 types-toml = "^0.10.8.1"
