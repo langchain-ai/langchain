@@ -60,19 +60,23 @@ class OpenAPISpec(OpenAPI):
             open_api_spec = yaml.safe_load(response.text)
         return cls.from_spec_dict(open_api_spec)
 
+
 class _Joiner(str, Enum):
     union = "|"
     intersection = "&"
+
+
 class JoinedType(BaseModel):
 
     sub_types: List[str]
 
-    joiner: _Joiner 
+    joiner: _Joiner
+
+
 ## Resolving
 
-def _resolve_reference(
-    ref: Reference, spec: OpenAPI, seen: Set[str]
-) -> str:
+
+def _resolve_reference(ref: Reference, spec: OpenAPI, seen: Set[str]) -> str:
     """Resolve a $ref to a definition in the OpenAPI spec."""
     ref_name = ref.split("/")[-1]
     # TODO: The parsing library loses the `required` tags in the spec.
@@ -94,7 +98,9 @@ def _resolve_reference(
     raise ValueError(f"Reference {ref} not found in spec")
 
 
-def _dereference_anyof(schema: Schema, spec: OpenAPI, seen: Set[str]) -> Optional[JoinedType]:
+def _dereference_anyof(
+    schema: Schema, spec: OpenAPI, seen: Set[str]
+) -> Optional[JoinedType]:
     """Dereference anyOf schemas."""
     if not schema.anyOf:
         return
@@ -127,8 +133,6 @@ def _dereference_children(schema: Schema, spec: OpenAPI, seen: Set[str]) -> None
     """Dereference children."""
     _dereference_anyof(schema, spec, seen)
     _dereference_properties(schema, spec, seen)
-
-
 
 
 ###### Shared functions #######
@@ -295,12 +299,12 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
             parameter = _resolve_reference(parameter.ref, spec)
         if parameter.param_in == "path":
             pass
-        elif  parameter.param_in == "query":
+        elif parameter.param_in == "query":
             pass
         elif parameter.param_in == "header":
             logger.warning("Header parameters not yet implemented")
             continue
-        else parameter.param_in == "cookie":
+        else:  # parameter.param_in == "cookie"
             logger.warning("Cookie parameters not yet implemented")
             continue
     path_params = extract_path_params(path)
@@ -309,10 +313,8 @@ def foo(path: str, method: str, spec: OpenAPI) -> None:
     operation.p
 
 
-
-
-# if __name__ == "__main__":
-#     CACHED_OPENAPI_SPECS = ["http://127.0.0.1:7289/openapi.json"]
-
-#     spec = get_openapi_spec(CACHED_OPENAPI_SPECS[0])
-#     print(spec)
+if __name__ == "__main__":
+    CACHED_OPENAPI_SPECS = ["http://127.0.0.1:7289/openapi.json"]
+    spec = OpenAPISpec.from_url(CACHED_OPENAPI_SPECS[0])
+    op = foo("/foo", "get", spec)
+    print(spec)
