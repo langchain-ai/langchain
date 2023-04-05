@@ -5,7 +5,8 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import (
-    UnstructuredFileLoader, satisfies_min_unstructured_version
+    UnstructuredFileLoader,
+    satisfies_min_unstructured_version,
 )
 
 
@@ -26,8 +27,9 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
 
             return partition_msg(filename=self.file_path)
         else:
-            raise ValueError(f"Filetype {filetype} is not supported in UnstructuredEmailLoader.")
-
+            raise ValueError(
+                f"Filetype {filetype} is not supported in UnstructuredEmailLoader."
+            )
 
 
 class OutlookMessageLoader(BaseLoader):
