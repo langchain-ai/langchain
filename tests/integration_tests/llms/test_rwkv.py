@@ -15,13 +15,10 @@ def _download_model() -> str:
     tokenizer_url = "https://github.com/BlinkDL/ChatRWKV/blob/main/v2/20B_tokenizer.json?raw=true"
     local_filename = model_url.split("/")[-1]
 
-#    if not os.path.exists("convert_gpt4all.py"):
-#        urlretrieve(conversion_script, "convert_gpt4all.py")
     if not os.path.exists("20B_tokenizer.json"):
         urlretrieve(tokenizer_url, "20B_tokenizer.json")
     if not os.path.exists(local_filename):
         urlretrieve(model_url, local_filename)
-#        os.system(f"python convert_gpt4all.py.py . tokenizer.model")
 
     return local_filename
 
