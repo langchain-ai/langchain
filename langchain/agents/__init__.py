@@ -3,6 +3,7 @@ from langchain.agents.agent import (
     Agent,
     AgentExecutor,
     AgentOutputParser,
+    BaseMultiActionAgent,
     BaseSingleActionAgent,
     LLMSingleActionAgent,
 )
