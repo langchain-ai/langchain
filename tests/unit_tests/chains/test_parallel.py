@@ -260,3 +260,31 @@ def test_parallel_nested_speedup() -> None:
         < end_time_serial - start_time_serial
     )
     assert output_concurrent == output_serial == expected_output
+
+
+def test_parallel_usage_differing_inputs_for_child_chains() -> None:
+    """Test parallel on differing inputs for child chains."""
+    chain = ParallelChain(
+        chains={
+            "output1": FakeChain(
+                input_variables=["input1", "input2"],
+                output_variables=["chain_out1"],
+                chain_id=1,
+            ),
+            "output2": FakeChain(
+                input_variables=["input1", "input3"],
+                output_variables=["chain_out2"],
+                chain_id=2,
+            ),
+        },
+    )
+    inputs = {"input1": "foo", "input2": "bar", "input3": "baz"}
+    output = chain(inputs)
+    expected_output = {
+        "input1": "foo",
+        "input2": "bar",
+        "input3": "baz",
+        "output1": {"chain_out1": "foo bar 1"},
+        "output2": {"chain_out2": "foo baz 2"},
+    }
+    assert output == expected_output

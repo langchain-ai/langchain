@@ -64,7 +64,11 @@ class ParallelChain(Chain, BaseModel):
         if self.verbose:
             print(f'Child chain for key="{key}" started.')
             t0 = time.time()
-        result = chain(inputs, return_only_outputs=True)
+        # run chain only on the inputs that match the chain's input keys
+        result = chain(
+            {k: v for k, v in inputs.items() if k in chain.input_keys},
+            return_only_outputs=True,
+        )
         if self.verbose:
             print(
                 f'Child chain for key="{key}" finished after {time.time() - t0:.2f} seconds.'
