@@ -40,7 +40,7 @@ def test_parallel_usage_single_input() -> None:
     """Test parallel on single input."""
     input_variables = ["input"]
     chain = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             "output1": FakeChain(
                 input_variables=input_variables,
@@ -67,7 +67,7 @@ def test_parallel_usage_multiple_inputs() -> None:
     """Test parallel on multiple inputs."""
     input_variables = ["input1", "input2"]
     chain = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             "output1": FakeChain(
                 input_variables=input_variables,
@@ -84,7 +84,8 @@ def test_parallel_usage_multiple_inputs() -> None:
     inputs = {"input1": "foo", "input2": "bar"}
     output = chain(inputs)
     expected_output = {
-        **inputs,
+        "input1": "foo",
+        "input2": "bar",
         "output1": {"chain_out1": "foo bar 1"},
         "output2": {"chain_out2": "foo bar 2"},
     }
@@ -95,7 +96,7 @@ def test_parallel_usage_one_chain_single_output() -> None:
     """Test parallel on multiple inputs."""
     input_variables = ["input1", "input2"]
     chain = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             "output1": FakeChain(
                 input_variables=input_variables,
@@ -107,7 +108,8 @@ def test_parallel_usage_one_chain_single_output() -> None:
     inputs = {"input1": "foo", "input2": "bar"}
     output = chain(inputs)
     expected_output = {
-        **inputs,
+        "input1": "foo",
+        "input2": "bar",
         "output1": {"chain_out1": "foo bar 1"},
     }
     assert output == expected_output
@@ -130,7 +132,7 @@ def test_parallel_concurrency_speedup() -> None:
     input_variables = ["input1", "input2"]
 
     chain = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             f"output{i}": FakeChain(
                 input_variables=input_variables,
@@ -187,10 +189,10 @@ def test_parallel_nested_speedup() -> None:
     input_variables = ["input1", "input2"]
 
     chain_concurrent = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             f"output{i}": ParallelChain(
-                input_variables=input_variables,
+                # input_variables=input_variables,
                 chains={
                     f"output{i}_{j}": FakeChain(
                         input_variables=input_variables,
@@ -207,10 +209,10 @@ def test_parallel_nested_speedup() -> None:
     )
 
     chain_serial = ParallelChain(
-        input_variables=input_variables,
+        # input_variables=input_variables,
         chains={
             f"output{i}": ParallelChain(
-                input_variables=input_variables,
+                # input_variables=input_variables,
                 chains={
                     f"output{i}_{j}": FakeChain(
                         input_variables=input_variables,
@@ -239,7 +241,8 @@ def test_parallel_nested_speedup() -> None:
     end_time_serial = time.time()
 
     expected_output = {
-        **inputs,
+        "input1": "foo",
+        "input2": "bar",
         "output0": {
             "output0_0": {"chain_out0_0": "foo bar 0"},
             "output0_1": {"chain_out0_1": "foo bar 1"},
@@ -270,41 +273,41 @@ def test_parallel_nested_speedup() -> None:
 # if we allow child chains to have different inputs, we should remove the following tests
 
 
-def test_parallel_error_mismatched_inputs() -> None:
-    """Test error is raised when input variables to the parallel chain do not match those of the child chains."""
-    with pytest.raises(ValueError):
-        ParallelChain(
-            input_variables=["input1", "input3"],
-            chains={
-                "output1": FakeChain(
-                    input_variables=["input1", "input2"],
-                    output_variables=["chain_out1"],
-                    chain_id=1,
-                ),
-                "output2": FakeChain(
-                    input_variables=["input1", "input2"],
-                    output_variables=["chain_out2"],
-                    chain_id=2,
-                ),
-            },
-        )
+# def test_parallel_error_mismatched_inputs() -> None:
+#     """Test error is raised when input variables to the parallel chain do not match those of the child chains."""
+#     with pytest.raises(ValueError):
+#         ParallelChain(
+#             input_variables=["input1", "input3"],
+#             chains={
+#                 "output1": FakeChain(
+#                     input_variables=["input1", "input2"],
+#                     output_variables=["chain_out1"],
+#                     chain_id=1,
+#                 ),
+#                 "output2": FakeChain(
+#                     input_variables=["input1", "input2"],
+#                     output_variables=["chain_out2"],
+#                     chain_id=2,
+#                 ),
+#             },
+#         )
 
 
-def test_parallel_error_mismatched_inputs_between_chains() -> None:
-    """Test error is raised when the input variables to different chains do not match."""
-    with pytest.raises(ValueError):
-        ParallelChain(
-            input_variables=["input1", "input2"],
-            chains={
-                "output1": FakeChain(
-                    input_variables=["input1", "input2"],
-                    output_variables=["chain_out1"],
-                    chain_id=1,
-                ),
-                "output2": FakeChain(
-                    input_variables=["input1", "input3"],
-                    output_variables=["chain_out2"],
-                    chain_id=2,
-                ),
-            },
-        )
+# def test_parallel_error_mismatched_inputs_between_chains() -> None:
+#     """Test error is raised when the input variables to different chains do not match."""
+#     with pytest.raises(ValueError):
+#         ParallelChain(
+#             input_variables=["input1", "input2"],
+#             chains={
+#                 "output1": FakeChain(
+#                     input_variables=["input1", "input2"],
+#                     output_variables=["chain_out1"],
+#                     chain_id=1,
+#                 ),
+#                 "output2": FakeChain(
+#                     input_variables=["input1", "input3"],
+#                     output_variables=["chain_out2"],
+#                     chain_id=2,
+#                 ),
+#             },
+#         )

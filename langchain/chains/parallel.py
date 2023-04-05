@@ -23,7 +23,7 @@ class ParallelChain(Chain, BaseModel):
     in the sense of being run on different threads or processes.
     """
 
-    input_variables: List[str]  #: :meta private:
+    # input_variables: List[str]  #: :meta private:
     chains: Dict[str, Chain]
     concurrent: bool = True
 
@@ -35,11 +35,12 @@ class ParallelChain(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return expected input keys to each chain, which should all be the same.
+        """Return the union of all the input keys of the child chains.
 
         :meta private:
         """
-        return self.input_variables
+        return list(set().union(*(chain.input_keys for chain in self.chains.values())))
+        # return self.input_variables
 
     @property
     def output_keys(self) -> List[str]:
@@ -57,19 +58,19 @@ class ParallelChain(Chain, BaseModel):
         if len(chains) == 0:
             raise ValueError("There must be at least one chain.")
 
-        input_variables = values["input_variables"]
-        for chain in chains.values():
-            if chain.input_keys != input_variables:
-                raise ValueError(
-                    f"Chain {chain} has input keys {chain.input_keys} "
-                    f"which do not match the expected input keys {input_variables}."
-                )
+        # input_variables = values["input_variables"]
+        # for chain in chains.values():
+        #     if chain.input_keys != input_variables:
+        #         raise ValueError(
+        #             f"Chain {chain} has input keys {chain.input_keys} "
+        #             f"which do not match the expected input keys {input_variables}."
+        #         )
 
         return values
 
     def _run_child(
         self, inputs: Dict[str, str], key: str, chain: Chain
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         if self.verbose:
             print(f'Child chain for key="{key}" started.')
             t0 = time.time()
@@ -98,12 +99,18 @@ class ParallelChain(Chain, BaseModel):
                 outputs.update(self._run_child(inputs, key, chain))
             return outputs
 
-    async def _arun_child(self, loop, key, chain, inputs):
+    async def _arun_child(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        key: str,
+        chain: Chain,
+        inputs: Dict[str, Any],
+    ) -> Dict[str, Any]:
         func = functools.partial(self._run_child, key=key, chain=chain)
         result = await loop.run_in_executor(None, func, inputs)
         return result
 
-    async def _acall(self, inputs):
+    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         loop = asyncio.get_event_loop()
         tasks = []
         for key, chain in self.chains.items():
