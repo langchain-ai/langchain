@@ -3,8 +3,7 @@
 from __future__ import annotations
 import json
 
-from typing import Dict, List, NamedTuple, Optional, Union
-from openapi_schema_pydantic import OpenAPI, Operation
+from typing import Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -14,6 +13,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
 from langchain.requests import Requests
+from langchain.tools.openapi.utils.api_models import APIOperation
 
 
 class _ParamMapping(NamedTuple):
@@ -29,12 +29,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
     api_request_chain: LLMChain
     api_response_chain: LLMChain
-    error_handling_chain: Optional[LLMChain] = Field(
-        default=None,
-    )
-    # description: str
-    url: str = Field(alias="url")
-    method: HTTPVerb = Field(alias="method")
+    # error_handling_chain: Optional[LLMChain] = Field(
+    #     default=None,
+    # )
+    api_operation: APIOperation
     requests: Requests = Field(exclude=True)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
     instructions_key: str = "instructions"  #: :meta private:
@@ -58,7 +56,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
     def _construct_path(self, args: Dict[str, str]) -> str:
         """Construct the path from the deserialized input."""
-        path = self.url
+        path = self.api_operation.base_url + self.api_operation.path
         for param in self.param_mapping.path_params:
             path = path.replace(f"{{{param}}}", args.pop(param, ""))
         return path
@@ -107,9 +105,11 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             method = getattr(self.requests, self.method.value)
             api_response: Response = method(**request_args)
             if api_response.status_code != 200:
+                method_str = str(self.api_operation.method.value)
                 response_text = (
                     f"{api_response.status_code}: {api_response.reason}"
-                    + f"\nFor {self.method.value.upper()}  {request_args['url']}\nCalled with args: {request_args['params']}"
+                    + f"\nFor {method_str.upper()}  {request_args['url']}\n"
+                    + f"Called with args: {request_args['params']}"
                 )
             else:
                 response_text = api_response.text
@@ -129,51 +129,39 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         return "openapi_chain"
 
     @classmethod
-    def from_operation_and_url(
+    def from_url_and_method(
         cls,
+        spec_url: str,
         path: str,
         method: str,
-        spec_url: OpenAPI,
         requests: Requests,
         llm: BaseLLM,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
-        spec = get_openapi_spec(spec_url)
-        return cls.from_operation_and_spec(
-            path=path,
-            method=method,
-            spec=spec,
+        operation = APIOperation.from_openapi_url(spec_url, path, method)
+        return cls.from_api_operation(
+            operation,
             requests=requests,
             llm=llm,
         )
 
     @classmethod
-    def from_operation_and_spec(
+    def from_api_operation(
         cls,
-        path: str,
-        method: str,
-        spec: OpenAPI,
+        operation: APIOperation,
         requests: Requests,
         llm: BaseLLM,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
         param_mapping = _ParamMapping(
-            query_params=query_params,
-            body_params=body_params,
-            path_params=path_params,
+            query_params=operation.query_params,
+            # body_params=body_params,
+            path_params=operation.path_params,
         )
-        # encoding_type stuff
-        # response_schema = generate_resolved_response_schema(operation, spec)
-        if path_params:
-            if not operation_schema.required:
-                operation_schema.required = []
-            operation_schema.required.extend(path_params)
-        requests_chain = APIRequesterChain.from_operation_schema(
-            llm,
-            operation_schema=operation_schema,
-            full_spec=spec,
+        requests_chain = APIRequesterChain.from_llm_and_typescript(
+            llm, typescript_definition=operation.to_typescript(), verbose=True
         )
         response_chain = APIResponderChain.from_llm(llm)
         # operation_id = get_cleaned_operation_id(operation, path, requests_method)
@@ -181,9 +169,8 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         return cls(
             api_request_chain=requests_chain,
             api_response_chain=response_chain,
+            api_operation=operation,
             requests=requests,
-            url=f"{base_url}{path}",
-            method=http_verb,
             param_mapping=param_mapping,
         )
 
@@ -195,7 +182,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 #     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml",
 #     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml",
 # ]
-from langchain.llms import OpenAI, Anthropic
+from langchain.llms import Anthropic
 
 # llm = OpenAI()
 llm = Anthropic()
@@ -203,10 +190,10 @@ requests = Requests()
 method = "post"
 twitter_url = "http://127.0.0.1:7289/openapi.json"
 path = "/hide"
-chain = OpenAPIEndpointChain.from_operation_and_url(
+chain = OpenAPIEndpointChain.from_url_and_method(
+    spec_url=twitter_url,
     path=path,
     method=method,
-    spec_url=twitter_url,
     requests=requests,
     llm=llm,
 )

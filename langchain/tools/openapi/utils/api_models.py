@@ -266,3 +266,19 @@ type {operation_name} = (_: {{
 }}) => any;
 """
         return typescript_definition.strip()
+
+    @property
+    def query_params(self) -> List[str]:
+        return [
+            property.name
+            for property in self.properties
+            if property.location == APIPropertyLocation.QUERY
+        ]
+
+    @property
+    def path_params(self) -> List[str]:
+        return [
+            property.name
+            for property in self.properties
+            if property.location == APIPropertyLocation.PATH
+        ]

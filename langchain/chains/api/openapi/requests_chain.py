@@ -83,19 +83,3 @@ class APIRequesterChain(LLMChain):
             input_variables=["instructions"],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
-
-    @classmethod
-    def from_operation_schema(
-        cls,
-        llm: BaseLLM,
-        operation_schema: Schema,
-        full_spec: OpenAPI,
-        verbose: bool = True,
-    ) -> "APIRequesterChain":
-        """Get the request parser."""
-        typescript_def = schema_to_typescript(
-            operation_schema, full_spec, verbose=verbose
-        )
-        return cls.from_llm_and_typescript(
-            llm=llm, typescript_definition=typescript_def, verbose=verbose
-        )
