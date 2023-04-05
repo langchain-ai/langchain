@@ -37,7 +37,8 @@ def vector_search(
         query_embedding: np.ndarray
         data_vectors: np.ndarray
         k (int): number of nearest neighbors
-        distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max' l-infinity distnace, 'cos' for cosine similarity, 'dot' for dot product
+        distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max' 
+            l-infinity distnace, 'cos' for cosine similarity, 'dot' for dot product
 
     returns:
         nearest_indices: List, indices of nearest neighbors
@@ -62,13 +63,16 @@ class DeepLake(VectorStore):
     """Wrapper around Deep Lake, a data lake for deep learning applications.
 
     We implement naive similarity search and filtering for fast prototyping,
-    but it can be extended with Tensor Query Language (TQL) for production use cases over billion rows.
+    but it can be extended with Tensor Query Language (TQL) for production use cases 
+    over billion rows.
 
     Why Deep Lake?
 
-    - Not only stores embeddings, but also the original data with automatic version control.
-    - Serverless, doesn't require another service and can be used with major cloud providers (S3, GCS, etc.)
-    - More than just a multi-modal vector store. You can use the dataset to fine-tune your own LLM models.
+    - Not only stores embeddings, but also the original data with version control.
+    - Serverless, doesn't require another service and can be used with major 
+        cloud providers (S3, GCS, etc.)
+    - More than just a multi-modal vector store. You can use the dataset 
+        to fine-tune your own LLM models.
 
     To use, you should have the ``deeplake`` python package installed.
 
@@ -92,8 +96,7 @@ class DeepLake(VectorStore):
         read_only: Optional[bool] = None,
     ) -> None:
         """Initialize with Deep Lake client."""
-        import deeplake
-
+        
         try:
             import deeplake
         except ImportError:
@@ -210,10 +213,15 @@ class DeepLake(VectorStore):
             query: Text to look up documents similar to.
             embedding: Embedding function to use. Defaults to None.
             k: Number of Documents to return. Defaults to 4.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
-            filter: Attribute filter by metadata example {'key': 'value'}. Defaults to None.
-            maximal_marginal_relevance: Whether to use maximal marginal relevance. Defaults to False.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, 
+                `max` L-infinity distance, `cos` for cosine similarity, 
+                'dot' for dot product. Defaults to `L2`.
+            filter: Attribute filter by metadata example {'key': 'value'}. 
+                Defaults to None.
+            maximal_marginal_relevance: Whether to use maximal marginal relevance. 
+                Defaults to False.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.   
+                Defaults to 20.
             return_score: Whether to return the score. Defaults to False.
 
         Returns:
@@ -282,14 +290,22 @@ class DeepLake(VectorStore):
 
         Args:
             query: text to embed and run the query on.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return. 
+                Defaults to 4.
             query: Text to look up documents similar to.
-            embedding: Embedding function to use. Defaults to None.
-            k: Number of Documents to return. Defaults to 4.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
-            filter: Attribute filter by metadata example {'key': 'value'}. Defaults to None.
-            maximal_marginal_relevance: Whether to use maximal marginal relevance. Defaults to False.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            embedding: Embedding function to use. 
+                Defaults to None.
+            k: Number of Documents to return. 
+                Defaults to 4.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max`    
+                L-infinity distance, `cos` for cosine similarity, 'dot' for dot product 
+                Defaults to `L2`.
+            filter: Attribute filter by metadata example {'key': 'value'}. 
+                Defaults to None.
+            maximal_marginal_relevance: Whether to use maximal marginal relevance. 
+                Defaults to False.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm. 
+                Defaults to 20.
             return_score: Whether to return the score. Defaults to False.
 
         Returns:
@@ -321,7 +337,9 @@ class DeepLake(VectorStore):
 
         Args:
             query (str): Query text to search for.
-            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity distance, `cos` for cosine similarity, 'dot' for dot product. Defaults to `L2`.
+            distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity 
+                distance, `cos` for cosine similarity, 'dot' for dot product. 
+                Defaults to `L2`.
             k (int): Number of results to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
@@ -400,8 +418,9 @@ class DeepLake(VectorStore):
                     (use 'activeloop login' from command line)
                 - AWS S3 path of the form ``s3://bucketname/path/to/dataset``.
                     Credentials are required in either the environment
-                - Google Cloud Storage path of the form ``gcs://bucketname/path/to/dataset``
-                    Credentials are required in either the environment
+                - Google Cloud Storage path of the form 
+                    ``gcs://bucketname/path/to/dataset``Credentials are required 
+                    in either the environment
                 - Local file system path of the form ``./path/to/dataset`` or
                     ``~/path/to/dataset`` or ``path/to/dataset``.
                 - In-memory path of the form ``mem://path/to/dataset`` which doesn't
@@ -431,9 +450,12 @@ class DeepLake(VectorStore):
         """Delete the entities in the dataset
 
         Args:
-            ids (Optional[List[str]], optional): The document_ids to delete. Defaults to None.
-            filter (Optional[Dict[str, str]], optional): The filter to delete by. Defaults to None.
-            delete_all (Optional[bool], optional): Whether to drop the dataset. Defaults to None.
+            ids (Optional[List[str]], optional): The document_ids to delete. 
+                Defaults to None.
+            filter (Optional[Dict[str, str]], optional): The filter to delete by. 
+                Defaults to None.
+            delete_all (Optional[bool], optional): Whether to drop the dataset. 
+                Defaults to None.
         """
         if delete_all:
             self.ds.delete()
