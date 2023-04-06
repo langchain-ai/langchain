@@ -365,7 +365,8 @@ class Redis(VectorStore):
 class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
     vectorstore: Redis
     search_type: str = "similarity"
-    search_kwargs: dict = Field(default_factory=dict)
+    k: int = 4
+    score_threshold: float = 0.4
 
     class Config:
         """Configuration for this pydantic object."""
@@ -383,10 +384,12 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(query, k=self.k)
         elif self.search_type == "similarity_limit":
             docs = self.vectorstore.similarity_search_limit_score(
-                query, **self.search_kwargs
+                query,
+                k=self.k,
+                score_threshold=self.score_threshold
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
