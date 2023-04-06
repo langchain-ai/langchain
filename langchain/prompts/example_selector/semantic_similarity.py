@@ -99,7 +99,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         return cls(vectorstore=vectorstore, k=k, input_keys=input_keys)
 
 
-class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector, BaseModel):
+class MaxMarginalRelevanceExampleSelector(SemanticSimilarityExampleSelector):
     """ExampleSelector that selects examples based on Max Marginal Relevance.
 
     This was shown to improve performance in this paper:

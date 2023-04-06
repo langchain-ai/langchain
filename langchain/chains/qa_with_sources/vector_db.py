@@ -3,7 +3,7 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -11,7 +11,7 @@ from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore
 
 
-class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     """Question-answering with sources over a vector database."""
 
     vectorstore: VectorStore = Field(exclude=True)

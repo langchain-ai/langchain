@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -17,7 +17,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class RefineDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class RefineDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by doing a first pass and then refining on more documents."""
 
     initial_llm_chain: LLMChain
