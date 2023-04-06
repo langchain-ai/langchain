@@ -24,5 +24,9 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
 @pytest.fixture(scope="module")
 def vcr_config() -> dict:
     return {
-        "filter_headers": [("authorization", "DUMMY")],
+        "filter_headers": [
+            ("authorization", "authorization-DUMMY"),
+            ("X-OpenAI-Client-User-Agent", "X-OpenAI-Client-User-Agent-DUMMY"),
+            ("User-Agent", "User-Agent-DUMMY"),
+        ],
     }

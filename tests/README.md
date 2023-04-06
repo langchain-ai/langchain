@@ -13,7 +13,7 @@ To run some integration tests, such as tests located in
 software:
 
 - Docker
-- Python 3.8 or later
+- Python 3.8.1 or later
 
 We have optional group `test_integration` in the `pyproject.toml` file. This group
 should contain dependencies for the integration tests and can be installed using the
@@ -37,6 +37,10 @@ for `test_elasticsearch.py`:
 cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 ```
+
+Additionally, it's important to note that some integration tests may require certain
+environment variables to be set, such as `OPENAI_API_KEY`. Be sure to set any required
+environment variables before running the tests to ensure they run correctly.
 
 ### Recording HTTP interactions with pytest-vcr
 
