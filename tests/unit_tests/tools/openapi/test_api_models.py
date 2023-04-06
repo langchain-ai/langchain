@@ -3,11 +3,19 @@ import json
 import os
 from pathlib import Path
 from typing import Iterable, List, Tuple
+from openapi_schema_pydantic import (
+    Components,
+    Info,
+    MediaType,
+    Reference,
+    RequestBody,
+    Schema,
+)
 
 import pytest
 import yaml
 
-from langchain.tools.openapi.utils.api_models import APIOperation
+from langchain.tools.openapi.utils.api_models import APIOperation, APIRequestBody
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 _DIR = Path(__file__).parent
@@ -73,3 +81,38 @@ def test_parse_api_operations(
         APIOperation.from_openapi_spec(spec, path, method)
     except Exception as e:
         raise AssertionError(f"Error processong {spec_name}: {e} ") from e
+
+
+def test_api_request_body_from_request_body():
+    """Test instantiating APIRequestBody from RequestBody."""
+    spec = OpenAPISpec(
+        info=Info(title="Test API", version="1.0.0"),
+        components=Components(
+            schemas={
+                "Foo": Schema(
+                    type="object",
+                    properties={
+                        "foo": Schema(type="string"),
+                        "bar": Schema(type="number"),
+                    },
+                    required=["foo"],
+                )
+            }
+        ),
+    )
+    media_type = MediaType(
+        schema=Reference(
+            ref="#/components/schemas/Foo",
+        )
+    )
+    request_body = RequestBody(content={"application/json": media_type})
+    api_request_body = APIRequestBody.from_request_body(request_body, spec)
+    assert api_request_body.description is None
+    assert len(api_request_body.properties) == 2
+    foo_prop = api_request_body.properties[0]
+    assert foo_prop.name == "foo"
+    assert foo_prop.required is True
+    bar_prop = api_request_body.properties[1]
+    assert bar_prop.name == "bar"
+    assert bar_prop.required is False
+    assert api_request_body.media_type == "application/json"
