@@ -315,8 +315,10 @@ class APIRequestBody(BaseModel):
         spec: OpenAPISpec,
     ) -> List[APIRequestBodyProperty]:
         """Process the media type of the request body."""
+        references_used = []
         schema = media_type_obj.media_type_schema
         if isinstance(schema, Reference):
+            references_used.append(schema.ref.split("/")[-1])
             schema = spec.get_referenced_schema(schema)
         if schema is None:
             raise ValueError(
@@ -341,11 +343,12 @@ class APIRequestBody(BaseModel):
             api_request_body_properties.append(
                 APIRequestBodyProperty(
                     name="body",
-                    required=schema.required,
+                    required=True,
                     type=schema.type,
                     default=schema.default,
                     description=schema.description,
                     properties=[],
+                    references_used=references_used,
                 )
             )
 
