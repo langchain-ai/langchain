@@ -138,36 +138,6 @@ class APIProperty(APIPropertyBase):
 
         return schema_type
 
-    # @staticmethod
-    # def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
-    #     # TODO: recurse and differentiate between union vs. intersection types
-    #     schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
-    #     if schema_type == "array":
-    #         items = schema.items
-    #         if isinstance(items, Reference):
-    #             ref_name = items.ref.split("/")[-1]
-    #             schema_type = f'"{ref_name}"'  # To be valid typescript
-    #         elif isinstance(items, Schema):
-    #             schema_type = APIProperty._cast_schema_list_type(items)
-    #         else:
-    #             raise ValueError(f"Unsupported array items: {items}")
-    #         if isinstance(schema_type, str):
-    #             # TODO: recurse
-    #             schema_type = (schema_type,)
-    #     elif schema_type == "object":
-    #         # TODO: Resolve array and object types to components.
-    #         raise NotImplementedError("Objects not yet supported")
-    #     elif schema_type in PRIMITIVE_TYPES:
-    #         if schema.enum:
-    #             param_name = f"{parameter.name}Enum"
-    #             return Enum(param_name, [str(v) for v in schema.enum])
-    #         else:
-    #             # Directly use the primitive type
-    #             pass
-    #     else:
-    #         raise NotImplementedError(f"Unsupported type: {schema_type}")
-    #     return schema_type
-
     @staticmethod
     def _validate_location(location: APIPropertyLocation) -> None:
         if location not in SUPPORTED_LOCATIONS:
@@ -213,41 +183,6 @@ class APIProperty(APIPropertyBase):
             required=parameter.required,
             type=schema_type,
         )
-
-    # @classmethod
-    # def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
-    #     """Instantiate from an OpenAPI Parameter."""
-    #     # TODO: Resolve array and object types to components.
-    #     location = APIPropertyLocation.from_str(parameter.param_in)
-    #     if location not in SUPPORTED_LOCATIONS:
-    #         raise NotImplementedError(
-    #             f'Unsupported APIPropertyLocation "{location}". '
-    #             f"Valid values are {SUPPORTED_LOCATIONS}"
-    #         )
-    #     if parameter.content:
-    #         raise ValueError(
-    #             "API Properties with media content not supported. "
-    #             "Media content only supported within APIRequestBodyProperty's"
-    #         )
-    #     schema = parameter.param_schema
-    #     if isinstance(schema, Reference):
-    #         schema = spec.get_referenced_schema(schema)
-    #     if schema is None:
-    #         schema_type = None
-    #     elif not isinstance(schema, Schema):
-    #         raise ValueError(f"Error dereferencing schema: {schema}")
-    #     else:
-    #         pass
-    #     schema_type = cls._get_schema_type(parameter, schema)
-    #     default_val = schema.default if schema is not None else None
-    #     return cls(
-    #         name=parameter.name,
-    #         location=location,
-    #         default=default_val,
-    #         description=parameter.description,
-    #         required=parameter.required,
-    #         type=schema_type,
-    #     )
 
 
 class APIRequestBodyProperty(APIPropertyBase):
