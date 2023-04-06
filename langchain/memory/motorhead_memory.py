@@ -32,7 +32,7 @@ class MotorheadMemory(BaseChatMemory):
         self.session_id = fields.session_id
         self.context = None
 
-    def init(self):
+    async def init(self):
         res = requests.get(f"{MOTORHEAD_URL}/sessions/{self.session_id}/memory", timeout=self.timeout, headers={"Content-Type": "application/json"})
         res_data = res.json()
         messages = res_data.get("messages", [])
