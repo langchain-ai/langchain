@@ -95,7 +95,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             "params": query_params,
         }
 
-    def _get_output(self, output: str, intermediate_steps: list) -> dict:
+    def _get_output(self, output: str, intermediate_steps: dict) -> dict:
         """Return the output from the API call."""
         if self.return_intermediate_steps:
             return {
