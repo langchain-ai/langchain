@@ -6,8 +6,20 @@ from typing import Iterable, List, Tuple
 
 import pytest
 import yaml
+from openapi_schema_pydantic import (
+    Components,
+    Info,
+    MediaType,
+    Reference,
+    RequestBody,
+    Schema,
+)
 
-from langchain.tools.openapi.utils.api_models import APIOperation
+from langchain.tools.openapi.utils.api_models import (
+    APIOperation,
+    APIRequestBody,
+    APIRequestBodyProperty,
+)
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
 _DIR = Path(__file__).parent
@@ -73,3 +85,112 @@ def test_parse_api_operations(
         APIOperation.from_openapi_spec(spec, path, method)
     except Exception as e:
         raise AssertionError(f"Error processong {spec_name}: {e} ") from e
+
+
+@pytest.fixture
+def raw_spec() -> OpenAPISpec:
+    """Return a raw OpenAPI spec."""
+    return OpenAPISpec(
+        info=Info(title="Test API", version="1.0.0"),
+    )
+
+
+def test_api_request_body_from_request_body_with_ref(raw_spec: OpenAPISpec) -> None:
+    """Test instantiating APIRequestBody from RequestBody with a reference."""
+    raw_spec.components = Components(
+        schemas={
+            "Foo": Schema(
+                type="object",
+                properties={
+                    "foo": Schema(type="string"),
+                    "bar": Schema(type="number"),
+                },
+                required=["foo"],
+            )
+        }
+    )
+    media_type = MediaType(
+        schema=Reference(
+            ref="#/components/schemas/Foo",
+        )
+    )
+    request_body = RequestBody(content={"application/json": media_type})
+    api_request_body = APIRequestBody.from_request_body(request_body, raw_spec)
+    assert api_request_body.description is None
+    assert len(api_request_body.properties) == 2
+    foo_prop = api_request_body.properties[0]
+    assert foo_prop.name == "foo"
+    assert foo_prop.required is True
+    bar_prop = api_request_body.properties[1]
+    assert bar_prop.name == "bar"
+    assert bar_prop.required is False
+    assert api_request_body.media_type == "application/json"
+
+
+def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -> None:
+    """Test instantiating APIRequestBody from RequestBody with a schema."""
+    request_body = RequestBody(
+        content={
+            "application/json": MediaType(
+                schema=Schema(type="object", properties={"foo": Schema(type="string")})
+            )
+        }
+    )
+    api_request_body = APIRequestBody.from_request_body(request_body, raw_spec)
+    assert api_request_body.properties == [
+        APIRequestBodyProperty(
+            name="foo",
+            required=False,
+            type="string",
+            default=None,
+            description=None,
+            properties=[],
+            references_used=[],
+        )
+    ]
+    assert api_request_body.media_type == "application/json"
+
+
+def test_api_request_body_property_from_schema(raw_spec: OpenAPISpec) -> None:
+    raw_spec.components = Components(
+        schemas={
+            "Bar": Schema(
+                type="number",
+            )
+        }
+    )
+    schema = Schema(
+        type="object",
+        properties={
+            "foo": Schema(type="string"),
+            "bar": Reference(ref="#/components/schemas/Bar"),
+        },
+        required=["bar"],
+    )
+    api_request_body_property = APIRequestBodyProperty.from_schema(
+        schema, "test", required=True, spec=raw_spec
+    )
+    expected_sub_properties = [
+        APIRequestBodyProperty(
+            name="foo",
+            required=False,
+            type="string",
+            default=None,
+            description=None,
+            properties=[],
+            references_used=[],
+        ),
+        APIRequestBodyProperty(
+            name="bar",
+            required=True,
+            type="number",
+            default=None,
+            description=None,
+            properties=[],
+            references_used=["Bar"],
+        ),
+    ]
+    assert api_request_body_property.properties[0] == expected_sub_properties[0]
+    assert api_request_body_property.properties[1] == expected_sub_properties[1]
+    assert api_request_body_property.type == "object"
+    assert api_request_body_property.properties[1].references_used == ["Bar"]
