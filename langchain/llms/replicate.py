@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
@@ -10,7 +10,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class Replicate(LLM, BaseModel):
+class Replicate(LLM):
     """Wrapper around Replicate models.
 
     To use, you should have the ``replicate`` python package installed,

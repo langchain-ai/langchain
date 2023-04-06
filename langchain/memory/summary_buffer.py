@@ -1,13 +1,13 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
 from langchain.schema import BaseMessage, get_buffer_string
 
 
-class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin, BaseModel):
+class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     """Buffer with summarizer for storing conversation memory."""
 
     max_token_limit: int = 2000

@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -113,7 +113,7 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-class BaseOpenAI(BaseLLM, BaseModel):
+class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -534,7 +534,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
 
-class OpenAIChat(BaseLLM, BaseModel):
+class OpenAIChat(BaseLLM):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the

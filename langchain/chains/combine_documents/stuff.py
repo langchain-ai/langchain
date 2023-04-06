@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -15,7 +15,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context."""
 
     llm_chain: LLMChain

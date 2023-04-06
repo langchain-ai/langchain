@@ -19,9 +19,7 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     REQUESTS_GET_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
 )
-from langchain.agents.agent_toolkits.openapi.spec import (
-    ReducedOpenAPISpec,
-)
+from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain

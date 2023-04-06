@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -59,7 +59,7 @@ def _collapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
-class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then combining results."""
 
     llm_chain: LLMChain

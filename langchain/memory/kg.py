@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Type, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.graphs import NetworkxEntityGraph
@@ -20,7 +20,7 @@ from langchain.schema import (
 )
 
 
-class ConversationKGMemory(BaseChatMemory, BaseModel):
+class ConversationKGMemory(BaseChatMemory):
     """Knowledge graph memory for storing conversation memory.
 
     Integrates with external knowledge graph to store and retrieve

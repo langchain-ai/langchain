@@ -2,8 +2,6 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
@@ -11,7 +9,7 @@ from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]

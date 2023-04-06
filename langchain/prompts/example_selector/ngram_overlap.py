@@ -20,8 +20,8 @@ def ngram_overlap_score(source: List[str], example: List[str]) -> float:
     https://www.nltk.org/_modules/nltk/translate/bleu_score.html
     https://aclanthology.org/P02-1040.pdf
     """
-    from nltk.translate.bleu_score import (  # type: ignore
-        SmoothingFunction,
+    from nltk.translate.bleu_score import (
+        SmoothingFunction,  # type: ignore
         sentence_bleu,
     )
 

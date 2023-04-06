@@ -5,7 +5,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -18,7 +18,7 @@ from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class BaseRetrievalQA(Chain, BaseModel):
+class BaseRetrievalQA(Chain):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -143,7 +143,7 @@ class BaseRetrievalQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class RetrievalQA(BaseRetrievalQA, BaseModel):
+class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
     Example:
@@ -166,7 +166,7 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
         return await self.retriever.aget_relevant_documents(question)
 
 
-class VectorDBQA(BaseRetrievalQA, BaseModel):
+class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
     vectorstore: VectorStore = Field(exclude=True, alias="vectorstore")
