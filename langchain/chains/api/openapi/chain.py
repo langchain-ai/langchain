@@ -32,6 +32,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
+    return_intermediate_steps: bool = False
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
 
@@ -49,7 +50,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
         :meta private:
         """
-        return [self.output_key]
+        if not self.return_intermediate_steps:
+            return [self.output_key]
+        else:
+            return [self.output_key, "intermediate_steps"]
 
     def _construct_path(self, args: Dict[str, str]) -> str:
         """Construct the path from the deserialized input."""
@@ -91,16 +95,33 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             "params": query_params,
         }
 
+    def _get_output(self, output: str, intermediate_steps: list) -> dict:
+        """Return the output from the API call."""
+        if self.return_intermediate_steps:
+            return {
+                self.output_key: output,
+                "intermediate_steps": intermediate_steps,
+            }
+        else:
+            return {self.output_key: output}
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        intermediate_steps = []
         instructions = inputs[self.instructions_key]
         _api_arguments = self.api_request_chain.predict_and_parse(
             instructions=instructions
         )
         api_arguments = cast(str, _api_arguments)
+        intermediate_steps.append(api_arguments)
+        self.callback_manager.on_text(
+            api_arguments, color="green", end="\n", verbose=self.verbose
+        )
         if api_arguments.startswith("ERROR"):
-            return {self.output_key: api_arguments}
+            return self._get_output(api_arguments, intermediate_steps)
         elif api_arguments.startswith("MESSAGE:"):
-            return {self.output_key: api_arguments[len("MESSAGE:") :]}
+            return self._get_output(
+                api_arguments[len("MESSAGE:") :], intermediate_steps
+            )
         try:
             request_args = self.deserialize_json_input(api_arguments)
             method = getattr(self.requests, self.api_operation.method.value)
@@ -116,6 +137,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
                 response_text = api_response.text
         except Exception as e:
             response_text = f"Error with message {str(e)}"
+        intermediate_steps.append(response_text)
+        self.callback_manager.on_text(
+            response_text, color="blue", end="\n", verbose=self.verbose
+        )
         _answer = self.api_response_chain.predict_and_parse(
             response=response_text,
             instructions=instructions,
@@ -124,7 +149,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         self.callback_manager.on_text(
             answer, color="yellow", end="\n", verbose=self.verbose
         )
-        return {self.output_key: answer}
+        return self._get_output(answer, intermediate_steps)
 
     @classmethod
     def from_url_and_method(
@@ -134,6 +159,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         method: str,
         llm: BaseLLM,
         requests: Optional[Requests] = None,
+        return_intermediate_steps: bool = False,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -142,6 +168,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             operation,
             requests=requests,
             llm=llm,
+            return_intermediate_steps=return_intermediate_steps,
         )
 
     @classmethod
@@ -150,7 +177,8 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         operation: APIOperation,
         llm: BaseLLM,
         requests: Optional[Requests] = None,
-        verbose: bool = False
+        verbose: bool = False,
+        return_intermediate_steps: bool = False,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
@@ -171,4 +199,5 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             requests=_requests,
             param_mapping=param_mapping,
             verbose=verbose,
+            return_intermediate_steps=return_intermediate_steps,
         )
