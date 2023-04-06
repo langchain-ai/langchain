@@ -41,11 +41,11 @@ Here are endpoints you can use. Do not reference any of the endpoints above.
 User query: {query}
 Plan:"""
 API_PLANNER_TOOL_NAME = "api_planner"
-API_PLANNER_TOOL_DESCRIPTION = f"Can be used to generate the right API calls to assist with a user query, like {API_PLANNER_TOOL_NAME}(query). Should always be called before trying to calling the API controller."
+API_PLANNER_TOOL_DESCRIPTION = f"Can be used to generate the right API calls to assist with a user query, like {API_PLANNER_TOOL_NAME}(query). Should always be called before trying to call the API controller."
 
 # Execution.
 API_CONTROLLER_PROMPT = """You are an agent that gets a sequence of API calls and given their documentation, should execute them and return the final response.
-If you cannot complete them and run into issues, you should explain the issue. If you're able to resolve an API call call, you can retry the API call. When interacting with API objects, you should extract ids for inputs to other API calls but ids and names for outputs returned to the User.
+If you cannot complete them and run into issues, you should explain the issue. If you're able to resolve an API call, you can retry the API call. When interacting with API objects, you should extract ids for inputs to other API calls but ids and names for outputs returned to the User.
 
 
 Here is documentation on the API:
@@ -124,8 +124,8 @@ Thought: I should generate a plan to help with this query and then copy that pla
 {agent_scratchpad}"""
 
 REQUESTS_GET_TOOL_DESCRIPTION = """Use this to GET content from a website.
-Input to the tool should be a json string with 2 keys: "url" and "output_instructions".
-The value of "url" should be a string. The value of "output_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the GET request fetches.
+Input to the tool should be a json string with 3 keys: "url", "params" and "output_instructions".
+The value of "url" should be a string. The value of "params" should be a dict and left empty if not needed. The value of "output_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the GET request fetches.
 """
 
 PARSING_GET_PROMPT = PromptTemplate(
