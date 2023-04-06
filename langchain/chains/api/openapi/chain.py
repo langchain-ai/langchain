@@ -95,7 +95,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             "params": query_params,
         }
 
-    def _get_output(self, output: str, intermediate_steps: list) -> dict:
+    def _get_output(self, output: str, intermediate_steps: dict) -> dict:
         """Return the output from the API call."""
         if self.return_intermediate_steps:
             return {
@@ -106,13 +106,13 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             return {self.output_key: output}
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        intermediate_steps = []
+        intermediate_steps = {}
         instructions = inputs[self.instructions_key]
         _api_arguments = self.api_request_chain.predict_and_parse(
             instructions=instructions
         )
         api_arguments = cast(str, _api_arguments)
-        intermediate_steps.append(api_arguments)
+        intermediate_steps["request_args"] = api_arguments
         self.callback_manager.on_text(
             api_arguments, color="green", end="\n", verbose=self.verbose
         )
@@ -137,7 +137,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
                 response_text = api_response.text
         except Exception as e:
             response_text = f"Error with message {str(e)}"
-        intermediate_steps.append(response_text)
+        intermediate_steps["response_text"] = response_text
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
         )
