@@ -141,8 +141,34 @@ class OpenAPISpec(OpenAPI):
             request_body = self._get_referenced_request_body(request_body)
         return request_body
 
+    @staticmethod
+    def _alert_unsupported_spec(obj: dict) -> None:
+        """Alert if the spec is not supported."""
+        warning_message = (
+            " This may result in incompletely parsed information."
+            + " Please convert your spec to a valid OpenAPI 3.1.* spec"
+            + " for best results."
+        )
+        swagger_version = obj.get("swagger")
+        openapi_version = obj.get("openapi")
+        if isinstance(openapi_version, str) and openapi_version.startswith("3.1"):
+            pass
+        elif isinstance(swagger_version, str):
+            logger.warning(
+                f"Attempting to load a Swagger {swagger_version} spec. "
+                + warning_message
+            )
+        elif isinstance(openapi_version, str):
+            logger.warning(
+                f"Attempting to load an OpenAPI {openapi_version} spec. "
+                + warning_message
+            )
+        else:
+            raise ValueError(f"Unsupported spec:\n\n{spec}\n" + warning_messages)
+
     @classmethod
-    def parse_obj(cls, obj: Any) -> "OpenAPISpec":
+    def parse_obj(cls, obj: dict) -> "OpenAPISpec":
+        cls._alert_unsupported_spec(obj)
         try:
             return super().parse_obj(obj)
         except ValidationError as e:
