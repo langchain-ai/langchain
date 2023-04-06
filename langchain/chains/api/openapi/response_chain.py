@@ -6,31 +6,9 @@ import re
 import json5
 
 from langchain import LLMChain, PromptTemplate
+from langchain.chains.api.openapi.prompts import RESPONSE_TEMPLATE
 from langchain.llms.base import BaseLLM
 from langchain.schema import BaseOutputParser
-
-response_template = """You are a helpful AI assistant trained to answer user queries from API responses.
-You attempted to call an API, which resulted in:
-API_RESPONSE: {response}
-
-USER_COMMENT: "{instructions}"
-
-
-If the API_RESPONSE can answer the USER_COMMENT respond with the following markdown json block:
-Response: ```json
-{{"response": "Concise response to USER_COMMENT based on API_RESPONSE."}}
-```
-
-Otherwise respond with the following markdown json block:
-Response Error: ```json
-{{"response": "What you did and a concise statement of the resulting error. If it can be easily fixed, provide a suggestion."}}
-```
-
-You MUST respond as a markdown json code block.
-
-Begin:
----
-"""
 
 
 class APIResponderOutputParser(BaseOutputParser):
@@ -59,7 +37,7 @@ class APIResponderChain(LLMChain):
         """Get the response parser."""
         output_parser = APIResponderOutputParser()
         prompt = PromptTemplate(
-            template=response_template,
+            template=RESPONSE_TEMPLATE,
             output_parser=output_parser,
             input_variables=["response", "instructions"],
         )

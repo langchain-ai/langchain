@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, cast
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -81,7 +81,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         return body_params
 
     def deserialize_json_input(self, serialized_args: str) -> dict:
-        """Use the serialized typescript dictionary to resolve the path, query params dict, and optional requestBody dict."""
+        """Use the serialized typescript dictionary.
+
+        Resolve the path, query params dict, and optional requestBody dict.
+        """
         args: dict = json.loads(serialized_args)
         path = self._construct_path(args)
         body_params = self._extract_body_params(args)
@@ -94,9 +97,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         instructions = inputs[self.instructions_key]
-        api_arguments = self.api_request_chain.predict_and_parse(
+        _api_arguments = self.api_request_chain.predict_and_parse(
             instructions=instructions
         )
+        api_arguments = cast(str, _api_arguments)
         if api_arguments.startswith("ERROR"):
             return {self.output_key: api_arguments}
         elif api_arguments.startswith("MESSAGE:"):
@@ -116,10 +120,11 @@ class OpenAPIEndpointChain(Chain, BaseModel):
                 response_text = api_response.text
         except Exception as e:
             response_text = f"Error with message {str(e)}"
-        answer = self.api_response_chain.predict_and_parse(
+        _answer = self.api_response_chain.predict_and_parse(
             response=response_text,
             instructions=instructions,
         )
+        answer = cast(str, _answer)
         self.callback_manager.on_text(
             answer, color="yellow", end="\n", verbose=self.verbose
         )
@@ -174,34 +179,3 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             requests=requests,
             param_mapping=param_mapping,
         )
-
-
-# %%
-# CACHED_OPENAPI_SPECS = [
-#     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/spotify.com/1.0.0/openapi.yaml",
-#     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/xkcd.com/1.0.0/openapi.yaml",
-#     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/notion.com/1.0.0/openapi.yaml",
-#     "https://raw.githubusercontent.com/APIs-guru/openapi-directory/main/APIs/twitter.com/current/2.61/openapi.yaml",
-# ]
-from langchain.llms import Anthropic
-
-# llm = OpenAI()
-llm = Anthropic()
-requests = Requests()
-method = "delete"
-twitter_url = "http://127.0.0.1:7289/openapi.json"
-path = "/recycle"
-chain = OpenAPIEndpointChain.from_url_and_method(
-    spec_url=twitter_url,
-    path=path,
-    method=method,
-    requests=requests,
-    llm=llm,
-)
-
-# %%
-print(chain("Please hide."))
-
-# %%
-chain.url
-# %%
