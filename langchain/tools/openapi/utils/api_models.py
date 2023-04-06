@@ -15,7 +15,6 @@ PRIMITIVE_TYPES = {
     "boolean": bool,
     "array": List,
     "object": Dict,
-    "date-time": str,
     "null": None,
 }
 
@@ -266,7 +265,9 @@ class APIOperation(BaseModel):
     @staticmethod
     def ts_type_from_python(type_: SCHEMA_TYPE) -> str:
         if type_ is None:
-            return "null"
+            # TODO: Handle Nones better. These often result when
+            # parsing specs that are < v3
+            return "any"
         elif isinstance(type_, str):
             return {
                 "str": "string",
