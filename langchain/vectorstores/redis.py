@@ -36,6 +36,23 @@ def _check_redis_module_exist(client: RedisType, modules: List[dict]):
             raise ValueError(error_message)
 
 
+def _check_index_exists(client, index_name: str) -> bool:
+    try:
+        client.ft(index_name).info()
+    except:
+        logger.info("Index does not exist")
+        return False
+    logger.info("Index already exists")
+    return True
+
+
+def _redis_key(prefix: str) -> str:
+    return f"{prefix}:{uuid.uuid4().hex}"
+
+
+def _redis_prefix(index_name: str) -> str:
+    return f"doc:{index_name}"
+
 class Redis(VectorStore):
     def __init__(
         self,
@@ -71,15 +88,14 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        # `prefix`: Maybe in the future we can let the user choose the index_name.
-        prefix = "doc"  # prefix for the document keys
+        """Add text data to an existing index."""
+        prefix = _redis_prefix(self.index_name)
         keys = kwargs.get("keys")
-
         ids = []
         # Check if index exists
         for i, text in enumerate(texts):
-            _key = keys[i] if keys else self.index_name
-            key = f"{prefix}:{_key}"
+            # Use provided key otherwise use default key
+            key = keys[i] if keys else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             self.client.hset(
                 key,
@@ -226,55 +242,49 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
+            # check if redis has redisearch module installed
+            _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
         except ValueError as e:
-            raise ValueError(f"Your redis connected error: {e}")
+            raise ValueError(f"Redis failed to connect: {e}")
 
-        # check if redis add redisearch module
-        if not _check_redis_module_exist(client, "search"):
-            raise ValueError(
-                "Could not use redis directly, you need to add search module"
-                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
-            )
-
+        # Create embeddings over documents
         embeddings = embedding.embed_documents(texts)
-        dim = len(embeddings[0])
-        # Constants
-        vector_number = len(embeddings)  # initial number of vectors
-        # name of the search index if not given
+
+        # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
-        prefix = f"doc:{index_name}"  # prefix for the document keys
-        distance_metric = (
-            "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-        )
-        content = TextField(name="content")
-        metadata = TextField(name="metadata")
-        content_embedding = VectorField(
-            "content_vector",
-            "FLAT",
-            {
-                "TYPE": "FLOAT32",
-                "DIM": dim,
-                "DISTANCE_METRIC": distance_metric,
-                "INITIAL_CAP": vector_number,
-            },
-        )
-        fields = [content, metadata, content_embedding]
+        prefix = _redis_prefix(index_name)  # prefix for the document keys
 
         # Check if index exists
-        try:
-            client.ft(index_name).info()
-            logger.info("Index already exists")
-        except:  # noqa
+        if not _check_index_exists(client, index_name):
+            # Constants
+            dim = len(embeddings[0])
+            distance_metric = (
+                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
+            )
+            schema = (
+                TextField(name="content"),
+                TextField(name="metadata"),
+                VectorField(
+                    "content_vector",
+                    "FLAT",
+                    {
+                        "TYPE": "FLOAT32",
+                        "DIM": dim,
+                        "DISTANCE_METRIC": distance_metric,
+                    },
+                )
+            )
             # Create Redis Index
             client.ft(index_name).create_index(
-                fields=fields,
+                fields=schema,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
 
+        # Write data to Redis
         pipeline = client.pipeline()
         for i, text in enumerate(texts):
-            key = f"{prefix}:{i}"
+            key = _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
             pipeline.hset(
                 key,
@@ -339,15 +349,12 @@ class Redis(VectorStore):
             # otherwise passing it to Redis will result in an error.
             kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
-        except ValueError as e:
-            raise ValueError(f"Your redis connected error: {e}")
-
-        # check if redis add redisearch module
-        if not _check_redis_module_exist(client, "search"):
-            raise ValueError(
-                "Could not use redis directly, you need to add search module"
-                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
-            )
+            # check if redis has redisearch module installed
+            _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
+            # ensure that the index already exists
+            assert _check_index_exists(client, index_name), f"Index {index_name} does not exist"
+        except Exception as e:
+            raise ValueError(f"Redis failed to connect: {e}")
 
         return cls(redis_url, index_name, embedding.embed_query)
 
