@@ -5,7 +5,7 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 import yaml
@@ -17,6 +17,7 @@ from openapi_schema_pydantic import (
     PathItem,
     Paths,
     Reference,
+    RequestBody,
     Schema,
 )
 from pydantic import ValidationError
@@ -83,6 +84,14 @@ class OpenAPISpec(OpenAPI):
             raise ValueError("No schemas found in spec. ")
         return schemas
 
+    @property
+    def _request_bodies_strict(self) -> Dict[str, Union[RequestBody, Reference]]:
+        """Get the request body or err."""
+        request_bodies = self._components_strict.requestBodies
+        if request_bodies is None:
+            raise ValueError("No request body found in spec. ")
+        return request_bodies
+
     def _get_referenced_parameter(self, ref: Reference) -> Union[Parameter, Reference]:
         """Get a parameter (or nested reference) or err."""
         ref_name = ref.ref.split("/")[-1]
@@ -112,6 +121,25 @@ class OpenAPISpec(OpenAPI):
         while isinstance(schema, Reference):
             schema = self.get_referenced_schema(schema)
         return schema
+
+    def _get_referenced_request_body(
+        self, ref: Reference
+    ) -> Optional[Union[Reference, RequestBody]]:
+        """Get a request body (or nested reference) or err."""
+        ref_name = ref.ref.split("/")[-1]
+        request_bodies = self._request_bodies_strict
+        if ref_name not in request_bodies:
+            raise ValueError(f"No request body found for {ref_name}")
+        return request_bodies[ref_name]
+
+    def _get_root_referenced_request_body(
+        self, ref: Reference
+    ) -> Optional[RequestBody]:
+        """Get the root request Body or err."""
+        request_body = self._get_referenced_request_body(ref)
+        while isinstance(request_body, Reference):
+            request_body = self._get_referenced_request_body(request_body)
+        return request_body
 
     @classmethod
     def parse_obj(cls, obj: Any) -> "OpenAPISpec":
@@ -190,6 +218,15 @@ class OpenAPISpec(OpenAPI):
                     parameter = self._get_root_referenced_parameter(parameter)
                 parameters.append(parameter)
         return parameters
+
+    def get_request_body_for_operation(
+        self, operation: Operation
+    ) -> Optional[RequestBody]:
+        """Get the request body for a given operation."""
+        request_body = operation.requestBody
+        if isinstance(request_body, Reference):
+            request_body = self._get_root_referenced_request_body(request_body)
+        return request_body
 
     @staticmethod
     def get_cleaned_operation_id(operation: Operation, path: str, method: str) -> str:
