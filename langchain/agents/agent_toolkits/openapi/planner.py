@@ -31,6 +31,7 @@ from langchain.requests import RequestsWrapper
 from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.requests.tool import BaseRequestsTool
+from langchain.memory import ReadOnlySharedMemory
 
 #
 # Requests tools with LLM-instructed extraction of truncated responses.
@@ -185,6 +186,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    shared_memory: ReadOnlySharedMemory,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -209,7 +211,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt),
+        llm_chain=LLMChain(llm=llm, prompt=prompt, memory = shared_memory),
         allowed_tools=[tool.name for tool in tools],
     )
     return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
