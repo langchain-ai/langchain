@@ -56,12 +56,12 @@ class Redis(VectorStore):
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
+            # connect to redis from url
             redis_client = redis.from_url(redis_url, **kwargs)
+            # check if redis has redisearch module installed
+            _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
         except ValueError as e:
-            raise ValueError(f"Your redis connected error: {e}")
-
-        # check if redis has redisearch module installed
-        _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
+            raise ValueError(f"Redis failed to connect: {e}")
 
         self.client = redis_client
 
