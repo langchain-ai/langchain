@@ -106,7 +106,7 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     @validator("llm_chain")
     def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
-         if llm_chain.prompt.input_variables != ["tool_input", "tables", "schemas"]:
+        if llm_chain.prompt.input_variables != ["tool_input", "tables", "schemas"]:
             raise ValueError(
                 "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas']"
             )
