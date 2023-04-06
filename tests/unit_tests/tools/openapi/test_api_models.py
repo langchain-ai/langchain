@@ -145,6 +145,7 @@ def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -
             default=None,
             description=None,
             properties=[],
+            references_used=[],
         )
     ]
     assert api_request_body.media_type == "application/json"
