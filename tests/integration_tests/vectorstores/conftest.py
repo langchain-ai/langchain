@@ -1,20 +1,19 @@
 import os
+from typing import Generator, List
 
 import pytest
 
-ABS_PATH = os.path.dirname(os.path.abspath(__file__))
+from langchain.document_loaders import TextLoader
+from langchain.schema import Document
+from langchain.text_splitter import CharacterTextSplitter
 
 
 @pytest.fixture(scope="module")
-def vcr_cassette_dir(request):
-    # Put all the cassettes in a directory named 'vhs' in the same directory as the test file
-    return os.path.join(
-        "vhs", ABS_PATH, request.module.__name__, request.function.__name__ + ".yaml"
-    )
+def documents() -> Generator[List[Document], None, None]:
+    """Return a generator that yields a list of documents."""
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "filter_headers": [("authorization", "DUMMY")],
-    }
+    documents = TextLoader(
+        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
+    ).load()
+    yield text_splitter.split_documents(documents)

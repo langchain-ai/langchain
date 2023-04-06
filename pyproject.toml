@@ -89,6 +89,7 @@ optional = true
 [tool.poetry.group.test_integration.dependencies]
 openai = "^0.27.4"
 elasticsearch = {extras = ["async"], version = "^8.6.2"}
+pytest-vcr = "^1.0.2"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
