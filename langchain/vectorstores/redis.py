@@ -19,8 +19,21 @@ from langchain.vectorstores.base import VectorStore
 logger = logging.getLogger()
 
 
-def _check_redis_module_exist(client: RedisType, module: str) -> bool:
-    return module in [m["name"] for m in client.info().get("modules", {"name": ""})]
+# required modules
+REDIS_REQUIRED_MODULES = [
+    {"name": "search", "ver": 20400},
+]
+
+
+def _check_redis_module_exist(client: RedisType, modules: List[dict]):
+    installed_modules = client.info().get("modules", [])
+    installed_modules = {module["name"]: module for module in installed_modules}
+    for module in modules:
+        if module["name"] not in installed_modules or int(installed_modules[module["name"]]["ver"]) < int(module["ver"]):
+            error_message =  "You must add the RediSearch (>= 2.4) module from Redis Stack. " \
+                "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+            logging.error(error_message)
+            raise ValueError(error_message)
 
 
 class Redis(VectorStore):
@@ -47,12 +60,8 @@ class Redis(VectorStore):
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
 
-        # check if redis add redisearch module
-        if not _check_redis_module_exist(redis_client, "search"):
-            raise ValueError(
-                "Could not use redis directly, you need to add search module"
-                "Please refer [RediSearch](https://redis.io/docs/stack/search/quick_start/)"  # noqa
-            )
+        # check if redis has redisearch module installed
+        _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
 
         self.client = redis_client
 
