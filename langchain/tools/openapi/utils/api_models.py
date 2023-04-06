@@ -95,8 +95,7 @@ class APIProperty(APIPropertyBase):
     def _get_schema_type_for_enum(parameter: Parameter, schema: Schema) -> Enum:
         """Get the schema type when the parameter is an enum."""
         param_name = f"{parameter.name}Enum"
-        enumy = schema.enum + ["anotherone", "soocool"]
-        return Enum(param_name, {str(v): v for v in enumy})
+        return Enum(param_name, {str(v): v for v in schema.enum})
 
     @staticmethod
     def _get_schema_type_for_array(
