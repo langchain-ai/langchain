@@ -8,8 +8,9 @@ This repository contains functional tests for several search engines and databas
 tests aim to verify the correct behavior of the engines and databases according to their
 specifications and requirements.
 
-To run some integration tests, such as tests located in `vectorstores`,
-you will need to install the following software:
+To run some integration tests, such as tests located in
+`tests/integration_tests/vectorstores/`, you will need to install the following
+software:
 
 - Docker
 - Python 3.8 or later
