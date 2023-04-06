@@ -154,9 +154,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
+        operation.request_body.ro
         param_mapping = _ParamMapping(
             query_params=operation.query_params,
-            body_params=[],  # TODO
+            body_params=operation.body_params,
             path_params=operation.path_params,
         )
         requests_chain = APIRequesterChain.from_llm_and_typescript(

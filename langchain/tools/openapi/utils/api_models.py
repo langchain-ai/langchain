@@ -572,3 +572,9 @@ type {operation_name} = (_: {{
             for property in self.properties
             if property.location == APIPropertyLocation.PATH
         ]
+
+    @property
+    def body_params(self) -> List[str]:
+        if self.request_body is None:
+            return []
+        return [prop.name for prop in self.request_body.properties]
