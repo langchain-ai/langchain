@@ -39,7 +39,7 @@ def create_pbi_agent(
     llm_chain = LLMChain(
         llm=llm,
         prompt=prompt,
-        callback_manager=callback_manager,
+        callback_manager=callback_manager,  # type: ignore
     )
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)

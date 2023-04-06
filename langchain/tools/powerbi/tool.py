@@ -1,6 +1,6 @@
 # flake8: noqa
 """Tools for interacting with a Power BI dataset."""
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator  # pylint: disable=E0611
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
@@ -74,7 +74,7 @@ class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
     name = "list_tables_powerbi"
-    description = "Input is an empty string, output is a comma separated list of tables in the database."
+    description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
 
     def _run(self, tool_input: str = "") -> str:
         """Get the schema for a specific table."""
@@ -91,7 +91,7 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     template: str = QUESTION_TO_QUERY
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),
+            llm=OpenAI(temperature=0),  # type: ignore
             prompt=PromptTemplate(
                 template=QUESTION_TO_QUERY,
                 input_variables=["tool_input", "tables", "schemas"],
@@ -104,11 +104,13 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     """
 
     @validator("llm_chain")
-    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
+    def validate_llm_chain_input_variables(  # pylint: disable=E0213
+        cls, llm_chain: LLMChain
+    ) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
         if llm_chain.prompt.input_variables != ["tool_input", "tables", "schemas"]:
             raise ValueError(
-                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas']"
+                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas']"  # noqa: C0301 # pylint: disable=C0301
             )
         return llm_chain
 
@@ -135,7 +137,7 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
     template: str = QUERY_CHECKER
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),
+            llm=OpenAI(temperature=0),  # type: ignore
             prompt=PromptTemplate(
                 template=QUERY_CHECKER, input_variables=["tool_input"]
             ),
@@ -148,7 +150,9 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
     """
 
     @validator("llm_chain")
-    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
+    def validate_llm_chain_input_variables(  # pylint: disable=E0213
+        cls, llm_chain: LLMChain
+    ) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
         if llm_chain.prompt.input_variables != ["tool_input"]:
             raise ValueError(

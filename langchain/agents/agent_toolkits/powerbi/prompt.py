@@ -1,4 +1,6 @@
 # flake8: noqa
+"""Prompts for PowerBI agent."""
+
 
 POWERBI_PREFIX = """You are an agent designed to interact with a Power BI Dataset.
 Given an input question, create a syntactically correct DAX query to run, then look at the results of the query and return the answer.
@@ -14,5 +16,5 @@ If the question does not seem related to the dataset, just return "I don't know"
 POWERBI_SUFFIX = """Begin!
 
 Question: {input}
-Thought: I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it.
+Thought: I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a nice sentence that answers the question.
 {agent_scratchpad}"""
