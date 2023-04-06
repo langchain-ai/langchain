@@ -82,7 +82,7 @@ API_CONTROLLER_TOOL_DESCRIPTION = f"Can be used to execute a plan of API calls, 
 # The goal is to have an agent at the top-level (e.g. so it can recover from errors and re-plan) while
 # keeping planning (and specifically the planning prompt) simple.
 API_ORCHESTRATOR_PROMPT = """You are an agent that assists with user queries against API, things like querying information or creating resources.
-Some user queries can be resolved in a single API call though some require several API call.
+Some user queries can be resolved in a single API call, particularly if you can find appropriate params from the OpenAPI spec; though some require several API call.
 You should always plan your API calls first, and then execute the plan second.
 You should never return information without executing the api_controller tool.
 
@@ -107,12 +107,12 @@ User query: can you add some trendy stuff to my shopping cart.
 Thought: I should plan API calls first.
 Action: api_planner
 Action Input: I need to find the right API calls to add trendy items to the users shopping cart
-Observation: 1) GET /items/trending to get trending item ids
+Observation: 1) GET /items with params = {'trending':'True'} to get trending item ids
 2) GET /user to get user
 3) POST /cart to post the trending items to the user's cart
 Thought: I'm ready to execute the API calls.
 Action: api_controller
-Action Input: 1) GET /items/trending to get trending item ids
+Action Input: 1) GET /items params = {'trending':'True'} to get trending item ids
 2) GET /user to get user
 3) POST /cart to post the trending items to the user's cart
 ...
@@ -125,7 +125,11 @@ Thought: I should generate a plan to help with this query and then copy that pla
 
 REQUESTS_GET_TOOL_DESCRIPTION = """Use this to GET content from a website.
 Input to the tool should be a json string with 3 keys: "url", "params" and "output_instructions".
-The value of "url" should be a string. The value of "params" should be a dict and left empty if not needed. The value of "output_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the GET request fetches.
+The value of "url" should be a string. 
+The value of "params" should be a dict of the needed and available parameters from the OpenAPI spec related to the endpoint. 
+If parameters are not needed, or not available, leave it empty.
+The value of "output_instructions" should be instructions on what information to extract from the response, 
+for example the id(s) for a resource(s) that the GET request fetches.
 """
 
 PARSING_GET_PROMPT = PromptTemplate(
