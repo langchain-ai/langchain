@@ -172,8 +172,8 @@ class OpenAPISpec(OpenAPI):
 
     @classmethod
     def parse_obj(cls, obj: dict) -> "OpenAPISpec":
-        cls._alert_unsupported_spec(obj)
         try:
+            cls._alert_unsupported_spec(obj)
             return super().parse_obj(obj)
         except ValidationError as e:
             # We are handling possibly misconfigured specs and want to do a best-effort
