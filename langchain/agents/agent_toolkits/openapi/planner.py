@@ -190,7 +190,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-    shared_memory: ReadOnlySharedMemory,
+    shared_memory: ReadOnlySharedMemory = None,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
