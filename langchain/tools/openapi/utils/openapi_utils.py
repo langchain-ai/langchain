@@ -145,8 +145,9 @@ class OpenAPISpec(OpenAPI):
     def _alert_unsupported_spec(obj: dict) -> None:
         """Alert if the spec is not supported."""
         warning_message = (
-            " This will likely result in unsupported behavior."
-            + " Please convert your spec to a valid OpenAPI 3.1.* spec."
+            " This may result in degraded performance."
+            + " Convert your OpenAPI spec to 3.1.* spec"
+            + " for better support."
         )
         swagger_version = obj.get("swagger")
         openapi_version = obj.get("openapi")
