@@ -193,7 +193,7 @@ class APIRequestBodyProperty(APIPropertyBase):
 
     # This is useful for handling nested property cycles.
     # We can define separate types in that case.
-    references_used: List[str] = Field(alias="referencesUsed", default_factory=list)
+    references_used: List[str] = Field(alias="references_used")
     """The references used by the property."""
 
     @classmethod

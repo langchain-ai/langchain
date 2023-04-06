@@ -148,3 +148,48 @@ def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -
         )
     ]
     assert api_request_body.media_type == "application/json"
+
+
+def test_api_request_body_property_from_schema(raw_spec: OpenAPISpec) -> None:
+    raw_spec.components = Components(
+        schemas={
+            "Bar": Schema(
+                type="number",
+            )
+        }
+    )
+    schema = Schema(
+        type="object",
+        properties={
+            "foo": Schema(type="string"),
+            "bar": Reference(ref="#/components/schemas/Bar"),
+        },
+        required=["bar"],
+    )
+    api_request_body_property = APIRequestBodyProperty.from_schema(
+        schema, "test", required=True, spec=raw_spec
+    )
+    expected_sub_properties = [
+        APIRequestBodyProperty(
+            name="foo",
+            required=False,
+            type="string",
+            default=None,
+            description=None,
+            properties=[],
+            references_used=[],
+        ),
+        APIRequestBodyProperty(
+            name="bar",
+            required=True,
+            type="number",
+            default=None,
+            description=None,
+            properties=[],
+            references_used=["Bar"],
+        ),
+    ]
+    assert api_request_body_property.properties[0] == expected_sub_properties[0]
+    assert api_request_body_property.properties[1] == expected_sub_properties[1]
+    assert api_request_body_property.type == "object"
+    assert api_request_body_property.properties[1].references_used == ["Bar"]
