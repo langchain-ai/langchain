@@ -2,6 +2,7 @@
 import copy
 import json
 import logging
+import re
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -189,3 +190,13 @@ class OpenAPISpec(OpenAPI):
                     parameter = self._get_root_referenced_parameter(parameter)
                 parameters.append(parameter)
         return parameters
+
+    @staticmethod
+    def get_cleaned_operation_id(operation: Operation, path: str, method: str) -> str:
+        """Get a cleaned operation id from an operation id."""
+        operation_id = operation.operationId
+        if operation_id is None:
+            # Replace all punctuation of any kind with underscore
+            path = re.sub(r"[^a-zA-Z0-9]", "_", path.lstrip("/"))
+            operation_id = f"{path}_{method}"
+        return operation_id.replace("-", "_").replace(".", "_").replace("/", "_")
