@@ -21,20 +21,19 @@ class PowerBIDataset:
         table_names: list[str],
         credential: ChainedTokenCredential | InteractiveCredential,
         sample_rows_in_table_info: int = 1,
-        schemas: dict[str, str] = {},
     ):
         """Create engine from database URI."""
         self._group_id = group_id
         self._dataset_id = dataset_id
         self._table_names = table_names
-        self._schemas = schemas
+        self._schemas = {}
         if sample_rows_in_table_info < 1:
             raise ValueError("sample_rows_in_table_info must be >= 1")
         self._sample_rows_in_table_info = sample_rows_in_table_info
         self._credential = credential
-        self.request_url = f"https://api.powerbi.com/v1.0/myorg/datasets/{self._dataset_id}/executeQueries"
+        self.request_url = f"https://api.powerbi.com/v1.0/myorg/datasets/{self._dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
         if self._group_id:
-            self.request_url = f"https://api.powerbi.com/v1.0/myorg/groups/{self._group_id}/datasets/{self._dataset_id}/executeQueries"
+            self.request_url = f"https://api.powerbi.com/v1.0/myorg/groups/{self._group_id}/datasets/{self._dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
     def token(self) -> str:
@@ -85,7 +84,7 @@ class PowerBIDataset:
                 _LOGGER.warning(
                     "HTTP error while getting table info for %s: %s", table, err
                 )
-                return "Error with the connection to PowerBI, please review your authentication credentials."
+                return "Error with the connection to PowerBI, please review your authentication credentials."  # noqa: E501 # pylint: disable=C0301
             rows = result["results"][0]["tables"][0]["rows"]
             self._schemas[table] = rows
             tables.append(str(rows))
