@@ -2,8 +2,9 @@
 
 import json
 import re
+from typing import Dict
 
-import json5
+from pydantic import root_validator
 
 from langchain.chains.api.openapi.prompts import REQUEST_TEMPLATE
 from langchain.chains.llm import LLMChain
@@ -15,8 +16,23 @@ from langchain.schema import BaseOutputParser
 class APIRequesterOutputParser(BaseOutputParser):
     """Parse the request and error tags."""
 
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that json5 package exists."""
+        try:
+            import json5  # noqa: F401
+
+        except ImportError:
+            raise ValueError(
+                "Could not import json5 python package. "
+                "Please it install it with `pip install json5`."
+            )
+        return values
+
     def parse(self, llm_output: str) -> str:
         """Parse the request and error tags."""
+        import json5
+
         json_match = re.search(r"```json(.*?)```", llm_output, re.DOTALL)
         if json_match:
             typescript_block = json_match.group(1).strip()
