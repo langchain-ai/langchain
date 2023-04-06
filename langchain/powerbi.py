@@ -26,7 +26,7 @@ class PowerBIDataset:
         self._group_id = group_id
         self._dataset_id = dataset_id
         self._table_names = table_names
-        self._schemas = {}
+        self._schemas: dict[str, str] = {}
         if sample_rows_in_table_info < 1:
             raise ValueError("sample_rows_in_table_info must be >= 1")
         self._sample_rows_in_table_info = sample_rows_in_table_info
