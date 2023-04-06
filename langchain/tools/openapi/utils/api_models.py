@@ -505,9 +505,9 @@ class APIOperation(BaseModel):
         formatted_params = "\n".join(params).strip()
         description_str = f"/* {self.description} */" if self.description else ""
         typescript_definition = f"""
-    {description_str}
-    type {operation_name} = (_: {{
-    {formatted_params}
-    }}) => any;
-    """
+{description_str}
+type {operation_name} = (_: {{
+{formatted_params}
+}}) => any;
+"""
         return typescript_definition.strip()
