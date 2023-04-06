@@ -115,8 +115,9 @@ class APIProperty(APIPropertyBase):
         elif schema_type in PRIMITIVE_TYPES:
             if schema.enum:
                 param_name = f"{parameter.name}Enum"
-                return Enum(param_name, schema.enum)
+                return Enum(param_name, [str(v) for v in schema.enum])
             else:
+                # Directly use the primitive type
                 pass
         else:
             raise NotImplementedError(f"Unsupported type: {schema_type}")
@@ -139,8 +140,11 @@ class APIProperty(APIPropertyBase):
             )
         schema = parameter.param_schema
         if isinstance(schema, Reference):
+            _copied_Schema = schema
             schema = spec.get_referenced_schema(schema)
         if not isinstance(schema, Schema):
+            print(schema)
+            breakpoint()
             raise ValueError(f"Error dereferencing schema: {schema}")
         schema_type = cls._get_schema_type(parameter, schema)
         default_val = schema.default if schema is not None else None
@@ -221,8 +225,9 @@ class APIOperation(BaseModel):
         operation = spec.get_operation(path, method)
         parameters = spec.get_parameters_for_operation(operation)
         properties = [APIProperty.from_parameter(param, spec) for param in parameters]
+        operation_id = OpenAPISpec.get_cleaned_operation_id(operation, path, method)
         return cls(
-            operation_id=operation.operationId,
+            operation_id=operation_id,
             description=operation.description,
             base_url=spec.base_url,
             path=path,
