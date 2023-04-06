@@ -1,5 +1,4 @@
 """Test ElasticSearch functionality."""
-import logging
 import os
 from typing import Generator, List, Union
 
@@ -7,13 +6,9 @@ import pytest
 from elasticsearch import Elasticsearch
 
 from langchain.docstore.document import Document
-from langchain.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
-logging.basicConfig(level=logging.DEBUG)
 
 """
 cd tests/integration_tests/vectorstores/docker-compose
@@ -44,16 +39,6 @@ class TestElasticsearch:
 
         yield openai_api_key
 
-    @pytest.fixture(scope="class")
-    def documents(self) -> Generator[List[Document], None, None]:
-        """Return a generator that yields a list of documents."""
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-
-        documents = TextLoader(
-            os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
-        ).load()
-        yield text_splitter.split_documents(documents)
-
     def test_similarity_search_without_metadata(self, elasticsearch_url: str) -> None:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
@@ -76,7 +61,7 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
-    @pytest.mark.vcr()
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_default_index_from_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
@@ -95,6 +80,7 @@ class TestElasticsearch:
         print(search_result)
         assert len(search_result) != 0
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_from_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
@@ -116,6 +102,7 @@ class TestElasticsearch:
 
         assert len(search_result) != 0
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_add_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
