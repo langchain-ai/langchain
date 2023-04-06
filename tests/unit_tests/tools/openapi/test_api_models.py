@@ -3,6 +3,9 @@ import json
 import os
 from pathlib import Path
 from typing import Iterable, List, Tuple
+
+import pytest
+import yaml
 from openapi_schema_pydantic import (
     Components,
     Info,
@@ -11,9 +14,6 @@ from openapi_schema_pydantic import (
     RequestBody,
     Schema,
 )
-
-import pytest
-import yaml
 
 from langchain.tools.openapi.utils.api_models import (
     APIOperation,
