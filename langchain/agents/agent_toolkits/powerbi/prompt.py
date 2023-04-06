@@ -14,5 +14,5 @@ If the question does not seem related to the dataset, just return "I don't know"
 POWERBI_SUFFIX = """Begin!
 
 Question: {input}
-Thought: I should ask the input to query tool to create a query for me.
+Thought: I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it.
 {agent_scratchpad}"""
