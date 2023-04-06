@@ -70,10 +70,16 @@ def test_agent_bad_action() -> None:
 
 
 def test_agent_stopped_early() -> None:
-    """Test react chain when bad action given."""
+    """Test react chain when max iterations or max execution time is exceeded."""
+    # iteration limit
     agent = _get_agent(max_iterations=0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to max iterations."
+    assert output == "Agent stopped due to iteration limit or time limit."
+
+    # execution time limit
+    agent = _get_agent(max_execution_time=0.0)
+    output = agent.run("when was langchain made")
+    assert output == "Agent stopped due to iteration limit or time limit."
 
 
 def test_agent_with_callbacks_global() -> None:
