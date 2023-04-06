@@ -1,7 +1,7 @@
 """Pydantic models for parsing an OpenAPI spec."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from openapi_schema_pydantic import Parameter, Reference, Schema
 from pydantic import BaseModel, Field
@@ -94,34 +94,76 @@ class APIProperty(APIPropertyBase):
             return tuple(type_)
 
     @staticmethod
+    def _get_schema_type_for_enum(parameter: Parameter, schema: Schema) -> Enum:
+        """Get the schema type when the parameter is an enum."""
+        param_name = f"{parameter.name}Enum"
+        return Enum(param_name, [str(v) for v in schema.enum])
+
+    @staticmethod
+    def _get_schema_type_for_array(schema: Schema) -> Union[str, Tuple[str]]:
+        items = schema.items
+        if isinstance(items, Reference):
+            ref_name = items.ref.split("/")[-1]
+            schema_type = f'"{ref_name}"'  # To be valid typescript
+        elif isinstance(items, Schema):
+            schema_type = APIProperty._cast_schema_list_type(items)
+        else:
+            raise ValueError(f"Unsupported array items: {items}")
+
+        if isinstance(schema_type, str):
+            # TODO: recurse
+            schema_type = (schema_type,)
+
+        return schema_type
+
+    @staticmethod
     def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
-        # TODO: recurse and differentiate between union vs. intersection types
         schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
         if schema_type == "array":
-            items = schema.items
-            if isinstance(items, Reference):
-                ref_name = items.ref.split("/")[-1]
-                schema_type = f'"{ref_name}"'  # To be valid typescript
-            elif isinstance(items, Schema):
-                schema_type = APIProperty._cast_schema_list_type(items)
-            else:
-                raise ValueError(f"Unsupported array items: {items}")
-            if isinstance(schema_type, str):
-                # TODO: recurse
-                schema_type = (schema_type,)
+            schema_type = APIProperty._get_schema_type_for_array(schema)
         elif schema_type == "object":
             # TODO: Resolve array and object types to components.
             raise NotImplementedError("Objects not yet supported")
         elif schema_type in PRIMITIVE_TYPES:
             if schema.enum:
-                param_name = f"{parameter.name}Enum"
-                return Enum(param_name, [str(v) for v in schema.enum])
+                schema_type = APIProperty._get_schema_type_for_enum(parameter, schema)
             else:
                 # Directly use the primitive type
                 pass
         else:
             raise NotImplementedError(f"Unsupported type: {schema_type}")
+
         return schema_type
+
+    # @staticmethod
+    # def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
+    #     # TODO: recurse and differentiate between union vs. intersection types
+    #     schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
+    #     if schema_type == "array":
+    #         items = schema.items
+    #         if isinstance(items, Reference):
+    #             ref_name = items.ref.split("/")[-1]
+    #             schema_type = f'"{ref_name}"'  # To be valid typescript
+    #         elif isinstance(items, Schema):
+    #             schema_type = APIProperty._cast_schema_list_type(items)
+    #         else:
+    #             raise ValueError(f"Unsupported array items: {items}")
+    #         if isinstance(schema_type, str):
+    #             # TODO: recurse
+    #             schema_type = (schema_type,)
+    #     elif schema_type == "object":
+    #         # TODO: Resolve array and object types to components.
+    #         raise NotImplementedError("Objects not yet supported")
+    #     elif schema_type in PRIMITIVE_TYPES:
+    #         if schema.enum:
+    #             param_name = f"{parameter.name}Enum"
+    #             return Enum(param_name, [str(v) for v in schema.enum])
+    #         else:
+    #             # Directly use the primitive type
+    #             pass
+    #     else:
+    #         raise NotImplementedError(f"Unsupported type: {schema_type}")
+    #     return schema_type
 
     @staticmethod
     def _validate_location(location: APIPropertyLocation):
