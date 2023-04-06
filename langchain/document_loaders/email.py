@@ -21,11 +21,11 @@ class UnstructuredEmailLoader(UnstructuredFileLoader):
         if filetype == FileType.EML:
             from unstructured.partition.email import partition_email
 
-            return partition_email(filename=self.file_path)
+            return partition_email(filename=self.file_path, **self.unstructured_kwargs)
         elif satisfies_min_unstructured_version("0.5.8") and filetype == FileType.MSG:
             from unstructured.partition.msg import partition_msg
 
-            return partition_msg(filename=self.file_path)
+            return partition_msg(filename=self.file_path, **self.unstructured_kwargs)
         else:
             raise ValueError(
                 f"Filetype {filetype} is not supported in UnstructuredEmailLoader."
