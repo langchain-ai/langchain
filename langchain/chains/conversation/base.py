@@ -39,6 +39,12 @@ class ConversationChain(LLMChain):
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
+    def __init__(self, **kwargs):
+        """Initialize the chain."""
+        super().__init__(**kwargs)
+        if self.memory is not None and self.memory.input_key is None:
+            self.memory.input_key = self.input_key
+
     @root_validator()
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
@@ -51,10 +57,9 @@ class ConversationChain(LLMChain):
             )
         prompt_variables = values["prompt"].input_variables
         expected_keys = memory_keys + [input_key]
-        if set(expected_keys) != set(prompt_variables):
+        if set(expected_keys).difference(set(prompt_variables)):
             raise ValueError(
-                "Got unexpected prompt input variables. The prompt expects "
-                f"{prompt_variables}, but got {memory_keys} as inputs from "
-                f"memory, and {input_key} as the normal input key."
+                "Prompt input variables do not contain all expected keys. Expected keys are "
+                f"{expected_keys}, but got {prompt_variables} from the prompt."
             )
         return values
