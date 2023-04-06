@@ -109,3 +109,53 @@ def test_marqo_weighted_query(client) -> None:
         {"communications device": 1.0, "Old technology": -5.0}, k=1
     )
     assert results == [Document(page_content="Smartphone")]
+
+def test_marqo_multimodal():
+    client = marqo.Client(url=DEFAULT_MARQO_URL, api_key=DEFAULT_MARQO_API_KEY)
+    try:
+        client.index(INDEX_NAME).delete()
+    except Exception:
+        pass
+
+    # reset the index for this example
+    client.delete_index(INDEX_NAME)
+
+    # This index could have been created by another system
+    settings = {"treat_urls_and_pointers_as_images": True, "model": "ViT-L/14"}
+    client.create_index(INDEX_NAME, **settings)
+    client.index(INDEX_NAME).add_documents(
+        [   
+            # image of a bus
+            {
+                    "caption": "Bus",
+                    "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image4.jpg"
+            },
+            # image of a plane
+            {   
+                    "caption": "Plane", 
+                    "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image2.jpg"
+            }
+        ],
+    )
+
+    def get_content(res):
+        if 'text' in res:
+            return res['text']
+        
+        return f"{res['caption']}: {res['image']}"
+
+    marqo_search = Marqo(client, INDEX_NAME)
+
+    query = "vehicles that fly"
+    docs = marqo_search.similarity_search(query, page_content_builder=get_content)
+
+    assert docs[0].page_content.split(":")[0] == "Plane"
+
+
+    raised_value_error = False
+    try:
+        marqo_search.add_texts(["text"])
+    except ValueError:
+        raised_value_error = True 
+    
+    assert raised_value_error
