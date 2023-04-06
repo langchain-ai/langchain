@@ -16,7 +16,9 @@ def get_model() -> str:
     conversion_script = "https://github.com/ggerganov/llama.cpp/raw/master/convert-unversioned-ggml-to-ggml.py"
     migrate_script = "https://github.com/ggerganov/llama.cpp/raw/master/migrate-ggml-2023-03-30-pr613.py"
     local_filename = model_url.split("/")[-1]
-    local_filename_ggjt = local_filename.split('.')[0] + '-ggjt.' + local_filename.split('.')[1]
+    local_filename_ggjt = (
+        local_filename.split(".")[0] + "-ggjt." + local_filename.split(".")[1]
+    )
 
     if not os.path.exists("convert-unversioned-ggml-to-ggml.py"):
         urlretrieve(conversion_script, "convert-unversioned-ggml-to-ggml.py")
@@ -27,7 +29,9 @@ def get_model() -> str:
     if not os.path.exists(local_filename):
         urlretrieve(model_url, local_filename)
         os.system(f"python convert-unversioned-ggml-to-ggml.py . tokenizer.model")
-        os.system(f"python migrate-ggml-2023-03-30-pr613.py {local_filename} {local_filename_ggjt}")
+        os.system(
+            f"python migrate-ggml-2023-03-30-pr613.py {local_filename} {local_filename_ggjt}"
+        )
 
     return local_filename_ggjt
 
