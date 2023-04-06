@@ -837,7 +837,7 @@ class AgentExecutor(Chain, BaseModel):
         # We now enter the agent loop (until it returns something).
         async with asyncio_timeout(self.max_execution_time):
             try:
-                while self._should_continue(iterations):
+                while self._should_continue(iterations, time_elapsed):
                     next_step_output = await self._atake_next_step(
                         name_to_tool_map, color_mapping, inputs, intermediate_steps
                     )
@@ -853,6 +853,7 @@ class AgentExecutor(Chain, BaseModel):
                             return await self._areturn(tool_return, intermediate_steps)
 
                     iterations += 1
+                    time_elapsed = time.time() - start_time
                 output = self.agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
