@@ -145,26 +145,29 @@ class OpenAPISpec(OpenAPI):
     def _alert_unsupported_spec(obj: dict) -> None:
         """Alert if the spec is not supported."""
         warning_message = (
-            " This may result in incompletely parsed information."
-            + " Please convert your spec to a valid OpenAPI 3.1.* spec"
-            + " for best results."
+            " This will likely result in unsupported behavior."
+            + " Please convert your spec to a valid OpenAPI 3.1.* spec."
         )
         swagger_version = obj.get("swagger")
         openapi_version = obj.get("openapi")
-        if isinstance(openapi_version, str) and openapi_version.startswith("3.1"):
-            pass
+        if isinstance(openapi_version, str):
+            if openapi_version != "3.1.0":
+                logger.warning(
+                    f"Attempting to load an OpenAPI {openapi_version}"
+                    f" spec. {warning_message}"
+                )
+            else:
+                pass
         elif isinstance(swagger_version, str):
             logger.warning(
-                f"Attempting to load a Swagger {swagger_version} spec. "
-                + warning_message
-            )
-        elif isinstance(openapi_version, str):
-            logger.warning(
-                f"Attempting to load an OpenAPI {openapi_version} spec. "
-                + warning_message
+                f"Attempting to load a Swagger {swagger_version}"
+                f" spec. {warning_message}"
             )
         else:
-            raise ValueError(f"Unsupported spec:\n\n{obj}\n" + warning_message)
+            raise ValueError(
+                "Attempting to load an unsupported spec:"
+                f"\n\n{obj}\n{warning_message}"
+            )
 
     @classmethod
     def parse_obj(cls, obj: dict) -> "OpenAPISpec":
