@@ -96,7 +96,8 @@ class APIProperty(APIPropertyBase):
     def _get_schema_type_for_enum(parameter: Parameter, schema: Schema) -> Enum:
         """Get the schema type when the parameter is an enum."""
         param_name = f"{parameter.name}Enum"
-        return Enum(param_name, {str(v): v for v in schema.enum})
+        enumy = schema.enum + ["anotherone", "soocool"]
+        return Enum(param_name, {str(v): v for v in enumy})
 
     @staticmethod
     def _get_schema_type_for_array(
@@ -107,7 +108,7 @@ class APIProperty(APIPropertyBase):
             schema_type = APIProperty._cast_schema_list_type(items)
         elif isinstance(items, Reference):
             ref_name = items.ref.split("/")[-1]
-            schema_type = f'"{ref_name}"'  # To be valid typescript
+            schema_type = ref_name  # TODO: Add ref definitions to make his valid
         else:
             raise ValueError(f"Unsupported array items: {items}")
 
