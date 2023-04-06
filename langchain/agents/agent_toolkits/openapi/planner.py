@@ -162,7 +162,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST|PATCH)\s+(/\S+)*"
+        pattern = r"\b(GET|POST)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
@@ -190,7 +190,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-    shared_memory: ReadOnlySharedMemory,
+    shared_memory: ReadOnlySharedMemory = None,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
