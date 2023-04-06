@@ -107,12 +107,12 @@ User query: can you add some trendy stuff to my shopping cart.
 Thought: I should plan API calls first.
 Action: api_planner
 Action Input: I need to find the right API calls to add trendy items to the users shopping cart
-Observation: 1) GET /items with params = {'trending':'True'} to get trending item ids
+Observation: 1) GET /items with params 'trending' is 'True' to get trending item ids
 2) GET /user to get user
 3) POST /cart to post the trending items to the user's cart
 Thought: I'm ready to execute the API calls.
 Action: api_controller
-Action Input: 1) GET /items params = {'trending':'True'} to get trending item ids
+Action Input: 1) GET /items params 'trending' is 'True' to get trending item ids
 2) GET /user to get user
 3) POST /cart to post the trending items to the user's cart
 ...
