@@ -1,5 +1,4 @@
 """Chain that makes API calls and summarizes the responses to answer a question."""
-# %%
 from __future__ import annotations
 
 import json
@@ -30,11 +29,8 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
     api_request_chain: LLMChain
     api_response_chain: LLMChain
-    # error_handling_chain: Optional[LLMChain] = Field(
-    #     default=None,
-    # )
     api_operation: APIOperation
-    requests: Requests = Field(exclude=True)
+    requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
@@ -130,18 +126,14 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         )
         return {self.output_key: answer}
 
-    @property
-    def _chain_type(self) -> str:
-        return "openapi_chain"
-
     @classmethod
     def from_url_and_method(
         cls,
         spec_url: str,
         path: str,
         method: str,
-        requests: Requests,
         llm: BaseLLM,
+        requests: Optional[Requests] = None,
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -156,8 +148,9 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     def from_api_operation(
         cls,
         operation: APIOperation,
-        requests: Requests,
         llm: BaseLLM,
+        requests: Optional[Requests] = None,
+        verbose: bool = False
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
@@ -167,15 +160,15 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             path_params=operation.path_params,
         )
         requests_chain = APIRequesterChain.from_llm_and_typescript(
-            llm, typescript_definition=operation.to_typescript(), verbose=True
+            llm, typescript_definition=operation.to_typescript(), verbose=verbose
         )
-        response_chain = APIResponderChain.from_llm(llm)
-        # operation_id = get_cleaned_operation_id(operation, path, requests_method)
-        # description = operation.description or f"Call {operation_id}"
+        response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
+        _requests = requests or Requests()
         return cls(
             api_request_chain=requests_chain,
             api_response_chain=response_chain,
             api_operation=operation,
-            requests=requests,
+            requests=_requests,
             param_mapping=param_mapping,
+            verbose=verbose,
         )

@@ -5,9 +5,10 @@ import re
 
 import json5
 
-from langchain import LLMChain, PromptTemplate
 from langchain.chains.api.openapi.prompts import RESPONSE_TEMPLATE
+from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
+from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseOutputParser
 
 
