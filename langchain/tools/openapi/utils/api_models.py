@@ -1,4 +1,5 @@
 """Pydantic models for parsing an OpenAPI spec."""
+import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
+logger = logging.getLogger(__name__)
 PRIMITIVE_TYPES = {
     "integer": int,
     "number": float,
@@ -139,12 +141,16 @@ class APIProperty(APIPropertyBase):
         return schema_type
 
     @staticmethod
-    def _validate_location(location: APIPropertyLocation) -> None:
+    def _validate_location(location: APIPropertyLocation, required: bool) -> None:
         if location not in SUPPORTED_LOCATIONS:
-            raise NotImplementedError(
+            message = (
                 f'Unsupported APIPropertyLocation "{location}". '
-                f"Valid values are {SUPPORTED_LOCATIONS}"
+                + f"Valid values are {SUPPORTED_LOCATIONS}"
             )
+            if required:
+                raise NotImplementedError(message)
+            else:
+                logger.warning(message)
 
     @staticmethod
     def _validate_content(content: Optional[Dict[str, MediaType]]) -> None:
@@ -170,7 +176,7 @@ class APIProperty(APIPropertyBase):
     def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
         """Instantiate from an OpenAPI Parameter."""
         location = APIPropertyLocation.from_str(parameter.param_in)
-        cls._validate_location(location)
+        cls._validate_location(location, required=parameter.required)
         cls._validate_content(parameter.content)
         schema = cls._get_schema(parameter, spec)
         schema_type = cls._get_schema_type(parameter, schema)
