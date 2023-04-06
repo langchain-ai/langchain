@@ -548,7 +548,7 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class AgentExecutor(Chain, BaseModel):
+class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]

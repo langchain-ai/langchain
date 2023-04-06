@@ -2,14 +2,13 @@
 from typing import Dict, List
 
 import pytest
-from pydantic import BaseModel
 
 from langchain.chains.base import Chain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.memory.simple import SimpleMemory
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(Chain):
     """Fake Chain for testing purposes."""
 
     input_variables: List[str]

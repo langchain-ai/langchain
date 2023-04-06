@@ -1,13 +1,13 @@
 """Wrapper for the GPT4All model."""
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-class GPT4All(LLM, BaseModel):
+class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
     To use, you should have the ``pyllamacpp`` python package installed, the

@@ -5,7 +5,7 @@ import logging
 import sys
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -91,7 +91,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-class ChatOpenAI(BaseChatModel, BaseModel):
+class ChatOpenAI(BaseChatModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the

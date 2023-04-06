@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
-
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
@@ -13,7 +11,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel, BaseMessage, get_buffer_string
 
 
-class ConversationEntityMemory(BaseChatMemory, BaseModel):
+class ConversationEntityMemory(BaseChatMemory):
     """Entity extractor & summarizer to memory."""
 
     human_prefix: str = "Human"
