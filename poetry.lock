@@ -3332,14 +3332,14 @@ files = [
 
 [[package]]
 name = "marqo"
-version = "0.8.0"
+version = "0.9.1"
 description = "Tensor search for humans"
 category = "main"
 optional = true
 python-versions = ">=3"
 files = [
-    {file = "marqo-0.8.0-py3-none-any.whl", hash = "sha256:7ddf5bfaf8e068356993c5e090e875f8a39220e964a8ba8617541fe974612ea0"},
-    {file = "marqo-0.8.0.tar.gz", hash = "sha256:4af8aa6e0cabbeb25e4f2fa28f329af8935c303e8fa812beaa872b7b047b33ca"},
+    {file = "marqo-0.9.1-py3-none-any.whl", hash = "sha256:5e84c68d20b65723daaada65f9a4780d4ce20f3c679522258f826fde12333bbf"},
+    {file = "marqo-0.9.1.tar.gz", hash = "sha256:11af3ef7b4612aca3f4e65ba8379a8685f852d6960ff2eefe6788a0734d00975"},
 ]
 
 [package.dependencies]
@@ -4513,7 +4513,7 @@ name = "pandas"
 version = "2.0.0"
 description = "Powerful data structures for data analysis, time series, and statistics"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "pandas-2.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bbb2c5e94d6aa4e632646a3bacd05c2a871c3aa3e85c9bec9be99cb1267279f2"},
@@ -7872,7 +7872,7 @@ name = "tzdata"
 version = "2023.3"
 description = "Provider of IANA time zone data"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=2"
 files = [
     {file = "tzdata-2023.3-py2.py3-none-any.whl", hash = "sha256:7e65763eef3120314099b6939b5546db7adce1e7d6f2e179e3df563c70511eda"},
@@ -8569,10 +8569,10 @@ docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker
 testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["aleph-alpha-client", "anthropic", "beautifulsoup4", "boto3", "cohere", "deeplake", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "huggingface_hub", "jina", "jinja2", "manifest-ml", "marqo", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pgvector", "pinecone-client", "psycopg2-binary", "pyowm", "pypdf", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["aleph-alpha-client", "anthropic", "beautifulsoup4", "boto3", "cohere", "deeplake", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "huggingface_hub", "jina", "jinja2", "manifest-ml", "marqo", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pandas", "pgvector", "pinecone-client", "psycopg2-binary", "pyowm", "pypdf", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f04774c2b00d1e11a0a0512c09ba0be45c329c10a3a09ec2fcf9af8dacaa3215"
+content-hash = "241edfee66b07157d86a1f765b6400bfa68e89cc293d910b8507d5eb594a8688"
