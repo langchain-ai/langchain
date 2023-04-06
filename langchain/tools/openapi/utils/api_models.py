@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from openapi_schema_pydantic import Parameter, Reference, Schema
+from openapi_schema_pydantic import MediaType, Parameter, Reference, Schema
 from pydantic import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
@@ -85,9 +85,8 @@ class APIProperty(APIPropertyBase):
     """The path/how it's being passed to the endpoint."""
 
     @staticmethod
-    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, tuple]]:
+    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, Tuple[str, ...]]]:
         type_ = schema.type
-
         if not isinstance(type_, list):
             return type_
         else:
@@ -100,13 +99,15 @@ class APIProperty(APIPropertyBase):
         return Enum(param_name, [str(v) for v in schema.enum])
 
     @staticmethod
-    def _get_schema_type_for_array(schema: Schema) -> Union[str, Tuple[str]]:
+    def _get_schema_type_for_array(
+        schema: Schema,
+    ) -> Optional[Union[str, Tuple[str, ...]]]:
         items = schema.items
-        if isinstance(items, Reference):
+        if isinstance(items, Schema):
+            schema_type = APIProperty._cast_schema_list_type(items)
+        elif isinstance(items, Reference):
             ref_name = items.ref.split("/")[-1]
             schema_type = f'"{ref_name}"'  # To be valid typescript
-        elif isinstance(items, Schema):
-            schema_type = APIProperty._cast_schema_list_type(items)
         else:
             raise ValueError(f"Unsupported array items: {items}")
 
@@ -117,7 +118,9 @@ class APIProperty(APIPropertyBase):
         return schema_type
 
     @staticmethod
-    def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
+    def _get_schema_type(parameter: Parameter, schema: Optional[Schema]) -> SCHEMA_TYPE:
+        if schema is None:
+            return None
         schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
         if schema_type == "array":
             schema_type = APIProperty._get_schema_type_for_array(schema)
@@ -166,7 +169,7 @@ class APIProperty(APIPropertyBase):
     #     return schema_type
 
     @staticmethod
-    def _validate_location(location: APIPropertyLocation):
+    def _validate_location(location: APIPropertyLocation) -> None:
         if location not in SUPPORTED_LOCATIONS:
             raise NotImplementedError(
                 f'Unsupported APIPropertyLocation "{location}". '
@@ -174,7 +177,7 @@ class APIProperty(APIPropertyBase):
             )
 
     @staticmethod
-    def _validate_content(content):
+    def _validate_content(content: Optional[Dict[str, MediaType]]) -> None:
         if content:
             raise ValueError(
                 "API Properties with media content not supported. "
@@ -182,7 +185,7 @@ class APIProperty(APIPropertyBase):
             )
 
     @staticmethod
-    def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Union[Schema, None]:
+    def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
         schema = parameter.param_schema
         if isinstance(schema, Reference):
             schema = spec.get_referenced_schema(schema)
