@@ -15,4 +15,4 @@ There exists a Jina Embeddings wrapper, which you can access with
 ```python
 from langchain.embeddings import JinaEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/indexes/examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/jina.ipynb)
