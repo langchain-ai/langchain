@@ -1,7 +1,6 @@
 # flake8: noqa
 QUERY_CHECKER = """
-query: {tool_input}
-Double check the DAX query above for common mistakes. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. 
+Double check the DAX query below for common mistakes and return a rewritten query. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. 
 
 Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. 
 
@@ -38,15 +37,14 @@ Examples:
 The query "EVALUATE COUNT(<table>)" is not correct and needs to be rewritten "EVALUATE ROW(<name>, COUNTROWS(<table>))"
 The query "SELECT COUNT(DISTINCT VALUES <table>[<column>]) FROM tablename WHERE <table>[<column] = TRUE" is not correct and needs to be rewritten "DEFINE <temptable> = FILTER(<table>, <table>[<column>] = TRUE) EVALUATE ROW(<name>, DISTINCTCOUNT(<temptable>[<column>]))"
 
-rewritten query:
-
+Query: {tool_input}
+Rewritten query:
 """
 
 
 # flake8: noqa
 QUESTION_TO_QUERY = """
-Question: {tool_input}
-Answer the question above with a DAX query that can be sent to Power BI. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. 
+Answer the question below with a DAX query that can be sent to Power BI. DAX queries have a simple syntax comprised of just one required keyword, EVALUATE, and several optional keywords: ORDER BY, START AT, DEFINE, MEASURE, VAR, TABLE, and COLUMN. Each keyword defines a statement used for the duration of the query. Any time < or > are used in the text below it means that those values need to be replaced by table, columns or other things. 
 
 Some DAX functions return a table instead of a scalar, and must be wrapped in a function that evaluates the table and returns a scalar; unless the table is a single column, single row table, then it is treated as a scalar value. Most DAX functions require one or more arguments, which can include tables, columns, expressions, and values. However, some functions, such as PI, do not require any arguments, but always require parentheses to indicate the null argument. For example, you must always type PI(), not PI. You can also nest functions within other functions. 
 
@@ -82,5 +80,16 @@ The following tables exist: {tables}
 and the schema's for some are given here:
 {schemas}
 
-DAX:
+Examples:
+Question: How many rows are in the table <table>?
+DAX: EVALUATE ROW("Number of rows", COUNTROWS(<table>))
+----
+Question: How many rows are in the table <table> where <column> is not empty?
+DAX: EVALUATE ROW("Number of rows", COUNTROWS(FILTER(<table>, <table>[<column>] <> "")))
+----
+Question: What was the average of <column> in <table>?
+DAX: EVALUATE ROW("Average", AVERAGE(<table>[<column>]))
+----
+Question: {tool_input}
+DAX: 
 """
