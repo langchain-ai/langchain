@@ -164,7 +164,7 @@ class OpenAPISpec(OpenAPI):
                 + warning_message
             )
         else:
-            raise ValueError(f"Unsupported spec:\n\n{spec}\n" + warning_messages)
+            raise ValueError(f"Unsupported spec:\n\n{obj}\n" + warning_message)
 
     @classmethod
     def parse_obj(cls, obj: dict) -> "OpenAPISpec":
