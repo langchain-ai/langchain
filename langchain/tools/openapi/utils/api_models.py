@@ -47,6 +47,11 @@ SUPPORTED_LOCATIONS = {
     APIPropertyLocation.QUERY,
     APIPropertyLocation.PATH,
 }
+INVALID_LOCATION_TEMPL = (
+    'Unsupported APIPropertyLocation "{location}"'
+    " for parameter {name}. "
+    + f"Valid values are {[loc.value for loc in SUPPORTED_LOCATIONS]}"
+)
 
 SCHEMA_TYPE = Union[str, Type, tuple, None, Enum]
 
@@ -141,16 +146,11 @@ class APIProperty(APIPropertyBase):
         return schema_type
 
     @staticmethod
-    def _validate_location(location: APIPropertyLocation, required: bool) -> None:
+    def _validate_location(location: APIPropertyLocation, name: str) -> None:
         if location not in SUPPORTED_LOCATIONS:
-            message = (
-                f'Unsupported APIPropertyLocation "{location}". '
-                + f"Valid values are {SUPPORTED_LOCATIONS}"
+            raise NotImplementedError(
+                INVALID_LOCATION_TEMPL.format(location=location, name=name)
             )
-            if required:
-                raise NotImplementedError(message)
-            else:
-                logger.warning(message)
 
     @staticmethod
     def _validate_content(content: Optional[Dict[str, MediaType]]) -> None:
@@ -172,11 +172,22 @@ class APIProperty(APIPropertyBase):
 
         return schema
 
+    @staticmethod
+    def is_supported_location(location: str) -> bool:
+        """Return whether the provided location is supported."""
+        try:
+            return APIPropertyLocation.from_str(location) in SUPPORTED_LOCATIONS
+        except ValueError:
+            return False
+
     @classmethod
     def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
         """Instantiate from an OpenAPI Parameter."""
         location = APIPropertyLocation.from_str(parameter.param_in)
-        cls._validate_location(location, required=parameter.required)
+        cls._validate_location(
+            location,
+            parameter.name,
+        )
         cls._validate_content(parameter.content)
         schema = cls._get_schema(parameter, spec)
         schema_type = cls._get_schema_type(parameter, schema)
@@ -410,6 +421,31 @@ class APIOperation(BaseModel):
     request_body: Optional[APIRequestBody] = Field(alias="request_body")
     """The request body of the operation."""
 
+    @staticmethod
+    def _get_properties_from_parameters(
+        parameters: List[Parameter], spec: OpenAPISpec
+    ) -> List[APIProperty]:
+        """Get the properties of the operation."""
+        properties = []
+        for param in parameters:
+            if APIProperty.is_supported_location(param.param_in):
+                properties.append(APIProperty.from_parameter(param, spec))
+            elif param.required:
+                raise ValueError(
+                    INVALID_LOCATION_TEMPL.format(
+                        location=param.param_in, name=param.name
+                    )
+                )
+            else:
+                logger.warning(
+                    INVALID_LOCATION_TEMPL.format(
+                        location=param.param_in, name=param.name
+                    )
+                    + " Ignoring optional parameter"
+                )
+                pass
+        return properties
+
     @classmethod
     def from_openapi_url(
         cls,
@@ -431,7 +467,7 @@ class APIOperation(BaseModel):
         """Create an APIOperation from an OpenAPI spec."""
         operation = spec.get_operation(path, method)
         parameters = spec.get_parameters_for_operation(operation)
-        properties = [APIProperty.from_parameter(param, spec) for param in parameters]
+        properties = cls._get_properties_from_parameters(parameters, spec)
         operation_id = OpenAPISpec.get_cleaned_operation_id(operation, path, method)
         request_body = spec.get_request_body_for_operation(operation)
         api_request_body = (
