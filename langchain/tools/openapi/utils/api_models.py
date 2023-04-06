@@ -1,9 +1,9 @@
 """Pydantic models for parsing an OpenAPI spec."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from openapi_schema_pydantic import Parameter, Reference, Schema
+from openapi_schema_pydantic import MediaType, Parameter, Reference, Schema
 from pydantic import BaseModel, Field
 
 from langchain.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
@@ -15,7 +15,6 @@ PRIMITIVE_TYPES = {
     "boolean": bool,
     "array": List,
     "object": Dict,
-    "date-time": str,
     "null": None,
 }
 
@@ -85,63 +84,94 @@ class APIProperty(APIPropertyBase):
     """The path/how it's being passed to the endpoint."""
 
     @staticmethod
-    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, tuple]]:
+    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, Tuple[str, ...]]]:
         type_ = schema.type
-
         if not isinstance(type_, list):
             return type_
         else:
             return tuple(type_)
 
     @staticmethod
-    def _get_schema_type(parameter: Parameter, schema: Schema) -> SCHEMA_TYPE:
-        # TODO: recurse and differentiate between union vs. intersection types
+    def _get_schema_type_for_enum(parameter: Parameter, schema: Schema) -> Enum:
+        """Get the schema type when the parameter is an enum."""
+        param_name = f"{parameter.name}Enum"
+        return Enum(param_name, {str(v): v for v in schema.enum})
+
+    @staticmethod
+    def _get_schema_type_for_array(
+        schema: Schema,
+    ) -> Optional[Union[str, Tuple[str, ...]]]:
+        items = schema.items
+        if isinstance(items, Schema):
+            schema_type = APIProperty._cast_schema_list_type(items)
+        elif isinstance(items, Reference):
+            ref_name = items.ref.split("/")[-1]
+            schema_type = ref_name  # TODO: Add ref definitions to make his valid
+        else:
+            raise ValueError(f"Unsupported array items: {items}")
+
+        if isinstance(schema_type, str):
+            # TODO: recurse
+            schema_type = (schema_type,)
+
+        return schema_type
+
+    @staticmethod
+    def _get_schema_type(parameter: Parameter, schema: Optional[Schema]) -> SCHEMA_TYPE:
+        if schema is None:
+            return None
         schema_type: SCHEMA_TYPE = APIProperty._cast_schema_list_type(schema)
         if schema_type == "array":
-            items = schema.items
-            if isinstance(items, Reference):
-                ref_name = items.ref.split("/")[-1]
-                schema_type = f'"{ref_name}"'  # To be valid typescript
-            elif isinstance(items, Schema):
-                schema_type = APIProperty._cast_schema_list_type(items)
-            else:
-                raise ValueError(f"Unsupported array items: {items}")
-            if isinstance(schema_type, str):
-                # TODO: recurse
-                schema_type = (schema_type,)
+            schema_type = APIProperty._get_schema_type_for_array(schema)
         elif schema_type == "object":
             # TODO: Resolve array and object types to components.
             raise NotImplementedError("Objects not yet supported")
         elif schema_type in PRIMITIVE_TYPES:
             if schema.enum:
-                param_name = f"{parameter.name}Enum"
-                return Enum(param_name, schema.enum)
+                schema_type = APIProperty._get_schema_type_for_enum(parameter, schema)
             else:
+                # Directly use the primitive type
                 pass
         else:
             raise NotImplementedError(f"Unsupported type: {schema_type}")
+
         return schema_type
 
-    @classmethod
-    def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
-        """Instantiate from an OpenAPI Parameter."""
-        # TODO: Resolve array and object types to components.
-        location = APIPropertyLocation.from_str(parameter.param_in)
+    @staticmethod
+    def _validate_location(location: APIPropertyLocation) -> None:
         if location not in SUPPORTED_LOCATIONS:
             raise NotImplementedError(
-                f"Unsupported APIPropertyLocation. "
+                f'Unsupported APIPropertyLocation "{location}". '
                 f"Valid values are {SUPPORTED_LOCATIONS}"
             )
-        if parameter.content:
+
+    @staticmethod
+    def _validate_content(content: Optional[Dict[str, MediaType]]) -> None:
+        if content:
             raise ValueError(
                 "API Properties with media content not supported. "
                 "Media content only supported within APIRequestBodyProperty's"
             )
+
+    @staticmethod
+    def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
         schema = parameter.param_schema
         if isinstance(schema, Reference):
             schema = spec.get_referenced_schema(schema)
-        if not isinstance(schema, Schema):
+        elif schema is None:
+            return None
+        elif not isinstance(schema, Schema):
             raise ValueError(f"Error dereferencing schema: {schema}")
+
+        return schema
+
+    @classmethod
+    def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
+        """Instantiate from an OpenAPI Parameter."""
+        location = APIPropertyLocation.from_str(parameter.param_in)
+        cls._validate_location(location)
+        cls._validate_content(parameter.content)
+        schema = cls._get_schema(parameter, spec)
         schema_type = cls._get_schema_type(parameter, schema)
         default_val = schema.default if schema is not None else None
         return cls(
@@ -177,7 +207,7 @@ class APIOperation(BaseModel):
     operation_id: str = Field(alias="operation_id")
     """The unique identifier of the operation."""
 
-    description: str = Field(alias="description")
+    description: Optional[str] = Field(alias="description")
     """The description of the operation."""
 
     base_url: str = Field(alias="base_url")
@@ -221,8 +251,9 @@ class APIOperation(BaseModel):
         operation = spec.get_operation(path, method)
         parameters = spec.get_parameters_for_operation(operation)
         properties = [APIProperty.from_parameter(param, spec) for param in parameters]
+        operation_id = OpenAPISpec.get_cleaned_operation_id(operation, path, method)
         return cls(
-            operation_id=operation.operationId,
+            operation_id=operation_id,
             description=operation.description,
             base_url=spec.base_url,
             path=path,
@@ -233,7 +264,9 @@ class APIOperation(BaseModel):
     @staticmethod
     def ts_type_from_python(type_: SCHEMA_TYPE) -> str:
         if type_ is None:
-            return "null"
+            # TODO: Handle Nones better. These often result when
+            # parsing specs that are < v3
+            return "any"
         elif isinstance(type_, str):
             return {
                 "str": "string",
@@ -261,8 +294,9 @@ class APIOperation(BaseModel):
             params.append(f"{prop_desc}\n\t\t{prop_name}{prop_required}: {prop_type},")
 
         formatted_params = "\n".join(params).strip()
+        description_str = f"/* {self.description} */" if self.description else ""
         typescript_definition = f"""
-// {self.description}
+{description_str}
 type {operation_name} = (_: {{
 {formatted_params}
 }}) => any;
