@@ -476,7 +476,7 @@ class APIOperation(BaseModel):
             else None
         )
         description = operation.description or operation.summary
-        if not description:
+        if not description and spec.paths is not None:
             description = spec.paths[path].description or spec.paths[path].summary
         return cls(
             operation_id=operation_id,
