@@ -5,10 +5,7 @@ from pydantic import Field
 
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.schema import (
-    BaseChatMessageHistory,
-    BaseMemory,
-)
+from langchain.schema import BaseChatMessageHistory, BaseMemory
 
 
 class BaseChatMemory(BaseMemory, ABC):

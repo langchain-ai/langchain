@@ -20,7 +20,7 @@ This page is broken into two parts: installation and setup, and then references 
     - `pandoc` (EPUBs)
 - If you are parsing PDFs using the `"hi_res"` strategy, run the following to install the `detectron2` model, which
   `unstructured` uses for layout detection:
-    - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2"`
+    - `pip install "detectron2@git+https://github.com/facebookresearch/detectron2.git@e2ce8dc#egg=detectron2"`
     - If `detectron2` is not installed, `unstructured` will fallback to processing PDFs
       using the `"fast"` strategy, which uses `pdfminer` directly and doesn't require
       `detectron2`.

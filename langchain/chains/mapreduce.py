@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -20,7 +20,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
 
-class MapReduceChain(Chain, BaseModel):
+class MapReduceChain(Chain):
     """Map-reduce chain."""
 
     combine_documents_chain: BaseCombineDocumentsChain

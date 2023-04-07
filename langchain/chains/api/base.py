@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
@@ -13,7 +13,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.schema import BaseLanguageModel
 
 
-class APIChain(Chain, BaseModel):
+class APIChain(Chain):
     """Chain that makes API calls and summarizes the responses to answer a question."""
 
     api_request_chain: LLMChain

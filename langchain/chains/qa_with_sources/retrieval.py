@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -10,7 +10,7 @@ from langchain.docstore.document import Document
 from langchain.schema import BaseRetriever
 
 
-class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
     """Question-answering with sources over an index."""
 
     retriever: BaseRetriever = Field(exclude=True)

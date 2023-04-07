@@ -1,5 +1,6 @@
 """Chains are easily reusable components which can be linked together."""
 from langchain.chains.api.base import APIChain
+from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
 from langchain.chains.combine_documents.base import AnalyzeDocumentChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 from langchain.chains.conversation.base import ConversationChain
@@ -61,4 +62,5 @@ __all__ = [
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",
     "ConversationalRetrievalChain",
+    "OpenAPIEndpointChain",
 ]

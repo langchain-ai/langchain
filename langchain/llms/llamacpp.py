@@ -2,14 +2,14 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(LLM, BaseModel):
+class LlamaCpp(LLM):
     """Wrapper around the llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the

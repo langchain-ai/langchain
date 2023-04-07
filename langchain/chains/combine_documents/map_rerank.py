@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -12,7 +12,7 @@ from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
 
 
-class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then reranking results."""
 
     llm_chain: LLMChain

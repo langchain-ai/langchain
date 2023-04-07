@@ -6,9 +6,7 @@ from typing import Any, Dict
 
 from pydantic import root_validator
 
-from langchain.chat_models.openai import (
-    ChatOpenAI,
-)
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)

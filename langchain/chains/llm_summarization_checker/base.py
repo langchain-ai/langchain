@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -27,7 +27,7 @@ ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
 )
 
 
-class LLMSummarizationCheckerChain(Chain, BaseModel):
+class LLMSummarizationCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
     Example:

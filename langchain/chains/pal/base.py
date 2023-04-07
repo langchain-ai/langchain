@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -17,7 +17,7 @@ from langchain.python import PythonREPL
 from langchain.schema import BaseLanguageModel
 
 
-class PALChain(Chain, BaseModel):
+class PALChain(Chain):
     """Implements Program-Aided Language Models."""
 
     llm: BaseLanguageModel

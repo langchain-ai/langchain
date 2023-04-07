@@ -1,7 +1,7 @@
 """Chain that interprets a prompt and executes python code to do math."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -11,7 +11,7 @@ from langchain.python import PythonREPL
 from langchain.schema import BaseLanguageModel
 
 
-class LLMMathChain(Chain, BaseModel):
+class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
     Example:
