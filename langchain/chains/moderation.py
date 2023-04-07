@@ -39,7 +39,11 @@ class OpenAIModerationChain(Chain):
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         openai_organization = get_from_dict_or_env(
-            values, "openai_organization", "OPENAI_ORGANIZATION", default=None
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default=None,
+            allow_none_default=True,
         )
         try:
             import openai
