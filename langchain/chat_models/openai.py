@@ -155,8 +155,7 @@ class ChatOpenAI(BaseChatModel):
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
-            default=None,
-            allow_none_default=True,
+            default="",
         )
         try:
             import openai

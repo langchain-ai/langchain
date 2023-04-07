@@ -208,8 +208,7 @@ class BaseOpenAI(BaseLLM):
             values,
             "openai_organization",
             "OPENAI_ORGANIZATION",
-            default=None,
-            allow_none_default=True,
+            default="",
         )
         try:
             import openai
@@ -600,11 +599,7 @@ class OpenAIChat(BaseLLM):
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         openai_organization = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default=None,
-            allow_none_default=True,
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
         try:
             import openai
