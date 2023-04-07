@@ -60,7 +60,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             data_params = data["params"]
         except KeyError:
             data_params = None
-        response = self.requests_wrapper.get(data["url"], params = data_params)
+        response = self.requests_wrapper.get(data["url"], params=data_params)
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -215,7 +215,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt, memory = shared_memory),
+        llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
     )
     return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
