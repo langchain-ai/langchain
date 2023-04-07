@@ -10,6 +10,13 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
 
+def _format_index(index: dict) -> str:
+    return (
+        f'Name: {index["name"]}, Unique: {index["unique"]},'
+        f' Columns: {str(index["column_names"])}'
+    )
+
+
 class SQLDatabase:
     """SQLAlchemy wrapper around a database."""
 
@@ -168,10 +175,7 @@ class SQLDatabase:
 
     def _get_table_indexes(self, table: Table) -> str:
         indexes = self._inspector.get_indexes(table.name)
-        index_format = (
-            lambda index: f'Name: {index["name"]}, Unique: {index["unique"]}, Columns: {str(index["column_names"])}'
-        )
-        indexes_formatted = "\n".join(map(index_format, indexes))
+        indexes_formatted = "\n".join(map(_format_index, indexes))
         return f"Table Indexes:\n{indexes_formatted}"
 
     def _get_sample_rows(self, table: Table) -> str:
