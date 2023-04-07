@@ -1,5 +1,6 @@
 """Mock Python REPL."""
 import sys
+import traceback
 from io import StringIO
 from typing import Dict, Optional
 
@@ -20,7 +21,10 @@ class PythonREPL(BaseModel):
             exec(command, self.globals, self.locals)
             sys.stdout = old_stdout
             output = mystdout.getvalue()
-        except Exception as e:
+        except Exception:
             sys.stdout = old_stdout
-            output = str(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            trace_info = traceback.format_exception(
+                exc_type, exc_value, exc_traceback)
+            output = "\n".join(trace_info)
         return output
