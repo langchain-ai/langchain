@@ -25,7 +25,8 @@ REDIS_REQUIRED_MODULES = [
 ]
 
 
-def _check_redis_module_exist(client: RedisType, modules: List[dict]):
+def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
+    """Check if the correct Redis modules are installed."""
     installed_modules = client.info().get("modules", [])
     installed_modules = {module["name"]: module for module in installed_modules}
     for module in modules:
@@ -36,7 +37,8 @@ def _check_redis_module_exist(client: RedisType, modules: List[dict]):
             raise ValueError(error_message)
 
 
-def _check_index_exists(client, index_name: str) -> bool:
+def _check_index_exists(client: RedisType, index_name: str) -> bool:
+    """Check if Redis index exists."""
     try:
         client.ft(index_name).info()
     except:
@@ -47,11 +49,14 @@ def _check_index_exists(client, index_name: str) -> bool:
 
 
 def _redis_key(prefix: str) -> str:
+    """Redis key schema for a given prefix."""
     return f"{prefix}:{uuid.uuid4().hex}"
 
 
 def _redis_prefix(index_name: str) -> str:
+    """Redis key prefix for a given index."""
     return f"doc:{index_name}"
+
 
 class Redis(VectorStore):
     def __init__(
@@ -88,16 +93,17 @@ class Redis(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Add text data to an existing index."""
+        """Add texts data to an existing index."""
         prefix = _redis_prefix(self.index_name)
         keys = kwargs.get("keys")
         ids = []
-        # Check if index exists
+        # Write data to redis
+        pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             # Use provided key otherwise use default key
             key = keys[i] if keys else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
-            self.client.hset(
+            pipeline.hset(
                 key,
                 mapping={
                     "content": text,
@@ -108,11 +114,22 @@ class Redis(VectorStore):
                 },
             )
             ids.append(key)
+        pipeline.execute()
         return ids
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [doc for doc, _ in docs_and_scores]
 
@@ -120,7 +137,8 @@ class Redis(VectorStore):
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
         """
-        Returns the most similar indexed documents to the query text.
+        Returns the most similar indexed documents to the query text within the
+        score_threshold range.
 
         Args:
             query (str): The query text for which to find similar documents.
@@ -282,7 +300,7 @@ class Redis(VectorStore):
             )
 
         # Write data to Redis
-        pipeline = client.pipeline()
+        pipeline = client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             key = _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
@@ -305,6 +323,16 @@ class Redis(VectorStore):
         delete_documents: bool,
         **kwargs: Any,
     ) -> bool:
+        """
+        Drop a Redis search index.
+
+        Args:
+            index_name (str): Name of the index to drop.
+            delete_documents (bool): Whether to drop the associated documents.
+
+        Returns:
+            bool: Whether or not the drop was successful.
+        """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
             import redis
@@ -325,7 +353,7 @@ class Redis(VectorStore):
             client.ft(index_name).dropindex(delete_documents)
             logger.info("Drop index")
             return True
-        except:  # noqa
+        except:
             # Index not exist
             return False
 
@@ -336,6 +364,7 @@ class Redis(VectorStore):
         index_name: str,
         **kwargs: Any,
     ) -> Redis:
+        """Connect to an existing Redis index."""
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
             import redis
