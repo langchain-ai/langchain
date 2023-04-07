@@ -50,7 +50,7 @@ Response Error: ```json
 {{"response": "What you did and a concise statement of the resulting error. If it can be easily fixed, provide a suggestion."}}
 ```
 
-You MUST respond as a markdown json code block.
+You MUST respond as a markdown json code block. API_RESPONSE and other information is not visible to the user.
 
 Begin:
 ---
