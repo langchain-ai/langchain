@@ -5,6 +5,7 @@ import logging
 from typing import Any, Iterable, List
 
 import requests
+from azure.core.exceptions import ClientAuthenticationError
 from azure.identity import ChainedTokenCredential
 from azure.identity._internal import InteractiveCredential
 
@@ -19,10 +20,16 @@ class PowerBIDataset:
         group_id: str | None,
         dataset_id: str,
         table_names: list[str],
-        credential: ChainedTokenCredential | InteractiveCredential,
+        credential: ChainedTokenCredential | InteractiveCredential | None = None,
+        token: str | None = None,
+        impersonated_user_name: str | None = None,
         sample_rows_in_table_info: int = 1,
     ):
-        """Create engine from database URI."""
+        """Create PowerBI engine from dataset ID and credential or token.
+
+        Use either the credential or a supplied token to authenticate. If both are supplied the credential is used to generate a token.
+        The impersonated_user_name is the UPN of a user to be impersonated. If the model is not RLS enabled, this will be ignored.
+        """
         self._group_id = group_id
         self._dataset_id = dataset_id
         self._table_names = table_names
@@ -31,6 +38,8 @@ class PowerBIDataset:
             raise ValueError("sample_rows_in_table_info must be >= 1")
         self._sample_rows_in_table_info = sample_rows_in_table_info
         self._credential = credential
+        self._token = token
+        self._impersonated_user_name = impersonated_user_name
         self.request_url = f"https://api.powerbi.com/v1.0/myorg/datasets/{self._dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
         if self._group_id:
             self.request_url = f"https://api.powerbi.com/v1.0/myorg/groups/{self._group_id}/datasets/{self._dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
@@ -38,9 +47,13 @@ class PowerBIDataset:
     @property
     def token(self) -> str:
         """Get the token."""
-        return self._credential.get_token(
-            "https://analysis.windows.net/powerbi/api/.default"
-        ).token
+        if self._credential:
+            return self._credential.get_token(
+                "https://analysis.windows.net/powerbi/api/.default"
+            ).token
+        if self._token:
+            return self._token
+        raise ClientAuthenticationError("No credential or token supplied.")
 
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -97,6 +110,7 @@ class PowerBIDataset:
             self.request_url,
             json={
                 "queries": [{"query": command}],
+                "impersonatedUserName": self._impersonated_user_name,
                 "serializerSettings": {"includeNulls": True},
             },
             headers={

@@ -45,6 +45,8 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
             if "unauthorized" in str(exc).lower():
                 return "Unauthorized. Try changing your authentication, do not retry."
             return str(exc)
+        if "results" in result:
+            return result["results"]
         return result
 
     async def _arun(self, tool_input: str) -> str:
