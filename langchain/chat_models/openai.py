@@ -400,5 +400,5 @@ class ChatOpenAI(BaseChatModel):
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
-        num_tokens += 2
+        num_tokens += 3
         return num_tokens
