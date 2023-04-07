@@ -2,8 +2,6 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
@@ -11,7 +9,7 @@ from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]
@@ -72,10 +70,16 @@ def test_agent_bad_action() -> None:
 
 
 def test_agent_stopped_early() -> None:
-    """Test react chain when bad action given."""
+    """Test react chain when max iterations or max execution time is exceeded."""
+    # iteration limit
     agent = _get_agent(max_iterations=0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to max iterations."
+    assert output == "Agent stopped due to iteration limit or time limit."
+
+    # execution time limit
+    agent = _get_agent(max_execution_time=0.0)
+    output = agent.run("when was langchain made")
+    assert output == "Agent stopped due to iteration limit or time limit."
 
 
 def test_agent_with_callbacks_global() -> None:

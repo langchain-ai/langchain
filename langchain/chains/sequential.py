@@ -1,13 +1,13 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.input import get_color_mapping
 
 
-class SequentialChain(Chain, BaseModel):
+class SequentialChain(Chain):
     """Chain where the outputs of one chain feed directly into next."""
 
     chains: List[Chain]
@@ -94,7 +94,7 @@ class SequentialChain(Chain, BaseModel):
         return {k: known_values[k] for k in self.output_variables}
 
 
-class SimpleSequentialChain(Chain, BaseModel):
+class SimpleSequentialChain(Chain):
     """Simple chain where the outputs of one step feed directly into next."""
 
     chains: List[Chain]

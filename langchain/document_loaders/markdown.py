@@ -22,4 +22,4 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
                 "Partitioning markdown files is only supported in unstructured>=0.4.16."
             )
 
-        return partition_md(filename=self.file_path)
+        return partition_md(filename=self.file_path, **self.unstructured_kwargs)
