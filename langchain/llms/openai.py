@@ -204,10 +204,20 @@ class BaseOpenAI(BaseLLM):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                print("USING ORGANIZATION: ")
+                print(openai_organization)
+                openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
             raise ValueError(
@@ -588,10 +598,15 @@ class OpenAIChat(BaseLLM):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "

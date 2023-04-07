@@ -68,6 +68,12 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_type",
             "OPENAI_API_TYPE",
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
@@ -75,6 +81,8 @@ class AzureChatOpenAI(ChatOpenAI):
             openai.api_base = openai_api_base
             openai.api_version = openai_api_version
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
