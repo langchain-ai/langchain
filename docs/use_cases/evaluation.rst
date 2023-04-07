@@ -79,7 +79,7 @@ The existing examples we have are:
 
 `Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: A notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
 
-`Evaluating an OpenAPI Chain <./evaluation/openapi_eval.ipynb>`_: A notebook showing evaluation of an OpenAPI chain, including how to generate test data if you don't have any.
+`Evaluating an OpenAPI Chain <./evaluation/openapi_eval.html>`_: A notebook showing evaluation of an OpenAPI chain, including how to generate test data if you don't have any.
 
 
 Other Examples
