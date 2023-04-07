@@ -7,7 +7,7 @@ import uuid
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, root_validator
 from redis.client import Redis as RedisType
 
 from langchain.docstore.document import Document
@@ -30,9 +30,13 @@ def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
     installed_modules = client.info().get("modules", [])
     installed_modules = {module["name"]: module for module in installed_modules}
     for module in modules:
-        if module["name"] not in installed_modules or int(installed_modules[module["name"]]["ver"]) < int(module["ver"]):
-            error_message =  "You must add the RediSearch (>= 2.4) module from Redis Stack. " \
+        if module["name"] not in installed_modules or int(
+            installed_modules[module["name"]]["ver"]
+        ) < int(module["ver"]):
+            error_message = (
+                "You must add the RediSearch (>= 2.4) module from Redis Stack. "
                 "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+            )
             logging.error(error_message)
             raise ValueError(error_message)
 
@@ -41,7 +45,7 @@ def _check_index_exists(client: RedisType, index_name: str) -> bool:
     """Check if Redis index exists."""
     try:
         client.ft(index_name).info()
-    except:
+    except:  # noqa: E722
         logger.info("Index does not exist")
         return False
     logger.info("Index already exists")
@@ -291,7 +295,7 @@ class Redis(VectorStore):
                         "DIM": dim,
                         "DISTANCE_METRIC": distance_metric,
                     },
-                )
+                ),
             )
             # Create Redis Index
             client.ft(index_name).create_index(
@@ -353,7 +357,7 @@ class Redis(VectorStore):
             client.ft(index_name).dropindex(delete_documents)
             logger.info("Drop index")
             return True
-        except:
+        except:  # noqa: E722
             # Index not exist
             return False
 
@@ -381,7 +385,9 @@ class Redis(VectorStore):
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
             # ensure that the index already exists
-            assert _check_index_exists(client, index_name), f"Index {index_name} does not exist"
+            assert _check_index_exists(
+                client, index_name
+            ), f"Index {index_name} does not exist"
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -416,9 +422,7 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
             docs = self.vectorstore.similarity_search(query, k=self.k)
         elif self.search_type == "similarity_limit":
             docs = self.vectorstore.similarity_search_limit_score(
-                query,
-                k=self.k,
-                score_threshold=self.score_threshold
+                query, k=self.k, score_threshold=self.score_threshold
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
