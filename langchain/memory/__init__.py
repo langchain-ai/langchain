@@ -9,7 +9,8 @@ from langchain.memory.chat_message_histories.redis import RedisChatMessageHistor
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
-    ConversationEntityRedisMemory,
+    InMemoryEntityStore,
+    RedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.readonly import ReadOnlySharedMemory
@@ -26,7 +27,8 @@ __all__ = [
     "ConversationSummaryBufferMemory",
     "ConversationKGMemory",
     "ConversationEntityMemory",
-    "ConversationEntityRedisMemory",
+    "InMemoryEntityStore",
+    "RedisEntityStore",
     "ConversationSummaryMemory",
     "ChatMessageHistory",
     "ConversationStringBufferMemory",
