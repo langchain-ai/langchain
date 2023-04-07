@@ -151,7 +151,9 @@ class SQLDatabase:
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
-            has_extra_info = self._indexes_in_table_info or self._sample_rows_in_table_info
+            has_extra_info = (
+                self._indexes_in_table_info or self._sample_rows_in_table_info
+            )
             if has_extra_info:
                 table_info += "\n\n/*"
             if self._indexes_in_table_info:
@@ -166,8 +168,10 @@ class SQLDatabase:
 
     def _get_table_indexes(self, table: Table) -> str:
         indexes = self._inspector.get_indexes(table.name)
-        index_format = lambda index: f'Name: {index["name"]}, Unique: {index["unique"]}, Columns: {str(index["column_names"])}'
-        indexes_formatted = '\n'.join(map(index_format, indexes))
+        index_format = (
+            lambda index: f'Name: {index["name"]}, Unique: {index["unique"]}, Columns: {str(index["column_names"])}'
+        )
+        indexes_formatted = "\n".join(map(index_format, indexes))
         return f"Table Indexes:\n{indexes_formatted}"
 
     def _get_sample_rows(self, table: Table) -> str:
@@ -198,7 +202,7 @@ class SQLDatabase:
             f"{self._sample_rows_in_table_info} rows from {table.name} table:\n"
             f"{columns_str}\n"
             f"{sample_rows_str}"
-            )
+        )
 
     def run(self, command: str, fetch: str = "all") -> str:
         """Execute a SQL command and return a string representing the results.
