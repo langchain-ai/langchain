@@ -390,3 +390,9 @@ class OutputParserException(Exception):
     """
 
     pass
+
+
+class BaseDocumentProcessor(ABC):
+    @abstractmethod
+    def process(self, documents: List[Document]) -> List[Document]:
+        """Process documents."""

@@ -17,11 +17,12 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
+from langchain.schema import BaseDocumentProcessor
 
 logger = logging.getLogger()
 
 
-class TextSplitter(ABC):
+class TextSplitter(BaseDocumentProcessor, ABC):
     """Interface for splitting text into chunks."""
 
     def __init__(
@@ -63,6 +64,9 @@ class TextSplitter(ABC):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return self.create_documents(texts, metadatas)
+
+    def process(self, documents: List[Document]) -> List[Document]:
+        return self.split_documents(documents)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
