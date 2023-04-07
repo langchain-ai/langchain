@@ -182,6 +182,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .list(
                 q=f"'{self.folder_id}' in parents",
                 pageSize=1000,
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 fields="nextPageToken, files(id, name, mimeType)",
             )
             .execute()
