@@ -165,7 +165,8 @@ class BaseOpenAI(BaseLLM):
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
         model_name = data.get("model_name", "")
-        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+        chat_model_prefixes = ["gpt-3.5-turbo", "gpt-35-turbo", "gpt-4"]
+        if any([model_name.startswith(prefix) for prefix in chat_model_prefixes]):
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
