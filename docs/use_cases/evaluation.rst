@@ -69,15 +69,17 @@ To facilitate that, we've included a `template notebook <./evaluation/benchmarki
 
 The existing examples we have are:
 
-`Question Answering (State of Union) <./evaluation/qa_benchmarking_sota.html>`_: An notebook showing evaluation of a question-answering task over a State-of-the-Union address.
+`Question Answering (State of Union) <./evaluation/qa_benchmarking_sota.html>`_: A notebook showing evaluation of a question-answering task over a State-of-the-Union address.
 
-`Question Answering (Paul Graham Essay) <./evaluation/qa_benchmarking_pg.html>`_: An notebook showing evaluation of a question-answering task over a Paul Graham essay.
+`Question Answering (Paul Graham Essay) <./evaluation/qa_benchmarking_pg.html>`_: A notebook showing evaluation of a question-answering task over a Paul Graham essay.
 
-`SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: An notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
+`SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: A notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
 
-`Agent Vectorstore <./evaluation/agent_vectordb_sota_pg.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
+`Agent Vectorstore <./evaluation/agent_vectordb_sota_pg.html>`_: A notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
 
-`Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
+`Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: A notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
+
+`Evaluating an OpenAPI Chain <./evaluation/openapi_eval.html>`_: A notebook showing evaluation of an OpenAPI chain, including how to generate test data if you don't have any.
 
 
 Other Examples
