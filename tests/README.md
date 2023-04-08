@@ -26,7 +26,8 @@ poetry install --with test_integration
 Any new dependencies should be added by running:
 
 ```bash
-poetry add some_new_deps --group "test_integration" 
+# add package and install it after adding:
+poetry add deeplake --group "test_integration" && poetry install --with test_integration
 ```
 
 Before running any tests, you should start a specific Docker container that has all the
