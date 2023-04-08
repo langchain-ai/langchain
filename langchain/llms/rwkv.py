@@ -67,8 +67,6 @@ class RWKV(LLM, BaseModel):
 
     pipeline: Any = None  #: :meta private:
 
-    model_state: Any = None  #: :meta private:
-
     model_tokens: Any = None  #: :meta private:
 
     class Config:
@@ -145,7 +143,7 @@ class RWKV(LLM, BaseModel):
         tokens = self.tokenizer.encode(prompt).ids
 
         logits = None
-        state = self.model_state
+        state = None
 
         occurrence = {}
 
@@ -178,8 +176,6 @@ class RWKV(LLM, BaseModel):
                     + occurrence[n] * self.penalty_alpha_frequency
                 )
 
-        # Update state for future invocations
-        self.model_state = state
         return decoded
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
