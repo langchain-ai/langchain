@@ -1,6 +1,7 @@
 """Test ElasticSearch functionality."""
 import logging
 import os
+import uuid
 from typing import Generator, List, Union
 
 import pytest
@@ -76,6 +77,7 @@ class TestElasticsearch:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_default_index_from_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
@@ -94,44 +96,55 @@ class TestElasticsearch:
         print(search_result)
         assert len(search_result) != 0
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_from_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'from_documents'."""
+
+        index_name = f"custom_index_{uuid.uuid4().hex}"
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         elastic_vector_search = ElasticVectorSearch.from_documents(
             documents=documents,
             embedding=embedding,
             elasticsearch_url=elasticsearch_url,
-            index_name="custom_index",
+            index_name=index_name,
         )
         es = Elasticsearch(hosts=elasticsearch_url)
         index_names = es.indices.get(index="_all").keys()
-        assert "custom_index" in index_names
+        assert index_name in index_names
 
         search_result = elastic_vector_search.similarity_search("sharks")
         print(search_result)
 
         assert len(search_result) != 0
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_add_documents(
         self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'add_documents'."""
+
+        index_name = f"custom_index_{uuid.uuid4().hex}"
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         elastic_vector_search = ElasticVectorSearch(
             embedding=embedding,
             elasticsearch_url=elasticsearch_url,
-            index_name="custom_index",
+            index_name=index_name,
         )
         es = Elasticsearch(hosts=elasticsearch_url)
-        index_names = es.indices.get(index="_all").keys()
-        assert "custom_index" in index_names
-
         elastic_vector_search.add_documents(documents)
+
+        index_names = es.indices.get(index="_all").keys()
+        assert index_name in index_names
+
         search_result = elastic_vector_search.similarity_search("sharks")
         print(search_result)
 
         assert len(search_result) != 0
+
+    def test_custom_index_add_documents_to_exists_store(self) -> None:
+        # TODO: implement it
+        pass

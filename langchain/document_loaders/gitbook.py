@@ -1,6 +1,6 @@
 """Loader that loads GitBook."""
 from typing import Any, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.web_base import WebBaseLoader
@@ -18,6 +18,7 @@ class GitbookLoader(WebBaseLoader):
         web_page: str,
         load_all_paths: bool = False,
         base_url: Optional[str] = None,
+        content_selector: str = "main",
     ):
         """Initialize with web page and whether to load all paths.
 
@@ -39,6 +40,7 @@ class GitbookLoader(WebBaseLoader):
             web_paths = web_page
         super().__init__(web_paths)
         self.load_all_paths = load_all_paths
+        self.content_selector = content_selector
 
     def load(self) -> List[Document]:
         """Fetch text from one single GitBook page."""
@@ -47,18 +49,23 @@ class GitbookLoader(WebBaseLoader):
             relative_paths = self._get_paths(soup_info)
             documents = []
             for path in relative_paths:
-                url = self.base_url + path
+                url = urljoin(self.base_url, path)
                 print(f"Fetching text from {url}")
                 soup_info = self._scrape(url)
                 documents.append(self._get_document(soup_info, url))
-            return documents
+            return [d for d in documents if d]
         else:
             soup_info = self.scrape()
-            return [self._get_document(soup_info, self.web_path)]
+            documents = [self._get_document(soup_info, self.web_path)]
+            return [d for d in documents if d]
 
-    def _get_document(self, soup: Any, custom_url: Optional[str] = None) -> Document:
+    def _get_document(
+        self, soup: Any, custom_url: Optional[str] = None
+    ) -> Optional[Document]:
         """Fetch content from page and return Document."""
-        page_content_raw = soup.find("main")
+        page_content_raw = soup.find(self.content_selector)
+        if not page_content_raw:
+            return None
         content = page_content_raw.get_text(separator="\n").strip()
         title_if_exists = page_content_raw.find("h1")
         title = title_if_exists.text if title_if_exists else ""

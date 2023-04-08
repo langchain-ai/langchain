@@ -27,7 +27,7 @@ FROM builder AS dependencies
 COPY pyproject.toml poetry.lock poetry.toml ./
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
-RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi
+RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi --with test
 
 # Use a multi-stage build to run tests
 FROM dependencies AS tests
@@ -35,7 +35,7 @@ FROM dependencies AS tests
 # Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
 COPY . .
 
-RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi
+RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with test
 
 # Set the entrypoint to run tests using Poetry
 ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]
