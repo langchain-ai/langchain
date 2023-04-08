@@ -151,6 +151,7 @@ class BaseOpenAI(BaseLLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
