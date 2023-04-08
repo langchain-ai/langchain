@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from typing import Any, AsyncIterator, Dict, List, Literal, Union, cast
 
@@ -54,7 +56,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
             )
 
             # Extract the value of the first completed task
-            token_or_done = cast(str | Literal[True], done.pop().result())
+            token_or_done = cast(Union[str, Literal[True]], done.pop().result())
 
             # If the extracted value is the boolean True, the done event was set
             if token_or_done is True:
