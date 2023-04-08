@@ -244,7 +244,7 @@ class DeepLake(VectorStore):
             distance_metric: `L2` for Euclidean, `L1` for Nuclear,
                 `max` L-infinity distance, `cos` for cosine similarity,
                 'dot' for dot product. Defaults to `L2`.
-            filter: Attribute filter by metadata example {'key': 'value'}. It can also 
+            filter: Attribute filter by metadata example {'key': 'value'}. It can also
             take [Deep Lake filter]
             (https://docs.deeplake.ai/en/latest/deeplake.core.dataset.html#deeplake.core.dataset.Dataset.filter)
                 Defaults to None.
