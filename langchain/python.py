@@ -24,7 +24,6 @@ class PythonREPL(BaseModel):
         except Exception:
             sys.stdout = old_stdout
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            trace_info = traceback.format_exception(
-                exc_type, exc_value, exc_traceback)
+            trace_info = traceback.format_exception(exc_type, exc_value, exc_traceback)
             output = "\n".join(trace_info)
         return output
