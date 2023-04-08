@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Callable
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -244,8 +244,9 @@ class DeepLake(VectorStore):
             distance_metric: `L2` for Euclidean, `L1` for Nuclear,
                 `max` L-infinity distance, `cos` for cosine similarity,
                 'dot' for dot product. Defaults to `L2`.
-            filter: Attribute filter by metadata example {'key': 'value'}. It can also take
-                [Deep Lake filter](https://docs.deeplake.ai/en/latest/deeplake.core.dataset.html#deeplake.core.dataset.Dataset.filter).
+            filter: Attribute filter by metadata example {'key': 'value'}. It can also 
+            take [Deep Lake filter]
+            (https://docs.deeplake.ai/en/latest/deeplake.core.dataset.html#deeplake.core.dataset.Dataset.filter)
                 Defaults to None.
             maximal_marginal_relevance: Whether to use maximal marginal relevance.
                 Defaults to False.
