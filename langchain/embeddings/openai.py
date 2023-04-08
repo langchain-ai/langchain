@@ -98,6 +98,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     query_model_name: str = "text-embedding-ada-002"
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6

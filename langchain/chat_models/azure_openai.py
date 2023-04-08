@@ -44,6 +44,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
+    openai_organization: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
