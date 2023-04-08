@@ -115,6 +115,7 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     request_timeout: int = 60
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
@@ -151,10 +152,18 @@ class ChatOpenAI(BaseChatModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
@@ -183,6 +192,7 @@ class ChatOpenAI(BaseChatModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
+            "temperature": self.temperature,
             **self.model_kwargs,
         }
 
@@ -392,5 +402,5 @@ class ChatOpenAI(BaseChatModel):
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
-        num_tokens += 2
+        num_tokens += 3
         return num_tokens
