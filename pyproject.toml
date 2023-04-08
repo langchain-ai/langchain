@@ -52,10 +52,10 @@ aiohttp = "^3.8.3"
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.2.9", optional = true}
+deeplake = {version = "^3.2.21", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
-boto3 = {version = "^1.26.96", optional = true}
+#boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
 
@@ -92,6 +92,12 @@ openai = "^0.27.4"
 elasticsearch = {extras = ["async"], version = "^8.6.2"}
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
+redis = "^4.5.4"
+pinecone-client = "^2.2.1"
+pgvector = "^0.1.6"
+transformers = "^4.27.4"
+pandas = "^2.0.0"
+deeplake = "^3.2.21"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
