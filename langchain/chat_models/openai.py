@@ -115,6 +115,7 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     request_timeout: int = 60
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
