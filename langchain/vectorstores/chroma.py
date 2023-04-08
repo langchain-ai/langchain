@@ -59,7 +59,7 @@ class Chroma(VectorStore):
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        collection_metadata: Optional[Dict] = None
+        collection_metadata: Optional[Dict] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -87,7 +87,7 @@ class Chroma(VectorStore):
             embedding_function=self._embedding_function.embed_documents
             if self._embedding_function is not None
             else None,
-            metadata=collection_metadata
+            metadata=collection_metadata,
         )
 
     def add_texts(
