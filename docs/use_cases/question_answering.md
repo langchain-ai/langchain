@@ -51,8 +51,8 @@ chain.run(input_documents=docs, question=query)
 ```
 
 The following resources exist:
-- [Question Answering Notebook](/modules/indexes/chain_examples/question_answering.ipynb): A notebook walking through how to accomplish this task.
-- [VectorDB Question Answering Notebook](/modules/indexes/chain_examples/vector_db_qa.ipynb): A notebook walking through how to do question answering over a vector database. This can often be useful for when you have a LOT of documents, and you don't want to pass them all to the LLM, but rather first want to do some semantic search over embeddings.
+- [Question Answering Notebook](../modules/chains/index_examples/question_answering.ipynb): A notebook walking through how to accomplish this task.
+- [VectorDB Question Answering Notebook](../modules/chains/index_examples/vector_db_qa.ipynb): A notebook walking through how to do question answering over a vector database. This can often be useful for when you have a LOT of documents, and you don't want to pass them all to the LLM, but rather first want to do some semantic search over embeddings.
 
 ## Adding in sources
 
@@ -67,8 +67,8 @@ chain({"input_documents": docs, "question": query}, return_only_outputs=True)
 ```
 
 The following resources exist:
-- [QA With Sources Notebook](/modules/indexes/chain_examples/qa_with_sources.ipynb): A notebook walking through how to accomplish this task.
-- [VectorDB QA With Sources Notebook](/modules/indexes/chain_examples/vector_db_qa_with_sources.ipynb): A notebook walking through how to do question answering with sources over a vector database. This can often be useful for when you have a LOT of documents, and you don't want to pass them all to the LLM, but rather first want to do some semantic search over embeddings.
+- [QA With Sources Notebook](../modules/chains/index_examples/qa_with_sources.ipynb): A notebook walking through how to accomplish this task.
+- [VectorDB QA With Sources Notebook](../modules/chains/index_examples/vector_db_qa_with_sources.ipynb): A notebook walking through how to do question answering with sources over a vector database. This can often be useful for when you have a LOT of documents, and you don't want to pass them all to the LLM, but rather first want to do some semantic search over embeddings.
 
 ## Additional Related Resources
 
