@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Callable
 
 import numpy as np
 
@@ -46,6 +46,7 @@ def vector_search(
     # Calculate the distance between the query_vector and all data_vectors
     distances = distance_metric_map[distance_metric](query_embedding, data_vectors)
     nearest_indices = np.argsort(distances)
+
     nearest_indices = (
         nearest_indices[::-1][:k] if distance_metric in ["cos"] else nearest_indices[:k]
     )
@@ -230,7 +231,7 @@ class DeepLake(VectorStore):
         distance_metric: str = "L2",
         use_maximal_marginal_relevance: Optional[bool] = False,
         fetch_k: Optional[int] = 20,
-        filter: Optional[Dict[str, str]] = None,
+        filter: Optional[Any[Dict[str, str], Callable, str]] = None,
         return_score: Optional[bool] = False,
         **kwargs: Any,
     ) -> Any[List[Document], List[Tuple[Document, float]]]:
@@ -243,7 +244,8 @@ class DeepLake(VectorStore):
             distance_metric: `L2` for Euclidean, `L1` for Nuclear,
                 `max` L-infinity distance, `cos` for cosine similarity,
                 'dot' for dot product. Defaults to `L2`.
-            filter: Attribute filter by metadata example {'key': 'value'}.
+            filter: Attribute filter by metadata example {'key': 'value'}. It can also take
+                [Deep Lake filter](https://docs.deeplake.ai/en/latest/deeplake.core.dataset.html#deeplake.core.dataset.Dataset.filter).
                 Defaults to None.
             maximal_marginal_relevance: Whether to use maximal marginal relevance.
                 Defaults to False.
@@ -259,8 +261,10 @@ class DeepLake(VectorStore):
 
         # attribute based filtering
         if filter is not None:
-            view = view.filter(partial(dp_filter, filter=filter))
+            if isinstance(filter, dict):
+                filter = partial(dp_filter, filter=filter)
 
+            view = view.filter(filter)
             if len(view) == 0:
                 return []
 
@@ -279,8 +283,7 @@ class DeepLake(VectorStore):
                 query
             )  # type: ignore
             query_emb = np.array(emb, dtype=np.float32)
-            embeddings = view.embedding.numpy()
-
+            embeddings = view.embedding.numpy(fetch_chunks=True)
             k_search = fetch_k if use_maximal_marginal_relevance else k
             indices, scores = vector_search(
                 query_emb,
@@ -288,8 +291,8 @@ class DeepLake(VectorStore):
                 k=k_search,
                 distance_metric=distance_metric.lower(),
             )
-            view = view[indices]
 
+            view = view[indices]
             if use_maximal_marginal_relevance:
                 indices = maximal_marginal_relevance(
                     query_emb, embeddings[indices], k=min(k, len(indices))
