@@ -93,12 +93,17 @@ class DeepLake(VectorStore):
         dataset_path: str = _LANGCHAIN_DEFAULT_DEEPLAKE_PATH,
         token: Optional[str] = None,
         embedding_function: Optional[Embeddings] = None,
-        read_only: Optional[bool] = None,
+        read_only: Optional[bool] = False,
+        ingestion_batch_size: int = 1024,
+        num_workers: int = 4,
     ) -> None:
         """Initialize with Deep Lake client."""
+        self.ingestion_batch_size = ingestion_batch_size
+        self.num_workers = num_workers
 
         try:
             import deeplake
+            from deeplake.constants import MB
         except ImportError:
             raise ValueError(
                 "Could not import deeplake python package. "
@@ -115,6 +120,7 @@ class DeepLake(VectorStore):
             self.ds.summary()
         else:
             self.ds = deeplake.empty(dataset_path, token=token, overwrite=True)
+
             with self.ds:
                 self.ds.create_tensor(
                     "text",
@@ -122,6 +128,7 @@ class DeepLake(VectorStore):
                     create_id_tensor=False,
                     create_sample_info_tensor=False,
                     create_shape_tensor=False,
+                    chunk_compression="lz4",
                 )
                 self.ds.create_tensor(
                     "metadata",
@@ -129,13 +136,16 @@ class DeepLake(VectorStore):
                     create_id_tensor=False,
                     create_sample_info_tensor=False,
                     create_shape_tensor=False,
+                    chunk_compression="lz4",
                 )
                 self.ds.create_tensor(
                     "embedding",
                     htype="generic",
+                    dtype=np.float32,
                     create_id_tensor=False,
                     create_sample_info_tensor=False,
-                    create_shape_tensor=False,
+                    max_chunk_size=64 * MB,
+                    create_shape_tensor=True,
                 )
                 self.ds.create_tensor(
                     "ids",
@@ -143,6 +153,7 @@ class DeepLake(VectorStore):
                     create_id_tensor=False,
                     create_sample_info_tensor=False,
                     create_shape_tensor=False,
+                    chunk_compression="lz4",
                 )
 
         self._embedding_function = embedding_function
@@ -170,29 +181,45 @@ class DeepLake(VectorStore):
 
         text_list = list(texts)
 
-        if self._embedding_function is None:
-            embeddings: Sequence[Optional[List[float]]] = [None] * len(text_list)
-        else:
-            embeddings = self._embedding_function.embed_documents(text_list)
-
         if metadatas is None:
             metadatas = [{}] * len(text_list)
 
-        elements = zip(text_list, embeddings, metadatas, ids)
+        elements = list(zip(text_list, metadatas, ids))
 
         @self._deeplake.compute
         def ingest(sample_in: list, sample_out: list) -> None:
-            s = {
-                "text": sample_in[0],
-                "embedding": sample_in[1],
-                "metadata": sample_in[2],
-                "ids": sample_in[3],
-            }
-            sample_out.append(s)
+            text_list = [s[0] for s in sample_in]
 
-        ingest().eval(list(elements), self.ds)
+            embeds: Sequence[Optional[np.ndarray]] = []
+
+            if self._embedding_function is not None:
+                embeddings = self._embedding_function.embed_documents(text_list)
+                embeds = [np.array(e, dtype=np.float32) for e in embeddings]
+            else:
+                embeds = [None] * len(text_list)
+
+            for s, e in zip(sample_in, embeds):
+                sample_out.append(
+                    {
+                        "text": s[0],
+                        "metadata": s[1],
+                        "ids": s[2],
+                        "embedding": e,
+                    }
+                )
+
+        batch_size = min(self.ingestion_batch_size, len(elements))
+        batched = [
+            elements[i : i + batch_size] for i in range(0, len(elements), batch_size)
+        ]
+
+        ingest().eval(
+            batched,
+            self.ds,
+            num_workers=min(self.num_workers, len(batched) // self.num_workers),
+        )
         self.ds.commit(allow_empty=True)
-
+        self.ds.summary()
         return ids
 
     def search(
