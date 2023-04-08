@@ -1,5 +1,5 @@
 """Wrapper around AI21 APIs."""
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from pydantic import BaseModel, Extra, root_validator
@@ -19,7 +19,7 @@ class AI21PenaltyData(BaseModel):
     applyToEmojis: bool = True
 
 
-class AI21(LLM, BaseModel):
+class AI21(LLM):
     """Wrapper around AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
@@ -28,11 +28,11 @@ class AI21(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import AI21
-            ai21 = AI21(model="j1-jumbo")
+            from langchain.llms import AI21
+            ai21 = AI21(model="j2-jumbo-instruct")
     """
 
-    model: str = "j1-jumbo"
+    model: str = "j2-jumbo-instruct"
     """Model name to use."""
 
     temperature: float = 0.7
@@ -64,6 +64,11 @@ class AI21(LLM, BaseModel):
 
     ai21_api_key: Optional[str] = None
 
+    stop: Optional[List[str]] = None
+
+    base_url: Optional[str] = None
+    """Base url to use, if None decides based on model name."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -77,7 +82,7 @@ class AI21(LLM, BaseModel):
         return values
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling AI21 API."""
         return {
             "temperature": self.temperature,
@@ -92,7 +97,7 @@ class AI21(LLM, BaseModel):
         }
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
@@ -116,10 +121,21 @@ class AI21(LLM, BaseModel):
 
                 response = ai21("Tell me a joke.")
         """
-        if stop is None:
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            stop = self.stop
+        elif stop is None:
             stop = []
+        if self.base_url is not None:
+            base_url = self.base_url
+        else:
+            if self.model in ("j1-grande-instruct",):
+                base_url = "https://api.ai21.com/studio/v1/experimental"
+            else:
+                base_url = "https://api.ai21.com/studio/v1"
         response = requests.post(
-            url=f"https://api.ai21.com/studio/v1/{self.model}/complete",
+            url=f"{base_url}/{self.model}/complete",
             headers={"Authorization": f"Bearer {self.ai21_api_key}"},
             json={"prompt": prompt, "stopSequences": stop, **self._default_params},
         )

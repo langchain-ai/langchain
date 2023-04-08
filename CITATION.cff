@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Chase"
+  given-names: "Harrison"
+title: "LangChain"
+date-released: 2022-10-17
+url: "https://github.com/hwchase17/langchain"

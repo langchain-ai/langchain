@@ -37,6 +37,17 @@ Open Source
 
     ---
 
+    .. link-button:: https://github.com/normandmickey/MrsStax
+        :type: url
+        :text: QA Slack Bot
+        :classes: stretched-link btn-lg
+
+    +++
+
+    This application is a Slack Bot that uses Langchain and OpenAI's GPT3 language model to provide domain specific answers. You provide the documents.
+
+    ---
+
     .. link-button:: https://github.com/OpenBioLink/ThoughtSource
         :type: url
         :text: ThoughtSource
@@ -73,6 +84,17 @@ Open Source
     .. link-button:: https://dagster.io/blog/chatgpt-langchain
         :type: url
         :text: Dagster Documentation ChatBot
+        :classes: stretched-link btn-lg
+
+    +++
+
+    A jupyter notebook demonstrating how you could create a semantic search engine on documents in one of your Google Folders
+
+    ---
+
+    .. link-button:: https://github.com/venuv/langchain_semantic_search
+        :type: url
+        :text: Google Folder Semantic Search
         :classes: stretched-link btn-lg
 
     +++
@@ -136,14 +158,14 @@ Open Source
 
     ---
 
-    .. link-button:: https://github.com/jerryjliu/gpt_index
+    .. link-button:: https://github.com/jerryjliu/llama_index
         :type: url
-        :text: GPT Index
+        :text: LlamaIndex
         :classes: stretched-link btn-lg
     
     +++
 
-    GPT Index is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+    LlamaIndex (formerly GPT Index) is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
     ---
 
@@ -188,6 +210,17 @@ Open Source
     +++
 
     This repo is a simple demonstration of using LangChain to do fact-checking with prompt chaining.
+    
+    ---
+
+    .. link-button:: https://github.com/arc53/docsgpt
+        :type: url
+        :text: DocsGPT
+        :classes: stretched-link btn-lg
+    
+    +++
+
+    Answer questions about the documentation of any project    
 
 Misc. Colab Notebooks
 ~~~~~~~~~~~~~~~
@@ -289,5 +322,14 @@ Proprietary
 
     By Zahid Khawaja, this demo utilizes question answering to answer questions about a given website. A followup added this for `YouTube videos <https://twitter.com/chillzaza_/status/1593739682013220865?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ>`_, and then another followup added it for `Wikipedia <https://twitter.com/chillzaza_/status/1594847151238037505?s=20&t=EhU8jl0KyCPJ7vE9Rnz-cQ>`_.
 
+    ---
 
+    .. link-button:: https://mynd.so
+        :type: url
+        :text: Mynd
+        :classes: stretched-link btn-lg
 
+    +++
+
+    A journaling app for self-care that uses AI to uncover insights and patterns over time.
+    

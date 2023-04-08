@@ -4,8 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.schema import Generation
 
@@ -60,7 +64,7 @@ class SQLAlchemyCache(BaseCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
-        Base.metadata.create_all(self.engine)
+        self.cache_schema.metadata.create_all(self.engine)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
@@ -71,9 +75,7 @@ class SQLAlchemyCache(BaseCache):
             .order_by(self.cache_schema.idx)
         )
         with Session(self.engine) as session:
-            generations = []
-            for row in session.execute(stmt):
-                generations.append(Generation(text=row[0]))
+            generations = [Generation(text=row[0]) for row in session.execute(stmt)]
             if len(generations) > 0:
                 return generations
         return None
@@ -85,7 +87,7 @@ class SQLAlchemyCache(BaseCache):
                 prompt=prompt, llm=llm_string, response=generation.text, idx=i
             )
             with Session(self.engine) as session, session.begin():
-                session.add(item)
+                session.merge(item)
 
 
 class SQLiteCache(SQLAlchemyCache):

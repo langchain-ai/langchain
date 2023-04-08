@@ -1,7 +1,7 @@
 """A shared CallbackManager."""
 
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -41,18 +41,22 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_llm_start(serialized, prompts, **kwargs)
 
-    def on_llm_end(
-        self,
-        response: LLMResult,
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
         with self._lock:
-            self._callback_manager.on_llm_end(response)
+            self._callback_manager.on_llm_end(response, **kwargs)
 
-    def on_llm_error(self, error: Exception) -> None:
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run when LLM generates a new token."""
+        with self._lock:
+            self._callback_manager.on_llm_new_token(token, **kwargs)
+
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when LLM errors."""
         with self._lock:
-            self._callback_manager.on_llm_error(error)
+            self._callback_manager.on_llm_error(error, **kwargs)
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
@@ -61,32 +65,41 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.on_chain_start(serialized, inputs, **kwargs)
 
-    def on_chain_end(self, outputs: Dict[str, Any]) -> None:
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
         with self._lock:
-            self._callback_manager.on_chain_end(outputs)
+            self._callback_manager.on_chain_end(outputs, **kwargs)
 
-    def on_chain_error(self, error: Exception) -> None:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when chain errors."""
         with self._lock:
-            self._callback_manager.on_chain_error(error)
+            self._callback_manager.on_chain_error(error, **kwargs)
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         with self._lock:
-            self._callback_manager.on_tool_start(serialized, action, **kwargs)
+            self._callback_manager.on_tool_start(serialized, input_str, **kwargs)
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+        with self._lock:
+            self._callback_manager.on_agent_action(action, **kwargs)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         with self._lock:
             self._callback_manager.on_tool_end(output, **kwargs)
 
-    def on_tool_error(self, error: Exception) -> None:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
         """Run when tool errors."""
         with self._lock:
-            self._callback_manager.on_tool_error(error)
+            self._callback_manager.on_tool_error(error, **kwargs)
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text."""
@@ -108,7 +121,7 @@ class SharedCallbackManager(Singleton, BaseCallbackManager):
         with self._lock:
             self._callback_manager.remove_handler(callback)
 
-    def set_handler(self, handler: BaseCallbackHandler) -> None:
-        """Set handler as the only handler on the callback manager."""
+    def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
+        """Set handlers as the only handlers on the callback manager."""
         with self._lock:
-            self._callback_manager.handlers = [handler]
+            self._callback_manager.handlers = handlers

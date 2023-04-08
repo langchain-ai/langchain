@@ -13,6 +13,27 @@ def test_prompt_valid() -> None:
     assert prompt.input_variables == input_variables
 
 
+def test_prompt_from_template() -> None:
+    """Test prompts can be constructed from a template."""
+    # Single input variable.
+    template = "This is a {foo} test."
+    prompt = PromptTemplate.from_template(template)
+    expected_prompt = PromptTemplate(template=template, input_variables=["foo"])
+    assert prompt == expected_prompt
+
+    # Multiple input variables.
+    template = "This {bar} is a {foo} test."
+    prompt = PromptTemplate.from_template(template)
+    expected_prompt = PromptTemplate(template=template, input_variables=["bar", "foo"])
+    assert prompt == expected_prompt
+
+    # Multiple input variables with repeats.
+    template = "This {bar} is a {foo} test {foo}."
+    prompt = PromptTemplate.from_template(template)
+    expected_prompt = PromptTemplate(template=template, input_variables=["bar", "foo"])
+    assert prompt == expected_prompt
+
+
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
@@ -87,3 +108,40 @@ def test_prompt_from_file() -> None:
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+
+
+def test_partial_init_string() -> None:
+    """Test prompt can be initialized with partial variables."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=[], template=template, partial_variables={"foo": 1}
+    )
+    assert prompt.template == template
+    assert prompt.input_variables == []
+    result = prompt.format()
+    assert result == "This is a 1 test."
+
+
+def test_partial_init_func() -> None:
+    """Test prompt can be initialized with partial variables."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=[], template=template, partial_variables={"foo": lambda: 2}
+    )
+    assert prompt.template == template
+    assert prompt.input_variables == []
+    result = prompt.format()
+    assert result == "This is a 2 test."
+
+
+def test_partial() -> None:
+    """Test prompt can be partialed."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(input_variables=["foo"], template=template)
+    assert prompt.template == template
+    assert prompt.input_variables == ["foo"]
+    new_prompt = prompt.partial(foo="3")
+    new_result = new_prompt.format()
+    assert new_result == "This is a 3 test."
+    result = prompt.format(foo="foo")
+    assert result == "This is a foo test."

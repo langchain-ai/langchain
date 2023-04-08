@@ -1,0 +1,8 @@
+{
+  "memory": null,
+  "verbose": true,
+  "prompt_path": "prompt.json",
+  "llm_path": "llm.json",
+  "output_key": "text",
+  "_type": "llm_chain"
+}

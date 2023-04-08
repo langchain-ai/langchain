@@ -17,7 +17,7 @@ def selector() -> LengthBasedExampleSelector:
     selector = LengthBasedExampleSelector(
         examples=EXAMPLES,
         example_prompt=prompts,
-        max_length=25,
+        max_length=30,
     )
     return selector
 

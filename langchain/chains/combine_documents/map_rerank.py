@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.prompts.base import RegexParser
+from langchain.output_parsers.regex import RegexParser
 
 
-class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then reranking results."""
 
     llm_chain: LLMChain
@@ -98,8 +98,27 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             # FYI - this is parallelized and so it is fast.
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
         )
-        typed_results = cast(List[dict], results)
+        return self._process_results(docs, results)
 
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine documents in a map rerank manner.
+
+        Combine by mapping first chain over all documents, then reranking the results.
+        """
+        results = await self.llm_chain.aapply_and_parse(
+            # FYI - this is parallelized and so it is fast.
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+        )
+        return self._process_results(docs, results)
+
+    def _process_results(
+        self,
+        docs: List[Document],
+        results: Sequence[Union[str, List[str], Dict[str, str]]],
+    ) -> Tuple[str, dict]:
+        typed_results = cast(List[dict], results)
         sorted_res = sorted(
             zip(typed_results, docs), key=lambda x: -int(x[0][self.rank_key])
         )
@@ -111,3 +130,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         if self.return_intermediate_steps:
             extra_info["intermediate_steps"] = results
         return output[self.answer_key], extra_info
+
+    @property
+    def _chain_type(self) -> str:
+        return "map_rerank_documents_chain"

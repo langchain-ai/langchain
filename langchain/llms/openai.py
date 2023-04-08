@@ -1,9 +1,30 @@
 """Wrapper around OpenAI APIs."""
+from __future__ import annotations
+
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Mapping, Optional, Tuple, Union
+import warnings
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.llms.base import BaseLLM
 from langchain.schema import Generation, LLMResult
@@ -12,7 +33,87 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class BaseOpenAI(BaseLLM, BaseModel):
+def update_token_usage(
+    keys: Set[str], response: Dict[str, Any], token_usage: Dict[str, Any]
+) -> None:
+    """Update token usage."""
+    _keys_to_use = keys.intersection(response["usage"])
+    for _key in _keys_to_use:
+        if _key not in token_usage:
+            token_usage[_key] = response["usage"][_key]
+        else:
+            token_usage[_key] += response["usage"][_key]
+
+
+def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) -> None:
+    """Update response from the stream response."""
+    response["choices"][0]["text"] += stream_response["choices"][0]["text"]
+    response["choices"][0]["finish_reason"] = stream_response["choices"][0][
+        "finish_reason"
+    ]
+    response["choices"][0]["logprobs"] = stream_response["choices"][0]["logprobs"]
+
+
+def _streaming_response_template() -> Dict[str, Any]:
+    return {
+        "choices": [
+            {
+                "text": "",
+                "finish_reason": None,
+                "logprobs": None,
+            }
+        ]
+    }
+
+
+def _create_retry_decorator(llm: Union[BaseOpenAI, OpenAIChat]) -> Callable[[Any], Any]:
+    import openai
+
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(llm.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def completion_with_retry(llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    def _completion_with_retry(**kwargs: Any) -> Any:
+        return llm.client.create(**kwargs)
+
+    return _completion_with_retry(**kwargs)
+
+
+async def acompletion_with_retry(
+    llm: Union[BaseOpenAI, OpenAIChat], **kwargs: Any
+) -> Any:
+    """Use tenacity to retry the async completion call."""
+    retry_decorator = _create_retry_decorator(llm)
+
+    @retry_decorator
+    async def _completion_with_retry(**kwargs: Any) -> Any:
+        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
+        return await llm.client.acreate(**kwargs)
+
+    return await _completion_with_retry(**kwargs)
+
+
+class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -24,7 +125,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import OpenAI
+            from langchain.llms import OpenAI
             openai = OpenAI(model_name="text-davinci-003")
     """
 
@@ -50,12 +151,29 @@ class BaseOpenAI(BaseLLM, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
+
+    def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
+        """Initialize the OpenAI object."""
+        model_name = data.get("model_name", "")
+        if model_name.startswith("gpt-3.5-turbo") or model_name.startswith("gpt-4"):
+            warnings.warn(
+                "You are trying to use a chat model. This way of initializing it is "
+                "no longer supported. Instead, please use: "
+                "`from langchain.chat_models import ChatOpenAI`"
+            )
+            return OpenAIChat(**data)
+        return super().__new__(cls)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -87,16 +205,30 @@ class BaseOpenAI(BaseLLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                print("USING ORGANIZATION: ")
+                print(openai_organization)
+                openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please it install it with `pip install openai`."
             )
+        if values["streaming"] and values["n"] > 1:
+            raise ValueError("Cannot stream results when n > 1.")
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
         return values
 
     @property
@@ -134,11 +266,89 @@ class BaseOpenAI(BaseLLM, BaseModel):
         """
         # TODO: write a unit test for this
         params = self._invocation_params
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
+        choices = []
+        token_usage: Dict[str, int] = {}
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        for _prompts in sub_prompts:
+            if self.streaming:
+                if len(_prompts) > 1:
+                    raise ValueError("Cannot stream results with multiple prompts.")
+                params["stream"] = True
+                response = _streaming_response_template()
+                for stream_resp in completion_with_retry(
+                    self, prompt=_prompts, **params
+                ):
+                    self.callback_manager.on_llm_new_token(
+                        stream_resp["choices"][0]["text"],
+                        verbose=self.verbose,
+                        logprobs=stream_resp["choices"][0]["logprobs"],
+                    )
+                    _update_response(response, stream_resp)
+                choices.extend(response["choices"])
+            else:
+                response = completion_with_retry(self, prompt=_prompts, **params)
+                choices.extend(response["choices"])
+            if not self.streaming:
+                # Can't update token usage if streaming
+                update_token_usage(_keys, response, token_usage)
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        """Call out to OpenAI's endpoint async with k unique prompts."""
+        params = self._invocation_params
+        sub_prompts = self.get_sub_prompts(params, prompts, stop)
+        choices = []
+        token_usage: Dict[str, int] = {}
+        # Get the token usage from the response.
+        # Includes prompt, completion, and total tokens used.
+        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
+        for _prompts in sub_prompts:
+            if self.streaming:
+                if len(_prompts) > 1:
+                    raise ValueError("Cannot stream results with multiple prompts.")
+                params["stream"] = True
+                response = _streaming_response_template()
+                async for stream_resp in await acompletion_with_retry(
+                    self, prompt=_prompts, **params
+                ):
+                    if self.callback_manager.is_async:
+                        await self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"],
+                            verbose=self.verbose,
+                            logprobs=stream_resp["choices"][0]["logprobs"],
+                        )
+                    else:
+                        self.callback_manager.on_llm_new_token(
+                            stream_resp["choices"][0]["text"],
+                            verbose=self.verbose,
+                            logprobs=stream_resp["choices"][0]["logprobs"],
+                        )
+                    _update_response(response, stream_resp)
+                choices.extend(response["choices"])
+            else:
+                response = await acompletion_with_retry(self, prompt=_prompts, **params)
+                choices.extend(response["choices"])
+            if not self.streaming:
+                # Can't update token usage if streaming
+                update_token_usage(_keys, response, token_usage)
+        return self.create_llm_result(choices, prompts, token_usage)
+
+    def get_sub_prompts(
+        self,
+        params: Dict[str, Any],
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+    ) -> List[List[str]]:
+        """Get the sub prompts for llm call."""
         if stop is not None:
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
                 raise ValueError(
@@ -149,22 +359,14 @@ class BaseOpenAI(BaseLLM, BaseModel):
             prompts[i : i + self.batch_size]
             for i in range(0, len(prompts), self.batch_size)
         ]
-        choices = []
-        token_usage = {}
-        # Get the token usage from the response.
-        # Includes prompt, completion, and total tokens used.
-        _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-        for _prompts in sub_prompts:
-            response = self.client.create(prompt=_prompts, **params)
-            choices.extend(response["choices"])
-            _keys_to_use = _keys.intersection(response["usage"])
-            for _key in _keys_to_use:
-                if _key not in token_usage:
-                    token_usage[_key] = response["usage"][_key]
-                else:
-                    token_usage[_key] += response["usage"][_key]
+        return sub_prompts
+
+    def create_llm_result(
+        self, choices: Any, prompts: List[str], token_usage: Dict[str, int]
+    ) -> LLMResult:
+        """Create the LLMResult from the choices and prompts."""
         generations = []
-        for i, prompt in enumerate(prompts):
+        for i, _ in enumerate(prompts):
             sub_choices = choices[i * self.n : (i + 1) * self.n]
             generations.append(
                 [
@@ -178,11 +380,10 @@ class BaseOpenAI(BaseLLM, BaseModel):
                     for choice in sub_choices
                 ]
             )
-        return LLMResult(
-            generations=generations, llm_output={"token_usage": token_usage}
-        )
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
+        return LLMResult(generations=generations, llm_output=llm_output)
 
-    def stream(self, prompt: str) -> Generator:
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         """Call OpenAI with streaming flag and return the resulting generator.
 
         BETA: this is a beta feature while we figure out the right abstraction.
@@ -190,6 +391,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
 
         Args:
             prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
 
         Returns:
             A generator representing the stream of tokens from OpenAI.
@@ -201,13 +403,22 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 for token in generator:
                     yield token
         """
-        params = self._invocation_params
-        if params["best_of"] != 1:
-            raise ValueError("OpenAI only supports best_of == 1 for streaming")
-        params["stream"] = True
+        params = self.prep_streaming_params(stop)
         generator = self.client.create(prompt=prompt, **params)
 
         return generator
+
+    def prep_streaming_params(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Prepare the params for streaming."""
+        params = self._invocation_params
+        if params["best_of"] != 1:
+            raise ValueError("OpenAI only supports best_of == 1 for streaming")
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        params["stream"] = True
+        return params
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
@@ -237,8 +448,13 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please it install it with `pip install tiktoken`."
             )
+        encoder = "gpt2"
+        if self.model_name in ("text-davinci-003", "text-davinci-002"):
+            encoder = "p50k_base"
+        if self.model_name.startswith("code"):
+            encoder = "p50k_base"
         # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding("gpt2")
+        enc = tiktoken.get_encoding(encoder)
 
         # encode the text using the GPT-3 encoder
         tokenized_text = enc.encode(text)
@@ -249,7 +465,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
 
-        text-davinci-003: 4,000 tokens
+        text-davinci-003: 4,097 tokens
         text-curie-001: 2,048 tokens
         text-babbage-001: 2,048 tokens
         text-ada-001: 2,048 tokens
@@ -268,7 +484,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
         if modelname == "text-davinci-003":
-            return 4000
+            return 4097
         elif modelname == "text-curie-001":
             return 2048
         elif modelname == "text-babbage-001":
@@ -280,7 +496,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
         elif modelname == "code-cushman-001":
             return 2048
         else:
-            return 4000
+            return 4097
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
@@ -327,3 +543,212 @@ class AzureOpenAI(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
+
+
+class OpenAIChat(BaseLLM):
+    """Wrapper around OpenAI Chat large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import OpenAIChat
+            openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
+    """
+
+    client: Any  #: :meta private:
+    model_name: str = "gpt-3.5-turbo"
+    """Model name to use."""
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for `create` call not explicitly specified."""
+    openai_api_key: Optional[str] = None
+    max_retries: int = 6
+    """Maximum number of retries to make when generating."""
+    prefix_messages: List = Field(default_factory=list)
+    """Series of messages for Chat input."""
+    streaming: bool = False
+    """Whether to stream the results or not."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.ignore
+
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Build extra kwargs from additional params that were passed in."""
+        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
+            if field_name not in all_required_field_names:
+                if field_name in extra:
+                    raise ValueError(f"Found {field_name} supplied twice.")
+                extra[field_name] = values.pop(field_name)
+        values["model_kwargs"] = extra
+        return values
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        openai_api_key = get_from_dict_or_env(
+            values, "openai_api_key", "OPENAI_API_KEY"
+        )
+        openai_organization = get_from_dict_or_env(
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
+        )
+        try:
+            import openai
+
+            openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
+        except ImportError:
+            raise ValueError(
+                "Could not import openai python package. "
+                "Please it install it with `pip install openai`."
+            )
+        try:
+            values["client"] = openai.ChatCompletion
+        except AttributeError:
+            raise ValueError(
+                "`openai` has no `ChatCompletion` attribute, this is likely "
+                "due to an old version of the openai package. Try upgrading it "
+                "with `pip install --upgrade openai`."
+            )
+        warnings.warn(
+            "You are trying to use a chat model. This way of initializing it is "
+            "no longer supported. Instead, please use: "
+            "`from langchain.chat_models import ChatOpenAI`"
+        )
+        return values
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        return self.model_kwargs
+
+    def _get_chat_params(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> Tuple:
+        if len(prompts) > 1:
+            raise ValueError(
+                f"OpenAIChat currently only supports single prompt, got {prompts}"
+            )
+        messages = self.prefix_messages + [{"role": "user", "content": prompts[0]}]
+        params: Dict[str, Any] = {**{"model": self.model_name}, **self._default_params}
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        if params.get("max_tokens") == -1:
+            # for ChatGPT api, omitting max_tokens is equivalent to having no limit
+            del params["max_tokens"]
+        return messages, params
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            for stream_resp in completion_with_retry(self, messages=messages, **params):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                self.callback_manager.on_llm_new_token(
+                    token,
+                    verbose=self.verbose,
+                )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = completion_with_retry(self, messages=messages, **params)
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output=llm_output,
+            )
+
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        messages, params = self._get_chat_params(prompts, stop)
+        if self.streaming:
+            response = ""
+            params["stream"] = True
+            async for stream_resp in await acompletion_with_retry(
+                self, messages=messages, **params
+            ):
+                token = stream_resp["choices"][0]["delta"].get("content", "")
+                response += token
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        token,
+                        verbose=self.verbose,
+                    )
+            return LLMResult(
+                generations=[[Generation(text=response)]],
+            )
+        else:
+            full_response = await acompletion_with_retry(
+                self, messages=messages, **params
+            )
+            llm_output = {
+                "token_usage": full_response["usage"],
+                "model_name": self.model_name,
+            }
+            return LLMResult(
+                generations=[
+                    [Generation(text=full_response["choices"][0]["message"]["content"])]
+                ],
+                llm_output=llm_output,
+            )
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{"model_name": self.model_name}, **self._default_params}
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "openai-chat"
+
+    def get_num_tokens(self, text: str) -> int:
+        """Calculate num tokens with tiktoken package."""
+        # tiktoken NOT supported for Python 3.8 or below
+        if sys.version_info[1] <= 8:
+            return super().get_num_tokens(text)
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please it install it with `pip install tiktoken`."
+            )
+        # create a GPT-3.5-Turbo encoder instance
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+        # encode the text using the GPT-3.5-Turbo encoder
+        tokenized_text = enc.encode(text)
+
+        # calculate the number of tokens in the encoded text
+        return len(tokenized_text)

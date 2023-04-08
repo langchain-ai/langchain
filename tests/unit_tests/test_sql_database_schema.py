@@ -1,3 +1,4 @@
+# flake8: noqa
 """Test SQL database wrapper with schema support.
 
 Using DuckDB as SQLite does not support schemas.
@@ -44,12 +45,22 @@ def test_table_info() -> None:
     """Test that table info is constructed properly."""
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)
-    db = SQLDatabase(engine, schema="schema_a")
+
+    db = SQLDatabase(engine, schema="schema_a", metadata=metadata_obj)
     output = db.table_info
-    expected_output = (
-        "Table 'user' has columns: user_id (INTEGER), user_name (VARCHAR).",
+    expected_output = """
+    CREATE TABLE schema_a."user" (
+        user_id INTEGER NOT NULL, 
+        user_name VARCHAR NOT NULL, 
+        PRIMARY KEY (user_id)
     )
-    assert sorted(output.split("\n")) == sorted(expected_output)
+    /*
+    3 rows from user table:
+    user_id user_name
+    */
+    """
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
 def test_sql_database_run() -> None:
@@ -57,7 +68,7 @@ def test_sql_database_run() -> None:
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)
     stmt = insert(user).values(user_id=13, user_name="Harrison")
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(stmt)
     db = SQLDatabase(engine, schema="schema_a")
     command = 'select user_name from "user" where user_id = 13'

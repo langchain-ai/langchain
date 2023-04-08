@@ -1,18 +1,18 @@
 """Prompt template that contains few shot examples."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
-    BasePromptTemplate,
+    StringPromptTemplate,
     check_valid_template,
 )
 from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
+class FewShotPromptTemplate(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None
@@ -41,6 +41,9 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
+    validate_template: bool = True
+    """Whether or not to try validating the template."""
+
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
@@ -61,11 +64,12 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
     @root_validator()
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix and input variables are consistent."""
-        check_valid_template(
-            values["prefix"] + values["suffix"],
-            values["template_format"],
-            values["input_variables"],
-        )
+        if values["validate_template"]:
+            check_valid_template(
+                values["prefix"] + values["suffix"],
+                values["template_format"],
+                values["input_variables"] + list(values["partial_variables"]),
+            )
         return values
 
     class Config:
@@ -97,6 +101,7 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
 
             prompt.format(variable1="foo")
         """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
         # Format the examples.
@@ -106,14 +111,17 @@ class FewShotPromptTemplate(BasePromptTemplate, BaseModel):
         # Create the overall template.
         pieces = [self.prefix, *example_strings, self.suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
+
         # Format the template with the input variables.
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
-    def _prompt_dict(self) -> Dict:
+    @property
+    def _prompt_type(self) -> str:
+        """Return the prompt type key."""
+        return "few_shot"
+
+    def dict(self, **kwargs: Any) -> Dict:
         """Return a dictionary of the prompt."""
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
-
-        prompt_dict = self.dict()
-        prompt_dict["_type"] = "few_shot"
-        return prompt_dict
+        return super().dict(**kwargs)

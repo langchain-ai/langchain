@@ -18,12 +18,15 @@ class CohereEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain.embeddings import CohereEmbeddings
-            cohere = CohereEmbeddings(model_name="medium", cohere_api_key="my-api-key")
+            cohere = CohereEmbeddings(model="medium", cohere_api_key="my-api-key")
     """
 
     client: Any  #: :meta private:
-    model: str = "medium"
+    model: str = "large"
     """Model name to use."""
+
+    truncate: Optional[str] = None
+    """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     cohere_api_key: Optional[str] = None
 
@@ -58,8 +61,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.embed(model=self.model, texts=texts).embeddings
-        return embeddings
+        embeddings = self.client.embed(
+            model=self.model, texts=texts, truncate=self.truncate
+        ).embeddings
+        return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Cohere's embedding endpoint.
@@ -70,5 +75,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self.client.embed(model=self.model, texts=[text]).embeddings[0]
-        return embedding
+        embedding = self.client.embed(
+            model=self.model, texts=[text], truncate=self.truncate
+        ).embeddings[0]
+        return list(map(float, embedding))

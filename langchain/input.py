@@ -6,6 +6,7 @@ _TEXT_COLOR_MAPPING = {
     "yellow": "33;1",
     "pink": "38;5;200",
     "green": "32;1",
+    "red": "31;1",
 }
 
 

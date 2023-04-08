@@ -1,0 +1,36 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "BizToc",
+      "description": "Get the latest business news articles.",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://ai.biztoc.com"
+      }
+   ],
+   "paths": {
+      "/ai/news": {
+         "get": {
+            "operationId": "getNews",
+            "summary": "Retrieves the latest news whose content contains the query string.",
+            "parameters": [
+               {
+                  "in": "query",
+                  "name": "query",
+                  "schema": {
+                     "type": "string"
+                  },
+                  "description": "Used to query news articles on their title and body. For example, ?query=apple will return news stories that have 'apple' in their title or body."
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "OK"
+               }
+            }
+         }
+      }
+   }
+}

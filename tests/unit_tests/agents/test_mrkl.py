@@ -19,6 +19,25 @@ def test_get_action_and_input() -> None:
     assert action_input == "NBA"
 
 
+def test_get_action_and_input_whitespace() -> None:
+    """Test getting an action from text."""
+    llm_output = "Thought: I need to search for NBA\nAction: Search \nAction Input: NBA"
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Search"
+    assert action_input == "NBA"
+
+
+def test_get_action_and_input_newline() -> None:
+    """Test getting an action from text where Action Input is a code snippet."""
+    llm_output = (
+        "Now I need to write a unittest for the function.\n\n"
+        "Action: Python\nAction Input:\n```\nimport unittest\n\nunittest.main()\n```"
+    )
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Python"
+    assert action_input == "```\nimport unittest\n\nunittest.main()\n```"
+
+
 def test_get_final_answer() -> None:
     """Test getting final answer."""
     llm_output = (

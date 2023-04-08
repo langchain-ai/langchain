@@ -1,0 +1,8 @@
+{
+    "input_variables": [
+        "question"
+    ],
+    "output_parser": null,
+    "template": "Question: {question}\n\nAnswer: Let's think step by step.",
+    "template_format": "f-string"
+}

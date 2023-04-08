@@ -1,27 +1,33 @@
 """Load prompts from disk."""
 import importlib
 import json
-import tempfile
+import logging
 from pathlib import Path
 from typing import Union
 
-import requests
 import yaml
 
+from langchain.output_parsers.regex import RegexParser
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
+from langchain.utilities.loading import try_load_from_hub
+
+URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
+logger = logging.getLogger(__file__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Get the right type from the config and load it accordingly."""
-    prompt_type = config.pop("_type", "prompt")
-    if prompt_type == "prompt":
-        return _load_prompt(config)
-    elif prompt_type == "few_shot":
-        return _load_few_shot_prompt(config)
-    else:
-        raise ValueError
+    """Load prompt from Config Dict."""
+    if "_type" not in config:
+        logger.warning("No `_type` key found, defaulting to `prompt`.")
+    config_type = config.pop("_type", "prompt")
+
+    if config_type not in type_to_loader_dict:
+        raise ValueError(f"Loading {config_type} prompt not supported")
+
+    prompt_loader = type_to_loader_dict[config_type]
+    return prompt_loader(config)
 
 
 def _load_template(var_name: str, config: dict) -> dict:
@@ -52,10 +58,31 @@ def _load_examples(config: dict) -> dict:
         pass
     elif isinstance(config["examples"], str):
         with open(config["examples"]) as f:
-            examples = json.load(f)
+            if config["examples"].endswith(".json"):
+                examples = json.load(f)
+            elif config["examples"].endswith((".yaml", ".yml")):
+                examples = yaml.safe_load(f)
+            else:
+                raise ValueError(
+                    "Invalid file format. Only json or yaml formats are supported."
+                )
         config["examples"] = examples
     else:
-        raise ValueError
+        raise ValueError("Invalid examples format. Only list or string are supported.")
+    return config
+
+
+def _load_output_parser(config: dict) -> dict:
+    """Load output parser."""
+    if "output_parsers" in config:
+        if config["output_parsers"] is not None:
+            _config = config["output_parsers"]
+            output_parser_type = _config["_type"]
+            if output_parser_type == "regex_parser":
+                output_parser = RegexParser(**_config)
+            else:
+                raise ValueError(f"Unsupported output parser {output_parser_type}")
+            config["output_parsers"] = output_parser
     return config
 
 
@@ -73,9 +100,10 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
             )
         config["example_prompt"] = load_prompt(config.pop("example_prompt_path"))
     else:
-        config["example_prompt"] = _load_prompt(config["example_prompt"])
+        config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
     config = _load_examples(config)
+    config = _load_output_parser(config)
     return FewShotPromptTemplate(**config)
 
 
@@ -83,10 +111,21 @@ def _load_prompt(config: dict) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
     config = _load_template("template", config)
+    config = _load_output_parser(config)
     return PromptTemplate(**config)
 
 
-def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
+def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
+    """Unified method for loading a prompt from LangChainHub or local fs."""
+    if hub_result := try_load_from_hub(
+        path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
+    ):
+        return hub_result
+    else:
+        return _load_prompt_from_file(path)
+
+
+def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to Path object.
     if isinstance(file, str):
@@ -118,20 +157,8 @@ def load_prompt(file: Union[str, Path]) -> BasePromptTemplate:
     return load_prompt_from_config(config)
 
 
-URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-
-
-def load_from_hub(path: str) -> BasePromptTemplate:
-    """Load prompt from hub."""
-    suffix = path.split(".")[-1]
-    if suffix not in {"py", "json", "yaml"}:
-        raise ValueError("Unsupported file type.")
-    full_url = URL_BASE + path
-    r = requests.get(full_url)
-    if r.status_code != 200:
-        raise ValueError(f"Could not find file at {full_url}")
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file = tmpdirname + "/prompt." + suffix
-        with open(file, "wb") as f:
-            f.write(r.content)
-        return load_prompt(file)
+type_to_loader_dict = {
+    "prompt": _load_prompt,
+    "few_shot": _load_few_shot_prompt,
+    # "few_shot_with_templates": _load_few_shot_with_templates_prompt,
+}

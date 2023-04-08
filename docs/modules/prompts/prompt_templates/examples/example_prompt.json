@@ -1,0 +1,5 @@
+{
+    "_type": "prompt",
+    "input_variables": ["input", "output"],
+    "template": "Input: {input}\nOutput: {output}" 
+}

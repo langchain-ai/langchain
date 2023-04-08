@@ -2,15 +2,14 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
-from langchain.agents import AgentExecutor, Tool, initialize_agent
+from langchain.agents import AgentExecutor, AgentType, initialize_agent
+from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]
@@ -19,8 +18,8 @@ class FakeListLLM(LLM, BaseModel):
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
-        print(self.i)
-        print(self.responses)
+        print(f"=== Mock Response #{self.i} ===")
+        print(self.responses[self.i])
         return self.responses[self.i]
 
     @property
@@ -42,11 +41,23 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
-        Tool("Lookup", lambda x: x, "Useful for looking up things in a table"),
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
+        Tool(
+            name="Lookup",
+            func=lambda x: x,
+            description="Useful for looking up things in a table",
+        ),
     ]
     agent = initialize_agent(
-        tools, fake_llm, agent="zero-shot-react-description", verbose=True, **kwargs
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        **kwargs,
     )
     return agent
 
@@ -59,10 +70,16 @@ def test_agent_bad_action() -> None:
 
 
 def test_agent_stopped_early() -> None:
-    """Test react chain when bad action given."""
+    """Test react chain when max iterations or max execution time is exceeded."""
+    # iteration limit
     agent = _get_agent(max_iterations=0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to max iterations."
+    assert output == "Agent stopped due to iteration limit or time limit."
+
+    # execution time limit
+    agent = _get_agent(max_execution_time=0.0)
+    output = agent.run("when was langchain made")
+    assert output == "Agent stopped due to iteration limit or time limit."
 
 
 def test_agent_with_callbacks_global() -> None:
@@ -79,12 +96,17 @@ def test_agent_with_callbacks_global() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            callback_manager=manager,
+        ),
     ]
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
@@ -92,8 +114,13 @@ def test_agent_with_callbacks_global() -> None:
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
-    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
-    assert handler.starts == 6
+    # 1 top level chain run runs, 2 LLMChain runs, 2 LLM runs, 1 tool run
+    assert handler.chain_starts == handler.chain_ends == 3
+    assert handler.llm_starts == handler.llm_ends == 2
+    assert handler.tool_starts == 2
+    assert handler.tool_ends == 1
+    # 1 extra agent action
+    assert handler.starts == 7
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
@@ -115,23 +142,33 @@ def test_agent_with_callbacks_local() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            callback_manager=manager,
+        ),
     ]
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
 
-    agent.agent.llm_chain.verbose = True
+    agent.agent.llm_chain.verbose = True  # type: ignore
 
     output = agent.run("when was langchain made")
     assert output == "curses foiled again"
 
-    # 1 top level chain run, 2 LLMChain runs, 2 LLM runs, 1 tool run
-    assert handler.starts == 6
+    # 1 top level chain run, 2 LLMChain starts, 2 LLM runs, 1 tool run
+    assert handler.chain_starts == handler.chain_ends == 3
+    assert handler.llm_starts == handler.llm_ends == 2
+    assert handler.tool_starts == 2
+    assert handler.tool_ends == 1
+    # 1 extra agent action
+    assert handler.starts == 7
     # 1 extra agent end
     assert handler.ends == 7
     assert handler.errors == 0
@@ -153,12 +190,16 @@ def test_agent_with_callbacks_not_verbose() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching"),
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        ),
     ]
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         callback_manager=manager,
     )
 
@@ -180,13 +221,101 @@ def test_agent_tool_return_direct() -> None:
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
-        Tool("Search", lambda x: x, "Useful for searching", return_direct=True),
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
     ]
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
     output = agent.run("when was langchain made")
     assert output == "misalignment"
+
+
+def test_agent_tool_return_direct_in_intermediate_steps() -> None:
+    """Test agent using tools that return directly."""
+    tool = "Search"
+    responses = [
+        f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
+        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+    ]
+    fake_llm = FakeListLLM(responses=responses)
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        return_intermediate_steps=True,
+    )
+
+    resp = agent("when was langchain made")
+    assert resp["output"] == "misalignment"
+    assert len(resp["intermediate_steps"]) == 1
+    action, _action_intput = resp["intermediate_steps"][0]
+    assert action.tool == "Search"
+
+
+def test_agent_with_new_prefix_suffix() -> None:
+    """Test agent initilization kwargs with new prefix and suffix."""
+    fake_llm = FakeListLLM(
+        responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
+    )
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
+    ]
+    prefix = "FooBarBaz"
+
+    suffix = "Begin now!\nInput: {input}\nThought: {agent_scratchpad}"
+
+    agent = initialize_agent(
+        tools=tools,
+        llm=fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        agent_kwargs={"prefix": prefix, "suffix": suffix},
+    )
+
+    # avoids "BasePromptTemplate" has no attribute "template" error
+    assert hasattr(agent.agent.llm_chain.prompt, "template")  # type: ignore
+    prompt_str = agent.agent.llm_chain.prompt.template  # type: ignore
+    assert prompt_str.startswith(prefix), "Prompt does not start with prefix"
+    assert prompt_str.endswith(suffix), "Prompt does not end with suffix"
+
+
+def test_agent_lookup_tool() -> None:
+    """Test agent lookup tool."""
+    fake_llm = FakeListLLM(
+        responses=["FooBarBaz\nAction: Search\nAction Input: misalignment"]
+    )
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+            return_direct=True,
+        ),
+    ]
+    agent = initialize_agent(
+        tools=tools,
+        llm=fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    )
+
+    assert agent.lookup_tool("Search") == tools[0]

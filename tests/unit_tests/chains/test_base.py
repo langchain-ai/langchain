@@ -1,15 +1,15 @@
 """Test logic on base chain class."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel
 
 from langchain.callbacks.base import CallbackManager
-from langchain.chains.base import Chain, Memory
+from langchain.chains.base import Chain
+from langchain.schema import BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeMemory(Memory, BaseModel):
+class FakeMemory(BaseMemory):
     """Fake memory class for testing purposes."""
 
     @property
@@ -17,7 +17,9 @@ class FakeMemory(Memory, BaseModel):
         """Return baz variable."""
         return ["baz"]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def load_memory_variables(
+        self, inputs: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
 
@@ -30,7 +32,7 @@ class FakeMemory(Memory, BaseModel):
         pass
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(Chain):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True

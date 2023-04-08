@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -12,7 +12,7 @@ from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 
 
-class NatBotChain(Chain, BaseModel):
+class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
     Example:
@@ -94,3 +94,7 @@ class NatBotChain(Chain, BaseModel):
             self.input_browser_content_key: browser_content,
         }
         return self(_inputs)[self.output_key]
+
+    @property
+    def _chain_type(self) -> str:
+        return "nat_bot_chain"

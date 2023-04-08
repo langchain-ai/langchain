@@ -43,10 +43,8 @@ class WolframAlphaAPIWrapper(BaseModel):
                 "Please install it with `pip install wolframalpha`"
             )
         client = wolframalpha.Client(wolfram_alpha_appid)
-
         values["wolfram_client"] = client
 
-        # TODO: Add error handling if keys are missing
         return values
 
     def run(self, query: str) -> str:

@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -15,7 +15,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context."""
 
     llm_chain: LLMChain
@@ -68,7 +68,11 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         # Format each document according to the prompt
         doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
         # Join the documents together to put them in the prompt.
-        inputs = kwargs.copy()
+        inputs = {
+            k: v
+            for k, v in kwargs.items()
+            if k in self.llm_chain.prompt.input_variables
+        }
         inputs[self.document_variable_name] = "\n\n".join(doc_strings)
         return inputs
 
@@ -83,3 +87,15 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
         return self.llm_chain.predict(**inputs), {}
+
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Stuff all documents into one prompt and pass to LLM."""
+        inputs = self._get_inputs(docs, **kwargs)
+        # Call predict on the LLM.
+        return await self.llm_chain.apredict(**inputs), {}
+
+    @property
+    def _chain_type(self) -> str:
+        return "stuff_documents_chain"

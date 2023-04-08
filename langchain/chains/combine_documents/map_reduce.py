@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -59,7 +59,7 @@ def _collapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
-class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then combining results."""
 
     llm_chain: LLMChain
@@ -140,6 +140,29 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             # FYI - this is parallelized and so it is fast.
             [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
         )
+        return self._process_results(results, docs, token_max, **kwargs)
+
+    async def acombine_docs(
+        self, docs: List[Document], **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Combine documents in a map reduce manner.
+
+        Combine by mapping first chain over all documents, then reducing the results.
+        This reducing can be done recursively if needed (if there are many documents).
+        """
+        results = await self.llm_chain.aapply(
+            # FYI - this is parallelized and so it is fast.
+            [{**{self.document_variable_name: d.page_content}, **kwargs} for d in docs]
+        )
+        return self._process_results(results, docs, **kwargs)
+
+    def _process_results(
+        self,
+        results: List[Dict],
+        docs: List[Document],
+        token_max: int = 3000,
+        **kwargs: Any,
+    ) -> Tuple[str, dict]:
         question_result_key = self.llm_chain.output_key
         result_docs = [
             Document(page_content=r[question_result_key], metadata=docs[i].metadata)
@@ -168,3 +191,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain, BaseModel):
             extra_return_dict = {}
         output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)
         return output, extra_return_dict
+
+    @property
+    def _chain_type(self) -> str:
+        return "map_reduce_documents_chain"

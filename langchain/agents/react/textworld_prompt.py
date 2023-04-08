@@ -16,9 +16,9 @@ should have stuff on it?
 
 You don't like doors? Why not try going east, that entranceway is unguarded.
 
-Thought 1: I need to travel east
-Action 1: Play[go east]
-Observation 1: -= Office =-
+Thought: I need to travel east
+Action: Play[go east]
+Observation: -= Office =-
 You arrive in an office. An ordinary one.
 
 You can make out a locker. The locker contains a binder. You see a case. The
@@ -29,18 +29,18 @@ be empty. If you haven't noticed it already, there seems to be something there
 by the wall, it's a table. Unfortunately, there isn't a thing on it. Hm. Oh well
 There is an exit to the west. Don't worry, it is unguarded.
 
-Thought 2: I need to take the binder from the locker
-Action 2: Play[take binder]
-Observation 2: You take the binder from the locker.
+Thought: I need to take the binder from the locker
+Action: Play[take binder]
+Observation: You take the binder from the locker.
 
-Thought 3: I need to place the binder on the mantelpiece
-Action 3: Play[put binder on mantelpiece]
+Thought: I need to place the binder on the mantelpiece
+Action: Play[put binder on mantelpiece]
 
-Observation 3: You put the binder on the mantelpiece.
+Observation: You put the binder on the mantelpiece.
 Your score has just gone up by one point.
 *** The End ***
-Thought 4: The End has occurred
-Action 4: Finish[yes]
+Thought: The End has occurred
+Action: Finish[yes]
 
 """
 ]

@@ -22,3 +22,21 @@ This repo serves as a template for how deploy a LangChain with Gradio.
 It implements a chatbot interface, with a "Bring-Your-Own-Token" approach (nice for not wracking up big bills).
 It also contains instructions for how to deploy this app on the Hugging Face platform.
 This is heavily influenced by James Weaver's [excellent examples](https://huggingface.co/JavaFXpert).
+
+## [Beam](https://github.com/slai-labs/get-beam/tree/main/examples/langchain-question-answering)
+
+This repo serves as a template for how deploy a LangChain with [Beam](https://beam.cloud).
+
+It implements a Question Answering app and contains instructions for deploying the app as a serverless REST API.
+
+## [Vercel](https://github.com/homanp/vercel-langchain)
+
+A minimal example on how to run LangChain on Vercel using Flask.
+
+
+## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
+This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
+This includes: production ready endpoints, horizontal scaling across dependencies, persistant storage of app state, multi-tenancy support, etc.
+
+## [Langchain-serve](https://github.com/jina-ai/langchain-serve)
+This repository allows users to serve local chains and agents as RESTful, gRPC, or Websocket APIs thanks to [Jina](https://docs.jina.ai/). Deploy your chains & agents with ease and enjoy independent scaling, serverless and autoscaling APIs, as well as a Streamlit playground on Jina AI Cloud.

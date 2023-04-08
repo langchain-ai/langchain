@@ -1,12 +1,10 @@
 """Chain that runs an arbitrary python function."""
 from typing import Callable, Dict, List
 
-from pydantic import BaseModel
-
 from langchain.chains.base import Chain
 
 
-class TransformChain(Chain, BaseModel):
+class TransformChain(Chain):
     """Chain transform chain output.
 
     Example:
