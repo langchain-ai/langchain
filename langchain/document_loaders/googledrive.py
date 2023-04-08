@@ -148,7 +148,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
-        file = service.files().get(fileId=id).execute()
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -182,6 +182,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .list(
                 q=f"'{self.folder_id}' in parents",
                 pageSize=1000,
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 fields="nextPageToken, files(id, name, mimeType)",
             )
             .execute()
@@ -217,7 +219,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
-        file = service.files().get(fileId=id).execute()
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
