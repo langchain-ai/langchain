@@ -192,6 +192,7 @@ class ChatOpenAI(BaseChatModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
+            "temperature": self.temperature,
             **self.model_kwargs,
         }
 
