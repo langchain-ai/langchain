@@ -28,7 +28,9 @@ REDIS_REQUIRED_MODULES = [
 def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
     """Check if the correct Redis modules are installed."""
     installed_modules = client.module_list()
-    installed_modules = {module[b"name"].decode('utf-8'): module for module in installed_modules}
+    installed_modules = {
+        module[b"name"].decode("utf-8"): module for module in installed_modules
+    }
     for module in modules:
         if module["name"] not in installed_modules or int(
             installed_modules[module["name"]][b"ver"]
