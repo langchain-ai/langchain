@@ -31,6 +31,7 @@ class OpenAIModerationChain(Chain):
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
