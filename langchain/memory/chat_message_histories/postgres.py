@@ -36,7 +36,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
         self._create_table_if_not_exists()
 
-    def _create_table_if_not_exists(self):
+    def _create_table_if_not_exists(self) -> None:
         create_table_query = f"""CREATE TABLE IF NOT EXISTS {self.table_name} (
             id SERIAL PRIMARY KEY,
             session_id TEXT NOT NULL,
@@ -74,7 +74,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         self.cursor.execute(query, (self.session_id,))
         self.connection.commit()
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.cursor:
             self.cursor.close()
         if self.connection:
