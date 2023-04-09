@@ -89,7 +89,7 @@ class APIChain(Chain):
         self.callback_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
-        api_response = self.requests_wrapper.get(api_url)
+        api_response = await self.requests_wrapper.aget(api_url)
         self.callback_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
@@ -100,7 +100,7 @@ class APIChain(Chain):
             api_response=api_response,
         )
         return {self.output_key: answer}
-    
+
     @classmethod
     def from_llm_and_api_docs(
         cls,
