@@ -5715,18 +5715,17 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "7.2.2"
+version = "7.3.0"
 description = "pytest: simple powerful testing with Python"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-7.2.2-py3-none-any.whl", hash = "sha256:130328f552dcfac0b1cec75c12e3f005619dc5f874f0a06e8ff7263f0ee6225e"},
-    {file = "pytest-7.2.2.tar.gz", hash = "sha256:c99ab0c73aceb050f68929bc93af19ab6db0558791c6a0715723abe9d0ade9d4"},
+    {file = "pytest-7.3.0-py3-none-any.whl", hash = "sha256:933051fa1bfbd38a21e73c3960cebdad4cf59483ddba7696c48509727e17f201"},
+    {file = "pytest-7.3.0.tar.gz", hash = "sha256:58ecc27ebf0ea643ebfdf7fb1249335da761a00c9f955bcd922349bcb68ee57d"},
 ]
 
 [package.dependencies]
-attrs = ">=19.2.0"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
 exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
@@ -5735,7 +5734,7 @@ pluggy = ">=0.12,<2.0"
 tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
-testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
+testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
 name = "pytest-asyncio"
@@ -6095,14 +6094,14 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "qdrant-client"
-version = "1.1.2"
+version = "1.1.3"
 description = "Client library for the Qdrant vector search engine"
 category = "main"
 optional = true
 python-versions = ">=3.7,<3.12"
 files = [
-    {file = "qdrant_client-1.1.2-py3-none-any.whl", hash = "sha256:e722aa76af3d4db1f52bc49857f1e2398cbb89afafac1a7b7f21eda424c72faf"},
-    {file = "qdrant_client-1.1.2.tar.gz", hash = "sha256:708b7a6291dfeeeaa8c5ac2e61a0f73b61fa66b45e31a568e3f406ab08393100"},
+    {file = "qdrant_client-1.1.3-py3-none-any.whl", hash = "sha256:c95f59fb9e3e89d163517f8992ee4557eccb45c252147e11e45c608ef1c7dd29"},
+    {file = "qdrant_client-1.1.3.tar.gz", hash = "sha256:2b7de2b987fc456c643a06878a4150947c3d3d6c6515f6c29f6e707788daa6e7"},
 ]
 
 [package.dependencies]
@@ -8886,4 +8885,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "769da00e7ae983d44cf57008e6f7ba5ad7a3a1e2486f33dcee4512206c329c0d"
+content-hash = "87a072abb93f80c1786d907ec51b6a6b19ca0e526f6649a51f925f7815870154"

@@ -75,7 +75,7 @@ linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.2.0"
+pytest = "^7.3.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.7.0"
@@ -88,10 +88,10 @@ pytest-asyncio = "^0.20.3"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-openai = "^0.27.4"
-elasticsearch = {extras = ["async"], version = "^8.6.2"}
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
+openai = "^0.27.4"
+elasticsearch = {extras = ["async"], version = "^8.6.2"}
 redis = "^4.5.4"
 pinecone-client = "^2.2.1"
 pgvector = "^0.1.6"
