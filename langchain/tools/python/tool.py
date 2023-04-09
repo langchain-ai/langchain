@@ -50,7 +50,8 @@ class PythonAstREPLTool(BaseTool):
     )
     globals: Optional[Dict] = Field(default_factory=dict)
     locals: Optional[Dict] = Field(default_factory=dict)
-
+    sanitize_input: bool = True
+    
     @root_validator(pre=True)
     def validate_python_version(cls, values: Dict) -> Dict:
         """Validate valid python version."""
@@ -64,6 +65,8 @@ class PythonAstREPLTool(BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
+        if self.sanitize_input:
+            query = query.strip().strip("```")
         try:
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
