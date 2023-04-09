@@ -100,6 +100,7 @@ pandas = "^2.0.0"
 deeplake = "^3.2.21"
 torch = "^2.0.0"
 chromadb = "^0.3.21"
+tiktoken = "^0.3.3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"

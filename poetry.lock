@@ -7842,7 +7842,7 @@ name = "tiktoken"
 version = "0.3.3"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "tiktoken-0.3.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d1f37fa75ba70c1bc7806641e8ccea1fba667d23e6341a1591ea333914c226a9"},
@@ -9167,4 +9167,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "64e6c9dc794cbc01dab66c1cfb62b97abfecd57d503fa60e295c869f85b74c61"
+content-hash = "a8fde2558f92b4c5ec1dce45f830adc6158dd2cf8c425a34a06523ee8e74487d"
