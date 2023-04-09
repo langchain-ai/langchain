@@ -12,7 +12,7 @@ from langchain.docstore.document import Document
 
 
 def _fake_docs_len_func(docs: List[Document]) -> int:
-    return len(_fake_combine_docs_func(docs)[0])
+    return len(_fake_combine_docs_func(docs))
 
 
 def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
