@@ -36,19 +36,18 @@ class AgentOutputParser(BaseOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Any:
+        response = None
         cleaned_output = text.strip()
-        if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
-        if "```" in cleaned_output:
-            cleaned_output, _ = cleaned_output.split("```")
-        if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
-        if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
-        if cleaned_output.endswith("```"):
-            cleaned_output = cleaned_output[: -len("```")]
-        cleaned_output = cleaned_output.strip()
-        response = json.loads(cleaned_output)
+        if  cleaned_output.startswith("{") and cleaned_output.endswith("}"):
+            try:
+                response = json.loads(cleaned_output)
+            except Exception:
+                """nothing to do"""
+        if response is None:
+            match = re.match(".*?```(?:json){,1}(.+)```.*?", cleaned_output, re.DOTALL)
+            if match:
+                cleaned_output = match.group(1).strip()
+            response = json.loads(cleaned_output)
         return {"action": response["action"], "action_input": response["action_input"]}
 
 
