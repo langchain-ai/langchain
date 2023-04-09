@@ -68,6 +68,31 @@ class LLMMathChain(Chain):
             raise ValueError(f"unknown format from LLM: {t}")
         return {self.output_key: answer}
 
+    async def _aprocess_llm_result(self, t: str) -> Dict[str, str]:
+        python_executor = PythonREPL()
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_text(t, color="green", verbose=self.verbose)
+        else:
+            self.callback_manager.on_text(t, color="green", verbose=self.verbose)
+        t = t.strip()
+        if t.startswith("```python"):
+            code = t[9:-4]
+            output = python_executor.run(code)
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
+                await self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+            else:
+                await self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
+                await self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+            answer = "Answer: " + output
+        elif t.startswith("Answer:"):
+            answer = t
+        elif "Answer:" in t:
+            answer = "Answer: " + t.split("Answer:")[-1]
+        else:
+            raise ValueError(f"unknown format from LLM: {t}")
+        return {self.output_key: answer}
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(
             prompt=self.prompt, llm=self.llm, callback_manager=self.callback_manager
@@ -80,11 +105,14 @@ class LLMMathChain(Chain):
         llm_executor = LLMChain(
             prompt=self.prompt, llm=self.llm, callback_manager=self.callback_manager
         )
-        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+        if self.callback_manager.is_async:
+            await self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+        else:
+            self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
         t = await llm_executor.apredict(
             question=inputs[self.input_key], stop=["```output"]
         )
-        return self._process_llm_result(t)
+        return await self._aprocess_llm_result(t)
 
     @property
     def _chain_type(self) -> str:
