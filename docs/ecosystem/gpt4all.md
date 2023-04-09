@@ -1,7 +1,6 @@
 # GPT4All
 
-This page covers how to use the `GPT4All` wrapper within LangChain.
-It is broken into two parts: installation and setup, and then usage with an example.
+This page covers how to use the `GPT4All` wrapper within LangChain. The tutorial is divided into two parts: installation and setup, followed by usage with an example.
 
 ## Installation and Setup
 - Install the Python package with `pip install pyllamacpp`
