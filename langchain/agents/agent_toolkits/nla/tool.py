@@ -22,9 +22,12 @@ class NLATool(Tool):
         expanded_name = (
             f'{api_title.replace(" ", "_")}.{chain.api_operation.operation_id}'
         )
-        # TODO Improve the description
-        description = f"I'm an AI from {api_title}. Instruct what you want, and I'll assist via an API with description: {chain.api_operation.description}"
-        return cls(name=expanded_name, func=chain, description=description)
+        description = (
+            f"I'm an AI from {api_title}. Instruct what you want,"
+            " and I'll assist via an API with description:"
+            f" {chain.api_operation.description}"
+        )
+        return cls(name=expanded_name, func=chain.run, description=description)
 
     @classmethod
     def from_llm_and_method(

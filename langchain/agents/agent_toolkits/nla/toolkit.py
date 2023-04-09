@@ -1,7 +1,7 @@
 """Toolkit for interacting with API's using natural language."""
 
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
 
@@ -16,12 +16,12 @@ from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 class NLAToolkit(BaseToolkit):
     """Natural Language API Toolkit Definition."""
 
-    nla_tools: List[NLATool] = Field(...)
+    nla_tools: Sequence[NLATool] = Field(...)
     """List of API Endpoint Tools."""
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools for all the API operations."""
-        return self.nla_tools
+        return list(self.nla_tools)
 
     @classmethod
     def from_llm_and_spec(
@@ -33,7 +33,9 @@ class NLAToolkit(BaseToolkit):
         **kwargs: Any
     ) -> "NLAToolkit":
         """Instantiate the toolkit by creating tools for each operation."""
-        http_operation_tools = []
+        http_operation_tools: List[NLATool] = []
+        if not spec.paths:
+            return cls(nla_tools=http_operation_tools)
         for path in spec.paths:
             for method in spec.get_methods_for_path(path):
                 endpoint_tool = NLATool.from_llm_and_method(
