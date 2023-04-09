@@ -87,6 +87,9 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
+    verbose: Optional[bool] = True
+    """A flag to indicate whether to print detailed information during the execution of the program."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -101,6 +104,7 @@ class LlamaCpp(LLM):
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
         last_n_tokens_size = values["last_n_tokens_size"]
+        verbose = values["verbose"]
 
         try:
             from llama_cpp import Llama
@@ -117,6 +121,7 @@ class LlamaCpp(LLM):
                 n_threads=n_threads,
                 n_batch=n_batch,
                 last_n_tokens_size=last_n_tokens_size,
+                verbose=verbose,
             )
         except ImportError:
             raise ModuleNotFoundError(

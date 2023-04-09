@@ -53,6 +53,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
+    verbose: Optional[bool] = True
+    """A flag to indicate whether to print detailed information during the execution of the program."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -71,6 +74,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
+        verbose = values["verbose"]
 
         try:
             from llama_cpp import Llama
@@ -86,6 +90,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
                 use_mlock=use_mlock,
                 n_threads=n_threads,
                 n_batch=n_batch,
+                verbose=verbose,
                 embedding=True,
             )
         except ImportError:
