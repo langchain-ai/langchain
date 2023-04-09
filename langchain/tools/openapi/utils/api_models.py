@@ -475,9 +475,12 @@ class APIOperation(BaseModel):
             if request_body is not None
             else None
         )
+        description = operation.description or operation.summary
+        if not description and spec.paths is not None:
+            description = spec.paths[path].description or spec.paths[path].summary
         return cls(
             operation_id=operation_id,
-            description=operation.description,
+            description=description,
             base_url=spec.base_url,
             path=path,
             method=method,
