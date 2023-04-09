@@ -14,7 +14,7 @@ from langchain.docstore.document import Document
 class CombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    def __call__(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
+    def __call__(self, docs: List[Document], **kwargs: Any) -> str:
         """Interface for the combine_docs method."""
 
 
@@ -48,7 +48,7 @@ def _collapse_docs(
     combine_document_func: CombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
-    result, _ = combine_document_func(docs, **kwargs)
+    result = combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
     for doc in docs[1:]:
         for k, v in doc.metadata.items():
@@ -171,15 +171,17 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         ]
         length_func = self.combine_document_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
+
+        def _collaple_docs_func(docs: List[Document], **kwargs: Any) -> str:
+            return self._collapse_chain.run(input_documents=docs, **kwargs)
+
         while num_tokens is not None and num_tokens > token_max:
             new_result_doc_list = _split_list_of_docs(
                 result_docs, length_func, token_max, **kwargs
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = _collapse_docs(
-                    docs, self._collapse_chain.combine_docs, **kwargs
-                )
+                new_doc = _collapse_docs(docs, _collaple_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = self.combine_document_chain.prompt_length(
                 result_docs, **kwargs
@@ -189,7 +191,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             extra_return_dict = {"intermediate_steps": _results}
         else:
             extra_return_dict = {}
-        output, _ = self.combine_document_chain.combine_docs(result_docs, **kwargs)
+        output = self.combine_document_chain.run(input_documents=result_docs, **kwargs)
         return output, extra_return_dict
 
     @property
