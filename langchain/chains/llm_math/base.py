@@ -80,10 +80,14 @@ class LLMMathChain(Chain):
             output = python_executor.run(code)
             if self.callback_manager.is_async:
                 await self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
-                await self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+                await self.callback_manager.on_text(
+                    output, color="yellow", verbose=self.verbose
+                )
             else:
                 await self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
-                await self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+                await self.callback_manager.on_text(
+                    output, color="yellow", verbose=self.verbose
+                )
             answer = "Answer: " + output
         elif t.startswith("Answer:"):
             answer = t
@@ -106,7 +110,9 @@ class LLMMathChain(Chain):
             prompt=self.prompt, llm=self.llm, callback_manager=self.callback_manager
         )
         if self.callback_manager.is_async:
-            await self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+            await self.callback_manager.on_text(
+                inputs[self.input_key], verbose=self.verbose
+            )
         else:
             self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
         t = await llm_executor.apredict(
