@@ -53,7 +53,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
-    verbose: Optional[bool] = True
+    client_verbose: Optional[bool] = True
     """A flag to indicate whether to print detailed information during the execution of the program."""
 
     class Config:
@@ -74,7 +74,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
-        verbose = values["verbose"]
+        client_verbose = values["client_verbose"]
 
         try:
             from llama_cpp import Llama
@@ -90,7 +90,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
                 use_mlock=use_mlock,
                 n_threads=n_threads,
                 n_batch=n_batch,
-                verbose=verbose,
+                verbose=client_verbose,
                 embedding=True,
             )
         except ImportError:

@@ -87,7 +87,7 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
-    verbose: Optional[bool] = True
+    client_verbose: Optional[bool] = True
     """A flag to indicate whether to print detailed information during the execution of the program."""
 
     @root_validator()
@@ -104,7 +104,7 @@ class LlamaCpp(LLM):
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
         last_n_tokens_size = values["last_n_tokens_size"]
-        verbose = values["verbose"]
+        client_verbose = values["client_verbose"]
 
         try:
             from llama_cpp import Llama
@@ -121,7 +121,7 @@ class LlamaCpp(LLM):
                 n_threads=n_threads,
                 n_batch=n_batch,
                 last_n_tokens_size=last_n_tokens_size,
-                verbose=verbose,
+                verbose=client_verbose,
             )
         except ImportError:
             raise ModuleNotFoundError(
