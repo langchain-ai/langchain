@@ -46,7 +46,7 @@ good code into the codebase.
 
 ### 🏭Release process
 
-As of now, LangChain has an ad hoc release process: releases are cut with high frequency via by
+As of now, LangChain has an ad hoc release process: releases are cut with high frequency by
 a developer and published to [PyPI](https://pypi.org/project/langchain/).
 
 LangChain follows the [semver](https://semver.org/) versioning standard. However, as pre-1.0 software,
@@ -121,6 +121,12 @@ To run unit tests:
 
 ```bash
 make test
+```
+
+To run unit tests in Docker:
+
+```bash
+make docker_tests
 ```
 
 If you add new logic, please add a unit test.

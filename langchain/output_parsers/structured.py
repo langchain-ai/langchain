@@ -39,7 +39,10 @@ class StructuredOutputParser(BaseOutputParser):
 
     def parse(self, text: str) -> BaseModel:
         json_string = text.split("```json")[1].strip().strip("```").strip()
-        json_obj = json.loads(json_string)
+        try:
+            json_obj = json.loads(json_string)
+        except json.JSONDecodeError as e:
+            raise OutputParserException(f"Got invalid JSON object. Error: {e}")
         for schema in self.response_schemas:
             if schema.name not in json_obj:
                 raise OutputParserException(

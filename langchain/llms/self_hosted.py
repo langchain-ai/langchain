@@ -4,7 +4,7 @@ import logging
 import pickle
 from typing import Any, Callable, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -61,7 +61,7 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
     return pipeline
 
 
-class SelfHostedPipeline(LLM, BaseModel):
+class SelfHostedPipeline(LLM):
     """Run model inference on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,

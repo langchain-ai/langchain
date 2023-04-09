@@ -32,6 +32,15 @@ class VectorStore(ABC):
             List of ids from adding the texts into the vectorstore.
         """
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore."""
+        raise NotImplementedError
+
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
@@ -47,11 +56,32 @@ class VectorStore(ABC):
         metadatas = [doc.metadata for doc in documents]
         return self.add_texts(texts, metadatas, **kwargs)
 
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents (List[Document]: Documents to add to the vectorstore.
+
+        Returns:
+            List[str]: List of IDs of the added texts.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas, **kwargs)
+
     @abstractmethod
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
+
+    async def asimilarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to query."""
+        raise NotImplementedError
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -65,6 +95,12 @@ class VectorStore(ABC):
         Returns:
             List of Documents most similar to the query vector.
         """
+        raise NotImplementedError
+
+    async def asimilarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector."""
         raise NotImplementedError
 
     def max_marginal_relevance_search(
@@ -85,6 +121,12 @@ class VectorStore(ABC):
         """
         raise NotImplementedError
 
+    async def amax_marginal_relevance_search(
+        self, query: str, k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        raise NotImplementedError
+
     def max_marginal_relevance_search_by_vector(
         self, embedding: List[float], k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
@@ -103,6 +145,12 @@ class VectorStore(ABC):
         """
         raise NotImplementedError
 
+    async def amax_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        raise NotImplementedError
+
     @classmethod
     def from_documents(
         cls,
@@ -116,6 +164,18 @@ class VectorStore(ABC):
         return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
+    async def afrom_documents(
+        cls,
+        documents: List[Document],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> VectorStore:
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return await cls.afrom_texts(texts, embedding, metadatas=metadatas, **kwargs)
+
+    @classmethod
     @abstractmethod
     def from_texts(
         cls,
@@ -126,8 +186,19 @@ class VectorStore(ABC):
     ) -> VectorStore:
         """Return VectorStore initialized from texts and embeddings."""
 
-    def as_retriever(self) -> VectorStoreRetriever:
-        return VectorStoreRetriever(vectorstore=self)
+    @classmethod
+    async def afrom_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> VectorStore:
+        """Return VectorStore initialized from texts and embeddings."""
+        raise NotImplementedError
+
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        return VectorStoreRetriever(vectorstore=self, **kwargs)
 
 
 class VectorStoreRetriever(BaseRetriever, BaseModel):
@@ -154,6 +225,19 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
+
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        if self.search_type == "similarity":
+            docs = await self.vectorstore.asimilarity_search(
+                query, **self.search_kwargs
+            )
+        elif self.search_type == "mmr":
+            docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
         else:

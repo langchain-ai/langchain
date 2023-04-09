@@ -5,7 +5,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -14,7 +14,7 @@ from langchain.prompts.base import (
 )
 
 
-class PromptTemplate(StringPromptTemplate, BaseModel):
+class PromptTemplate(StringPromptTemplate):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -82,10 +82,11 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
         input_variables: List[str],
         example_separator: str = "\n\n",
         prefix: str = "",
+        **kwargs: Any,
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
-        Intended be used as a way to dynamically create a prompt from examples.
+        Intended to be used as a way to dynamically create a prompt from examples.
 
         Args:
             examples: List of examples to use in the prompt.
@@ -102,11 +103,11 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
             The final prompt generated.
         """
         template = example_separator.join([prefix, *examples, suffix])
-        return cls(input_variables=input_variables, template=template)
+        return cls(input_variables=input_variables, template=template, **kwargs)
 
     @classmethod
     def from_file(
-        cls, template_file: Union[str, Path], input_variables: List[str]
+        cls, template_file: Union[str, Path], input_variables: List[str], **kwargs: Any
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
@@ -119,15 +120,17 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
         """
         with open(str(template_file), "r") as f:
             template = f.read()
-        return cls(input_variables=input_variables, template=template)
+        return cls(input_variables=input_variables, template=template, **kwargs)
 
     @classmethod
-    def from_template(cls, template: str) -> PromptTemplate:
+    def from_template(cls, template: str, **kwargs: Any) -> PromptTemplate:
         """Load a prompt template from a template."""
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
         }
-        return cls(input_variables=list(sorted(input_variables)), template=template)
+        return cls(
+            input_variables=list(sorted(input_variables)), template=template, **kwargs
+        )
 
 
 # For backwards compatibility.

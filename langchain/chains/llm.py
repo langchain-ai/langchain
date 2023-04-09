@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
@@ -12,7 +12,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
-class LLMChain(Chain, BaseModel):
+class LLMChain(Chain):
     """Chain to run queries against LLMs.
 
     Example:
@@ -169,6 +169,16 @@ class LLMChain(Chain, BaseModel):
     def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)
+        if self.prompt.output_parser is not None:
+            return self.prompt.output_parser.parse(result)
+        else:
+            return result
+
+    async def apredict_and_parse(
+        self, **kwargs: Any
+    ) -> Union[str, List[str], Dict[str, str]]:
+        """Call apredict and then parse the results."""
+        result = await self.apredict(**kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
         else:

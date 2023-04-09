@@ -1,17 +1,17 @@
 """Chain that interprets a prompt and executes python code to do math."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.python import PythonREPL
+from langchain.schema import BaseLanguageModel
 
 
-class LLMMathChain(Chain, BaseModel):
+class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
     Example:
@@ -21,7 +21,7 @@ class LLMMathChain(Chain, BaseModel):
             llm_math = LLMMathChain(llm=OpenAI())
     """
 
-    llm: BaseLLM
+    llm: BaseLanguageModel
     """LLM wrapper to use."""
     prompt: BasePromptTemplate = PROMPT
     """Prompt to use to translate to python if neccessary."""

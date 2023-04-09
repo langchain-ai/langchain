@@ -35,11 +35,11 @@ def _import_bulk() -> Any:
     return bulk
 
 
-def _get_opensearch_client(opensearch_url: str) -> Any:
+def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     """Get OpenSearch client from the opensearch_url, otherwise raise error."""
     try:
         opensearch = _import_opensearch()
-        client = opensearch(opensearch_url)
+        client = opensearch(opensearch_url, **kwargs)
     except ValueError as e:
         raise ValueError(
             f"OpenSearch client string provided is not in proper format. "
@@ -128,12 +128,15 @@ def _default_text_mapping(
 
 
 def _default_approximate_search_query(
-    query_vector: List[float], size: int = 4, k: int = 4
+    query_vector: List[float],
+    size: int = 4,
+    k: int = 4,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
         "size": size,
-        "query": {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+        "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
     }
 
 
@@ -141,6 +144,7 @@ def _default_script_query(
     query_vector: List[float],
     space_type: str = "l2",
     pre_filter: Dict = MATCH_ALL_QUERY,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Script Scoring Search, this is the default query."""
     return {
@@ -151,7 +155,7 @@ def _default_script_query(
                     "source": "knn_score",
                     "lang": "knn",
                     "params": {
-                        "field": "vector_field",
+                        "field": vector_field,
                         "query_value": query_vector,
                         "space_type": space_type,
                     },
@@ -176,6 +180,7 @@ def _default_painless_scripting_query(
     query_vector: List[float],
     space_type: str = "l2Squared",
     pre_filter: Dict = MATCH_ALL_QUERY,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
     source = __get_painless_scripting_source(space_type, query_vector)
@@ -186,7 +191,7 @@ def _default_painless_scripting_query(
                 "script": {
                     "source": source,
                     "params": {
-                        "field": "vector_field",
+                        "field": vector_field,
                         "query_value": query_vector,
                     },
                 },
@@ -218,12 +223,16 @@ class OpenSearchVectorSearch(VectorStore):
     """
 
     def __init__(
-        self, opensearch_url: str, index_name: str, embedding_function: Embeddings
+        self,
+        opensearch_url: str,
+        index_name: str,
+        embedding_function: Embeddings,
+        **kwargs: Any,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index_name = index_name
-        self.client = _get_opensearch_client(opensearch_url)
+        self.client = _get_opensearch_client(opensearch_url, **kwargs)
 
     def add_texts(
         self,
@@ -265,6 +274,15 @@ class OpenSearchVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the query.
 
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+            metadata_field: Document field that metadata is stored in. Defaults to
+            "metadata".
+            Can be set to a special value "*" to include the entire document.
+
         Optional Args for Approximate Search:
             search_type: "approximate_search"; default: "approximate_search"
             size: number of results the query actually returns; default: 4
@@ -287,18 +305,27 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
+        text_field = _get_kwargs_value(kwargs, "text_field", "text")
+        metadata_field = _get_kwargs_value(kwargs, "metadata_field", "metadata")
         if search_type == "approximate_search":
             size = _get_kwargs_value(kwargs, "size", 4)
-            search_query = _default_approximate_search_query(embedding, size, k)
+            vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+            search_query = _default_approximate_search_query(
+                embedding, size, k, vector_field
+            )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
-            search_query = _default_script_query(embedding, space_type, pre_filter)
+            vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+            search_query = _default_script_query(
+                embedding, space_type, pre_filter, vector_field
+            )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
+            vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
             search_query = _default_painless_scripting_query(
-                embedding, space_type, pre_filter
+                embedding, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
@@ -306,7 +333,13 @@ class OpenSearchVectorSearch(VectorStore):
         response = self.client.search(index=self.index_name, body=search_query)
         hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
         documents = [
-            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
+            Document(
+                page_content=hit[text_field],
+                metadata=hit
+                if metadata_field == "*" or metadata_field not in hit
+                else hit[metadata_field],
+            )
+            for hit in hits
         ]
         return documents
 

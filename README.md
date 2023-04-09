@@ -32,7 +32,7 @@ This library is aimed at assisting in the development of those types of applicat
 
 **🤖 Agents**
 
-- [Documentation](https://langchain.readthedocs.io/en/latest/use_cases/agents.html)
+- [Documentation](https://langchain.readthedocs.io/en/latest/modules/agents.html)
 - End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
 
 ## 📖 Documentation
@@ -73,7 +73,7 @@ Memory is the concept of persisting state between calls of a chain/agent. LangCh
 
 [BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
-For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/?).
+For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/).
 
 ## 💁 Contributing
 

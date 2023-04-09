@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -13,7 +13,7 @@ from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 
 
-class SQLDatabaseChain(Chain, BaseModel):
+class SQLDatabaseChain(Chain):
     """Chain for interacting with SQL Database.
 
     Example:
@@ -107,7 +107,7 @@ class SQLDatabaseChain(Chain, BaseModel):
         return "sql_database_chain"
 
 
-class SQLDatabaseSequentialChain(Chain, BaseModel):
+class SQLDatabaseSequentialChain(Chain):
     """Chain for querying SQL database that is a sequential chain.
 
     The chain is as follows:
@@ -162,7 +162,7 @@ class SQLDatabaseSequentialChain(Chain, BaseModel):
             return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
-        _table_names = self.sql_chain.database.get_table_names()
+        _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
         llm_inputs = {
             "query": inputs[self.input_key],

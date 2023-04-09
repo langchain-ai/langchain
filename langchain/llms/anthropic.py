@@ -2,13 +2,13 @@
 import re
 from typing import Any, Dict, Generator, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
 
-class Anthropic(LLM, BaseModel):
+class Anthropic(LLM):
     r"""Wrapper around Anthropic large language models.
 
     To use, you should have the ``anthropic`` python package installed, and the
@@ -47,6 +47,9 @@ class Anthropic(LLM, BaseModel):
 
     top_p: float = 1
     """Total probability mass of tokens to consider at each step."""
+
+    streaming: bool = False
+    """Whether to stream the results."""
 
     anthropic_api_key: Optional[str] = None
 
@@ -143,14 +146,61 @@ class Anthropic(LLM, BaseModel):
 
         """
         stop = self._get_anthropic_stop(stop)
+        if self.streaming:
+            stream_resp = self.client.completion_stream(
+                model=self.model,
+                prompt=self._wrap_prompt(prompt),
+                stop_sequences=stop,
+                stream=True,
+                **self._default_params,
+            )
+            current_completion = ""
+            for data in stream_resp:
+                delta = data["completion"][len(current_completion) :]
+                current_completion = data["completion"]
+                self.callback_manager.on_llm_new_token(
+                    delta, verbose=self.verbose, **data
+                )
+            return current_completion
         response = self.client.completion(
             model=self.model,
             prompt=self._wrap_prompt(prompt),
             stop_sequences=stop,
             **self._default_params,
         )
-        text = response["completion"]
-        return text
+        return response["completion"]
+
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Call out to Anthropic's completion endpoint asynchronously."""
+        stop = self._get_anthropic_stop(stop)
+        if self.streaming:
+            stream_resp = await self.client.acompletion_stream(
+                model=self.model,
+                prompt=self._wrap_prompt(prompt),
+                stop_sequences=stop,
+                stream=True,
+                **self._default_params,
+            )
+            current_completion = ""
+            async for data in stream_resp:
+                delta = data["completion"][len(current_completion) :]
+                current_completion = data["completion"]
+                if self.callback_manager.is_async:
+                    await self.callback_manager.on_llm_new_token(
+                        delta, verbose=self.verbose, **data
+                    )
+                else:
+                    self.callback_manager.on_llm_new_token(
+                        delta, verbose=self.verbose, **data
+                    )
+            return current_completion
+        response = await self.client.acompletion(
+            model=self.model,
+            prompt=self._wrap_prompt(prompt),
+            stop_sequences=stop,
+            **self._default_params,
+        )
+        return response["completion"]
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
         r"""Call Anthropic completion_stream and return the resulting generator.

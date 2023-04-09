@@ -1,13 +1,13 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.input import get_color_mapping
 
 
-class SequentialChain(Chain, BaseModel):
+class SequentialChain(Chain):
     """Chain where the outputs of one chain feed directly into next."""
 
     chains: List[Chain]
@@ -46,8 +46,8 @@ class SequentialChain(Chain, BaseModel):
         if "memory" in values and values["memory"] is not None:
             """Validate that prompt input variables are consistent."""
             memory_keys = values["memory"].memory_variables
-            if any(input_variables) in memory_keys:
-                overlapping_keys = input_variables & memory_keys
+            if set(input_variables).intersection(set(memory_keys)):
+                overlapping_keys = set(input_variables) & set(memory_keys)
                 raise ValueError(
                     f"The the input key(s) {''.join(overlapping_keys)} are found "
                     f"in the Memory keys ({memory_keys}) - please use input and "
@@ -94,7 +94,7 @@ class SequentialChain(Chain, BaseModel):
         return {k: known_values[k] for k in self.output_variables}
 
 
-class SimpleSequentialChain(Chain, BaseModel):
+class SimpleSequentialChain(Chain):
     """Simple chain where the outputs of one step feed directly into next."""
 
     chains: List[Chain]

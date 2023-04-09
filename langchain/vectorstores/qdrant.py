@@ -165,7 +165,7 @@ class Qdrant(VectorStore):
             query_vector=embedding,
             with_payload=True,
             with_vectors=True,
-            limit=k,
+            limit=fetch_k,
         )
         embeddings = [result.vector for result in results]
         mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
@@ -181,6 +181,7 @@ class Qdrant(VectorStore):
         cls,
         documents: List[Document],
         embedding: Embeddings,
+        location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
@@ -190,6 +191,7 @@ class Qdrant(VectorStore):
         prefix: Optional[str] = None,
         timeout: Optional[float] = None,
         host: Optional[str] = None,
+        path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
@@ -201,6 +203,7 @@ class Qdrant(VectorStore):
             super().from_documents(
                 documents,
                 embedding,
+                location=location,
                 url=url,
                 port=port,
                 grpc_port=grpc_port,
@@ -210,6 +213,7 @@ class Qdrant(VectorStore):
                 prefix=prefix,
                 timeout=timeout,
                 host=host,
+                path=path,
                 collection_name=collection_name,
                 distance_func=distance_func,
                 content_payload_key=content_payload_key,
@@ -224,6 +228,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
@@ -233,6 +238,7 @@ class Qdrant(VectorStore):
         prefix: Optional[str] = None,
         timeout: Optional[float] = None,
         host: Optional[str] = None,
+        path: Optional[str] = None,
         collection_name: Optional[str] = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
@@ -247,6 +253,10 @@ class Qdrant(VectorStore):
             metadatas:
                 An optional list of metadata. If provided it has to be of the same
                 length as a list of texts.
+            location:
+                If `:memory:` - use in-memory Qdrant instance.
+                If `str` - use it as a `url` parameter.
+                If `None` - use default values for `host` and `port`.
             url: either host or str of "Optional[scheme], host, Optional[port],
                 Optional[prefix]". Default: `None`
             port: Port of the REST API interface. Default: 6333
@@ -266,6 +276,9 @@ class Qdrant(VectorStore):
             host:
                 Host name of Qdrant service. If url and host are None, set to
                 'localhost'. Default: `None`
+            path:
+                Path in which the vectors will be stored while using local mode.
+                Default: `None`
             collection_name:
                 Name of the Qdrant collection to be used. If not provided,
                 will be created randomly.
@@ -311,6 +324,7 @@ class Qdrant(VectorStore):
         distance_func = distance_func.upper()
 
         client = qdrant_client.QdrantClient(
+            location=location,
             url=url,
             port=port,
             grpc_port=grpc_port,
@@ -320,6 +334,7 @@ class Qdrant(VectorStore):
             prefix=prefix,
             timeout=timeout,
             host=host,
+            path=path,
             **kwargs,
         )
 

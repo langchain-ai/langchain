@@ -96,24 +96,78 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
 
         return creds
 
+    def _load_sheet_from_id(self, id: str) -> List[Document]:
+        """Load a sheet and all tabs from an ID."""
+
+        from googleapiclient.discovery import build
+
+        creds = self._load_credentials()
+        sheets_service = build("sheets", "v4", credentials=creds)
+        spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=id).execute()
+        sheets = spreadsheet.get("sheets", [])
+
+        documents = []
+        for sheet in sheets:
+            sheet_name = sheet["properties"]["title"]
+            result = (
+                sheets_service.spreadsheets()
+                .values()
+                .get(spreadsheetId=id, range=sheet_name)
+                .execute()
+            )
+            values = result.get("values", [])
+
+            header = values[0]
+            for i, row in enumerate(values[1:], start=1):
+                metadata = {
+                    "source": (
+                        f"https://docs.google.com/spreadsheets/d/{id}/"
+                        f"edit?gid={sheet['properties']['sheetId']}"
+                    ),
+                    "title": f"{spreadsheet['properties']['title']} - {sheet_name}",
+                    "row": i,
+                }
+                content = []
+                for j, v in enumerate(row):
+                    title = header[j].strip() if len(header) > j else ""
+                    content.append(f"{title}: {v.strip()}")
+
+                page_content = "\n".join(content)
+                documents.append(Document(page_content=page_content, metadata=metadata))
+
+        return documents
+
     def _load_document_from_id(self, id: str) -> Document:
         """Load a document from an ID."""
         from io import BytesIO
 
         from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseDownload
 
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
-        while done is False:
-            status, done = downloader.next_chunk()
+        try:
+            while done is False:
+                status, done = downloader.next_chunk()
+
+        except HttpError as e:
+            if e.resp.status == 404:
+                print("File not found: {}".format(id))
+            else:
+                print("An error occurred: {}".format(e))
+
         text = fh.getvalue().decode("utf-8")
-        metadata = {"source": f"https://docs.google.com/document/d/{id}/edit"}
+        metadata = {
+            "source": f"https://docs.google.com/document/d/{id}/edit",
+            "title": f"{file.get('name')}",
+        }
         return Document(page_content=text, metadata=metadata)
 
     def _load_documents_from_folder(self) -> List[Document]:
@@ -128,6 +182,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .list(
                 q=f"'{self.folder_id}' in parents",
                 pageSize=1000,
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 fields="nextPageToken, files(id, name, mimeType)",
             )
             .execute()
@@ -137,6 +193,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         for item in items:
             if item["mimeType"] == "application/vnd.google-apps.document":
                 returns.append(self._load_document_from_id(item["id"]))
+            elif item["mimeType"] == "application/vnd.google-apps.spreadsheet":
+                returns.extend(self._load_sheet_from_id(item["id"]))
             elif item["mimeType"] == "application/pdf":
                 returns.extend(self._load_file_from_id(item["id"]))
             else:
@@ -161,6 +219,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -178,6 +237,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 page_content=page.extract_text(),
                 metadata={
                     "source": f"https://drive.google.com/file/d/{id}/view",
+                    "title": f"{file.get('name')}",
                     "page": i,
                 },
             )

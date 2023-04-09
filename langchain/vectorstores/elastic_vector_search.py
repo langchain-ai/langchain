@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from abc import ABC
 from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.docstore.document import Document
@@ -31,19 +32,81 @@ def _default_script_query(query_vector: List[float]) -> Dict:
     }
 
 
-class ElasticVectorSearch(VectorStore):
+# ElasticVectorSearch is a concrete implementation of the abstract base class
+# VectorStore, which defines a common interface for all vector database
+# implementations. By inheriting from the ABC class, ElasticVectorSearch can be
+# defined as an abstract base class itself, allowing the creation of subclasses with
+# their own specific implementations. If you plan to subclass ElasticVectorSearch,
+# you can inherit from it and define your own implementation of the necessary methods
+# and attributes.
+class ElasticVectorSearch(VectorStore, ABC):
     """Wrapper around Elasticsearch as a vector database.
+
+    To connect to an Elasticsearch instance that does not require
+    login credentials, pass the Elasticsearch URL and index name along with the
+    embedding object to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain import ElasticVectorSearch
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embedding = OpenAIEmbeddings()
             elastic_vector_search = ElasticVectorSearch(
-                "http://localhost:9200",
-                "embeddings",
-                embedding
+                elasticsearch_url="http://localhost:9200",
+                index_name="test_index",
+                embedding=embedding
             )
 
+
+    To connect to an Elasticsearch instance that requires login credentials,
+    including Elastic Cloud, use the Elasticsearch URL format
+    https://username:password@es_host:9243. For example, to connect to Elastic
+    Cloud, create the Elasticsearch URL with the required authentication details and
+    pass it to the ElasticVectorSearch constructor as the named parameter
+    elasticsearch_url.
+
+    You can obtain your Elastic Cloud URL and login credentials by logging in to the
+    Elastic Cloud console at https://cloud.elastic.co, selecting your deployment, and
+    navigating to the "Deployments" page.
+
+    To obtain your Elastic Cloud password for the default "elastic" user:
+
+    1. Log in to the Elastic Cloud console at https://cloud.elastic.co
+    2. Go to "Security" > "Users"
+    3. Locate the "elastic" user and click "Edit"
+    4. Click "Reset password"
+    5. Follow the prompts to reset the password
+
+    The format for Elastic Cloud URLs is
+    https://username:password@cluster_id.region_id.gcp.cloud.es.io:9243.
+
+    Example:
+        .. code-block:: python
+
+            from langchain import ElasticVectorSearch
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embedding = OpenAIEmbeddings()
+
+            elastic_host = "cluster_id.region_id.gcp.cloud.es.io"
+            elasticsearch_url = f"https://username:password@{elastic_host}:9243"
+            elastic_vector_search = ElasticVectorSearch(
+                elasticsearch_url=elasticsearch_url,
+                index_name="test_index",
+                embedding=embedding
+            )
+
+    Args:
+        elasticsearch_url (str): The URL for the Elasticsearch instance.
+        index_name (str): The name of the Elasticsearch index for the embeddings.
+        embedding (Embeddings): An object that provides the ability to embed text.
+                It should be an instance of a class that subclasses the Embeddings
+                abstract base class, such as OpenAIEmbeddings()
+
+    Raises:
+        ValueError: If the elasticsearch python package is not installed.
     """
 
     def __init__(self, elasticsearch_url: str, index_name: str, embedding: Embeddings):
@@ -69,6 +132,7 @@ class ElasticVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        refresh_indices: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -76,11 +140,13 @@ class ElasticVectorSearch(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            refresh_indices: bool to refresh ElasticSearch indices
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
         try:
+            from elasticsearch.exceptions import NotFoundError
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
@@ -90,6 +156,17 @@ class ElasticVectorSearch(VectorStore):
         requests = []
         ids = []
         embeddings = self.embedding.embed_documents(list(texts))
+        dim = len(embeddings[0])
+        mapping = _default_text_mapping(dim)
+
+        # check to see if the index already exists
+        try:
+            self.client.indices.get(index=self.index_name)
+        except NotFoundError:
+            # TODO would be nice to create index before embedding,
+            # just to save expensive steps for last
+            self.client.indices.create(index=self.index_name, mappings=mapping)
+
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             _id = str(uuid.uuid4())
@@ -104,8 +181,9 @@ class ElasticVectorSearch(VectorStore):
             ids.append(_id)
             requests.append(request)
         bulk(self.client, requests)
-        # TODO: add option not to refresh
-        self.client.indices.refresh(index=self.index_name)
+
+        if refresh_indices:
+            self.client.indices.refresh(index=self.index_name)
         return ids
 
     def similarity_search(
@@ -163,11 +241,12 @@ class ElasticVectorSearch(VectorStore):
         )
         try:
             import elasticsearch
+            from elasticsearch.exceptions import NotFoundError
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
                 "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticearch`."
+                "Please install it with `pip install elasticsearch`."
             )
         try:
             client = elasticsearch.Elasticsearch(elasticsearch_url)
@@ -175,13 +254,19 @@ class ElasticVectorSearch(VectorStore):
             raise ValueError(
                 "Your elasticsearch client string is misformatted. " f"Got error: {e} "
             )
-        index_name = uuid.uuid4().hex
+        index_name = kwargs.get("index_name", uuid.uuid4().hex)
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
-        # TODO would be nice to create index before embedding,
-        # just to save expensive steps for last
-        client.indices.create(index=index_name, mappings=mapping)
+
+        # check to see if the index already exists
+        try:
+            client.indices.get(index=index_name)
+        except NotFoundError:
+            # TODO would be nice to create index before embedding,
+            # just to save expensive steps for last
+            client.indices.create(index=index_name, mappings=mapping)
+
         requests = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}

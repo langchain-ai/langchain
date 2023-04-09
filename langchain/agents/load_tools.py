@@ -1,23 +1,32 @@
 # flake8: noqa
 """Load tools."""
+import warnings
 from typing import Any, List, Optional
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.chains.api import news_docs, open_meteo_docs, tmdb_docs, podcast_docs
+from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
-from langchain.tools.requests.tool import RequestsGetTool
+from langchain.tools.requests.tool import (
+    RequestsDeleteTool,
+    RequestsGetTool,
+    RequestsPatchTool,
+    RequestsPostTool,
+    RequestsPutTool,
+)
+from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -32,8 +41,24 @@ def _get_python_repl() -> BaseTool:
     return PythonREPLTool()
 
 
-def _get_requests() -> BaseTool:
-    return RequestsGetTool(requests_wrapper=RequestsWrapper())
+def _get_tools_requests_get() -> BaseTool:
+    return RequestsGetTool(requests_wrapper=TextRequestsWrapper())
+
+
+def _get_tools_requests_post() -> BaseTool:
+    return RequestsPostTool(requests_wrapper=TextRequestsWrapper())
+
+
+def _get_tools_requests_patch() -> BaseTool:
+    return RequestsPatchTool(requests_wrapper=TextRequestsWrapper())
+
+
+def _get_tools_requests_put() -> BaseTool:
+    return RequestsPutTool(requests_wrapper=TextRequestsWrapper())
+
+
+def _get_tools_requests_delete() -> BaseTool:
+    return RequestsDeleteTool(requests_wrapper=TextRequestsWrapper())
 
 
 def _get_terminal() -> BaseTool:
@@ -46,7 +71,12 @@ def _get_terminal() -> BaseTool:
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
-    "requests": _get_requests,
+    "requests": _get_tools_requests_get,  # preserved for backwards compatability
+    "requests_get": _get_tools_requests_get,
+    "requests_post": _get_tools_requests_post,
+    "requests_patch": _get_tools_requests_patch,
+    "requests_put": _get_tools_requests_put,
+    "requests_delete": _get_tools_requests_delete,
     "terminal": _get_terminal,
 }
 
@@ -167,11 +197,12 @@ def _get_serpapi(**kwargs: Any) -> BaseTool:
 
 
 def _get_searx_search(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="SearX Search",
-        description="A meta search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        func=SearxSearchWrapper(**kwargs).run,
-    )
+    return SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))
+
+
+def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
+    wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
+    return SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)
 
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
@@ -195,10 +226,14 @@ _EXTRA_OPTIONAL_TOOLS = {
         _get_google_search_results_json,
         ["google_api_key", "google_cse_id", "num_results"],
     ),
+    "searx-search-results-json": (
+        _get_searx_search_results_json,
+        ["searx_host", "engines", "num_results", "aiosession"],
+    ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
-    "searx-search": (_get_searx_search, ["searx_host"]),
+    "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
 }
@@ -221,8 +256,21 @@ def load_tools(
         List of tools.
     """
     tools = []
+
     for name in tool_names:
-        if name in _BASE_TOOLS:
+        if name == "requests":
+            warnings.warn(
+                "tool name `requests` is deprecated - "
+                "please use `requests_all` or specify the requests method"
+            )
+
+        if name == "requests_all":
+            # expand requests into various methods
+            requests_method_tools = [
+                _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
+            ]
+            tool_names.extend(requests_method_tools)
+        elif name in _BASE_TOOLS:
             tools.append(_BASE_TOOLS[name]())
         elif name in _LLM_TOOLS:
             if llm is None:

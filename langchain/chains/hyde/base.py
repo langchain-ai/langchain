@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Dict, List
 
 import numpy as np
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
@@ -16,7 +16,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.llms.base import BaseLLM
 
 
-class HypotheticalDocumentEmbedder(Chain, Embeddings, BaseModel):
+class HypotheticalDocumentEmbedder(Chain, Embeddings):
     """Generate hypothetical document for query, and then embed that.
 
     Based on https://arxiv.org/abs/2212.10496
