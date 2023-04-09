@@ -15,6 +15,7 @@ from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain.llms.huggingface_model import HuggingFaceModel
 from langchain.llms.llamacpp import LlamaCpp
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
@@ -49,6 +50,7 @@ __all__ = [
     "HuggingFaceHub",
     "SagemakerEndpoint",
     "HuggingFacePipeline",
+    "HuggingFaceModel",
     "AI21",
     "AzureOpenAI",
     "Replicate",
@@ -81,6 +83,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "openai": OpenAI,
     "petals": Petals,
     "huggingface_pipeline": HuggingFacePipeline,
+    "huggingface_model": HuggingFaceModel,
     "azure": AzureOpenAI,
     "replicate": Replicate,
     "self_hosted": SelfHostedPipeline,
