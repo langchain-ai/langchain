@@ -35,6 +35,12 @@ import os
 os.environ["OPENAI_API_KEY"] = "..."
 ```
 
+You may also set the environment variable in a `.env` file in the working directory:
+
+```
+OPENAI_API_KEY=...
+```
+
 
 ## Building a Language Model Application: LLMs
 
