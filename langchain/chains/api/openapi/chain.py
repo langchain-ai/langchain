@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, NamedTuple, Optional, cast
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -35,6 +35,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     return_intermediate_steps: bool = False
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
+    max_text_length: Optional[int] = Field(ge=0)  #: :meta private:
 
     @property
     def input_keys(self) -> List[str]:
@@ -108,6 +109,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         intermediate_steps = {}
         instructions = inputs[self.instructions_key]
+        instructions = instructions[: self.max_text_length]
         _api_arguments = self.api_request_chain.predict_and_parse(
             instructions=instructions
         )
@@ -137,6 +139,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
                 response_text = api_response.text
         except Exception as e:
             response_text = f"Error with message {str(e)}"
+        response_text = response_text[: self.max_text_length]
         intermediate_steps["response_text"] = response_text
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
@@ -160,6 +163,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         llm: BaseLLM,
         requests: Optional[Requests] = None,
         return_intermediate_steps: bool = False,
+        **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -169,6 +173,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             requests=requests,
             llm=llm,
             return_intermediate_steps=return_intermediate_steps,
+            **kwargs,
         )
 
     @classmethod
@@ -179,6 +184,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests: Optional[Requests] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
+        **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
@@ -200,4 +206,5 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             param_mapping=param_mapping,
             verbose=verbose,
             return_intermediate_steps=return_intermediate_steps,
+            **kwargs,
         )
