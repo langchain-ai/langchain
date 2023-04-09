@@ -22,4 +22,4 @@ Query Understanding: GPT-4 processes user queries, grasping the context and extr
 5. Ask questions: Define a list of questions to ask about the codebase, and then use the ConversationalRetrievalChain to generate context-aware answers. The LLM (GPT-4) generates comprehensive, context-aware answers based on retrieved code snippets and conversation history.
 
 The full tutorial is available below.
-- [Twitter the-algorithm codebase analysis with Deep Lake](../modules/indexes/retrievers/examples/twitter-the-algorithm-analysis-deeplake.ipynb): A notebook walking through how to parse github source code and run queries conversation.
+- [Twitter the-algorithm codebase analysis with Deep Lake](code/twitter-the-algorithm-analysis-deeplake.ipynb): A notebook walking through how to parse github source code and run queries conversation.
