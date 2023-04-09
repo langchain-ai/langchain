@@ -41,10 +41,8 @@ class StructuredOutputParser(BaseOutputParser):
         json_string = text.split("```json")[1].strip().strip("```").strip()
         try:
             json_obj = json.loads(json_string)
-        except Exception as e:
-            raise OutputParserException(
-                f"Got invalid JSON object. Error: {e}"
-            )
+        except json.JSONDecodeError as e:
+            raise OutputParserException(f"Got invalid JSON object. Error: {e}")
         for schema in self.response_schemas:
             if schema.name not in json_obj:
                 raise OutputParserException(
