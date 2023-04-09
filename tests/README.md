@@ -27,7 +27,7 @@ Any new dependencies should be added by running:
 
 ```bash
 # add package and install it after adding:
-poetry add deeplake --group "test_integration" && poetry install --with test_integration
+poetry add chromadb@latest --group "test_integration" && poetry install --with test_integration
 ```
 
 Before running any tests, you should start a specific Docker container that has all the
