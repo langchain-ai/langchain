@@ -71,6 +71,8 @@ The above modules can be used in a variety of ways. LangChain also provides guid
 
 - `Querying Tabular Data <./use_cases/tabular.html>`_: If you want to understand how to use LLMs to query data that is stored in a tabular format (csvs, SQL, dataframes, etc) you should read this page.
 
+- `Code Understanding <./use_cases/code.html>`_: If you want to understand how to use LLMs to query source code from github, you should read this page.
+
 - `Interacting with APIs <./use_cases/apis.html>`_: Enabling LLMs to interact with APIs is extremely powerful in order to give them more up-to-date information and allow them to take actions.
 
 - `Extraction <./use_cases/extraction.html>`_: Extract structured information from text.
