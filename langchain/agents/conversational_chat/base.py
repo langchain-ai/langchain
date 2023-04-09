@@ -44,7 +44,7 @@ class AgentOutputParser(BaseOutputParser):
             except Exception:
                 """nothing to do"""
         if response is None:
-            match = re.match(".*?```(?:json){,1}(.+)```.*?", cleaned_output, re.DOTALL)
+            match = re.match(r".*?(\{.+}).*?", cleaned_output, re.DOTALL)
             if match:
                 cleaned_output = match.group(1).strip()
             response = json.loads(cleaned_output)
