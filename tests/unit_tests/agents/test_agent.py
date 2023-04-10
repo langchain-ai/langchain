@@ -7,7 +7,7 @@ from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
-
+from langchain.agents import load_tools
 
 class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
@@ -267,6 +267,42 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     action, _action_intput = resp["intermediate_steps"][0]
     assert action.tool == "Search"
 
+def test_agent_treat_exception() -> None:
+    responses = [
+        f"My action is to throw an exception",
+    ]
+    fake_llm = FakeListLLM(responses=responses)
+    agent = initialize_agent(
+        load_tools(['exception']),
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        max_iterations=1
+    )
+    output = agent.run("when was langchain made")
+    assert "Agent stopped" in output
+
+    # now test it does throw exception without the tool
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: x,
+            description="Useful for searching",
+        )]
+    fake_llm = FakeListLLM(responses=responses)
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        max_iterations=1
+    )
+    try:
+        output = agent.run("when was langchain made")
+        raise Exception("Should have thrown exception")
+    except ValueError as e:
+        assert "parse" in str(e)
+    
 
 def test_agent_with_new_prefix_suffix() -> None:
     """Test agent initilization kwargs with new prefix and suffix."""

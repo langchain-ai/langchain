@@ -15,6 +15,7 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
+from langchain.tools.exception.tool import ExceptionTool
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
@@ -148,7 +149,6 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
         func=chain.run,
     )
 
-
 def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     listen_api_key = kwargs["listen_api_key"]
     chain = APIChain.from_llm_and_api_docs(
@@ -212,6 +212,8 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
+def _get_exception_tool(**kwargs: Any) -> BaseTool:
+    return ExceptionTool(**kwargs)
 
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
@@ -236,6 +238,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
+    "exception": (_get_exception_tool, []),
 }
 
 

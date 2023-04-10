@@ -160,3 +160,7 @@ Below is a list of all supported tools and relevant information:
 - Notes: A connection to the OpenWeatherMap API (https://api.openweathermap.org), specifically the `/data/2.5/weather` endpoint.
 - Requires LLM: No
 - Extra Parameters: `openweathermap_api_key` (your API key to access this endpoint)
+
+**Exception**
+--Tool Name: Exception
+-- Tool Description: This intercepts parsing errors and sends them to the agent so that it can try to recover.

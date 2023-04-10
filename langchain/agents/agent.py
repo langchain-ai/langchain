@@ -400,7 +400,13 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        action = self._get_next_action(full_inputs)
+        try:
+            action = self._get_next_action(full_inputs)
+        except ValueError as e:
+            if 'parse' in str(e):
+                return AgentAction(tool="Exception", tool_input='Exception: ' + str(e), log=str(e))
+            else:
+                raise e
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -419,7 +425,13 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        action = await self._aget_next_action(full_inputs)
+        try:
+            action = await self._aget_next_action(full_inputs)
+        except ValueError as e:
+            if 'parse' in str(e):
+                return AgentAction(tool="Exception", tool_input='Exception: ' + str(e), log=str(e))
+            else:
+                raise e
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -718,6 +730,10 @@ class AgentExecutor(Chain):
                     color=color,
                     **tool_run_kwargs,
                 )
+            elif agent_action.tool == "Exception":
+                # just raise exception then, since tool
+                # wasn't installed
+                raise ValueError(agent_action.tool_input)
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
@@ -777,6 +793,10 @@ class AgentExecutor(Chain):
                     color=color,
                     **tool_run_kwargs,
                 )
+            elif agent_action.tool == "Exception":
+                # just raise exception then, since tool
+                # wasn't installed
+                raise ValueError(agent_action.tool_input)
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = await InvalidTool().arun(
