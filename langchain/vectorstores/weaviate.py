@@ -9,6 +9,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
+
 def _default_schema(index_name: str) -> Dict:
     return {
         "class": index_name,
@@ -19,6 +20,7 @@ def _default_schema(index_name: str) -> Dict:
             }
         ],
     }
+
 
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
@@ -100,11 +102,7 @@ class Weaviate(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self._embedding.embed_query(query)
-        return self.similarity_search_by_vector(
-            embedding,
-            k,
-            **kwargs
-        )
+        return self.similarity_search_by_vector(embedding, k, **kwargs)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -148,9 +146,7 @@ class Weaviate(VectorStore):
                     weaviate_url="http://localhost:8080"
                 )
         """
-        weaviate_url = get_from_dict_or_env(
-            kwargs, "weaviate_url", "WEAVIATE_URL"
-        )
+        weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
 
         try:
             import weaviate
@@ -161,7 +157,7 @@ class Weaviate(VectorStore):
                 "Could not import weaviate python  package. "
                 "Please install it with `pip instal weaviate-client`"
             )
-        
+
         client = Client(weaviate_url)
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
         embeddings = embedding.embed_documents(texts)
@@ -186,12 +182,11 @@ class Weaviate(VectorStore):
 
                 batch.add_data_object(
                     uuid=_id,
-                    data_object=data_properties, 
+                    data_object=data_properties,
                     class_name=index_name,
-                    vector=embeddings[i]
+                    vector=embeddings[i],
                 )
 
             batch.flush()
 
         return cls(client, index_name, text_key, embedding, attributes)
-
