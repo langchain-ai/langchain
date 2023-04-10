@@ -69,6 +69,9 @@ def _get_terminal() -> BaseTool:
         func=BashProcess().run,
     )
 
+def _get_exception_tool() -> BaseTool:
+    return ExceptionTool()
+
 
 _BASE_TOOLS = {
     "python_repl": _get_python_repl,
@@ -79,6 +82,7 @@ _BASE_TOOLS = {
     "requests_put": _get_tools_requests_put,
     "requests_delete": _get_tools_requests_delete,
     "terminal": _get_terminal,
+    "exception": _get_exception_tool
 }
 
 
@@ -212,9 +216,6 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
-def _get_exception_tool(**kwargs: Any) -> BaseTool:
-    return ExceptionTool(**kwargs)
-
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -237,8 +238,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
-    "human": (_get_human_tool, ["prompt_func", "input_func"]),
-    "exception": (_get_exception_tool, []),
+    "human": (_get_human_tool, ["prompt_func", "input_func"])
 }
 
 
