@@ -11,7 +11,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction, BaseLanguageModel
+from langchain.schema import AgentAction, BaseLanguageModel, OutputParserException
 from langchain.tools import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -52,7 +52,7 @@ class ChatAgent(Agent):
             return response["action"], response["action_input"]
 
         except Exception:
-            raise ValueError(f"Could not parse LLM output: {text}")
+            raise OutputParserException(f"Could not parse LLM output: {text}")
 
     @property
     def _stop(self) -> List[str]:

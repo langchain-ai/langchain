@@ -26,6 +26,7 @@ from langchain.schema import (
     BaseLanguageModel,
     BaseMessage,
     BaseOutputParser,
+    OutputParserException,
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
@@ -400,15 +401,7 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        try:
-            action = self._get_next_action(full_inputs)
-        except ValueError as e:
-            if "parse" in str(e):
-                return AgentAction(
-                    tool="Exception", tool_input="Exception: " + str(e), log=str(e)
-                )
-            else:
-                raise e
+        action = self._get_next_action(full_inputs)
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -427,15 +420,7 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        try:
-            action = await self._aget_next_action(full_inputs)
-        except ValueError as e:
-            if "parse" in str(e):
-                return AgentAction(
-                    tool="Exception", tool_input="Exception: " + str(e), log=str(e)
-                )
-            else:
-                raise e
+        action = await self._aget_next_action(full_inputs)
         if action.tool == self.finish_tool_name:
             return AgentFinish({"output": action.tool_input}, action.log)
         return action
@@ -705,7 +690,13 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = self.agent.plan(intermediate_steps, **inputs)
+        try:
+            output = self.agent.plan(intermediate_steps, **inputs)
+        except OutputParserException as e:
+            if "Exception" in name_to_tool_map:
+                output = AgentAction(tool="Exception", tool_input=str(e), log=str(e))
+            else:
+                raise e
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -734,10 +725,6 @@ class AgentExecutor(Chain):
                     color=color,
                     **tool_run_kwargs,
                 )
-            elif agent_action.tool == "Exception":
-                # just raise exception then, since tool
-                # wasn't installed
-                raise ValueError(agent_action.tool_input)
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
@@ -761,7 +748,13 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = await self.agent.aplan(intermediate_steps, **inputs)
+        try:
+            output = await self.agent.aplan(intermediate_steps, **inputs)
+        except OutputParserException as e:
+            if "Exception" in name_to_tool_map:
+                output = AgentAction(tool="Exception", tool_input=str(e), log=str(e))
+            else:
+                raise e
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -797,10 +790,6 @@ class AgentExecutor(Chain):
                     color=color,
                     **tool_run_kwargs,
                 )
-            elif agent_action.tool == "Exception":
-                # just raise exception then, since tool
-                # wasn't installed
-                raise ValueError(agent_action.tool_input)
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = await InvalidTool().arun(

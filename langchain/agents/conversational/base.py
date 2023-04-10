@@ -10,7 +10,7 @@ from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseLanguageModel, OutputParserException
 from langchain.tools.base import BaseTool
 
 
@@ -82,7 +82,7 @@ class ConversationalAgent(Agent):
         regex = r"Action: (.*?)[\n]*Action Input: (.*)"
         match = re.search(regex, llm_output)
         if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+            raise OutputParserException(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1)
         action_input = match.group(2)
         return action.strip(), action_input.strip(" ").strip('"')

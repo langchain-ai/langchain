@@ -2,10 +2,13 @@
 
 from typing import Any, List, Mapping, Optional
 
+import pytest
+
 from langchain.agents import AgentExecutor, AgentType, initialize_agent, load_tools
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
+from langchain.schema import OutputParserException
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -299,11 +302,8 @@ def test_agent_treat_exception() -> None:
         verbose=True,
         max_iterations=1,
     )
-    try:
+    with pytest.raises(OutputParserException):
         output = agent.run("when was langchain made")
-        raise Exception("Should have thrown exception")
-    except ValueError as e:
-        assert "parse" in str(e)
 
 
 def test_agent_with_new_prefix_suffix() -> None:

@@ -11,6 +11,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import OutputParserException
 from langchain.tools.base import BaseTool
 
 
@@ -50,7 +51,9 @@ class ReActDocstoreAgent(Agent):
         # Parse out the action and the directive.
         re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
         if re_matches is None:
-            raise ValueError(f"Could not parse action directive: {action_str}")
+            raise OutputParserException(
+                f"Could not parse action directive: {action_str}"
+            )
         return re_matches.group(1), re_matches.group(2)
 
     @property

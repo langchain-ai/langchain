@@ -27,6 +27,7 @@ from langchain.schema import (
     BaseMessage,
     BaseOutputParser,
     HumanMessage,
+    OutputParserException,
 )
 from langchain.tools.base import BaseTool
 
@@ -106,7 +107,7 @@ class ConversationalChatAgent(Agent):
             response = self.output_parser.parse(llm_output)
             return response["action"], response["action_input"]
         except Exception:
-            raise ValueError(f"Could not parse LLM output: {llm_output}")
+            raise OutputParserException(f"Could not parse LLM output: {llm_output}")
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
