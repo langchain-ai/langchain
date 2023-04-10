@@ -1,8 +1,10 @@
 """Test functionality of Python REPL."""
 import sys
+
 import pytest
+
 from langchain.python import PythonREPL
-from langchain.tools.python.tool import PythonREPLTool, PythonAstREPLTool
+from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
 
 _SAMPLE_CODE = """
 ```
