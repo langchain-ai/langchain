@@ -1,6 +1,7 @@
 """Wrapper around Redis vector database."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -25,9 +26,9 @@ REDIS_REQUIRED_MODULES = [
 ]
 
 
-def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
+async def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
     """Check if the correct Redis modules are installed."""
-    installed_modules = client.module_list()
+    installed_modules = await client.module_list()
     installed_modules = {
         module[b"name"].decode("utf-8"): module for module in installed_modules
     }
@@ -43,10 +44,10 @@ def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
             raise ValueError(error_message)
 
 
-def _check_index_exists(client: RedisType, index_name: str) -> bool:
+async def _check_index_exists(client: RedisType, index_name: str) -> bool:
     """Check if Redis index exists."""
     try:
-        client.ft(index_name).info()
+        await client.ft(index_name).info()
     except:  # noqa: E722
         logger.info("Index does not exist")
         return False
@@ -64,6 +65,95 @@ def _redis_prefix(index_name: str) -> str:
     return f"doc:{index_name}"
 
 
+async def _setup_index(texts, embedding, kwargs):
+    redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
+    try:
+        import redis.asyncio as redis
+        from redis.commands.search.field import TextField, VectorField
+        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+    except ImportError:
+        raise ValueError(
+            "Could not import redis python package. "
+            "Please install it with `pip install redis`."
+        )
+    try:
+        # We need to first remove redis_url from kwargs,
+        # otherwise passing it to Redis will result in an error.
+        kwargs.pop("redis_url")
+        client = redis.from_url(url=redis_url, **kwargs)
+        # check if redis has redisearch module installed
+        await _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
+    except ValueError as e:
+        raise ValueError(f"Redis failed to connect: {e}")
+
+    # Create embeddings over documents
+    embeddings = embedding.embed_documents(texts)
+
+    # Name of the search index if not given
+    if not index_name:
+        index_name = uuid.uuid4().hex
+    prefix = _redis_prefix(index_name)  # prefix for the document keys
+
+    # Check if index exists
+    if not await _check_index_exists(client, index_name):
+        # Constants
+        dim = len(embeddings[0])
+        distance_metric = (
+            "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
+        )
+        schema = (
+            TextField(name="content"),
+            TextField(name="metadata"),
+            VectorField(
+                "content_vector",
+                "FLAT",
+                {
+                    "TYPE": "FLOAT32",
+                    "DIM": dim,
+                    "DISTANCE_METRIC": distance_metric,
+                },
+            ),
+        )
+        # Create Redis Index
+        await client.ft(index_name).create_index(
+            fields=schema,
+            definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
+        )
+
+
+async def _write_batch(
+    client: RedisType,
+    prefix: str,
+    texts: Iterable[str],
+    metadatas: Optional[List[dict]] = None,
+    keys: Optional[List[dict]] = None,
+    embeddings: Optional[List[float]] = None,
+    embedding_function: Optional[Callable] = None
+) -> List[str]:
+    # Init list of keys
+    ids: List[str] = []
+    # Write data to redis in a pipeline
+    pipeline = await client.pipeline(transaction=False)
+    for i, text in enumerate(texts):
+        # Use provided key otherwise use default key
+        key = keys[i] if keys else _redis_key(prefix)
+        metadata = metadatas[i] if metadatas else {}
+        embedding = embeddings[i] if embeddings else embedding_function(text)
+        await pipeline.hset(
+            key,
+            mapping={
+                "content": text,
+                "content_vector": np.array(
+                    embedding, dtype=np.float32
+                ).tobytes(),
+                "metadata": json.dumps(metadata),
+            },
+        )
+        ids.append(key)
+    await pipeline.execute()
+    return ids
+
+
 class Redis(VectorStore):
     def __init__(
         self,
@@ -74,7 +164,7 @@ class Redis(VectorStore):
     ):
         """Initialize with necessary components."""
         try:
-            import redis
+            import redis.asyncio as redis
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -87,7 +177,7 @@ class Redis(VectorStore):
             # connect to redis from url
             redis_client = redis.from_url(redis_url, **kwargs)
             # check if redis has redisearch module installed
-            _check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES)
+            asyncio.run(_check_redis_module_exist(redis_client, REDIS_REQUIRED_MODULES))
         except ValueError as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -102,26 +192,108 @@ class Redis(VectorStore):
         """Add texts data to an existing index."""
         prefix = _redis_prefix(self.index_name)
         keys = kwargs.get("keys")
-        ids = []
-        # Write data to redis
-        pipeline = self.client.pipeline(transaction=False)
-        for i, text in enumerate(texts):
-            # Use provided key otherwise use default key
-            key = keys[i] if keys else _redis_key(prefix)
-            metadata = metadatas[i] if metadatas else {}
-            pipeline.hset(
-                key,
-                mapping={
-                    "content": text,
-                    "content_vector": np.array(
-                        self.embedding_function(text), dtype=np.float32
-                    ).tobytes(),
-                    "metadata": json.dumps(metadata),
-                },
-            )
-            ids.append(key)
-        pipeline.execute()
+        ids = asyncio.run(self._write_batch(prefix, texts, metadatas, keys))
         return ids
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any
+    ) -> List[str]:
+        """Add texts data to an existing index."""
+        prefix = _redis_prefix(self.index_name)
+        keys = kwargs.get("keys")
+        ids = await self._write_batch(prefix, texts, metadatas, keys)
+        return ids
+
+    async def _search_redis(self, embedding: List[float], k: int) -> List[Document]:
+        try:
+            from redis.commands.search.query import Query
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+
+        # Setup Redis query
+        return_fields = ["metadata", "content", "vector_score"]
+        vector_field = "content_vector"
+        hybrid_fields = "*"
+        base_query = (
+            f"{hybrid_fields}=>[KNN {k} @{vector_field} $vector AS vector_score]"
+        )
+        redis_query = (
+            Query(base_query)
+            .return_fields(*return_fields)
+            .sort_by("vector_score")
+            .paging(0, k)
+            .dialect(2)
+        )
+        params_dict: Mapping[str, str] = {
+            "vector": np.array(embedding)  # type: ignore
+            .astype(dtype=np.float32)
+            .tobytes()
+        }
+
+        # Perform vector search
+        results = (
+            await self.client
+              .ft(self.index_name)
+              .search(redis_query, params_dict)
+        )
+
+        # Aggregate result documents
+        return [
+            (
+                Document(
+                    page_content=result.content,
+                    metadata=json.loads(result.metadata)
+                ),
+                float(result.vector_score),
+            )
+            for result in results.docs
+        ]
+
+    async def similarity_search_with_score(
+        self, query: str, k: int = 4
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query and score for each
+        """
+        # Creates embedding vector from user query
+        embedding = self.embedding_function(query)
+        # Perform search in Redis
+        docs = await self._search_redis(embedding, k)
+        return docs
+
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        docs = asyncio.run(self._search_redis(embedding, k))
+        return docs
+
+    async def asimilarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector."""
+        docs = await self._search_redis(embedding, k)
+        return docs
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -136,7 +308,16 @@ class Redis(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = asyncio.run(self.similarity_search_with_score(query, k=k))
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """
+        Returns the most similar indexed documents to the query text.
+        """
+        docs_and_scores = await self.similarity_search_with_score(query, k=k)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
@@ -163,67 +344,18 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
-
+        docs_and_scores = asyncio.run(self.similarity_search_with_score(query, k=k))
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
-    def similarity_search_with_score(
-        self, query: str, k: int = 4
-    ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query.
-
-        Args:
-            query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-
-        Returns:
-            List of Documents most similar to the query and score for each
+    async def asimilarity_search_limit_score(
+        self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
+    ) -> List[Document]:
         """
-        try:
-            from redis.commands.search.query import Query
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-
-        # Creates embedding vector from user query
-        embedding = self.embedding_function(query)
-
-        # Prepare the Query
-        return_fields = ["metadata", "content", "vector_score"]
-        vector_field = "content_vector"
-        hybrid_fields = "*"
-        base_query = (
-            f"{hybrid_fields}=>[KNN {k} @{vector_field} $vector AS vector_score]"
-        )
-        redis_query = (
-            Query(base_query)
-            .return_fields(*return_fields)
-            .sort_by("vector_score")
-            .paging(0, k)
-            .dialect(2)
-        )
-        params_dict: Mapping[str, str] = {
-            "vector": np.array(embedding)  # type: ignore
-            .astype(dtype=np.float32)
-            .tobytes()
-        }
-
-        # perform vector search
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)
-
-        docs = [
-            (
-                Document(
-                    page_content=result.content, metadata=json.loads(result.metadata)
-                ),
-                float(result.vector_score),
-            )
-            for result in results.docs
-        ]
-
-        return docs
+        Returns the most similar indexed documents to the query text within the
+        score_threshold range.
+        """
+        docs_and_scores = await self.similarity_search_with_score(query, k=k)
+        return [doc for doc, score in docs_and_scores if score < score_threshold]
 
     @classmethod
     def from_texts(
@@ -251,76 +383,25 @@ class Redis(VectorStore):
                     redis_url="redis://username:password@localhost:6379"
                 )
         """
-        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-        try:
-            import redis
-            from redis.commands.search.field import TextField, VectorField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-        try:
-            # We need to first remove redis_url from kwargs,
-            # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
-            # check if redis has redisearch module installed
-            _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
-        except ValueError as e:
-            raise ValueError(f"Redis failed to connect: {e}")
-
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
-
-        # Name of the search index if not given
-        if not index_name:
-            index_name = uuid.uuid4().hex
-        prefix = _redis_prefix(index_name)  # prefix for the document keys
-
-        # Check if index exists
-        if not _check_index_exists(client, index_name):
-            # Constants
-            dim = len(embeddings[0])
-            distance_metric = (
-                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-            )
-            schema = (
-                TextField(name="content"),
-                TextField(name="metadata"),
-                VectorField(
-                    "content_vector",
-                    "FLAT",
-                    {
-                        "TYPE": "FLOAT32",
-                        "DIM": dim,
-                        "DISTANCE_METRIC": distance_metric,
-                    },
-                ),
-            )
-            # Create Redis Index
-            client.ft(index_name).create_index(
-                fields=schema,
-                definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
-            )
-
+        # Setup Redis Index
+        redis_url, prefix, keys, embeddings = asyncio.run(_setup_index(texts, embedding, **kwargs))
         # Write data to Redis
-        pipeline = client.pipeline(transaction=False)
-        for i, text in enumerate(texts):
-            key = _redis_key(prefix)
-            metadata = metadatas[i] if metadatas else {}
-            pipeline.hset(
-                key,
-                mapping={
-                    "content": text,
-                    "content_vector": np.array(
-                        embeddings[i], dtype=np.float32
-                    ).tobytes(),
-                    "metadata": json.dumps(metadata),
-                },
-            )
-        pipeline.execute()
+        ids = asyncio.run(_write_batch(prefix, texts, metadatas, keys, embeddings))
+        return cls(redis_url, index_name, embedding.embed_query)
+
+    @classmethod
+    async def afrom_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        index_name: Optional[str] = None,
+        **kwargs: Any
+    ) -> Redis:
+        # Setup Redis Index
+        redis_url, prefix, keys, embeddings = await _setup_index(texts, embedding, **kwargs)
+        # Write data to Redis
+        ids = await _write_batch(prefix, texts, metadatas, keys, embeddings)
         return cls(redis_url, index_name, embedding.embed_query)
 
     @staticmethod
@@ -373,7 +454,7 @@ class Redis(VectorStore):
         """Connect to an existing Redis index."""
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
         try:
-            import redis
+            import redis.asyncio as redis
         except ImportError:
             raise ValueError(
                 "Could not import redis python package. "
@@ -387,9 +468,8 @@ class Redis(VectorStore):
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
             # ensure that the index already exists
-            assert _check_index_exists(
-                client, index_name
-            ), f"Index {index_name} does not exist"
+            exists = asyncio.run(_check_index_exists(client, index_name))
+            assert exists, f"Index {index_name} does not exist"
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -431,4 +511,12 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
-        raise NotImplementedError("RedisVectorStoreRetriever does not support async")
+        if self.search_type == "similarity":
+            docs = await self.vectorstore.asimilarity_search(query, k=self.k)
+        elif self.search_type == "similarity_limit":
+            docs = await self.vectorstore.asimilarity_search_limit_score(
+                query, k=self.k, score_threshold=self.score_threshold
+            )
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
+        return docs
