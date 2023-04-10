@@ -1,11 +1,8 @@
-import atexit
 import json
-import logging
 import pathlib
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
 
 from langchain.callbacks import get_callback_manager
-from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.base import SharedTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
@@ -18,11 +15,10 @@ if TYPE_CHECKING:
         ToolRun,
         TracerSessionCreate,
     )
+    from langchain.callbacks.base import BaseCallbackHandler
 
-if TYPE_CHECKING:
     from wandb import Settings as WBSettings
-    from wandb.integration.langchain.media_types import LangChainModel, LangChainTrace
-    from wandb.integration.langchain.stream_table import StreamTable
+    from wandb.integration.langchain.media_types import LangChainModelTrace
     from wandb.wandb_run import Run as WBRun
 
 
@@ -64,60 +60,6 @@ class WandbRunArgs(TypedDict):
     settings: Union["WBSettings", Dict[str, Any], None]
 
 
-def watch(run_args: Optional[WandbRunArgs] = None) -> None:
-    """Sets up a WandbTracer and makes it the default handler. To use W&B to
-    monitor all LangChain activity, simply call this function at the top of
-    the notebook or script:
-    ```
-    from langchain.callbacks.wandb_tracer import watch
-    watch()
-    ```
-
-    It is safe to call this over and over without any side effects. Users
-    can pas new run_args which will trigger a new run to be created.
-
-    Currently users would need to do something like:
-    ```
-    tracer = WandbTracer()
-    manager = get_callback_manager()
-    manager.set_handlers([tracer])
-    ```
-
-    which is a bit tedious. This is a one liner for users to globally
-    monitor their LangChain activity.
-    """
-    tracer = WandbTracer()
-    tracer.init(run_args)
-    tracer.load_session("")
-    manager = get_callback_manager()
-    manager.set_handlers([tracer, StdOutCallbackHandler()])
-
-
-def finish() -> None:
-    """Waits for W&B data to upload. It is recommended to call this function
-    before terminating the kernel or python script."""
-    tracer = WandbTracer()
-    if tracer._run is None:
-        return
-    url = tracer._run.settings.run_url
-    tracer._run.finish()
-    import_wandb().termlog(
-        (f"All files uploaded. View LangChain logs in W&B at {url}.")
-    )
-
-
-def _print_wandb_url(run_url: str) -> None:
-    import_wandb().termlog(
-        (
-            f"W&B Run initialized. View LangChain logs in W&B at {run_url}. "
-            "To ensure that all data is uploaded, call `wandb_tracer.finish()` "
-            "before terminating the notebook kernel or script.\n\nNote that the "
-            "WandbLangChainTracer is currently in beta and is subject to change "
-            "based on updates to `langchain`. Please report any issues to "
-            "https://github.com/wandb/wandb/issues with the tag `langchain`."
-        )
-    )
-
 
 class WandbTracer(SharedTracer):
     """Callback Handler that logs to Weights and Biases.
@@ -130,15 +72,51 @@ class WandbTracer(SharedTracer):
 
     _run: Optional["WBRun"] = None
     _run_args: Optional[WandbRunArgs] = None
-    _stream_table: Optional["StreamTable"] = None
-    _known_models: dict[int, "LangChainModel"] = {}
+
+    @classmethod
+    def watch_all(cls, run_args: Optional[WandbRunArgs] = None, additional_handlers: list["BaseCallbackHandler"] =[]) -> "WandbTracer":
+        """Sets up a WandbTracer and makes it the default handler. To use W&B to
+        monitor all LangChain activity, simply call this function at the top of
+        the notebook or script:
+        ```
+        from langchain.callbacks.wandb_tracer import WandbTracer
+        WandbTracer.watch_all()
+        # ...
+        # end of notebook:
+        WandbTracer.stop_watch()
+        ```
+
+        It is safe to call this over and over without any side effects. Users
+        can pas new run_args which will trigger a new run to be created.
+
+        Currently users would need to do something like:
+        ```
+        tracer = WandbTracer()
+        manager = get_callback_manager()
+        manager.set_handlers([tracer])
+        ```
+
+        which is a bit tedious. This is a one liner for users to globally
+        monitor their LangChain activity.
+        """
+        tracer = cls()
+        tracer.init(run_args)
+        tracer.load_session("")
+        manager = get_callback_manager()
+        manager.set_handlers([tracer] + additional_handlers)
+        return tracer
+    
+    @staticmethod
+    def stop_watch():
+        WandbTracer._instance.finish()
+        manager = get_callback_manager()
+        manager.set_handlers([])
 
     def init(self, run_args: Optional[WandbRunArgs] = None) -> None:
         """Initialize wandb if it has not been initialized."""
         # Load in wandb symbols
         wandb = import_wandb()
-        from wandb.integration.langchain.stream_table import StreamTable
-        from wandb.sdk.wandb_run import TeardownHook, TeardownStage
+        from wandb.integration.langchain.media_types import print_wandb_init_message
 
         # We only want to start a new run if the run args differ. This will
         # reduce the number of W&B runs created, which is more ideal in a
@@ -149,11 +127,10 @@ class WandbTracer(SharedTracer):
             and json.dumps(self._run_args, sort_keys=True)
             == json.dumps(run_args, sort_keys=True)
         ):
-            _print_wandb_url(self._run.settings.run_url)
+            print_wandb_init_message(self._run.settings.run_url)
             return
         self._run_args = run_args
         self._run = None
-        self._stream_table = None
 
         # Make a shallow copy of the run args so we don't modify the original
         run_args = run_args or {}  # type: ignore
@@ -166,27 +143,30 @@ class WandbTracer(SharedTracer):
 
         # Start the run and add the stream table
         self._run = wandb.init(**run_args)
-        self._stream_table = StreamTable("langchain_traces", ["model", "trace"])
-        self._run._teardown_hooks.append(
-            TeardownHook(self._on_run_teardown, TeardownStage.EARLY)
-        )
-        atexit.register(self._on_run_teardown)
+        print_wandb_init_message(self._run.settings.run_url)
 
-        _print_wandb_url(self._run.settings.run_url)
+    def finish(self):
+        """Waits for W&B data to upload. It is recommended to call this function
+        before terminating the kernel or python script."""
+        if self._run is not None:
+            url = self._run.settings.run_url
+            self._run.finish()
+            import_wandb()
+            from wandb.integration.langchain.media_types import print_wandb_finish_message
+            print_wandb_finish_message(url)
+        else:
+            print("W&B run not started. Skipping.")
 
-    def _on_run_teardown(self) -> None:
-        if self._stream_table is not None:
-            self._stream_table.join()
-        self._run = None
-        self._run_args = None
-        self._stream_table = None
+    @staticmethod
+    def stop_all() -> None:
+        """Stops all W&B runs."""
+        global global_tracer
+        if global_tracer is not None:
+            global_tracer.stop()
+            global_tracer = None
 
-    def _log_trace(self, model: "LangChainModel", trace: "LangChainTrace") -> None:
-        if self._stream_table is None:
-            logging.warning("Failed to log trace to W&B. No StreamTable found.")
-            return
-
-        self._stream_table.add_data(model, trace)
+    def _log_trace(self, model_trace: "LangChainModelTrace") -> None:
+        self._run.log({"_langchain_model_trace": model_trace})
 
     ###  Start of required methods
     @property
@@ -201,26 +181,10 @@ class WandbTracer(SharedTracer):
     def _persist_run(self, run: Union["LLMRun", "ChainRun", "ToolRun"]) -> None:
         """Persist a run."""
         import_wandb()
-        from wandb.integration.langchain.media_types import (
-            LangChainModel,
-            LangChainTrace,
-        )
+        from wandb.integration.langchain.media_types import LangChainModelTrace
 
-        try:
-            wb_model = None
-            model = run.serialized.get("_self")
-            if model is not None:
-                key = id(model)
-                if (
-                    key not in self._known_models
-                    or self._known_models[key]._model != model
-                ):
-                    self._known_models[key] = LangChainModel(model)
-                wb_model = self._known_models[key]
-            self._log_trace(wb_model, LangChainTrace(run))
-        except Exception as e:
-            raise e
-            # logging.warning(f"Failed to persist run: {e}")
+        model = run.serialized.get("_self")
+        self._log_trace(LangChainModelTrace(run, model))
 
     def _persist_session(
         self, session_create: "TracerSessionCreate"
@@ -244,12 +208,6 @@ class WandbTracer(SharedTracer):
         child_run: Union["LLMRun", "ChainRun", "ToolRun"],
     ) -> None:
         """Add child run to a chain run or tool run."""
-        if isinstance(child_run, LLMRun):
-            parent_run.child_llm_runs.append(child_run)
-        elif isinstance(child_run, ChainRun):
-            parent_run.child_chain_runs.append(child_run)
-        else:
-            parent_run.child_tool_runs.append(child_run)
         parent_run.child_runs.append(child_run)
 
     ## End of required methods
