@@ -1,13 +1,13 @@
 """Wrapper around NLPCloud APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
 
-class NLPCloud(LLM, BaseModel):
+class NLPCloud(LLM):
     """Wrapper around NLPCloud large language models.
 
     To use, you should have the ``nlpcloud`` python package installed, and the

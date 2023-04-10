@@ -2,8 +2,6 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel
-
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
@@ -16,7 +14,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.tools.base import BaseTool
 
 
-class ReActDocstoreAgent(Agent, BaseModel):
+class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
 
     @property
@@ -124,7 +122,7 @@ class DocstoreExplorer:
         return self.document.page_content.split("\n\n")
 
 
-class ReActTextWorldAgent(ReActDocstoreAgent, BaseModel):
+class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod

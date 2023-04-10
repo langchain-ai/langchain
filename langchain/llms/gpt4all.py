@@ -1,13 +1,14 @@
 """Wrapper for the GPT4All model."""
+from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
 
-class GPT4All(LLM, BaseModel):
+class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
     To use, you should have the ``pyllamacpp`` python package installed, the
@@ -174,8 +175,12 @@ class GPT4All(LLM, BaseModel):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
+        text_callback = partial(
+            self.callback_manager.on_llm_new_token, verbose=self.verbose
+        )
         text = self.client.generate(
             prompt,
+            new_text_callback=text_callback,
             **self._default_params,
         )
         if stop is not None:

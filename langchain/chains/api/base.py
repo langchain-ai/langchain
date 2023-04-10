@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
@@ -13,7 +13,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.schema import BaseLanguageModel
 
 
-class APIChain(Chain, BaseModel):
+class APIChain(Chain):
     """Chain that makes API calls and summarizes the responses to answer a question."""
 
     api_request_chain: LLMChain
@@ -74,6 +74,26 @@ class APIChain(Chain, BaseModel):
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
+            question=question,
+            api_docs=self.api_docs,
+            api_url=api_url,
+            api_response=api_response,
+        )
+        return {self.output_key: answer}
+
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        question = inputs[self.question_key]
+        api_url = await self.api_request_chain.apredict(
+            question=question, api_docs=self.api_docs
+        )
+        self.callback_manager.on_text(
+            api_url, color="green", end="\n", verbose=self.verbose
+        )
+        api_response = await self.requests_wrapper.aget(api_url)
+        self.callback_manager.on_text(
+            api_response, color="yellow", end="\n", verbose=self.verbose
+        )
+        answer = await self.api_answer_chain.apredict(
             question=question,
             api_docs=self.api_docs,
             api_url=api_url,
