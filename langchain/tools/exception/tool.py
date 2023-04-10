@@ -8,9 +8,7 @@ class ExceptionTool(BaseTool):
     """Tool for echoing."""
 
     name: str = "Exception"
-    description: str = (
-        "Reports exceptions. Do not call"
-    )
+    description: str = "Reports exceptions. Do not call"
 
     def _run(self, query: str) -> str:
         """Echo the input."""

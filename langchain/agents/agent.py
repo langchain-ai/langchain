@@ -403,8 +403,10 @@ class Agent(BaseSingleActionAgent):
         try:
             action = self._get_next_action(full_inputs)
         except ValueError as e:
-            if 'parse' in str(e):
-                return AgentAction(tool="Exception", tool_input='Exception: ' + str(e), log=str(e))
+            if "parse" in str(e):
+                return AgentAction(
+                    tool="Exception", tool_input="Exception: " + str(e), log=str(e)
+                )
             else:
                 raise e
         if action.tool == self.finish_tool_name:
@@ -428,8 +430,10 @@ class Agent(BaseSingleActionAgent):
         try:
             action = await self._aget_next_action(full_inputs)
         except ValueError as e:
-            if 'parse' in str(e):
-                return AgentAction(tool="Exception", tool_input='Exception: ' + str(e), log=str(e))
+            if "parse" in str(e):
+                return AgentAction(
+                    tool="Exception", tool_input="Exception: " + str(e), log=str(e)
+                )
             else:
                 raise e
         if action.tool == self.finish_tool_name:
