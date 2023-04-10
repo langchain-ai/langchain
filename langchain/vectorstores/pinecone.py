@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -26,13 +26,13 @@ class Pinecone(VectorStore):
             pinecone.init(api_key="***", environment="...")
             index = pinecone.Index("langchain-demo")
             embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings.embed_query, "text")
+            vectorstore = Pinecone(index, embeddings, "text")
     """
 
     def __init__(
         self,
         index: Any,
-        embedding_function: Callable,
+        embeddings: Embeddings,
         text_key: str,
         namespace: Optional[str] = None,
     ):
@@ -50,7 +50,7 @@ class Pinecone(VectorStore):
                 f"got {type(index)}"
             )
         self._index = index
-        self._embedding_function = embedding_function
+        self._embeddings = embeddings
         self._text_key = text_key
         self._namespace = namespace
 
@@ -78,13 +78,13 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
         # Embed and create the documents
-        docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        for i, text in enumerate(texts):
-            embedding = self._embedding_function(text)
-            metadata = metadatas[i] if metadatas else {}
+        embeddings = self._embeddings.embed_documents(texts)
+        metadatas = metadatas or [{}] * len(texts)
+        for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
-            docs.append((ids[i], embedding, metadata))
+        docs = list(zip(ids, embeddings, metadatas))
+
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
@@ -109,7 +109,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding_function(query)
+        query_obj = self._embeddings.embed_query(query)
         docs = []
         results = self._index.query(
             [query_obj],
@@ -145,7 +145,7 @@ class Pinecone(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        query_obj = self._embedding_function(query)
+        query_obj = self._embeddings.embed_query(query)
         docs = []
         results = self._index.query(
             [query_obj],
@@ -164,7 +164,7 @@ class Pinecone(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embeddings: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
@@ -232,7 +232,7 @@ class Pinecone(VectorStore):
             else:
                 ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
-            embeds = embedding.embed_documents(lines_batch)
+            embeds = embeddings.embed_documents(lines_batch)
             # prep metadata and upsert batch
             if metadatas:
                 metadata = metadatas[i:i_end]
@@ -244,13 +244,13 @@ class Pinecone(VectorStore):
 
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embedding.embed_query, text_key, namespace)
+        return cls(index, embeddings, text_key, namespace)
 
     @classmethod
     def from_existing_index(
         cls,
         index_name: str,
-        embedding: Embeddings,
+        embeddings: Embeddings,
         text_key: str = "text",
         namespace: Optional[str] = None,
     ) -> Pinecone:
@@ -263,6 +263,4 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        return cls(
-            pinecone.Index(index_name), embedding.embed_query, text_key, namespace
-        )
+        return cls(pinecone.Index(index_name), embeddings, text_key, namespace)
