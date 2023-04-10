@@ -70,5 +70,5 @@ class MapReduceChain(Chain):
         # Split the larger text into smaller chunks.
         texts = self.text_splitter.split_text(inputs[self.input_key])
         docs = [Document(page_content=text) for text in texts]
-        outputs, _ = self.combine_documents_chain.combine_docs(docs)
+        outputs = self.combine_documents_chain.run(input_documents=docs)
         return {self.output_key: outputs}
