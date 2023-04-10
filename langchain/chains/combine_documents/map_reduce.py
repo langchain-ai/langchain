@@ -172,7 +172,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         length_func = self.combine_document_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        def _collaple_docs_func(docs: List[Document], **kwargs: Any) -> str:
+        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
             return self._collapse_chain.run(input_documents=docs, **kwargs)
 
         while num_tokens is not None and num_tokens > token_max:
@@ -181,7 +181,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             )
             result_docs = []
             for docs in new_result_doc_list:
-                new_doc = _collapse_docs(docs, _collaple_docs_func, **kwargs)
+                new_doc = _collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = self.combine_document_chain.prompt_length(
                 result_docs, **kwargs
