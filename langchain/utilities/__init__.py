@@ -6,6 +6,7 @@ from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -19,6 +20,7 @@ __all__ = [
     "PythonREPL",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
+    "GooglePlacesAPIWrapper",
     "WolframAlphaAPIWrapper",
     "SerpAPIWrapper",
     "SearxSearchWrapper",
