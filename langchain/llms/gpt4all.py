@@ -1,4 +1,5 @@
 """Wrapper for the GPT4All model."""
+from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import Extra, Field, root_validator
@@ -174,8 +175,12 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
+        text_callback = partial(
+            self.callback_manager.on_llm_new_token, verbose=self.verbose
+        )
         text = self.client.generate(
             prompt,
+            new_text_callback=text_callback,
             **self._default_params,
         )
         if stop is not None:
