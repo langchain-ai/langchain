@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import chromadb.config
 
 logger = logging.getLogger()
-
+DEFAULT_K = 4 #Number of Documents to return.
 
 def _results_to_docs(results: Any) -> List[Document]:
     return [doc for doc, _ in _results_to_docs_and_scores(results)]
@@ -121,7 +121,7 @@ class Chroma(VectorStore):
     def similarity_search(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -141,7 +141,7 @@ class Chroma(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -160,7 +160,7 @@ class Chroma(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -190,7 +190,7 @@ class Chroma(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        k: int = 4,
+        k: int = DEFAULT_K,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Document]:
@@ -224,7 +224,7 @@ class Chroma(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        k: int = 4,
+        k: int = DEFAULT_K,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Document]:
