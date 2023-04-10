@@ -19,7 +19,6 @@ cd tests/integration_tests/vectorstores/docker-compose
 docker compose -f weaviate.yml up
 """
 
-
 class TestWeaviate:
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_url(self) -> Union[str, Generator[str, None, None]]:
