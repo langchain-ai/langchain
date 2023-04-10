@@ -67,10 +67,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
         generations = [res.generations for res in results]
         return LLMResult(generations=generations, llm_output=llm_output)
 
-    def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
-    ) -> LLMResult:
+    def generate_prompt(self, system_prompt: BaseMessage, prompts: List[PromptValue], stop: Optional[List[str]] = None) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
+        prompt_messages.append([system_prompt])
         prompt_strings = [p.to_string() for p in prompts]
         self.callback_manager.on_llm_start(
             {"name": self.__class__.__name__}, prompt_strings, verbose=self.verbose

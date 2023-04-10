@@ -34,6 +34,21 @@ def initialize_agent(
     Returns:
         An agent executor
     """
+    """Add a retrial tool for placeholder outputs by default"""
+
+    def empty_function(query):
+        return "Placeholder detected in AgentGPTs output, re-evaluate and reuse tools to fill in Placeholder"
+
+    from langchain.agents import Tool
+    placeholder_tool = Tool(
+        name="Placeholder Detected",
+        func=empty_function,
+        description="",
+    )
+
+    if not agent.is_tool_restricted_agent():
+        tools.append(placeholder_tool)
+
     if agent is None and agent_path is None:
         agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:

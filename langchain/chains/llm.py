@@ -9,7 +9,7 @@ from langchain.chains.base import Chain
 from langchain.input import get_colored_text
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
+from langchain.schema import BaseLanguageModel, LLMResult, PromptValue, BaseMessage
 
 
 class LLMChain(Chain):
@@ -58,8 +58,8 @@ class LLMChain(Chain):
 
     def generate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
-        prompts, stop = self.prep_prompts(input_list)
-        return self.llm.generate_prompt(prompts, stop)
+        prompts, stop, system_prompt = self.prep_prompts(input_list)
+        return self.llm.generate_prompt(system_prompt, prompts, stop)
 
     async def agenerate(self, input_list: List[Dict[str, Any]]) -> LLMResult:
         """Generate LLM result from inputs."""
@@ -68,12 +68,13 @@ class LLMChain(Chain):
 
     def prep_prompts(
         self, input_list: List[Dict[str, Any]]
-    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+    ) -> Tuple[List[PromptValue], Optional[List[str]], BaseMessage]:
         """Prepare prompts from inputs."""
         stop = None
         if "stop" in input_list[0]:
             stop = input_list[0]["stop"]
         prompts = []
+        system_prompt = self.prompt.get_system_prompt()
         for inputs in input_list:
             selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
             prompt = self.prompt.format_prompt(**selected_inputs)
@@ -85,7 +86,7 @@ class LLMChain(Chain):
                     "If `stop` is present in any inputs, should be present in all."
                 )
             prompts.append(prompt)
-        return prompts, stop
+        return prompts, stop, system_prompt
 
     async def aprep_prompts(
         self, input_list: List[Dict[str, Any]]

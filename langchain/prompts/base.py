@@ -10,7 +10,7 @@ import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.formatting import formatter
-from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue
+from langchain.schema import BaseMessage, BaseOutputParser, HumanMessage, PromptValue, SystemMessage
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -81,6 +81,10 @@ class BasePromptTemplate(BaseModel, ABC):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    def get_system_prompt(self) -> BaseMessage:
+        """Return prompt as messages."""
+        return SystemMessage(content=self.template)
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:

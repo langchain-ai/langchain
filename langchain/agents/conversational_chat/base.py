@@ -80,6 +80,7 @@ class ConversationalChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
+        tools = [tool for tool in tools if tool.name != "Placeholder Detected"]
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools]
         )

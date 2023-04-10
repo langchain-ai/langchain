@@ -1,4 +1,5 @@
 """Interface for tools."""
+import inspect
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Union
 
@@ -27,8 +28,18 @@ class Tool(BaseTool):
         self, name: str, func: Callable[[str], str], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
+
+        """Provide function context for agent training purposes"""
+        from langchain import OpenAI
+        llm = OpenAI()
+        TOOL_TECHNICAL_DESCRIPTION_PROMPT = """
+        In less than 50 words analyze and learn to return a highly summarized context of what this function. Remember to read the variable names to figure out the context. Explain how I can use it as an AI assisntant:
+        {function}
+        """
+        tool_technical_description = llm(TOOL_TECHNICAL_DESCRIPTION_PROMPT.format(function=inspect.getsource(func))) if name != "Placeholder Detected Tool" else ""
+
         super(Tool, self).__init__(
-            name=name, func=func, description=description, **kwargs
+            name=name, func=func, description=" ".join([description, tool_technical_description]), **kwargs
         )
 
 

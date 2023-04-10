@@ -67,6 +67,7 @@ class ChatAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
+        tools = [tool for tool in tools if tool.name != "Placeholder Detected"]
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)

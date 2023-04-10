@@ -27,6 +27,7 @@ class SelfAskWithSearchAgent(Agent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        tools = [tool for tool in tools if tool.name != "Placeholder Detected"]
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}

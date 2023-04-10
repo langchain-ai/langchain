@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from abc import abstractmethod
 from pathlib import Path
@@ -361,7 +362,16 @@ class Agent(BaseSingleActionAgent):
         return thoughts
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
+        def has_placeholders(text):
+            pattern = r'\[([^\]]+)\]'  # Regex pattern to match placeholders
+            placeholders = re.findall(pattern, text)
+            return len(placeholders) > 0
+
         full_output = self.llm_chain.predict(**full_inputs)
+
+        if has_placeholders(full_output) and "Placeholder Detected" in self.allowed_tools:
+            return AgentAction(tool="Placeholder Detected", tool_input="", log=full_output)
+
         parsed_output = self._extract_tool_and_input(full_output)
         while parsed_output is None:
             full_output = self._fix_text(full_output)

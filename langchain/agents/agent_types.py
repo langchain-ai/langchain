@@ -8,3 +8,6 @@ class AgentType(str, Enum):
     CONVERSATIONAL_REACT_DESCRIPTION = "conversational-react-description"
     CHAT_ZERO_SHOT_REACT_DESCRIPTION = "chat-zero-shot-react-description"
     CHAT_CONVERSATIONAL_REACT_DESCRIPTION = "chat-conversational-react-description"
+
+    def is_tool_restricted_agent(self):
+        return self in [self.REACT_DOCSTORE, self.SELF_ASK_WITH_SEARCH]

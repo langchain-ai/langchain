@@ -174,7 +174,7 @@ class PromptValue(BaseModel, ABC):
 class BaseLanguageModel(BaseModel, ABC):
     @abstractmethod
     def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self, system_prompt: BaseMessage, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
 
