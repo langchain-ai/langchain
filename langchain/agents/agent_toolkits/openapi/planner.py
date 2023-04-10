@@ -183,6 +183,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    verbose: bool=True
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -210,4 +211,4 @@ def create_openapi_agent(
         llm_chain=LLMChain(llm=llm, prompt=prompt),
         allowed_tools=[tool.name for tool in tools],
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
