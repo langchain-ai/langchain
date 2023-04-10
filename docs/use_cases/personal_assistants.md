@@ -1,4 +1,4 @@
-# Personal Assistants
+# Personal Assistants (Agents)
 
 > [Conceptual Guide](https://docs.langchain.com/docs/use-cases/personal-assistants)
 
@@ -16,3 +16,7 @@ Highlighting specific parts:
 - [Agent Documentation](../modules/agents.rst) (for interacting with the outside world)
 - [Index Documentation](../modules/indexes.rst) (for giving them knowledge of your data)
 - [Memory](../modules/memory.rst) (for helping them remember interactions)
+
+Specific examples of this include:
+
+- [Baby AGI](agents/baby_agi.ipynb): a notebook implementing [BabyAGI](https://github.com/yoheinakajima/babyagi) by Yohei Nakajima as LLM Chains

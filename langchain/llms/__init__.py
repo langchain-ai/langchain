@@ -11,6 +11,7 @@ from langchain.llms.cohere import Cohere
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
+from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
@@ -21,6 +22,7 @@ from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.petals import Petals
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
+from langchain.llms.rwkv import RWKV
 from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
@@ -36,6 +38,7 @@ __all__ = [
     "DeepInfra",
     "ForefrontAI",
     "GooseAI",
+    "GPT4All",
     "LlamaCpp",
     "Modal",
     "NLPCloud",
@@ -55,6 +58,7 @@ __all__ = [
     "PromptLayerOpenAIChat",
     "StochasticAI",
     "Writer",
+    "RWKV",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -67,6 +71,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
     "gooseai": GooseAI,
+    "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
     "llamacpp": LlamaCpp,
@@ -82,4 +87,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "self_hosted_hugging_face": SelfHostedHuggingFaceLLM,
     "stochasticai": StochasticAI,
     "writer": Writer,
+    "rwkv": RWKV,
 }

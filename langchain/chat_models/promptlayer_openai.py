@@ -2,13 +2,11 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
-
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import BaseMessage, ChatResult
 
 
-class PromptLayerChatOpenAI(ChatOpenAI, BaseModel):
+class PromptLayerChatOpenAI(ChatOpenAI):
     """Wrapper around OpenAI Chat large language models and PromptLayer.
 
     To use, you should have the ``openai`` and ``promptlayer`` python

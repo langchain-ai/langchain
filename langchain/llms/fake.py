@@ -1,12 +1,10 @@
 """Fake LLM wrapper for testing purposes."""
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
 from langchain.llms.base import LLM
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM wrapper for testing purposes."""
 
     responses: List

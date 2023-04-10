@@ -3,14 +3,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
-class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
+class BaseCombineDocumentsChain(Chain, ABC):
     """Base interface for chains combining documents."""
 
     input_key: str = "input_documents"  #: :meta private:
@@ -66,7 +66,7 @@ class BaseCombineDocumentsChain(Chain, BaseModel, ABC):
         return extra_return_dict
 
 
-class AnalyzeDocumentChain(Chain, BaseModel):
+class AnalyzeDocumentChain(Chain):
     """Chain that splits documents, then analyzes it in pieces."""
 
     input_key: str = "input_document"  #: :meta private:
