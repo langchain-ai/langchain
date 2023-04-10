@@ -149,7 +149,6 @@ class Weaviate(VectorStore):
         weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
 
         try:
-            import weaviate
             from weaviate import Client
             from weaviate.util import get_valid_uuid
         except ImportError:

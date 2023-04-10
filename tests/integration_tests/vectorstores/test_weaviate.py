@@ -1,9 +1,9 @@
 """Test Weaviate functionality."""
 import logging
+import os
 from typing import Generator, List, Union
 
 import pytest
-import weaviate
 from weaviate import Client
 
 from langchain.docstore.document import Document
