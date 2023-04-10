@@ -49,9 +49,9 @@ class BiliBiliLoader(BaseLoader):
                 try:
                     v = video.Video(aid=int(aid.group()[2:]))
                 except AttributeError:
-                    raise ValueError(f"{url} is not bilibli url.")
+                    raise ValueError(f"{url} is not bilibili url.")
             else:
-                raise ValueError(f"{url} is not bilibli url.")
+                raise ValueError(f"{url} is not bilibili url.")
 
         video_info = sync(v.get_info())
         video_info.update({"url": url})
