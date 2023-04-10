@@ -81,6 +81,26 @@ class APIChain(Chain):
         )
         return {self.output_key: answer}
 
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+        question = inputs[self.question_key]
+        api_url = await self.api_request_chain.apredict(
+            question=question, api_docs=self.api_docs
+        )
+        self.callback_manager.on_text(
+            api_url, color="green", end="\n", verbose=self.verbose
+        )
+        api_response = await self.requests_wrapper.aget(api_url)
+        self.callback_manager.on_text(
+            api_response, color="yellow", end="\n", verbose=self.verbose
+        )
+        answer = await self.api_answer_chain.apredict(
+            question=question,
+            api_docs=self.api_docs,
+            api_url=api_url,
+            api_response=api_response,
+        )
+        return {self.output_key: answer}
+
     @classmethod
     def from_llm_and_api_docs(
         cls,

@@ -92,6 +92,7 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    ./use_cases/question_answering.md
    ./use_cases/chatbots.md
    ./use_cases/tabular.rst
+   ./use_cases/code.md
    ./use_cases/apis.md
    ./use_cases/summarization.md
    ./use_cases/extraction.md
