@@ -43,6 +43,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
@@ -116,6 +117,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "PDFMinerPDFasHTMLLoader",
     "PyMuPDFLoader",
     "TelegramChatLoader",
     "SRTLoader",
