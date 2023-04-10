@@ -499,7 +499,7 @@ name = "authlib"
 version = "1.2.0"
 description = "The ultimate Python library in building OAuth and OpenID Connect servers and clients."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "Authlib-1.2.0-py2.py3-none-any.whl", hash = "sha256:4ddf4fd6cfa75c9a460b361d4bd9dac71ffda0be879dbe4292a02e92349ad55a"},
@@ -8058,7 +8058,7 @@ name = "validators"
 version = "0.19.0"
 description = "Python Data Validation for Humans™."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.4"
 files = [
     {file = "validators-0.19.0.tar.gz", hash = "sha256:dec45f4381f042f1e705cfa74949505b77f1e27e8b05409096fee8152c839cbe"},
@@ -8192,21 +8192,21 @@ files = [
 
 [[package]]
 name = "weaviate-client"
-version = "3.15.4"
+version = "3.15.5"
 description = "A python native weaviate client"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "weaviate-client-3.15.4.tar.gz", hash = "sha256:5e61ebffefbedf62b0751d7de562ffd5384717c8ee6adfca4ea6eb150d012e1c"},
-    {file = "weaviate_client-3.15.4-py3-none-any.whl", hash = "sha256:e765b2f434d2a4301ad8d63052833ab7708d0ef430033496e3e7020ef72c9da0"},
+    {file = "weaviate-client-3.15.5.tar.gz", hash = "sha256:6da7e5d08dc9bb8b7879661d1a457c50af7d73e621a5305efe131160e83da69e"},
+    {file = "weaviate_client-3.15.5-py3-none-any.whl", hash = "sha256:24d0be614e5494534e758cc67a45e7e15f3929a89bf512afd642de53d08723c7"},
 ]
 
 [package.dependencies]
 authlib = ">=1.1.0"
 requests = ">=2.28.0,<2.29.0"
 tqdm = ">=4.59.0,<5.0.0"
-validators = ">=0.18.2,<0.20.0"
+validators = ">=0.18.2,<=0.21.0"
 
 [[package]]
 name = "webcolors"
@@ -8655,4 +8655,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "56e8666167102cc23b605c8d91b26a62c0858216637cc281b866315da766ad71"
+content-hash = "df3fa3d4723c018fcfc0347db436038f7728ef9157f4df109db65636bca968b3"
