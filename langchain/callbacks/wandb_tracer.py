@@ -334,11 +334,10 @@ def _safe_maybe_model_dict(
         message = str(e)
         pass
 
-
     if data is None and hasattr(model, "agent"):
         try:
             data = model.agent.dict()
-        except Exception:
+        except Exception as e:
             message = str(e)
 
     if data is None and message is not None:
