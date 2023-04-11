@@ -1,6 +1,7 @@
 """Interface for vector stores."""
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
@@ -83,7 +84,13 @@ class VectorStore(ABC):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        return await asyncio.get_event_loop().run_in_executor(
+            None, self.similarity_search, query, k, **kwargs
+        )
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
