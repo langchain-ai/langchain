@@ -95,7 +95,7 @@ def test_faiss_add_texts() -> None:
 
 def test_faiss_add_texts_not_supported() -> None:
     """Test adding of texts to a docstore that doesn't support it."""
-    docsearch = FAISS(FakeEmbeddings().embed_query, None, Wikipedia(), {})
+    docsearch = FAISS(FakeEmbeddings(), None, Wikipedia(), {})
     with pytest.raises(ValueError):
         docsearch.add_texts(["foo"])
 

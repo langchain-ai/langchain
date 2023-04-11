@@ -4,7 +4,7 @@ from __future__ import annotations
 import pickle
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -38,19 +38,19 @@ class FAISS(VectorStore):
         .. code-block:: python
 
             from langchain import FAISS
-            faiss = FAISS(embedding_function, index, docstore, index_to_docstore_id)
+            faiss = FAISS(embeddings, index, docstore, index_to_docstore_id)
 
     """
 
     def __init__(
         self,
-        embedding_function: Callable,
+        embeddings: Embeddings,
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
     ):
         """Initialize with necessary components."""
-        self.embedding_function = embedding_function
+        self._embeddings = embeddings
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
@@ -106,7 +106,7 @@ class FAISS(VectorStore):
                 f"adding items, which {self.docstore} does not"
             )
         # Embed and create the documents.
-        embeddings = [self.embedding_function(text) for text in texts]
+        embeddings = self._embeddings.embed_documents(list(texts))
         return self.__add(texts, embeddings, metadatas, **kwargs)
 
     def add_embeddings(
@@ -173,7 +173,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        embedding = self.embedding_function(query)
+        embedding = self._embeddings.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(embedding, k)
         return docs
 
@@ -258,7 +258,7 @@ class FAISS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self.embedding_function(query)
+        embedding = self._embeddings.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
         return docs
 
@@ -314,7 +314,7 @@ class FAISS(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(embedding.embed_query, index, docstore, index_to_id)
+        return cls(embedding, index, docstore, index_to_id)
 
     @classmethod
     def from_texts(
@@ -408,4 +408,4 @@ class FAISS(VectorStore):
         # load docstore and index_to_docstore_id
         with open(path / "index.pkl", "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
-        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+        return cls(embeddings, index, docstore, index_to_docstore_id)
