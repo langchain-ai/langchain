@@ -157,3 +157,19 @@ If the response indicates an error, you should instead output a summary of the e
 Output:""",
     input_variables=["response", "instructions"],
 )
+
+REQUESTS_PATCH_TOOL_DESCRIPTION = """Use this when you want to PATCH content on a website.
+Input to the tool should be a json string with 3 keys: "url", "data", and "output_instructions".
+The value of "url" should be a string.
+The value of "data" should be a dictionary of key-value pairs of the body params available in the OpenAPI spec you want to PATCH the content with at the url.
+The value of "summary_instructions" should be instructions on what information to extract from the response, for example the id(s) for a resource(s) that the PATCH request creates.
+Always use double quotes for strings in the json string."""
+
+PARSING_PATCH_PROMPT = PromptTemplate(
+    template="""Here is an API response:\n\n{response}\n\n====
+Your task is to extract some information according to these instructions: {instructions}
+When working with API objects, you should usually use ids over names. Do not return any ids or names that are not in the response.
+If the response indicates an error, you should instead output a summary of the error.
+Output:""",
+    input_variables=["response", "instructions"],
+)
