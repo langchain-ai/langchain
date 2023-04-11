@@ -149,7 +149,7 @@ class AlephAlpha(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         return values
 
