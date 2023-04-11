@@ -1,11 +1,9 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
-
 from langchain.schema import BaseMemory
 
 
-class CombinedMemory(BaseMemory, BaseModel):
+class CombinedMemory(BaseMemory):
     """Class for combining multiple memories' data together."""
 
     memories: List[BaseMemory]

@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Extra, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
@@ -23,7 +23,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
+class BaseChatModel(BaseLanguageModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)

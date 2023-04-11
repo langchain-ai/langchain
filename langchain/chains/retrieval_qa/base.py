@@ -5,7 +5,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -18,7 +18,7 @@ from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class BaseRetrievalQA(Chain, BaseModel):
+class BaseRetrievalQA(Chain):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -107,7 +107,9 @@ class BaseRetrievalQA(Chain, BaseModel):
         question = inputs[self.input_key]
 
         docs = self._get_docs(question)
-        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer = self.combine_documents_chain.run(
+            input_documents=docs, question=question
+        )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
@@ -133,8 +135,8 @@ class BaseRetrievalQA(Chain, BaseModel):
         question = inputs[self.input_key]
 
         docs = await self._aget_docs(question)
-        answer, _ = await self.combine_documents_chain.acombine_docs(
-            docs, question=question
+        answer = await self.combine_documents_chain.arun(
+            input_documents=docs, question=question
         )
 
         if self.return_source_documents:
@@ -143,7 +145,7 @@ class BaseRetrievalQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class RetrievalQA(BaseRetrievalQA, BaseModel):
+class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
     Example:
@@ -166,7 +168,7 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
         return await self.retriever.aget_relevant_documents(question)
 
 
-class VectorDBQA(BaseRetrievalQA, BaseModel):
+class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
     vectorstore: VectorStore = Field(exclude=True, alias="vectorstore")

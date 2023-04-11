@@ -54,9 +54,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
             values, "aleph_alpha_api_key", "ALEPH_ALPHA_API_KEY"
         )
         try:
-            from aleph_alpha_client import (
-                Client,
-            )
+            from aleph_alpha_client import Client
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "

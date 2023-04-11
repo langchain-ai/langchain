@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -11,7 +11,7 @@ from langchain.llms.utils import enforce_stop_tokens
 logger = logging.getLogger(__name__)
 
 
-class Modal(LLM, BaseModel):
+class Modal(LLM):
     """Wrapper around Modal large language models.
 
     To use, you should have the ``modal-client`` python package installed.

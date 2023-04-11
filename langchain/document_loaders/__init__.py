@@ -17,7 +17,10 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
-from langchain.document_loaders.email import UnstructuredEmailLoader
+from langchain.document_loaders.email import (
+    OutlookMessageLoader,
+    UnstructuredEmailLoader,
+)
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -40,6 +43,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
@@ -89,6 +93,7 @@ __all__ = [
     "UnstructuredImageLoader",
     "ObsidianLoader",
     "UnstructuredEmailLoader",
+    "OutlookMessageLoader",
     "UnstructuredEPubLoader",
     "UnstructuredMarkdownLoader",
     "RoamLoader",
@@ -112,6 +117,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "PDFMinerPDFasHTMLLoader",
     "PyMuPDFLoader",
     "TelegramChatLoader",
     "SRTLoader",

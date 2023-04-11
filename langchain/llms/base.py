@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Extra, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
@@ -53,7 +53,7 @@ def update_cache(
     return llm_output
 
 
-class BaseLLM(BaseLanguageModel, BaseModel, ABC):
+class BaseLLM(BaseLanguageModel, ABC):
     """LLM wrapper should take in a prompt and return a string."""
 
     cache: Optional[bool] = None
