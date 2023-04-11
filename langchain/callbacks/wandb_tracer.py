@@ -1,29 +1,42 @@
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
-import typing
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+    cast,
+)
 
+from langchain.agents import BaseSingleActionAgent
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.tracers.base import SharedTracer
-from langchain.agents import BaseSingleActionAgent
 from langchain.callbacks.tracers.schemas import (
-    TracerSession,
-    LLMRun,
     ChainRun,
+    LLMRun,
     ToolRun,
+    TracerSession,
 )
 
 if TYPE_CHECKING:
-    from langchain.callbacks.tracers.schemas import (
-        BaseRun,
-        TracerSessionCreate,
-    )
-    from langchain.callbacks.base import BaseCallbackHandler
-
     from wandb import Settings as WBSettings
     from wandb.integration.langchain.media_types import LangChainModelTrace
     from wandb.integration.langchain.schema import BaseRunSpan
     from wandb.wandb_run import Run as WBRun
+
+    from langchain.callbacks.base import BaseCallbackHandler
+    from langchain.callbacks.tracers.schemas import (
+        BaseRun,
+        TracerSessionCreate,
+    )
+    from langchain.chains.base import Chain
+    from langchain.llms.base import BaseLLM
+    from langchain.schema import BaseLanguageModel
+    from langchain.tools.base import BaseTool
 
 
 def import_wandb() -> Any:
@@ -77,7 +90,11 @@ class WandbTracer(SharedTracer):
     _run_args: Optional[WandbRunArgs] = None
 
     @classmethod
-    def watch_all(cls, run_args: Optional[WandbRunArgs] = None, additional_handlers: list["BaseCallbackHandler"] =[]) -> "WandbTracer":
+    def watch_all(
+        cls,
+        run_args: Optional[WandbRunArgs] = None,
+        additional_handlers: list["BaseCallbackHandler"] = [],
+    ) -> "WandbTracer":
         """Sets up a WandbTracer and makes it the default handler. To use W&B to
         monitor all LangChain activity, simply call this function at the top of
         the notebook or script:
@@ -108,12 +125,13 @@ class WandbTracer(SharedTracer):
         manager = get_callback_manager()
         manager.set_handlers([tracer] + additional_handlers)
         return tracer
-    
+
     @staticmethod
-    def stop_watch():
-        WandbTracer._instance.finish()
-        manager = get_callback_manager()
-        manager.set_handlers([])
+    def stop_watch() -> None:
+        if WandbTracer._instance:
+            cast(WandbTracer, WandbTracer._instance).finish()
+            manager = get_callback_manager()
+            manager.set_handlers([])
 
     def init(self, run_args: Optional[WandbRunArgs] = None) -> None:
         """Initialize wandb if it has not been initialized."""
@@ -148,28 +166,24 @@ class WandbTracer(SharedTracer):
         self._run = wandb.init(**run_args)
         print_wandb_init_message(self._run.settings.run_url)
 
-    def finish(self):
+    def finish(self) -> None:
         """Waits for W&B data to upload. It is recommended to call this function
         before terminating the kernel or python script."""
         if self._run is not None:
             url = self._run.settings.run_url
             self._run.finish()
             import_wandb()
-            from wandb.integration.langchain.media_types import print_wandb_finish_message
+            from wandb.integration.langchain.media_types import (
+                print_wandb_finish_message,
+            )
+
             print_wandb_finish_message(url)
         else:
             print("W&B run not started. Skipping.")
 
-    @staticmethod
-    def stop_all() -> None:
-        """Stops all W&B runs."""
-        global global_tracer
-        if global_tracer is not None:
-            global_tracer.stop()
-            global_tracer = None
-
     def _log_trace(self, model_trace: "LangChainModelTrace") -> None:
-        self._run.log({"_langchain_model_trace": model_trace})
+        if self._run:
+            self._run({"_langchain_model_trace": model_trace})
 
     ###  Start of required methods
     @property
@@ -186,9 +200,12 @@ class WandbTracer(SharedTracer):
         import_wandb()
         from wandb.integration.langchain.media_types import LangChainModelTrace
 
-        self._log_trace(LangChainModelTrace(
-            trace_dict=_convert_langchain_schema_to_wandb(run),
-            model_dict=_safe_maybe_model_dict(_get_span_producing_object(run))))
+        self._log_trace(
+            LangChainModelTrace(
+                trace_dict=_convert_langchain_schema_to_wandb(run),
+                model_dict=_safe_maybe_model_dict(_get_span_producing_object(run)),
+            )
+        )
 
     def _persist_session(
         self, session_create: "TracerSessionCreate"
@@ -209,20 +226,28 @@ class WandbTracer(SharedTracer):
     def _add_child_run(
         self,
         parent_run: Union["ChainRun", "ToolRun"],
-        child_run: "BaseRun",
+        child_run: Union["LLMRun", "ChainRun", "ToolRun"],
     ) -> None:
         """Add child run to a chain run or tool run."""
         parent_run.child_runs.append(child_run)
 
     ## End of required methods
 
-def _get_span_producing_object(run: "BaseRun") -> typing.Any:
+
+def _get_span_producing_object(run: "BaseRun") -> Any:
     return run.serialized.get("_self")
 
-def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan": 
+
+def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
     import_wandb()
-    from wandb.integration.langchain.schema import BaseRunSpan, LLMRunSpan, ChainRunSpan, ToolRunSpan, LLMResponse
-    
+    from wandb.integration.langchain.schema import (
+        BaseRunSpan,
+        ChainRunSpan,
+        LLMResponse,
+        LLMRunSpan,
+        ToolRunSpan,
+    )
+
     if isinstance(run, LLMRun):
         return LLMRunSpan(
             id=run.id,
@@ -234,10 +259,16 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             span_component_name=run.serialized.get("name"),
             prompt_responses=[
                 LLMResponse(
-                    prompt=prompt,  
-                    generation=run.response.generations[ndx][0].text if run.response != None and len(run.response.generations) > ndx and run.response.generations[ndx] != None and len(run.response.generations[ndx]) > 0 else None,
-                ) for ndx, prompt in enumerate(run.prompts)
-            ]
+                    prompt=prompt,
+                    generation=run.response.generations[ndx][0].text
+                    if run.response is not None
+                    and len(run.response.generations) > ndx
+                    and run.response.generations[ndx] is not None
+                    and len(run.response.generations[ndx]) > 0
+                    else None,
+                )
+                for ndx, prompt in enumerate(run.prompts)
+            ],
         )
     elif isinstance(run, ChainRun):
         return ChainRunSpan(
@@ -250,8 +281,11 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             span_component_name=run.serialized.get("name"),
             inputs=run.inputs,
             outputs=run.outputs,
-            child_runs = [_convert_langchain_schema_to_wandb(child_run) for child_run in run.child_runs],
-            is_agent=isinstance(_get_span_producing_object(run), BaseSingleActionAgent)
+            child_runs=[
+                _convert_langchain_schema_to_wandb(child_run)
+                for child_run in run.child_runs
+            ],
+            is_agent=isinstance(_get_span_producing_object(run), BaseSingleActionAgent),
         )
     elif isinstance(run, ToolRun):
         return ToolRunSpan(
@@ -265,7 +299,10 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             tool_input=run.tool_input,
             output=run.output,
             action=run.action,
-            child_runs = [_convert_langchain_schema_to_wandb(child_run) for child_run in run.child_runs]
+            child_runs=[
+                _convert_langchain_schema_to_wandb(child_run)
+                for child_run in run.child_runs
+            ],
         )
     else:
         return BaseRunSpan(
@@ -275,10 +312,13 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             execution_order=run.execution_order,
             session_id=run.session_id,
             error=run.error,
-            span_component_name=run.serialized.get("name")
+            span_component_name=run.serialized.get("name"),
         )
 
-def _safe_maybe_model_dict(model) -> typing.Optional[dict]:
+
+def _safe_maybe_model_dict(
+    model: Union["BaseLanguageModel", "BaseLLM", "BaseTool", "Chain"]
+) -> Optional[dict]:
     """Returns the model dict if possible, otherwise returns None.
     Given that Models are all user defined, this operation is not always possible.
     """
