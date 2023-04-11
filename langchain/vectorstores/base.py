@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
+
+VST = TypeVar("VST", bound="VectorStore")
 
 
 class VectorStore(ABC):
@@ -153,11 +155,11 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[VST],
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -165,11 +167,11 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls,
+        cls: Type[VST],
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -178,22 +180,22 @@ class VectorStore(ABC):
     @classmethod
     @abstractmethod
     def from_texts(
-        cls,
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
 
     @classmethod
     async def afrom_texts(
-        cls,
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         raise NotImplementedError
 
