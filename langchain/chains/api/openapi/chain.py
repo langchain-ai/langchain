@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, NamedTuple, Optional, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -36,6 +36,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
     max_text_length: Optional[int] = Field(ge=0)  #: :meta private:
+    apply_llm: bool = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -106,6 +107,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         else:
             return {self.output_key: output}
 
+    def call_with_apply_llm(self, inputs: Union[Dict[str, Any], Any], apply_llm: bool, return_only_outputs: bool = False) -> Dict[str, Any]:
+        self.apply_llm = apply_llm
+        return self.__call__(inputs, return_only_outputs)
+
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         intermediate_steps = {}
         instructions = inputs[self.instructions_key]
@@ -144,15 +149,18 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
         )
-        _answer = self.api_response_chain.predict_and_parse(
-            response=response_text,
-            instructions=instructions,
-        )
-        answer = cast(str, _answer)
-        self.callback_manager.on_text(
-            answer, color="yellow", end="\n", verbose=self.verbose
-        )
-        return self._get_output(answer, intermediate_steps)
+        if self.apply_llm:
+            _answer = self.api_response_chain.predict_and_parse(
+                response=response_text,
+                instructions=instructions,
+            )
+            answer = cast(str, _answer)
+            self.callback_manager.on_text(
+                answer, color="yellow", end="\n", verbose=self.verbose
+            )
+            return self._get_output(answer, intermediate_steps)
+        else:
+            return self._get_output(response_text, intermediate_steps)
 
     @classmethod
     def from_url_and_method(
