@@ -56,11 +56,14 @@ def create_pbi_chat_agent(
             memory_key="chat_history", return_messages=True
         ),
         verbose=verbose,
-        **kwargs,
+        **agent_kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
+        memory=ConversationBufferMemory(
+            memory_key="chat_history", return_messages=True
+        ),
         **kwargs,
     )
