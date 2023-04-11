@@ -181,7 +181,7 @@ class WandbTracer(SharedTracer):
         """Generate an id for a run."""
         return None
 
-    def _persist_run(self, run: BaseRun) -> None:
+    def _persist_run(self, run: "BaseRun") -> None:
         """Persist a run."""
         import_wandb()
         from wandb.integration.langchain.media_types import LangChainModelTrace
@@ -209,20 +209,20 @@ class WandbTracer(SharedTracer):
     def _add_child_run(
         self,
         parent_run: Union["ChainRun", "ToolRun"],
-        child_run: BaseRun,
+        child_run: "BaseRun",
     ) -> None:
         """Add child run to a chain run or tool run."""
         parent_run.child_runs.append(child_run)
 
     ## End of required methods
 
-def _get_span_producing_object(run: BaseRun) -> typing.Any:
+def _get_span_producing_object(run: "BaseRun") -> typing.Any:
     return run.serialized.get("_self")
 
-def _convert_langchain_schema_to_wandb(run: BaseRun) -> "BaseRunSpan": 
+def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan": 
     import_wandb()
     from wandb.integration.langchain.schema import BaseRunSpan, LLMRunSpan, ChainRunSpan, ToolRunSpan, LLMResponse
-
+    
     if isinstance(run, LLMRun):
         return LLMRunSpan(
             id=run.id,
@@ -235,8 +235,8 @@ def _convert_langchain_schema_to_wandb(run: BaseRun) -> "BaseRunSpan":
             prompt_responses=[
                 LLMResponse(
                     prompt=prompt,  
-                    generation=run.response[ndx][ndx][0].text if run.response != None and run.response.length < ndx and run.response[ndx] != None and run.response[ndx].length > 0 else None,
-                ) for prompt, ndx in enumerate(run.prompts)
+                    generation=run.response.generations[ndx][0].text if run.response != None and len(run.response.generations) > ndx and run.response.generations[ndx] != None and len(run.response.generations[ndx]) > 0 else None,
+                ) for ndx, prompt in enumerate(run.prompts)
             ]
         )
     elif isinstance(run, ChainRun):
