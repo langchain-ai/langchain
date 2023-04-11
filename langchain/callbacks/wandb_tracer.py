@@ -327,17 +327,21 @@ def _safe_maybe_model_dict(
     Given that Models are all user defined, this operation is not always possible.
     """
     data = None
-
+    message = None
     try:
         data = model.dict()
-    except Exception:
+    except Exception as e:
+        message = str(e)
         pass
+
 
     if data is None and hasattr(model, "agent"):
         try:
             data = model.agent.dict()
         except Exception:
-            pass
+            message = str(e)
 
-    model_dict = data
-    return model_dict
+    if data is None and message is not None:
+        print(f"Could not serialize model: {message}")
+
+    return data
