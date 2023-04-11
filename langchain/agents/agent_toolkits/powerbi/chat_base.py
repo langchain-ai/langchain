@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain.agents import Agent, ConversationalChatAgent
+from langchain.agents import AgentExecutor, ConversationalChatAgent
 from langchain.agents.agent_toolkits.powerbi.prompt import (
     POWERBI_CHAT_PREFIX,
     POWERBI_CHAT_SUFFIX,
@@ -24,10 +24,11 @@ def create_pbi_chat_agent(
     top_k: int = 10,
     verbose: bool = False,
     **kwargs: Any,
-) -> Agent:
+) -> AgentExecutor:
     """Construct a pbi agent from an Chat LLM and tools."""
     prefix = prefix.format(top_k=top_k)
-    return ConversationalChatAgent.from_llm_and_tools(
+    tools = toolkit.get_tools()
+    agent = ConversationalChatAgent.from_llm_and_tools(
         llm=llm,
         tools=toolkit.get_tools(),
         system_message=prefix,
@@ -38,5 +39,11 @@ def create_pbi_chat_agent(
         ),
         callback_manager=callback_manager,
         verbose=verbose,
+        **kwargs,
+    )
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
         **kwargs,
     )
