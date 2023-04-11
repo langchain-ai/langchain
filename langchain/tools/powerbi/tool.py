@@ -29,7 +29,7 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
 
     name = "query_powerbi"
     description = """
-    Input to this tool is a detailed and correct DAX query, output is a result from the database.
+    Input to this tool is a detailed and correct DAX query, output is a result from the dataset.
     If the query is not correct, an error message will be returned. 
     If an error is returned with Bad request in it, rewrite the query, check the query, and try again.
     If an error is returned with Unauthorized in it, do not try again, but tell the user to change their authentication.
@@ -102,7 +102,7 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     )
     name = "question_to_query_powerbi"
     description = """
-    Use this tool to create the DAX query from the question, the input is a fully formed question related to the powerbi dataset.
+    Use this tool to create the DAX query from the question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
     """
 
     @validator("llm_chain")
@@ -147,8 +147,7 @@ class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
     )
     name = "query_checker_powerbi"
     description = """
-    Use this tool to double check if your query is correct before executing it.
-    Always use this tool before executing a query with query_powerbi!
+    Use this tool to double check if your query is correct when you get an error back.
     """
 
     @validator("llm_chain")
