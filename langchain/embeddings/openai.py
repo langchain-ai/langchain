@@ -188,7 +188,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         return values
 
@@ -242,7 +242,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for OpenAIEmbeddings. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
