@@ -252,7 +252,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 specified by the class.
 
         Returns:
-            List of embeddings, one for each text.
+            List of list of embeddings, one for each text.
         """
         # handle batches of large input text
         if self.embedding_ctx_length > 0:
@@ -276,7 +276,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             text: The text to embed.
 
         Returns:
-            Embeddings for the text.
+            List of embeddings, one for each text.
         """
         embedding = self._embedding_func(text, engine=self.query_model_name)
         return embedding
