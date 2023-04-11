@@ -1,7 +1,7 @@
 import enum
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
@@ -346,7 +346,7 @@ class PGVector(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type["PGVector"],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -395,7 +395,7 @@ class PGVector(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type["PGVector"],
         documents: List[Document],
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
