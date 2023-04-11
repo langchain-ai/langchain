@@ -24,6 +24,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
+from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
 from langchain.requests import RequestsWrapper
 from langchain.schema import BaseLanguageModel
@@ -53,7 +54,8 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             data = json.loads(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.get(data["url"])
+        data_params = data.get("params")
+        response = self.requests_wrapper.get(data["url"], params=data_params)
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -183,6 +185,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    shared_memory: Optional[ReadOnlySharedMemory] = None,
     verbose: bool = True,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
@@ -208,7 +211,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt),
+        llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
     )
     return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
