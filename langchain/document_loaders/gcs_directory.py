@@ -22,7 +22,7 @@ class GCSDirectoryLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "Could not import google-cloud-storage python package. "
-                "Please it install it with `pip install google-cloud-storage`."
+                "Please install it with `pip install google-cloud-storage`."
             )
         client = storage.Client(project=self.project_name)
         docs = []
