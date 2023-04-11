@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
+from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel, Field, root_validator
@@ -88,9 +89,8 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        return await asyncio.get_event_loop().run_in_executor(
-            None, self.similarity_search, query, k, **kwargs
-        )
+        func = partial(self.similarity_search, query, k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -110,7 +110,12 @@ class VectorStore(ABC):
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to embedding vector."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_by_vector, embedding, k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search(
         self, query: str, k: int = 4, fetch_k: int = 20
@@ -134,7 +139,12 @@ class VectorStore(ABC):
         self, query: str, k: int = 4, fetch_k: int = 20
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.max_marginal_relevance_search, query, k, fetch_k)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
         self, embedding: List[float], k: int = 4, fetch_k: int = 20
