@@ -183,7 +183,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-    verbose: bool=True
+    verbose: bool = True,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
