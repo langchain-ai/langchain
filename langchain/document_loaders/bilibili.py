@@ -1,7 +1,7 @@
 import re
 import json
 import warnings
-from typing import List
+from typing import List, Tuple
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -23,7 +23,7 @@ class BiliBiliLoader(BaseLoader):
 
         return results
 
-    def _get_bilibili_subs_and_info(self, url: str) -> tuple[str, dict]:
+    def _get_bilibili_subs_and_info(self, url: str) -> Tuple[str, dict]:
         try:
             import requests
         except ImportError:
