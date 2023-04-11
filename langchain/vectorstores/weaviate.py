@@ -104,11 +104,11 @@ class Weaviate(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type["Weaviate"],
+        cls: Type[Weaviate],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "Weaviate":
+    ) -> Weaviate:
         """Not implemented for Weaviate yet."""
         raise NotImplementedError("weaviate does not currently support `from_texts`.")
