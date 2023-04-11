@@ -4,8 +4,10 @@ from langchain.document_loaders.bilibili import BiliBiliLoader
 def test_bilibili_loader() -> None:
     """Test Bilibili Loader."""
     loader = BiliBiliLoader(
-        ["https://www.bilibili.com/video/BV1xt411o7Xu/",
-         "https://www.bilibili.com/video/av330407025/"]
+        [
+            "https://www.bilibili.com/video/BV1xt411o7Xu/",
+            "https://www.bilibili.com/video/av330407025/",
+        ]
     )
     docs = loader.load()
 
