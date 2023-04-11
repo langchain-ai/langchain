@@ -58,3 +58,9 @@ def create_pbi_chat_agent(
         verbose=verbose,
         **kwargs,
     )
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        **kwargs,
+    )
