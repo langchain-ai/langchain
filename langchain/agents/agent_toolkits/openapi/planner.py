@@ -117,7 +117,8 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
     async def _arun(self, text: str) -> str:
         raise NotImplementedError()
-    
+
+
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     name = "requests_delete"
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
