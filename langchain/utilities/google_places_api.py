@@ -16,7 +16,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     To use, you should have the ``googlemaps`` python package installed, **an API key for the google maps platform**, and the enviroment variable ''GPLACES_API_KEY'' set with your API key , or pass 'gplaces_api_key' as a named parameter to the constructor. 
 
-    By default, this will return contact the top-l results of an input search.
+   By default, this will return the contact for the top-l results of an input search.
 
     Example:
         .. code-block:: python
