@@ -10,6 +10,10 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
 
 
+def hash_text(text: str) -> str:
+    return str(hashlib.sha256(text.encode("utf-8")).hexdigest())
+
+
 def create_index(
     contexts: List[str],
     index: Any,
@@ -29,7 +33,7 @@ def create_index(
     if ids is None:
         # create unique ids using hash of the text
         ids = [
-            str(hashlib.sha256(context.encode("utf-8")).hexdigest())
+            hash_text(context)
             for context in contexts
         ]
 
@@ -50,12 +54,12 @@ def create_index(
 
         vectors = []
         # loop through the data and create dictionaries for upserts
-        for _id, sparse, dense, metadata in zip(
+        for doc_id, sparse, dense, metadata in zip(
             batch_ids, sparse_embeds, dense_embeds, meta
         ):
             vectors.append(
                 {
-                    "id": _id,
+                    "id": doc_id,
                     "sparse_values": sparse,
                     "values": dense,
                     "metadata": metadata,
