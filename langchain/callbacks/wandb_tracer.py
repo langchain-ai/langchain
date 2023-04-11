@@ -242,14 +242,14 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
     import_wandb()
     from wandb.integration.langchain.schema import (
         BaseRunSpan,
-        ChainRunSpan,
         LLMResponse,
-        LLMRunSpan,
-        ToolRunSpan,
+        chain_run_span,
+        llm_run_span,
+        tool_run_span,
     )
 
     if isinstance(run, LLMRun):
-        return LLMRunSpan(
+        return llm_run_span(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
@@ -271,7 +271,7 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             ],
         )
     elif isinstance(run, ChainRun):
-        return ChainRunSpan(
+        return chain_run_span(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
@@ -288,7 +288,7 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             is_agent=isinstance(_get_span_producing_object(run), BaseSingleActionAgent),
         )
     elif isinstance(run, ToolRun):
-        return ToolRunSpan(
+        return tool_run_span(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
