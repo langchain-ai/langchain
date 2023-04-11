@@ -2,20 +2,20 @@
 import hashlib
 from typing import Any, List, Optional
 
+from pinecone_text.hybrid import hybrid_convex_scale
+from pinecone_text.sparse.base_sparse_encoder import BaseSparseEncoder
 from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
-from pinecone_text.sparse.base_sparse_encoder import BaseSparseEncoder
-from pinecone_text.hybrid import hybrid_convex_scale
 
 
 def create_index(
     contexts: List[str],
-        index: Any,
-        embeddings: Embeddings,
-        sparse_encoder: BaseSparseEncoder,
-        ids: Optional[List[str]] = None,
+    index: Any,
+    embeddings: Embeddings,
+    sparse_encoder: BaseSparseEncoder,
+    ids: Optional[List[str]] = None,
 ) -> None:
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
@@ -28,7 +28,10 @@ def create_index(
 
     if ids is None:
         # create unique ids using hash of the text
-        ids = [str(hashlib.sha256(context.encode("utf-8")).hexdigest()) for context in contexts]
+        ids = [
+            str(hashlib.sha256(context.encode("utf-8")).hexdigest())
+            for context in contexts
+        ]
 
     for i in _iterator:
         # find end of batch
@@ -47,7 +50,9 @@ def create_index(
 
         vectors = []
         # loop through the data and create dictionaries for upserts
-        for _id, sparse, dense, metadata in zip(batch_ids, sparse_embeds, dense_embeds, meta):
+        for _id, sparse, dense, metadata in zip(
+            batch_ids, sparse_embeds, dense_embeds, meta
+        ):
             vectors.append(
                 {
                     "id": _id,
