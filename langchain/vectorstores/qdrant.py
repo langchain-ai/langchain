@@ -199,7 +199,7 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
-    ) -> Qdrant:
+    ) -> "Qdrant":
         """Construct Qdrant wrapper from a list of texts.
 
         Args:
