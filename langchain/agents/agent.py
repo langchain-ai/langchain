@@ -29,6 +29,8 @@ from langchain.schema import (
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 logger = logging.getLogger()
 
@@ -676,7 +678,135 @@ class AgentExecutor(Chain):
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
+    def truncate_log(self, log):
+        # Find the index of the first "- Action Input:"
+        first_action_input_index = log.find('Action Input:')
 
+        if first_action_input_index != -1:
+            # Find the index of the next newline followed by a "-" and one of the specified strings:
+            pattern = r'\n\s*(-?\s*(Observation|Action Input|Action|Thought))'
+            next_action_index = re.search(pattern, log[first_action_input_index:])
+
+            if next_action_index:
+                truncated_log = log[:first_action_input_index + next_action_index.start()]
+            else:
+                truncated_log = log[:first_action_input_index] + log[first_action_input_index:].rstrip()
+
+            # Remove "- Thought:" at the beginning
+            truncated_log = re.sub(r'^\s*-?Thought:', '', truncated_log)
+
+            # Remove all "-" in the text
+            truncated_log = re.sub(r'-', '', truncated_log)
+
+            # Remove any leading whitespace
+            truncated_log = re.sub(r'^\s+', '', truncated_log)
+
+            return truncated_log
+        else:
+            # If no "- Action Input:" is found, remove all "-" in the text and return
+            return re.sub(r'-', '', log)
+
+    def clean_tool_name(self, tool_name: str) -> str:
+    # Ensure that there is a space after ":"
+        tool_name = re.sub(r':([^ ])', r': \1', tool_name)
+        
+        # Extract the word after ":" if it exists, else extract the first word
+        tool_name = re.search(r':\s*(\S+)|^(\S+)', tool_name).group(1) or tool_name.strip().split()[0]
+
+        return tool_name
+
+    def text_similarity(self,text1, text2):
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform([text1, text2])
+        similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
+        return similarity_score[0][0]
+    
+    def one_action(self, output):
+        if isinstance(output, AgentAction):
+            truncated_log = self.truncate_log(output.log)            
+            if truncated_log != output.log:
+                if "Action Input:" in truncated_log and "Action:" in truncated_log:
+                    # Extract the first tool and tool_input from the log
+                    first_tool = re.findall(r'\n.*?\s*-?\s*Action: (.+?)(?:$|\n)', truncated_log, re.MULTILINE)[0]
+                    first_tool_input = re.findall(r'\n.*?\s*-?\s*Action Input: (.+?)(?:$|\n)', truncated_log, re.MULTILINE)[0]
+                    cleaned_tool_name = self.clean_tool_name(first_tool)
+                    # Update the tool name in the new_output object
+                    new_output = AgentAction(
+                        tool=cleaned_tool_name,
+                        tool_input=first_tool_input,
+                        log=truncated_log
+                    )
+                    # Replace the old output with the new one
+                    output = new_output
+
+
+        elif isinstance(output, AgentFinish):
+            truncated_log = self.truncate_log(output.log)
+
+            if truncated_log != output.log:
+                if "Action Input:" in truncated_log and "Action:" in truncated_log:
+                    # Extract the first tool and tool_input from the log
+                    first_tool = re.findall(r'\n.*?\s*-?\s*Action: (.+?)\n', truncated_log)[0]
+                    first_tool_input = re.findall(r'\n.*?\s*-?\s*Action Input: (.+?)$', truncated_log, re.MULTILINE)[0]
+                    cleaned_tool_name = self.clean_tool_name(first_tool)
+                    new_output = AgentAction(
+                        tool=cleaned_tool_name,
+                        tool_input=first_tool_input,
+                        log=truncated_log
+                    )
+                    # Replace the old output with the new one
+                    output = new_output
+        return output
+    
+    def sequentialExecution(self, output, intermediate_steps):
+        if len(intermediate_steps) > 0:
+            last_agent_action = intermediate_steps[-1][0]
+            tool_name = last_agent_action.tool
+            last_intermediate_string = intermediate_steps[-1][1]
+
+            if isinstance(output, AgentAction):
+                initial_text = re.findall(r'\nAction Input: (.*?)$', output.log, re.MULTILINE)[0]
+                if f"Result of the {tool_name}:" not in output.log:
+                    new_text = f"{initial_text}\n\n Result of the {tool_name}:\n {last_intermediate_string}"
+                    cleaned_tool_name = self.clean_tool_name(output.tool)
+                    similarity_score = self.text_similarity(initial_text, last_intermediate_string)
+
+                    if similarity_score < 0.5:
+                        new_output = AgentAction(
+                            tool=cleaned_tool_name,
+                            tool_input=output.tool_input,
+                            log=output.log.replace(initial_text, new_text)
+                        )
+                        output = new_output
+                    else:
+                        new_text = last_intermediate_string if len(last_intermediate_string) > len(initial_text) else initial_text
+                        new_output = AgentAction(
+                            tool=cleaned_tool_name,
+                            tool_input=output.tool_input,
+                            log=output.log.replace(initial_text, new_text)
+                        )
+                        output = new_output
+
+            elif isinstance(output, AgentFinish):
+                if f"Result of the {tool_name}:" not in output.return_values['output']:
+                    new_output_value = f"{output.return_values['output']}\n\n {last_intermediate_string}"
+                    similarity_score = self.text_similarity(output.return_values['output'], last_intermediate_string)
+                    if similarity_score < 0.5:
+                        new_output = AgentFinish(
+                            return_values={"output": new_output_value},
+                            log=output.log
+                        )
+                        output = new_output
+                    else:
+                        new_text = last_intermediate_string if len(last_intermediate_string) > len(output.return_values['output']) else output.return_values['output']
+                        new_output = AgentFinish(
+                            return_values={"output": new_text},
+                            log=output.log
+                        )
+                        output = new_output
+        return output
+    
+    
     def _take_next_step(
         self,
         name_to_tool_map: Dict[str, BaseTool],
@@ -690,6 +820,9 @@ class AgentExecutor(Chain):
         """
         # Call the LLM to see what to do.
         output = self.agent.plan(intermediate_steps, **inputs)
+        single_action_output = self.one_action(output)
+        output = single_action_output
+        output = self.sequentialExecution(output, intermediate_steps)
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
