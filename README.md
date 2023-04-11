@@ -10,6 +10,8 @@ Please fill out [this form](https://forms.gle/57d8AmXBYp8PP8tZA) and we'll set u
 ## Quick Install
 
 `pip install langchain`
+or
+`conda install langchain -c conda-forge`
 
 ## 🤔 What is this?
 
