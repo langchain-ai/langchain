@@ -32,10 +32,7 @@ def create_index(
 
     if ids is None:
         # create unique ids using hash of the text
-        ids = [
-            hash_text(context)
-            for context in contexts
-        ]
+        ids = [hash_text(context) for context in contexts]
 
     for i in _iterator:
         # find end of batch
