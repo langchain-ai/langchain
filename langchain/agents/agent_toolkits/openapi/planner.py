@@ -54,10 +54,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             data = json.loads(text)
         except json.JSONDecodeError as e:
             raise e
-        try:
-            data_params = data["params"]
-        except KeyError:
-            data_params = None
+        data_params = data.get("params")
         response = self.requests_wrapper.get(data["url"], params=data_params)
         response = response[: self.response_length]
         return self.llm_chain.predict(
