@@ -1,12 +1,13 @@
 """Power BI agent."""
 from typing import Any, List, Optional
 
-from langchain.agents import AgentExecutor, ZeroShotAgent
+from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
     POWERBI_PREFIX,
     POWERBI_SUFFIX,
 )
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
+from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain

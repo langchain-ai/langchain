@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain.agents import AgentExecutor, ConversationalChatAgent
+from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
     POWERBI_CHAT_PREFIX,
     POWERBI_CHAT_SUFFIX,
 )
 from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
+from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ConversationBufferMemory
