@@ -2,16 +2,14 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel
-
-from langchain.agents import AgentExecutor, initialize_agent
+from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import CallbackManager
 from langchain.llms.base import LLM
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]
@@ -55,7 +53,11 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
         ),
     ]
     agent = initialize_agent(
-        tools, fake_llm, agent="zero-shot-react-description", verbose=True, **kwargs
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        **kwargs,
     )
     return agent
 
@@ -68,10 +70,16 @@ def test_agent_bad_action() -> None:
 
 
 def test_agent_stopped_early() -> None:
-    """Test react chain when bad action given."""
+    """Test react chain when max iterations or max execution time is exceeded."""
+    # iteration limit
     agent = _get_agent(max_iterations=0)
     output = agent.run("when was langchain made")
-    assert output == "Agent stopped due to max iterations."
+    assert output == "Agent stopped due to iteration limit or time limit."
+
+    # execution time limit
+    agent = _get_agent(max_execution_time=0.0)
+    output = agent.run("when was langchain made")
+    assert output == "Agent stopped due to iteration limit or time limit."
 
 
 def test_agent_with_callbacks_global() -> None:
@@ -98,7 +106,7 @@ def test_agent_with_callbacks_global() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
@@ -144,7 +152,7 @@ def test_agent_with_callbacks_local() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         callback_manager=manager,
     )
@@ -191,7 +199,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         callback_manager=manager,
     )
 
@@ -223,7 +231,7 @@ def test_agent_tool_return_direct() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
     output = agent.run("when was langchain made")
@@ -249,7 +257,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     agent = initialize_agent(
         tools,
         fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         return_intermediate_steps=True,
     )
 
@@ -280,7 +288,7 @@ def test_agent_with_new_prefix_suffix() -> None:
     agent = initialize_agent(
         tools=tools,
         llm=fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         agent_kwargs={"prefix": prefix, "suffix": suffix},
     )
 
@@ -307,7 +315,7 @@ def test_agent_lookup_tool() -> None:
     agent = initialize_agent(
         tools=tools,
         llm=fake_llm,
-        agent="zero-shot-react-description",
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     )
 
     assert agent.lookup_tool("Search") == tools[0]

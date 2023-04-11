@@ -89,6 +89,19 @@ class Weaviate(VectorStore):
             docs.append(Document(page_content=text, metadata=res))
         return docs
 
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Look up similar documents by embedding vector in Weaviate."""
+        vector = {"vector": embedding}
+        query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        result = query_obj.with_near_vector(vector).with_limit(k).do()
+        docs = []
+        for res in result["data"]["Get"][self._index_name]:
+            text = res.pop(self._text_key)
+            docs.append(Document(page_content=text, metadata=res))
+        return docs
+
     @classmethod
     def from_texts(
         cls,

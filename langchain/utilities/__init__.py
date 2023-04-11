@@ -1,6 +1,6 @@
 """General utilities."""
 from langchain.python import PythonREPL
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -15,7 +15,7 @@ from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 __all__ = [
     "ApifyWrapper",
     "BashProcess",
-    "RequestsWrapper",
+    "TextRequestsWrapper",
     "PythonREPL",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",

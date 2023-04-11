@@ -176,5 +176,6 @@ async def test_async_callback_manager_sync_handler() -> None:
     """Test the AsyncCallbackManager."""
     handler1 = FakeCallbackHandler(always_verbose_=True)
     handler2 = FakeAsyncCallbackHandler()
-    manager = AsyncCallbackManager([handler1, handler2])
-    await _test_callback_manager_async(manager, handler1, handler2)
+    handler3 = FakeAsyncCallbackHandler(always_verbose_=True)
+    manager = AsyncCallbackManager([handler1, handler2, handler3])
+    await _test_callback_manager_async(manager, handler1, handler2, handler3)

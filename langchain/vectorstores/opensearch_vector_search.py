@@ -65,6 +65,8 @@ def _bulk_ingest_embeddings(
     embeddings: List[List[float]],
     texts: Iterable[str],
     metadatas: Optional[List[dict]] = None,
+    vector_field: str = "vector_field",
+    text_field: str = "text",
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     bulk = _import_bulk()
@@ -76,8 +78,8 @@ def _bulk_ingest_embeddings(
         request = {
             "_op_type": "index",
             "_index": index_name,
-            "vector_field": embeddings[i],
-            "text": text,
+            vector_field: embeddings[i],
+            text_field: text,
             "metadata": metadata,
             "_id": _id,
         }
@@ -88,12 +90,15 @@ def _bulk_ingest_embeddings(
     return ids
 
 
-def _default_scripting_text_mapping(dim: int) -> Dict:
+def _default_scripting_text_mapping(
+    dim: int,
+    vector_field: str = "vector_field",
+) -> Dict:
     """For Painless Scripting or Script Scoring,the default mapping to create index."""
     return {
         "mappings": {
             "properties": {
-                "vector_field": {"type": "knn_vector", "dimension": dim},
+                vector_field: {"type": "knn_vector", "dimension": dim},
             }
         }
     }
@@ -106,13 +111,14 @@ def _default_text_mapping(
     ef_search: int = 512,
     ef_construction: int = 512,
     m: int = 16,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Approximate k-NN Search, this is the default mapping to create index."""
     return {
         "settings": {"index": {"knn": True, "knn.algo_param.ef_search": ef_search}},
         "mappings": {
             "properties": {
-                "vector_field": {
+                vector_field: {
                     "type": "knn_vector",
                     "dimension": dim,
                     "method": {
@@ -128,12 +134,15 @@ def _default_text_mapping(
 
 
 def _default_approximate_search_query(
-    query_vector: List[float], size: int = 4, k: int = 4
+    query_vector: List[float],
+    size: int = 4,
+    k: int = 4,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
         "size": size,
-        "query": {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+        "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
     }
 
 
@@ -141,6 +150,7 @@ def _default_script_query(
     query_vector: List[float],
     space_type: str = "l2",
     pre_filter: Dict = MATCH_ALL_QUERY,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Script Scoring Search, this is the default query."""
     return {
@@ -151,7 +161,7 @@ def _default_script_query(
                     "source": "knn_score",
                     "lang": "knn",
                     "params": {
-                        "field": "vector_field",
+                        "field": vector_field,
                         "query_value": query_vector,
                         "space_type": space_type,
                     },
@@ -161,10 +171,18 @@ def _default_script_query(
     }
 
 
-def __get_painless_scripting_source(space_type: str, query_vector: List[float]) -> str:
+def __get_painless_scripting_source(
+    space_type: str, query_vector: List[float], vector_field: str = "vector_field"
+) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = (
-        "(1.0 + " + space_type + "(" + str(query_vector) + ", doc['vector_field']))"
+        "(1.0 + "
+        + space_type
+        + "("
+        + str(query_vector)
+        + ", doc['"
+        + vector_field
+        + "']))"
     )
     if space_type == "cosineSimilarity":
         return source_value
@@ -176,6 +194,7 @@ def _default_painless_scripting_query(
     query_vector: List[float],
     space_type: str = "l2Squared",
     pre_filter: Dict = MATCH_ALL_QUERY,
+    vector_field: str = "vector_field",
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
     source = __get_painless_scripting_source(space_type, query_vector)
@@ -186,7 +205,7 @@ def _default_painless_scripting_query(
                 "script": {
                     "source": source,
                     "params": {
-                        "field": "vector_field",
+                        "field": vector_field,
                         "query_value": query_vector,
                     },
                 },
@@ -245,13 +264,26 @@ class OpenSearchVectorSearch(VectorStore):
 
         Returns:
             List of ids from adding the texts into the vectorstore.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
         """
-        embeddings = [
-            self.embedding_function.embed_documents([text])[0] for text in texts
-        ]
+        embeddings = self.embedding_function.embed_documents(list(texts))
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
+        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+        text_field = _get_kwargs_value(kwargs, "text_field", "text")
         return _bulk_ingest_embeddings(
-            self.client, self.index_name, embeddings, texts, metadatas
+            self.client,
+            self.index_name,
+            embeddings,
+            texts,
+            metadatas,
+            vector_field,
+            text_field,
         )
 
     def similarity_search(
@@ -269,8 +301,20 @@ class OpenSearchVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the query.
 
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
+
+            metadata_field: Document field that metadata is stored in. Defaults to
+            "metadata".
+            Can be set to a special value "*" to include the entire document.
+
         Optional Args for Approximate Search:
             search_type: "approximate_search"; default: "approximate_search"
+
             size: number of results the query actually returns; default: 4
 
         Optional Args for Script Scoring Search:
@@ -284,6 +328,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         Optional Args for Painless Scripting Search:
             search_type: "painless_scripting"; default: "approximate_search"
+
             space_type: "l2Squared", "l1Norm", "cosineSimilarity"; default: "l2Squared"
 
             pre_filter: script_score query to pre-filter documents before identifying
@@ -291,18 +336,25 @@ class OpenSearchVectorSearch(VectorStore):
         """
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
+        text_field = _get_kwargs_value(kwargs, "text_field", "text")
+        metadata_field = _get_kwargs_value(kwargs, "metadata_field", "metadata")
+        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
         if search_type == "approximate_search":
             size = _get_kwargs_value(kwargs, "size", 4)
-            search_query = _default_approximate_search_query(embedding, size, k)
+            search_query = _default_approximate_search_query(
+                embedding, size, k, vector_field
+            )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
-            search_query = _default_script_query(embedding, space_type, pre_filter)
+            search_query = _default_script_query(
+                embedding, space_type, pre_filter, vector_field
+            )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2Squared")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, space_type, pre_filter
+                embedding, space_type, pre_filter, vector_field
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
@@ -310,7 +362,13 @@ class OpenSearchVectorSearch(VectorStore):
         response = self.client.search(index=self.index_name, body=search_query)
         hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
         documents = [
-            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
+            Document(
+                page_content=hit[text_field],
+                metadata=hit
+                if metadata_field == "*" or metadata_field not in hit
+                else hit[metadata_field],
+            )
+            for hit in hits
         ]
         return documents
 
@@ -340,6 +398,13 @@ class OpenSearchVectorSearch(VectorStore):
         OpenSearch by default supports Approximate Search powered by nmslib, faiss
         and lucene engines recommended for large datasets. Also supports brute force
         search through Script Scoring and Painless Scripting.
+
+        Optional Args:
+            vector_field: Document field embeddings are stored in. Defaults to
+            "vector_field".
+
+            text_field: Document field the text of the document is stored in. Defaults
+            to "text".
 
         Optional Keyword Args for Approximate Search:
             engine: "nmslib", "faiss", "hnsw"; default: "nmslib"
@@ -373,6 +438,8 @@ class OpenSearchVectorSearch(VectorStore):
             kwargs, "index_name", "OPENSEARCH_INDEX_NAME", default=uuid.uuid4().hex
         )
         is_appx_search = _get_kwargs_value(kwargs, "is_appx_search", True)
+        vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+        text_field = _get_kwargs_value(kwargs, "text_field", "text")
         if is_appx_search:
             engine = _get_kwargs_value(kwargs, "engine", "nmslib")
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
@@ -381,11 +448,13 @@ class OpenSearchVectorSearch(VectorStore):
             m = _get_kwargs_value(kwargs, "m", 16)
 
             mapping = _default_text_mapping(
-                dim, engine, space_type, ef_search, ef_construction, m
+                dim, engine, space_type, ef_search, ef_construction, m, vector_field
             )
         else:
             mapping = _default_scripting_text_mapping(dim)
 
         client.indices.create(index=index_name, body=mapping)
-        _bulk_ingest_embeddings(client, index_name, embeddings, texts, metadatas)
+        _bulk_ingest_embeddings(
+            client, index_name, embeddings, texts, metadatas, vector_field, text_field
+        )
         return cls(opensearch_url, index_name, embedding)

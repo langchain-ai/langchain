@@ -5,6 +5,7 @@ from typing import Generator, Optional
 
 from langchain.callbacks.aim_callback import AimCallbackHandler
 from langchain.callbacks.base import (
+    AsyncCallbackManager,
     BaseCallbackHandler,
     BaseCallbackManager,
     CallbackManager,
@@ -13,6 +14,7 @@ from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
@@ -70,6 +72,7 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 __all__ = [
     "CallbackManager",
+    "AsyncCallbackManager",
     "OpenAICallbackHandler",
     "SharedCallbackManager",
     "StdOutCallbackHandler",
@@ -77,6 +80,7 @@ __all__ = [
     "WandbCallbackHandler",
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
+    "AsyncIteratorCallbackHandler",
     "get_openai_callback",
     "set_tracing_callback_manager",
     "set_default_callback_manager",

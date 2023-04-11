@@ -19,7 +19,7 @@ class AI21PenaltyData(BaseModel):
     applyToEmojis: bool = True
 
 
-class AI21(LLM, BaseModel):
+class AI21(LLM):
     """Wrapper around AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``

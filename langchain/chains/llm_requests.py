@@ -3,23 +3,23 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
 }
 
 
-class LLMRequestsChain(Chain, BaseModel):
+class LLMRequestsChain(Chain):
     """Chain that hits a URL and then uses an LLM to parse results."""
 
     llm_chain: LLMChain
-    requests_wrapper: RequestsWrapper = Field(
-        default_factory=RequestsWrapper, exclude=True
+    requests_wrapper: TextRequestsWrapper = Field(
+        default_factory=TextRequestsWrapper, exclude=True
     )
     text_length: int = 8000
     requests_key: str = "requests_result"  #: :meta private:
