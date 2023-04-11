@@ -1,8 +1,9 @@
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+import langchain
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -27,7 +28,9 @@ def import_comet_ml() -> Any:
     return comet_ml
 
 
-def _get_experiment(workspace: str = None, project_name: str = None) -> Any:
+def _get_experiment(
+    workspace: Optional[str] = None, project_name: Optional[str] = None
+) -> Any:
     comet_ml = import_comet_ml()
 
     experiment = comet_ml.config.get_global_experiment()
@@ -96,9 +99,9 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         project_name: Optional[str] = "comet-langchain-demo",
         tags: Optional[Sequence] = None,
         name: Optional[str] = None,
-        visualizations: Optional[str] = None,
+        visualizations: Optional[List[str]] = None,
         complexity_metrics: bool = False,
-        custom_metrics: Optional[callable] = None,
+        custom_metrics: Optional[Callable] = None,
         stream_logs: bool = True,
     ) -> None:
         """Initialize callback handler."""
@@ -348,7 +351,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.ends += 1
 
         resp = self._init_resp()
-        output = (finish.return_values["output"],)
+        output = finish.return_values["output"]
         log = finish.log
 
         resp.update({"action": "on_agent_finish", "log": log})
@@ -423,9 +426,9 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         project_name: Optional[str] = "comet-langchain-demo",
         tags: Optional[Sequence] = None,
         name: Optional[str] = None,
-        visualizations: Optional[str] = None,
+        visualizations: Optional[List[str]] = None,
         complexity_metrics: bool = False,
-        custom_metrics: Optional[callable] = None,
+        custom_metrics: Optional[Callable] = None,
         finish: bool = False,
         reset: bool = False,
     ) -> None:
@@ -487,14 +490,15 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     f" Could not save Langchain Asset for {langchain_asset.__class__.__name__}"
                 )
 
-    def _log_session(self, langchain_asset: Any = None):
+    def _log_session(self, langchain_asset: Optional[Any] = None) -> None:
         llm_session_df = self._create_session_analysis_dataframe(langchain_asset)
         # Log the cleaned dataframe as a table
         self.experiment.log_table(f"langchain-llm-session.csv", llm_session_df)
 
+        metadata = {"langchain_version": str(langchain.__version__)}
         # Log the langchain low-level records as a JSON file directly
         self.experiment.log_asset_data(
-            self.action_records, "langchain-action_records.json"
+            self.action_records, "langchain-action_records.json", metadata=metadata
         )
 
         self._log_visualizations(llm_session_df)
@@ -507,7 +511,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         for key, value in metrics_summary.items():
             self.experiment.log_metrics(value, prefix=key, step=step)
 
-    def _log_visualizations(self, session_df) -> None:
+    def _log_visualizations(self, session_df: Any) -> None:
         if not (self.visualizations and self.nlp):
             return
 
@@ -548,9 +552,9 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         project_name: Optional[str] = None,
         tags: Optional[Sequence] = None,
         name: Optional[str] = None,
-        visualizations: Optional[str] = None,
+        visualizations: Optional[List[str]] = None,
         complexity_metrics: bool = False,
-        custom_metrics: Optional[callable] = None,
+        custom_metrics: Optional[Callable] = None,
     ) -> None:
         _task_type = task_type if task_type else self.task_type
         _workspace = workspace if workspace else self.workspace
