@@ -9,7 +9,6 @@ from langchain.agents.agent import (
 )
 from langchain.agents.agent_toolkits import (
     create_csv_agent,
-    create_json_agent,
     create_openapi_agent,
     create_pandas_dataframe_agent,
     create_pbi_agent,
@@ -46,7 +45,7 @@ __all__ = [
     "load_agent",
     "create_sql_agent",
     "create_pbi_agent",
-    "create_json_agent",
+    "create_pbi_chat_agent" "create_json_agent",
     "create_openapi_agent",
     "create_vectorstore_router_agent",
     "create_vectorstore_agent",
