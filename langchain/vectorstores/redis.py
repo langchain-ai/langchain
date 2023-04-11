@@ -38,7 +38,7 @@ class Redis(VectorStore):
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
-        self.loop = kwargs.pop('loop', asyncio.new_event_loop())
+        self.loop = kwargs.pop('loop', asyncio.get_event_loop())
         self.embedding_function = embedding_function
         self.index_name = index_name
         self.client = client
@@ -417,7 +417,7 @@ class Redis(VectorStore):
                     redis_url="redis://username:password@localhost:6379"
                 )
         """
-        loop = asyncio.new_event_loop()
+        loop = asyncio.get_event_loop()
         keys = kwargs.pop("keys", None)
         # Setup Redis Index
         client, index_name = loop.run_until_complete(
@@ -485,7 +485,7 @@ class Redis(VectorStore):
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
-        loop = asyncio.new_event_loop()
+        loop = asyncio.get_event_loop()
         client = loop.run_until_complete(
             cls._load_redis_client(cls, index_name, **kwargs)
         )
