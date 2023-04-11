@@ -14,9 +14,13 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_PLANNER_PROMPT,
     API_PLANNER_TOOL_DESCRIPTION,
     API_PLANNER_TOOL_NAME,
+    PARSING_DELETE_PROMPT,
     PARSING_GET_PROMPT,
+    PARSING_PATCH_PROMPT,
     PARSING_POST_PROMPT,
+    REQUESTS_DELETE_TOOL_DESCRIPTION,
     REQUESTS_GET_TOOL_DESCRIPTION,
+    REQUESTS_PATCH_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
 )
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
@@ -81,6 +85,56 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.post(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_patch"
+    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_PATCH_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.patch(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_delete"
+    description = REQUESTS_DELETE_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_DELETE_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.delete(data["url"])
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -157,7 +211,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST)\s+(/\S+)*"
+        pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
