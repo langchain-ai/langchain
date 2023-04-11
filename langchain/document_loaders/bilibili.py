@@ -19,8 +19,8 @@ class BiliBiliLoader(BaseLoader):
         results = []
         for url in self.video_urls:
             transcript, video_info = self._get_bilibili_subs_and_info(url)
-            results.append(
-                Document(page_content=transcript, metadata=video_info))
+            doc = Document(page_content=transcript, metadata=video_info)
+            results.append(doc)
 
         return results
 
@@ -64,8 +64,7 @@ class BiliBiliLoader(BaseLoader):
             sub_url = sub_list[0]["subtitle_url"]
             result = requests.get(sub_url)
             raw_sub_titles = json.loads(result.content)["body"]
-            raw_transcript = " ".join(
-                [c["content"] for c in raw_sub_titles])
+            raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
 
             raw_transcript_with_meta_info = f"""
                 Video Title: {video_info['title']},
