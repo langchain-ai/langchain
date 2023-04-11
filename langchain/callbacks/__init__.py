@@ -15,6 +15,7 @@ from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
+from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 
 
 def get_callback_manager() -> BaseCallbackManager:
@@ -75,6 +76,7 @@ __all__ = [
     "AimCallbackHandler",
     "WandbCallbackHandler",
     "ClearMLCallbackHandler",
+    "CometCallbackHandler",
     "get_openai_callback",
     "set_tracing_callback_manager",
     "set_default_callback_manager",
