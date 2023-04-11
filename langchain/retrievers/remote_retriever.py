@@ -20,7 +20,12 @@ class RemoteLangChainRetriever(BaseRetriever, BaseModel):
             self.url, json={self.input_key: query}, headers=self.headers
         )
         result = response.json()
-        return [Document(page_content=r[self.page_content_key], metadata=r[self.metadata_key]) for r in result[self.response_key]]
+        return [
+            Document(
+                page_content=r[self.page_content_key], metadata=r[self.metadata_key]
+            )
+            for r in result[self.response_key]
+        ]
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         async with aiohttp.ClientSession() as session:
@@ -28,4 +33,9 @@ class RemoteLangChainRetriever(BaseRetriever, BaseModel):
                 "POST", self.url, headers=self.headers, json={self.input_key: query}
             ) as response:
                 result = await response.json()
-        return [Document(page_content=r[self.page_content_key], metadata=r[self.metadata_key]) for r in result[self.response_key]]
+        return [
+            Document(
+                page_content=r[self.page_content_key], metadata=r[self.metadata_key]
+            )
+            for r in result[self.response_key]
+        ]
