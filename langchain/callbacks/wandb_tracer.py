@@ -94,7 +94,7 @@ class WandbTracer(SharedTracer):
         cls,
         run_args: Optional[WandbRunArgs] = None,
         additional_handlers: list["BaseCallbackHandler"] = [],
-    ) -> "WandbTracer":
+    ) -> None:
         """Sets up a WandbTracer and makes it the default handler. To use W&B to
         monitor all LangChain activity, simply call this function at the top of
         the notebook or script:
@@ -124,7 +124,6 @@ class WandbTracer(SharedTracer):
         tracer.load_session("")
         manager = get_callback_manager()
         manager.set_handlers([tracer] + additional_handlers)
-        return tracer
 
     @staticmethod
     def stop_watch() -> None:
