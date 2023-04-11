@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 
@@ -270,7 +270,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Chroma],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -308,7 +308,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[Chroma],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
