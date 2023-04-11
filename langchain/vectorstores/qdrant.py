@@ -1,7 +1,7 @@
 """Wrapper around Qdrant vector database."""
 import uuid
 from operator import itemgetter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -155,7 +155,8 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -217,7 +218,8 @@ class Qdrant(VectorStore):
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:
-                If true - use gPRC interface whenever possible in custom methods. Default: False
+                If true - use gPRC interface whenever possible in custom methods.
+                Default: False
             https: If true - use HTTPS(SSL) protocol. Default: None
             api_key: API key for authentication in Qdrant Cloud. Default: None
             prefix:
@@ -238,17 +240,21 @@ class Qdrant(VectorStore):
                 Name of the Qdrant collection to be used. If not provided,
                 it will be created randomly. Default: None
             distance_func:
-                Distance function. One of: "Cosine" / "Euclid" / "Dot". Default: "Cosine"
+                Distance function. One of: "Cosine" / "Euclid" / "Dot".
+                Default: "Cosine"
             content_payload_key:
-                A payload key used to store the content of the document. Default: "page_content"
+                A payload key used to store the content of the document.
+                Default: "page_content"
             metadata_payload_key:
-                A payload key used to store the metadata of the document. Default: "metadata"
+                A payload key used to store the metadata of the document.
+                Default: "metadata"
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
         This is a user friendly interface that:
             1. Creates embeddings, one for each text
-            2. Initializes the Qdrant database as an in-memory docstore by default (and is overridable to be a remote docstore)
+            2. Initializes the Qdrant database as an in-memory docstore by default
+               (and overridable to a remote docstore)
             3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
