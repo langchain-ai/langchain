@@ -5,6 +5,7 @@ from langchain.retrievers.pinecone_hybrid_search import PineconeHybridSearchRetr
 from langchain.retrievers.remote_retriever import RemoteLangChainRetriever
 from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.databerry import DataberryRetriever
 
 __all__ = [
     "ChatGPTPluginRetriever",
@@ -14,4 +15,5 @@ __all__ = [
     "ElasticSearchBM25Retriever",
     "TFIDFRetriever",
     "WeaviateHybridSearchRetriever",
+    "DataberryRetriever"
 ]
