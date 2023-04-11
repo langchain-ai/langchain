@@ -1,5 +1,5 @@
-import re
 import json
+import re
 import warnings
 from typing import List, Tuple
 
@@ -19,7 +19,8 @@ class BiliBiliLoader(BaseLoader):
         results = []
         for url in self.video_urls:
             transcript, video_info = self._get_bilibili_subs_and_info(url)
-            results.append(Document(page_content=transcript, metadata=video_info))
+            results.append(
+                Document(page_content=transcript, metadata=video_info))
 
         return results
 
@@ -63,13 +64,21 @@ class BiliBiliLoader(BaseLoader):
             sub_url = sub_list[0]["subtitle_url"]
             result = requests.get(sub_url)
             raw_sub_titles = json.loads(result.content)["body"]
-            raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
+            raw_transcript = " ".join(
+                [c["content"] for c in raw_sub_titles])
 
-            raw_transcript_with_meta_info = f"Video Title: {video_info['title']}, description: {video_info['desc']}\nTranscript: {raw_transcript}"
+            raw_transcript_with_meta_info = f"""
+                Video Title: {video_info['title']},
+                description: {video_info['desc']}\n
+                Transcript: {raw_transcript}
+                """
             return raw_transcript_with_meta_info, video_info
         else:
             raw_transcript = ""
             warnings.warn(
-                f"No subtitles found for video: {url}. Return Empty transcript."
+                f"""
+                No subtitles found for video: {url}.
+                Return Empty transcript.
+                """
             )
             return raw_transcript, video_info
