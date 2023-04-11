@@ -183,7 +183,7 @@ class WandbTracer(SharedTracer):
 
     def _log_trace(self, model_trace: "LangChainModelTrace") -> None:
         if self._run:
-            self._run({"_langchain_model_trace": model_trace})
+            self._run.log({"_langchain_model_trace": model_trace})
 
     ###  Start of required methods
     @property
@@ -202,7 +202,7 @@ class WandbTracer(SharedTracer):
 
         self._log_trace(
             LangChainModelTrace(
-                trace_dict=_convert_langchain_schema_to_wandb(run),
+                trace_span=_convert_lc_run_to_wb_span(run),
                 model_dict=_safe_maybe_model_dict(_get_span_producing_object(run)),
             )
         )
@@ -238,22 +238,23 @@ def _get_span_producing_object(run: "BaseRun") -> Any:
     return run.serialized.get("_self")
 
 
-def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
+def _convert_lc_run_to_wb_span(run: "BaseRun") -> "BaseRunSpan":
     import_wandb()
     from wandb.integration.langchain.schema import (
         BaseRunSpan,
+        ChainRunSpan,
         LLMResponse,
-        chain_run_span,
-        llm_run_span,
-        tool_run_span,
+        LLMRunSpan,
+        ToolRunSpan,
     )
 
     if isinstance(run, LLMRun):
-        return llm_run_span(
+        return LLMRunSpan(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
             execution_order=run.execution_order,
+            extra=run.extra,
             session_id=run.session_id,
             error=run.error,
             span_component_name=run.serialized.get("name"),
@@ -269,30 +270,32 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
                 )
                 for ndx, prompt in enumerate(run.prompts)
             ],
+            llm_output=run.response.llm_output if run.response is not None else None,
         )
     elif isinstance(run, ChainRun):
-        return chain_run_span(
+        return ChainRunSpan(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
             execution_order=run.execution_order,
             session_id=run.session_id,
+            extra=run.extra,
             error=run.error,
             span_component_name=run.serialized.get("name"),
             inputs=run.inputs,
             outputs=run.outputs,
             child_runs=[
-                _convert_langchain_schema_to_wandb(child_run)
-                for child_run in run.child_runs
+                _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
             ],
             is_agent=isinstance(_get_span_producing_object(run), BaseSingleActionAgent),
         )
     elif isinstance(run, ToolRun):
-        return tool_run_span(
+        return ToolRunSpan(
             id=run.id,
             start_time=run.start_time,
             end_time=run.end_time,
             execution_order=run.execution_order,
+            extra=run.extra,
             session_id=run.session_id,
             error=run.error,
             span_component_name=run.serialized.get("name"),
@@ -300,8 +303,7 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             output=run.output,
             action=run.action,
             child_runs=[
-                _convert_langchain_schema_to_wandb(child_run)
-                for child_run in run.child_runs
+                _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
             ],
         )
     else:
@@ -313,6 +315,8 @@ def _convert_langchain_schema_to_wandb(run: "BaseRun") -> "BaseRunSpan":
             session_id=run.session_id,
             error=run.error,
             span_component_name=run.serialized.get("name"),
+            span_type=None,
+            extra=None,
         )
 
 
