@@ -58,6 +58,7 @@ psycopg2-binary = {version = "^2.9.5", optional = true}
 #boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
+gptcache = {version = ">=0.1.7", optional = true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
