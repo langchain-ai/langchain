@@ -1,10 +1,6 @@
 import json
 import logging
-from typing import List, Optional
-
-import psycopg
-from psycopg.rows import dict_row
-from psycopg import sql
+from typing import List
 
 from langchain.schema import (
     AIMessage,
@@ -17,14 +13,19 @@ from langchain.schema import (
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost/chat_history"
+
 
 class PostgresChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         session_id: str,
-        connection_string: str = "postgresql://postgres:mypassword@localhost/chat_history",
+        connection_string: str = DEFAULT_CONNECTION_STRING,
         table_name: str = "message_store",
     ):
+        import psycopg
+        from psycopg.rows import dict_row
+
         try:
             self.connection = psycopg.connect(connection_string)
             self.cursor = self.connection.cursor(row_factory=dict_row)
@@ -62,10 +63,14 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in PostgreSQL"""
-        query = sql.SQL(
-            "INSERT INTO {} (session_id, message) VALUES (%s, %s);"
-        ).format(sql.Identifier(self.table_name))
-        self.cursor.execute(query, (self.session_id, json.dumps(_message_to_dict(message))))
+        from psycopg import sql
+
+        query = sql.SQL("INSERT INTO {} (session_id, message) VALUES (%s, %s);").format(
+            sql.Identifier(self.table_name)
+        )
+        self.cursor.execute(
+            query, (self.session_id, json.dumps(_message_to_dict(message)))
+        )
         self.connection.commit()
 
     def clear(self) -> None:
