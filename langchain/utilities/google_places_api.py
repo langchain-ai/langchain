@@ -1,12 +1,11 @@
 """Chain that calls Google Places API.
-
 """
 
 import os
 import sys
+import logging
 from typing import Any, Dict, Optional, Tuple
 
-import aiohttp
 from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -16,7 +15,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     To use, you should have the ``googlemaps`` python package installed, **an API key for the google maps platform**, and the enviroment variable ''GPLACES_API_KEY'' set with your API key , or pass 'gplaces_api_key' as a named parameter to the constructor. 
 
-   By default, this will return the contact for the top-l results of an input search.
+    By default, this will return the all the results on the input query. You can use the top_k_results argument to limit the number of results.
 
     Example:
         .. code-block:: python
@@ -58,28 +57,23 @@ class GooglePlacesAPIWrapper(BaseModel):
     def run(self, query:str) -> str:
         """Run Places search and get k number of places that exists that match the description"""
         search_results = self.google_map_client.places(query)['results']
-        search_results_len = len(search_results)
+        num_to_return = len(search_results)
 
         places = []
 
-        if search_results_len == 0:
+        if num_to_return == 0:
             return "Google Places did not find any places that match the description"
 
-        if self.top_k_results is None:
-            for result in search_results:
-                details = self.fetch_place_details(result['place_id'])
+        num_to_return = num_to_return if self.top_k_results is None else min(num_to_return, self.top_k_results)
 
-                if details is not None:
-                    places.append(details)
-        else:
-            for i in range(min(search_results_len, self.top_k_results)):
-                result = search_results[i]
-                details = self.fetch_place_details(result['place_id'])
+        for i in range(num_to_return):
+            result = search_results[i]
+            details = self.fetch_place_details(result['place_id'])
 
-                if details is not None:
-                    places.append(details)
-
-        return "".join([f'{i+1}. {item}' for i, item in enumerate(places)])
+            if details is not None:
+                places.append(details)
+                
+        return "\n".join([f'{i+1}. {item}' for i, item in enumerate(places)])
 
     def fetch_place_details(self, place_id: str) -> Optional[str]:
         try:
@@ -87,10 +81,10 @@ class GooglePlacesAPIWrapper(BaseModel):
             formatted_details = self.format_place_details(place_details)
             return formatted_details
         except Exception as e:
-            print(f'An Error occured while fetching place details: {e}')
+            logging.error(f'An Error occured while fetching place details: {e}')
             return None
 
-    def format_place_details(self, place_details: str) -> Optional[str]:
+    def format_place_details(self, place_details: Dict[str,any]) -> Optional[str]:
         try:
             name = place_details.get('result', {}).get('name', 'Unkown')
             address = place_details.get('result', {}).get('formatted_address', 'Unknown')
@@ -101,7 +95,7 @@ class GooglePlacesAPIWrapper(BaseModel):
             formatted_details = f"{name}\nAddress: {address}\nPhone: {phone_number}\nWebsite: {website}\n\n"
             return formatted_details
         except Exception as e:
-            print(f'An error occurred while formatting place details: {e}')
+            logging.error(f'An error occurred while formatting place details: {e}')
             return None
 
 
