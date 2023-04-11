@@ -1,17 +1,9 @@
 """Wrapper around Qdrant vector database."""
+from __future__ import annotations
+
 import uuid
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -188,7 +180,7 @@ class Qdrant(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type["Qdrant"],
+        cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -208,7 +200,7 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
-    ) -> "Qdrant":
+    ) -> Qdrant:
         """Construct Qdrant wrapper from raw documents.
 
         Args:
