@@ -28,7 +28,7 @@ class WhatsAppChatLoader(BaseLoader):
 
         for line in lines:
             result = re.match(
-                r"(\d{1,2}/\d{1,2}/\d{2,4}, \d{1,2}:\d{1,2}(?: AM| PM)?) - (.*?): (.*)",
+                r"(\d{1,2}/\d{1,2}/\d{2,4}, \d{1,2}:\d{1,2}[ _]?(?:AM|PM)?) - (.*?): (.*)",
                 line.strip(),
             )
             if result:
