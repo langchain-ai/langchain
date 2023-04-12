@@ -361,16 +361,18 @@ class Agent(BaseSingleActionAgent):
         return thoughts
 
     def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
-        full_output = self.llm_chain.predict(**full_inputs)
-        parsed_output = self._extract_tool_and_input(full_output)
-        fix_attempts = 0
-        while parsed_output is None or fix_attempts > 5:
-            full_output = self._fix_text(full_output)
-            full_inputs["agent_scratchpad"] += full_output
-            output = self.llm_chain.predict(**full_inputs)
-            full_output += output
+        """Get the next action, by calling the LLM, and parsing the output."""
+        attempts = 0
+        parsed_output = None
+        full_output = ""
+        while attempts < 5:
+            full_output = self.llm_chain.predict(**full_inputs)
             parsed_output = self._extract_tool_and_input(full_output)
-            fix_attempts += 1
+            if parsed_output is not None:
+                break
+            new_input = self._fix_text(full_output)
+            full_inputs["agent_scratchpad"] += new_input
+            attempts += 1
         if parsed_output is None:
             raise ValueError(f"Could not parse output: {full_output}")
         return AgentAction(
@@ -378,14 +380,19 @@ class Agent(BaseSingleActionAgent):
         )
 
     async def _aget_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
-        full_output = await self.llm_chain.apredict(**full_inputs)
-        parsed_output = self._extract_tool_and_input(full_output)
-        while parsed_output is None:
-            full_output = self._fix_text(full_output)
-            full_inputs["agent_scratchpad"] += full_output
-            output = await self.llm_chain.apredict(**full_inputs)
-            full_output += output
+        attempts = 0
+        parsed_output = None
+        full_output = ""
+        while attempts < 5:
+            full_output = await self.llm_chain.apredict(**full_inputs)
             parsed_output = self._extract_tool_and_input(full_output)
+            if parsed_output is not None:
+                break
+            new_input = self._fix_text(full_output)
+            full_inputs["agent_scratchpad"] += new_input
+            attempts += 1
+        if parsed_output is None:
+            raise ValueError(f"Could not parse output: {full_output}")
         return AgentAction(
             tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
         )
