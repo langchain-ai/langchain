@@ -56,9 +56,7 @@ class ZapierNLAWrapper(BaseModel):
 
         if self.zapier_nla_oauth_access_token:
             session.headers.update(
-                {
-                    "Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"
-                }
+                {"Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"}
             )
         else:
             session.params = {"api_key": self.zapier_nla_api_key}
@@ -98,7 +96,7 @@ class ZapierNLAWrapper(BaseModel):
             values,
             "zapier_nla_api_key",
             "ZAPIER_NLA_API_KEY",
-            zapier_nla_api_key_default
+            zapier_nla_api_key_default,
         )
 
         values["zapier_nla_api_key"] = zapier_nla_api_key
