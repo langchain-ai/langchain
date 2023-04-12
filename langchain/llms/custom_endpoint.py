@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class HuggingFaceEndpoint(LLM):
+class CustomEndpoint(LLM):
     """Wrapper around HuggingFaceHub Inference Endpoints.
 
     Only supports `text-generation` and `text2text-generation` for now.
