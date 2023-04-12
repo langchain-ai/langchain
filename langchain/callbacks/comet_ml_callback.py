@@ -619,8 +619,3 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             return {}
 
         return llm_parameters
-
-    @property
-    def always_verbose(self) -> bool:
-        """Whether to call verbose callbacks even if verbose is False."""
-        return True
