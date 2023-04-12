@@ -2,6 +2,8 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+import asyncio
+from functools import partial
 from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
@@ -56,7 +58,7 @@ class CustomEndpoint(LLM):
         return "huggingface_endpoint"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Call out to HuggingFace Hub's inference endpoint.
+        """Call out to custom inference endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -107,3 +109,13 @@ class CustomEndpoint(LLM):
             # stop tokens when making calls to huggingface_hub.
             text = enforce_stop_tokens(text, stop)
         return text
+        
+    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        """Call out to custom inference endpoint."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self._call, prompt, stop)
+        return await asyncio.get_event_loop().run_in_executor(None, func)        
+        
