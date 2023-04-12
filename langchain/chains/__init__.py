@@ -12,6 +12,7 @@ from langchain.chains.pal.base import PALChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain.chains.llm_google_calendar.base import LLMGoogleCalendarChain
 from langchain.chains.sql_database.base import (
     SQLDatabaseChain,
     SQLDatabaseSequentialChain,
@@ -39,4 +40,5 @@ __all__ = [
     "MapReduceChain",
     "OpenAIModerationChain",
     "SQLDatabaseSequentialChain",
+    "LLMGoogleCalendarChain",
 ]
