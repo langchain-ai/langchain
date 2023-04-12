@@ -156,7 +156,6 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         metadata = self._init_resp()
         metadata.update({"action": "on_llm_start"})
-        print("SERIALIZED", serialized)
         metadata.update(flatten_dict(serialized))
         metadata.update(self.get_custom_callback_meta())
 
