@@ -84,12 +84,12 @@ class GooglePlacesAPIWrapper(BaseModel):
             logging.error(f'An Error occured while fetching place details: {e}')
             return None
 
-    def format_place_details(self, place_details: Dict[str,any]) -> Optional[str]:
+    def format_place_details(self, place_details: Dict[str,Any]) -> Optional[str]:
         try:
             name = place_details.get('result', {}).get('name', 'Unkown')
             address = place_details.get('result', {}).get('formatted_address', 'Unknown')
-            phone_number = place_details.get('results', {}).get('formatted_phone_number', 'Unknown')
-            website = place_details.get('results', {}).get('website', 'Unknown')
+            phone_number = place_details.get('result', {}).get('formatted_phone_number', 'Unknown')
+            website = place_details.get('result', {}).get('website', 'Unknown')
 
 
             formatted_details = f"{name}\nAddress: {address}\nPhone: {phone_number}\nWebsite: {website}\n\n"
