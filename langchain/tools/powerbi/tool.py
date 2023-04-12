@@ -34,8 +34,10 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     description = """
     Input to this tool is a detailed and correct DAX query, output is a result from the dataset.
     If the query is not correct, an error message will be returned. 
-    If an error is returned with Bad request in it, rewrite the query, check the query, and try again.
+    If an error is returned with Bad request in it, rewrite the query and try again.
     If an error is returned with Unauthorized in it, do not try again, but tell the user to change their authentication.
+
+    Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
     """
 
     def _run(self, tool_input: str) -> str:
@@ -44,7 +46,7 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
             result = self.powerbi.run(command=tool_input)
         except Exception as exc:  # pylint: disable=broad-except
             if "bad request" in str(exc).lower():
-                return "Bad request. Try rewriting the query and retrying then."
+                return "Bad request. Try a different query."
             if "unauthorized" in str(exc).lower():
                 return "Unauthorized. Try changing your authentication, do not retry."
             return str(exc)
@@ -106,7 +108,9 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     )
     name = "question_to_query_powerbi"
     description = """
-    Use this tool to create the DAX query from the question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
+    Use this tool to create the DAX query from a question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
+
+    Example Input: "How many records are in table1?"
     """
 
     @validator("llm_chain")

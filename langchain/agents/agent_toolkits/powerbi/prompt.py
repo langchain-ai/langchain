@@ -29,7 +29,7 @@ Given an input question, create a syntactically correct DAX query to run, then l
 
 Overall, Assistant is a powerful system that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.
 
-Usually I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a nice sentence that answers the question.
+Usually I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a nice sentence that answers the question. If you receive an error back that mentions that the query was wrong try to phrase the question differently and get a new query from the question to query tool.
 """
 
 POWERBI_CHAT_SUFFIX = """TOOLS
