@@ -99,6 +99,16 @@ class BaseSingleActionAgent(BaseModel):
                 f"Got unsupported early_stopping_method `{early_stopping_method}`"
             )
 
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
+    ) -> BaseSingleActionAgent:
+        raise NotImplementedError
+
     @property
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
