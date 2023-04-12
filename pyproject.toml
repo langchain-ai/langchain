@@ -28,7 +28,7 @@ spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
-torch = {version = "^2", optional = true}
+torch = {version = "^1", optional = true}
 jinja2 = {version = "^3", optional = true}
 tiktoken = {version = "^0.3.2", optional = true, python="^3.9"}
 pinecone-client = {version = "^2", optional = true}
@@ -100,7 +100,7 @@ pgvector = "^0.1.6"
 transformers = "^4.27.4"
 pandas = "^2.0.0"
 deeplake = "^3.2.21"
-torch = "^2.0.0"
+torch = "^1.0.0"
 chromadb = "^0.3.21"
 tiktoken = "^0.3.3"
 
