@@ -371,6 +371,8 @@ class Agent(BaseSingleActionAgent):
             full_output += output
             parsed_output = self._extract_tool_and_input(full_output)
             fix_attempts += 1
+        if parsed_output is None:
+            raise ValueError(f"Could not parse output: {full_output}")
         return AgentAction(
             tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
         )
