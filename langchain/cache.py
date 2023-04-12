@@ -1,7 +1,7 @@
 """Beta Feature: base interface for cache."""
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -146,8 +146,8 @@ class GPTCache(BaseCache):
     def __init__(self, init_func: Callable[[Any], None]):
         """Initialize by passing in the `init` GPTCache func
 
-        :param init_func: init `GPTCache` function
-        :type init_func:  Callable[[Any], None]
+        Args:
+            init_func (Callable[[Any], None]): init `GPTCache` function
 
         Example:
         .. code-block:: python
@@ -156,7 +156,8 @@ class GPTCache(BaseCache):
             from gptcache.processor.pre import get_prompt
             from gptcache.manager.factory import get_data_manager
 
-            # Avoid multiple caches using the same file, causing different llm model caches to affect each other
+            # Avoid multiple caches using the same file,
+            causing different llm model caches to affect each other
             i = 0
             file_prefix = "data_map"
 
@@ -173,7 +174,7 @@ class GPTCache(BaseCache):
 
         """
         try:
-            import gptcache
+            import gptcache  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import gptcache python package. "
@@ -183,22 +184,26 @@ class GPTCache(BaseCache):
         self.gptcache_dict: Dict[str, Any] = {}
 
     @staticmethod
-    def _update_cache_callback_none(_, __) -> None:
-        """When updating cached data, do nothing, because currently only cached queries are processed"""
+    def _update_cache_callback_none(*_: Any, **__: Any) -> None:
+        """When updating cached data, do nothing.
+
+        Because currently only cached queries are processed."""
         return None
 
     @staticmethod
-    def _llm_handle_none(*_, **__) -> None:
+    def _llm_handle_none(*_: Any, **__: Any) -> None:
         """Do nothing on a cache miss"""
         return None
 
     @staticmethod
-    def _cache_data_converter(data) -> RETURN_VAL_TYPE:
-        """Convert the `data` in the cache to the `RETURN_VAL_TYPE` data format"""
+    def _cache_data_converter(data: str) -> RETURN_VAL_TYPE:
+        """Convert the `data` in the cache to the `RETURN_VAL_TYPE` data format."""
         return [Generation(**generation_dict) for generation_dict in json.loads(data)]
 
     def _get_gptcache(self, llm_string: str) -> Any:
-        """Get a cache object. When the corresponding llm model cache does not exist, it will be created """
+        """Get a cache object.
+
+        When the corresponding llm model cache does not exist, it will be created."""
         from gptcache import Cache
 
         _gptcache = self.gptcache_dict.get(llm_string, None)
@@ -244,7 +249,7 @@ class GPTCache(BaseCache):
 
         _gptcache = self._get_gptcache(llm_string)
 
-        def llm_handle(*_, **__) -> RETURN_VAL_TYPE:
+        def llm_handle(*_: Any, **__: Any) -> RETURN_VAL_TYPE:
             return return_val
 
         return adapt(

@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 import langchain
@@ -7,7 +8,7 @@ from langchain.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 try:
-    import gptcache
+    import gptcache  # noqa: F401
 
     gptcache_installed = True
 except ImportError:
@@ -19,13 +20,13 @@ def test_gptcache_map_caching() -> None:
     """Test gptcache caching behavior."""
 
     from gptcache import Cache
-    from gptcache.processor.pre import get_prompt
     from gptcache.manager.factory import get_data_manager
+    from gptcache.processor.pre import get_prompt
 
     i = 0
     file_prefix = "data_map"
 
-    def init_gptcache_map(cache_obj: Cache):
+    def init_gptcache_map(cache_obj: Cache) -> None:
         nonlocal i
         cache_path = f"{file_prefix}_{i}.txt"
         if os.path.isfile(cache_path):
