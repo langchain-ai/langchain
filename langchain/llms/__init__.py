@@ -13,6 +13,7 @@ from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain.llms.custom_endpoint import CustomEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.llamacpp import LlamaCpp
@@ -46,6 +47,7 @@ __all__ = [
     "OpenAIChat",
     "Petals",
     "HuggingFaceEndpoint",
+    "CustomEndpoint",
     "HuggingFaceHub",
     "SagemakerEndpoint",
     "HuggingFacePipeline",
@@ -74,6 +76,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,
     "huggingface_endpoint": HuggingFaceEndpoint,
+    "custom_endpoint": CustomEndpoint,
     "llamacpp": LlamaCpp,
     "modal": Modal,
     "sagemaker_endpoint": SagemakerEndpoint,
