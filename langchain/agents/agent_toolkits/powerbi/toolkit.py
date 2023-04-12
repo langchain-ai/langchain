@@ -9,12 +9,11 @@ from langchain.powerbi import PowerBIDataset
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.tools import BaseTool
-from langchain.tools.powerbi.prompt import QUERY_CHECKER, QUESTION_TO_QUERY
+from langchain.tools.powerbi.prompt import QUESTION_TO_QUERY
 from langchain.tools.powerbi.tool import (
     InfoPowerBITool,
     InputToQueryTool,
     ListPowerBITool,
-    QueryCheckerTool,
     QueryPowerBITool,
 )
 
@@ -35,25 +34,16 @@ class PowerBIToolkit(BaseToolkit):
         if self.llm is None:
             pass
         return [
-            QueryPowerBITool(powerbi=self.powerbi),
-            InfoPowerBITool(powerbi=self.powerbi),
-            ListPowerBITool(powerbi=self.powerbi),
-            QueryCheckerTool(
-                powerbi=self.powerbi,
-                llm_chain=LLMChain(
-                    llm=self.llm,
-                    prompt=PromptTemplate(
-                        template=QUERY_CHECKER, input_variables=["tool_input"]
-                    ),
-                ),
-            ),
-            InputToQueryTool(
+            QueryPowerBITool(powerbi=self.powerbi),  # type: ignore
+            InfoPowerBITool(powerbi=self.powerbi),  # type: ignore
+            ListPowerBITool(powerbi=self.powerbi),  # type: ignore
+            InputToQueryTool(  # type: ignore
                 powerbi=self.powerbi,
                 llm_chain=LLMChain(
                     llm=self.llm,
                     prompt=PromptTemplate(
                         template=QUESTION_TO_QUERY,
-                        input_variables=["tool_input", "tables", "schemas"],
+                        input_variables=["tool_input", "tables", "schemas", "examples"],
                     ),
                 ),
             ),

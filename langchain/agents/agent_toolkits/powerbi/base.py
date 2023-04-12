@@ -12,11 +12,13 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
+from langchain.powerbi import PowerBIDataset
 
 
 def create_pbi_agent(
     llm: BaseLLM,
-    toolkit: PowerBIToolkit,
+    toolkit: PowerBIToolkit | None,
+    powerbi: PowerBIDataset | None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
     suffix: str = POWERBI_SUFFIX,
@@ -27,6 +29,10 @@ def create_pbi_agent(
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
+    if toolkit is None:
+        if powerbi is None:
+            raise ValueError("Must provide either a toolkit or powerbi dataset")
+        toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm)
     tools = toolkit.get_tools()
     prefix = prefix.format(top_k=top_k)
     prompt = ZeroShotAgent.create_prompt(

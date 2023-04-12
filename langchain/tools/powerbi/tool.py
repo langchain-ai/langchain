@@ -7,7 +7,10 @@ from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.powerbi import PowerBIDataset
 from langchain.tools.base import BaseTool
-from langchain.tools.powerbi.prompt import QUERY_CHECKER, QUESTION_TO_QUERY
+from langchain.tools.powerbi.prompt import (
+    QUESTION_TO_QUERY,
+    DEFAULT_FEWSHOT_EXAMPLES,
+)
 
 
 class BasePowerBIDatabaseTool(BaseModel):
@@ -91,12 +94,13 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUESTION_TO_QUERY
+    examples: str = DEFAULT_FEWSHOT_EXAMPLES
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
             llm=OpenAI(temperature=0),  # type: ignore
             prompt=PromptTemplate(
                 template=QUESTION_TO_QUERY,
-                input_variables=["tool_input", "tables", "schemas"],
+                input_variables=["tool_input", "tables", "schemas", "examples"],
             ),
         )
     )
@@ -110,9 +114,14 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
         cls, llm_chain: LLMChain
     ) -> LLMChain:
         """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != ["tool_input", "tables", "schemas"]:
+        if llm_chain.prompt.input_variables != [
+            "tool_input",
+            "tables",
+            "schemas",
+            "examples",
+        ]:
             raise ValueError(
-                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas']"  # noqa: C0301 # pylint: disable=C0301
+                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 # pylint: disable=C0301
             )
         return llm_chain
 
@@ -122,6 +131,7 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
             tool_input=tool_input,
             tables=self.powerbi.get_table_names(),
             schemas=self.powerbi.get_schemas(),
+            examples=self.examples,
         )
 
     async def _arun(self, tool_input: str) -> str:
@@ -129,41 +139,5 @@ class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
             tool_input=tool_input,
             tables=self.powerbi.get_table_names(),
             schemas=self.powerbi.get_schemas(),
+            examples=self.examples,
         )
-
-
-class QueryCheckerTool(BasePowerBIDatabaseTool, BaseTool):
-    """Use an LLM to create the query.
-    Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
-
-    template: str = QUERY_CHECKER
-    llm_chain: LLMChain = Field(
-        default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),  # type: ignore
-            prompt=PromptTemplate(
-                template=QUERY_CHECKER, input_variables=["tool_input"]
-            ),
-        )
-    )
-    name = "query_checker_powerbi"
-    description = """
-    Use this tool to double check if your query is correct when you get an error back.
-    """
-
-    @validator("llm_chain")
-    def validate_llm_chain_input_variables(  # pylint: disable=E0213
-        cls, llm_chain: LLMChain
-    ) -> LLMChain:
-        """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != ["tool_input"]:
-            raise ValueError(
-                "LLM chain for QueryCheckerTool must have input variables ['tool_input']"
-            )
-        return llm_chain
-
-    def _run(self, tool_input: str) -> str:
-        """Use the LLM to check the query."""
-        return self.llm_chain.predict(tool_input=tool_input)
-
-    async def _arun(self, tool_input: str) -> str:
-        return await self.llm_chain.apredict(tool_input=tool_input)
