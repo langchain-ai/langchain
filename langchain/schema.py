@@ -1,6 +1,8 @@
 """Common schema objects."""
 from __future__ import annotations
 
+import asyncio
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, NamedTuple, Optional
 
@@ -296,7 +298,8 @@ class Document(BaseModel):
 
     page_content: str
     metadata: dict = Field(default_factory=dict)
-
+    
+    
 
 class BaseRetriever(ABC):
     @abstractmethod
@@ -392,7 +395,10 @@ class OutputParserException(Exception):
     pass
 
 
-class BaseDocumentProcessor(ABC):
+class BaseOutputParserConfig(BaseModel, ABC):
+    """Base class for output parser configs."""
+
     @abstractmethod
-    def process(self, documents: List[Document]) -> List[Document]:
-        """Process documents."""
+    def get_output_parser(self) -> BaseOutputParser:
+        """Return an output parser instance."""
+
