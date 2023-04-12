@@ -6,6 +6,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.conversational_chat.prompt import (
+    FIX_RESPONSE,
     FORMAT_INSTRUCTIONS,
     PREFIX,
     SUFFIX,
@@ -71,6 +72,9 @@ class ConversationalChatAgent(Agent):
         """Prefix to append the llm call with."""
         return "Thought:"
 
+    def _fix_text(self, text: str) -> str:
+        return FIX_RESPONSE
+
     @classmethod
     def create_prompt(
         cls,
@@ -106,7 +110,7 @@ class ConversationalChatAgent(Agent):
             response = self.output_parser.parse(llm_output)
             return response["action"], response["action_input"]
         except Exception:
-            raise ValueError(f"Could not parse LLM output: {llm_output}")
+            return None
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
