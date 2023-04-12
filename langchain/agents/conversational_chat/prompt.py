@@ -33,25 +33,25 @@ Use this if you want to respond directly to the human. Markdown code snippet for
 }}}}
 ```"""
 
-SUFFIX = """TOOLS
+TOOLS = """TOOLS
 ------
 Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
 
 {{tools}}
 
 {format_instructions}
+"""
 
-USER'S INPUT
+SUFFIX = """USER'S INPUT
 --------------------
 Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
 
-{{{{input}}}}"""
+{input}"""
 
-TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE: 
+TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 ---------------------
 {observation}
 
 USER'S INPUT
 --------------------
-
 Okay, so what is the response to my last comment? If using information obtained from the tools you must mention it explicitly without mentioning the tool names - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""

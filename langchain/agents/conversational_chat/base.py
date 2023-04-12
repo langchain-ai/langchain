@@ -10,6 +10,7 @@ from langchain.agents.conversational_chat.prompt import (
     PREFIX,
     SUFFIX,
     TEMPLATE_TOOL_RESPONSE,
+    TOOLS,
 )
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
@@ -76,6 +77,7 @@ class ConversationalChatAgent(Agent):
         cls,
         tools: Sequence[BaseTool],
         system_message: str = PREFIX,
+        tool_message: str = TOOLS,
         human_message: str = SUFFIX,
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
@@ -85,18 +87,17 @@ class ConversationalChatAgent(Agent):
         )
         tool_names = ", ".join([tool.name for tool in tools])
         _output_parser = output_parser or AgentOutputParser()
-        format_instructions = human_message.format(
+        prompt = system_message + "\n\n" + tool_message
+        # Format in two steps because the format instructions includes tool_names
+        final_prompt = prompt.format(
             format_instructions=_output_parser.get_format_instructions()
-        )
-        final_prompt = format_instructions.format(
-            tool_names=tool_names, tools=tool_strings
-        )
+        ).format(tool_names=tool_names, tools=tool_strings)
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         messages = [
-            SystemMessagePromptTemplate.from_template(system_message),
+            SystemMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template(final_prompt),
+            HumanMessagePromptTemplate.from_template(human_message),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
