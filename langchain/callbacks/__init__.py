@@ -11,13 +11,13 @@ from langchain.callbacks.base import (
     CallbackManager,
 )
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
+from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.callbacks.tracers import SharedLangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
-from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 
 
 def get_callback_manager() -> BaseCallbackManager:

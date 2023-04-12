@@ -22,8 +22,9 @@ def import_comet_ml() -> Any:
         import comet_ml  # noqa: F401
     except ImportError:
         raise ImportError(
-            "To use the comet_ml callback manager you need to have the `comet_ml` python "
-            "package installed. Please install it with `pip install comet_ml`"
+            "To use the comet_ml callback manager you need to have the "
+            "`comet_ml` python package installed. Please install it with"
+            " `pip install comet_ml`"
         )
     return comet_ml
 
@@ -78,7 +79,8 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     """Callback Handler that logs to Comet.
 
     Parameters:
-        job_type (str): The type of comet_ml task such as "inference", "testing" or "qc"
+        job_type (str): The type of comet_ml task such as "inference",
+            "testing" or "qc"
         project_name (str): The comet_ml project name
         tags (list): Tags to add to the task
         task_name (str): Name of the comet_ml task
@@ -130,7 +132,8 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         warning = (
             "The comet_ml callback is currently in beta and is subject to change "
             "based on updates to `langchain`. Please report any issues to "
-            "https://github.com/comet_ml/issue_tracking/issues with the tag `langchain`."
+            "https://github.com/comet_ml/issue_tracking/issues with the tag "
+            "`langchain`."
         )
         comet_ml.LOGGER.warning(warning)
 
@@ -253,7 +256,8 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
             else:
                 comet_ml.LOGGER.warning(
-                    f"Unexpected data format provided! Input Value for {chain_input_key} will not be logged"
+                    f"Unexpected data format provided! "
+                    f"Input Value for {chain_input_key} will not be logged"
                 )
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
@@ -277,7 +281,8 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 self.action_records.append(output_resp)
             else:
                 comet_ml.LOGGER.warning(
-                    f"Unexpected data format provided! Output Value for {chain_output_key} will not be logged"
+                    f"Unexpected data format provided! "
+                    f"Output Value for {chain_output_key} will not be logged"
                 )
 
     def on_chain_error(
@@ -486,13 +491,14 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             else:
                 comet_ml.LOGGER.warning(
                     f"{e}"
-                    f" Could not save Langchain Asset for {langchain_asset.__class__.__name__}"
+                    " Could not save Langchain Asset "
+                    f"for {langchain_asset.__class__.__name__}"
                 )
 
     def _log_session(self, langchain_asset: Optional[Any] = None) -> None:
         llm_session_df = self._create_session_analysis_dataframe(langchain_asset)
         # Log the cleaned dataframe as a table
-        self.experiment.log_table(f"langchain-llm-session.csv", llm_session_df)
+        self.experiment.log_table("langchain-llm-session.csv", llm_session_df)
 
         metadata = {"langchain_version": str(langchain.__version__)}
         # Log the langchain low-level records as a JSON file directly
@@ -566,7 +572,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         _custom_metrics = custom_metrics if custom_metrics else self.custom_metrics
 
-        self.__init__(
+        self.__init__(  # type: ignore
             task_type=_task_type,
             workspace=_workspace,
             project_name=_project_name,
@@ -615,7 +621,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 llm_parameters = langchain_asset.llm.dict()
             else:
                 llm_parameters = langchain_asset.dict()
-        except Exception as e:
+        except Exception:
             return {}
 
         return llm_parameters
