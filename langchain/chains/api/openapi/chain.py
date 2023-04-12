@@ -28,7 +28,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     """Chain interacts with an OpenAPI endpoint using natural language."""
 
     api_request_chain: LLMChain
-    api_response_chain: LLMChain
+    api_response_chain: Optional[LLMChain]
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
@@ -36,7 +36,6 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
     max_text_length: Optional[int] = Field(ge=0)  #: :meta private:
-    apply_llm: bool = True
 
     @property
     def input_keys(self) -> List[str]:
@@ -107,7 +106,12 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         else:
             return {self.output_key: output}
 
-    def call_with_apply_llm(self, inputs: Union[Dict[str, Any], Any], apply_llm: bool, return_only_outputs: bool = False) -> Dict[str, Any]:
+    def call_with_apply_llm(
+        self,
+        inputs: Union[Dict[str, Any], Any],
+        apply_llm: bool,
+        return_only_outputs: bool = False,
+    ) -> Dict[str, Any]:
         self.apply_llm = apply_llm
         return self.__call__(inputs, return_only_outputs)
 
@@ -149,7 +153,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
         )
-        if self.apply_llm:
+        if self.api_response_chain is not None:
             _answer = self.api_response_chain.predict_and_parse(
                 response=response_text,
                 instructions=instructions,
