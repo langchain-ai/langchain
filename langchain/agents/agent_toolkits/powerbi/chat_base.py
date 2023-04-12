@@ -19,7 +19,7 @@ from langchain.powerbi import PowerBIDataset
 def create_pbi_chat_agent(
     llm: BaseChatModel,
     toolkit: PowerBIToolkit | None,
-    powerbi: PowerBIDataset | None,
+    powerbi: PowerBIDataset | None = None,
     callback_manager: BaseCallbackManager | None = None,
     prefix: str = POWERBI_CHAT_PREFIX,
     suffix: str = POWERBI_CHAT_SUFFIX,

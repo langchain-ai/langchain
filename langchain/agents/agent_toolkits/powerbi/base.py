@@ -18,7 +18,7 @@ from langchain.powerbi import PowerBIDataset
 def create_pbi_agent(
     llm: BaseLLM,
     toolkit: PowerBIToolkit | None,
-    powerbi: PowerBIDataset | None,
+    powerbi: PowerBIDataset | None = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
     suffix: str = POWERBI_SUFFIX,
