@@ -2063,6 +2063,23 @@ protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4
 grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
+name = "gptcache"
+version = "0.1.8"
+description = "GPT Cache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPT Cache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
+category = "main"
+optional = true
+python-versions = ">=3.8.1"
+files = [
+    {file = "gptcache-0.1.8-py3-none-any.whl", hash = "sha256:953662291819471e5461920c89367084f905237a8506f1a1605729f3e633f147"},
+    {file = "gptcache-0.1.8.tar.gz", hash = "sha256:23200cc0783776210cce85a588ae68222d522ce9456f74b7836945ebe8b15820"},
+]
+
+[package.dependencies]
+cachetools = "*"
+numpy = "*"
+openai = "*"
+
+[[package]]
 name = "greenlet"
 version = "2.0.1"
 description = "Lightweight in-process concurrent programming"
@@ -8994,4 +9011,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "11bbe0042c3c1e56a5d1abbaab33185efad5dcdacb095fc91e91c382f2c9ebb7"
+content-hash = "26b1bbfbc3a228b892b2466af3561b799238a6d379853d325dc3c798776df0d8"
