@@ -222,7 +222,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 response = embed_with_retry(
                     self,
                     input=tokens[i : i + _chunk_size],
-                    engine=self.document_model_name,
+                    engine=self.query_model_name,
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
