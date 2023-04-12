@@ -70,6 +70,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         result = (
             query_obj.with_hybrid(content, alpha=self.alpha).with_limit(self.k).do()
         )
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
 
         docs = []
 
