@@ -16,7 +16,6 @@ from langchain.chains import (
     SQLDatabaseChain,
     VectorDBQA,
     VectorDBQAWithSourcesChain,
-    LLMGoogleCalendarChain,
 )
 from langchain.docstore import InMemoryDocstore, Wikipedia
 from langchain.llms import Cohere, HuggingFaceHub, OpenAI
@@ -49,7 +48,6 @@ __all__ = [
     "GoogleSearchAPIWrapper",
     "WolframAlphaAPIWrapper",
     "GoogleCalendarAPIWrapper",
-    "LLMGoogleCalendarChain",
     "Cohere",
     "OpenAI",
     "BasePromptTemplate",
