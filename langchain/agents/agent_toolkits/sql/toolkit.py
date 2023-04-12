@@ -6,6 +6,7 @@ from pydantic import Field
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
+from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
@@ -20,7 +21,7 @@ class SQLDatabaseToolkit(BaseToolkit):
     """Toolkit for interacting with SQL databases."""
 
     db: SQLDatabase = Field(exclude=True)
-    llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
 
     @property
     def dialect(self) -> str:

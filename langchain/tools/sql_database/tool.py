@@ -1,9 +1,11 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Extra, Field, validator
+from typing import Any, Dict
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 from langchain.llms.base import BaseLLM
 from langchain.tools.base import BaseTool
@@ -80,33 +82,46 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
-    llm: BaseLLM
-    llm_chain: LLMChain = Field(
-        default_factory=lambda: LLMChain(
-            llm=QueryCheckerTool.llm,
-            prompt=PromptTemplate(
-                template=QueryCheckerTool.template, input_variables=["query", "dialect"]
-            ),
-        )
-    )
+    llm: BaseLanguageModel
+    llm_chain: LLMChain = Field(init=False)
+
     name = "query_checker_sql_db"
     description = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
+    The input should be the description of what you're using for in a single line, followed by the query in a new line
     """
 
-    @validator("llm_chain")
-    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
-        """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != ["query", "dialect"]:
+    @root_validator(pre=True)
+    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if "llm_chain" not in values:
+            values["llm_chain"] = LLMChain(
+                llm=values.get("llm"), # type: ignore
+                prompt=PromptTemplate(
+                    template=QUERY_CHECKER, input_variables=["query", "explain", "table_info", "dialect"]
+                ),
+            )
+
+        if values["llm_chain"].prompt.input_variables != ["query", "explain", "table_info", "dialect"]:
             raise ValueError(
                 "LLM chain for QueryCheckerTool must have input variables ['query', 'dialect']"
             )
-        return llm_chain
+        return values
 
     def _run(self, query: str) -> str:
         """Use the LLM to check the query."""
-        return self.llm_chain.predict(query=query, dialect=self.db.dialect)
+        try:
+            explain_result = self.db._run("EXPLAIN " + '\n'.join(query.splitlines()[1:]))
+        except Exception as e:
+            explain_result = str(e)
+        explain_result = '\n'.join([tup[0] for tup in explain_result])
+        llm_inputs = {
+            "query": query,
+            "explain": explain_result,
+            "dialect": self.db.dialect,
+            "table_info": self.db.table_info,
+        }
+        return self.llm_chain.predict(**llm_inputs)
 
     async def _arun(self, query: str) -> str:
-        return await self.llm_chain.apredict(query=query, dialect=self.db.dialect)
+        raise NotImplementedError("QueryCheckerTool does not support async")
