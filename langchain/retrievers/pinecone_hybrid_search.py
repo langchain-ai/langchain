@@ -1,10 +1,8 @@
 """Taken from: https://docs.pinecone.io/docs/hybrid-search"""
 import hashlib
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pinecone_text.hybrid import hybrid_convex_scale
-from pinecone_text.sparse.base_sparse_encoder import BaseSparseEncoder
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever, Document
@@ -18,7 +16,7 @@ def create_index(
     contexts: List[str],
     index: Any,
     embeddings: Embeddings,
-    sparse_encoder: BaseSparseEncoder,
+    sparse_encoder: Any,
     ids: Optional[List[str]] = None,
 ) -> None:
     batch_size = 32
@@ -69,7 +67,7 @@ def create_index(
 
 class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
     embeddings: Embeddings
-    sparse_encoder: BaseSparseEncoder
+    sparse_encoder: Any
     index: Any
     top_k: int = 4
     alpha: float = 0.5
@@ -83,7 +81,24 @@ class PineconeHybridSearchRetriever(BaseRetriever, BaseModel):
     def add_texts(self, texts: List[str], ids: Optional[List[str]] = None) -> None:
         create_index(texts, self.index, self.embeddings, self.sparse_encoder, ids=ids)
 
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        try:
+            from pinecone_text.hybrid import hybrid_convex_scale  # noqa:F401
+            from pinecone_text.sparse.base_sparse_encoder import (
+                BaseSparseEncoder,  # noqa:F401
+            )
+        except ImportError:
+            raise ValueError(
+                "Could not import pinecone_text python package. "
+                "Please install it with `pip install pinecone_text`."
+            )
+        return values
+
     def get_relevant_documents(self, query: str) -> List[Document]:
+        from pinecone_text.hybrid import hybrid_convex_scale
+
         sparse_vec = self.sparse_encoder.encode_queries(query)
         # convert the question into a dense vector
         dense_vec = self.embeddings.embed_query(query)
