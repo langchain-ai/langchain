@@ -1,5 +1,5 @@
 """Toolkit for interacting with API's using natural language."""
-
+from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
 
@@ -11,6 +11,7 @@ from langchain.llms.base import BaseLLM
 from langchain.requests import Requests
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+from langchain.tools.plugin import AIPlugin
 
 
 class NLAToolkit(BaseToolkit):
@@ -23,19 +24,18 @@ class NLAToolkit(BaseToolkit):
         """Get the tools for all the API operations."""
         return list(self.nla_tools)
 
-    @classmethod
-    def from_llm_and_spec(
-        cls,
+    @staticmethod
+    def _get_http_operation_tools(
         llm: BaseLLM,
         spec: OpenAPISpec,
         requests: Optional[Requests] = None,
         verbose: bool = False,
-        **kwargs: Any
-    ) -> "NLAToolkit":
-        """Instantiate the toolkit by creating tools for each operation."""
-        http_operation_tools: List[NLATool] = []
+        **kwargs: Any,
+    ) -> List[NLATool]:
+        """Get the tools for all the API operations."""
         if not spec.paths:
-            return cls(nla_tools=http_operation_tools)
+            return []
+        http_operation_tools = []
         for path in spec.paths:
             for method in spec.get_methods_for_path(path):
                 endpoint_tool = NLATool.from_llm_and_method(
@@ -45,9 +45,24 @@ class NLAToolkit(BaseToolkit):
                     spec=spec,
                     requests=requests,
                     verbose=verbose,
-                    **kwargs
+                    **kwargs,
                 )
                 http_operation_tools.append(endpoint_tool)
+        return http_operation_tools
+
+    @classmethod
+    def from_llm_and_spec(
+        cls,
+        llm: BaseLLM,
+        spec: OpenAPISpec,
+        requests: Optional[Requests] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> NLAToolkit:
+        """Instantiate the toolkit by creating tools for each operation."""
+        http_operation_tools = cls._get_http_operation_tools(
+            llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
+        )
         return cls(nla_tools=http_operation_tools)
 
     @classmethod
@@ -57,10 +72,45 @@ class NLAToolkit(BaseToolkit):
         open_api_url: str,
         requests: Optional[Requests] = None,
         verbose: bool = False,
-        **kwargs: Any
-    ) -> "NLAToolkit":
+        **kwargs: Any,
+    ) -> NLAToolkit:
         """Instantiate the toolkit from an OpenAPI Spec URL"""
         spec = OpenAPISpec.from_url(open_api_url)
         return cls.from_llm_and_spec(
             llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
+        )
+
+    @classmethod
+    def from_llm_and_ai_plugin(
+        cls,
+        llm: BaseLLM,
+        ai_plugin: AIPlugin,
+        requests: Optional[Requests] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> NLAToolkit:
+        """Instantiate the toolkit from an OpenAPI Spec URL"""
+        spec = OpenAPISpec.from_url(ai_plugin.api.url)
+        # TODO: Merge optional Auth information with the `requests` argument
+        return cls.from_llm_and_spec(
+            llm=llm,
+            spec=spec,
+            requests=requests,
+            verbose=verbose,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_llm_and_ai_plugin_url(
+        cls,
+        llm: BaseLLM,
+        ai_plugin_url: str,
+        requests: Optional[Requests] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> NLAToolkit:
+        """Instantiate the toolkit from an OpenAPI Spec URL"""
+        plugin = AIPlugin.from_url(ai_plugin_url)
+        return cls.from_llm_and_ai_plugin(
+            llm=llm, ai_plugin=plugin, requests=requests, verbose=verbose, **kwargs
         )
