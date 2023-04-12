@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple
+import warnings
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -32,7 +33,7 @@ class Pinecone(VectorStore):
     def __init__(
         self,
         index: Any,
-        embeddings: Embeddings,
+        embeddings: Union[Embeddings, Callable],
         text_key: str,
         namespace: Optional[str] = None,
     ):
@@ -50,7 +51,15 @@ class Pinecone(VectorStore):
                 f"got {type(index)}"
             )
         self._index = index
-        self._embeddings = embeddings
+        if isinstance(embeddings, Embeddings):
+            self._embeddings = embeddings
+        else:
+            warnings.warn(
+                "passing a function as embeddings is deprecated, "
+                "you should pass an Embedding object directly. "
+                "If this throws an error, that is why."
+            )
+            self._embeddings = embeddings.__self__  # type: ignore
         self._text_key = text_key
         self._namespace = namespace
 
@@ -78,10 +87,11 @@ class Pinecone(VectorStore):
         if namespace is None:
             namespace = self._namespace
         # Embed and create the documents
-        ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embeddings = self._embeddings.embed_documents(texts)
-        metadatas = metadatas or [{}] * len(texts)
-        for metadata, text in zip(metadatas, texts):
+        _texts = list(texts)
+        ids = ids or [str(uuid.uuid4()) for _ in _texts]
+        embeddings = self._embeddings.embed_documents(_texts)
+        metadatas = metadatas or [{}] * len(_texts)
+        for metadata, text in zip(metadatas, _texts):
             metadata[self._text_key] = text
         docs = list(zip(ids, embeddings, metadatas))
 
@@ -164,7 +174,7 @@ class Pinecone(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embeddings: Embeddings,
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
@@ -232,7 +242,7 @@ class Pinecone(VectorStore):
             else:
                 ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
             # create embeddings
-            embeds = embeddings.embed_documents(lines_batch)
+            embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
             if metadatas:
                 metadata = metadatas[i:i_end]
@@ -244,13 +254,13 @@ class Pinecone(VectorStore):
 
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
-        return cls(index, embeddings, text_key, namespace)
+        return cls(index, embedding, text_key, namespace)
 
     @classmethod
     def from_existing_index(
         cls,
         index_name: str,
-        embeddings: Embeddings,
+        embedding: Embeddings,
         text_key: str = "text",
         namespace: Optional[str] = None,
     ) -> Pinecone:
@@ -263,4 +273,4 @@ class Pinecone(VectorStore):
                 "Please install it with `pip install pinecone-client`."
             )
 
-        return cls(pinecone.Index(index_name), embeddings, text_key, namespace)
+        return cls(pinecone.Index(index_name), embedding, text_key, namespace)
