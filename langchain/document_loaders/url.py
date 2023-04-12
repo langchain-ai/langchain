@@ -63,6 +63,7 @@ class UnstructuredURLLoader(BaseLoader):
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
+                    continue
                 else:
                     raise e
             text = "\n\n".join([str(el) for el in elements])

@@ -76,7 +76,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
 
         Args:
             examples: List of examples to use in the prompt.
-            embeddings: An iniialized embedding API interface, e.g. OpenAIEmbeddings().
+            embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
             k: Number of examples to select
             input_keys: If provided, the search is based on the input variables
