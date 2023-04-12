@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -106,15 +106,6 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         else:
             return {self.output_key: output}
 
-    def call_with_apply_llm(
-        self,
-        inputs: Union[Dict[str, Any], Any],
-        apply_llm: bool,
-        return_only_outputs: bool = False,
-    ) -> Dict[str, Any]:
-        self.apply_llm = apply_llm
-        return self.__call__(inputs, return_only_outputs)
-
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         intermediate_steps = {}
         instructions = inputs[self.instructions_key]
@@ -196,6 +187,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests: Optional[Requests] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
+        raw_response: bool = False,
         **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
@@ -208,7 +200,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests_chain = APIRequesterChain.from_llm_and_typescript(
             llm, typescript_definition=operation.to_typescript(), verbose=verbose
         )
-        response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
+        if raw_response:
+            response_chain = None
+        else:
+            response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
         _requests = requests or Requests()
         return cls(
             api_request_chain=requests_chain,
