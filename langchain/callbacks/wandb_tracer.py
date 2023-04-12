@@ -43,7 +43,6 @@ def import_wandb() -> Any:
         import wandb
 
         # min_version = "0.14.2"
-        print("VERSION", wandb.__version__)
         # if parse_version(wandb.__version__) < parse_version(
         #     min_version
         # ):  # Update to 0.14.3 once it is released
