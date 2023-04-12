@@ -54,6 +54,8 @@ class Pinecone(VectorStore):
         if isinstance(embeddings, Embeddings):
             self._embeddings = embeddings
         else:
+            # This is for backwards compatibility issues. Previously,
+            # embeddings.embed_query was passed in, not the whole class
             warnings.warn(
                 "passing a function as embeddings is deprecated, "
                 "you should pass an Embedding object directly. "
