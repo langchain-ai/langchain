@@ -318,7 +318,7 @@ def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
     base_span = _convert_run_to_wb_span(run)
 
     base_span.attributes["action"] = run.action
-    base_span.results = [trace_tree.Result(inputs=run.tool_input, outputs=run.output)]
+    base_span.results = [trace_tree.Result(inputs={"input": run.tool_input}, outputs={"output": run.output})]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
     ]
