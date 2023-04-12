@@ -103,6 +103,7 @@ deeplake = "^3.2.21"
 torch = "^1.0.0"
 chromadb = "^0.3.21"
 tiktoken = "^0.3.3"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
