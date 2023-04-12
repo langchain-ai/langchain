@@ -63,8 +63,9 @@ class PlaywrightURLLoader(BaseLoader):
             for url in self.urls:
                 try:
                     page = browser.new_page()
-                    response = page.goto(url)
-                    elements = partition_html(text=response.body().decode())
+                    page.goto(url)
+                    page_source = page.content()
+                    elements = partition_html(text=page_source)
                     text = "\n\n".join([str(el) for el in elements])
                     metadata = {"source": url}
                     docs.append(Document(page_content=text, metadata=metadata))
