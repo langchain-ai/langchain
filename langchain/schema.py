@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -327,15 +327,17 @@ class BaseRetriever(ABC):
 
 Memory = BaseMemory
 
+T = TypeVar("T")
 
-class BaseOutputParser(BaseModel, ABC):
+
+class BaseOutputParser(BaseModel, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
 
     @abstractmethod
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
         A method which takes in a string (assumed output of language model )

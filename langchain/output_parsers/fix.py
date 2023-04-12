@@ -1,30 +1,32 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TypeVar
 
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
 
+T = TypeVar("T")
 
-class OutputFixingParser(BaseOutputParser):
+
+class OutputFixingParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors."""
 
-    parser: BaseOutputParser
+    parser: BaseOutputParser[T]
     retry_chain: LLMChain
 
     @classmethod
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        parser: BaseOutputParser,
+        parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_FIX_PROMPT,
-    ) -> OutputFixingParser:
+    ) -> OutputFixingParser[T]:
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain)
 
-    def parse(self, completion: str) -> Any:
+    def parse(self, completion: str) -> T:
         try:
             parsed_completion = self.parser.parse(completion)
         except OutputParserException as e:

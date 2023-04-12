@@ -1,17 +1,19 @@
 import json
 import re
-from typing import Any
+from typing import Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
 from langchain.output_parsers.format_instructions import PYDANTIC_FORMAT_INSTRUCTIONS
 from langchain.schema import BaseOutputParser, OutputParserException
 
+T = TypeVar("T", bound=BaseModel)
 
-class PydanticOutputParser(BaseOutputParser):
-    pydantic_object: Any
 
-    def parse(self, text: str) -> BaseModel:
+class PydanticOutputParser(BaseOutputParser[T]):
+    pydantic_object: Type[T]
+
+    def parse(self, text: str) -> T:
         try:
             # Greedy search for 1st json candidate.
             match = re.search(
