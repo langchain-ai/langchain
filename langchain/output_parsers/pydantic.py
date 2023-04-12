@@ -40,6 +40,6 @@ class PydanticOutputParser(BaseOutputParser[T]):
         if "type" in reduced_schema:
             del reduced_schema["type"]
         # Ensure json in context is well-formed with double quotes.
-        schema = json.dumps(reduced_schema)
+        schema_str = json.dumps(reduced_schema)
 
-        return PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema)
+        return PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
