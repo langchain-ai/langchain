@@ -19,11 +19,11 @@ class CustomEndpoint(LLM):
     Example:
         .. code-block:: python
 
-            from langchain.llms import HuggingFaceEndpoint
+            from langchain.llms import CustomEndpoint
             endpoint_url = (
                 "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
             )
-            hf = HuggingFaceEndpoint(
+            hf = CustomEndpoint(
                 endpoint_url=endpoint_url,
                 huggingfacehub_api_token="my-api-key"
             )
