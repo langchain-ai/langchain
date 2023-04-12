@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
-from langchain.tools.plugin import AIPlugin
 
 from pydantic import Field
 
@@ -12,6 +11,7 @@ from langchain.llms.base import BaseLLM
 from langchain.requests import Requests
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+from langchain.tools.plugin import AIPlugin
 
 
 class NLAToolkit(BaseToolkit):
@@ -19,9 +19,6 @@ class NLAToolkit(BaseToolkit):
 
     nla_tools: Sequence[NLATool] = Field(...)
     """List of API Endpoint Tools."""
-
-    ai_plugin: Optional[AIPlugin] = Field(default=None)
-    """Optional AI Plugin for the toolkit."""
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools for all the API operations."""
@@ -63,11 +60,10 @@ class NLAToolkit(BaseToolkit):
         **kwargs: Any,
     ) -> NLAToolkit:
         """Instantiate the toolkit by creating tools for each operation."""
-        ai_plugin = kwargs.pop("ai_plugin", None)
         http_operation_tools = cls._get_http_operation_tools(
             llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
         )
-        return cls(nla_tools=http_operation_tools, ai_plugin=ai_plugin)
+        return cls(nla_tools=http_operation_tools)
 
     @classmethod
     def from_llm_and_url(
@@ -101,7 +97,6 @@ class NLAToolkit(BaseToolkit):
             spec=spec,
             requests=requests,
             verbose=verbose,
-            ai_plugin=ai_plugin,
             **kwargs,
         )
 
