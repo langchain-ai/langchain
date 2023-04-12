@@ -125,7 +125,7 @@ class SQLDatabaseSequentialChain(Chain):
         cls,
         llm: BaseLanguageModel,
         database: SQLDatabase,
-        query_`prompt`: BasePromptTemplate = PROMPT,
+        query_prompt: BasePromptTemplate = PROMPT,
         decider_prompt: BasePromptTemplate = DECIDER_PROMPT,
         **kwargs: Any,
     ) -> SQLDatabaseSequentialChain:
