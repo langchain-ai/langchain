@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import time
+import re
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -678,7 +679,7 @@ class AgentExecutor(Chain):
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
-    def truncate_log(self, log):
+    def truncate_log(self, log: str) -> str:
         # Find the index of the first "- Action Input:"
         first_action_input_index = log.find('Action Input:')
 
@@ -715,13 +716,13 @@ class AgentExecutor(Chain):
 
         return tool_name
 
-    def text_similarity(self,text1, text2):
+    def text_similarity(self, text1: str, text2: str) -> float:
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform([text1, text2])
         similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
         return similarity_score[0][0]
     
-    def one_action(self, output):
+    def one_action(self, output: Union[AgentAction, AgentFinish]) -> Union[AgentAction, AgentFinish]:
         if isinstance(output, AgentAction):
             truncated_log = self.truncate_log(output.log)            
             if truncated_log != output.log:
@@ -758,7 +759,7 @@ class AgentExecutor(Chain):
                     output = new_output
         return output
     
-    def sequentialExecution(self, output, intermediate_steps):
+    def sequentialExecution(self, output: Union[AgentAction, AgentFinish], intermediate_steps: List[Tuple[AgentAction, str]]) -> Union[AgentAction, AgentFinish]:
         if len(intermediate_steps) > 0:
             last_agent_action = intermediate_steps[-1][0]
             tool_name = last_agent_action.tool
