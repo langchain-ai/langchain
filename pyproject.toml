@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.136"
+version = "0.0.137"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -28,7 +28,7 @@ spacy = {version = "^3", optional = true}
 nltk = {version = "^3", optional = true}
 transformers = {version = "^4", optional = true}
 beautifulsoup4 = {version = "^4", optional = true}
-torch = {version = "^1", optional = true}
+torch = {version = "^2", optional = true}
 jinja2 = {version = "^3", optional = true}
 tiktoken = {version = "^0.3.2", optional = true, python="^3.9"}
 pinecone-client = {version = "^2", optional = true}
@@ -76,7 +76,7 @@ linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.2.0"
+pytest = "^7.3.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.7.0"
@@ -89,10 +89,10 @@ pytest-asyncio = "^0.20.3"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-openai = "^0.27.4"
-elasticsearch = {extras = ["async"], version = "^8.6.2"}
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
+openai = "^0.27.4"
+elasticsearch = {extras = ["async"], version = "^8.6.2"}
 redis = "^4.5.4"
 pinecone-client = "^2.2.1"
 pinecone-text = "^0.4.2"
@@ -100,6 +100,9 @@ pgvector = "^0.1.6"
 transformers = "^4.27.4"
 pandas = "^2.0.0"
 deeplake = "^3.2.21"
+torch = "^2.0.0"
+chromadb = "^0.3.21"
+tiktoken = "^0.3.3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"

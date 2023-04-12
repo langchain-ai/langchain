@@ -23,7 +23,7 @@ class GCSFileLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "Could not import google-cloud-storage python package. "
-                "Please it install it with `pip install google-cloud-storage`."
+                "Please install it with `pip install google-cloud-storage`."
             )
 
         # Initialise a client

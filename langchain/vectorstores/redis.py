@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Type
 
 import numpy as np
 from pydantic import BaseModel, root_validator
@@ -227,7 +227,7 @@ class Redis(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Redis],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,

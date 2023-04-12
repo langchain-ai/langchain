@@ -20,3 +20,5 @@ Highlighting specific parts:
 Specific examples of this include:
 
 - [Baby AGI](agents/baby_agi.ipynb): a notebook implementing [BabyAGI](https://github.com/yoheinakajima/babyagi) by Yohei Nakajima as LLM Chains
+- [Baby AGI with Tools](agents/baby_agi_with_agent.ipynb): building off the above notebook, this example substitutes in an agent with tools as the execution tools, allowing it to actually take actions.
+- [CAMEL](agents/camel_role_playing.ipynb): an implementation of the CAMEL (Communicative Agents for “Mind” Exploration of Large Scale Language Model Society) paper, where two agents communicate with eachother.

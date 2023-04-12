@@ -1,7 +1,9 @@
 """Wrapper around Qdrant vector database."""
+from __future__ import annotations
+
 import uuid
 from operator import itemgetter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -177,54 +179,8 @@ class Qdrant(VectorStore):
         ]
 
     @classmethod
-    def from_documents(
-        cls,
-        documents: List[Document],
-        embedding: Embeddings,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
-        grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[float] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
-        distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
-        **kwargs: Any,
-    ) -> "Qdrant":
-        return cast(
-            Qdrant,
-            super().from_documents(
-                documents,
-                embedding,
-                location=location,
-                url=url,
-                port=port,
-                grpc_port=grpc_port,
-                prefer_grpc=prefer_grpc,
-                https=https,
-                api_key=api_key,
-                prefix=prefix,
-                timeout=timeout,
-                host=host,
-                path=path,
-                collection_name=collection_name,
-                distance_func=distance_func,
-                content_payload_key=content_payload_key,
-                metadata_payload_key=metadata_payload_key,
-                **kwargs,
-            ),
-        )
-
-    @classmethod
     def from_texts(
-        cls,
+        cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -244,7 +200,7 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
-    ) -> "Qdrant":
+    ) -> Qdrant:
         """Construct Qdrant wrapper from raw documents.
 
         Args:

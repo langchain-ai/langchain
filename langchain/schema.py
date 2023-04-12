@@ -194,7 +194,7 @@ class BaseLanguageModel(BaseModel, ABC):
             raise ValueError(
                 "Could not import transformers python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
         # create a GPT-3 tokenizer instance
         tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
