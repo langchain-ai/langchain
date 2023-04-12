@@ -1,6 +1,7 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator, root_validator
+from typing import (Any, Dict)
 
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
@@ -81,28 +82,29 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
 
     template: str = QUERY_CHECKER
     llm: BaseLLM
-    llm_chain: LLMChain = Field(
-        default_factory=lambda: LLMChain(
-            llm=QueryCheckerTool.llm,
-            prompt=PromptTemplate(
-                template=QueryCheckerTool.template, input_variables=["query", "dialect"]
-            ),
-        )
-    )
+    llm_chain: LLMChain = Field(init=False)
     name = "query_checker_sql_db"
     description = """
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """
 
-    @validator("llm_chain")
-    def validate_llm_chain_input_variables(cls, llm_chain: LLMChain) -> LLMChain:
-        """Make sure the LLM chain has the correct input variables."""
-        if llm_chain.prompt.input_variables != ["query", "dialect"]:
+    @root_validator(pre=True)
+    def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if "llm_chain" not in values:
+            values["llm_chain"] = LLMChain(
+                llm=values.get("llm"),
+                prompt=PromptTemplate(
+                    template=QUERY_CHECKER, input_variables=["query", "dialect"]
+                ),
+            )
+
+        if values["llm_chain"].prompt.input_variables != ["query", "dialect"]:
             raise ValueError(
                 "LLM chain for QueryCheckerTool must have input variables ['query', 'dialect']"
             )
-        return llm_chain
+
+        return values
 
     def _run(self, query: str) -> str:
         """Use the LLM to check the query."""
