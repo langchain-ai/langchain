@@ -106,8 +106,8 @@ class YoutubeLoader(BaseLoader):
         self.language = language
 
     @classmethod
-    def from_youtube_channel(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
-        """Given a channel name, load all videos."""
+    def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
+        """Given youtube URL, load video."""
         video_id = youtube_url.split("youtube.com/watch?v=")[-1]
         return cls(video_id, **kwargs)
 
