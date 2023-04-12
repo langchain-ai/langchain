@@ -324,7 +324,7 @@ def _convert_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
     attributes['execution_order'] = run.execution_order
 
     return trace_tree.Span(
-        span_id = str(run.id),
+        span_id = str(run.id) if run.id is not None else None,
         name = run.serialized.get("name"),
         start_time_ms=run.start_time,
         end_time_ms=run.end_time,
