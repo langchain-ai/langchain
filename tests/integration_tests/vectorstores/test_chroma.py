@@ -13,6 +13,7 @@ def test_chroma() -> None:
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+
 def test_chroma_k_greater_than_collection() -> None:
     """Test end to end construction and search with k > collection.count()."""
     texts = ["foo"]
@@ -21,6 +22,7 @@ def test_chroma_k_greater_than_collection() -> None:
     )
     output = docsearch.similarity_search("foo", k=2)
     assert output == [Document(page_content="foo")]
+
 
 def test_chroma_with_metadatas() -> None:
     """Test end to end construction and search."""
