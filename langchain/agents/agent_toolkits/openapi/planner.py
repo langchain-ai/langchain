@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import yaml
 
+from langchain.llms import AzureOpenAI
+from langchain.chat_models import AzureChatOpenAI
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -111,6 +113,14 @@ def _create_api_planner_tool(
     return tool
 
 
+def _get_llm_chain(llm):
+    if isinstance(llm, AzureOpenAI) or isinstance(llm, AzureChatOpenAI):
+        llm = AzureOpenAI(**llm._identifying_params)
+    else:
+        llm = OpenAI()
+    return LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
+
+
 def _create_api_controller_agent(
     api_url: str,
     api_docs: str,
@@ -118,8 +128,8 @@ def _create_api_controller_agent(
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
     tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper),
-        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper),
+        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper, llm_chain=_get_llm_chain(llm)),
+        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper, llm_chain=_get_llm_chain(llm)),
     ]
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
