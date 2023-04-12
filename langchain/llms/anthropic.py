@@ -76,7 +76,7 @@ class Anthropic(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import anthropic python package. "
-                "Please it install it with `pip install anthropic`."
+                "Please install it with `pip install anthropic`."
             )
         return values
 

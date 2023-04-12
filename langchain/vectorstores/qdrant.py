@@ -1,7 +1,9 @@
 """Wrapper around Qdrant vector database."""
+from __future__ import annotations
+
 import uuid
 from operator import itemgetter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -19,6 +21,7 @@ class Qdrant(VectorStore):
     Example:
         .. code-block:: python
 
+            from qdrant_client import QdrantClient
             from langchain import Qdrant
 
             client = QdrantClient()
@@ -123,7 +126,7 @@ class Qdrant(VectorStore):
             filter: Filter by metadata. Defaults to None.
 
         Returns:
-            List of Documents most similar to the query and score for each
+            List of Documents most similar to the query and score for each.
         """
         embedding = self.embedding_function(query)
         results = self.client.search(
@@ -155,6 +158,7 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                     Defaults to 20.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -177,54 +181,8 @@ class Qdrant(VectorStore):
         ]
 
     @classmethod
-    def from_documents(
-        cls,
-        documents: List[Document],
-        embedding: Embeddings,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
-        grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[float] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
-        distance_func: str = "Cosine",
-        content_payload_key: str = CONTENT_KEY,
-        metadata_payload_key: str = METADATA_KEY,
-        **kwargs: Any,
-    ) -> "Qdrant":
-        return cast(
-            Qdrant,
-            super().from_documents(
-                documents,
-                embedding,
-                location=location,
-                url=url,
-                port=port,
-                grpc_port=grpc_port,
-                prefer_grpc=prefer_grpc,
-                https=https,
-                api_key=api_key,
-                prefix=prefix,
-                timeout=timeout,
-                host=host,
-                path=path,
-                collection_name=collection_name,
-                distance_func=distance_func,
-                content_payload_key=content_payload_key,
-                metadata_payload_key=metadata_payload_key,
-                **kwargs,
-            ),
-        )
-
-    @classmethod
     def from_texts(
-        cls,
+        cls: Type[Qdrant],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -244,8 +202,8 @@ class Qdrant(VectorStore):
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         **kwargs: Any,
-    ) -> "Qdrant":
-        """Construct Qdrant wrapper from raw documents.
+    ) -> Qdrant:
+        """Construct Qdrant wrapper from a list of texts.
 
         Args:
             texts: A list of texts to be indexed in Qdrant.
@@ -256,45 +214,50 @@ class Qdrant(VectorStore):
             location:
                 If `:memory:` - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
-                If `None` - use default values for `host` and `port`.
+                If `None` - fallback to relying on `host` and `port` parameters.
             url: either host or str of "Optional[scheme], host, Optional[port],
                 Optional[prefix]". Default: `None`
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:
-                If `true` - use gPRC interface whenever possible in custom methods.
-            https: If `true` - use HTTPS(SSL) protocol. Default: `None`
-            api_key: API key for authentication in Qdrant Cloud. Default: `None`
+                If true - use gPRC interface whenever possible in custom methods.
+                Default: False
+            https: If true - use HTTPS(SSL) protocol. Default: None
+            api_key: API key for authentication in Qdrant Cloud. Default: None
             prefix:
-                If not `None` - add `prefix` to the REST URL path.
-                Example: `service/v1` will result in
-                    `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
-                Default: `None`
+                If not None - add prefix to the REST URL path.
+                Example: service/v1 will result in
+                    http://localhost:6333/service/v1/{qdrant-endpoint} for REST API.
+                Default: None
             timeout:
                 Timeout for REST and gRPC API requests.
                 Default: 5.0 seconds for REST and unlimited for gRPC
             host:
                 Host name of Qdrant service. If url and host are None, set to
-                'localhost'. Default: `None`
+                'localhost'. Default: None
             path:
                 Path in which the vectors will be stored while using local mode.
-                Default: `None`
+                Default: None
             collection_name:
                 Name of the Qdrant collection to be used. If not provided,
-                will be created randomly.
+                it will be created randomly. Default: None
             distance_func:
-                Distance function. One of the: "Cosine" / "Euclid" / "Dot".
+                Distance function. One of: "Cosine" / "Euclid" / "Dot".
+                Default: "Cosine"
             content_payload_key:
                 A payload key used to store the content of the document.
+                Default: "page_content"
             metadata_payload_key:
                 A payload key used to store the metadata of the document.
+                Default: "metadata"
             **kwargs:
                 Additional arguments passed directly into REST client initialization
 
         This is a user friendly interface that:
-            1. Embeds documents.
-            2. Creates an in memory docstore
-            3. Initializes the Qdrant database
+            1. Creates embeddings, one for each text
+            2. Initializes the Qdrant database as an in-memory docstore by default
+               (and overridable to a remote docstore)
+            3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 

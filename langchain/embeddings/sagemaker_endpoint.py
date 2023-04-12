@@ -131,7 +131,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import boto3 python package. "
-                "Please it install it with `pip install boto3`."
+                "Please install it with `pip install boto3`."
             )
         return values
 

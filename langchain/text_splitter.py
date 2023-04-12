@@ -131,7 +131,7 @@ class TextSplitter(ABC):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
@@ -150,7 +150,7 @@ class TextSplitter(ABC):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
         # create a GPT-3 encoder instance
@@ -205,7 +205,7 @@ class TokenTextSplitter(TextSplitter):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3 encoder instance
         self._tokenizer = tiktoken.get_encoding(encoding_name)

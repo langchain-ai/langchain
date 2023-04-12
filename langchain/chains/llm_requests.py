@@ -57,7 +57,7 @@ class LLMRequestsChain(Chain):
         except ImportError:
             raise ValueError(
                 "Could not import bs4 python package. "
-                "Please it install it with `pip install bs4`."
+                "Please install it with `pip install bs4`."
             )
         return values
 
