@@ -22,10 +22,11 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
 )
 
+from pkg_resources import parse_version
+
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
-    from wandb.integration.langchain.media_types import LangChainModelTrace
-    from wandb.integration.langchain.schema import BaseRunSpan
+    from wandb.sdk.data_types import trace_tree
     from wandb.wandb_run import Run as WBRun
 
     from langchain.callbacks.base import BaseCallbackHandler
@@ -38,16 +39,34 @@ if TYPE_CHECKING:
     from langchain.schema import BaseLanguageModel
     from langchain.tools.base import BaseTool
 
-
 def import_wandb() -> Any:
     try:
-        import wandb  # noqa: F401
+        import wandb
+        min_version = "0.14.2"
+        if parse_version(wandb.__version__) < parse_version(min_version): # Update to 0.14.3 once it is released
+            raise ImportError((
+                f"`wandb` version must be at least {min_version}. Found "
+                f"{wandb.__version__}. Please run `pip install --upgrade wandb>={min_version}`"
+            ))
     except ImportError:
         raise ImportError(
-            "To use the wandb callback manager you need to have the `wandb` python "
+            "To use the WandbTracer you need to have the `wandb` python "
             "package installed. Please install it with `pip install wandb`"
         )
     return wandb
+
+def print_wandb_init_message(run_url: str) -> None:
+    import_wandb().termlog(
+        f"W&B Run initialized. View LangChain logs in W&B at {run_url} . "
+        "\n\nNote that the WandbTracer is currently in beta and is "
+        "subject to change based on updates to `langchain`. Please "
+        "report any issues to https://github.com/wandb/wandb/issues "
+        "with the tag `langchain`."
+    )
+
+
+def print_wandb_finish_message(run_url: str) -> None:
+    import_wandb().termlog(f"View LangChain logs in W&B at {run_url} .")
 
 
 class WandbRunArgs(TypedDict):
@@ -136,8 +155,6 @@ class WandbTracer(SharedTracer):
         """Initialize wandb if it has not been initialized."""
         # Load in wandb symbols
         wandb = import_wandb()
-        from wandb.integration.langchain.media_types import print_wandb_init_message
-
         # We only want to start a new run if the run args differ. This will
         # reduce the number of W&B runs created, which is more ideal in a
         # notebook setting
@@ -171,18 +188,13 @@ class WandbTracer(SharedTracer):
         if self._run is not None:
             url = self._run.settings.run_url
             self._run.finish()
-            import_wandb()
-            from wandb.integration.langchain.media_types import (
-                print_wandb_finish_message,
-            )
-
             print_wandb_finish_message(url)
         else:
             print("W&B run not started. Skipping.")
 
-    def _log_trace(self, model_trace: "LangChainModelTrace") -> None:
+    def _log_trace(self, model_trace: "trace_tree.WBTraceTree") -> None:
         if self._run:
-            self._run.log({"_langchain_model_trace": model_trace})
+            self._run.log({"langchain_trace": model_trace})
 
     ###  Start of required methods
     @property
@@ -197,12 +209,12 @@ class WandbTracer(SharedTracer):
     def _persist_run(self, run: "BaseRun") -> None:
         """Persist a run."""
         import_wandb()
-        from wandb.integration.langchain.media_types import LangChainModelTrace
+        from wandb.sdk.data_types import trace_tree
 
         self._log_trace(
-            LangChainModelTrace(
-                trace_span=_convert_lc_run_to_wb_span(run),
-                model_dict=_safe_maybe_model_dict(_get_span_producing_object(run)),
+            trace_tree.WBTraceTree(
+                root_span=_convert_lc_run_to_wb_span(run),
+                model_dump=_safe_maybe_model_dump(_get_span_producing_object(run)),
             )
         )
 
@@ -236,110 +248,128 @@ class WandbTracer(SharedTracer):
 def _get_span_producing_object(run: "BaseRun") -> Any:
     return run.serialized.get("_self")
 
+def _convert_lc_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
+    if isinstance(run, LLMRun):
+        return _convert_llm_run_to_wb_span(run)
+    elif isinstance(run, ChainRun):
+        return _convert_chain_run_to_wb_span(run)
+    elif isinstance(run, ToolRun):
+        return _convert_tool_run_to_wb_span(run)
+    else:
+        return _convert_run_to_wb_span(run)
 
-def _convert_lc_run_to_wb_span(run: "BaseRun") -> "BaseRunSpan":
+def _convert_llm_run_to_wb_span(run: "LLMRun") -> "trace_tree.Span":
     import_wandb()
-    from wandb.integration.langchain.schema import (
-        BaseRunSpan,
-        ChainRunSpan,
-        LLMResponse,
-        LLMRunSpan,
-        ToolRunSpan,
+    from wandb.sdk.data_types import trace_tree
+    
+    base_span = _convert_run_to_wb_span(run)
+
+    if run.response is not None:
+        base_span.attributes["llm_output"] = run.response.llm_output
+    base_span.results = [
+            trace_tree.Result(
+                inputs={"prompt": prompt},
+                outputs={"generation": run.response.generations[ndx][0].text} if (run.response is not None and run.response.generations.length > ndx and run.response.generations[ndx].length > 0) else None
+            )
+            for ndx, prompt in enumerate(run.serialized.get("prompts", []))
+        ]
+    base_span.span_kind = trace_tree.SpanKind.LLM
+
+    return base_span
+
+def _convert_chain_run_to_wb_span(run: "ChainRun") -> "trace_tree.Span":
+    import_wandb()
+    from wandb.sdk.data_types import trace_tree
+
+    base_span = _convert_run_to_wb_span(run)
+
+    base_span.results = [
+            trace_tree.Result(
+                inputs=run.inputs,
+                outputs=run.outputs
+            )
+        ]
+    base_span.child_spans = [
+        _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+    ]
+    base_span.span_kind = trace_tree.SpanKind.AGENT if isinstance(_get_span_producing_object(run), BaseSingleActionAgent) else trace_tree.SpanKind.CHAIN
+
+    return base_span
+
+def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
+    import_wandb()
+    from wandb.sdk.data_types import trace_tree
+
+    base_span = _convert_run_to_wb_span(run)
+
+    base_span.attributes['action'] = run.action
+    base_span.results = [
+            trace_tree.Result(
+                inputs=run.tool_input,
+                outputs=run.output
+            )
+        ]
+    base_span.child_spans = [
+        _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
+    ]
+    base_span.span_kind = trace_tree.SpanKind.TOOL
+
+    return base_span
+
+def _convert_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
+    import_wandb()
+    from wandb.sdk.data_types import trace_tree
+
+    attributes = {**run.extra} if run.extra else {}
+    attributes['execution_order'] = run.execution_order
+
+    return trace_tree.Span(
+        span_id = str(run.id),
+        name = run.serialized.get("name"),
+        start_time_ms=run.start_time,
+        end_time_ms=run.end_time,
+        status_code=trace_tree.StatusCode.SUCCESS if run.error is None else trace_tree.StatusCode.ERROR,
+        status_message=run.error,
+        attributes=attributes,
     )
 
-    if isinstance(run, LLMRun):
-        return LLMRunSpan(
-            id=run.id,
-            start_time=run.start_time,
-            end_time=run.end_time,
-            execution_order=run.execution_order,
-            extra=run.extra,
-            session_id=run.session_id,
-            error=run.error,
-            span_component_name=run.serialized.get("name"),
-            prompt_responses=[
-                LLMResponse(
-                    prompt=prompt,
-                    generation=run.response.generations[ndx][0].text
-                    if run.response is not None
-                    and len(run.response.generations) > ndx
-                    and run.response.generations[ndx] is not None
-                    and len(run.response.generations[ndx]) > 0
-                    else None,
-                )
-                for ndx, prompt in enumerate(run.prompts)
-            ],
-            llm_output=run.response.llm_output if run.response is not None else None,
-        )
-    elif isinstance(run, ChainRun):
-        return ChainRunSpan(
-            id=run.id,
-            start_time=run.start_time,
-            end_time=run.end_time,
-            execution_order=run.execution_order,
-            session_id=run.session_id,
-            extra=run.extra,
-            error=run.error,
-            span_component_name=run.serialized.get("name"),
-            inputs=run.inputs,
-            outputs=run.outputs,
-            child_runs=[
-                _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
-            ],
-            is_agent=isinstance(_get_span_producing_object(run), BaseSingleActionAgent),
-        )
-    elif isinstance(run, ToolRun):
-        return ToolRunSpan(
-            id=run.id,
-            start_time=run.start_time,
-            end_time=run.end_time,
-            execution_order=run.execution_order,
-            extra=run.extra,
-            session_id=run.session_id,
-            error=run.error,
-            span_component_name=run.serialized.get("name"),
-            tool_input=run.tool_input,
-            output=run.output,
-            action=run.action,
-            child_runs=[
-                _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
-            ],
-        )
-    else:
-        return BaseRunSpan(
-            id=run.id,
-            start_time=run.start_time,
-            end_time=run.end_time,
-            execution_order=run.execution_order,
-            session_id=run.session_id,
-            error=run.error,
-            span_component_name=run.serialized.get("name"),
-            span_type=None,
-            extra=None,
-        )
 
-
-def _safe_maybe_model_dict(
+def _safe_maybe_model_dump(
     model: Union["BaseLanguageModel", "BaseLLM", "BaseTool", "Chain"]
 ) -> Optional[dict]:
     """Returns the model dict if possible, otherwise returns None.
     Given that Models are all user defined, this operation is not always possible.
     """
     data = None
-    message = None
     try:
         data = model.dict()
-    except Exception as e:
-        message = str(e)
+    except Exception:
         pass
 
     if data is None and hasattr(model, "agent"):
         try:
             data = model.agent.dict()
-        except Exception as e:
-            message = str(e)
+        except Exception:
+            pass
 
-    if data is None and message is not None:
-        print(f"Could not serialize model: {message}")
+    if data is not None:
+        data = _replace_type_with_kind(data)
 
     return data
+
+def _replace_type_with_kind(data: dict) -> dict:
+    if isinstance(data, dict):
+        # W&B TraceTree expects "_kind" instead of "_type" since `_type` is special
+        # in W&B.
+        if "_type" in data:
+            _type = data.pop("_type")
+            data["_kind"] = _type
+        return {k: _replace_type_with_kind(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_replace_type_with_kind(v) for v in data]
+    elif isinstance(data, tuple):
+        return tuple(_replace_type_with_kind(v) for v in data)
+    elif isinstance(data, set):
+        return {_replace_type_with_kind(v) for v in data}
+    else:
+        return data
