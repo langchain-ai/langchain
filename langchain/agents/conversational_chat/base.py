@@ -49,7 +49,12 @@ class AgentOutputParser(BaseOutputParser):
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
-        response = json.loads(cleaned_output)
+        try:
+            response = json.loads(cleaned_output)
+        except json.decoder.JSONDecodeError:
+            # If the output is not JSON, just return it to the user as a
+            # final answer and hope for the best
+            return {"action": "Final Answer", "action_input": cleaned_output}
         return {"action": response["action"], "action_input": response["action_input"]}
 
 
