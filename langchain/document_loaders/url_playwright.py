@@ -59,7 +59,7 @@ class PlaywrightURLLoader(BaseLoader):
         docs: List[Document] = list()
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(headless=self.headless)
             for url in self.urls:
                 try:
                     page = browser.new_page()
