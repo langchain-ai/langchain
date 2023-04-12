@@ -115,7 +115,9 @@ def _create_api_planner_tool(
 
 def _get_llm_chain(llm):
     if isinstance(llm, AzureOpenAI) or isinstance(llm, AzureChatOpenAI):
-        llm = AzureOpenAI(**llm._identifying_params)
+        llm_args = llm._identifying_params.copy()
+        llm_args.pop("model_name")
+        llm = AzureOpenAI(**llm_args)
     else:
         llm = OpenAI()
     return LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
