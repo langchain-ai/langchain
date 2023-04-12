@@ -76,7 +76,7 @@ class NLPCloud(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import nlpcloud python package. "
-                "Please it install it with `pip install nlpcloud`."
+                "Please install it with `pip install nlpcloud`."
             )
         return values
 
