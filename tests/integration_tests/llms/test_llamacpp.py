@@ -1,10 +1,13 @@
 # flake8: noqa
 """Test Llama.cpp wrapper."""
 import os
+from typing import Generator
 from urllib.request import urlretrieve
 
 from langchain.llms import LlamaCpp
+from langchain.callbacks.base import CallbackManager
 
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def get_model() -> str:
     """Download model. f
@@ -32,3 +35,28 @@ def test_llamacpp_inference() -> None:
     llm = LlamaCpp(model_path=model_path)
     output = llm("Say foo:")
     assert isinstance(output, str)
+
+def test_llamacpp_streaming() -> None:
+    """Test streaming tokens from LlamaCpp."""
+    model_path = get_model()
+    llm = LlamaCpp(model_path=model_path, max_tokens=10)
+    generator = llm.stream("Q: How do you say 'hello' in German? A:'",stop=["'"])
+
+    assert isinstance(generator, Generator)
+
+    for token in generator:
+        assert isinstance(token, str)
+        # Note that this out currently differs from the OpenAI format:
+        # which looks like this: token["choices"][0]["text"]
+
+def test_llamacpp_streaming_callback() -> None:
+    """Test that streaming correctly invokes on_llm_new_token callback."""
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+    llm = LlamaCpp(
+        model_path=get_model(),
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+    llm("Q: How do you say 'hello' in German? A:'")
+    assert callback_handler.llm_streams > 2
