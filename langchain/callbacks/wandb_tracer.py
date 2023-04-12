@@ -22,8 +22,6 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
 )
 
-from pkg_resources import parse_version
-
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
     from wandb.sdk.data_types import trace_tree
@@ -39,21 +37,30 @@ if TYPE_CHECKING:
     from langchain.schema import BaseLanguageModel
     from langchain.tools.base import BaseTool
 
+
 def import_wandb() -> Any:
     try:
         import wandb
-        min_version = "0.14.2"
-        if parse_version(wandb.__version__) < parse_version(min_version): # Update to 0.14.3 once it is released
-            raise ImportError((
-                f"`wandb` version must be at least {min_version}. Found "
-                f"{wandb.__version__}. Please run `pip install --upgrade wandb>={min_version}`"
-            ))
+
+        # min_version = "0.14.2"
+        print("VERSION", wandb.__version__)
+        # if parse_version(wandb.__version__) < parse_version(
+        #     min_version
+        # ):  # Update to 0.14.3 once it is released
+        #     raise ImportError(
+        #         (
+        #             f"`wandb` version must be at least {min_version}. Found "
+        #             f"{wandb.__version__}. Please run "
+        #             "`pip install --upgrade wandb>={min_version}`"
+        #         )
+        #     )
     except ImportError:
         raise ImportError(
             "To use the WandbTracer you need to have the `wandb` python "
             "package installed. Please install it with `pip install wandb`"
         )
     return wandb
+
 
 def print_wandb_init_message(run_url: str) -> None:
     import_wandb().termlog(
@@ -248,6 +255,7 @@ class WandbTracer(SharedTracer):
 def _get_span_producing_object(run: "BaseRun") -> Any:
     return run.serialized.get("_self")
 
+
 def _convert_lc_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
     if isinstance(run, LLMRun):
         return _convert_llm_run_to_wb_span(run)
@@ -258,24 +266,32 @@ def _convert_lc_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
     else:
         return _convert_run_to_wb_span(run)
 
+
 def _convert_llm_run_to_wb_span(run: "LLMRun") -> "trace_tree.Span":
     import_wandb()
     from wandb.sdk.data_types import trace_tree
-    
+
     base_span = _convert_run_to_wb_span(run)
 
     if run.response is not None:
         base_span.attributes["llm_output"] = run.response.llm_output
     base_span.results = [
-            trace_tree.Result(
-                inputs={"prompt": prompt},
-                outputs={"generation": run.response.generations[ndx][0].text} if (run.response is not None and run.response.generations.length > ndx and run.response.generations[ndx].length > 0) else None
+        trace_tree.Result(
+            inputs={"prompt": prompt},
+            outputs={"generation": run.response.generations[ndx][0].text}
+            if (
+                run.response is not None
+                and len(run.response.generations) > ndx
+                and len(run.response.generations[ndx]) > 0
             )
-            for ndx, prompt in enumerate(run.serialized.get("prompts", []))
-        ]
+            else None,
+        )
+        for ndx, prompt in enumerate(run.serialized.get("prompts", []))
+    ]
     base_span.span_kind = trace_tree.SpanKind.LLM
 
     return base_span
+
 
 def _convert_chain_run_to_wb_span(run: "ChainRun") -> "trace_tree.Span":
     import_wandb()
@@ -283,18 +299,18 @@ def _convert_chain_run_to_wb_span(run: "ChainRun") -> "trace_tree.Span":
 
     base_span = _convert_run_to_wb_span(run)
 
-    base_span.results = [
-            trace_tree.Result(
-                inputs=run.inputs,
-                outputs=run.outputs
-            )
-        ]
+    base_span.results = [trace_tree.Result(inputs=run.inputs, outputs=run.outputs)]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
     ]
-    base_span.span_kind = trace_tree.SpanKind.AGENT if isinstance(_get_span_producing_object(run), BaseSingleActionAgent) else trace_tree.SpanKind.CHAIN
+    base_span.span_kind = (
+        trace_tree.SpanKind.AGENT
+        if isinstance(_get_span_producing_object(run), BaseSingleActionAgent)
+        else trace_tree.SpanKind.CHAIN
+    )
 
     return base_span
+
 
 def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
     import_wandb()
@@ -302,13 +318,8 @@ def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
 
     base_span = _convert_run_to_wb_span(run)
 
-    base_span.attributes['action'] = run.action
-    base_span.results = [
-            trace_tree.Result(
-                inputs=run.tool_input,
-                outputs=run.output
-            )
-        ]
+    base_span.attributes["action"] = run.action
+    base_span.results = [trace_tree.Result(inputs=run.tool_input, outputs=run.output)]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
     ]
@@ -316,19 +327,22 @@ def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
 
     return base_span
 
+
 def _convert_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
     import_wandb()
     from wandb.sdk.data_types import trace_tree
 
     attributes = {**run.extra} if run.extra else {}
-    attributes['execution_order'] = run.execution_order
+    attributes["execution_order"] = run.execution_order
 
     return trace_tree.Span(
-        span_id = str(run.id) if run.id is not None else None,
-        name = run.serialized.get("name"),
+        span_id=str(run.id) if run.id is not None else None,
+        name=run.serialized.get("name"),
         start_time_ms=run.start_time,
         end_time_ms=run.end_time,
-        status_code=trace_tree.StatusCode.SUCCESS if run.error is None else trace_tree.StatusCode.ERROR,
+        status_code=trace_tree.StatusCode.SUCCESS
+        if run.error is None
+        else trace_tree.StatusCode.ERROR,
         status_message=run.error,
         attributes=attributes,
     )
@@ -356,6 +370,7 @@ def _safe_maybe_model_dump(
         data = _replace_type_with_kind(data)
 
     return data
+
 
 def _replace_type_with_kind(data: dict) -> dict:
     if isinstance(data, dict):
