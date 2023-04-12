@@ -13,7 +13,7 @@ from typing import (
 )
 
 from langchain.agents import BaseSingleActionAgent
-from langchain.callbacks import get_callback_manager
+from langchain.callbacks import get_callback_manager, StdOutCallbackHandler
 from langchain.callbacks.tracers.base import SharedTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
@@ -118,6 +118,7 @@ class WandbTracer(SharedTracer):
     def watch_all(
         cls,
         run_args: Optional[WandbRunArgs] = None,
+        include_stdout: bool = True,
         additional_handlers: list["BaseCallbackHandler"] = [],
     ) -> None:
         """Sets up a WandbTracer and makes it the default handler. To use W&B to
@@ -148,7 +149,10 @@ class WandbTracer(SharedTracer):
         tracer.init(run_args)
         tracer.load_session("")
         manager = get_callback_manager()
-        manager.set_handlers([tracer] + additional_handlers)
+        handlers = [tracer]
+        if include_stdout:
+            handlers.append(StdOutCallbackHandler())
+        manager.set_handlers(handlers + additional_handlers)
 
     @staticmethod
     def stop_watch() -> None:
