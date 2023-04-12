@@ -21,7 +21,7 @@ PROMPT = PromptTemplate(
 )
 
 context_template = """You are a teacher grading a quiz.
-You are given a question, the contex the question is about, and the student's answer You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
+You are given a question, the context the question is about, and the student's answer. You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
 
 Example Format:
 QUESTION: question here
@@ -41,7 +41,7 @@ CONTEXT_PROMPT = PromptTemplate(
 
 
 cot_template = """You are a teacher grading a quiz.
-You are given a question, the contex the question is about, and the student's answer You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
+You are given a question, the context the question is about, and the student's answer. You are asked to score the student's answer as either CORRECT or INCORRECT, based on the context.
 Write out in a step by step manner your reasoning to be sure that your conclusion is correct. Avoid simply stating the correct answer at the outset.
 
 Example Format:
