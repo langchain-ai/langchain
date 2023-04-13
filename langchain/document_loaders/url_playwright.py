@@ -1,7 +1,7 @@
 """Loader that uses Playwright to load a page, then uses unstructured to load the html.
 """
 import logging
-from typing import List
+from typing import List, Optional
 
 
 from langchain.docstore.document import Document
@@ -25,6 +25,7 @@ class PlaywrightURLLoader(BaseLoader):
         urls: List[str],
         continue_on_failure: bool = True,
         headless: bool = True,
+        remove_selectors: Optional[List[str]] = None,
     ):
         """Load a list of URLs using Playwright and unstructured."""
         try:
@@ -46,6 +47,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.headless = headless
+        self.remove_selectors = remove_selectors
 
     def load(self) -> List[Document]:
         """Load the specified URLs using Playwright and create Document instances.
@@ -64,6 +66,12 @@ class PlaywrightURLLoader(BaseLoader):
                 try:
                     page = browser.new_page()
                     page.goto(url)
+
+                    for selector in self.remove_selectors or []:
+                        element = page.locator(selector)
+                        if element.is_visible():
+                            element.evaluate('element => element.remove()')
+
                     page_source = page.content()
                     elements = partition_html(text=page_source)
                     text = "\n\n".join([str(el) for el in elements])
