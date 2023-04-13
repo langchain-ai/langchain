@@ -31,12 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const mendableFloatingButton = React.createElement(
       MendableFloatingButton,
       {
-        hintText: 'How to create an LLM chain?',
         style: { darkMode: false, accentColor: '#010810' },
         floatingButtonStyle: { color: '#ffffff', backgroundColor: '#010810' },
         anon_key: '82842b36-3ea6-49b2-9fb8-52cfc4bde6bf', // Mendable Search Public ANON key, ok to be public
+        messageSettings: {
+          openSourcesInNewTab: false,
+        },
         icon: icon,
-        
       }
     );
 
