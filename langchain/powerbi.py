@@ -35,9 +35,8 @@ class PowerBIDataset(BaseModel):
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
     schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    @root_validator(pre=True)
-    @classmethod
-    def token_or_credential_present(cls, values: dict[str, Any]) -> Any:
+    @root_validator()
+    def token_or_credential_present(cls, values: dict) -> dict:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credentials" in values:
             return values
