@@ -1,4 +1,4 @@
-"""Wrapper around a custom APIs."""
+"""Wrapper around custom APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
@@ -14,7 +14,7 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 
 
 class CustomEndpoint(LLM):
-    """Wrapper around HuggingFaceHub Inference Endpoints.
+    """Wrapper around custom Inference Endpoints, related to HuggingFaceHub Inference Endpoints.
 
     Only supports `text-generation` and `text2text-generation` for now.
 
@@ -22,12 +22,10 @@ class CustomEndpoint(LLM):
         .. code-block:: python
 
             from langchain.llms import CustomEndpoint
-            endpoint_url = (
-                "https://abcdefghijklmnop.us-east-1.aws.endpoints.huggingface.cloud"
-            )
-            hf = CustomEndpoint(
+            endpoint_url = "https://api/endpoint/
+            llm = CustomEndpoint(
                 endpoint_url=endpoint_url,
-                huggingfacehub_api_token="my-api-key"
+                api_token="my-api-key"
             )
     """
 
@@ -38,6 +36,17 @@ class CustomEndpoint(LLM):
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
 
+    api_key: Optional[str] = None
+    """API key."""
+    api_authorization_header: Optional[str] = None
+    """
+    Authorization header that will be formatted with `format`.
+    
+    Example:
+        'Api-Key {api_key}'
+    Header compute:
+        authorization_header = self.api_authorization_header.format(api_key=self.api_key)
+    """
     class Config:
         """Configuration for this pydantic object."""
 
@@ -55,7 +64,7 @@ class CustomEndpoint(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "huggingface_endpoint"
+        return "custom_endpoint"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to custom inference endpoint.
@@ -70,7 +79,7 @@ class CustomEndpoint(LLM):
         Example:
             .. code-block:: python
 
-                response = hf("Tell me a joke.")
+                response = llm("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
 
@@ -81,13 +90,21 @@ class CustomEndpoint(LLM):
         headers = {
             "Content-Type": "application/json",
         }
+        if self.authorization_header is not None:
+            authorization_header = self.api_authorization_header.format(api_key=self.api_key)
+        elif self.api_key is not None:
+            authorization_header = self.api_key
+        else:
+            authorization_header = None
+        if authorization_header is not None:
+            headers.update({"Authorization": authorization_header})
 
         # send request
         try:
             response = requests.post(
                 self.endpoint_url, headers=headers, json=parameter_payload
             )
-        except requests.exceptions.RequestException as e:  # This is the correct syntax
+        except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
         generated_text = response.json()
         if "error" in generated_text:
@@ -105,17 +122,11 @@ class CustomEndpoint(LLM):
                 f"currently only {VALID_TASKS} are supported"
             )
         if stop is not None:
-            # This is a bit hacky, but I can't figure out a better way to enforce
-            # stop tokens when making calls to huggingface_hub.
             text = enforce_stop_tokens(text, stop)
         return text
         
     async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to custom inference endpoint."""
-
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
         func = partial(self._call, prompt, stop)
         return await asyncio.get_event_loop().run_in_executor(None, func)        
         
