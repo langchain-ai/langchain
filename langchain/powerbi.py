@@ -98,7 +98,7 @@ class PowerBIDataset:
                     "HTTP error while getting table info for %s: %s", table, err
                 )
                 return "Error with the connection to PowerBI, please review your authentication credentials."  # noqa: E501 # pylint: disable=C0301
-            rows = result["results"][0]["tables"][0]["rows"]
+            rows = json_to_md(result["results"][0]["tables"][0]["rows"])
             self._schemas[table] = rows
             tables.append(str(rows))
         return ", ".join(tables)
@@ -121,3 +121,14 @@ class PowerBIDataset:
         )
         result.raise_for_status()
         return result.json()
+
+
+def json_to_md(json_contents: list[dict[str, str | int | float]]) -> str:
+    """Create a markdown table from a json object."""
+    md = ""
+    for index, _dict in enumerate(json_contents):
+        md += f"| Num: {index} |  |\n| - | - |\n"
+        for key in _dict:
+            md += f"| {key} | {json_contents[index][key]} |\n"
+        md += "---\n"
+    return md
