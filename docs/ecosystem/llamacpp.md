@@ -1,7 +1,7 @@
 # Llama.cpp
 
 This page covers how to use [llama.cpp](https://github.com/ggerganov/llama.cpp) within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Jina wrappers.
+It is broken into two parts: installation and setup, and then references to specific Llama-cpp wrappers.
 
 ## Installation and Setup
 - Install the Python package with `pip install llama-cpp-python`

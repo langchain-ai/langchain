@@ -110,6 +110,7 @@ def test_marqo_weighted_query(client) -> None:
     )
     assert results == [Document(page_content="Smartphone")]
 
+
 def test_marqo_multimodal():
     client = marqo.Client(url=DEFAULT_MARQO_URL, api_key=DEFAULT_MARQO_API_KEY)
     try:
@@ -124,24 +125,24 @@ def test_marqo_multimodal():
     settings = {"treat_urls_and_pointers_as_images": True, "model": "ViT-L/14"}
     client.create_index(INDEX_NAME, **settings)
     client.index(INDEX_NAME).add_documents(
-        [   
+        [
             # image of a bus
             {
-                    "caption": "Bus",
-                    "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image4.jpg"
+                "caption": "Bus",
+                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image4.jpg",
             },
             # image of a plane
-            {   
-                    "caption": "Plane", 
-                    "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image2.jpg"
-            }
+            {
+                "caption": "Plane",
+                "image": "https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image2.jpg",
+            },
         ],
     )
 
     def get_content(res):
-        if 'text' in res:
-            return res['text']
-        
+        if "text" in res:
+            return res["text"]
+
         return f"{res['caption']}: {res['image']}"
 
     marqo_search = Marqo(client, INDEX_NAME)
@@ -151,11 +152,10 @@ def test_marqo_multimodal():
 
     assert docs[0].page_content.split(":")[0] == "Plane"
 
-
     raised_value_error = False
     try:
         marqo_search.add_texts(["text"])
     except ValueError:
-        raised_value_error = True 
-    
+        raised_value_error = True
+
     assert raised_value_error

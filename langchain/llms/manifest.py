@@ -1,12 +1,12 @@
 """Wrapper around HazyResearch's Manifest library."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 
 
-class ManifestWrapper(LLM, BaseModel):
+class ManifestWrapper(LLM):
     """Wrapper around HazyResearch's Manifest library."""
 
     client: Any  #: :meta private:
@@ -28,7 +28,7 @@ class ManifestWrapper(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import manifest python package. "
-                "Please it install it with `pip install manifest-ml`."
+                "Please install it with `pip install manifest-ml`."
             )
         return values
 

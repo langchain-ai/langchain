@@ -2,13 +2,11 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
-
 from langchain.llms import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 
 
-class PromptLayerOpenAI(OpenAI, BaseModel):
+class PromptLayerOpenAI(OpenAI):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -106,7 +104,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         return generated_responses
 
 
-class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
+class PromptLayerOpenAIChat(OpenAIChat):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python

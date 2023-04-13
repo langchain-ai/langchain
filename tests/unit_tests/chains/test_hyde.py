@@ -2,7 +2,6 @@
 from typing import List, Optional
 
 import numpy as np
-from pydantic import BaseModel
 
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
@@ -23,7 +22,7 @@ class FakeEmbeddings(Embeddings):
         return list(np.random.uniform(0, 1, 10))
 
 
-class FakeLLM(BaseLLM, BaseModel):
+class FakeLLM(BaseLLM):
     """Fake LLM wrapper for testing purposes."""
 
     n: int = 1

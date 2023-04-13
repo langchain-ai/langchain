@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class HuggingFaceEndpoint(LLM, BaseModel):
+class HuggingFaceEndpoint(LLM):
     """Wrapper around HuggingFaceHub Inference Endpoints.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -70,7 +70,7 @@ class HuggingFaceEndpoint(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Please install it with `pip install huggingface_hub`."
             )
         return values
 

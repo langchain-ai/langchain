@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -11,7 +11,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class Cohere(LLM, BaseModel):
+class Cohere(LLM):
     """Wrapper around Cohere large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -73,7 +73,7 @@ class Cohere(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import cohere python package. "
-                "Please it install it with `pip install cohere`."
+                "Please install it with `pip install cohere`."
             )
         return values
 

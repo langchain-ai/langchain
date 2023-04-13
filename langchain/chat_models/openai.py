@@ -5,7 +5,7 @@ import logging
 import sys
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -91,7 +91,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-class ChatOpenAI(BaseChatModel, BaseModel):
+class ChatOpenAI(BaseChatModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -115,6 +115,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     request_timeout: int = 60
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
@@ -151,14 +152,22 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
@@ -183,6 +192,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
+            "temperature": self.temperature,
             **self.model_kwargs,
         }
 
@@ -317,8 +327,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -326,7 +336,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model(self.model_name)
@@ -348,7 +358,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
         model = self.model_name
@@ -392,5 +402,5 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
-        num_tokens += 2
+        num_tokens += 3
         return num_tokens

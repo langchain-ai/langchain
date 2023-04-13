@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
@@ -12,7 +12,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 
-class LLMChain(Chain, BaseModel):
+class LLMChain(Chain):
     """Chain to run queries against LLMs.
 
     Example:

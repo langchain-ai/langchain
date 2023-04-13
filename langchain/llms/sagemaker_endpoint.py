@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -55,7 +55,7 @@ class ContentHandlerBase(ABC):
         """
 
 
-class SagemakerEndpoint(LLM, BaseModel):
+class SagemakerEndpoint(LLM):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed
@@ -176,7 +176,7 @@ class SagemakerEndpoint(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import boto3 python package. "
-                "Please it install it with `pip install boto3`."
+                "Please install it with `pip install boto3`."
             )
         return values
 

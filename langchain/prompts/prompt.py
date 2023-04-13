@@ -5,7 +5,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -14,7 +14,7 @@ from langchain.prompts.base import (
 )
 
 
-class PromptTemplate(StringPromptTemplate, BaseModel):
+class PromptTemplate(StringPromptTemplate):
     """Schema to represent a prompt for an LLM.
 
     Example:
@@ -86,7 +86,7 @@ class PromptTemplate(StringPromptTemplate, BaseModel):
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
-        Intended be used as a way to dynamically create a prompt from examples.
+        Intended to be used as a way to dynamically create a prompt from examples.
 
         Args:
             examples: List of examples to use in the prompt.

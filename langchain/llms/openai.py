@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -113,7 +113,7 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-class BaseOpenAI(BaseLLM, BaseModel):
+class BaseOpenAI(BaseLLM):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -151,6 +151,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -204,15 +205,25 @@ class BaseOpenAI(BaseLLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                print("USING ORGANIZATION: ")
+                print(openai_organization)
+                openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
@@ -435,7 +446,7 @@ class BaseOpenAI(BaseLLM, BaseModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         encoder = "gpt2"
         if self.model_name in ("text-davinci-003", "text-davinci-002"):
@@ -534,7 +545,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
 
-class OpenAIChat(BaseLLM, BaseModel):
+class OpenAIChat(BaseLLM):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -588,14 +599,19 @@ class OpenAIChat(BaseLLM, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
@@ -726,7 +742,7 @@ class OpenAIChat(BaseLLM, BaseModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")

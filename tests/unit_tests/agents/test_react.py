@@ -2,8 +2,6 @@
 
 from typing import Any, List, Mapping, Optional, Union
 
-from pydantic import BaseModel
-
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
 from langchain.agents.tools import Tool
 from langchain.docstore.base import Docstore
@@ -23,7 +21,7 @@ Made in 2022."""
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
 
 
-class FakeListLLM(LLM, BaseModel):
+class FakeListLLM(LLM):
     """Fake LLM for testing that outputs elements of a list."""
 
     responses: List[str]

@@ -10,6 +10,8 @@ Please fill out [this form](https://forms.gle/57d8AmXBYp8PP8tZA) and we'll set u
 ## Quick Install
 
 `pip install langchain`
+or
+`conda install langchain -c conda-forge`
 
 ## 🤔 What is this?
 
@@ -73,7 +75,7 @@ Memory is the concept of persisting state between calls of a chain/agent. LangCh
 
 [BETA] Generative models are notoriously hard to evaluate with traditional metrics. One new way of evaluating them is using language models themselves to do the evaluation. LangChain provides some prompts/chains for assisting in this.
 
-For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/?).
+For more information on these concepts, please see our [full documentation](https://langchain.readthedocs.io/en/latest/).
 
 ## 💁 Contributing
 

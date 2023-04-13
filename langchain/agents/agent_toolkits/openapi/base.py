@@ -22,7 +22,11 @@ def create_openapi_agent(
     suffix: str = OPENAPI_SUFFIX,
     format_instructions: str = FORMAT_INSTRUCTIONS,
     input_variables: Optional[List[str]] = None,
+    max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
+    early_stopping_method: str = "force",
     verbose: bool = False,
+    return_intermediate_steps: bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a json agent from an LLM and tools."""
@@ -42,5 +46,11 @@ def create_openapi_agent(
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=toolkit.get_tools(), verbose=verbose
+        agent=agent,
+        tools=toolkit.get_tools(),
+        verbose=verbose,
+        return_intermediate_steps=return_intermediate_steps,
+        max_iterations=max_iterations,
+        max_execution_time=max_execution_time,
+        early_stopping_method=early_stopping_method,
     )
