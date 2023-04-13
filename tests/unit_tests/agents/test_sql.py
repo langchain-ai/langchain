@@ -1,8 +1,9 @@
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-from langchain.sql_database import SQLDatabase
 from langchain.llms.openai import OpenAI
+from langchain.sql_database import SQLDatabase
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
 
 def test_create_sql_agent() -> None:
     db = SQLDatabase.from_uri("sqlite:///:memory:")
@@ -15,4 +16,4 @@ def test_create_sql_agent() -> None:
         toolkit=toolkit,
     )
 
-    assert agent_executor.run("foo") == "baz"
+    assert agent_executor.run("hello") == "baz"
