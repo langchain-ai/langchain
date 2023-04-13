@@ -1,4 +1,6 @@
 """Toolkit for interacting with a Power BI dataset."""
+from __future__ import annotations
+
 from typing import List
 
 from pydantic import Field

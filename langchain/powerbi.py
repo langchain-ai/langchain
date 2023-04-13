@@ -19,8 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 class PowerBIDataset:
     """Create PowerBI engine from dataset ID and credential or token.
 
-    Use either the credential or a supplied token to authenticate. If both are supplied the credential is used to generate a token.
-    The impersonated_user_name is the UPN of a user to be impersonated. If the model is not RLS enabled, this will be ignored.
+    Use either the credential or a supplied token to authenticate.
+    If both are supplied the credential is used to generate a token.
+    The impersonated_user_name is the UPN of a user to be impersonated.
+    If the model is not RLS enabled, this will be ignored.
     """
 
     group_id: str | None
