@@ -115,6 +115,7 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     request_timeout: int = 60
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
@@ -166,7 +167,7 @@ class ChatOpenAI(BaseChatModel):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
@@ -191,6 +192,7 @@ class ChatOpenAI(BaseChatModel):
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
+            "temperature": self.temperature,
             **self.model_kwargs,
         }
 
@@ -325,8 +327,8 @@ class ChatOpenAI(BaseChatModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -334,7 +336,7 @@ class ChatOpenAI(BaseChatModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model(self.model_name)
@@ -356,7 +358,7 @@ class ChatOpenAI(BaseChatModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
         model = self.model_name

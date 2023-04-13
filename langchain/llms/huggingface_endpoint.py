@@ -70,7 +70,7 @@ class HuggingFaceEndpoint(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Please install it with `pip install huggingface_hub`."
             )
         return values
 

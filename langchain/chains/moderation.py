@@ -31,6 +31,7 @@ class OpenAIModerationChain(Chain):
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -54,7 +55,7 @@ class OpenAIModerationChain(Chain):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         return values
 

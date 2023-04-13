@@ -26,7 +26,8 @@ poetry install --with test_integration
 Any new dependencies should be added by running:
 
 ```bash
-poetry add some_new_deps --group "test_integration" 
+# add package and install it after adding:
+poetry add tiktoken@latest --group "test_integration" && poetry install --with test_integration
 ```
 
 Before running any tests, you should start a specific Docker container that has all the
@@ -54,4 +55,12 @@ new cassettes. Here's an example:
 
 ```bash
 pytest tests/integration_tests/vectorstores/test_elasticsearch.py --vcr-record=none
+```
+
+### Run some tests with coverage:
+
+```bash
+pytest tests/integration_tests/vectorstores/test_elasticsearch.py --cov=langchain --cov-report=html
+start "" htmlcov/index.html || open htmlcov/index.html
+
 ```

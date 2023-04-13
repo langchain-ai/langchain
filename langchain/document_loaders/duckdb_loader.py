@@ -35,7 +35,7 @@ class DuckDBLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "Could not import duckdb python package. "
-                "Please it install it with `pip install duckdb`."
+                "Please install it with `pip install duckdb`."
             )
 
         docs = []

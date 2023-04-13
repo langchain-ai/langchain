@@ -151,6 +151,7 @@ class BaseOpenAI(BaseLLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
@@ -222,7 +223,7 @@ class BaseOpenAI(BaseLLM):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         if values["streaming"] and values["n"] > 1:
             raise ValueError("Cannot stream results when n > 1.")
@@ -445,7 +446,7 @@ class BaseOpenAI(BaseLLM):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         encoder = "gpt2"
         if self.model_name in ("text-davinci-003", "text-davinci-002"):
@@ -610,7 +611,7 @@ class OpenAIChat(BaseLLM):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
@@ -741,7 +742,7 @@ class OpenAIChat(BaseLLM):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")

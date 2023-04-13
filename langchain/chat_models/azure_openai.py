@@ -44,6 +44,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
+    openai_organization: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -86,7 +87,7 @@ class AzureChatOpenAI(ChatOpenAI):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion

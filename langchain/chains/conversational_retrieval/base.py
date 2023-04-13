@@ -80,7 +80,7 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
+        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
@@ -104,7 +104,7 @@ class BaseConversationalRetrievalChain(Chain):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
+        answer = await self.combine_docs_chain.arun(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
