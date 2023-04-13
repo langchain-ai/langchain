@@ -22,11 +22,12 @@ class SlackDirectoryLoader(BaseLoader):
         """
         self.zip_path = Path(zip_path)
         self.workspace_url = workspace_url
-        self.channel_id_map = self._get_channel_id_map()
+        self.channel_id_map = self._get_channel_id_map(self.zip_path)
 
-    def _get_channel_id_map(self) -> Dict[str, str]:
+    @staticmethod
+    def _get_channel_id_map(zip_path: Path) -> Dict[str, str]:
         """Get a dictionary mapping channel names to their respective IDs."""
-        with zipfile.ZipFile(self.zip_path, "r") as zip_file:
+        with zipfile.ZipFile(zip_path, "r") as zip_file:
             try:
                 with zip_file.open("channels.json", "r") as f:
                     channels = json.load(f)
