@@ -13,7 +13,7 @@ from typing import (
 )
 
 from langchain.agents import BaseSingleActionAgent
-from langchain.callbacks import get_callback_manager, StdOutCallbackHandler
+from langchain.callbacks import StdOutCallbackHandler, get_callback_manager
 from langchain.callbacks.tracers.base import SharedTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
@@ -149,7 +149,7 @@ class WandbTracer(SharedTracer):
         tracer.init(run_args)
         tracer.load_session("")
         manager = get_callback_manager()
-        handlers = [tracer]
+        handlers: list["BaseCallbackHandler"] = [tracer]
         if include_stdout:
             handlers.append(StdOutCallbackHandler())
         manager.set_handlers(handlers + additional_handlers)
@@ -322,7 +322,11 @@ def _convert_tool_run_to_wb_span(run: "ToolRun") -> "trace_tree.Span":
     base_span = _convert_run_to_wb_span(run)
 
     base_span.attributes["action"] = run.action
-    base_span.results = [trace_tree.Result(inputs={"input": run.tool_input}, outputs={"output": run.output})]
+    base_span.results = [
+        trace_tree.Result(
+            inputs={"input": run.tool_input}, outputs={"output": run.output}
+        )
+    ]
     base_span.child_spans = [
         _convert_lc_run_to_wb_span(child_run) for child_run in run.child_runs
     ]
