@@ -5310,6 +5310,22 @@ files = [
 wcwidth = "*"
 
 [[package]]
+name = "promptlayer"
+version = "0.1.80"
+description = "PromptLayer is a package to keep track of your GPT models training"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "promptlayer-0.1.80.tar.gz", hash = "sha256:1012018ed3e4bca4f0d9c9164cb00b7ca0936cba6a40d4de53e87ef08fdff62f"},
+]
+
+[package.dependencies]
+langchain = "*"
+openai = "*"
+requests = "*"
+
+[[package]]
 name = "protobuf"
 version = "3.19.6"
 description = "Protocol Buffers"
@@ -9019,4 +9035,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8d1bb01bd6cab73583c3b2e2aaa907f0c69ac949de4aef53c511f1290359b854"
+content-hash = "3c8488864a754852fdec3e56dd5630ed73852ec2120a94cfe22537c075901b24"
