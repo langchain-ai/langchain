@@ -1,5 +1,6 @@
 # flake8: noqa
 """Tools for interacting with a Power BI dataset."""
+from __future__ import annotations
 from pydantic import BaseModel, Extra, Field, validator  # pylint: disable=E0611
 
 from langchain.chains.llm import LLMChain
