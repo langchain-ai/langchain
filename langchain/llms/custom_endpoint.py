@@ -25,7 +25,7 @@ class CustomEndpoint(LLM):
             endpoint_url = "https://api/endpoint/
             llm = CustomEndpoint(
                 endpoint_url=endpoint_url,
-                api_token="my-api-key"
+                api_key="my-api-key"
             )
     """
 
@@ -45,7 +45,8 @@ class CustomEndpoint(LLM):
     Example:
         'Api-Key {api_key}'
     Header compute:
-        authorization_header = self.api_authorization_header.format(api_key=self.api_key)
+        .. code-block:: python
+            authorization_header = self.api_authorization_header.format(api_key=self.api_key)
     """
     class Config:
         """Configuration for this pydantic object."""
