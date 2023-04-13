@@ -22,7 +22,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     input_key: Optional[str] = None
     """Key name to index the inputs to load_memory_variables."""
 
-    return_docs: bool = True
+    return_docs: bool = False
     """Whether or not to return the result of querying the database directly."""
 
     @property
