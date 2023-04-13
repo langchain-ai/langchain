@@ -10,7 +10,10 @@ class SlackDirectoryLoader(BaseLoader):
     """Loader that loads documents from Slack directory dump."""
 
     def __init__(self, path: str, workspace_url: Optional[str] = None):
-        """Initialize with path and optional workspace URL. Including the URL will turn sources into links."""
+        """Initialize with path and optional workspace URL.
+
+        Including the URL will turn sources into links
+        """
         self.file_path = path
         self.workspace_url = workspace_url
         self.channel_id_map = self._get_channel_id_map()
@@ -41,7 +44,10 @@ class SlackDirectoryLoader(BaseLoader):
                         user = message.get("user")
                         if self.workspace_url:
                             channel_id = self.channel_id_map.get(channel_name, "")
-                            message_link = f"{self.workspace_url}/archives/{channel_id}/p{timestamp.replace('.', '')}"
+                            message_link = (
+                                f"{self.workspace_url}/archives/"
+                                + f"{channel_id}/p{timestamp.replace('.', '')}"
+                            )
                             source = message_link
                         else:
                             source = f"{channel_name} - {user} - {timestamp}"
