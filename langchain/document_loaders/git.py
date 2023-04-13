@@ -46,7 +46,7 @@ class GitLoader(BaseLoader):
                         file_type = os.path.splitext(item.name)[1]
 
                         # loads only text files
-                        if self.is_text_content(content):
+                        if self.bytes2str(content):
                             metadata = {
                                 "file_path": rel_file_path,
                                 "file_name": item.name,
@@ -63,10 +63,9 @@ class GitLoader(BaseLoader):
         return docs
 
     @staticmethod
-    def is_text_content(content: bytes) -> bool:
-        """Determines if the content is text based on the content bytes."""
+    def bytes2str(content: bytes) -> str:
+        """Return decoded text from bytes."""
         try:
-            content.decode("utf-8")
-            return True
+            return content.decode("utf-8")
         except UnicodeDecodeError:
-            return False
+            return None
