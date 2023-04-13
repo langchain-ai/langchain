@@ -10,6 +10,7 @@ from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
 from langchain.document_loaders.bigquery import BigQueryLoader
+from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -136,4 +137,5 @@ __all__ = [
     "SitemapLoader",
     "DuckDBLoader",
     "BigQueryLoader",
+    "BiliBiliLoader",
 ]
