@@ -4,7 +4,7 @@ from langchain.sql_database import SQLDatabase
 from langchain.llms.openai import OpenAI
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-def test_create_sql_agent():
+def test_create_sql_agent() -> None:
     db = SQLDatabase.from_uri("sqlite:///:memory:")
     queries = {"foo": "Final Answer: baz"}
     llm = FakeLLM(queries=queries, sequential_responses=True)
