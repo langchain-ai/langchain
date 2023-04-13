@@ -1,19 +1,50 @@
 """Base loader class."""
-
+import mimetypes
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union, Generator
 from io import IOBase
 from pydantic import BaseModel
+from typing import List, Optional, Union, Generator
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 class Blob(BaseModel):
-    """Blob schema."""
+    """Langchain representation of a blob.
+
+    This representation is inspired by: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+    """
 
     data: Union[bytes, str, IOBase]
-    mimetype: Optional[str]
+    mimetype: Optional[str] = None
+    encoding: Optional[str] = None
+    location: Optional[str] = None  # Location where the original content was found
+
+    def read_if_needed(self) -> "Blob":
+        """Read data if needed."""
+        if isinstance(self.data, IOBase):
+            return Blob(
+                data=self.data.read(),  # TODO(apply encoding here?)
+                mimetype=self.mimetype,
+                encoding=self.encoding,
+            )
+        return self
+
+    def from_file(
+        self, path: str, encoding: Optional[str], mime_type_from_extension: bool = True
+    ) -> "Blob":
+        """Load the blob from a file on the local file system."""
+        if mime_type_from_extension:
+            mimetype = mimetypes.guess_type(path)[0]
+        else:
+            mimetype = False
+        with open(path, "r") as f:
+            return Blob(
+                data=f.read(),
+                mimetype=mimetype,
+                encoding=self.encoding,
+                location=path,
+            )
 
 
 class BaseLoader(ABC):
@@ -37,7 +68,7 @@ class BaseLoader(ABC):
     @abstractmethod
     def lazy_load(
         self,
-    ) -> Generator[Blob, None, None] | Generator[Document, None, None]:
+    ) -> Union[Generator[Blob, None, None], Generator[Document, None, None]]:
         """A lazy loader for content.
 
         Content can be represented as a `blob` or as a `document`.

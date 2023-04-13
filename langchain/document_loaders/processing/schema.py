@@ -4,7 +4,7 @@ Document processors take a langchain Document and produce a new Document using s
 processing logic.
 """
 from abc import ABC, abstractmethod
-from typing import List, Iterable, Sequence
+from typing import List, Sequence
 
 from langchain.schema import Document
 
@@ -27,28 +27,30 @@ class BaseDocumentProcessor(ABC):
     @abstractmethod
     async def abatch_process(self, documents: Sequence[Document]) -> List[Document]:
         """Process documents."""
-
-
-class BaseDocumentReducer(ABC):
-    @abstractmethod
-    def process(
-        self, documents: Iterable[Document]
-    ) -> Document:  # Is Iterable OK here?
-        """Process documents."""
         raise NotImplementedError()
 
-    @abstractmethod
-    def batch_process(self, documents: Sequence[Document]) -> List[Document]:
-        raise NotImplementedError()
 
-    @abstractmethod
-    async def aprocess_document(self, documents: Document) -> Document:
-        """Process documents."""
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def abatch_process(self, documents: Sequence[Document]) -> List[Document]:
-        """Process documents."""
+# Something that may need to exist
+# class BaseDocumentReducer(ABC):
+#     @abstractmethod
+#     def process(
+#         self, documents: Iterable[Document]  # TODO(Eugene): Is Iterable OK here?
+#     ) -> Document:
+#         """Process documents."""
+#         raise NotImplementedError()
+#
+#     @abstractmethod
+#     def batch_process(self, documents: Sequence[Sequence[Document]]) -> List[Document]:
+#         raise NotImplementedError()
+#
+#     @abstractmethod
+#     async def aprocess_document(self, documents: Document) -> Document:
+#         """Process documents."""
+#         raise NotImplementedError()
+#
+#     @abstractmethod
+#     async def abatch_process(self, documents: Sequence[Document]) -> List[Document]:
+#         """Process documents."""
 
 
 class SimpleBatchProcessor(BaseDocumentProcessor, ABC):

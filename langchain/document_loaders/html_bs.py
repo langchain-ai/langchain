@@ -1,10 +1,11 @@
 """Loader that uses bs4 to load HTML files, enriching metadata with page title."""
 
 import logging
-from typing import Dict, List, Union
+from typing import List, Union, Generator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseLoader, Blob
+from langchain.document_loaders.parsers.html_bs import BSHTMLParser
 
 logger = logging.getLogger(__file__)
 
@@ -27,28 +28,16 @@ class BSHTMLLoader(BaseLoader):
                 "bs4 package not found, please install it with " "`pip install bs4`"
             )
 
+        self.parser = BSHTMLParser(bs_kwargs=bs_kwargs)
         self.file_path = file_path
         self.open_encoding = open_encoding
-        if bs_kwargs is None:
-            bs_kwargs = {"features": "lxml"}
-        self.bs_kwargs = bs_kwargs
 
     def load(self) -> List[Document]:
-        from bs4 import BeautifulSoup
+        return list(self.lazy_load())
 
-        """Load HTML document into document objects."""
-        with open(self.file_path, "r", encoding=self.open_encoding) as f:
-            soup = BeautifulSoup(f, **self.bs_kwargs)
-
-        text = soup.get_text()
-
-        if soup.title:
-            title = str(soup.title.string)
-        else:
-            title = ""
-
-        metadata: Dict[str, Union[str, None]] = {
-            "source": self.file_path,
-            "title": title,
-        }
-        return [Document(page_content=text, metadata=metadata)]
+    def lazy_load(
+        self,
+    ) -> Generator[Document, None, None]:
+        """Lazy load"""
+        blob = Blob.from_file(self.file_path)
+        yield from self.parser.lazy_parse(blob)
