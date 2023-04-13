@@ -327,6 +327,7 @@ class Agent(BaseSingleActionAgent):
 
     llm_chain: LLMChain
     allowed_tools: Optional[List[str]] = None
+    max_retries: int = 6
 
     def get_allowed_tools(self) -> Optional[List[str]]:
         return self.allowed_tools
@@ -339,8 +340,8 @@ class Agent(BaseSingleActionAgent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         """Extract tool and tool input from llm output."""
 
-    def _fix_text(self, text: str) -> str:
-        """Fix the text."""
+    def _fix_text(self, text: str) -> str | BaseMessage:
+        """Fix the text, return a string if the agent is not using a chat format."""
         raise ValueError("fix_text not implemented for this agent.")
 
     @property
@@ -360,39 +361,49 @@ class Agent(BaseSingleActionAgent):
             thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
         return thoughts
 
-    def _get_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
+    def _get_next_action(
+        self, full_inputs: Dict[str, str | list[BaseMessage]]
+    ) -> AgentAction:
         """Get the next action, by calling the LLM, and parsing the output."""
-        attempts = 0
-        parsed_output = None
-        full_output = ""
-        while attempts < 5:
-            full_output = self.llm_chain.predict(**full_inputs)
-            parsed_output = self._extract_tool_and_input(full_output)
-            if parsed_output is not None:
-                break
+        str_mode = isinstance(full_inputs["agent_scratchpad"], str)
+        retry_count = 0
+        full_output = self.llm_chain.predict(**full_inputs)
+        parsed_output = self._extract_tool_and_input(full_output)
+        while parsed_output is None and retry_count < self.max_retries:
             new_input = self._fix_text(full_output)
-            full_inputs["agent_scratchpad"] += new_input
-            attempts += 1
+            if str_mode:
+                full_inputs["agent_scratchpad"] += new_input  # type: ignore
+            else:
+                full_inputs["agent_scratchpad"].append(new_input)  # type: ignore
+            full_output = self.llm_chain.predict(**full_inputs)
+            if str_mode:
+                full_output = new_input + full_output  # type: ignore
+            parsed_output = self._extract_tool_and_input(full_output)
+            retry_count += 1
         if parsed_output is None:
-            raise ValueError(f"Could not parse output: {full_output}")
+            raise ValueError("Could not parse output: {full_output}")
         return AgentAction(
             tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
         )
 
     async def _aget_next_action(self, full_inputs: Dict[str, str]) -> AgentAction:
-        attempts = 0
-        parsed_output = None
-        full_output = ""
-        while attempts < 5:
-            full_output = await self.llm_chain.apredict(**full_inputs)
-            parsed_output = self._extract_tool_and_input(full_output)
-            if parsed_output is not None:
-                break
+        str_mode = isinstance(full_inputs["agent_scratchpad"], str)
+        retry_count = 0
+        full_output = await self.llm_chain.apredict(**full_inputs)
+        parsed_output = self._extract_tool_and_input(full_output)
+        while parsed_output is None and retry_count < self.max_retries:
             new_input = self._fix_text(full_output)
-            full_inputs["agent_scratchpad"] += new_input
-            attempts += 1
+            if str_mode:
+                full_inputs["agent_scratchpad"] += new_input  # type: ignore
+            else:
+                full_inputs["agent_scratchpad"].append(new_input)  # type: ignore
+            full_output = await self.llm_chain.apredict(**full_inputs)
+            if str_mode:
+                full_output = new_input + full_output  # type: ignore
+            parsed_output = self._extract_tool_and_input(full_output)
+            retry_count += 1
         if parsed_output is None:
-            raise ValueError(f"Could not parse output: {full_output}")
+            raise ValueError("Could not parse output: {full_output}")
         return AgentAction(
             tool=parsed_output[0], tool_input=parsed_output[1], log=full_output
         )
