@@ -47,17 +47,26 @@ class UnstructuredURLLoader(BaseLoader):
 
         return unstructured_version >= (0, 5, 7)
 
+    def __is_non_html_available(self) -> bool:
+        _unstructured_version = self.__version.split("-")[0]
+        unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
+
+        return unstructured_version >= (0, 5, 12)
+
     def load(self) -> List[Document]:
         """Load file."""
+        from unstructured.partition.auto import partition
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
         for url in self.urls:
             try:
-                if self.__is_headers_available():
+                if self.headers and self.__is_headers_available():
                     elements = partition_html(
                         url=url, headers=self.headers, **self.unstructured_kwargs
                     )
+                elif self.__is_non_html_available():
+                    elements = partition(url=url, **self.unstructured_kwargs)
                 else:
                     elements = partition_html(url=url, **self.unstructured_kwargs)
             except Exception as e:

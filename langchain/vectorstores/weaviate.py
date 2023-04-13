@@ -42,7 +42,6 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
-        embedding: Embeddings,
         attributes: Optional[List[str]] = None,
     ):
         """Initialize with Weaviate client."""
@@ -60,7 +59,6 @@ class Weaviate(VectorStore):
         self._client = client
         self._index_name = index_name
         self._text_key = text_key
-        self._embedding = embedding
         self._query_attrs = [self._text_key]
         if attributes is not None:
             self._query_attrs.extend(attributes)
@@ -85,7 +83,11 @@ class Weaviate(VectorStore):
                         data_properties[key] = metadatas[i][key]
 
                 _id = get_valid_uuid(uuid4())
-                batch.add_data_object(data_properties, self._index_name, _id)
+                batch.add_data_object(
+                    data_object=data_properties, 
+                    class_name=self._index_name, 
+                    uuid=_id
+                )
                 ids.append(_id)
         return ids
 
@@ -101,8 +103,18 @@ class Weaviate(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self._embedding.embed_query(query)
-        return self.similarity_search_by_vector(embedding, k, **kwargs)
+        content: Dict[str, Any] = {"concepts": [query]}
+        if kwargs.get("search_distance"):
+            content["certainty"] = kwargs.get("search_distance")
+        query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        result = query_obj.with_near_text(content).with_limit(k).do()
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
+        docs = []
+        for res in result["data"]["Get"][self._index_name]:
+            text = res.pop(self._text_key)
+            docs.append(Document(page_content=text, metadata=res))
+        return docs
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -111,6 +123,8 @@ class Weaviate(VectorStore):
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_vector(vector).with_limit(k).do()
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
         docs = []
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
@@ -159,7 +173,7 @@ class Weaviate(VectorStore):
 
         client = Client(weaviate_url)
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
-        embeddings = embedding.embed_documents(texts)
+        embeddings = embedding.embed_documents(texts) if embedding else None
         text_key = "text"
         schema = _default_schema(index_name)
         attributes = list(metadatas[0].keys()) if metadatas else None
@@ -179,13 +193,20 @@ class Weaviate(VectorStore):
 
                 _id = get_valid_uuid(uuid4())
 
-                batch.add_data_object(
-                    uuid=_id,
-                    data_object=data_properties,
-                    class_name=index_name,
-                    vector=embeddings[i],
-                )
+                # if an embedding strategy is not provided, we let
+                # weaviate create the embedding. Note that this will only 
+                # work if weaviate has been installed with a vectorizer module
+                # like text2vec-contextionary for example
+                params = {
+                    "uuid": _id,
+                    "data_object": data_properties,
+                    "class_name": index_name
+                }
+                if embeddings is not None:
+                    params["vector"] = embeddings[i],
+
+                batch.add_data_object(**params)
 
             batch.flush()
 
-        return cls(client, index_name, text_key, embedding, attributes)
+        return cls(client, index_name, text_key, attributes)
