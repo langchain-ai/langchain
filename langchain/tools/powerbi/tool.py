@@ -29,7 +29,10 @@ class BasePowerBIDatabaseTool(BaseModel):
 
 
 class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
-    """Tool for querying a Power BI Dataset."""
+    """Tool for querying a Power BI Dataset.
+
+    TODO: test contents of aiohttp responses to catch bad request vs bad auth.
+    """
 
     name = "query_powerbi"
     description = """
@@ -56,7 +59,17 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         return result
 
     async def _arun(self, tool_input: str) -> str:
-        raise NotImplementedError("QueryPowerBITool does not support async")
+        try:
+            result = await self.powerbi.arun(command=tool_input)
+        except Exception as exc:  # pylint: disable=broad-except
+            if "bad request" in str(exc).lower():
+                return "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
+            if "unauthorized" in str(exc).lower():
+                return "Unauthorized. Try changing your authentication, do not retry."
+            return str(exc)
+        if "results" in result:
+            return json_to_md(result["results"][0]["tables"][0]["rows"])
+        return result
 
 
 class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
@@ -75,7 +88,7 @@ class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         return self.powerbi.get_table_info(tool_input.split(", "))
 
     async def _arun(self, tool_input: str) -> str:
-        raise NotImplementedError("SchemaSqlDbTool does not support async")
+        return await self.powerbi.aget_table_info(tool_input.split(", "))
 
 
 class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
@@ -85,11 +98,12 @@ class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
 
     def _run(self, tool_input: str = "") -> str:
-        """Get the schema for a specific table."""
+        """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
     async def _arun(self, tool_input: str = "") -> str:
-        raise NotImplementedError("ListTablesSqlDbTool does not support async")
+        """Get the names of the tables."""
+        return ", ".join(self.powerbi.get_table_names())
 
 
 class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
