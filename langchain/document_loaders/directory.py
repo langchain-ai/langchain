@@ -1,10 +1,10 @@
 """Loading logic for loading documents from a directory."""
 import logging
 from pathlib import Path
-from typing import List, Type, Union
+from typing import List, Type, Union, Generator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.base import BaseLoader, Blob
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
@@ -49,18 +49,25 @@ class DirectoryLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        p = Path(self.path)
         docs = []
-        items = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
-        for i in items:
-            if i.is_file():
-                if _is_visible(i.relative_to(p)) or self.load_hidden:
-                    try:
-                        sub_docs = self.loader_cls(str(i), **self.loader_kwargs).load()
-                        docs.extend(sub_docs)
-                    except Exception as e:
-                        if self.silent_errors:
-                            logger.warning(e)
-                        else:
-                            raise e
+
+        for blob in self.lazy_load():
+            try:
+                sub_docs = self.loader_cls(blob.data, **self.loader_kwargs).load()
+                docs.extend(sub_docs)
+            except Exception as e:
+                if self.silent_errors:
+                    logger.warning(e)
+                else:
+                    raise e
         return docs
+
+    def lazy_load(
+        self,
+    ) -> Union[Generator[Blob, None, None], Generator[Document, None, None]]:
+        p = Path(self.path)
+        items = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        for item in items:
+            if item.is_file():
+                if _is_visible(item.relative_to(p)) or self.load_hidden:
+                    yield Blob.from_file(str(item))

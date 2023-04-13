@@ -23,26 +23,36 @@ class Blob(BaseModel):
     def read_if_needed(self) -> "Blob":
         """Read data if needed."""
         if isinstance(self.data, IOBase):
-            return Blob(
+            return Blob(  # Not inheritance friendly
                 data=self.data.read(),  # TODO(apply encoding here?)
                 mimetype=self.mimetype,
                 encoding=self.encoding,
             )
         return self
 
+    @classmethod
     def from_file(
-        self, path: str, encoding: Optional[str], mime_type_from_extension: bool = True
+        cls,
+        path: str,
+        *,
+        encoding: Optional[str] = None,
+        guess_type: bool = True,
     ) -> "Blob":
-        """Load the blob from a file on the local file system."""
-        if mime_type_from_extension:
-            mimetype = mimetypes.guess_type(path)[0]
-        else:
-            mimetype = False
+        """Load the blob from a file on the local file system.
+
+        Args:
+            path: Path to the file. TODO(Eugene): Change to pathlike object
+            encoding: If provided, the file will be read as text, and the encoding will be used.
+
+        Returns:
+            Blob object
+        """
+        mimetype = mimetypes.guess_type(path)[0] if guess_type else None
         with open(path, "r") as f:
-            return Blob(
+            return cls(
                 data=f.read(),
                 mimetype=mimetype,
-                encoding=self.encoding,
+                encoding=encoding,
                 location=path,
             )
 
@@ -78,5 +88,10 @@ class BaseLoader(ABC):
 
         Future implementations should favor implementing a lazy loader to avoid loading all content
         eagerly into memory.
+
+        The Union on the output type is a bit unfortunate, as it'll force users of sub-classes
+        to use `from typing import cast` to cast the output to the correct type.
+
+        TODO(Eugene): Check if there is an overload solution
         """
         raise NotImplementedError()

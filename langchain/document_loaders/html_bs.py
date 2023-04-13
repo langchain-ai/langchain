@@ -33,11 +33,12 @@ class BSHTMLLoader(BaseLoader):
         self.open_encoding = open_encoding
 
     def load(self) -> List[Document]:
+        """Load all documents eagerly."""
         return list(self.lazy_load())
 
     def lazy_load(
         self,
     ) -> Generator[Document, None, None]:
         """Lazy load"""
-        blob = Blob.from_file(self.file_path)
+        blob = Blob.from_file(self.file_path, encoding=self.open_encoding)
         yield from self.parser.lazy_parse(blob)
