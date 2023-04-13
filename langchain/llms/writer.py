@@ -2,14 +2,14 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 
-class Writer(LLM, BaseModel):
+class Writer(LLM):
     """Wrapper around Writer large language models.
 
     To use, you should have the environment variable ``WRITER_API_KEY``

@@ -77,11 +77,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Log data to Arize when an LLM ends."""
 
-        from arize.utils.types import (
-            Embedding,
-            Environments,
-            ModelTypes,
-        )
+        from arize.utils.types import Embedding, Environments, ModelTypes
 
         # Record token usage of the LLM
         if response.llm_output is not None:

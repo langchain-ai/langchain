@@ -5,9 +5,14 @@ from langchain.memory.buffer import (
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessageHistory
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
+from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
 from langchain.memory.combined import CombinedMemory
-from langchain.memory.entity import ConversationEntityMemory
+from langchain.memory.entity import (
+    ConversationEntityMemory,
+    InMemoryEntityStore,
+    RedisEntityStore,
+)
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.readonly import ReadOnlySharedMemory
 from langchain.memory.simple import SimpleMemory
@@ -23,6 +28,8 @@ __all__ = [
     "ConversationSummaryBufferMemory",
     "ConversationKGMemory",
     "ConversationEntityMemory",
+    "InMemoryEntityStore",
+    "RedisEntityStore",
     "ConversationSummaryMemory",
     "ChatMessageHistory",
     "ConversationStringBufferMemory",
@@ -30,4 +37,5 @@ __all__ = [
     "ConversationTokenBufferMemory",
     "RedisChatMessageHistory",
     "DynamoDBChatMessageHistory",
+    "PostgresChatMessageHistory",
 ]

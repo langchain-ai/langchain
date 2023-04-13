@@ -1,7 +1,7 @@
 """Chain that interprets a prompt and executes bash code to perform bash operations."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -11,7 +11,7 @@ from langchain.schema import BaseLanguageModel
 from langchain.utilities.bash import BashProcess
 
 
-class LLMBashChain(Chain, BaseModel):
+class LLMBashChain(Chain):
     """Chain that interprets a prompt and executes bash code to perform bash operations.
 
     Example:

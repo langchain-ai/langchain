@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
@@ -12,7 +12,7 @@ from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
-class FewShotPromptTemplate(StringPromptTemplate, BaseModel):
+class FewShotPromptTemplate(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
     examples: Optional[List[dict]] = None

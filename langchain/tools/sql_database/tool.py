@@ -3,9 +3,9 @@
 from pydantic import BaseModel, Extra, Field, validator
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
+from langchain.llms.base import BaseLLM
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
@@ -80,11 +80,12 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
+    llm: BaseLLM
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),
+            llm=QueryCheckerTool.llm,
             prompt=PromptTemplate(
-                template=QUERY_CHECKER, input_variables=["query", "dialect"]
+                template=QueryCheckerTool.template, input_variables=["query", "dialect"]
             ),
         )
     )

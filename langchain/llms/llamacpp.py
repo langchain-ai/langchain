@@ -2,14 +2,14 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(LLM, BaseModel):
+class LlamaCpp(LLM):
     """Wrapper around the llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the
@@ -53,6 +53,10 @@ class LlamaCpp(LLM, BaseModel):
     """Number of threads to use. 
     If None, the number of threads is automatically determined."""
 
+    n_batch: Optional[int] = Field(8, alias="n_batch")
+    """Number of tokens to process in parallel.
+    Should be a number between 1 and n_ctx."""
+
     suffix: Optional[str] = Field(None)
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
@@ -80,6 +84,9 @@ class LlamaCpp(LLM, BaseModel):
     top_k: Optional[int] = 40
     """The top-k value to use for sampling."""
 
+    last_n_tokens_size: Optional[int] = 64
+    """The number of tokens to look back when applying the repeat_penalty."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -92,6 +99,8 @@ class LlamaCpp(LLM, BaseModel):
         vocab_only = values["vocab_only"]
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
+        n_batch = values["n_batch"]
+        last_n_tokens_size = values["last_n_tokens_size"]
 
         try:
             from llama_cpp import Llama
@@ -106,6 +115,8 @@ class LlamaCpp(LLM, BaseModel):
                 vocab_only=vocab_only,
                 use_mlock=use_mlock,
                 n_threads=n_threads,
+                n_batch=n_batch,
+                last_n_tokens_size=last_n_tokens_size,
             )
         except ImportError:
             raise ModuleNotFoundError(
@@ -166,6 +177,8 @@ class LlamaCpp(LLM, BaseModel):
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop:
             params["stop_sequences"] = self.stop
+        elif stop:
+            params["stop_sequences"] = stop
         else:
             params["stop_sequences"] = []
 

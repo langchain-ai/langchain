@@ -1,6 +1,6 @@
 """Loader that uses unstructured to load HTML files."""
 import logging
-from typing import List
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -12,7 +12,11 @@ class UnstructuredURLLoader(BaseLoader):
     """Loader that uses unstructured to load HTML files."""
 
     def __init__(
-        self, urls: List[str], continue_on_failure: bool = True, headers: dict = {}
+        self,
+        urls: List[str],
+        continue_on_failure: bool = True,
+        headers: dict = {},
+        **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
         try:
@@ -35,6 +39,7 @@ class UnstructuredURLLoader(BaseLoader):
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.headers = headers
+        self.unstructured_kwargs = unstructured_kwargs
 
     def __is_headers_available(self) -> bool:
         _unstructured_version = self.__version.split("-")[0]
@@ -42,20 +47,32 @@ class UnstructuredURLLoader(BaseLoader):
 
         return unstructured_version >= (0, 5, 7)
 
+    def __is_non_html_available(self) -> bool:
+        _unstructured_version = self.__version.split("-")[0]
+        unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
+
+        return unstructured_version >= (0, 5, 12)
+
     def load(self) -> List[Document]:
         """Load file."""
+        from unstructured.partition.auto import partition
         from unstructured.partition.html import partition_html
 
         docs: List[Document] = list()
         for url in self.urls:
             try:
-                if self.__is_headers_available():
-                    elements = partition_html(url=url, headers=self.headers)
+                if self.headers and self.__is_headers_available():
+                    elements = partition_html(
+                        url=url, headers=self.headers, **self.unstructured_kwargs
+                    )
+                elif self.__is_non_html_available():
+                    elements = partition(url=url, **self.unstructured_kwargs)
                 else:
-                    elements = partition_html(url=url)
+                    elements = partition_html(url=url, **self.unstructured_kwargs)
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
+                    continue
                 else:
                     raise e
             text = "\n\n".join([str(el) for el in elements])

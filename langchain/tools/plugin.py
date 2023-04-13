@@ -17,6 +17,8 @@ class ApiConfig(BaseModel):
 
 
 class AIPlugin(BaseModel):
+    """AI Plugin Definition."""
+
     schema_version: str
     name_for_model: str
     name_for_human: str
@@ -27,6 +29,12 @@ class AIPlugin(BaseModel):
     logo_url: Optional[str]
     contact_email: Optional[str]
     legal_info_url: Optional[str]
+
+    @classmethod
+    def from_url(cls, url: str) -> AIPlugin:
+        """Instantiate AIPlugin from a URL."""
+        response = requests.get(url).json()
+        return cls(**response)
 
 
 def marshal_spec(txt: str) -> dict:
@@ -43,8 +51,7 @@ class AIPluginTool(BaseTool):
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
-        response = requests.get(url).json()
-        plugin = AIPlugin(**response)
+        plugin = AIPlugin.from_url(url)
         description = (
             f"Call this tool to get the OpenAPI spec (and usage guide) "
             f"for interacting with the {plugin.name_for_human} API. "

@@ -6,9 +6,7 @@ from typing import Any, Dict
 
 from pydantic import root_validator
 
-from langchain.chat_models.openai import (
-    ChatOpenAI,
-)
+from langchain.chat_models.openai import ChatOpenAI
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
@@ -46,6 +44,7 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_base: str = ""
     openai_api_version: str = ""
     openai_api_key: str = ""
+    openai_organization: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -70,6 +69,12 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_type",
             "OPENAI_API_TYPE",
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
@@ -77,10 +82,12 @@ class AzureChatOpenAI(ChatOpenAI):
             openai.api_base = openai_api_base
             openai.api_version = openai_api_version
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
