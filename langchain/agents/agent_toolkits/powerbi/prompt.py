@@ -8,7 +8,7 @@ Unless the user specifies a specific number of examples they wish to obtain, alw
 You can order the results by a relevant column to return the most interesting examples in the database.
 Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
 
-You have access to tools for interacting with the Power BI Dataset. Only use the below tools. Only use the information returned by the below tools to construct your final answer. The first tool to use is the question_to_query_powerbi that translates the question to a DAX query. If you get an error while executing a query, check and rewrite the query and try again.
+You have access to tools for interacting with the Power BI Dataset. Only use the below tools. Only use the information returned by the below tools to construct your final answer. Usually I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a nice sentence that answers the question. If you receive an error back that mentions that the query was wrong try to phrase the question differently and get a new query from the question to query tool.
 
 If the question does not seem related to the dataset, just return "I don't know" as the answer.
 """
@@ -29,7 +29,7 @@ Given an input question, create a syntactically correct DAX query to run, then l
 
 Overall, Assistant is a powerful system that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.
 
-Usually I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a nice sentence that answers the question. If you receive an error back that mentions that the query was wrong try to phrase the question differently and get a new query from the question to query tool.
+Usually I should first ask which tables I have, then how each table is defined and then ask the question to query tool to create a query for me and then I should ask the query tool to execute it, finally create a complete sentence that answers the question. If you receive an error back that mentions that the query was wrong try to phrase the question differently and get a new query from the question to query tool.
 """
 
 POWERBI_CHAT_SUFFIX = """TOOLS

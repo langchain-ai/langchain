@@ -46,7 +46,7 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
             result = self.powerbi.run(command=tool_input)
         except Exception as exc:  # pylint: disable=broad-except
             if "bad request" in str(exc).lower():
-                return "Bad request. Try a different query."
+                return "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
             if "unauthorized" in str(exc).lower():
                 return "Unauthorized. Try changing your authentication, do not retry."
             return str(exc)

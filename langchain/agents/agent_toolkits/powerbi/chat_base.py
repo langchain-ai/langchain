@@ -55,5 +55,6 @@ def create_pbi_chat_agent(
         memory=ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         ),
+        verbose=verbose,
         **kwargs,
     )
