@@ -1,8 +1,8 @@
 """Wrapper around llama.cpp."""
 import logging
 import asyncio
-import threading
-from typing import Any, Dict, List, Optional, Coroutine, Generator, Iterable, AsyncIterable
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Optional, Coroutine, Generator, Iterable, AsyncIterable, AsyncGenerator
 import queue
 
 from pydantic import BaseModel, Field, root_validator
@@ -12,7 +12,7 @@ from langchain.llms.base import LLM, Generation, LLMResult
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(LLM, BaseModel):
+class LlamaCpp(LLM):
     """Wrapper around the llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the
@@ -149,6 +149,29 @@ class LlamaCpp(LLM, BaseModel):
             "top_k": self.top_k,
         }
 
+    def _prepare_params(self, stop: Optional[List[str]] = None, **config: Any) -> Dict[str, Any]:
+        """Prepare the parameters for calling llama_cpp, using defaults and input while checking for conflicts."""
+        params = self._default_params
+        if self.stop and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop:
+            params["stop_sequences"] = self.stop
+        else:
+            params["stop_sequences"] = []
+        
+        input_args = {
+            "max_tokens": params["max_tokens"],
+            "temperature": params["temperature"],
+            "top_p": params["top_p"],
+            "logprobs": params["logprobs"],
+            "echo": params["echo"],
+            "stop": params["stop_sequences"],
+            "repeat_penalty": params["repeat_penalty"],
+            "top_k": params["top_k"],
+        }
+        input_args.update(config)
+        return input_args
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -159,44 +182,116 @@ class LlamaCpp(LLM, BaseModel):
         """Return type of llm."""
         return "llama.cpp"
 
+    def _call(self, prompt: str, stop: Optional[List[str]] = None, **config: Any) -> str:
+        """Call the Llama model and return the output.
+
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+
+        Returns:
+            The generated text.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.llms import LlamaCppEmbeddings
+                llm = LlamaCppEmbeddings(model_path="/path/to/local/llama/model.bin")
+                llm("This is a prompt.")
+        """
+
+        params = self._prepare_params(stop, **config)
+        text = self.client(
+            prompt=prompt,
+            max_tokens=params["max_tokens"],
+            temperature=params["temperature"],
+            top_p=params["top_p"],
+            logprobs=params["logprobs"],
+            echo=params["echo"],
+            stop=params["stop_sequences"],
+            repeat_penalty=params["repeat_penalty"],
+            top_k=params["top_k"],
+        )
+        return text["choices"][0]["text"]
+
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None, stream: bool = True, **config: Any
-    ) -> AsyncIterable[LLMResult]:
-        if not stream:
-            raise NotImplementedError("Currently stream must be True, generators are the only implemented method of generate.")
+        self, prompts: List[str], 
+        stop: Optional[List[str]] = None, 
+        stream: bool = True, 
+        **config: Any
+    ) -> AsyncGenerator[str, None]:
+        """
+        Asynchronous generator for streaming tokens from the Llama models.
 
-        if stop is None:
-            stop = []
+        Args:
+            prompts: A list of prompts to use for generation.
+            stop: A list of strings to stop generation when encountered.
+            stream: Whether to stream tokens as they are generated.
+            config: Additional configuration parameters for the client.
 
-        for token in self.client(prompt=prompts[0], stream=stream, stop=stop, **config):
-            chunk = token['choices'][0]['text']
+        Yields:
+            An async iterable of generated token strings.
+        """
+        params = self._prepare_params(stop, **config)
+
+        if stream:
+            for generation in self.client(prompt=prompts[0], stream=stream, **params):
+                chunk = generation['choices'][0]['text']
             if self.verbose:
                 print(chunk, end="", flush=True)
             yield chunk
-    def _run_coroutine(self, coroutine: Coroutine) -> Generator:
-        q = queue.Queue()
+        else:
+            result = self.client(prompt=prompts[0], stream=stream, **params)
+            text = result['choices'][0]['text']
+            if self.verbose:
+                print(text)
+            yield text
+
+    def _run_coroutine(self, coroutine: Coroutine) -> Generator[str, None, None]:
+        """
+        Executes the given coroutine and yields individual tokens.
+
+        Args:
+            coroutine: The coroutine to execute.
+
+        Yields:
+            Individual tokens as strings.
+        """
+        chunk_queue = queue.Queue()
 
         async def _enqueue_chunks():
             async for chunk in coroutine:
-                q.put(chunk)
-            q.put(None)
+                chunk_queue.put(chunk)
+            chunk_queue.put(None)
 
         def _run_coroutine_internal():
             asyncio.run(_enqueue_chunks())
 
-        t = threading.Thread(target=_run_coroutine_internal)
-        t.start()
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(_run_coroutine_internal)
 
         while True:
-            chunk = q.get()
+            chunk = chunk_queue.get(timeout=60)
             if chunk is None:
                 break
             yield chunk
 
-        t.join()
+        future.result()
+        executor.shutdown(wait=True)
+    def stream(self, prompt: str, stop: Optional[List[str]] = None, **config: Any) -> Iterable[str]:
+        """
+        Stream tokens from the Llama model.
 
-    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Iterable[str]:
-        generator = self._agenerate([prompt], stop=stop)
+        Args:
+            prompt: The prompt to use for generation.
+            stop: A list of strings to stop generation when encountered.
+            config: Additional configuration parameters for the client.
+
+        Returns:
+            An iterable of generated tokens.
+        """
+        prepared_params = self._prepare_params(stop, **config)
+        generator = self._agenerate([prompt], **prepared_params)
         return self._run_coroutine(generator)
 
     def _generate(
@@ -205,14 +300,12 @@ class LlamaCpp(LLM, BaseModel):
         generator = self._agenerate(prompts, stop=stop)
         result = LLMResult(generations=[[Generation(text="")]])
         
-        for chunk in self._run_coroutine(generator):
-            result.generations[0][0].text += chunk
+        for token in self._run_coroutine(generator):
+            result.generations[0][0].text += token
             self.callback_manager.on_llm_new_token(
-                chunk,
+                {"choices": [{"text": token}]},
                 verbose=self.verbose,
-        )
+            )
+
         return result
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        result = self._generate([prompt], stop=stop)
-        return result.generations[0][0].text

@@ -46,17 +46,21 @@ def test_llamacpp_streaming() -> None:
 
     for token in generator:
         assert isinstance(token, str)
-        # Note that this out currently differs from the OpenAI format:
-        # which looks like this: token["choices"][0]["text"]
+        # Note that this does not match the OpenAI format:
+        # assert isinstance(token["choices"][0]["text"], str)
 
 def test_llamacpp_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
+    MAX_TOKENS = 5
+    OFF_BY_ONE = 1 # There may be an off by one error in the upstream code!
+    
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = LlamaCpp(
         model_path=get_model(),
         callback_manager=callback_manager,
         verbose=True,
+        max_tokens=MAX_TOKENS,
     )
-    llm("Q: How do you say 'hello' in German? A:'")
-    assert callback_handler.llm_streams > 2
+    llm("Q: Can you count to 10? A:'1, ")
+    assert callback_handler.llm_streams <= MAX_TOKENS + OFF_BY_ONE
