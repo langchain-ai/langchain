@@ -1,4 +1,6 @@
+"""Loader for documents from a Slack export."""
 import json
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -6,50 +8,54 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 
-def _read_json(json_file: Path) -> dict:
-    """Read a json file"""
-    with open(json_file, encoding="utf-8") as f:
-        return json.load(f)
-
-
 class SlackDirectoryLoader(BaseLoader):
     """Loader for loading documents from a Slack directory dump."""
 
-    def __init__(self, file_path: str, workspace_url: Optional[str] = None):
+    def __init__(self, zip_path: str, workspace_url: Optional[str] = None):
         """Initialize the SlackDirectoryLoader.
 
         Args:
-            file_path (str): The path to the Slack directory dump.
+            zip_path (str): The path to the Slack directory dump zip file.
             workspace_url (Optional[str]): The Slack workspace URL.
               Including the URL will turn
               sources into links. Defaults to None.
         """
-        self.file_path = Path(file_path)
+        self.zip_path = Path(zip_path)
         self.workspace_url = workspace_url
         self.channel_id_map = self._get_channel_id_map()
 
     def _get_channel_id_map(self) -> Dict[str, str]:
         """Get a dictionary mapping channel names to their respective IDs."""
-        channels_json_path = self.file_path / "channels.json"
-        if channels_json_path.exists():
-            with open(channels_json_path, encoding="utf-8") as f:
-                channels = json.load(f)
-            return {channel["name"]: channel["id"] for channel in channels}
-        return {}
+        with zipfile.ZipFile(self.zip_path, "r") as zip_file:
+            try:
+                with zip_file.open("channels.json", "r") as f:
+                    channels = json.load(f)
+                return {channel["name"]: channel["id"] for channel in channels}
+            except KeyError:
+                return {}
 
     def load(self) -> List[Document]:
         """Load and return documents from the Slack directory dump."""
         docs = []
-        for channel_path in self.file_path.iterdir():
-            if not channel_path.is_dir():
-                continue
-            channel_name = channel_path.name
-            for json_file in channel_path.glob("*.json"):
-                messages = _read_json(json_file)
-                for message in messages:
-                    document = self._convert_message_to_document(message, channel_name)
-                    docs.append(document)
+        with zipfile.ZipFile(self.zip_path, "r") as zip_file:
+            for channel_path in zip_file.namelist():
+                channel_name = Path(channel_path).parent.name
+                if not channel_name:
+                    continue
+                if channel_path.endswith(".json"):
+                    messages = self._read_json(zip_file, channel_path)
+                    for message in messages:
+                        document = self._convert_message_to_document(
+                            message, channel_name
+                        )
+                        docs.append(document)
         return docs
+
+    def _read_json(self, zip_file: zipfile.ZipFile, file_path: str) -> List[dict]:
+        """Read JSON data from a zip subfile."""
+        with zip_file.open(file_path, "r") as f:
+            data = json.load(f)
+        return data
 
     def _convert_message_to_document(
         self, message: dict, channel_name: str
@@ -99,7 +105,7 @@ class SlackDirectoryLoader(BaseLoader):
             channel_id = self.channel_id_map.get(channel_name, "")
             return (
                 f"{self.workspace_url}/archives/{channel_id}"
-                + "/p{timestamp.replace('.', '')}"
+                + f"/p{timestamp.replace('.', '')}"
             )
         else:
             return f"{channel_name} - {user} - {timestamp}"
