@@ -33,15 +33,14 @@ class SlackDirectoryLoader(BaseLoader):
                 channel_name = channel_path.name
                 json_files = list(channel_path.glob("*.json"))
                 for json_file in json_files:
-                    with open(json_file, encoding='utf-8') as f:
+                    with open(json_file, encoding="utf-8") as f:
                         messages = json.load(f)
                     for message in messages:
                         text = message.get("text", "")
                         timestamp = message.get("ts")
                         user = message.get("user")
                         if self.workspace_url:
-                            channel_id = self.channel_id_map.get(
-                                channel_name, "")
+                            channel_id = self.channel_id_map.get(channel_name, "")
                             message_link = f"{self.workspace_url}/archives/{channel_id}/p{timestamp.replace('.', '')}"
                             source = message_link
                         else:
@@ -52,6 +51,5 @@ class SlackDirectoryLoader(BaseLoader):
                             "timestamp": timestamp,
                             "user": user,
                         }
-                        docs.append(
-                            Document(page_content=text, metadata=metadata))
+                        docs.append(Document(page_content=text, metadata=metadata))
         return docs
