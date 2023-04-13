@@ -65,7 +65,11 @@ class SQLDatabaseChain(Chain):
             return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = self.prompt or SQL_PROMPTS[self.database.dialect]
+        try:
+            prompt = self.prompt or SQL_PROMPTS[self.database.dialect]
+        except KeyError:
+            # fallback to generic prompt if dialect-specific prompt doesn't exist yet
+            prompt = PROMPT
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
         input_text = f"{inputs[self.input_key]}\nSQLQuery:"
         self.callback_manager.on_text(input_text, verbose=self.verbose)
