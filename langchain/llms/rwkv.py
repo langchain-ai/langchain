@@ -170,6 +170,7 @@ class RWKV(LLM, BaseModel):
         logits = self.run_rnn(self.tokenizer.encode(prompt).ids)
         begin = len(self.model_tokens)
         out_last = begin
+
         occurrence = {}
 
         decoded = ""
