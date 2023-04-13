@@ -141,7 +141,6 @@ class RWKV(LLM, BaseModel):
         """Return the type of llm."""
         return "rwkv-4"
 
-    
     def run_rnn(self,tokens, newline_adj = 0):
         AVOID_REPEAT_TOKENS = []
         AVOID_REPEAT = '，：？！'
