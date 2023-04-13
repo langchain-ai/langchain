@@ -56,26 +56,19 @@ class GitLoader(BaseLoader):
                         file_type = os.path.splitext(item.name)[1]
 
                         # loads only text files
-                        if self.bytes2str(content):
-                            metadata = {
-                                "file_path": rel_file_path,
-                                "file_name": item.name,
-                                "file_type": file_type,
-                            }
-                            text_content = content.decode("utf-8", errors="ignore")
-                            doc = Document(page_content=text_content, metadata=metadata)
-                        else:
+                        try:
+                            text_content = content.decode("utf-8")
+                        except UnicodeDecodeError:
                             continue
+
+                        metadata = {
+                            "file_path": rel_file_path,
+                            "file_name": item.name,
+                            "file_type": file_type,
+                        }
+                        doc = Document(page_content=text_content, metadata=metadata)
                         docs.append(doc)
                 except Exception as e:
                     print(f"Error reading file {file_path}: {e}")
 
         return docs
-
-    @staticmethod
-    def bytes2str(content: bytes) -> str:
-        """Return decoded text from bytes."""
-        try:
-            return content.decode("utf-8")
-        except UnicodeDecodeError:
-            return None
