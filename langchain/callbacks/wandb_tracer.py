@@ -63,16 +63,16 @@ def import_wandb() -> Any:
 
 def print_wandb_init_message(run_url: str) -> None:
     import_wandb().termlog(
-        f"W&B Run initialized. View LangChain logs in W&B at {run_url} . "
-        "\n\nNote that the WandbTracer is currently in beta and is "
-        "subject to change based on updates to `langchain`. Please "
-        "report any issues to https://github.com/wandb/wandb/issues "
+        f"View W&B Run at {run_url}\n"
+        "`WandbTracer` is currently in beta.\n"
+        "Please report any issues to "
+        "https://github.com/wandb/wandb/issues "
         "with the tag `langchain`."
     )
 
 
 def print_wandb_finish_message(run_url: str) -> None:
-    import_wandb().termlog(f"View LangChain logs in W&B at {run_url} .")
+    import_wandb().termlog(f"View W&B Run at {run_url}")
 
 
 class WandbRunArgs(TypedDict):
