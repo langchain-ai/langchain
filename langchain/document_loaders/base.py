@@ -1,10 +1,19 @@
 """Base loader class."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Union, Generator
+from io import IOBase
+from pydantic import BaseModel
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+
+
+class Blob(BaseModel):
+    """Blob schema."""
+
+    data: Union[bytes, str, IOBase]
+    mimetype: Optional[str]
 
 
 class BaseLoader(ABC):
@@ -24,3 +33,19 @@ class BaseLoader(ABC):
             _text_splitter = text_splitter
         docs = self.load()
         return _text_splitter.split_documents(docs)
+
+    @abstractmethod
+    def lazy_load(
+        self,
+    ) -> Generator[Blob, None, None] | Generator[Document, None, None]:
+        """A lazy loader for content.
+
+        Content can be represented as a `blob` or as a `document`.
+
+        Yielding `blobs` is preferred as it allows to decouple parsing of blobs from loading
+        the blobs.
+
+        Future implementations should favor implementing a lazy loader to avoid loading all content
+        eagerly into memory.
+        """
+        raise NotImplementedError()
