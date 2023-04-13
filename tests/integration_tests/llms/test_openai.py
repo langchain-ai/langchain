@@ -213,11 +213,12 @@ async def test_openai_chat_async_streaming_callback() -> None:
     assert isinstance(result, LLMResult)
 
 
-def test_openai_modelname_to_contextsize() -> None:
-    """Test model name to context size outputs correct values."""
+def test_openai_modelname_to_contextsize_valid() -> None:
+    """Test model name to context size on a valid model."""
     assert OpenAI().modelname_to_contextsize("davinci") == 2049
-    try:
+
+
+def test_openai_modelname_to_contextsize_invalid() -> None:
+    """Test model name to context size on an invalid model."""
+    with pytest.raises(ValueError):
         OpenAI().modelname_to_contextsize("foobar")
-        assert False
-    except ValueError:
-        assert True
