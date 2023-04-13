@@ -32,7 +32,7 @@ class FakeLLM(LLM):
         return {}
 
     @property
-    def _get_next_response_in_sequence(self):
+    def _get_next_response_in_sequence(self) -> str:
         response = self.queries[list(self.queries.keys())[self.response_index]]
         self.response_index = self.response_index + 1
         return response
