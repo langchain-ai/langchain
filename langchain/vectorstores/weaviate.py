@@ -83,6 +83,8 @@ class Weaviate(VectorStore):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_text(content).with_limit(k).do()
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
         docs = []
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
@@ -96,6 +98,8 @@ class Weaviate(VectorStore):
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         result = query_obj.with_near_vector(vector).with_limit(k).do()
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
         docs = []
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
