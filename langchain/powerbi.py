@@ -77,9 +77,13 @@ class PowerBIDataset:
         """Get information about specified tables."""
         all_table_names = self._table_names
         if table_names is not None:
-            if isinstance(table_names, list):
+            if (
+                isinstance(table_names, list)
+                and len(table_names) > 0
+                and table_names[0] != ""
+            ):
                 all_table_names = table_names
-            else:
+            elif isinstance(table_names, str) and table_names != "":
                 all_table_names = [table_names]
 
         tables = []
@@ -123,12 +127,20 @@ class PowerBIDataset:
         return result.json()
 
 
-def json_to_md(json_contents: list[dict[str, str | int | float]]) -> str:
-    """Create a markdown table from a json object."""
-    md = ""
-    for index, _dict in enumerate(json_contents):
-        md += f"| Num: {index} |  |\n| - | - |\n"
-        for key in _dict:
-            md += f"| {key} | {json_contents[index][key]} |\n"
-        md += "---\n"
-    return md
+def json_to_md(
+    json_contents: list[dict[str, str | int | float]], table_name: str | None = None
+) -> str:
+    """Converts a JSON object to a markdown table."""
+    output_md = ""
+    headers = json_contents[0].keys()
+    for header in headers:
+        header.replace("[", ".").replace("]", "")
+        if table_name:
+            header.replace(f"{table_name}.", "")
+        output_md += f"| {header} "
+    output_md += "|\n"
+    for row in json_contents:
+        for value in row.values():
+            output_md += f"| {value} "
+        output_md += "|\n"
+    return output_md
