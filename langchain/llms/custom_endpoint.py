@@ -90,7 +90,7 @@ class CustomEndpoint(LLM):
         headers = {
             "Content-Type": "application/json",
         }
-        if self.authorization_header is not None:
+        if self.api_authorization_header is not None:
             authorization_header = self.api_authorization_header.format(api_key=self.api_key)
         elif self.api_key is not None:
             authorization_header = self.api_key
