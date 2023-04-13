@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Type
 
 import numpy as np
 
@@ -210,7 +210,7 @@ class AtlasDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[AtlasDB],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -270,7 +270,7 @@ class AtlasDB(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[AtlasDB],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,

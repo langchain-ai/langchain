@@ -14,9 +14,13 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_PLANNER_PROMPT,
     API_PLANNER_TOOL_DESCRIPTION,
     API_PLANNER_TOOL_NAME,
+    PARSING_DELETE_PROMPT,
     PARSING_GET_PROMPT,
+    PARSING_PATCH_PROMPT,
     PARSING_POST_PROMPT,
+    REQUESTS_DELETE_TOOL_DESCRIPTION,
     REQUESTS_GET_TOOL_DESCRIPTION,
+    REQUESTS_PATCH_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
 )
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
@@ -24,6 +28,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
+from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
 from langchain.requests import RequestsWrapper
 from langchain.schema import BaseLanguageModel
@@ -53,7 +58,8 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             data = json.loads(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.get(data["url"])
+        data_params = data.get("params")
+        response = self.requests_wrapper.get(data["url"], params=data_params)
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -79,6 +85,56 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.post(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_patch"
+    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_PATCH_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.patch(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_delete"
+    description = REQUESTS_DELETE_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_DELETE_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.delete(data["url"])
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -155,7 +211,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST)\s+(/\S+)*"
+        pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
@@ -183,6 +239,8 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    shared_memory: Optional[ReadOnlySharedMemory] = None,
+    verbose: bool = True,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -207,7 +265,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt),
+        llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)

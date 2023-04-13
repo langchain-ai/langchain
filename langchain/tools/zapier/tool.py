@@ -31,8 +31,8 @@ Typically you'd use SequentialChain, here's a basic example:
 
     1. Use NLA to find an email in Gmail
     2. Use LLMChain to generate a draft reply to (1)
-    3. Use NLA to send the draft reply (2) to someone in Slack via direct mesage
-    
+    3. Use NLA to send the draft reply (2) to someone in Slack via direct message
+
 In code, below:
 
 ```python
@@ -61,6 +61,9 @@ from langchain.utilities.zapier import ZapierNLAWrapper
 
 llm = OpenAI(temperature=0)
 zapier = ZapierNLAWrapper()
+## To leverage a nla_oauth_access_token you may pass the value to the ZapierNLAWrapper
+## If you do this there is no need to initialize the ZAPIER_NLA_API_KEY env variable
+# zapier = ZapierNLAWrapper(zapier_nla_oauth_access_token="TOKEN_HERE")
 toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 agent = initialize_agent(
     toolkit.get_tools(),

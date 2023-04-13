@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel
 
@@ -37,7 +37,7 @@ class StructuredOutputParser(BaseOutputParser):
         )
         return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
-    def parse(self, text: str) -> BaseModel:
+    def parse(self, text: str) -> Any:
         json_string = text.split("```json")[1].strip().strip("```").strip()
         try:
             json_obj = json.loads(json_string)
