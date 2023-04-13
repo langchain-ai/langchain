@@ -83,7 +83,10 @@ class ConversationalAgent(Agent):
         match = re.search(regex, llm_output)
         if not match:
             if f"{self.llm_prefix} Do I need to use a tool? No" in llm_output:
-                return f"{self.ai_prefix} Do I have the final answer? Yes. {llm_output.split(f'Do I need to use a tool? No')[-1].strip()}"
+                return (
+                    self.ai_prefix,
+                    f"Do I have the final answer? Yes. {llm_output.split('Do I need to use a tool? No')[-1].strip()}",
+                )
             raise ValueError(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1)
         action_input = match.group(2)

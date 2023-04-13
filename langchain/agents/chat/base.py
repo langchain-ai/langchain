@@ -47,8 +47,13 @@ class ChatAgent(Agent):
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
 
-        if f"{self.llm_prefix} Do I need to use a tool? No" in text:  # Check if the Thought prefix is present
-            return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()  # Return the thought text as Final Answer
+        if (
+            f"{self.llm_prefix} Do I need to use a tool? No" in text
+        ):  # Check if the Thought prefix is present
+            return (
+                "Final Answer",
+                text.split(FINAL_ANSWER_ACTION)[-1].strip(),
+            )  # Return the thought text as Final Answer
 
         try:
             _, action, _ = text.split("```")
@@ -57,7 +62,6 @@ class ChatAgent(Agent):
 
         except Exception:
             raise ValueError(f"Could not parse LLM output: {text}")
-
 
     @property
     def _stop(self) -> List[str]:
