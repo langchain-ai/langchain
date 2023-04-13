@@ -34,7 +34,7 @@ class PowerBIDataset:
     request_url: str = "https://api.powerbi.com/v1.0/myorg/datasets/"
     schemas: dict[str, str] = field(default={}, init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Checks the init.
 
         Whether a token or credential is set
