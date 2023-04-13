@@ -167,19 +167,18 @@ class RWKV(LLM, BaseModel):
     def rwkv_generate(self, prompt: str) -> str:
         self.model_state = None
         self.model_tokens = []
-        out = self.run_rnn(self.tokenizer.encode(prompt).ids)
+        logits = self.run_rnn(self.tokenizer.encode(prompt).ids)
         begin = len(self.model_tokens)
         out_last = begin
         occurrence = {}
         decoded = ""
         for i in range(self.max_tokens_per_generation):
             for n in occurrence:
-                out[n] -= (self.penalty_alpha_presence + occurrence[n] * self.penalty_alpha_frequency)
+                logits[n] -= (self.penalty_alpha_presence + occurrence[n] * self.penalty_alpha_frequency)
             token = self.pipeline.sample_logits(
-                out,
-                temperature=self.temperature,
-                top_p=self.top_p,
+                logits, temperature=self.temperature, top_p=self.top_p,
             )
+
             END_OF_TEXT = 0
             if token == END_OF_TEXT:
                 break
@@ -188,8 +187,7 @@ class RWKV(LLM, BaseModel):
             else:
                 occurrence[token] += 1
 
-            out = self.run_rnn([token])
-            
+            logits = self.run_rnn([token])
             xxx = self.tokenizer.decode(self.model_tokens[out_last:])
             if '\ufffd' not in xxx: # avoid utf-8 display issues
                 decoded +=xxx
