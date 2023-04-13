@@ -10,7 +10,7 @@ from aiohttp.http_exceptions import HttpProcessingError
 from azure.core.exceptions import ClientAuthenticationError
 from azure.identity import ChainedTokenCredential
 from azure.identity._internal import InteractiveCredential
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, root_validator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,12 +35,12 @@ class PowerBIDataset(BaseModel):
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
     schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    @validator("token", "credential", always=True, allow_reuse=True)
+    @root_validator(pre=True)
     @classmethod
-    def token_or_credential_present(cls, value, values):
+    def token_or_credential_present(cls, values: dict[str, Any]) -> Any:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credentials" in values:
-            return value
+            return values
         raise ValueError("Please provide either a credential or a token.")
 
     @property
