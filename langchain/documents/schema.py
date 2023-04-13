@@ -1,51 +1,63 @@
-import enum
+import abc
+import magic
 from abc import abstractmethod, ABC
-from pydantic import BaseModel, Field
-from typing import List
+from io import IOBase
+from pydantic import BaseModel
+from typing import List, Union, Mapping, Optional, Callable, Generator
 
 from langchain.schema import Document
 
 
-class FileType(enum.Enum):
-    PDF = "pdf"
-    DOCX = "docx"
-    TXT = "txt"
-    HTML = "html"
-    PNG = "png"
-    JPG = "jpg"
-    JPEG = "jpeg"
-    GIF = "gif"
-    MP4 = "mp4"
-    MP3 = "mp3"
-    WAV = "wav"
-
-
-from typing import Union
-
-from pydantic import BaseModel
-
-
 class Blob(BaseModel):
-    name: str
-    type: str
-    size: int
-    data: Union[bytes, str]
+    """Blob schema."""
+
+    data: Union[bytes, str, IOBase]
+    mimetype: Optional[str]
 
 
-class Content(BaseModel):
-    data: bytes | str
-    metadata: dict = Field(default_factory=dict)
-    mime_type: str
+class Loader(ABC):
+    @abc.abstractmethod
+    def load(self, *args, **kwargs) -> Generator[Blob, None, None]:
+        """Loader interface."""
+        raise NotImplementedError()
+
+
+class Parser(ABC):
+    @abc.abstractmethod
+    def parse(self, blob: Blob) -> Generator[Document, None, None]:
+        """Parser interface."""
+        raise NotImplementedError()
+
+
+class MimeTypeBasedLoader(Parser):
+    def __init__(self, handlers: Mapping[str, Callable[[Blob], Document]]) -> None:
+        """A loader based on mime-types."""
+        self.handlers = handlers
+
+    def parse(self, blob: Blob) -> Generator[Document, None, None]:
+        """Load documents from a file."""
+        # TODO(Eugene): Restrict to first 2048 bytes
+        mime_type = magic.from_buffer(blob.data, mime=True)
+        if mime_type in self.handlers:
+            handler = self.handlers[mime_type]
+            document = handler(blob)
+            yield document
+        else:
+            raise ValueError(f"Unsupported mime type: {mime_type}")
+
+
+#
+# Textifier = MimeTypeBasedLoader({"text/html": "unstructured"})
 
 
 class BaseDocumentProcessor(ABC):
     @abstractmethod
-    def process_document(self, documents: Document) -> Document:
+    def process(self, documents: Document) -> Document:
         """Process documents."""
         raise NotImplementedError()
 
     @abstractmethod
-    def process_documents(self, documents: List[Document]) -> List[Document]:
+    def batch_process(self, documents: List[Document]) -> List[Document]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -54,7 +66,7 @@ class BaseDocumentProcessor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def aprocess_documents(self, documents: List[Document]) -> List[Document]:
+    async def abatch_process(self, documents: List[Document]) -> List[Document]:
         """Process documents."""
 
 
@@ -64,11 +76,11 @@ class SimpleBatchProcessor(BaseDocumentProcessor, ABC):
     def __init__(self, max_concurrency: int = 10) -> None:
         self.max_concurrency = max_concurrency
 
-    def process_documents(self, documents: List[Document]) -> List[Document]:
+    def batch_process(self, documents: List[Document]) -> List[Document]:
         """Process documents."""
-        return [self.process_document(doc) for doc in documents]
+        return [self.process(doc) for doc in documents]
 
-    async def aprocess_documents(self, documents: List[Document]) -> List[Document]:
+    async def abatch_process(self, documents: List[Document]) -> List[Document]:
         """Process documents."""
         raise NotImplementedError()
 
@@ -79,37 +91,19 @@ class SequentialBatchProcessor(BaseDocumentProcessor):
     def __init__(self, processors: List[BaseDocumentProcessor]) -> None:
         self.processors = processors
 
-    def process_document(self, document: Document) -> Document:
-        return self.process_documents(document)[0]
+    def process(self, document: Document) -> Document:
+        return self.batch_process([document])[0]
 
-    def process_documents(self, documents: List[Document]) -> List[Document]:
+    def batch_process(self, documents: List[Document]) -> List[Document]:
         for processor in self.processors:
-            documents = processor.process_documents(documents)
+            documents = processor.batch_process(documents)
         return documents
 
     async def aprocess_document(self, document: Document) -> Document:
-        return (await self.aprocess_documents([document]))[0]
+        return (await self.abatch_process([document]))[0]
 
-    async def aprocess_documents(self, documents: List[Document]) -> List[Document]:
+    async def abatch_process(self, documents: List[Document]) -> List[Document]:
         """Process documents."""
         for processor in self.processors:
-            documents = await processor.aprocess_documents(documents)
+            documents = await processor.abatch_process(documents)
         return documents
-
-
-class Loader(BaseDocumentProcessor, ABC):
-    def __init__(self, handlers) -> None:
-        self.handlers = handlers
-
-    def load_documents(self, path: str) -> Document:
-        """Load documents from a file."""
-        raise NotImplementedError()
-
-
-class Textifier(BaseDocumentProcessor, ABC):
-    def __init__(self, handlers) -> None:
-        self.handlers = handlers
-
-    def load_documents(self, file_path: str) -> Document:
-        """Load documents from a file."""
-        raise NotImplementedError()
