@@ -743,7 +743,7 @@ name = "cachetools"
 version = "5.3.0"
 description = "Extensible memoizing collections and decorators"
 category = "main"
-optional = true
+optional = false
 python-versions = "~=3.7"
 files = [
     {file = "cachetools-5.3.0-py3-none-any.whl", hash = "sha256:429e1a1e845c008ea6c85aa35d4b98b65d6a9763eeef3e37e92728a12d1de9d4"},
@@ -2067,7 +2067,7 @@ name = "gptcache"
 version = "0.1.9"
 description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.8.1"
 files = [
     {file = "gptcache-0.1.9-py3-none-any.whl", hash = "sha256:c603dea4a6e835032875ccc21a9205bb4d8ef0f2696a8df3ac13ac3a060c4cf6"},
@@ -9019,4 +9019,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f89e235335b77c7355a2bdeabe570c6a0b790a7c76a0212b95ae5a9770627445"
+content-hash = "8d1bb01bd6cab73583c3b2e2aaa907f0c69ac949de4aef53c511f1290359b854"

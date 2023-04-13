@@ -105,6 +105,7 @@ torch = "^1.0.0"
 chromadb = "^0.3.21"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
+gptcache = "^0.1.9"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
