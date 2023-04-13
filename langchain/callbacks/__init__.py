@@ -11,6 +11,7 @@ from langchain.callbacks.base import (
     CallbackManager,
 )
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
+from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
@@ -78,6 +79,7 @@ __all__ = [
     "AimCallbackHandler",
     "WandbCallbackHandler",
     "ClearMLCallbackHandler",
+    "CometCallbackHandler",
     "AsyncIteratorCallbackHandler",
     "get_openai_callback",
     "set_tracing_callback_manager",
