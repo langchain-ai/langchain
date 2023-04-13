@@ -32,7 +32,7 @@ class PowerBIDataset:
     sample_rows_in_table_info: int = field(default=1)
     aiosession: aiohttp.ClientSession | None = field(default=None)
     request_url: str = "https://api.powerbi.com/v1.0/myorg/datasets/"
-    schemas: dict[str, str] = field(default={}, init=False)
+    schemas: dict[str, str] = field(default_factory=dict, init=False)
 
     def __post_init__(self) -> None:
         """Checks the init.
