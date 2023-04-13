@@ -72,8 +72,8 @@ class ConversationalChatAgent(Agent):
         """Prefix to append the llm call with."""
         return "Thought:"
 
-    def _fix_text(self, text: str) -> list[BaseMessage]:
-        return [HumanMessage(content=FIX_RESPONSE)]
+    def _fix_text(self, text: str) -> BaseMessage:
+        return HumanMessage(content=FIX_RESPONSE)
 
     @classmethod
     def create_prompt(
