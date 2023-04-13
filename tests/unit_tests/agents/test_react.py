@@ -32,7 +32,7 @@ class FakeListLLM(LLM):
         """Return type of llm."""
         return "fake_list"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str | None:
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
         return self.responses[self.i]
