@@ -17,10 +17,15 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
 
         arbitrary_types_allowed = True
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(
+        self,
+        query: str,
+        filter: Optional[BaseModel] = None,
+        top_k: Optional[int] = 3,
+    ) -> List[Document]:
         response = requests.post(
             f"{self.url}/query",
-            json={"queries": [{"query": query}]},
+            json={"queries": [{"query": query, "filter": filter, "top_k": top_k}]},
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.bearer_token}",
@@ -33,9 +38,14 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
             docs.append(Document(page_content=content, metadata=d))
         return docs
 
-    async def aget_relevant_documents(self, query: str) -> List[Document]:
+    async def aget_relevant_documents(
+        self,
+        query: str,
+        filter: Optional[BaseModel] = None,
+        top_k: Optional[int] = 3,
+    ) -> List[Document]:
         url = f"{self.url}/query"
-        json = {"queries": [{"query": query}]}
+        json = ({"queries": [{"query": query, "filter": filter, "top_k": top_k}]},)
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.bearer_token}",
