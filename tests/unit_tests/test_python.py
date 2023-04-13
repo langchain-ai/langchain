@@ -22,6 +22,17 @@ multiply()
 ```
 """
 
+_AST_SAMPLE_CODE_EXECUTE = """
+```
+def multiply(a, b):
+    return(5*6)
+a = 5
+b = 6
+
+multiply(a, b)
+```
+"""
+
 
 def test_python_repl() -> None:
     """Test functionality when globals/locals are not provided."""
@@ -77,6 +88,16 @@ def test_python_ast_repl_multiline() -> None:
         pytest.skip("Python 3.9+ is required for this test")
     tool = PythonAstREPLTool()
     output = tool.run(_AST_SAMPLE_CODE)
+    assert output == 30
+
+
+def test_python_ast_repl_multi_statement() -> None:
+    """Test correct functionality for ChatGPT multi statement commands."""
+    if sys.version_info < (3, 9):
+        pytest.skip("Python 3.9+ is required for this test")
+    tool = PythonAstREPLTool()
+    output = tool.run(_AST_SAMPLE_CODE_EXECUTE)
+    print(output)
     assert output == 30
 
 
