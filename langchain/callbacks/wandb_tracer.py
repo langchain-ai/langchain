@@ -224,7 +224,7 @@ class WandbTracer(SharedTracer):
         self._log_trace(
             trace_tree.WBTraceTree(
                 root_span=_convert_lc_run_to_wb_span(run),
-                model_dump=_safe_maybe_model_dump(_get_span_producing_object(run)),
+                model_dict=_safe_maybe_model_dict(_get_span_producing_object(run)),
             )
         )
 
@@ -355,7 +355,7 @@ def _convert_run_to_wb_span(run: "BaseRun") -> "trace_tree.Span":
     )
 
 
-def _safe_maybe_model_dump(
+def _safe_maybe_model_dict(
     model: Union["BaseLanguageModel", "BaseLLM", "BaseTool", "Chain"]
 ) -> Optional[dict]:
     """Returns the model dict if possible, otherwise returns None.
