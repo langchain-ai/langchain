@@ -83,7 +83,7 @@ class Qdrant(VectorStore):
             collection_name=self.collection_name,
             points=rest.Batch(
                 ids=ids,
-                vectors=[self.embedding_function(text) for text in texts],
+                vectors=self.embedding_function(texts),
                 payloads=self._build_payloads(
                     texts,
                     metadatas,
