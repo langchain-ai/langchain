@@ -20,7 +20,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     def get_relevant_documents(
         self,
         query: str,
-        filter: Optional[BaseModel] = None,
+        filter: Optional[dict[str, str]] = None,
         top_k: Optional[int] = 3,
     ) -> List[Document]:
         response = requests.post(
@@ -41,7 +41,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     async def aget_relevant_documents(
         self,
         query: str,
-        filter: Optional[BaseModel] = None,
+        filter: Optional[dict[str, str]] = None,
         top_k: Optional[int] = 3,
     ) -> List[Document]:
         url = f"{self.url}/query"
