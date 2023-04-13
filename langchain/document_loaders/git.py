@@ -6,7 +6,9 @@ from langchain.document_loaders.base import BaseLoader
 
 
 class GitLoader(BaseLoader):
-    """Loads files from a local Git repository into a list of documents.
+    """Loads files from a Git repository into a list of documents.
+    Repository can be local on disk available at `path`,
+    or remote at `clone_url` that will be cloned to `path`.
     Currently supports only text files.
 
     Each document represents one file in the repository. The `path` points to
@@ -17,9 +19,11 @@ class GitLoader(BaseLoader):
     def __init__(
         self,
         path: str,
+        clone_url: Optional[str] = None,
         branch: Optional[str] = "main",
     ):
         self.path = path
+        self.clone_url = clone_url
         self.branch = branch
 
     def load(self) -> List[Document]:
@@ -31,8 +35,14 @@ class GitLoader(BaseLoader):
                 "Please install it with `pip install GitPython`."
             ) from ex
 
-        repo = Repo(self.path)
-        repo.git.checkout(self.branch)
+        if not os.path.exists(self.path) and self.clone_url is None:
+            raise ValueError(f"Path {self.path} does not exist")
+        elif self.clone_url:
+            repo = Repo.clone_from(self.clone_url, self.path)
+            repo.git.checkout(self.branch)
+        else:
+            repo = Repo(self.path)
+            repo.git.checkout(self.branch)
 
         docs: List[Document] = []
 
