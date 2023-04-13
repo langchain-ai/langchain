@@ -171,12 +171,13 @@ class RWKV(LLM, BaseModel):
         begin = len(self.model_tokens)
         out_last = begin
         occurrence = {}
+
         decoded = ""
         for i in range(self.max_tokens_per_generation):
             for n in occurrence:
                 logits[n] -= (self.penalty_alpha_presence + occurrence[n] * self.penalty_alpha_frequency)
             token = self.pipeline.sample_logits(
-                logits, temperature=self.temperature, top_p=self.top_p,
+                logits, temperature=self.temperature, top_p=self.top_p
             )
 
             END_OF_TEXT = 0
