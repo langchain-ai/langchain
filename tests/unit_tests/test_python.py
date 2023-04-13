@@ -97,7 +97,6 @@ def test_python_ast_repl_multi_statement() -> None:
         pytest.skip("Python 3.9+ is required for this test")
     tool = PythonAstREPLTool()
     output = tool.run(_AST_SAMPLE_CODE_EXECUTE)
-    print(output)
     assert output == 30
 
 
