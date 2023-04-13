@@ -211,3 +211,14 @@ async def test_openai_chat_async_streaming_callback() -> None:
     result = await llm.agenerate(["Write me a sentence with 100 words."])
     assert callback_handler.llm_streams != 0
     assert isinstance(result, LLMResult)
+
+
+def test_openai_modelname_to_contextsize_valid() -> None:
+    """Test model name to context size on a valid model."""
+    assert OpenAI().modelname_to_contextsize("davinci") == 2049
+
+
+def test_openai_modelname_to_contextsize_invalid() -> None:
+    """Test model name to context size on an invalid model."""
+    with pytest.raises(ValueError):
+        OpenAI().modelname_to_contextsize("foobar")
