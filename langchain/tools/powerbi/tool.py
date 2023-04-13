@@ -11,6 +11,7 @@ from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY,
     DEFAULT_FEWSHOT_EXAMPLES,
 )
+from langchain.powerbi import json_to_md
 
 
 class BasePowerBIDatabaseTool(BaseModel):
@@ -51,7 +52,7 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
                 return "Unauthorized. Try changing your authentication, do not retry."
             return str(exc)
         if "results" in result:
-            return result["results"]
+            return json_to_md(result["results"][0]["tables"][0]["rows"])
         return result
 
     async def _arun(self, tool_input: str) -> str:
