@@ -35,7 +35,7 @@ class PowerBIDataset(BaseModel):
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
     schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    @validator("token", "credential", always=True)
+    @validator("token", "credential", always=True, allow_reuse=True)
     @classmethod
     def token_or_credential_present(cls, value, values):
         """Validate that at least one of token and credentials is present."""
