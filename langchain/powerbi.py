@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
 from typing import Any, Iterable, List
 
 import aiohttp
@@ -11,12 +10,12 @@ from aiohttp.http_exceptions import HttpProcessingError
 from azure.core.exceptions import ClientAuthenticationError
 from azure.identity import ChainedTokenCredential
 from azure.identity._internal import InteractiveCredential
+from pydantic import BaseModel, Field, HttpUrl, validator
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
-class PowerBIDataset:
+class PowerBIDataset(BaseModel):
     """Create PowerBI engine from dataset ID and credential or token.
 
     Use either the credential or a supplied token to authenticate.
@@ -31,25 +30,25 @@ class PowerBIDataset:
     credential: ChainedTokenCredential | InteractiveCredential | None = None
     token: str | None = None
     impersonated_user_name: str | None = None
-    sample_rows_in_table_info: int = field(default=1)
-    aiosession: aiohttp.ClientSession | None = field(default=None)
-    request_url: str = "https://api.powerbi.com/v1.0/myorg/datasets/"
-    schemas: dict[str, str] = field(default_factory=dict, init=False)
+    sample_rows_in_table_info: int = Field(1, gt=0, le=10)
+    aiosession: aiohttp.ClientSession | None = Field(default=None)
+    base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
+    schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    def __post_init__(self) -> None:
-        """Checks the init.
+    @validator("token", "credential", always=True)
+    @classmethod
+    def token_or_credential_present(cls, value, values):
+        """Validate that at least one of token and credentials is present."""
+        if "token" in values or "credentials" in values:
+            return value
+        raise ValueError("Please provide either a credential or a token.")
 
-        Whether a token or credential is set
-        Whether the sample rows are a positive int
-        Constructs the request_url
-        """
-        assert self.token or self.credential
-        if self.sample_rows_in_table_info < 1:
-            self.sample_rows_in_table_info = 1
+    @property
+    def request_url(self) -> str:
+        """Get the request url."""
         if self.group_id:
-            self.request_url = f"{self.request_url}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
-        else:
-            self.request_url = f"{self.request_url}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+            return f"{self.base_url}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+        return f"{self.base_url}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
     def headers(self) -> dict[str, str]:
@@ -77,8 +76,7 @@ class PowerBIDataset:
         """Get the available schema's."""
         if self.schemas:
             return ", ".join([f"{key}: {value}" for key, value in self.schemas.items()])
-        else:
-            return "No known schema's yet. Use the schema_powerbi tool first."
+        return "No known schema's yet. Use the schema_powerbi tool first."
 
     @property
     def table_info(self) -> str:
