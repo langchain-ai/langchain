@@ -90,7 +90,7 @@ class Blob(BaseModel):
 
 
 class BaseLoader(ABC):
-    """Base loader class."""
+    """Base loader for documents."""
 
     @abstractmethod
     def load(self) -> List[Document]:
@@ -110,22 +110,17 @@ class BaseLoader(ABC):
     @abstractmethod
     def lazy_load(
         self,
-    ) -> Union[Generator[Blob, None, None], Generator[Document, None, None]]:
-        """A lazy loader for content.
+    ) -> Generator[Document, None, None]:
+        """A lazy loader for document content."""
+        raise NotImplementedError()
 
-        Content can be represented as a `blob` or as a `document`.
 
-        Yielding `blobs` is preferred as it allows to decouple parsing of blobs from loading
-        the blobs.
-
-        Future implementations should favor implementing a lazy loader to avoid loading all content
-        eagerly into memory.
-
-        The Union on the output type is a bit unfortunate, as it'll force users of sub-classes
-        to use `from typing import cast` to cast the output to the correct type.
-
-        TODO(Eugene): Check if there is an overload solution
-        """
+class BlobLoader(ABC):
+    @abstractmethod
+    def yield_blobs(
+        self,
+    ) -> Generator[Blob, None, None]:
+        """A lazy loader for raw data represented by LangChain's Blob object."""
         raise NotImplementedError()
 
 

@@ -1,10 +1,10 @@
 """Loading logic for loading documents from a directory."""
 import logging
-from pathlib import Path
 from typing import List, Type, Union, Generator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader, Blob
+from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.blob_loaders.file_system import FileSystemLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
@@ -12,15 +12,8 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 FILE_LOADER_TYPE = Union[
     Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader]
 ]
+
 logger = logging.getLogger(__file__)
-
-
-def _is_visible(p: Path) -> bool:
-    parts = p.parts
-    for _p in parts:
-        if _p.startswith("."):
-            return False
-    return True
 
 
 class DirectoryLoader(BaseLoader):
@@ -36,38 +29,38 @@ class DirectoryLoader(BaseLoader):
         loader_kwargs: Union[dict, None] = None,
         recursive: bool = False,
     ):
-        """Initialize with path to directory and how to glob over it."""
-        if loader_kwargs is None:
-            loader_kwargs = {}
-        self.path = path
-        self.glob = glob
-        self.load_hidden = load_hidden
+        """Initialize with path to directory and how to glob over it.
+
+        Args:
+            path: Path to directory.
+            glob: Glob pattern to use.
+            silent_errors: If True, errors will be logged and ignored.
+            load_hidden: If True, hidden files will be loaded.
+            loader_cls: Class to use for loading files.
+            loader_kwargs: Keyword arguments to pass to loader_cls.
+            recursive: If True, will recursively load files.
+        """
+        self.loader = FileSystemLoader(
+            path, glob, load_hidden=load_hidden, recursive=recursive
+        )
         self.loader_cls = loader_cls
-        self.loader_kwargs = loader_kwargs
+        self.loader_kwargs = loader_kwargs or {}
         self.silent_errors = silent_errors
-        self.recursive = recursive
 
     def load(self) -> List[Document]:
         """Load documents."""
-        docs = []
+        return list(self.lazy_load())
 
-        for blob in self.lazy_load():
+    def lazy_load(
+        self,
+    ) -> Generator[Document, None, None]:
+        """Load documents lazily."""
+        for blob in self.loader.yield_blobs():
             try:
                 sub_docs = self.loader_cls(blob.data, **self.loader_kwargs).load()
-                docs.extend(sub_docs)
+                yield from sub_docs
             except Exception as e:
                 if self.silent_errors:
                     logger.warning(e)
                 else:
                     raise e
-        return docs
-
-    def lazy_load(
-        self,
-    ) -> Union[Generator[Blob, None, None], Generator[Document, None, None]]:
-        p = Path(self.path)
-        items = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
-        for item in items:
-            if item.is_file():
-                if _is_visible(item.relative_to(p)) or self.load_hidden:
-                    yield Blob.from_path(str(item))

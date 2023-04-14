@@ -1,4 +1,9 @@
-"""PDF parsers."""
+"""Implementations of PDF parsers.
+
+This module provides various flavors of PDF parsers.
+
+PDF parsers take a Blob and return a list of Document objects containing parsed content.
+"""
 from io import StringIO
 from typing import Generator
 
