@@ -67,7 +67,7 @@ class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("Chain, RetrievalQATool does not support async")
+        raise NotImplementedError("RetrievalQATool does not support async")
 
 
 class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
@@ -96,5 +96,5 @@ class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously"""
         raise NotImplementedError(
-            "Chain, RetrievalQAWithSourcesTool does not support async"
+            "RetrievalQAWithSourcesTool does not support async"
         )
