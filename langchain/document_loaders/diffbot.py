@@ -10,7 +10,7 @@ from langchain.document_loaders.base import BaseLoader
 logger = logging.getLogger(__file__)
 
 
-class DiffbotFileLoader(BaseLoader):
+class DiffbotLoader(BaseLoader):
     """Loader that loads Diffbot file json."""
 
     def __init__(self, access_token: str, urls: List[str], continue_on_failure: bool = True):
