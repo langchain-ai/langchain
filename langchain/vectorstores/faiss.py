@@ -373,7 +373,7 @@ class FAISS(VectorStore):
         embeddings = [t[1] for t in text_embeddings]
         return cls.__from(texts, embeddings, embedding, metadatas, **kwargs)
 
-    def save_local(self, folder_path: str, index_name: str ='index') -> None:
+    def save_local(self, folder_path: str, index_name: str = "index") -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
@@ -386,14 +386,18 @@ class FAISS(VectorStore):
 
         # save index separately since it is not picklable
         faiss = dependable_faiss_import()
-        faiss.write_index(self.index, str(path / "{index_name}.faiss".format(index_name=index_name)))
+        faiss.write_index(
+            self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # save docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "wb") as f:
             pickle.dump((self.docstore, self.index_to_docstore_id), f)
 
     @classmethod
-    def load_local(cls, folder_path: str, embeddings: Embeddings, index_name : str ="index") -> FAISS:
+    def load_local(
+        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+    ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
@@ -405,7 +409,9 @@ class FAISS(VectorStore):
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        index = faiss.read_index(str(path / "{index_name}.faiss".format(index_name=index_name)))
+        index = faiss.read_index(
+            str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
