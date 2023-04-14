@@ -3,7 +3,6 @@
 import logging
 from typing import List, Optional
 
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -70,7 +69,7 @@ class PlaywrightURLLoader(BaseLoader):
                     for selector in self.remove_selectors or []:
                         element = page.locator(selector)
                         if element.is_visible():
-                            element.evaluate('element => element.remove()')
+                            element.evaluate("element => element.remove()")
 
                     page_source = page.content()
                     elements = partition_html(text=page_source)
@@ -79,7 +78,9 @@ class PlaywrightURLLoader(BaseLoader):
                     docs.append(Document(page_content=text, metadata=metadata))
                 except Exception as e:
                     if self.continue_on_failure:
-                        logger.error(f"Error fetching or processing {url}, exception: {e}")
+                        logger.error(
+                            f"Error fetching or processing {url}, exception: {e}"
+                        )
                     else:
                         raise e
             browser.close()
