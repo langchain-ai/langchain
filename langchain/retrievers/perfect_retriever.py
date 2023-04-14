@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from langchain import LLMChain, PromptTemplate
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits import VectorStoreInfo
+from langchain.llms import BaseLLM
 from langchain.schema import BaseOutputParser, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStoreRetriever
 
@@ -26,6 +27,8 @@ When responding to me please, please output a response in this format. Use a mar
     }}}} \\ The conditions on which to filter the metadata
 }}}}
 ```
+
+If no metadata filters are needed you can leave "metadata_filter" as an empty map.
 
 Filtering metadata supports the following operators:
     $eq - Equal to (number, string, boolean)
@@ -77,7 +80,6 @@ A document store query consists of two components: a search string and a metadat
 
 {example}
 
-
 Begin!
 
 DOCUMENT STORE DESCRIPTION: {{docstore_description}}
@@ -118,7 +120,10 @@ class VectorStoreExtendedInfo(VectorStoreInfo):
 
 
 class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
+    """"""
+
     llm_chain: LLMChain
+    """"""
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Get documents relevant for a query.
@@ -130,10 +135,10 @@ class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
             List of relevant documents
         """
         inputs = self.llm_chain.prep_inputs(query)
-        vecstore_query = self.llm_chain.predict_and_parse(**inputs)
-        print(vecstore_query)
-        _query = vecstore_query["query"]
-        _filter = vecstore_query["filter"]
+        vectorstore_query = self.llm_chain.predict_and_parse(**inputs)
+        print(vectorstore_query)
+        _query = vectorstore_query["query"]
+        _filter = vectorstore_query["filter"]
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
                 _query, filter=_filter, **self.search_kwargs
@@ -155,15 +160,24 @@ class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
         Returns:
             List of relevant documents
         """
-        pass
+        raise NotImplementedError(
+            "VectorStoreSelfQueryRetriever does not support async"
+        )
 
     @classmethod
-    def from_vecstore_extended_info(cls, llm, vecstore_extended_info, **kwargs):
+    def from_vectorstore_extended_info(
+        cls,
+        llm: BaseLLM,
+        vectorstore_extended_info: VectorStoreExtendedInfo,
+        **kwargs: Any,
+    ) -> "VectorStoreSelfQueryRetriever":
         metadata_field_json = (
-            "{" + json.dumps(vecstore_extended_info.metadata_field_descriptions) + "}"
+            "{"
+            + json.dumps(vectorstore_extended_info.metadata_field_descriptions)
+            + "}"
         )
         _prompt = self_query_prompt.format(
-            docstore_description=vecstore_extended_info.description,
+            docstore_description=vectorstore_extended_info.description,
             metadata_fields=metadata_field_json,
         )
         prompt = PromptTemplate(
@@ -174,7 +188,7 @@ class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             llm_chain=llm_chain,
-            vectorstore=vecstore_extended_info.vectorstore,
+            vectorstore=vectorstore_extended_info.vectorstore,
             **kwargs,
         )
 
