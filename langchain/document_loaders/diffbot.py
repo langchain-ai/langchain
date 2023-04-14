@@ -13,9 +13,9 @@ logger = logging.getLogger(__file__)
 class DiffbotLoader(BaseLoader):
     """Loader that loads Diffbot file json."""
 
-    def __init__(self, access_token: str, urls: List[str], continue_on_failure: bool = True):
-        """Initialize with access token, ids, and key."""
-        self.access_token = access_token        
+    def __init__(self, api_token: str, urls: List[str], continue_on_failure: bool = True):
+        """Initialize with API token, ids, and key."""
+        self.api_token = api_token
         self.urls = urls
         self.continue_on_failure = continue_on_failure
 
@@ -27,7 +27,7 @@ class DiffbotLoader(BaseLoader):
         # TODO: Add support for other Diffbot APIs
         diffbot_url = self._diffbot_api_url("article")
         params = {
-            "token": self.access_token,
+            "token": self.api_token,
             "url": url,
         }
         response = requests.get(diffbot_url, params=params, timeout=10)
