@@ -20,7 +20,7 @@ class SQLDatabaseToolkit(BaseToolkit):
     """Toolkit for interacting with SQL databases."""
 
     db: SQLDatabase = Field(exclude=True)
-    llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLLM = Field(exclude=True)
 
     @property
     def dialect(self) -> str:
