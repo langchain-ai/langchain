@@ -5,13 +5,14 @@ from google.cloud import storage
 from google.oauth2 import service_account
 from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
 import uuid
+import logging
 
 from langchain.docstore.document import Document
 from langchain.embeddings import TensorflowHubEmbeddings
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-VST = TypeVar("VST", bound="VectorStore")
+logger = logging.getLogger()
 
 
 class MatchingEngine(VectorStore):
@@ -37,6 +38,7 @@ class MatchingEngine(VectorStore):
                 gcs_bucket_uri: .
         """
         super().__init__()
+        logger.debug(f"Constructor.")
         self.project_id = project_id
         self.region = region
         self.gcs_client = None
@@ -60,6 +62,8 @@ class MatchingEngine(VectorStore):
     
     def _init_aiplatform(self, project_id: str, region: str, gcs_bucket_uri: str) -> None:
         """TODO add docs"""
+        logger.debug(f"Initializing AI Platform for project {project_id} on "
+                     f"{region} and for {gcs_bucket_uri}.")
         aiplatform.init(
             project=project_id, 
             location=region, 
@@ -69,6 +73,7 @@ class MatchingEngine(VectorStore):
 
     def _create_index_by_name(self, index_name: str) -> "aiplatform.MatchingEngineIndex":
         """TODO add docs"""
+        logger.debug(f"Creating matching engine index with name {index_name}.")
         return aiplatform.MatchingEngineIndex(
             index_name,
             project=self.project_id,
@@ -78,6 +83,7 @@ class MatchingEngine(VectorStore):
     
     def _create_endpoint_by_name(self, endpoint_name: str) -> "aiplatform.MatchingEngineIndexEndpoint":
         """TODO add docs"""
+        logger.debug(f"Creating endpoint with name {endpoint_name}.")
         return aiplatform.MatchingEngineIndexEndpoint(
             endpoint_name,
             project=self.project_id,
@@ -102,7 +108,7 @@ class MatchingEngine(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-
+        logger.debug(f"Embedding documents.")
         embeddings = self.embedder.embed_documents(texts)
         jsons = []
         ids = []
@@ -116,14 +122,19 @@ class MatchingEngine(VectorStore):
             })
             self._upload_to_gcs(text, f"documents/{id}")
 
+        logger.debug(f"Uploaded {len(ids)} documents to GCS.")
+
         result_str = "\n".join(jsons)
 
         filename = f"{uuid.uuid4()}.json"
         self._upload_to_gcs(result_str, filename)
+        logger.debug(f"Uploaded updated json with embeddings to {self.gcs_bucket_uri}/indexes/{filename}.")
 
         self.index = self.index.update_embeddings(
             contents_delta_uri=f"{self.gcs_bucket_uri}/indexes/{filename}",
         )
+
+        logger.debug(f"Updated index with new configuration.")
 
         return ids
     
@@ -152,11 +163,8 @@ class MatchingEngine(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+        logger.debug(f"Embedding query {query}.")
         embedding_query = self.embedder.embed_documents([query])
-
-        # I'm only getting the first one because queries receives an array and the similarity_search 
-        # method only recevies one query. This means that the match method will always return an array
-        # with only one element.
 
         index_id = None
 
@@ -168,17 +176,24 @@ class MatchingEngine(VectorStore):
         if index_id == None:
             raise ValueError(f"No index with id {self.index.resource_name} deployed on enpoint {self.endpoint.display_name}.")
 
+        # I'm only getting the first one because queries receives an array and the similarity_search 
+        # method only recevies one query. This means that the match method will always return an array
+        # with only one element.
         response = self.endpoint.match(
             deployed_index_id=index_id,
             queries=embedding_query,
             num_neighbors=k,
         )[0]
 
+        logger.debug(f"Found {len(response)} matches for the query {query}.")
+
         results = []
 
         for doc in response:
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(Document(page_content=page_content))
+
+        logger.debug(f"Downloaded documents for query.")
             
         return results
     
@@ -191,7 +206,7 @@ class MatchingEngine(VectorStore):
     
     @classmethod
     def from_texts(
-        cls: Type[VST], 
+        cls: Type["MatchingEngine"], 
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None, 
@@ -201,7 +216,7 @@ class MatchingEngine(VectorStore):
         index_name: str = None,
         endpoint_name: str = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings."""
         matching_engine = cls(
             project_id=project_id,
@@ -218,6 +233,8 @@ class MatchingEngine(VectorStore):
 
 # TODO delete this after testing
 if __name__ == "__main__":
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
     me = MatchingEngine(
         project_id="scafati-joonix",
         region="us-central1",
@@ -225,3 +242,5 @@ if __name__ == "__main__":
         index_name="glove_100_1_langchain",
         endpoint_name="tree_ah_glove_deployed_langchain"
     )
+
+    print(me.similarity_search("Cristian Castro"))
