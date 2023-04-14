@@ -3,7 +3,7 @@
 Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.py
          https://github.com/BlinkDL/ChatRWKV/blob/main/v2/chat.py
 """
-from typing import Any, Dict, List, Mapping, Optional, Set, SupportsIndex
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -58,7 +58,7 @@ class RWKV(LLM, BaseModel):
     CHUNK_LEN: int = 256
     """Batch size for prompt processing."""
 
-    max_tokens_per_generation: SupportsIndex = 256
+    max_tokens_per_generation: int = 256
     """Maximum number of tokens to generate."""
 
     client: Any = None  #: :meta private:
@@ -69,7 +69,7 @@ class RWKV(LLM, BaseModel):
 
     model_tokens: Any = None  #: :meta private:
 
-    model_state : Any = None  #: :meta private:
+    model_state: Any = None  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -141,23 +141,26 @@ class RWKV(LLM, BaseModel):
         """Return the type of llm."""
         return "rwkv-4"
 
-    def run_rnn(self,tokens, newline_adj = 0):
+    def run_rnn(self, _tokens: List[str], newline_adj: int = 0) -> Any:
         AVOID_REPEAT_TOKENS = []
-        AVOID_REPEAT = '，：？！'
-        for i in AVOID_REPEAT:  
+        AVOID_REPEAT = "，：？！"
+        for i in AVOID_REPEAT:
             dd = self.pipeline.encode(i)
             assert len(dd) == 1
             AVOID_REPEAT_TOKENS += dd
 
-        tokens = [int(x) for x in tokens]
+        tokens = [int(x) for x in _tokens]
         self.model_tokens += tokens
 
-        while len(tokens) > 0:
-            out, self.model_state = self.client.forward(tokens[:self.CHUNK_LEN], self.model_state)
-            tokens = tokens[self.CHUNK_LEN:]
+        out: Any = None
 
+        while len(tokens) > 0:
+            out, self.model_state = self.client.forward(
+                tokens[: self.CHUNK_LEN], self.model_state
+            )
+            tokens = tokens[self.CHUNK_LEN :]
         END_OF_LINE = 187
-        out[END_OF_LINE] += newline_adj # adjust \n probability
+        out[END_OF_LINE] += newline_adj  # adjust \n probability
 
         if self.model_tokens[-1] in AVOID_REPEAT_TOKENS:
             out[self.model_tokens[-1]] = -999999999
@@ -170,12 +173,15 @@ class RWKV(LLM, BaseModel):
         begin = len(self.model_tokens)
         out_last = begin
 
-        occurrence = {}
+        occurrence: Dict = {}
 
         decoded = ""
         for i in range(self.max_tokens_per_generation):
             for n in occurrence:
-                logits[n] -= (self.penalty_alpha_presence + occurrence[n] * self.penalty_alpha_frequency)
+                logits[n] -= (
+                    self.penalty_alpha_presence
+                    + occurrence[n] * self.penalty_alpha_frequency
+                )
             token = self.pipeline.sample_logits(
                 logits, temperature=self.temperature, top_p=self.top_p
             )
@@ -190,10 +196,10 @@ class RWKV(LLM, BaseModel):
 
             logits = self.run_rnn([token])
             xxx = self.tokenizer.decode(self.model_tokens[out_last:])
-            if '\ufffd' not in xxx: # avoid utf-8 display issues
-                decoded +=xxx
+            if "\ufffd" not in xxx:  # avoid utf-8 display issues
+                decoded += xxx
                 out_last = begin + i + 1
-                if i >= self.max_tokens_per_generation-100:
+                if i >= self.max_tokens_per_generation - 100:
                     break
 
         return decoded
