@@ -34,6 +34,16 @@ class ConversationalAgent(Agent):
         """Prefix to append the llm call with."""
         return "Thought:"
 
+    @property
+    def alt_finish(self) -> str:
+        """String representing a finished Thought."""
+        return "Do I need to use a tool? No"
+
+    @property
+    def finished(self) -> str:
+        """String representing a finished Thought."""
+        return "Do I have the final answer? Yes."
+
     @classmethod
     def create_prompt(
         cls,
@@ -82,10 +92,10 @@ class ConversationalAgent(Agent):
         regex = r"Action: (.*?)[\n]*Action Input: (.*)"
         match = re.search(regex, llm_output)
         if not match:
-            if f"{self.llm_prefix} Do I need to use a tool? No" in llm_output:
+            if f"{self.llm_prefix} {self.alt_finish}" in llm_output:
                 return (
                     self.ai_prefix,
-                    f"Do I have the final answer? Yes. {llm_output.split('Do I need to use a tool? No')[-1].strip()}",
+                    f"{self.finished} {llm_output.split(self.alt_finish)[-1].strip()}",
                 )
             raise ValueError(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1)
