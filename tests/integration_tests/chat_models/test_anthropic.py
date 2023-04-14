@@ -1,5 +1,5 @@
 """Test Anthropic API wrapper."""
-from typing import Generator
+from typing import List
 
 import pytest
 
@@ -51,7 +51,7 @@ async def test_anthropic_async_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    chat_messages: list[BaseMessage] = [HumanMessage(content="How many toes do dogs have?")]
+    chat_messages: List[BaseMessage] = [HumanMessage(content="How many toes do dogs have?")]
     result: LLMResult = await chat.agenerate([chat_messages])
     assert callback_handler.llm_streams > 1
     assert isinstance(result, LLMResult)
@@ -64,7 +64,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 def test_formatting() -> None:
     chat = AnthropicChat()
 
-    chat_messages: list[BaseMessage] = [HumanMessage(content="Hello")]
+    chat_messages: List[BaseMessage] = [HumanMessage(content="Hello")]
     result = chat._convert_messages_to_prompt(chat_messages)
     assert result == "\n\nHuman: Hello\n\nAssistant:"
 
