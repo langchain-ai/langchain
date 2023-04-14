@@ -294,7 +294,7 @@ class Marqo(VectorStore):
                 {
                     "index": self._index_name,
                     "q": query,
-                    "searchable_attributes": self._searchable_attributes,
+                    "searchableAttributes": self._searchable_attributes,
                     "limit": k,
                 }
                 for query in queries

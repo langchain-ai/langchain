@@ -95,6 +95,20 @@ def test_marqo_search(client) -> None:
     assert ids[0] == results["hits"][0]["_id"]
 
 
+def test_marqo_bulk(client) -> None:
+    marqo_search = Marqo(client=client, index_name=INDEX_NAME)
+    input_documents = ["This is document 1", "2", "3"]
+    ids = marqo_search.add_texts(input_documents)
+    bulk_results = marqo_search.bulk_similarity_search(
+        ["What is the first document?", "2", "3"], k=3
+    )
+
+    assert len(ids) == len(input_documents)
+    assert bulk_results[0][0].page_content == input_documents[0]
+    assert bulk_results[1][0].page_content == input_documents[1]
+    assert bulk_results[2][0].page_content == input_documents[2]
+
+
 def test_marqo_weighted_query(client) -> None:
     """Test end to end construction and search."""
     texts = ["Smartphone", "Telephone"]
