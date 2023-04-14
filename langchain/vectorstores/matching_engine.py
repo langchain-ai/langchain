@@ -132,7 +132,7 @@ class MatchingEngine(VectorStore):
         logger.debug(f"Uploaded updated json with embeddings to {self.gcs_bucket_uri}/indexes/{filename}.")
 
         self.index = self.index.update_embeddings(
-            contents_delta_uri=f"{self.gcs_bucket_uri}/indexes/{filename}",
+            contents_delta_uri=f"gs://{self.gcs_bucket_uri}/indexes/{filename}",
         )
 
         logger.debug(f"Updated index with new configuration.")
