@@ -128,12 +128,13 @@ class MatchingEngine(VectorStore):
 
         result_str = "\n".join([json.dumps(x) for x in jsons])
 
-        filename = f"indexes/{uuid.uuid4()}/{time.time()}.json"
+        filename_prefix = f"indexes/{uuid.uuid4()}"
+        filename = f"{filename_prefix}/{time.time()}.json"
         self._upload_to_gcs(result_str, filename)
         logger.debug(f"Uploaded updated json with embeddings to {self.gcs_bucket_uri}/{filename}.")
 
         self.index = self.index.update_embeddings(
-            contents_delta_uri=f"gs://{self.gcs_bucket_uri}/{filename}"
+            contents_delta_uri=f"gs://{self.gcs_bucket_uri}/{filename_prefix}/"
         )
 
         logger.debug(f"Updated index with new configuration.")
