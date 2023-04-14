@@ -1,13 +1,14 @@
 """Vertex Matching Engine implementation of the vector store."""
 
+import json
+import logging
+import time
+import uuid
+
 from google.cloud import aiplatform
 from google.cloud import storage
 from google.oauth2 import service_account
-from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
-import json
-import time
-import uuid
-import logging
+from typing import Any, Iterable, List, Optional, Type, Union
 
 from langchain.docstore.document import Document
 from langchain.embeddings import TensorflowHubEmbeddings
