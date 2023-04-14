@@ -27,6 +27,7 @@ from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
 from langchain.document_loaders.gcs_directory import GCSDirectoryLoader
 from langchain.document_loaders.gcs_file import GCSFileLoader
+from langchain.document_loaders.git import GitLoader
 from langchain.document_loaders.gitbook import GitbookLoader
 from langchain.document_loaders.googledrive import GoogleDriveLoader
 from langchain.document_loaders.gutenberg import GutenbergLoader
@@ -140,4 +141,5 @@ __all__ = [
     "BigQueryLoader",
     "BiliBiliLoader",
     "SlackDirectoryLoader",
+    "GitLoader",
 ]
