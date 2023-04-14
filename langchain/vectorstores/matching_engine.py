@@ -75,10 +75,7 @@ class MatchingEngine(VectorStore):
         """TODO add docs"""
         logger.debug(f"Creating matching engine index with name {index_name} {self.project_id} {self.region}.")
         return aiplatform.MatchingEngineIndex(
-            index_name,
-            project=self.project_id,
-            location=self.region,
-            credentials=self.credentials
+            index_name=f"projects/{self.project_id}/locations/{self.region}/indexes/{index_name}"
         )
     
     def _create_endpoint_by_name(self, endpoint_name: str) -> "aiplatform.MatchingEngineIndexEndpoint":
@@ -236,7 +233,7 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
     me = MatchingEngine(
-        project_id="6912607735",
+        project_id="scafati-joonix",
         region="us-central1",
         gcs_bucket_uri="gs://langchain-integration",
         index_name="glove_100_1_langchain",
