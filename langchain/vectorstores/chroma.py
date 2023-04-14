@@ -117,6 +117,30 @@ class Chroma(VectorStore):
             metadatas=metadatas, embeddings=embeddings, documents=texts, ids=ids
         )
         return ids
+    
+    def add_documents(
+        self,
+        documents: Iterable[Document],
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents (Iterable[Document]): Documents to add to the vectorstore.
+            ids (Optional[List[str]], optional): Optional list of IDs.
+
+        Returns:
+            List[str]: List of IDs of the added documents.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        if ids is None:
+            ids = [str(uuid.uuid1()) for _ in documents]
+
+        return self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+
 
     def similarity_search(
         self,
