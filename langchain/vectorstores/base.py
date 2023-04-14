@@ -262,3 +262,13 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
+
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add documents to vectorstore."""
+        return self.vectorstore.add_documents(documents, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Add documents to vectorstore."""
+        return await self.vectorstore.aadd_documents(documents, **kwargs)

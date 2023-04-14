@@ -81,7 +81,7 @@ class Qdrant(VectorStore):
         ids = [uuid.uuid4().hex for _ in texts]
         self.client.upsert(
             collection_name=self.collection_name,
-            points=rest.Batch(
+            points=rest.Batch.construct(
                 ids=ids,
                 vectors=[self.embedding_function(text) for text in texts],
                 payloads=self._build_payloads(
@@ -314,7 +314,7 @@ class Qdrant(VectorStore):
 
         client.upsert(
             collection_name=collection_name,
-            points=rest.Batch(
+            points=rest.Batch.construct(
                 ids=[uuid.uuid4().hex for _ in texts],
                 vectors=embeddings,
                 payloads=cls._build_payloads(
