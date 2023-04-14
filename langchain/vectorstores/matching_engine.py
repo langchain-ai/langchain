@@ -4,6 +4,7 @@ from google.cloud import aiplatform
 from google.cloud import storage
 from google.oauth2 import service_account
 from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
+import json
 import uuid
 import logging
 
@@ -124,7 +125,7 @@ class MatchingEngine(VectorStore):
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
 
-        result_str = "\n".join(jsons)
+        result_str = "\n".join(json.dumps(jsons))
 
         filename = f"{uuid.uuid4()}.json"
         self._upload_to_gcs(result_str, filename)
