@@ -241,7 +241,7 @@ if __name__ == "__main__":
     me = MatchingEngine(
         project_id="scafati-joonix",
         region="us-central1",
-        gcs_bucket_uri="gs://langchain-integration",
+        gcs_bucket_uri="langchain-integration",
         index_id="1419223220854194176",
         endpoint_id="4789041642034167808"
     )
