@@ -7,7 +7,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from typing import Any, Iterable, List, Optional, Union
 
 from langchain.docstore.document import Document
-from langchain.embeddings import Embeddings, TensorflowHubEmbeddings
+from langchain.embeddings.base import Embeddings
+from langchain.embeddings import TensorflowHubEmbeddings
 from langchain.vectorstores.base import VectorStore
 
 
