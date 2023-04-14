@@ -22,7 +22,7 @@ class MatchingEngine(VectorStore):
         project_id: str,
         region: str,
         gcs_bucket_uri: str,
-        index_name: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
+        index_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
         endpoint_name: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
         json_credentials_path: Union[str, None] = None,
         embedder: Embeddings = TensorflowHubEmbeddings(model_url="https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
@@ -47,7 +47,7 @@ class MatchingEngine(VectorStore):
 
         self.credentials = self._create_credentials_from_file(json_credentials_path)
         self._init_aiplatform(project_id, region, gcs_bucket_uri)
-        self.index = self._create_index_by_name(index_name)
+        self.index = self._create_index_by_id(index_id)
         self.endpoint = self._create_endpoint_by_name(endpoint_name)
         
 
@@ -71,11 +71,11 @@ class MatchingEngine(VectorStore):
             credentials=self.credentials
         )
 
-    def _create_index_by_name(self, index_name: str) -> "aiplatform.MatchingEngineIndex":
+    def _create_index_by_id(self, index_id: str) -> "aiplatform.MatchingEngineIndex":
         """TODO add docs"""
-        logger.debug(f"Creating matching engine index with name {index_name} {self.project_id} {self.region}.")
+        logger.debug(f"Creating matching engine index with id {index_id} {self.project_id} {self.region}.")
         return aiplatform.MatchingEngineIndex(
-            index_name=f"projects/{self.project_id}/locations/{self.region}/indexes/{index_name}"
+            index_name=f"projects/{self.project_id}/locations/{self.region}/indexes/{index_id}"
         )
     
     def _create_endpoint_by_name(self, endpoint_name: str) -> "aiplatform.MatchingEngineIndexEndpoint":
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         project_id="scafati-joonix",
         region="us-central1",
         gcs_bucket_uri="gs://langchain-integration",
-        index_name="glove_100_1_langchain",
+        index_id="1419223220854194176",
         endpoint_name="tree_ah_glove_deployed_langchain"
     )
 
