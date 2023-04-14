@@ -5,7 +5,13 @@ import pytest
 
 from langchain.callbacks.base import CallbackManager
 from langchain.chat_models.anthropic import AnthropicChat
-from langchain.schema import AIMessage, BaseMessage, ChatGeneration, HumanMessage, LLMResult
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatGeneration,
+    HumanMessage,
+    LLMResult,
+)
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -51,7 +57,9 @@ async def test_anthropic_async_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    chat_messages: List[BaseMessage] = [HumanMessage(content="How many toes do dogs have?")]
+    chat_messages: List[BaseMessage] = [
+        HumanMessage(content="How many toes do dogs have?")
+    ]
     result: LLMResult = await chat.agenerate([chat_messages])
     assert callback_handler.llm_streams > 1
     assert isinstance(result, LLMResult)
