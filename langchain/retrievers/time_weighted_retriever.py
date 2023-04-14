@@ -59,11 +59,13 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             document.metadata["last_accessed_at"],
         )
         score = self.decay_factor**hours_passed
+        print(score)
         for key in self.other_score_keys:
             if key in document.metadata:
                 score += document.metadata[key]
         if vector_salience is not None:
             score += vector_salience
+        print(score)
         return score
 
     @property
