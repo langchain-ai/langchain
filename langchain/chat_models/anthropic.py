@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from pydantic import Extra
+
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema import (
@@ -61,7 +62,7 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
             raise ValueError(f"Got unknown type {message}")
         return message_text
 
-    def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:  # type: ignore
+    def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:
         """Format a list of strings into a single string with necessary newlines.
 
         Args:
@@ -93,16 +94,13 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
             text.rstrip()
         )  # trim off the trailing ' ' that might come from the "Assistant: "
 
-    def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None  # type: ignore
-    ) -> ChatResult:
+    def _generate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
+        params = {'prompt': prompt, 'stop_sequences': stop, **self._default_params}
 
         if self.streaming:
             completion = ""
-            stream_resp = self.client.completion_stream(
-                prompt=prompt, **self._default_params
-            )
+            stream_resp = self.client.completion_stream(**params)
             for data in stream_resp:
                 delta = data["completion"][len(completion) :]
                 completion = data["completion"]
@@ -111,7 +109,7 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
                     verbose=self.verbose,
                 )
         else:
-            response = self.client.completion(prompt=prompt, **self._default_params)
+            response = self.client.completion(**params)
             completion = response["completion"]
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
@@ -120,12 +118,11 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
+        params = {'prompt': prompt, 'stop_sequences': stop, **self._default_params}
 
         if self.streaming:
             completion = ""
-            stream_resp = await self.client.acompletion_stream(
-                prompt=prompt, **self._default_params
-            )
+            stream_resp = await self.client.acompletion_stream(**params)
             async for data in stream_resp:
                 delta = data["completion"][len(completion) :]
                 completion = data["completion"]
@@ -140,9 +137,7 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
                         verbose=self.verbose,
                     )
         else:
-            response = await self.client.acompletion(
-                prompt=prompt, **self._default_params
-            )
+            response = await self.client.acompletion(**params)
             completion = response["completion"]
         message = AIMessage(content=completion)
         return ChatResult(generations=[ChatGeneration(message=message)])
