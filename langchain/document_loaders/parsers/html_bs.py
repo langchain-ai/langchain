@@ -43,7 +43,7 @@ class BSHTMLParser(BaseBlobParser):
             title = ""
 
         metadata: Dict[str, Union[str, None]] = {
-            "source": blob.path_like,
+            "source": blob.path,
             "title": title,
         }
         yield Document(page_content=text, metadata=metadata)
