@@ -53,7 +53,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_from_texts_with_meta(
-        self, texts: List[str], embedding: Embeddings
+            self, texts: List[str], embedding: Embeddings
     ) -> None:
         """
         Test that the vector store can be populated from a list of texts and
@@ -63,7 +63,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_from_texts_with_ids(
-        self, texts: List[str], ids: List[str], embedding: Embeddings
+            self, texts: List[str], ids: List[str], embedding: Embeddings
     ) -> None:
         """
         Test that an existing document in the vector store is updated with new content.
@@ -72,7 +72,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_from_documents(
-        self, documents: List[Document], embedding: Embeddings
+            self, documents: List[Document], embedding: Embeddings
     ) -> None:
         """
         Test that the vector store can be populated from a list of documents.
@@ -81,7 +81,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_from_documents_with_meta(
-        self, documents: List[Document], embedding: Embeddings
+            self, documents: List[Document], embedding: Embeddings
     ) -> None:
         """
         Test that the vector store can be populated from a list of documents and
@@ -91,7 +91,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_add_documents_with_ids(
-        self, documents: List[Document], embedding: Embeddings
+            self, documents: List[Document], embedding: Embeddings
     ) -> None:
         """
         Test that documents can be added to the vector store with IDs and
@@ -101,7 +101,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_update_documents_with_ids(
-        self, documents: List[Document], embedding: Embeddings
+            self, documents: List[Document], embedding: Embeddings
     ) -> None:
         """
         Test that existing documents can be updated in the vector store with IDs and
@@ -112,7 +112,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_delete_document_with_id(
-        self, document: Document, embedding: Embeddings
+            self, document: Document, embedding: Embeddings
     ) -> None:
         """
         Test that document can be deleted from the vector store with ID.
@@ -121,7 +121,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_similarity_search(
-        self, query: str, expected_results: List[Document]
+            self, query: str, expected_results: List[Document]
     ) -> None:
         """
         Test that the vector store can perform a similarity search and return the
@@ -131,7 +131,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_similarity_search_with_meta(
-        self, query: str, expected_results: List[Document]
+            self, query: str, expected_results: List[Document]
     ) -> None:
         """
         Test that the vector store can perform a similarity search with metadata and
@@ -141,7 +141,7 @@ class AbstractVectorStoreTest(ABC):
 
     @abstractmethod
     def test_similarity_search_with_filters(
-        self, query: str, expected_results: List[Document]
+            self, query: str, expected_results: List[Document]
     ) -> None:
         """
         Test that the vector store can perform a similarity search with filters and
@@ -175,3 +175,22 @@ class AbstractVectorStoreTestLocal(AbstractVectorStoreTest, ABC):
             yield Path(temp_dir)
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+class BaseVectorStoreTest(AbstractVectorStoreTest, ABC):
+    """Doing all hard works here"""
+    vector_store_class: Type[VectorStore]
+
+
+class TestChromaRemote(AbstractVectorStoreTestRemote, BaseVectorStoreTest, ABC):
+    vector_store_class = Chroma
+
+    def setup_class(self) -> None:
+        """Prepare the test environment to connect to the vector store"""
+
+
+class TestChromaLocal(AbstractVectorStoreTestLocal, BaseVectorStoreTest, ABC):
+    vector_store_class = Chroma
+
+    def setup_class(self, db_store_dir) -> None:
+        """Prepare the test environment to prepare local DB for the vector store"""
