@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -80,6 +80,41 @@ class VectorStore(ABC):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
+
+    def similarity_search_with_normalized_similarities(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and similarity scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        docs_and_similarities = self._similarity_search_with_normalized_similarities(
+            query, k=k, **kwargs
+        )
+        if any(
+            similarity < 0.0 or similarity > 1.0
+            for _, similarity in docs_and_similarities
+        ):
+            raise ValueError(
+                "Normalized similarity scores must be between"
+                f" 0 and 1, got {docs_and_similarities}"
+            )
+        return docs_and_similarities
+
+    def _similarity_search_with_normalized_similarities(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and similarity scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        raise NotImplementedError
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
