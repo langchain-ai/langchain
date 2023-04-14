@@ -28,6 +28,7 @@ class TestWeaviate:
         client = Client(url)
         client.schema.delete_all()
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_similarity_search_without_metadata(self, weaviate_url: str) -> None:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
@@ -40,6 +41,7 @@ class TestWeaviate:
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_similarity_search_with_metadata(self, weaviate_url: str) -> None:
         """Test end to end construction and search with metadata."""
         texts = ["foo", "bar", "baz"]
@@ -49,3 +51,16 @@ class TestWeaviate:
         )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
+
+    def test_max_marginal_relevance_search(self, weaviate_url: str) -> None:
+        """Test end to end construction and MRR search."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Weaviate.from_texts(
+            texts,  OpenAIEmbeddings(), metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
+        assert output == [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="bar", metadata={"page": 1}),
+        ]
