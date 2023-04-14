@@ -125,7 +125,7 @@ class MatchingEngine(VectorStore):
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
 
-        result_str = "\n".join(json.dumps(jsons))
+        result_str = "\n".join([json.dumps(x) for x in jsons])
 
         filename = f"indexes/{uuid.uuid4()}.json"
         self._upload_to_gcs(result_str, filename)
