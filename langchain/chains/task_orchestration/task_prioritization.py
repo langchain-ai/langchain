@@ -9,8 +9,8 @@ class TaskPrioritizationChain(LLMChain):
     def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
         """Get the response parser."""
         task_prioritization_template = (
-            "You are an task prioritization AI tasked with cleaning the formatting of and reprioritizing"
-            " the following tasks: {task_names}."
+            "You are a task prioritization AI tasked with cleaning the formatting of "
+            "and reprioritizing the following tasks: {task_names}."
             " Consider the ultimate objective of your team: {objective}."
             " Do not remove any tasks. Return the result as a numbered list, like:"
             " #. First task"

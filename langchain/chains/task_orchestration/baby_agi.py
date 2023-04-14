@@ -2,13 +2,11 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+from task_creation import TaskCreationChain
+from task_execution import TaskExecutionChain
+from task_prioritization import TaskPrioritizationChain
 
 from langchain.chains.base import Chain
-from langchain.chains.task_orchestration.task_creation import TaskCreationChain
-from langchain.chains.task_orchestration.task_execution import TaskExecutionChain
-from langchain.chains.task_orchestration.task_prioritization import (
-    TaskPrioritizationChain,
-)
 from langchain.llms import BaseLLM
 from langchain.vectorstores.base import VectorStore
 
@@ -76,7 +74,9 @@ class BabyAGI(Chain, BaseModel):
         task_names = [t["task_name"] for t in list(self.task_list)]
         next_task_id = int(this_task_id) + 1
         response = self.task_prioritization_chain.run(
-            task_names=", ".join(task_names), next_task_id=str(next_task_id), objective=objective
+            task_names=", ".join(task_names),
+            next_task_id=str(next_task_id),
+            objective=objective,
         )
         new_tasks = response.split("\n")
         prioritized_task_list = []
@@ -102,7 +102,9 @@ class BabyAGI(Chain, BaseModel):
     def execute_task(self, objective: str, task: str, k: int = 5) -> str:
         """Execute a task."""
         context = self._get_top_tasks(query=objective, k=k)
-        return self.execution_chain.run(objective=objective, context="\n".join(context), task=task)
+        return self.execution_chain.run(
+            objective=objective, context="\n".join(context), task=task
+        )
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent."""
@@ -148,11 +150,11 @@ class BabyAGI(Chain, BaseModel):
 
     @classmethod
     def from_llm(
-        cls, 
-        llm: BaseLLM, 
-        vectorstore: VectorStore, 
-        verbose: bool = False, 
-        **kwargs: Dict[str, Any]
+        cls,
+        llm: BaseLLM,
+        vectorstore: VectorStore,
+        verbose: bool = False,
+        **kwargs: Dict[str, Any],
     ) -> "BabyAGI":
         """Initialize the BabyAGI Controller."""
         task_creation_chain = TaskCreationChain.from_llm(llm, verbose=verbose)
