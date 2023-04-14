@@ -15,7 +15,7 @@ from langchain.schema import (
 )
 
 
-class AnthropicChat(BaseChatModel, _AnthropicCommon):
+class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     r"""Wrapper around Anthropic's large language model.
 
     To use, you should have the ``anthropic`` python package installed, and the

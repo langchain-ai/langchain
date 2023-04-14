@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 from langchain.callbacks.base import CallbackManager
-from langchain.chat_models.anthropic import AnthropicChat
+from langchain.chat_models.anthropic import ChatAnthropic
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -17,7 +17,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = AnthropicChat(model="bare-nano-0")
+    chat = ChatAnthropic(model="bare-nano-0")
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, AIMessage)
@@ -26,7 +26,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = AnthropicChat(model="bare-nano-0", streaming=True)
+    chat = ChatAnthropic(model="bare-nano-0", streaming=True)
     message = HumanMessage(content="Hello")
     response = chat([message])
     assert isinstance(response, AIMessage)
@@ -37,7 +37,7 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = AnthropicChat(
+    chat = ChatAnthropic(
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -52,7 +52,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = AnthropicChat(
+    chat = ChatAnthropic(
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -70,7 +70,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 
 def test_formatting() -> None:
-    chat = AnthropicChat()
+    chat = ChatAnthropic()
 
     chat_messages: List[BaseMessage] = [HumanMessage(content="Hello")]
     result = chat._convert_messages_to_prompt(chat_messages)
