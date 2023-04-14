@@ -4,8 +4,7 @@ import logging
 from typing import Dict, Union, Generator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import Blob
-from langchain.schema import BaseBlobParser
+from langchain.document_loaders.base import Blob, BaseBlobParser
 
 logger = logging.getLogger(__file__)
 
@@ -34,8 +33,7 @@ class BSHTMLParser(BaseBlobParser):
         """Load HTML document into document objects."""
         from bs4 import BeautifulSoup
 
-        blob = blob.read_if_needed()
-        soup = BeautifulSoup(blob.data, **self.bs_kwargs)
+        soup = BeautifulSoup(blob.as_string(), **self.bs_kwargs)
         text = soup.get_text()
 
         if soup.title:

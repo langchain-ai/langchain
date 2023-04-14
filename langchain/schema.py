@@ -1,14 +1,10 @@
 """Common schema objects."""
 from __future__ import annotations
 
-import abc
-
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional, Generator
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
-
-from langchain.document_loaders.base import Blob
 
 
 def get_buffer_string(
@@ -396,22 +392,3 @@ class OutputParserException(Exception):
     pass
 
 
-class BaseBlobParser(ABC):
-    """Base interface for blob parsers.
-
-    A blob
-
-    A blob is a representation of content that may live in memory or on disk etc.
-    It is associated with data and mimetype.
-
-    Parsers are used to parse the output
-    """
-
-    @abc.abstractmethod
-    def lazy_parse(self, blob: Blob) -> Generator[Document, None, None]:
-        """Parser interface."""
-        raise NotImplementedError()
-
-    def parse(self, blob: Blob) -> List[Document]:
-        """Eager parse"""
-        return list(self.lazy_parse(blob))

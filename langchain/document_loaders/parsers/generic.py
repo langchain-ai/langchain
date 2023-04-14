@@ -2,8 +2,8 @@
 import magic
 from typing import Mapping, Callable, Generator
 
-from langchain.document_loaders.base import Blob
-from langchain.schema import Document, BaseBlobParser
+from langchain.document_loaders.base import Blob, BaseBlobParser
+from langchain.schema import Document
 
 
 class MimeTypeBasedParser(BaseBlobParser):
@@ -17,18 +17,15 @@ class MimeTypeBasedParser(BaseBlobParser):
     Example:
 
         >>> from langchain.document_loaders.parsers.generic import MimeTypeBasedParser
-        >>> from langchain.document_loaders.parsers.unstructured import UnstructuredParser
         >>> from langchain.document_loaders.parsers.image import ImageParser
         >>> from langchain.document_loaders.parsers.pdf import PDFParser
-        >>> from langchain.document_loaders.parsers.office import OfficeParser
 
         >>> parser = MimeTypeBasedParser({
-        ...     "text/plain": UnstructuredParser(),
         ...     "image/png": ImageParser(),
         ...     "application/pdf": PDFParser(),
-        ...     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": OfficeParser(),
         ... })
         >>> parser.parse(Blob(data=b"Hello world", mimetype="text/plain"))
+
         [Document(page_content='Hello world', metadata={})]
     """
 
@@ -43,12 +40,18 @@ class MimeTypeBasedParser(BaseBlobParser):
 
     def parse(self, blob: Blob) -> Generator[Document, None, None]:
         """Load documents from a file."""
-        # TODO(Eugene): Restrict to first 2048 bytes
-        mime_type = magic.from_buffer(blob.data, mime=True) if blob.mimetype else blob
 
-        if mime_type in self.handlers:
-            handler = self.handlers[mime_type]
+        mimetype = blob.mimetype
+
+        if mimetype is None:
+            err_msg = "Mime type must be specified provided."
+            if blob.location is not None:
+                err_msg += f" Location: {blob.location}"
+            raise ValueError(err_msg)
+
+        if mimetype in self.handlers:
+            handler = self.handlers[mimetype]
             document = handler(blob)
             yield document
         else:
-            raise ValueError(f"Unsupported mime type: {mime_type}")
+            raise ValueError(f"Unsupported mime type: {mimetype}")
