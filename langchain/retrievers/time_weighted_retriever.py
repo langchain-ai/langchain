@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field, validator
 
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.faiss import FAISS
 
 
 def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
@@ -17,7 +17,7 @@ def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     """Retriever combining embededing similarity with recency."""
 
-    vectorstore: VectorStore
+    vectorstore: FAISS
     """The vectorstore to store documents and determine salience."""
 
     search_kwargs: dict = Field(default_factory=lambda: dict(k=100))
@@ -46,16 +46,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
-
-    @validator("vectorstore")
-    def validate_vectorstore(cls, vectorstore: VectorStore) -> VectorStore:
-        """Validate the vectorstore has the required methods implemented."""
-        if not hasattr(vectorstore, "similarity_search_with_score"):
-            raise ValueError(
-                f"Required method 'similarity_search_with_score not implemented"
-                f" for vectorstore of type {type(vectorstore)}"
-            )
-        return vectorstore
 
     def _get_combined_score(
         self,
@@ -86,14 +76,14 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Tuple[Document, float]]
-        docs_and_scores = self._similarity_search_with_score(
+        docs_and_scores = self.vectorstore.similarity_search_with_score(
             query, **self.search_kwargs
         )
         results = {}
-        for fetched_doc, salience in docs_and_scores:
+        for fetched_doc, cosine_distance in docs_and_scores:
             buffer_idx = fetched_doc.metadata["buffer_idx"]
             doc = self.memory_stream[buffer_idx]
-            results[buffer_idx] = (doc, salience)
+            results[buffer_idx] = (doc, (1 - cosine_distance))
         return results
 
     def get_relevant_documents(self, query: str) -> List[Document]:
