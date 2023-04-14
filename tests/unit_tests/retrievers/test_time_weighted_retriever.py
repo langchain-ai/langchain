@@ -110,7 +110,7 @@ def time_weighted_retriever() -> TimeWeightedVectorStoreRetriever:
 def test__get_hours_passed() -> None:
     time1 = datetime(2023, 4, 14, 14, 30)
     time2 = datetime(2023, 4, 14, 12, 0)
-    expected_hours_passed = 150
+    expected_hours_passed = 2.5
     hours_passed = _get_hours_passed(time1, time2)
     assert hours_passed == expected_hours_passed
 
@@ -123,7 +123,7 @@ def test_get_combined_score(
         metadata={"last_accessed_at": datetime(2023, 4, 14, 12, 0)},
     )
     vector_salience = 0.7
-    expected_hours_passed = 150
+    expected_hours_passed = 2.5
     current_time = datetime(2023, 4, 14, 14, 30)
     combined_score = time_weighted_retriever._get_combined_score(
         document, vector_salience, current_time

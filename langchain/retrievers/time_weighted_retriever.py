@@ -11,7 +11,7 @@ from langchain.vectorstores.base import VectorStore
 
 def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
     """Get the hours passed between two datetime objects."""
-    return (time - ref_time).total_seconds() / 60
+    return (time - ref_time).total_seconds() / 3600
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
@@ -99,8 +99,10 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         # Ensure frequently accessed memories aren't forgotten
         current_time = datetime.now()
         for doc, _ in rescored_docs[: self.k]:
-            doc.metadata["last_accessed_at"] = current_time
-            result.append(doc)
+            # TODO: Update vector store doc once `update` method is exposed.
+            buffered_doc = self.memory_stream[doc.metadata["buffer_idx"]]
+            buffered_doc.metadata["last_accessed_at"] = current_time
+            result.append(buffered_doc)
         return result
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
