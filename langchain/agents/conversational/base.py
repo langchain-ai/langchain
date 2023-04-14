@@ -82,7 +82,7 @@ class ConversationalAgent(Agent):
         regex = r"Action: (.*?)[\n]*Action Input: (.*)"
         match = re.search(regex, llm_output)
         if not match:
-            return llm_output.strip()
+            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
         action = match.group(1)
         action_input = match.group(2)
         return action.strip(), action_input.strip(" ").strip('"')
