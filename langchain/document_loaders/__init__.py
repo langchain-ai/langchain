@@ -55,6 +55,7 @@ from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
+from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
@@ -63,6 +64,7 @@ from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
 )
 from langchain.document_loaders.url import UnstructuredURLLoader
+from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
@@ -81,6 +83,7 @@ __all__ = [
     "UnstructuredFileIOLoader",
     "UnstructuredURLLoader",
     "SeleniumURLLoader",
+    "PlaywrightURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
     "NotionDBLoader",
@@ -138,4 +141,5 @@ __all__ = [
     "DuckDBLoader",
     "BigQueryLoader",
     "BiliBiliLoader",
+    "SlackDirectoryLoader",
 ]

@@ -499,7 +499,7 @@ name = "authlib"
 version = "1.2.0"
 description = "The ultimate Python library in building OAuth and OpenID Connect servers and clients."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "Authlib-1.2.0-py2.py3-none-any.whl", hash = "sha256:4ddf4fd6cfa75c9a460b361d4bd9dac71ffda0be879dbe4292a02e92349ad55a"},
@@ -782,7 +782,7 @@ name = "cachetools"
 version = "5.3.0"
 description = "Extensible memoizing collections and decorators"
 category = "main"
-optional = true
+optional = false
 python-versions = "~=3.7"
 files = [
     {file = "cachetools-5.3.0-py3-none-any.whl", hash = "sha256:429e1a1e845c008ea6c85aa35d4b98b65d6a9763eeef3e37e92728a12d1de9d4"},
@@ -2103,14 +2103,14 @@ grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gptcache"
-version = "0.1.8"
-description = "GPT Cache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPT Cache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
+version = "0.1.9"
+description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "gptcache-0.1.8-py3-none-any.whl", hash = "sha256:953662291819471e5461920c89367084f905237a8506f1a1605729f3e633f147"},
-    {file = "gptcache-0.1.8.tar.gz", hash = "sha256:23200cc0783776210cce85a588ae68222d522ce9456f74b7836945ebe8b15820"},
+    {file = "gptcache-0.1.9-py3-none-any.whl", hash = "sha256:c603dea4a6e835032875ccc21a9205bb4d8ef0f2696a8df3ac13ac3a060c4cf6"},
+    {file = "gptcache-0.1.9.tar.gz", hash = "sha256:b92f30e4d8bc22a017a71fb4801f469739d4c83734a874fea51ca6998ef833d4"},
 ]
 
 [package.dependencies]
@@ -5408,6 +5408,22 @@ files = [
 wcwidth = "*"
 
 [[package]]
+name = "promptlayer"
+version = "0.1.80"
+description = "PromptLayer is a package to keep track of your GPT models training"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "promptlayer-0.1.80.tar.gz", hash = "sha256:1012018ed3e4bca4f0d9c9164cb00b7ca0936cba6a40d4de53e87ef08fdff62f"},
+]
+
+[package.dependencies]
+langchain = "*"
+openai = "*"
+requests = "*"
+
+[[package]]
 name = "protobuf"
 version = "3.19.6"
 description = "Protocol Buffers"
@@ -8445,7 +8461,7 @@ name = "validators"
 version = "0.20.0"
 description = "Python Data Validation for Humans™."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.4"
 files = [
     {file = "validators-0.20.0.tar.gz", hash = "sha256:24148ce4e64100a2d5e267233e23e7afeb55316b47d30faae7eb6e7292bc226a"},
@@ -8582,7 +8598,7 @@ name = "weaviate-client"
 version = "3.15.5"
 description = "A python native weaviate client"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "weaviate-client-3.15.5.tar.gz", hash = "sha256:6da7e5d08dc9bb8b7879661d1a457c50af7d73e621a5305efe131160e83da69e"},
