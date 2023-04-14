@@ -303,7 +303,6 @@ class FAISS(VectorStore):
         embeddings: List[List[float]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
@@ -322,7 +321,6 @@ class FAISS(VectorStore):
             index,
             docstore,
             index_to_id,
-            normalize_score_fn=normalize_score_fn,
         )
 
     @classmethod
@@ -331,7 +329,6 @@ class FAISS(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
@@ -357,7 +354,6 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
-            normalize_score_fn=normalize_score_fn,
             **kwargs,
         )
 
@@ -367,7 +363,6 @@ class FAISS(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
@@ -394,14 +389,13 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
-            normalize_score_fn=normalize_score_fn,
             **kwargs,
         )
 
     def save_local(self, folder_path: str) -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
-        Args:s
+        Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
         """
