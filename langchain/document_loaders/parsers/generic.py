@@ -1,5 +1,4 @@
 """Implementations of generic use parsers."""
-import magic
 from typing import Mapping, Callable, Generator
 
 from langchain.document_loaders.base import Blob, BaseBlobParser
