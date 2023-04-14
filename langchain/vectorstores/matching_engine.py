@@ -3,13 +3,15 @@
 from google.cloud import aiplatform
 from google.cloud import storage
 from google.oauth2 import service_account
-from typing import Any, Iterable, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
 import uuid
 
 from langchain.docstore.document import Document
 from langchain.embeddings import TensorflowHubEmbeddings
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+
+VST = TypeVar("VST", bound="VectorStore")
 
 
 class MatchingEngine(VectorStore):
@@ -186,6 +188,33 @@ class MatchingEngine(VectorStore):
         bucket = client.get_bucket(self.gcs_bucket_uri)
         blob = bucket.blob(gcs_location)
         return blob.download_as_string()
+    
+    @classmethod
+    def from_texts(
+        cls: Type[VST], 
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None, 
+        project_id: str = None,
+        region: str = None,
+        gcs_bucket_uri: str = None,
+        index_name: str = None,
+        endpoint_name: str = None,
+        **kwargs: Any,
+    ) -> VST:
+        """Return VectorStore initialized from texts and embeddings."""
+        matching_engine = cls(
+            project_id=project_id,
+            region=region,
+            gcs_bucket_uri=gcs_bucket_uri,
+            index_name=index_name,
+            endpoint_name=endpoint_name,
+            embedder=embedding
+        )
+
+        matching_engine.add_texts(texts=texts, metadatas=metadatas)
+        return matching_engine
+    
 
 # TODO delete this after testing
 if __name__ == "__main__":
