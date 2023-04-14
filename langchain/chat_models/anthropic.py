@@ -97,7 +97,7 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None  # type: ignore
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        print(prompt)
+
         if self.streaming:
             completion = ""
             stream_resp = self.client.completion_stream(
