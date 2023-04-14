@@ -8,50 +8,54 @@ from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
-from langchain.utils import get_from_dict_or_env
 
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class CustomEndpoint(LLM):
-    """Wrapper around custom Inference Endpoints, related to HuggingFaceHub Inference Endpoints.
+class LocalHuggingFaceEndpoint(LLM):
+    """Wrapper around local HuggingFace Inference Endpoints.
 
     Only supports `text-generation` and `text2text-generation` for now.
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import CustomEndpoint
-            endpoint_url = "https://api/endpoint/
-            llm = CustomEndpoint(
+            from langchain.llms import LocalHuggingFaceEndpoint
+            endpoint_url = "https://api/endpoint/"
+            llm = LocalHuggingFaceEndpoint(
                 endpoint_url=endpoint_url,
-                api_key="my-api-key"
+                headers = {"Content-Type": "application/json"}
             )
     """
 
-    endpoint_url: str = ""
+    endpoint_url: str
     """Endpoint URL to use."""
     task: Optional[str] = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
     model_kwargs: Optional[dict] = None
     """Key word arguments to pass to the model."""
+    headers: Optional[dict] = None
+    """Endpoint specific headers."""
 
-    api_key: Optional[str] = None
-    """API key."""
-    api_authorization_header: Optional[str] = None
-    """
-    Authorization header that will be formatted with `format`.
-    
-    Example:
-        'Api-Key {api_key}'
-    Header compute:
-        .. code-block:: python
-            authorization_header = self.api_authorization_header.format(api_key=self.api_key)
-    """
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate the task and endpoint url."""
+        if cls.task not in VALID_TASKS:
+            raise ValueError(
+                f"Got invalid task {cls.task}, "
+                f"currently only {VALID_TASKS} are supported"
+            )
+        try:
+            response = requests.get(cls.endpoint_url, headers=cls.headers)
+            response.raise_for_status()
+        except Exception as e:
+            raise ValueError(f"Could not connect to {cls.endpoint_url} with error {e}")
+        return values
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -65,10 +69,10 @@ class CustomEndpoint(LLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "custom_endpoint"
+        return "local_huggingface_endpoint"
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Call out to custom inference endpoint.
+        """Call out to local Huggingface Inference endpoint.
 
         Args:
             prompt: The prompt to pass into the model.
@@ -87,23 +91,10 @@ class CustomEndpoint(LLM):
         # payload samples
         parameter_payload = {"inputs": prompt, "parameters": _model_kwargs}
 
-        # HTTP headers for authorization
-        headers = {
-            "Content-Type": "application/json",
-        }
-        if self.api_authorization_header is not None:
-            authorization_header = self.api_authorization_header.format(api_key=self.api_key)
-        elif self.api_key is not None:
-            authorization_header = self.api_key
-        else:
-            authorization_header = None
-        if authorization_header is not None:
-            headers.update({"Authorization": authorization_header})
-
         # send request
         try:
             response = requests.post(
-                self.endpoint_url, headers=headers, json=parameter_payload
+                self.endpoint_url, headers=self.headers, json=parameter_payload
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
