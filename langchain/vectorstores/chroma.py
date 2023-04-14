@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 
@@ -59,6 +59,7 @@ class Chroma(VectorStore):
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
+        collection_metadata: Optional[Dict] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -86,6 +87,7 @@ class Chroma(VectorStore):
             embedding_function=self._embedding_function.embed_documents
             if self._embedding_function is not None
             else None,
+            metadata=collection_metadata,
         )
 
     def add_texts(
@@ -267,7 +269,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Chroma],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -305,7 +307,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[Chroma],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,

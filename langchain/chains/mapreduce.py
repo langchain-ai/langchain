@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -20,7 +20,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
 
-class MapReduceChain(Chain, BaseModel):
+class MapReduceChain(Chain):
     """Map-reduce chain."""
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -70,5 +70,5 @@ class MapReduceChain(Chain, BaseModel):
         # Split the larger text into smaller chunks.
         texts = self.text_splitter.split_text(inputs[self.input_key])
         docs = [Document(page_content=text) for text in texts]
-        outputs, _ = self.combine_documents_chain.combine_docs(docs)
+        outputs = self.combine_documents_chain.run(input_documents=docs)
         return {self.output_key: outputs}

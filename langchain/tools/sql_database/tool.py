@@ -3,9 +3,9 @@
 from pydantic import BaseModel, Extra, Field, validator
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
+from langchain.llms.base import BaseLLM
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
@@ -30,7 +30,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     name = "query_sql_db"
     description = """
     Input to this tool is a detailed and correct SQL query, output is a result from the database.
-    If the query is not correct, an error message will be returned. 
+    If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
 
@@ -49,7 +49,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     description = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_sql_db first!
-    
+
     Example Input: "table1, table2, table3"
     """
 
@@ -69,7 +69,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
     def _run(self, tool_input: str = "") -> str:
         """Get the schema for a specific table."""
-        return ", ".join(self.db.get_table_names())
+        return ", ".join(self.db.get_usable_table_names())
 
     async def _arun(self, tool_input: str = "") -> str:
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
@@ -80,11 +80,12 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
     template: str = QUERY_CHECKER
+    llm: BaseLLM
     llm_chain: LLMChain = Field(
         default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),
+            llm=QueryCheckerTool.llm,
             prompt=PromptTemplate(
-                template=QUERY_CHECKER, input_variables=["query", "dialect"]
+                template=QueryCheckerTool.template, input_variables=["query", "dialect"]
             ),
         )
     )

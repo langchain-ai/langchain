@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -24,7 +24,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
 
 
-class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
+class BaseQAWithSourcesChain(Chain, ABC):
     """Question answering with sources over documents."""
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -116,7 +116,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         docs = self._get_docs(inputs)
-        answer, _ = self.combine_documents_chain.combine_docs(docs, **inputs)
+        answer = self.combine_documents_chain.run(input_documents=docs, **inputs)
         if re.search(r"SOURCES:\s", answer):
             answer, sources = re.split(r"SOURCES:\s", answer)
         else:
@@ -135,7 +135,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         docs = await self._aget_docs(inputs)
-        answer, _ = await self.combine_documents_chain.acombine_docs(docs, **inputs)
+        answer = await self.combine_documents_chain.arun(input_documents=docs, **inputs)
         if re.search(r"SOURCES:\s", answer):
             answer, sources = re.split(r"SOURCES:\s", answer)
         else:
@@ -149,7 +149,7 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
         return result
 
 
-class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+class QAWithSourcesChain(BaseQAWithSourcesChain):
     """Question answering with sources over documents."""
 
     input_docs_key: str = "docs"  #: :meta private:

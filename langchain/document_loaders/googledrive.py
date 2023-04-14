@@ -148,6 +148,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().export_media(fileId=id, mimeType="text/plain")
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -163,7 +164,10 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 print("An error occurred: {}".format(e))
 
         text = fh.getvalue().decode("utf-8")
-        metadata = {"source": f"https://docs.google.com/document/d/{id}/edit"}
+        metadata = {
+            "source": f"https://docs.google.com/document/d/{id}/edit",
+            "title": f"{file.get('name')}",
+        }
         return Document(page_content=text, metadata=metadata)
 
     def _load_documents_from_folder(self) -> List[Document]:
@@ -178,6 +182,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             .list(
                 q=f"'{self.folder_id}' in parents",
                 pageSize=1000,
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 fields="nextPageToken, files(id, name, mimeType)",
             )
             .execute()
@@ -213,6 +219,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         creds = self._load_credentials()
         service = build("drive", "v3", credentials=creds)
 
+        file = service.files().get(fileId=id, supportsAllDrives=True).execute()
         request = service.files().get_media(fileId=id)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -230,6 +237,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 page_content=page.extract_text(),
                 metadata={
                     "source": f"https://drive.google.com/file/d/{id}/view",
+                    "title": f"{file.get('name')}",
                     "page": i,
                 },
             )

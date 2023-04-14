@@ -9,6 +9,8 @@ To get started, install LangChain with the following command:
 
 ```bash
 pip install langchain
+# or
+conda install langchain -c conda-forge
 ```
 
 
@@ -197,6 +199,7 @@ Now we can get started!
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
+from langchain.agents import AgentType
 from langchain.llms import OpenAI
 
 # First, let's load the language model we're going to use to control the agent.
@@ -207,7 +210,7 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 
 # Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
-agent = initialize_agent(tools, llm, agent="zero-shot-react-description", verbose=True)
+agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
 # Now let's test it out!
 agent.run("What was the high temperature in SF yesterday in Fahrenheit? What is that number raised to the .023 power?")
@@ -404,11 +407,12 @@ chain.run(input_language="English", output_language="French", text="I love progr
 `````
 
 `````{dropdown} Agents with Chat Models
-Agents can also be used with chat models, you can initialize one using `"chat-zero-shot-react-description"` as the agent type.
+Agents can also be used with chat models, you can initialize one using `AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION` as the agent type.
 
 ```python
 from langchain.agents import load_tools
 from langchain.agents import initialize_agent
+from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 
@@ -421,7 +425,7 @@ tools = load_tools(["serpapi", "llm-math"], llm=llm)
 
 
 # Finally, let's initialize an agent with the tools, the language model, and the type of agent we want to use.
-agent = initialize_agent(tools, chat, agent="chat-zero-shot-react-description", verbose=True)
+agent = initialize_agent(tools, chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
 # Now let's test it out!
 agent.run("Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?")

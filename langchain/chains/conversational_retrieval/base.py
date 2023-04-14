@@ -6,7 +6,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -28,7 +28,7 @@ def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     return buffer
 
 
-class BaseConversationalRetrievalChain(Chain, BaseModel):
+class BaseConversationalRetrievalChain(Chain):
     """Chain for chatting with an index."""
 
     combine_docs_chain: BaseCombineDocumentsChain
@@ -80,7 +80,7 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
+        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
@@ -104,7 +104,7 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
+        answer = await self.combine_docs_chain.arun(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
@@ -116,7 +116,7 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         super().save(file_path)
 
 
-class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
+class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for chatting with an index."""
 
     retriever: BaseRetriever
@@ -175,7 +175,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
         )
 
 
-class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
+class ChatVectorDBChain(BaseConversationalRetrievalChain):
     """Chain for chatting with a vector database."""
 
     vectorstore: VectorStore = Field(alias="vectorstore")

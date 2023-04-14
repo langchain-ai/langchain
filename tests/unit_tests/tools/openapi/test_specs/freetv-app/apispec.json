@@ -1,0 +1,100 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "News Plugin",
+      "description": "A plugin that allows the user to obtain and summary latest news using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username \"global\".",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://staging2.freetv-app.com"
+      }
+   ],
+   "paths": {
+      "/services": {
+         "get": {
+            "summary": "Query the latest news",
+            "description": "Get the current latest news to user",
+            "operationId": "getLatestNews",
+            "parameters": [
+               {
+                  "in": "query",
+                  "name": "mobile",
+                  "schema": {
+                     "type": "integer",
+                     "enum": [
+                        1
+                     ]
+                  },
+                  "required": true
+               },
+               {
+                  "in": "query",
+                  "name": "funcs",
+                  "schema": {
+                     "type": "string",
+                     "enum": [
+                        "getLatestNewsForChatGPT"
+                     ]
+                  },
+                  "required": true
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "OK",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ApiResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "ApiResponse": {
+            "title": "ApiResponse",
+            "required": [
+               "getLatestNewsForChatGPT"
+            ],
+            "type": "object",
+            "properties": {
+               "getLatestNewsForChatGPT": {
+                  "title": "Result of Latest News",
+                  "type": "array",
+                  "items": {
+                     "$ref": "#/components/schemas/NewsItem"
+                  },
+                  "description": "The list of latest news."
+               }
+            }
+         },
+         "NewsItem": {
+            "type": "object",
+            "properties": {
+               "ref": {
+                  "title": "News Url",
+                  "type": "string"
+               },
+               "title": {
+                  "title": "News Title",
+                  "type": "string"
+               },
+               "thumbnail": {
+                  "title": "News Thumbnail",
+                  "type": "string"
+               },
+               "created": {
+                  "title": "News Published Time",
+                  "type": "string"
+               }
+            }
+         }
+      }
+   }
+}

@@ -19,4 +19,4 @@ class UnstructuredEPubLoader(UnstructuredFileLoader):
             )
         from unstructured.partition.epub import partition_epub
 
-        return partition_epub(filename=self.file_path)
+        return partition_epub(filename=self.file_path, **self.unstructured_kwargs)

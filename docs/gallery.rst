@@ -1,5 +1,5 @@
 LangChain Gallery
-=============
+=================
 
 Lots of people have built some pretty awesome stuff with LangChain.
 This is a collection of our favorites.
@@ -223,7 +223,7 @@ Open Source
     Answer questions about the documentation of any project    
 
 Misc. Colab Notebooks
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 .. panels::
     :body: text-center

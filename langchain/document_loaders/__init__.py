@@ -10,6 +10,7 @@ from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
 from langchain.document_loaders.bigquery import BigQueryLoader
+from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -17,7 +18,10 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
-from langchain.document_loaders.email import UnstructuredEmailLoader
+from langchain.document_loaders.email import (
+    OutlookMessageLoader,
+    UnstructuredEmailLoader,
+)
 from langchain.document_loaders.epub import UnstructuredEPubLoader
 from langchain.document_loaders.evernote import EverNoteLoader
 from langchain.document_loaders.facebook_chat import FacebookChatLoader
@@ -40,6 +44,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
@@ -58,6 +63,7 @@ from langchain.document_loaders.unstructured import (
     UnstructuredFileLoader,
 )
 from langchain.document_loaders.url import UnstructuredURLLoader
+from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
 from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
@@ -74,6 +80,7 @@ __all__ = [
     "UnstructuredFileLoader",
     "UnstructuredFileIOLoader",
     "UnstructuredURLLoader",
+    "SeleniumURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
     "NotionDBLoader",
@@ -87,6 +94,7 @@ __all__ = [
     "UnstructuredImageLoader",
     "ObsidianLoader",
     "UnstructuredEmailLoader",
+    "OutlookMessageLoader",
     "UnstructuredEPubLoader",
     "UnstructuredMarkdownLoader",
     "RoamLoader",
@@ -110,6 +118,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "PDFMinerPDFasHTMLLoader",
     "PyMuPDFLoader",
     "TelegramChatLoader",
     "SRTLoader",
@@ -128,4 +137,5 @@ __all__ = [
     "SitemapLoader",
     "DuckDBLoader",
     "BigQueryLoader",
+    "BiliBiliLoader",
 ]

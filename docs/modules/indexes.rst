@@ -11,7 +11,7 @@ This module contains utility functions for working with documents, different typ
 The most common way that indexes are used in chains is in a "retrieval" step.
 This step refers to taking a user's query and returning the most relevant documents.
 We draw this distinction because (1) an index can be used for other things besides retrieval, and (2) retrieval can use other logic besides an index to find relevant documents.
-We therefor have a concept of a "Retriever" interface - this is the interface that most chains work with.
+We therefore have a concept of a "Retriever" interface - this is the interface that most chains work with.
 
 Most of the time when we talk about indexes and retrieval we are talking about indexing and retrieving unstructured data (like text documents).
 For interacting with structured data (SQL tables, etc) or APIs, please see the corresponding use case sections for links to relevant functionality.

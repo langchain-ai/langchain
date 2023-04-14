@@ -10,7 +10,7 @@ but potentially an unknown chain that depends on the user's input.
 In these types of chains, there is a “agent” which has access to a suite of tools.
 Depending on the user input, the agent can then decide which, if any, of these tools to call.
 
-In this section of documentation, we first start with a Getting Started notebook to over over how to use all things related to agents in an end-to-end manner.
+In this section of documentation, we first start with a Getting Started notebook to cover how to use all things related to agents in an end-to-end manner.
 
 .. toctree::
    :maxdepth: 1

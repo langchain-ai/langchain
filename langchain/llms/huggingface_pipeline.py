@@ -3,7 +3,7 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
@@ -15,7 +15,7 @@ VALID_TASKS = ("text2text-generation", "text-generation")
 logger = logging.getLogger()
 
 
-class HuggingFacePipeline(LLM, BaseModel):
+class HuggingFacePipeline(LLM):
     """Wrapper around HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
@@ -76,7 +76,7 @@ class HuggingFacePipeline(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
 
         _model_kwargs = model_kwargs or {}

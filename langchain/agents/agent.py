@@ -1,8 +1,10 @@
 """Chain that takes in an input and produces an action and action input."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import time
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -15,12 +17,18 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish, BaseMessage, BaseOutputParser
+from langchain.schema import (
+    AgentAction,
+    AgentFinish,
+    BaseLanguageModel,
+    BaseMessage,
+    BaseOutputParser,
+)
 from langchain.tools.base import BaseTool
+from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger()
 
@@ -64,6 +72,130 @@ class BaseSingleActionAgent(BaseModel):
 
         Returns:
             Action specifying what tool to use.
+        """
+
+    @property
+    @abstractmethod
+    def input_keys(self) -> List[str]:
+        """Return the input keys.
+
+        :meta private:
+        """
+
+    def return_stopped_response(
+        self,
+        early_stopping_method: str,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        **kwargs: Any,
+    ) -> AgentFinish:
+        """Return response when agent has been stopped due to max iterations."""
+        if early_stopping_method == "force":
+            # `force` just returns a constant string
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+            )
+        else:
+            raise ValueError(
+                f"Got unsupported early_stopping_method `{early_stopping_method}`"
+            )
+
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
+    ) -> BaseSingleActionAgent:
+        raise NotImplementedError
+
+    @property
+    def _agent_type(self) -> str:
+        """Return Identifier of agent type."""
+        raise NotImplementedError
+
+    def dict(self, **kwargs: Any) -> Dict:
+        """Return dictionary representation of agent."""
+        _dict = super().dict()
+        _dict["_type"] = self._agent_type
+        return _dict
+
+    def save(self, file_path: Union[Path, str]) -> None:
+        """Save the agent.
+
+        Args:
+            file_path: Path to file to save the agent to.
+
+        Example:
+        .. code-block:: python
+
+            # If working with agent executor
+            agent.agent.save(file_path="path/agent.yaml")
+        """
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Fetch dictionary to save
+        agent_dict = self.dict()
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(agent_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(agent_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")
+
+    def tool_run_logging_kwargs(self) -> Dict:
+        return {}
+
+
+class BaseMultiActionAgent(BaseModel):
+    """Base Agent class."""
+
+    @property
+    def return_values(self) -> List[str]:
+        """Return values of the agent."""
+        return ["output"]
+
+    def get_allowed_tools(self) -> Optional[List[str]]:
+        return None
+
+    @abstractmethod
+    def plan(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Union[List[AgentAction], AgentFinish]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            **kwargs: User inputs.
+
+        Returns:
+            Actions specifying what tool to use.
+        """
+
+    @abstractmethod
+    async def aplan(
+        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+    ) -> Union[List[AgentAction], AgentFinish]:
+        """Given input, decided what to do.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations
+            **kwargs: User inputs.
+
+        Returns:
+            Actions specifying what tool to use.
         """
 
     @property
@@ -365,7 +497,7 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     def from_llm_and_tools(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
@@ -389,7 +521,9 @@ class Agent(BaseSingleActionAgent):
         """Return response when agent has been stopped due to max iterations."""
         if early_stopping_method == "force":
             # `force` just returns a constant string
-            return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
+            return AgentFinish(
+                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+            )
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
             thoughts = ""
@@ -431,19 +565,20 @@ class Agent(BaseSingleActionAgent):
         }
 
 
-class AgentExecutor(Chain, BaseModel):
+class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
-    agent: BaseSingleActionAgent
+    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
     tools: Sequence[BaseTool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
+    max_execution_time: Optional[float] = None
     early_stopping_method: str = "force"
 
     @classmethod
     def from_agent_and_tools(
         cls,
-        agent: BaseSingleActionAgent,
+        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
@@ -465,6 +600,20 @@ class AgentExecutor(Chain, BaseModel):
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
+        return values
+
+    @root_validator()
+    def validate_return_direct_tool(cls, values: Dict) -> Dict:
+        """Validate that tools are compatible with agent."""
+        agent = values["agent"]
+        tools = values["tools"]
+        if isinstance(agent, BaseMultiActionAgent):
+            for tool in tools:
+                if tool.return_direct:
+                    raise ValueError(
+                        "Tools that have `return_direct=True` are not allowed "
+                        "in multi-action agents"
+                    )
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -502,11 +651,16 @@ class AgentExecutor(Chain, BaseModel):
         """Lookup tool by name."""
         return {tool.name: tool for tool in self.tools}[name]
 
-    def _should_continue(self, iterations: int) -> bool:
-        if self.max_iterations is None:
-            return True
-        else:
-            return iterations < self.max_iterations
+    def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
+        if self.max_iterations is not None and iterations >= self.max_iterations:
+            return False
+        if (
+            self.max_execution_time is not None
+            and time_elapsed >= self.max_execution_time
+        ):
+            return False
+
+        return True
 
     def _return(self, output: AgentFinish, intermediate_steps: list) -> Dict[str, Any]:
         self.callback_manager.on_agent_finish(
@@ -539,7 +693,7 @@ class AgentExecutor(Chain, BaseModel):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
-    ) -> Union[AgentFinish, Tuple[AgentAction, str]]:
+    ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -549,27 +703,41 @@ class AgentExecutor(Chain, BaseModel):
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
-        self.callback_manager.on_agent_action(
-            output, verbose=self.verbose, color="green"
-        )
-        # Otherwise we lookup the tool
-        if output.tool in name_to_tool_map:
-            tool = name_to_tool_map[output.tool]
-            return_direct = tool.return_direct
-            color = color_mapping[output.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-            if return_direct:
-                tool_run_kwargs["llm_prefix"] = ""
-            # We then call the tool on the tool input to get an observation
-            observation = tool.run(
-                output.tool_input, verbose=self.verbose, color=color, **tool_run_kwargs
-            )
+        actions: List[AgentAction]
+        if isinstance(output, AgentAction):
+            actions = [output]
         else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-            observation = InvalidTool().run(
-                output.tool, verbose=self.verbose, color=None, **tool_run_kwargs
+            actions = output
+        result = []
+        for agent_action in actions:
+            self.callback_manager.on_agent_action(
+                agent_action, verbose=self.verbose, color="green"
             )
-        return output, observation
+            # Otherwise we lookup the tool
+            if agent_action.tool in name_to_tool_map:
+                tool = name_to_tool_map[agent_action.tool]
+                return_direct = tool.return_direct
+                color = color_mapping[agent_action.tool]
+                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+                if return_direct:
+                    tool_run_kwargs["llm_prefix"] = ""
+                # We then call the tool on the tool input to get an observation
+                observation = tool.run(
+                    agent_action.tool_input,
+                    verbose=self.verbose,
+                    color=color,
+                    **tool_run_kwargs,
+                )
+            else:
+                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+                observation = InvalidTool().run(
+                    agent_action.tool,
+                    verbose=self.verbose,
+                    color=None,
+                    **tool_run_kwargs,
+                )
+            result.append((agent_action, observation))
+        return result
 
     async def _atake_next_step(
         self,
@@ -577,7 +745,7 @@ class AgentExecutor(Chain, BaseModel):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
-    ) -> Union[AgentFinish, Tuple[AgentAction, str]]:
+    ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -587,34 +755,54 @@ class AgentExecutor(Chain, BaseModel):
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_agent_action(
-                output, verbose=self.verbose, color="green"
-            )
+        actions: List[AgentAction]
+        if isinstance(output, AgentAction):
+            actions = [output]
         else:
-            self.callback_manager.on_agent_action(
-                output, verbose=self.verbose, color="green"
-            )
+            actions = output
 
-        # Otherwise we lookup the tool
-        if output.tool in name_to_tool_map:
-            tool = name_to_tool_map[output.tool]
-            return_direct = tool.return_direct
-            color = color_mapping[output.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-            if return_direct:
-                tool_run_kwargs["llm_prefix"] = ""
-            # We then call the tool on the tool input to get an observation
-            observation = await tool.arun(
-                output.tool_input, verbose=self.verbose, color=color, **tool_run_kwargs
-            )
-        else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
-            observation = await InvalidTool().arun(
-                output.tool, verbose=self.verbose, color=None, **tool_run_kwargs
-            )
-            return_direct = False
-        return output, observation
+        async def _aperform_agent_action(
+            agent_action: AgentAction,
+        ) -> Tuple[AgentAction, str]:
+            if self.callback_manager.is_async:
+                await self.callback_manager.on_agent_action(
+                    agent_action, verbose=self.verbose, color="green"
+                )
+            else:
+                self.callback_manager.on_agent_action(
+                    agent_action, verbose=self.verbose, color="green"
+                )
+            # Otherwise we lookup the tool
+            if agent_action.tool in name_to_tool_map:
+                tool = name_to_tool_map[agent_action.tool]
+                return_direct = tool.return_direct
+                color = color_mapping[agent_action.tool]
+                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+                if return_direct:
+                    tool_run_kwargs["llm_prefix"] = ""
+                # We then call the tool on the tool input to get an observation
+                observation = await tool.arun(
+                    agent_action.tool_input,
+                    verbose=self.verbose,
+                    color=color,
+                    **tool_run_kwargs,
+                )
+            else:
+                tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+                observation = await InvalidTool().arun(
+                    agent_action.tool,
+                    verbose=self.verbose,
+                    color=None,
+                    **tool_run_kwargs,
+                )
+            return agent_action, observation
+
+        # Use asyncio.gather to run multiple tool.arun() calls concurrently
+        result = await asyncio.gather(
+            *[_aperform_agent_action(agent_action) for agent_action in actions]
+        )
+
+        return list(result)
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Run text through and get agent response."""
@@ -625,22 +813,27 @@ class AgentExecutor(Chain, BaseModel):
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
-        # Let's start tracking the iterations the agent has gone through
+        # Let's start tracking the number of iterations and time elapsed
         iterations = 0
+        time_elapsed = 0.0
+        start_time = time.time()
         # We now enter the agent loop (until it returns something).
-        while self._should_continue(iterations):
+        while self._should_continue(iterations, time_elapsed):
             next_step_output = self._take_next_step(
                 name_to_tool_map, color_mapping, inputs, intermediate_steps
             )
             if isinstance(next_step_output, AgentFinish):
                 return self._return(next_step_output, intermediate_steps)
 
-            intermediate_steps.append(next_step_output)
-            # See if tool should return directly
-            tool_return = self._get_tool_return(next_step_output)
-            if tool_return is not None:
-                return self._return(tool_return, intermediate_steps)
+            intermediate_steps.extend(next_step_output)
+            if len(next_step_output) == 1:
+                next_step_action = next_step_output[0]
+                # See if tool should return directly
+                tool_return = self._get_tool_return(next_step_action)
+                if tool_return is not None:
+                    return self._return(tool_return, intermediate_steps)
             iterations += 1
+            time_elapsed = time.time() - start_time
         output = self.agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
@@ -655,27 +848,40 @@ class AgentExecutor(Chain, BaseModel):
             [tool.name for tool in self.tools], excluded_colors=["green"]
         )
         intermediate_steps: List[Tuple[AgentAction, str]] = []
-        # Let's start tracking the iterations the agent has gone through
+        # Let's start tracking the number of iterations and time elapsed
         iterations = 0
+        time_elapsed = 0.0
+        start_time = time.time()
         # We now enter the agent loop (until it returns something).
-        while self._should_continue(iterations):
-            next_step_output = await self._atake_next_step(
-                name_to_tool_map, color_mapping, inputs, intermediate_steps
-            )
-            if isinstance(next_step_output, AgentFinish):
-                return await self._areturn(next_step_output, intermediate_steps)
+        async with asyncio_timeout(self.max_execution_time):
+            try:
+                while self._should_continue(iterations, time_elapsed):
+                    next_step_output = await self._atake_next_step(
+                        name_to_tool_map, color_mapping, inputs, intermediate_steps
+                    )
+                    if isinstance(next_step_output, AgentFinish):
+                        return await self._areturn(next_step_output, intermediate_steps)
 
-            intermediate_steps.append(next_step_output)
-            # See if tool should return directly
-            tool_return = self._get_tool_return(next_step_output)
-            if tool_return is not None:
-                return await self._areturn(tool_return, intermediate_steps)
+                    intermediate_steps.extend(next_step_output)
+                    if len(next_step_output) == 1:
+                        next_step_action = next_step_output[0]
+                        # See if tool should return directly
+                        tool_return = self._get_tool_return(next_step_action)
+                        if tool_return is not None:
+                            return await self._areturn(tool_return, intermediate_steps)
 
-            iterations += 1
-        output = self.agent.return_stopped_response(
-            self.early_stopping_method, intermediate_steps, **inputs
-        )
-        return await self._areturn(output, intermediate_steps)
+                    iterations += 1
+                    time_elapsed = time.time() - start_time
+                output = self.agent.return_stopped_response(
+                    self.early_stopping_method, intermediate_steps, **inputs
+                )
+                return await self._areturn(output, intermediate_steps)
+            except TimeoutError:
+                # stop early when interrupted by the async timeout
+                output = self.agent.return_stopped_response(
+                    self.early_stopping_method, intermediate_steps, **inputs
+                )
+                return await self._areturn(output, intermediate_steps)
 
     def _get_tool_return(
         self, next_step_output: Tuple[AgentAction, str]

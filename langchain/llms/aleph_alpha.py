@@ -1,14 +1,14 @@
 """Wrapper around Aleph Alpha APIs."""
 from typing import Any, Dict, List, Optional, Sequence
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
 
-class AlephAlpha(LLM, BaseModel):
+class AlephAlpha(LLM):
     """Wrapper around Aleph Alpha large language models.
 
     To use, you should have the ``aleph_alpha_client`` python package installed, and the
@@ -149,7 +149,7 @@ class AlephAlpha(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import aleph_alpha_client python package. "
-                "Please it install it with `pip install aleph_alpha_client`."
+                "Please install it with `pip install aleph_alpha_client`."
             )
         return values
 

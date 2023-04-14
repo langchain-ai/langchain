@@ -1,12 +1,10 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
-
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import BaseMessage, get_buffer_string
 
 
-class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
+class ConversationBufferWindowMemory(BaseChatMemory):
     """Buffer for storing conversation memory."""
 
     human_prefix: str = "Human"
@@ -30,11 +28,10 @@ class ConversationBufferWindowMemory(BaseChatMemory, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         """Return history buffer."""
 
-        if self.return_messages:
-            buffer: Any = self.buffer[-self.k * 2 :]
-        else:
+        buffer: Any = self.buffer[-self.k * 2 :] if self.k > 0 else []
+        if not self.return_messages:
             buffer = get_buffer_string(
-                self.buffer[-self.k * 2 :],
+                buffer,
                 human_prefix=self.human_prefix,
                 ai_prefix=self.ai_prefix,
             )

@@ -2,6 +2,7 @@
 
 import ast
 import sys
+from io import StringIO
 from typing import Dict, Optional
 
 from pydantic import Field, root_validator
@@ -25,9 +26,12 @@ class PythonREPLTool(BaseTool):
         "with `print(...)`."
     )
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
+    sanitize_input: bool = True
 
     def _run(self, query: str) -> str:
         """Use the tool."""
+        if self.sanitize_input:
+            query = query.strip().strip("```")
         return self.python_repl.run(query)
 
     async def _arun(self, query: str) -> str:
@@ -47,6 +51,7 @@ class PythonAstREPLTool(BaseTool):
     )
     globals: Optional[Dict] = Field(default_factory=dict)
     locals: Optional[Dict] = Field(default_factory=dict)
+    sanitize_input: bool = True
 
     @root_validator(pre=True)
     def validate_python_version(cls, values: Dict) -> Dict:
@@ -62,6 +67,9 @@ class PythonAstREPLTool(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         try:
+            if self.sanitize_input:
+                # Remove the triple backticks from the query.
+                query = query.strip().strip("```")
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
@@ -70,8 +78,16 @@ class PythonAstREPLTool(BaseTool):
             try:
                 return eval(module_end_str, self.globals, self.locals)
             except Exception:
-                exec(module_end_str, self.globals, self.locals)
-                return ""
+                old_stdout = sys.stdout
+                sys.stdout = mystdout = StringIO()
+                try:
+                    exec(module_end_str, self.globals, self.locals)
+                    sys.stdout = old_stdout
+                    output = mystdout.getvalue()
+                except Exception as e:
+                    sys.stdout = old_stdout
+                    output = str(e)
+                return output
         except Exception as e:
             return str(e)
 
