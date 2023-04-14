@@ -5,6 +5,7 @@ from google.cloud import storage
 from google.oauth2 import service_account
 from typing import Any, Iterable, List, Optional, Type, TypeVar, Union
 import json
+import time
 import uuid
 import logging
 
@@ -127,7 +128,7 @@ class MatchingEngine(VectorStore):
 
         result_str = "\n".join([json.dumps(x) for x in jsons])
 
-        filename = f"indexes/{uuid.uuid4()}.json"
+        filename = f"indexes/{uuid.uuid4()}/{time.time()}.json"
         self._upload_to_gcs(result_str, filename)
         logger.debug(f"Uploaded updated json with embeddings to {self.gcs_bucket_uri}/{filename}.")
 
