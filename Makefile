@@ -45,18 +45,23 @@ integration_tests:
 	poetry run pytest tests/integration_tests
 
 docker_tests:
-	docker build -t my-langchain-image:test .
-	docker run --rm my-langchain-image:test
+	docker build -t my-langchain-image:unit_tests --target=unit_tests .
+	docker run --rm my-langchain-image:unit_tests
+
+docker_integration_tests:
+	docker build -t my-langchain-image:integration_tests --target=integration_tests .
+	docker run --rm my-langchain-image:integration_tests
 
 help:
 	@echo '----'
-	@echo 'coverage            - run unit tests and generate coverage report'
-	@echo 'docs_build          - build the documentation'
-	@echo 'docs_clean          - clean the documentation build artifacts'
-	@echo 'docs_linkcheck      - run linkchecker on the documentation'
-	@echo 'format              - run code formatters'
-	@echo 'lint                - run linters'
-	@echo 'test                - run unit tests'
-	@echo 'test_watch          - run unit tests in watch mode'
-	@echo 'integration_tests   - run integration tests'
-	@echo 'docker_tests        - run unit tests in docker'
+	@echo 'coverage                 - run unit tests and generate coverage report'
+	@echo 'docs_build               - build the documentation'
+	@echo 'docs_clean               - clean the documentation build artifacts'
+	@echo 'docs_linkcheck           - run linkchecker on the documentation'
+	@echo 'format                   - run code formatters'
+	@echo 'lint                     - run linters'
+	@echo 'test                     - run unit tests'
+	@echo 'test_watch               - run unit tests in watch mode'
+	@echo 'integration_tests        - run integration tests'
+	@echo 'docker_tests             - run unit tests in docker'
+	@echo 'docker_integration_tests - run integration tests  in docker'

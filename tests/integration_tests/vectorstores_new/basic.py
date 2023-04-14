@@ -1,10 +1,7 @@
 # tests/integration_tests/vectorstores_new/basic.py
 import logging
-import shutil
-import tempfile
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Generator, List, Type
+from typing import List, Type, Union
 
 import pytest
 
@@ -13,20 +10,14 @@ from langchain.schema import Document
 from langchain.vectorstores import VectorStore
 
 # TODO: Move the logging setup and set the logging level in the fixture setup
+# Set up logging configuration
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 
 class AbstractVectorStoreStaticTest(ABC):
     """
-    Abstract base class defining the interface for vector store tests.
-
-    This class is used as a template for creating test classes that verify the
-    functionality of a `VectorStore`. It defines an abstract interface that
-    specifies the methods that a vector store must support, and provides
-    default implementations for setup and teardown methods that are run
-    before and after the tests are run.
+    Define an abstract base class that provides default implementations for
+    setup and teardown methods that are run before and after the tests are run
 
     Attributes:
         vector_store_class: The concrete class that implements the `VectorStore`
@@ -34,6 +25,16 @@ class AbstractVectorStoreStaticTest(ABC):
     """
 
     vector_store_class: Type[VectorStore]
+    docsearch: Union[VectorStore, None] = None
+    logger: logging.Logger
+
+    @pytest.fixture(autouse=True)
+    def _setup_logger(self) -> None:
+        # Set up logger for each test class
+        self.logger = logging.getLogger(self.__class__.__name__)
+        # TODO: Move the logging setup and set the logging level in the fixture setup
+        # Set up logging level
+        logging.getLogger(__name__).setLevel(logging.DEBUG)
 
     @classmethod
     @abstractmethod
@@ -98,71 +99,66 @@ class AbstractVectorStoreStaticTest(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def test_from_texts(self, texts: List[str], embedding: Embeddings) -> None:
-        """
-        Test that the vector store can be populated from a list of texts.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def test_from_documents(
-        self, documents: List[Document], embedding: Embeddings
-    ) -> None:
-        """
-        Test that the vector store can be populated from a list of documents.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def test_similarity_search(self, query: str) -> None:
-        """
-        Test that the vector store can perform a similarity search and return the
-        expected results.
-        """
-        raise NotImplementedError()
-
 
 class VectorStoreStaticTestMixin(AbstractVectorStoreStaticTest, ABC):
     """
     Mixin class containing shared test methods for vector stores.
     """
 
-    def test_from_texts(self, texts: List[str], embedding: Embeddings) -> None:
-        logger.debug("test_from_texts")
+    @pytest.mark.vcr()
+    def similarity_search(self, query: str, k: int = 1) -> List[Document]:
+        """
+        Perform a similarity search on the vector store for the given query.
 
-    def test_from_documents(
-        self, documents: List[Document], embedding: Embeddings
+        Args:
+            query (str): The query string to search for.
+            k (int): The number of results to return (default: 1).
+
+        Returns:
+            A list of Document objects representing the search results.
+        """
+        self.logger.debug("test_similarity_search")
+        assert self.docsearch is not None
+
+        output = self.docsearch.similarity_search(query, k=1)
+        assert len(output) >= 1
+        return output
+
+    @pytest.mark.vcr()
+    def test_from_texts(
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
-        logger.debug("test_from_documents")
+        """
+        Test creating a VectorStore from a list of texts.
+        """
+        self.logger.debug("test_from_texts")
 
-    def test_similarity_search(self, query: str) -> None:
-        logger.debug("test_similarity_search")
+        self.docsearch = self.vector_store_class.from_texts(
+            texts,
+            embedding=embedding,
+        )
+
+        self.similarity_search(query=query)
+
+    @pytest.mark.vcr()
+    def test_from_documents(
+        self, documents: List[Document], embedding: Embeddings, query: str
+    ) -> None:
+        """
+        Test creating a VectorStore from a list of Documents.
+        """
+        self.logger.debug("test_from_documents")
+
+        self.docsearch = self.vector_store_class.from_documents(
+            documents,
+            embedding=embedding,
+        )
+
+        self.similarity_search(query=query)
 
 
-class BaseVectorStoreStaticTestRemote(VectorStoreStaticTestMixin, ABC):
+class BaseVectorStoreStaticTest(VectorStoreStaticTestMixin, ABC):
     """
     Base class for remote vector store tests, which inherit the test cases
     defined in VectorStoreTestMixin.
     """
-
-
-class BaseVectorStoreStaticTestLocal(VectorStoreStaticTestMixin, ABC):
-    """
-    Base class for local vector store tests, which inherit the test cases
-    defined in VectorStoreTestMixin.
-    """
-
-    @pytest.fixture()
-    def db_store_dir(self) -> Generator[Path, None, None]:
-        """A fixture that returns the path for the temporary directory where the
-        database is stored."""
-
-        # use a temporary directory for the database
-        temp_dir = tempfile.mkdtemp()
-
-        # not sure if this is necessary to use try/finally
-        try:
-            yield Path(temp_dir)
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)

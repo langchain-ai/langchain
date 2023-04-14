@@ -27,18 +27,33 @@ FROM builder AS dependencies
 COPY pyproject.toml poetry.lock poetry.toml ./
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
-RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi --with test
+RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi --with "test"
 
 # Use a multi-stage build to run tests
-FROM dependencies AS tests
+FROM dependencies AS unit_tests
 
 # Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
 COPY . .
 
-RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with test
+RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with "test"
 
 # Set the entrypoint to run tests using Poetry
 ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]
 
 # Set the default command to run all unit tests
 CMD ["tests/unit_tests"]
+
+# Use a multi-stage build to run integration tests
+FROM dependencies AS integration_tests
+
+# Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
+COPY . .
+
+RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with "test" --with "test_integration"
+
+# Set the entrypoint to run integration tests using Poetry
+ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]
+
+# Set the default command to run vectorstores integration tests
+CMD ["tests/integration_tests"]
+#CMD["tests/integration_tests/vectorstores_new"]
