@@ -236,7 +236,7 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
     me = MatchingEngine(
-        project_id="scafati-joonix",
+        project_id="6912607735",
         region="us-central1",
         gcs_bucket_uri="gs://langchain-integration",
         index_name="glove_100_1_langchain",
