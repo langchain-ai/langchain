@@ -42,7 +42,7 @@ def test_anthropic_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    message = HumanMessage(content="Write me a sentence with 100 words.")
+    message = HumanMessage(content="Write me a sentence with 10 words.")
     chat([message])
     assert callback_handler.llm_streams > 1
 
