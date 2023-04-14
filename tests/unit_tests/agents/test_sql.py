@@ -1,6 +1,5 @@
 from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-from langchain.llms.openai import OpenAI
 from langchain.sql_database import SQLDatabase
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
