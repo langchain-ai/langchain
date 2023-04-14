@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, HttpUrl, root_validator
 _LOGGER = logging.getLogger(__name__)
 
 
-class PowerBIDataset(BaseModel):
+class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     """Create PowerBI engine from dataset ID and credential or token.
 
     Use either the credential or a supplied token to authenticate.
@@ -35,7 +35,7 @@ class PowerBIDataset(BaseModel):
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
     schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    @root_validator()
+    @root_validator
     def token_or_credential_present(cls, values: dict) -> dict:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credentials" in values:
