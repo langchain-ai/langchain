@@ -107,7 +107,9 @@ class BaseRetrievalQA(Chain):
         question = inputs[self.input_key]
 
         docs = self._get_docs(question)
-        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer = self.combine_documents_chain.run(
+            input_documents=docs, question=question
+        )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
@@ -133,8 +135,8 @@ class BaseRetrievalQA(Chain):
         question = inputs[self.input_key]
 
         docs = await self._aget_docs(question)
-        answer, _ = await self.combine_documents_chain.acombine_docs(
-            docs, question=question
+        answer = await self.combine_documents_chain.arun(
+            input_documents=docs, question=question
         )
 
         if self.return_source_documents:

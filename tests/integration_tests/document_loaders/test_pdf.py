@@ -2,6 +2,7 @@ from pathlib import Path
 
 from langchain.document_loaders import (
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     UnstructuredPDFLoader,
 )
@@ -26,6 +27,21 @@ def test_pdfminer_loader() -> None:
 
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
     loader = PDFMinerLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 1
+
+
+def test_pdfminer_pdf_as_html_loader() -> None:
+    """Test PDFMinerPDFasHTMLLoader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerPDFasHTMLLoader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerPDFasHTMLLoader(str(file_path))
 
     docs = loader.load()
     assert len(docs) == 1

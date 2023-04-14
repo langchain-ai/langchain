@@ -10,6 +10,7 @@ from langchain.document_loaders.azure_blob_storage_file import (
     AzureBlobStorageFileLoader,
 )
 from langchain.document_loaders.bigquery import BigQueryLoader
+from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -43,6 +44,7 @@ from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
     OnlinePDFLoader,
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
@@ -53,6 +55,7 @@ from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
+from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
@@ -116,6 +119,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "OnlinePDFLoader",
     "PDFMinerLoader",
+    "PDFMinerPDFasHTMLLoader",
     "PyMuPDFLoader",
     "TelegramChatLoader",
     "SRTLoader",
@@ -134,4 +138,6 @@ __all__ = [
     "SitemapLoader",
     "DuckDBLoader",
     "BigQueryLoader",
+    "BiliBiliLoader",
+    "SlackDirectoryLoader",
 ]

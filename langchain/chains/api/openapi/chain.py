@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, NamedTuple, Optional, cast
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from pydantic import BaseModel, Field
 from requests import Response
@@ -28,13 +28,14 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     """Chain interacts with an OpenAPI endpoint using natural language."""
 
     api_request_chain: LLMChain
-    api_response_chain: LLMChain
+    api_response_chain: Optional[LLMChain]
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
     return_intermediate_steps: bool = False
     instructions_key: str = "instructions"  #: :meta private:
     output_key: str = "output"  #: :meta private:
+    max_text_length: Optional[int] = Field(ge=0)  #: :meta private:
 
     @property
     def input_keys(self) -> List[str]:
@@ -108,6 +109,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         intermediate_steps = {}
         instructions = inputs[self.instructions_key]
+        instructions = instructions[: self.max_text_length]
         _api_arguments = self.api_request_chain.predict_and_parse(
             instructions=instructions
         )
@@ -137,19 +139,23 @@ class OpenAPIEndpointChain(Chain, BaseModel):
                 response_text = api_response.text
         except Exception as e:
             response_text = f"Error with message {str(e)}"
+        response_text = response_text[: self.max_text_length]
         intermediate_steps["response_text"] = response_text
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
         )
-        _answer = self.api_response_chain.predict_and_parse(
-            response=response_text,
-            instructions=instructions,
-        )
-        answer = cast(str, _answer)
-        self.callback_manager.on_text(
-            answer, color="yellow", end="\n", verbose=self.verbose
-        )
-        return self._get_output(answer, intermediate_steps)
+        if self.api_response_chain is not None:
+            _answer = self.api_response_chain.predict_and_parse(
+                response=response_text,
+                instructions=instructions,
+            )
+            answer = cast(str, _answer)
+            self.callback_manager.on_text(
+                answer, color="yellow", end="\n", verbose=self.verbose
+            )
+            return self._get_output(answer, intermediate_steps)
+        else:
+            return self._get_output(response_text, intermediate_steps)
 
     @classmethod
     def from_url_and_method(
@@ -160,6 +166,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         llm: BaseLLM,
         requests: Optional[Requests] = None,
         return_intermediate_steps: bool = False,
+        **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpoint from a spec at the specified url."""
@@ -169,6 +176,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             requests=requests,
             llm=llm,
             return_intermediate_steps=return_intermediate_steps,
+            **kwargs,
         )
 
     @classmethod
@@ -179,6 +187,8 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests: Optional[Requests] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
+        raw_response: bool = False,
+        **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
         """Create an OpenAPIEndpointChain from an operation and a spec."""
@@ -190,7 +200,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests_chain = APIRequesterChain.from_llm_and_typescript(
             llm, typescript_definition=operation.to_typescript(), verbose=verbose
         )
-        response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
+        if raw_response:
+            response_chain = None
+        else:
+            response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
         _requests = requests or Requests()
         return cls(
             api_request_chain=requests_chain,
@@ -200,4 +213,5 @@ class OpenAPIEndpointChain(Chain, BaseModel):
             param_mapping=param_mapping,
             verbose=verbose,
             return_intermediate_steps=return_intermediate_steps,
+            **kwargs,
         )

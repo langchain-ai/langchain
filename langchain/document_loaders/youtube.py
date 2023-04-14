@@ -106,8 +106,8 @@ class YoutubeLoader(BaseLoader):
         self.language = language
 
     @classmethod
-    def from_youtube_channel(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
-        """Given a channel name, load all videos."""
+    def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
+        """Given youtube URL, load video."""
         video_id = youtube_url.split("youtube.com/watch?v=")[-1]
         return cls(video_id, **kwargs)
 
@@ -118,7 +118,7 @@ class YoutubeLoader(BaseLoader):
         except ImportError:
             raise ImportError(
                 "Could not import youtube_transcript_api python package. "
-                "Please it install it with `pip install youtube-transcript-api`."
+                "Please install it with `pip install youtube-transcript-api`."
             )
 
         metadata = {"source": self.video_id}
@@ -159,7 +159,7 @@ class YoutubeLoader(BaseLoader):
         except ImportError:
             raise ImportError(
                 "Could not import pytube python package. "
-                "Please it install it with `pip install pytube`."
+                "Please install it with `pip install pytube`."
             )
         yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}")
         video_info = {

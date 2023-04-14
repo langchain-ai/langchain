@@ -177,6 +177,8 @@ class LlamaCpp(LLM):
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop:
             params["stop_sequences"] = self.stop
+        elif stop:
+            params["stop_sequences"] = stop
         else:
             params["stop_sequences"] = []
 

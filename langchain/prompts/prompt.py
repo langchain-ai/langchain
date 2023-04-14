@@ -86,7 +86,7 @@ class PromptTemplate(StringPromptTemplate):
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
-        Intended be used as a way to dynamically create a prompt from examples.
+        Intended to be used as a way to dynamically create a prompt from examples.
 
         Args:
             examples: List of examples to use in the prompt.
