@@ -83,10 +83,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Return documents that are relevant to the query."""
-        if query.startswith("FOOBAR"):
-            import pdb
-
-            pdb.set_trace()
         current_time = datetime.now()
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
