@@ -1,15 +1,18 @@
 """Wrapper around llama.cpp."""
 import logging
-from typing import Any, Dict, List, Optional
+import asyncio
+import threading
+from typing import Any, Dict, List, Optional, Coroutine, Generator, Iterable, AsyncIterable
+import queue
 
-from pydantic import Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
-from langchain.llms.base import LLM
+from langchain.llms.base import LLM, Generation, LLMResult
 
 logger = logging.getLogger(__name__)
 
 
-class LlamaCpp(LLM):
+class LlamaCpp(LLM, BaseModel):
     """Wrapper around the llama.cpp model.
 
     To use, you should have the llama-cpp-python library installed, and provide the
@@ -87,6 +90,8 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
+    verbose: Optional[bool] = Field(default=False)
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -154,44 +159,60 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        """Call the Llama model and return the output.
+    async def _agenerate(
+        self, prompts: List[str], stop: Optional[List[str]] = None, stream: bool = True, **config: Any
+    ) -> AsyncIterable[LLMResult]:
+        if not stream:
+            raise NotImplementedError("Currently stream must be True, generators are the only implemented method of generate.")
 
-        Args:
-            prompt: The prompt to use for generation.
-            stop: A list of strings to stop generation when encountered.
+        if stop is None:
+            stop = []
 
-        Returns:
-            The generated text.
+        for token in self.client(prompt=prompts[0], stream=stream, stop=stop, **config):
+            chunk = token['choices'][0]['text']
+            if self.verbose:
+                print(chunk, end="", flush=True)
+            yield chunk
+    def _run_coroutine(self, coroutine: Coroutine) -> Generator:
+        q = queue.Queue()
 
-        Example:
-            .. code-block:: python
+        async def _enqueue_chunks():
+            async for chunk in coroutine:
+                q.put(chunk)
+            q.put(None)
 
-                from langchain.llms import LlamaCppEmbeddings
-                llm = LlamaCppEmbeddings(model_path="/path/to/local/llama/model.bin")
-                llm("This is a prompt.")
-        """
+        def _run_coroutine_internal():
+            asyncio.run(_enqueue_chunks())
 
-        params = self._default_params
-        if self.stop and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop:
-            params["stop_sequences"] = self.stop
-        elif stop:
-            params["stop_sequences"] = stop
-        else:
-            params["stop_sequences"] = []
+        t = threading.Thread(target=_run_coroutine_internal)
+        t.start()
 
-        """Call the Llama model and return the output."""
-        text = self.client(
-            prompt=prompt,
-            max_tokens=params["max_tokens"],
-            temperature=params["temperature"],
-            top_p=params["top_p"],
-            logprobs=params["logprobs"],
-            echo=params["echo"],
-            stop=params["stop_sequences"],
-            repeat_penalty=params["repeat_penalty"],
-            top_k=params["top_k"],
+        while True:
+            chunk = q.get()
+            if chunk is None:
+                break
+            yield chunk
+
+        t.join()
+
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Iterable[str]:
+        generator = self._agenerate([prompt], stop=stop)
+        return self._run_coroutine(generator)
+
+    def _generate(
+        self, prompts: List[str], stop: Optional[List[str]] = None
+    ) -> LLMResult:
+        generator = self._agenerate(prompts, stop=stop)
+        result = LLMResult(generations=[[Generation(text="")]])
+        
+        for chunk in self._run_coroutine(generator):
+            result.generations[0][0].text += chunk
+            self.callback_manager.on_llm_new_token(
+                chunk,
+                verbose=self.verbose,
         )
-        return text["choices"][0]["text"]
+        return result
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        result = self._generate([prompt], stop=stop)
+        return result.generations[0][0].text
