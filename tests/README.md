@@ -39,6 +39,11 @@ cd tests/integration_tests/vectorstores/docker-compose
 docker-compose -f elasticsearch.yml up
 ```
 
+### Prepare environment variables for local testing:
+
+- copy `tests/.env.example` to `tests/.env`
+- set variables in `tests/.env` file, e.g `OPENAI_API_KEY`
+
 Additionally, it's important to note that some integration tests may require certain
 environment variables to be set, such as `OPENAI_API_KEY`. Be sure to set any required
 environment variables before running the tests to ensure they run correctly.
@@ -54,7 +59,9 @@ cassettes. You can use the --vcr-record=none command-line option to disable reco
 new cassettes. Here's an example:
 
 ```bash
+pytest --log-cli-level=10 tests/integration_tests/vectorstores/test_pinecone.py --vcr-record=none
 pytest tests/integration_tests/vectorstores/test_elasticsearch.py --vcr-record=none
+
 ```
 
 ### Run some tests with coverage:
