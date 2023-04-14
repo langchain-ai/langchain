@@ -45,8 +45,8 @@ class MimeTypeBasedParser(BaseBlobParser):
 
         if mimetype is None:
             err_msg = "Mime type must be specified provided."
-            if blob.location is not None:
-                err_msg += f" Location: {blob.location}"
+            if blob.path_like is not None:
+                err_msg += f" Location: {blob.path_like}"
             raise ValueError(err_msg)
 
         if mimetype in self.handlers:

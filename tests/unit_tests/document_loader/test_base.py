@@ -32,11 +32,11 @@ def test_blob_from_file_binary() -> None:
     content = b"Hello, World!"
 
     with temp_file(content) as temp_path:
-        blob = Blob.from_file(temp_path)
+        blob = Blob.from_path(temp_path)
         assert blob.data == content
         assert blob.mimetype is None
         assert blob.encoding is None
-        assert blob.location == str(temp_path)
+        assert blob.path_like == str(temp_path)
 
 
 def test_blob_from_file_binary_with_str_path() -> None:
@@ -44,8 +44,8 @@ def test_blob_from_file_binary_with_str_path() -> None:
     content = b"Hello, World!"
 
     with temp_file(content) as temp_path:
-        blob = Blob.from_file(str(temp_path))
+        blob = Blob.from_path(str(temp_path))
         assert blob.data == content
         assert blob.mimetype is None
         assert blob.encoding is None
-        assert blob.location == str(temp_path)
+        assert blob.path_like == str(temp_path)

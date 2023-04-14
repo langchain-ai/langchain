@@ -70,4 +70,4 @@ class DirectoryLoader(BaseLoader):
         for item in items:
             if item.is_file():
                 if _is_visible(item.relative_to(p)) or self.load_hidden:
-                    yield Blob.from_file(str(item))
+                    yield Blob.from_path(str(item))

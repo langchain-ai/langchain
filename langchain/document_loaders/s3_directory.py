@@ -9,7 +9,7 @@ from langchain.document_loaders.s3_file import S3FileLoader
 class S3DirectoryLoader(BaseLoader):
     """Loading logic for loading documents from s3."""
 
-    def __init__(self, bucket: str, prefix: str = ""):
+    def __init__(self, bucket: str, prefix: str = "") -> None:
         """Initialize with bucket and key name."""
         self.bucket = bucket
         self.prefix = prefix

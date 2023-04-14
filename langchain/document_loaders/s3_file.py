@@ -1,37 +1,30 @@
 """Loading logic for loading documents from an s3 file."""
-import os
-import tempfile
+from io import BytesIO
 from typing import List, Union, Generator
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader, Blob
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.document_loaders.unstructured import UnstructuredFileIOLoader
+
+
+def _get_bytes(s3, bucket, key) -> BytesIO:
+    raise NotImplementedError()
 
 
 class S3FileLoader(BaseLoader):
     """Loading logic for loading documents from s3."""
 
-    def __init__(self, bucket: str, key: str):
+    def __init__(self, bucket: str, key: str) -> None:
         """Initialize with bucket and key name."""
         self.bucket = bucket
         self.key = key
 
     def load(self) -> List[Document]:
         """Load documents."""
-        try:
-            import boto3
-        except ImportError:
-            raise ValueError(
-                "Could not import boto3 python package. "
-                "Please install it with `pip install boto3`."
-            )
-        s3 = boto3.client("s3")
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}/{self.key}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            s3.download_file(self.bucket, self.key, file_path)
-            loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+        docs = []
+        for blob in self.lazy_load():
+            docs.extend(UnstructuredFileIOLoader(blob.data).load())
+        return docs
 
     def lazy_load(
         self,
@@ -45,9 +38,6 @@ class S3FileLoader(BaseLoader):
                 "Please install it with `pip install boto3`."
             )
         s3 = boto3.client("s3")
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}/{self.key}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            s3.download_file(self.bucket, self.key, file_path)
-            loader = UnstructuredFileLoader(file_path)
-            return loader.lazy_load()
+        yield Blob(
+            data=_get_bytes(s3, self.bucket, self.key),
+        )
