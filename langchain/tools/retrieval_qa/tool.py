@@ -1,14 +1,12 @@
 """Tools for interacting with retriever."""
 import json
-from typing import Any, Dict
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import BaseRetrievalQA, RetrievalQA
 from langchain.llms.base import BaseLLM
-from langchain.llms.openai import OpenAI
 from langchain.schema import BaseRetriever
 from langchain.tools.base import BaseTool
 
@@ -16,7 +14,7 @@ from langchain.tools.base import BaseTool
 class BaseRetrievalQAInfo(BaseTool):
     """Base class to store information"""
 
-    llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLLM = Field(exclude=True)
     retriever: BaseRetriever = Field(exclude=True)
 
     class Config(BaseTool):
@@ -35,7 +33,8 @@ class BaseRetrievalQAInfo(BaseTool):
 
         if include_sources:
             sources_template: str = (
-                "Output is a json serialized dictionary with keys `answer` and `sources`. "
+                "Output is a json serialized dictionary "
+                "with keys `answer` and `sources`. "
                 "Only use this tool if the user explicitly asks for sources. "
             )
             template = base_template + sources_template
@@ -67,9 +66,7 @@ class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError(
-            "RetrievalQATool does not support async because chain does not support async"
-        )
+        raise NotImplementedError("Chain, RetrievalQATool does not support async")
 
 
 class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
@@ -98,5 +95,5 @@ class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously"""
         raise NotImplementedError(
-            "RetrievalQAWithSourcesTool does not support async because chain does not support async"
+            "Chain, RetrievalQAWithSourcesTool does not support async"
         )

@@ -1,11 +1,10 @@
 """Toolkit for interacting with a vector store."""
-from typing import List, Optional, Tuple, Type, Union, cast
+from typing import List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.base import BaseLLM
-from langchain.llms.openai import OpenAI
 from langchain.schema import BaseRetriever
 from langchain.tools import BaseTool
 from langchain.tools.retrieval_qa.tool import (
@@ -19,7 +18,7 @@ class RetrievalQAToolkit(BaseToolkit):
     """Wrapper Toolkit for RetrievalQATool, RetrievalQAWithSourcesTool"""
 
     retrieval_qa_info: BaseRetrievalQAInfo = Field(exclude=True)
-    llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLLM = Field(exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -62,7 +61,7 @@ class RetrievalQARouterToolkit(BaseToolkit):
     """Toolkit for routing among Retriever QA related tools."""
 
     retrieval_qa_info: List[BaseRetrievalQAInfo] = Field(..., min_items=1, exclude=True)
-    llm: BaseLLM = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLLM = Field(exclude=True)
     include_sources: Optional[bool] = False
 
     @validator("retrieval_qa_info", pre=True)
