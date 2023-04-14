@@ -1,4 +1,5 @@
 """Test Redis functionality."""
+import pytest
 
 from langchain.docstore.document import Document
 from langchain.vectorstores.redis import Redis
@@ -62,3 +63,48 @@ def test_redis_drop_index() -> None:
         index_name=TEST_INDEX_NAME, delete_documents=True, redis_url=TEST_REDIS_URL
     )
 
+
+@pytest.mark.asyncio
+async def test_redis_async() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = await Redis.afrom_texts(
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
+    )
+    output = await docsearch.asimilarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.asyncio
+async def test_redis_async_from_existing() -> None:
+    """Test adding a new document"""
+    texts = ["foo", "bar", "baz"]
+    docsearch = await Redis.afrom_texts(
+        texts, FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
+    )
+    del docsearch
+
+    # Test creating from an existing
+    docsearch2 = Redis.from_existing_index(
+        FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
+    )
+    output = await docsearch2.asimilarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+
+@pytest.mark.asyncio
+async def test_redis_async_add_texts_to_existing() -> None:
+    """Test adding a new document"""
+    # Test creating from an existing
+    docsearch = Redis.from_existing_index(
+        FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
+    )
+    await docsearch.aadd_texts(["foo"])
+    output = await docsearch.asimilarity_search("foo", k=2)
+    assert output == [Document(page_content="foo"), Document(page_content="foo")]
+
+
+def test_redis_drop_index_again() -> None:
+    assert Redis.drop_index(
+        index_name=TEST_INDEX_NAME, delete_documents=True, redis_url=TEST_REDIS_URL
+    )

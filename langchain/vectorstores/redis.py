@@ -264,12 +264,9 @@ class Redis(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Add texts data to an existing index."""
-        prefix = self._redis_prefix(self.index_name)
-        keys = kwargs.get("keys")
-        ids = self.loop.run_until_complete(
-            self._write_redis_batch(self.client, prefix, texts, metadatas, keys, embedding_function=self.embedding_function)
+        return self.loop.run_until_complete(
+            self.aadd_texts(texts, metadatas, **kwargs)
         )
-        return ids
 
     async def aadd_texts(
         self,
@@ -313,10 +310,9 @@ class Redis(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        docs = self.loop.run_until_complete(
-            self._query_redis(embedding, k)
+        return self.loop.run_until_complete(
+            self.asimilarity_search_by_vector(embedding, k, **kwargs)
         )
-        return docs
 
     async def asimilarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -338,10 +334,9 @@ class Redis(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.loop.run_until_complete(
-            self.asimilarity_search_with_score(query, k=k)
+        return self.loop.run_until_complete(
+            self.asimilarity_search(query, k, **kwargs)
         )
-        return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -376,10 +371,9 @@ class Redis(VectorStore):
             an empty list is returned.
 
         """
-        docs_and_scores = self.loop.run_until_complete(
-            self.asimilarity_search_with_score(query, k=k)
+        return self.loop.run_until_complete(
+            self.asimilarity_search_limit_score(query, k, score_threshold, **kwargs)
         )
-        return [doc for doc, score in docs_and_scores if score < score_threshold]
 
     async def asimilarity_search_limit_score(
         self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
@@ -516,15 +510,10 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(query, k=self.k)
-        elif self.search_type == "similarity_limit":
-            docs = self.vectorstore.similarity_search_limit_score(
-                query, k=self.k, score_threshold=self.score_threshold
-            )
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
+        loop = asyncio.get_running_loop()
+        return loop.run_until_complete(
+            self.aget_relevant_documents(query)
+        )
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         if self.search_type == "similarity":
