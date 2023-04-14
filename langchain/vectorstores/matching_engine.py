@@ -57,6 +57,8 @@ class MatchingEngine(VectorStore):
         credentials = None
         if json_credentials_path is not None:
             credentials = service_account.Credentials.from_service_account_file(json_credentials_path)
+            credentials = credentials.with_scopes(
+                ['https://www.googleapis.com/auth/cloud-platform'])
 
         return credentials
     
