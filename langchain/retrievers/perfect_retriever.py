@@ -1,11 +1,11 @@
 import json
 from abc import abstractmethod
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from langchain import PromptTemplate, LLMChain
+from langchain import LLMChain, PromptTemplate
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits import VectorStoreInfo
-from langchain.schema import BaseRetriever, Document, BaseOutputParser
+from langchain.schema import BaseOutputParser, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStoreRetriever
 
 pinecone_format_instructions = """RESPONSE FORMAT
@@ -83,11 +83,12 @@ Begin!
 DOCUMENT STORE DESCRIPTION: {{docstore_description}}
 METADATA FIELDS: {{metadata_fields}}
 QUESTION: {{{{question}}}}
-DOCUMENT STORE QUERY:""".format(format_instructions=pinecone_format_instructions, example=pinecone_example)
+DOCUMENT STORE QUERY:""".format(
+    format_instructions=pinecone_format_instructions, example=pinecone_example
+)
 
 
 class VectorStoreQueryOutputParser(BaseOutputParser):
-
     def get_format_instructions(self) -> str:
         return pinecone_format_instructions
 
@@ -106,7 +107,10 @@ class VectorStoreQueryOutputParser(BaseOutputParser):
         cleaned_output = cleaned_output.replace("`", "")
         cleaned_output = cleaned_output.strip()
         response = json.loads(cleaned_output)
-        return {"query": response["search_string"], "filter": response["metadata_filter"]}
+        return {
+            "query": response["search_string"],
+            "filter": response["metadata_filter"],
+        }
 
 
 class VectorStoreExtendedInfo(VectorStoreInfo):
@@ -128,10 +132,12 @@ class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
         inputs = self.llm_chain.prep_inputs(query)
         vecstore_query = self.llm_chain.predict_and_parse(**inputs)
         print(vecstore_query)
-        _query = vecstore_query['query']
-        _filter = vecstore_query['filter']
+        _query = vecstore_query["query"]
+        _filter = vecstore_query["filter"]
         if self.search_type == "similarity":
-            docs = self.vectorstore.similarity_search(_query, filter=_filter, **self.search_kwargs)
+            docs = self.vectorstore.similarity_search(
+                _query, filter=_filter, **self.search_kwargs
+            )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 _query, filter=_filter, **self.search_kwargs
@@ -153,17 +159,27 @@ class VectorStoreSelfQueryRetriever(VectorStoreRetriever):
 
     @classmethod
     def from_vecstore_extended_info(cls, llm, vecstore_extended_info, **kwargs):
-        metadata_field_json = "{" + json.dumps(vecstore_extended_info.metadata_field_descriptions) + "}"
-        _prompt = self_query_prompt.format(docstore_description=vecstore_extended_info.description,
-                                             metadata_fields=metadata_field_json)
-        prompt = PromptTemplate(input_variables=["question"], template=_prompt,
-                                output_parser=VectorStoreQueryOutputParser())
+        metadata_field_json = (
+            "{" + json.dumps(vecstore_extended_info.metadata_field_descriptions) + "}"
+        )
+        _prompt = self_query_prompt.format(
+            docstore_description=vecstore_extended_info.description,
+            metadata_fields=metadata_field_json,
+        )
+        prompt = PromptTemplate(
+            input_variables=["question"],
+            template=_prompt,
+            output_parser=VectorStoreQueryOutputParser(),
+        )
         llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, vectorstore=vecstore_extended_info.vectorstore, **kwargs)
+        return cls(
+            llm_chain=llm_chain,
+            vectorstore=vecstore_extended_info.vectorstore,
+            **kwargs,
+        )
 
 
 class PerfectRetriever(BaseRetriever):
-
     agent_executor: AgentExecutor
 
     @abstractmethod
@@ -176,7 +192,6 @@ class PerfectRetriever(BaseRetriever):
         Returns:
             List of relevant documents
         """
-
 
     @abstractmethod
     async def aget_relevant_documents(self, query: str) -> List[Document]:
