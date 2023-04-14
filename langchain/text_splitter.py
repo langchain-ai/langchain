@@ -80,7 +80,7 @@ class TextSplitter(ABC):
         docs = []
         current_doc: List[str] = []
         total = 0
-        for d in splits:
+        for index, d in enumerate(splits):
             _len = self._length_function(d)
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
@@ -107,7 +107,11 @@ class TextSplitter(ABC):
                             separator_len if len(current_doc) > 1 else 0
                         )
                         current_doc = current_doc[1:]
-            current_doc.append(d)
+
+            if index > 0:
+                current_doc.append(separator + d)
+            else:
+                current_doc.append(d)
             total += _len + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
@@ -258,8 +262,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now that we have the separator, split the text
         if separator:
             splits = text.split(separator)
-            # add back separators that were removed
-            splits = [splits[0]] + [separator + s for s in splits[1:]]
         else:
             splits = list(text)
         # Now go merging things, recursively splitting longer texts.
