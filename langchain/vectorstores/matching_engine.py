@@ -1,18 +1,20 @@
 """Vertex Matching Engine implementation of the vector store."""
 
 import json
-import uuid
-from google.cloud import aiplatform, storage
+from google.cloud import aiplatform
+from google.cloud import storage
 from oauth2client.service_account import ServiceAccountCredentials
 from typing import Any, Iterable, List, Optional, Union
+import uuid
 
 from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
 from langchain.embeddings import TensorflowHubEmbeddings
+from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 
 class MatchingEngine(VectorStore):
+    """Vertex Matching Engine implementation of the vector store."""
 
     def __init__(self,
         project_id: str,
@@ -23,9 +25,10 @@ class MatchingEngine(VectorStore):
         json_credentials_path: Union[str, None] = None,
         embedder: Embeddings = TensorflowHubEmbeddings(model_url="https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
     ):
-        """
-            TODO: fininsh docs
+        """Vertex Matching Engine implementation of the vector store. 
+            TODO: create docs for this module: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores.rst
             TODO: preconditio for this class the index and the endpoint must exist
+            TODO: 
             Attributes:
                 project_id: The GCS project id.
                 region: The default location making the API calls. It must have the 
