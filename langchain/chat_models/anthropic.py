@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra
 
@@ -98,7 +98,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
 
@@ -122,7 +122,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
         if stop:
             params["stop_sequences"] = stop
 
