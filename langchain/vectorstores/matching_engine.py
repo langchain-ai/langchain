@@ -186,7 +186,7 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         return blob.download_as_string()
 
-
+# TODO delete this after testing
 if __name__ == "__main__":
     me = MatchingEngine(
         project_id="scafati-joonix",
