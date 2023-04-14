@@ -94,9 +94,11 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
             text.rstrip()
         )  # trim off the trailing ' ' that might come from the "Assistant: "
 
-    def _generate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None) -> ChatResult:
+    def _generate(
+        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+    ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {'prompt': prompt, 'stop_sequences': stop, **self._default_params}
+        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
 
         if self.streaming:
             completion = ""
@@ -118,7 +120,7 @@ class AnthropicChat(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {'prompt': prompt, 'stop_sequences': stop, **self._default_params}
+        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
 
         if self.streaming:
             completion = ""
