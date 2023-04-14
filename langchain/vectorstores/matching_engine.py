@@ -85,7 +85,7 @@ class MatchingEngine(VectorStore):
         """TODO add docs"""
         logger.debug(f"Creating endpoint with id {endpoint_id}.")
         return aiplatform.MatchingEngineIndexEndpoint(
-            endpoint_name=endpoint_id,
+            index_endpoint_name=endpoint_id,
             project=self.project_id,
             location=self.region,
             credentials=self.credentials,
@@ -240,7 +240,7 @@ if __name__ == "__main__":
         region="us-central1",
         gcs_bucket_uri="gs://langchain-integration",
         index_id="1419223220854194176",
-        endpoint_id="tree_ah_glove_deployed_langchain"
+        endpoint_id="4789041642034167808"
     )
 
     print(me.similarity_search("Cristian Castro"))
