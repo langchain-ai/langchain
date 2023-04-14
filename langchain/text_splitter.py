@@ -258,6 +258,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now that we have the separator, split the text
         if separator:
             splits = text.split(separator)
+            # add back separators that were removed
+            splits = [splits[0]] + [separator + s for s in splits[1:]]
         else:
             splits = list(text)
         # Now go merging things, recursively splitting longer texts.
