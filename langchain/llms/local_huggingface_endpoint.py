@@ -98,16 +98,16 @@ class LocalHuggingFaceEndpoint(LLM):
             )
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
-        generated_text = response.json()
-        if "error" in generated_text:
+        response_dict = response.json()
+        if "error" in response_dict:
             raise ValueError(
-                f"Error raised by inference API: {generated_text['error']}"
+                f"Error raised by inference API: {response_dict['error']}"
             )
         if self.task == "text-generation":
             # Text generation return includes the starter text.
-            text = generated_text[0]["generated_text"][len(prompt) :]
+            text = response_dict[0]["generated_text"][len(prompt) :]
         elif self.task == "text2text-generation":
-            text = generated_text[0]["generated_text"]
+            text = response_dict[0]["generated_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.task}, "
