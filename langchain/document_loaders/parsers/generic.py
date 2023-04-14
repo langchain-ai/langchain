@@ -1,7 +1,8 @@
 """Implementations of generic use parsers."""
 from typing import Mapping, Callable, Generator
 
-from langchain.document_loaders.base import Blob, BaseBlobParser
+from langchain.document_loaders.base import BaseBlobParser
+from langchain.document_loaders.blob_loaders.schema import Blob
 from langchain.schema import Document
 
 

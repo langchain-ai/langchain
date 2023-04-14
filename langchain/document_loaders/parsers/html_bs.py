@@ -4,7 +4,8 @@ import logging
 from typing import Dict, Union, Generator
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.base import Blob, BaseBlobParser
+from langchain.document_loaders.base import BaseBlobParser
+from langchain.document_loaders.blob_loaders.schema import Blob
 
 logger = logging.getLogger(__file__)
 

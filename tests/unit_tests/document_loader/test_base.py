@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Generator
 
-from langchain.document_loaders.base import Blob
+from langchain.document_loaders.blob_loaders.schema import Blob
 
 
 @contextmanager

@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Generator
 
-from langchain.document_loaders.base import Blob, BlobLoader
+from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 
 def _is_visible(p: Path) -> bool:
@@ -12,6 +12,9 @@ def _is_visible(p: Path) -> bool:
         if _p.startswith("."):
             return False
     return True
+
+
+# PUBLIC API
 
 
 class FileSystemLoader(BlobLoader):

@@ -2,10 +2,10 @@
 from io import BytesIO
 from typing import Generator
 
-from langchain.document_loaders.base import Blob, BlobLoader
+from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 
-class GSCBlobLoader(BlobLoader):
+class GCSBlobLoader(BlobLoader):
     """GSC blob loader."""
 
     def __init__(self, project_name: str, bucket: str, prefix: str = "") -> None:

@@ -7,7 +7,8 @@ PDF parsers take a Blob and return a list of Document objects containing parsed 
 from io import StringIO
 from typing import Generator
 
-from langchain.document_loaders.base import BaseBlobParser, Blob
+from langchain.document_loaders.base import BaseBlobParser
+from langchain.document_loaders.blob_loaders.schema import Blob
 from langchain.schema import Document
 
 
