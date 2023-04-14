@@ -98,7 +98,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
+        params = {"prompt": prompt, **self._default_params}
+        if stop:
+            params["stop_sequences"] = stop
 
         if self.streaming:
             completion = ""
@@ -120,7 +122,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
+        params = {"prompt": prompt, **self._default_params}
+        if stop:
+            params["stop_sequences"] = stop
 
         if self.streaming:
             completion = ""
