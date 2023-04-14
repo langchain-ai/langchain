@@ -1,9 +1,9 @@
 """"""
 from typing import Any, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra
 
-from langchain import BasePromptTemplate, LLMChain, PromptTemplate
+from langchain import LLMChain, PromptTemplate
 from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 
 
