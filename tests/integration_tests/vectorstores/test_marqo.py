@@ -90,9 +90,9 @@ def test_marqo_search(client) -> None:
     marqo_search = Marqo(client=client, index_name=INDEX_NAME)
     input_documents = ["This is document 1", "2", "3"]
     ids = marqo_search.add_texts(input_documents)
-    hits = marqo_search.marqo_similarity_search("What is the first document?", k=3)
+    results = marqo_search.marqo_similarity_search("What is the first document?", k=3)
     assert len(ids) == len(input_documents)
-    assert ids[0] == hits[0]["_id"]
+    assert ids[0] == results["hits"][0]["_id"]
 
 
 def test_marqo_weighted_query(client) -> None:
@@ -142,13 +142,12 @@ def test_marqo_multimodal():
     def get_content(res):
         if "text" in res:
             return res["text"]
-
         return f"{res['caption']}: {res['image']}"
 
-    marqo_search = Marqo(client, INDEX_NAME)
+    marqo_search = Marqo(client, INDEX_NAME, page_content_builder=get_content)
 
     query = "vehicles that fly"
-    docs = marqo_search.similarity_search(query, page_content_builder=get_content)
+    docs = marqo_search.similarity_search(query)
 
     assert docs[0].page_content.split(":")[0] == "Plane"
 

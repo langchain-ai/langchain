@@ -41,7 +41,7 @@ class Marqo(VectorStore):
             import marqo
             from langchain.vectorstores import Marqo
             client = marqo.Client(url=os.environ["MARQO_URL"], ...)
-            datastore = Marqo(client, index_name)
+            vectorstore = Marqo(client, index_name)
 
     """
 
@@ -51,6 +51,7 @@ class Marqo(VectorStore):
         index_name: str,
         add_documents_settings: Optional[Dict[str, Any]] = {},
         searchable_attributes: Optional[List[str]] = None,
+        page_content_builder: Optional[Callable[[dict], str]] = None,
     ):
         """Initialize with Marqo client."""
         try:
@@ -67,13 +68,18 @@ class Marqo(VectorStore):
         self._client = client
         self._index_name = index_name
         self._add_documents_settings = add_documents_settings
+        self._searchable_attributes = searchable_attributes
+        self.page_content_builder = page_content_builder
 
         self._non_tensor_fields = ["metadata"]
-        self._searchable_attributes = searchable_attributes
+
         self._document_batch_size = 1024
 
     def add_texts(
-        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        continue_on_failure: bool = True,
     ) -> List[str]:
         """Upload texts with metadata (properties) to Marqo.
 
@@ -95,7 +101,7 @@ class Marqo(VectorStore):
             "treat_urls_and_pointers_as_images"
         ]:
             raise ValueError(
-                "Marqo.add_texts is disabled for multimodal indexes. To add documents use the Python Marqo client."
+                "Marqo.add_texts is disabled for multimodal indexes. To add documents with a multimodal index use the Python client for Marqo directly."
             )
 
         if metadatas and len(texts) != len(metadatas):
@@ -118,9 +124,12 @@ class Marqo(VectorStore):
                 **self._add_documents_settings,
             )
             if response["errors"]:
-                warnings.warn(
-                    f"Error in upload for documents in index range [{i},{i+self._document_batch_size}], check Marqo logs."
-                )
+                err_msg = f"Error in upload for documents in index range [{i},{i+self._document_batch_size}], check Marqo logs."
+                if continue_on_failure:
+                    warnings.warn(err_msg)
+                else:
+                    raise RuntimeError(err_msg)
+
             ids += [item["_id"] for item in response["items"]]
 
         return ids
@@ -129,7 +138,6 @@ class Marqo(VectorStore):
         self,
         query: Union[str, Dict[str, float]],
         k: int = 4,
-        page_content_builder: Optional[Callable[[dict], str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Search the marqo index for the most similar documents.
@@ -137,24 +145,42 @@ class Marqo(VectorStore):
         Args:
             query (Union[str, Dict[str, float]]): The query for the search, either as a string or a weighted query.
             k (int, optional): The number of documents to return. Defaults to 4.
-            page_content_builder (Optional[Callable[[dict], str]], optional): A callback to format arbitrary documents into a string. Defaults to None.
 
         Returns:
             List[Document]: k documents ordered from best to worst match.
         """
-        results = self._client.index(self._index_name).search(
-            q=query, searchable_attributes=self._searchable_attributes, limit=k
-        )
+        results = self.marqo_similarity_search(query=query, k=k)
+
         documents = self._construct_documents_from_results(
-            results, page_content_builder=page_content_builder, include_scores=False
+            results, include_scores=False
         )
         return documents
+
+    def similarity_search_with_score(
+        self,
+        query: Union[str, Dict[str, float]],
+        k: int = 4,
+    ) -> List[Tuple[Document, float]]:
+        """Return documents from Marqo that are similar to the query as well as their scores.
+
+        Args:
+            query (str): The query to search with, either as a string or a weighted query.
+            k (int, optional): The number of documents to return. Defaults to 4.
+
+        Returns:
+            List[Tuple[Document, float]]: The matching documents and their scores, ordered by descending score.
+        """
+        results = self.marqo_similarity_search(query=query, k=k)
+
+        scored_documents = self._construct_documents_from_results(
+            results, include_scores=True
+        )
+        return scored_documents
 
     def bulk_similarity_search(
         self,
         queries: Iterable[Union[str, Dict[str, float]]],
         k: int = 4,
-        page_content_builder: Optional[Callable[[dict], str]] = None,
         **kwargs: Any,
     ) -> List[List[Document]]:
         """Search the marqo index for the most similar documents in bulk with multiple queries.
@@ -162,58 +188,24 @@ class Marqo(VectorStore):
         Args:
             queries (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to execute in bulk, queries in the list can be strings or dictonaries of weighted queries.
             k (int, optional): The number of documents to return for each query. Defaults to 4.
-            page_content_builder (Optional[Callable[[dict], str]], optional): A callback to format arbitrary documents into a string. Defaults to None.
 
         Returns:
             List[List[Document]]: A list of results for each query.
         """
-        bulk_results = self._client.bulk_search(
-            [
-                {
-                    "index": self._index_name,
-                    "q": query,
-                    "searchable_attributes": self._searchable_attributes,
-                    "limit": k,
-                }
-                for query in queries
-            ]
-        )
+        bulk_results = self.marqo_bulk_similarity_search(queries=queries, k=k)
         bulk_documents: List[List[Document]] = []
         for results in bulk_results["result"]:
             documents = self._construct_documents_from_results(
-                results, page_content_builder=page_content_builder, include_scores=False
+                results, include_scores=False
             )
             bulk_documents.append(documents)
 
         return bulk_documents
 
-    def similarity_search_with_score(
-        self,
-        query: Union[str, Dict[str, float]],
-        k: int = 4,
-        page_content_builder: Optional[Callable[[dict], str]] = None,
-    ) -> List[Tuple[Document, float]]:
-        """Return documents from Marqo that are similar to the query as well as their scores.
-
-        Args:
-            query (str): The query to search with, either as a string or a weighted query.
-            k (int, optional): The number of documents to return. Defaults to 4.
-            page_content_builder (Optional[Callable[[dict], str]], optional): A callback to format arbitrary documents into a string. Defaults to None.
-
-        Returns:
-            List[Tuple[Document, float]]: The matching documents and their scores, ordered by descending score.
-        """
-        results = self._client.index(self._index_name).search(q=query, limit=k)
-        scored_documents = self._construct_documents_from_results(
-            results, page_content_builder=page_content_builder, include_scores=True
-        )
-        return scored_documents
-
     def bulk_similarity_search_with_score(
         self,
         queries: Iterable[Union[str, Dict[str, float]]],
         k: int = 4,
-        page_content_builder: Optional[Callable[[dict], str]] = None,
         **kwargs: Any,
     ) -> List[List[Tuple[Document, float]]]:
         """Return documents from Marqo that are similar to the query as well as their scores using
@@ -222,26 +214,15 @@ class Marqo(VectorStore):
         Args:
             query (Iterable[Union[str, Dict[str, float]]]): An iterable of queries to execute in bulk, queries in the list can be strings or dictonaries of weighted queries.
             k (int, optional): The number of documents to return. Defaults to 4.
-            page_content_builder (Optional[Callable[[dict], str]], optional): A callback to format arbitrary documents into a string. Defaults to None.
 
         Returns:
             List[Tuple[Document, float]]: A list of lists of the matching documents and their scores for each query
         """
-        bulk_results = self._client.bulk_search(
-            [
-                {
-                    "index": self._index_name,
-                    "q": query,
-                    "searchable_attributes": self._searchable_attributes,
-                    "limit": k,
-                }
-                for query in queries
-            ]
-        )
+        bulk_results = self.marqo_bulk_similarity_search(queries=queries, k=k)
         bulk_documents: List[List[Tuple[Document, float]]] = []
         for results in bulk_results["result"]:
             documents = self._construct_documents_from_results(
-                results, page_content_builder=page_content_builder, include_scores=True
+                results, include_scores=True
             )
             bulk_documents.append(documents)
 
@@ -250,7 +231,6 @@ class Marqo(VectorStore):
     def _construct_documents_from_results(
         self,
         results: List[dict],
-        page_content_builder: Optional[Callable[[dict], str]] = None,
         include_scores: bool = False,
     ) -> Union[List[Document], List[Tuple[Document, float]]]:
         """Helper to convert Marqo results into documents.
@@ -258,20 +238,18 @@ class Marqo(VectorStore):
         Args:
             results (List[dict]): A marqo results object with the 'hits'.
             include_scores (bool, optional): Include scores alongside documents. Defaults to False.
-            page_content_builder (Optional[Callable[[dict], str]], optional): A callback to format arbitrary documents into a string. Defaults to None.
 
         Returns:
             Union[List[Document], List[Tuple[Document, float]]]: The documents or document score pairs if `include_scores` is true.
         """
         documents: Union[List[Document], List[Tuple[Document, float]]] = []
         for res in results["hits"]:
-            if page_content_builder is None:
+            if self.page_content_builder is None:
                 text = res["text"]
             else:
-                text = page_content_builder(res)
+                text = self.page_content_builder(res)
 
-            md = res.get("metadata")
-            metadata = json.loads(md if md else "{}")
+            metadata = json.loads(res.get("metadata", "{}"))
             if include_scores:
                 documents.append(
                     (Document(page_content=text, metadata=metadata), res["_score"])
@@ -294,16 +272,43 @@ class Marqo(VectorStore):
         Returns:
             List[Dict[str, Any]]: This hits from marqo.
         """
-        results = self._client.index(self._index_name).search(q=query, limit=k)
-        return results["hits"]
+        results = self._client.index(self._index_name).search(
+            q=query, searchable_attributes=self._searchable_attributes, limit=k
+        )
+        return results
+
+    def marqo_bulk_similarity_search(
+        self, queries: Iterable[Union[str, Dict[str, float]]], k: int = 4
+    ) -> Dict[str, List[Dict[str, Dict[str, Any]]]]:
+        """Return documents from Marqo using a bulk search, exposes Marqo's output directly
+
+        Args:
+            queries (Iterable[Union[str, Dict[str, float]]]): A list of queries.
+            k (int, optional): The number of documents to return for each query. Defaults to 4.
+
+        Returns:
+            Dict[str, List[Dict[str, Dict[str, Any]]]]: A bulk search results object
+        """
+        bulk_results = self._client.bulk_search(
+            [
+                {
+                    "index": self._index_name,
+                    "q": query,
+                    "searchable_attributes": self._searchable_attributes,
+                    "limit": k,
+                }
+                for query in queries
+            ]
+        )
+        return bulk_results
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Marqo,
         documents: List[Document],
         embedding: Any = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> Marqo:
         """Return VectorStore initialized from documents. Note that Marqo does not need embeddings, we retain the
         parameter to adhere to the Liskov substitution principle.
 
@@ -331,6 +336,7 @@ class Marqo(VectorStore):
         marqo_device: str = "cpu",
         add_documents_settings: Optional[Dict[str, Any]] = {},
         searchable_attributes: Optional[List[str]] = None,
+        page_content_builder: Optional[Callable[[dict], str]] = None,
         index_settings: Optional[Dict[str, Any]] = {},
         verbose: bool = True,
         **kwargs: Any,
@@ -358,7 +364,7 @@ class Marqo(VectorStore):
             url (str, optional): The URL for Marqo. Defaults to "http://localhost:8882".
             api_key (str, optional): The API key for Marqo. Defaults to "".
             metadatas (Optional[List[dict]], optional): A list of metadatas, to accompany the texts. Defaults to None.
-            marqo_device (str, optional): The device for the marqo to use on the server, this is only used when a new index is being created. Defaults to "cpu".
+            marqo_device (str, optional): The device for the marqo to use on the server, this is only used when a new index is being created. Defaults to "cpu". Can be "cpu" or "cuda".
             add_documents_settings (Optional[Dict[str, Any]], optional): Settings for adding documents, see https://docs.marqo.ai/0.0.16/API-Reference/documents/#query-parameters. Defaults to {}.
             index_settings (Optional[Dict[str, Any]], optional): Index settings if the index doesn't exist, see https://docs.marqo.ai/0.0.16/API-Reference/indexes/#index-defaults-object. Defaults to {}.
 
@@ -382,7 +388,7 @@ class Marqo(VectorStore):
             client.create_index(index_name, settings_dict=index_settings)
             if verbose:
                 print(f"Created {index_name} successfully.")
-        except:
+        except Exception:
             if verbose:
                 print(f"Index {index_name} exists.")
 
@@ -391,6 +397,7 @@ class Marqo(VectorStore):
             index_name,
             searchable_attributes=searchable_attributes,
             add_documents_settings=add_documents_settings,
+            page_content_builder=page_content_builder,
         )
         instance.add_texts(texts, metadatas)
         return instance
