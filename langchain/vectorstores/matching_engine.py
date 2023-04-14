@@ -28,7 +28,7 @@ class MatchingEngine(VectorStore):
         """Vertex Matching Engine implementation of the vector store. 
             TODO: create docs for this module: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores.rst
             TODO: preconditio for this class the index and the endpoint must exist
-            TODO: 
+            TODO: add aiplatform and storage dependencies to poetry
             Attributes:
                 project_id: The GCS project id.
                 region: The default location making the API calls. It must have the 
