@@ -65,6 +65,7 @@ from langchain.document_loaders.unstructured import (
 )
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
+from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
 from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
@@ -82,6 +83,7 @@ __all__ = [
     "UnstructuredFileIOLoader",
     "UnstructuredURLLoader",
     "SeleniumURLLoader",
+    "PlaywrightURLLoader",
     "DirectoryLoader",
     "NotionDirectoryLoader",
     "NotionDBLoader",
