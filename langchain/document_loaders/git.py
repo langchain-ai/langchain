@@ -48,16 +48,15 @@ class GitLoader(BaseLoader):
 
         docs: List[Document] = []
 
-        for item in repo.tree().traverse():
-            
+        for item in repo.tree().traverse():  
             if not isinstance(item, Blob):
                 continue
 
             file_path = os.path.join(self.repo_path, item.path)
   
             ignored_files = repo.ignored([file_path])
-                if len(ignored_files):
-                    continue
+            if len(ignored_files):
+                continue
 
             # uses filter to skip files
             if self.file_filter and not self.file_filter(file_path):
