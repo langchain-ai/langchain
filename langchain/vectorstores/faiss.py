@@ -435,14 +435,6 @@ class FAISS(VectorStore):
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
 
-    def _get_similarity_score(self, score: float) -> float:
-        if self.normalize_score_fn is None:
-            raise ValueError(
-                "normalize_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
-            )
-        return self.normalize_score_fn(score)
-
     def _similarity_search_with_normalized_similarities(
         self,
         query: str,
@@ -450,7 +442,10 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.normalize_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [
-            (doc, self._get_similarity_score(score)) for doc, score in docs_and_scores
-        ]
+        return [(doc, self.normalize_score_fn(score)) for doc, score in docs_and_scores]
