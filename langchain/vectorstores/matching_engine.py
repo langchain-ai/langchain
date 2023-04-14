@@ -57,8 +57,6 @@ class MatchingEngine(VectorStore):
         credentials = None
         if json_credentials_path is not None:
             credentials = service_account.Credentials.from_service_account_file(json_credentials_path)
-            credentials = credentials.with_scopes(
-                ['https://www.googleapis.com/auth/cloud-platform'])
 
         return credentials
     
@@ -75,7 +73,7 @@ class MatchingEngine(VectorStore):
 
     def _create_index_by_name(self, index_name: str) -> "aiplatform.MatchingEngineIndex":
         """TODO add docs"""
-        logger.debug(f"Creating matching engine index with name {index_name}.")
+        logger.debug(f"Creating matching engine index with name {index_name} {self.project_id} {self.region}.")
         return aiplatform.MatchingEngineIndex(
             index_name,
             project=self.project_id,
