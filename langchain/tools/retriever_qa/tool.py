@@ -44,7 +44,6 @@ class BaseRetrievalQAInfo(BaseModel):
 class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
     """Tool for the RetrievalQA Chain. To be initialized with name and chain."""
     
-    @staticmethod
     def get_description(name: str, description: str) -> str:
         template: str = self._get_template(
             name=name,
@@ -77,7 +76,6 @@ class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
 class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
     """Tool for the RetrievalQAWithSources chain."""
     
-    @staticmethod
     def get_description(name: str, description: str) -> str:
         template: str = self._get_template(
             name=name,
@@ -95,7 +93,7 @@ class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
         )
         return chain
 
-    def _run(self, query: str, **kwargs: Any) -> Dict[str, Any]:
+    def _run(self, query: str, **kwargs: Any) -> str:
         """Use the tool."""
         chain = self._load_chain(**kwargs)
         result = chain(
