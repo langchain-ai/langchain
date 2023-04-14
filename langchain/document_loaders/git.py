@@ -49,6 +49,10 @@ class GitLoader(BaseLoader):
         docs: List[Document] = []
 
         for item in repo.tree().traverse():
+            
+            if not isinstance(item, Blob):
+                continue
+
             file_path = os.path.join(self.repo_path, item.path)
   
             ignored_files = repo.ignored([file_path])
