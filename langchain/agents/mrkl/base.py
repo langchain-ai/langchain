@@ -16,6 +16,14 @@ from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
+AI_PREFIX: str = "AI"
+
+LLM_PREFIX = "Thought:"
+
+ALT_FINISH = "Do I need to use a tool? No"
+
+FINISHED = "Do I have the final answer? Yes."
+
 
 class ChainConfig(NamedTuple):
     """Configuration for chain to use in MRKL system.
@@ -45,6 +53,11 @@ def get_action_and_input(llm_output: str) -> Tuple[str, str]:
     regex = r"Action: (.*?)[\n]*Action Input:[\s]*(.*)"
     match = re.search(regex, llm_output, re.DOTALL)
     if not match:
+        if f"{LLM_PREFIX} {ALT_FINISH}" in llm_output:
+            return (
+                AI_PREFIX,
+                f"{FINISHED} {llm_output.split(ALT_FINISH)[-1].strip()}",
+            )
         raise ValueError(f"Could not parse LLM output: `{llm_output}`")
     action = match.group(1).strip()
     action_input = match.group(2)
