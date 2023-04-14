@@ -183,7 +183,10 @@ class MatchingEngine(VectorStore):
             deployed_index_id=index_id,
             queries=embedding_query,
             num_neighbors=k,
-        )[0]
+        )
+
+        if len(response) == 0:
+            return []
 
         logger.debug(f"Found {len(response)} matches for the query {query}.")
 
