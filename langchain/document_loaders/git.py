@@ -49,6 +49,11 @@ class GitLoader(BaseLoader):
         for item in repo.tree().traverse():
             if isinstance(item, Blob):
                 file_path = os.path.join(self.repo_path, item.path)
+
+                ignored_files = repo.ignored([file_path])
+                if len(ignored_files):
+                    continue
+
                 rel_file_path = os.path.relpath(file_path, self.repo_path)
                 try:
                     with open(file_path, "rb") as f:
