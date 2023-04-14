@@ -1,7 +1,7 @@
 """Retriever that combines embedding similarity with recency in retrieving values."""
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field, validator
 
@@ -15,7 +15,7 @@ def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
-    """Retriever that combines embedding similarity with recency in retrieving values."""
+    """Retriever combining embededing similarity with recency."""
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""
@@ -28,7 +28,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     """The memory_stream of documents to search through."""
 
     decay_factor: float = Field(default=0.99)
-    """The exponential decay factor. Recency score is the decay_factor ** (hrs_passed)."""
+    """The exponential decay factor used as decay_factor ** (hrs_passed)."""
 
     k: int = 15
     """The maximum number of documents to retrieve in a given call."""
@@ -52,8 +52,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         """Validate the vectorstore has the required methods implemented."""
         if not hasattr(vectorstore, "similarity_search_with_score"):
             raise ValueError(
-                "VectorStoreRetriever requires similarity_search_with_score"
-                " to be implemented"
+                f"Required method 'similarity_search_with_score not implemented"
+                f" for vectorstore of type {type(vectorstore)}"
             )
         return vectorstore
 
@@ -76,10 +76,17 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             score += vector_salience
         return score
 
+    @property
+    def _similarity_search_with_score(
+        self,
+    ) -> Callable[[str], List[Tuple[Document, float]]]:
+        """Search the vector store for related docs and their similarities."""
+        return self.vectorstore.similarity_search_with_score  # type: ignore
+
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Tuple[Document, float]]
-        docs_and_scores = self.vectorstore.similarity_search_with_score(
+        docs_and_scores = self._similarity_search_with_score(
             query, **self.search_kwargs
         )
         results = {}
