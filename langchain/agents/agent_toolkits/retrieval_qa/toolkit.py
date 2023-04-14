@@ -18,7 +18,6 @@ class RetrievalQAToolkit(BaseToolkit):
     """Wrapper Toolkit for RetrievalQATool, RetrievalQAWithSourcesTool"""
 
     retrieval_qa_info: BaseRetrievalQAInfo = Field(exclude=True)
-    llm: BaseLLM = Field(exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -27,12 +26,13 @@ class RetrievalQAToolkit(BaseToolkit):
 
     def get_tools(self) -> list[BaseTool]:
         """Use static method from BaseRetrievalQAInfo"""
-        name, description, retriever = cast(
-            Tuple[str, str, BaseRetriever],
+        name, description, retriever, llm = cast(
+            Tuple[str, str, BaseRetriever, BaseLLM],
             (
                 self.retrieval_qa_info.name,
                 self.retrieval_qa_info.description,
                 self.retrieval_qa_info.retriever,
+                self.retrieval_qa_info.llm,
             ),
         )
 
@@ -42,7 +42,7 @@ class RetrievalQAToolkit(BaseToolkit):
                 name=name, description=description
             ),
             retriever=retriever,
-            llm=self.llm,
+            llm=llm,
         )
 
         qa_with_sources_tool = RetrievalQAWithSourcesTool(
@@ -51,7 +51,7 @@ class RetrievalQAToolkit(BaseToolkit):
                 name=name, description=description
             ),
             retriever=retriever,
-            llm=self.llm,
+            llm=llm,
         )
 
         return [qa_tool, qa_with_sources_tool]
@@ -61,7 +61,6 @@ class RetrievalQARouterToolkit(BaseToolkit):
     """Toolkit for routing among Retriever QA related tools."""
 
     retrieval_qa_info: List[BaseRetrievalQAInfo] = Field(..., min_items=1, exclude=True)
-    llm: BaseLLM = Field(exclude=True)
     include_sources: Optional[bool] = False
 
     @validator("retrieval_qa_info", pre=True)
@@ -86,7 +85,7 @@ class RetrievalQARouterToolkit(BaseToolkit):
             name=rq_info.name,
             description=rq_info.description,
             retriever=rq_info.retriever,
-            llm=self.llm,
+            llm=rq_info.llm,
         )
         return qa_tool
 
