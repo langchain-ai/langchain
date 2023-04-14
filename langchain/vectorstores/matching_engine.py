@@ -20,8 +20,8 @@ class MatchingEngine(VectorStore):
         project_id: str,
         region: str,
         gcs_bucket_uri: str,
-        index_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
-        endpoint_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
+        index_name: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
+        endpoint_name: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
         json_credentials_path: Union[str, None] = None,
         embedder: Embeddings = TensorflowHubEmbeddings(model_url="https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
     ):
@@ -34,38 +34,52 @@ class MatchingEngine(VectorStore):
                 same location 
                 gcs_bucket_uri: .
         """
-        self._init_aiplatform(project_id, region, gcs_bucket_uri)
-        self.index = self._find_index_by_id(index_id)
-        self.embedder = embedder
-        self.endpoint_id = endpoint_id
-
-        self.gcs_client = None
+        super().__init__()
         self.project_id = project_id
-        self.json_credentials_path = json_credentials_path
+        self.region = region
+        self.gcs_client = None
         self.gcs_bucket_uri = gcs_bucket_uri
+        self.embedder = embedder
+
+        self.credentials = self._create_credentials_from_file(json_credentials_path)
+        self._init_aiplatform(project_id, region, gcs_bucket_uri)
+        self.index = self._create_index_by_name(index_name)
+        self.endpoint = self._create_endpoint_by_name(endpoint_name)
         
 
+    def _create_credentials_from_file(self, json_credentials_path: Union[str, None]) -> ServiceAccountCredentials:
+        """TODO docs"""
+        if json_credentials_path is not None:
+            with open(self.json_credentials_path, "r") as f:
+                creds_file = json.load(f)
+                self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_file)
+    
     def _init_aiplatform(self, project_id: str, region: str, gcs_bucket_uri: str) -> None:
         """TODO add docs"""
         aiplatform.init(
             project=project_id, 
             location=region, 
-            staging_bucket=gcs_bucket_uri
+            staging_bucket=gcs_bucket_uri,
+            credentials=self.credentials
         )
 
-    def _find_index_by_id(self, index_id: str) -> "aiplatform.MatchingEngineIndex":
-        """TODO add docs and change return type"""
-        indexes = aiplatform.MatchingEngineIndex.deployed_indexes() 
-        found_index = None
-        for index in indexes: 
-            if index.deployed_index_id == index_id:
-                found_index = index
-                break
-
-        if found_index is None:
-            raise ValueError(f"Matching Index with id {index_id} not found.")
-        
-        return found_index
+    def _create_index_by_name(self, index_name: str) -> "aiplatform.MatchingEngineIndex":
+        """TODO add docs"""
+        return aiplatform.MatchingEngineIndex(
+            index_name,
+            project=self.project_id,
+            location=self.region,
+            credentials=self.credentials
+        )
+    
+    def _create_endpoint_by_name(self, endpoint_name: str) -> "aiplatform.MatchingEngineIndexEndpoint":
+        """TODO add docs"""
+        return aiplatform.MatchingEngineIndexEndpoint(
+            endpoint_name,
+            project=self.project_id,
+            location=self.region,
+            credentials=self.credentials,
+        )
 
     
     def add_texts(
@@ -88,60 +102,74 @@ class MatchingEngine(VectorStore):
         embeddings = self.embedder.embed_documents(texts)
         jsons = []
         ids = []
-        for embedding in embeddings:
+        # TODO improve with async
+        for embedding, text in zip(embeddings, texts):
             id = uuid.uuid4()
             ids.append(id)
             jsons.append({
                 "id": id,
                 "embedding": embedding
             })
+            self._upload_to_gcs(text, f"documents/{id}")
 
         result_str = "\n".join(jsons)
 
-        client = self._get_gcs_client()
-        bucket = client.get_bucket(self.gcs_bucket_uri)
         filename = f"{uuid.uuid4()}.json"
-        blob = bucket.blob(filename)
-        blob.upload_from_string(result_str)
+        self._upload_to_gcs(result_str, filename)
 
         self.index = self.index.update_embeddings(
-            contents_delta_uri=f"{self.gcs_bucket_uri}/{filename}",
+            contents_delta_uri=f"{self.gcs_bucket_uri}/indexes/{filename}",
         )
 
         return ids
+    
+    def _upload_to_gcs(self, data: str, gcs_location: str) -> None:
+        """TODO add docs"""
+        client = self._get_gcs_client()
+        bucket = client.get_bucket(self.gcs_bucket_uri)
+        blob = bucket.blob(gcs_location)
+        blob.upload_from_string(data)
 
     def _get_gcs_client(self) -> storage.Client:
         """TODO add docs"""
-        if self.gcs_client is None:
-            credentials = None
-
-            if self.json_credentials_path is not None:
-                with open(self.json_credentials_path, "r") as f:
-                    creds_file = json.load(f)
-                    credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_file)
-            
+        if self.gcs_client is None:            
             self.gcs_client = storage.Client(
-                credentials=credentials, 
+                credentials=self.credentials, 
                 project=self.project_id
             )
 
         return self.gcs_client
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, 
+        query: str, 
+        k: int = 4, 
+        **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
 
-        [embedding_query] = self.embedder.embed_documents([query])
+        embedding_query = self.embedder.embed_documents([query])
 
-        response = self.index.match(
-            deployed_index_id=self.endpoint_id,
+        # I'm only getting the first one because queries receives an array and the similarity_search 
+        # method only recevies one query. This means that the match method will always return an array
+        # with only one element.
+        response = self.endpoint.match(
+            deployed_index_id=self.index.id,
             queries=embedding_query,
             num_neighbors=k,
-        )
+        )[0]
 
-        response
+        results = []
 
-        # TODO parse response
-
-        return None
+        for doc in response:
+            page_content = self._download_from_gcs(f"documents/{doc.id}")
+            results.append(Document(page_content=page_content))
+            
+        return results
+    
+    def _download_from_gcs(self, gcs_location: str) -> str:
+        """TODO add docs"""
+        client = self._get_gcs_client()
+        bucket = client.get_bucket(self.gcs_bucket_uri)
+        blob = bucket.blob(gcs_location)
+        return blob.download_as_string()
