@@ -115,7 +115,7 @@ class MatchingEngine(VectorStore):
         ids = []
         # TODO improve with async
         for embedding, text in zip(embeddings, texts):
-            id = uuid.uuid4()
+            id = str(uuid.uuid4())
             ids.append(id)
             jsons.append({
                 "id": id,
