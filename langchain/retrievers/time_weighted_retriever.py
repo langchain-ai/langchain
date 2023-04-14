@@ -1,9 +1,9 @@
 """Retriever that combines embedding similarity with recency in retrieving values."""
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
@@ -30,7 +30,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     decay_factor: float = Field(default=0.99)
     """The exponential decay factor used as decay_factor ** (hrs_passed)."""
 
-    k: int = 15
+    k: int = 4
     """The maximum number of documents to retrieve in a given call."""
 
     other_score_keys: List[str] = []
@@ -46,16 +46,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
-
-    @validator("vectorstore")
-    def validate_vectorstore(cls, vectorstore: VectorStore) -> VectorStore:
-        """Validate the vectorstore has the required methods implemented."""
-        if not hasattr(vectorstore, "similarity_search_with_score"):
-            raise ValueError(
-                f"Required method 'similarity_search_with_score not implemented"
-                f" for vectorstore of type {type(vectorstore)}"
-            )
-        return vectorstore
 
     def _get_combined_score(
         self,
@@ -76,18 +66,13 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             score += vector_salience
         return score
 
-    @property
-    def _similarity_search_with_score(
-        self,
-    ) -> Callable[[str], List[Tuple[Document, float]]]:
-        """Search the vector store for related docs and their similarities."""
-        return self.vectorstore.similarity_search_with_score  # type: ignore
-
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Tuple[Document, float]]
-        docs_and_scores = self._similarity_search_with_score(
-            query, **self.search_kwargs
+        docs_and_scores = (
+            self.vectorstore.similarity_search_with_normalized_similarities(
+                query, **self.search_kwargs
+            )
         )
         results = {}
         for fetched_doc, salience in docs_and_scores:
@@ -98,6 +83,10 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         """Return documents that are relevant to the query."""
+        if query.startswith("FOOBAR"):
+            import pdb
+
+            pdb.set_trace()
         current_time = datetime.now()
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
