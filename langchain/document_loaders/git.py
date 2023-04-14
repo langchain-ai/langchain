@@ -48,7 +48,7 @@ class GitLoader(BaseLoader):
 
         docs: List[Document] = []
 
-        for item in repo.tree().traverse():  
+        for item in repo.tree().traverse():
             if not isinstance(item, Blob):
                 continue
 
