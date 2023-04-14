@@ -28,7 +28,7 @@ class GitLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         try:
-            from git import Blob, Repo
+            from git import Blob, Repo  # type: ignore
         except ImportError as ex:
             raise ImportError(
                 "Could not import git python package. "
