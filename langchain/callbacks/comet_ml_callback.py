@@ -34,12 +34,10 @@ def _get_experiment(
 ) -> Any:
     comet_ml = import_comet_ml()
 
-    experiment = comet_ml.config.get_global_experiment()
-    if experiment is None:
-        experiment = comet_ml.Experiment(  # type: ignore
-            workspace=workspace,
-            project_name=project_name,
-        )
+    experiment = comet_ml.Experiment(  # type: ignore
+        workspace=workspace,
+        project_name=project_name,
+    )
 
     return experiment
 
