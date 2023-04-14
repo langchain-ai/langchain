@@ -1,23 +1,24 @@
 """Tools for interacting with retriever."""
 import json
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import BaseRetrievalQA, RetrievalQA
-from langchain.llms.base import BaseLLM
-from langchain.schema import BaseRetriever
+from langchain.schema import BaseLanguageModel, BaseRetriever
 from langchain.tools.base import BaseTool
 
 
-class BaseRetrievalQAInfo(BaseTool):
+class BaseRetrievalQAInfo(BaseModel):
     """Base class to store information"""
 
-    llm: BaseLLM = Field(exclude=True)
-    retriever: BaseRetriever = Field(exclude=True)
+    llm: BaseLanguageModel
+    retriever: BaseRetriever
+    name: str
+    description: str
 
-    class Config(BaseTool):
+    class Config(BaseTool.Config):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True

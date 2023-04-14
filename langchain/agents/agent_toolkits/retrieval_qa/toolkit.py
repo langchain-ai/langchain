@@ -4,8 +4,7 @@ from typing import List, Optional, Tuple, Union, cast
 from pydantic import Field, validator
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.llms.base import BaseLLM
-from langchain.schema import BaseRetriever
+from langchain.schema import BaseLanguageModel, BaseRetriever
 from langchain.tools import BaseTool
 from langchain.tools.retrieval_qa.tool import (
     BaseRetrievalQAInfo,
@@ -27,7 +26,7 @@ class RetrievalQAToolkit(BaseToolkit):
     def get_tools(self) -> list[BaseTool]:
         """Use static method from BaseRetrievalQAInfo"""
         name, description, retriever, llm = cast(
-            Tuple[str, str, BaseRetriever, BaseLLM],
+            Tuple[str, str, BaseRetriever, BaseLanguageModel],
             (
                 self.retrieval_qa_info.name,
                 self.retrieval_qa_info.description,

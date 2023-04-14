@@ -10,11 +10,11 @@ from langchain.agents.agent_toolkits.retrieval_qa.toolkit import (
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
+from langchain.schema.base import BaseLanguageModel
 
 
 def create_retrieval_qa_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: RetrievalQAToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
@@ -33,7 +33,7 @@ def create_retrieval_qa_agent(
 
 
 def create_retrieval_qa_router_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: RetrievalQARouterToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = ROUTER_PREFIX,
@@ -52,7 +52,7 @@ def create_retrieval_qa_router_agent(
 
 
 def _create_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: Any,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
