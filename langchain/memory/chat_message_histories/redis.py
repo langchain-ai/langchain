@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.schema import (
     AIMessage,
@@ -21,6 +21,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
+        **kwargs: Any
     ):
         try:
             import redis
@@ -31,7 +32,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
             )
 
         try:
-            self.redis_client = redis.Redis.from_url(url=url)
+            self.redis_client = redis.Redis.from_url(url=url, **kwargs)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
@@ -67,3 +68,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
     def clear(self) -> None:
         """Clear session memory from Redis"""
         self.redis_client.delete(self.key)
+
+    def ping(self) -> bool:
+        """Pings Redis DB"""
+        return self.redis_client.ping()
