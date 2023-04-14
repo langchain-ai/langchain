@@ -1,6 +1,5 @@
 """Vertex Matching Engine implementation of the vector store."""
 
-import json
 from google.cloud import aiplatform
 from google.cloud import storage
 from google.oauth2 import service_account
