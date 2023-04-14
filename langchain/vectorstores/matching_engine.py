@@ -1,18 +1,15 @@
 """Vertex Matching Engine implementation of the vector store."""
 
 import json
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union
-from langchain.vectorstores.base import VectorStore
-from langchain.docstore.document import Document
-import asyncio
-from functools import partial
 import uuid
-from langchain.embeddings import Embeddings, TensorflowHubEmbeddings
-from google.cloud import storage
+from google.cloud import aiplatform, storage
 from oauth2client.service_account import ServiceAccountCredentials
-import os
+from typing import Any, Iterable, List, Optional, Union
 
-from google.cloud import aiplatform
+from langchain.docstore.document import Document
+from langchain.embeddings import Embeddings, TensorflowHubEmbeddings
+from langchain.vectorstores.base import VectorStore
+
 
 class MatchingEngine(VectorStore):
 
@@ -153,8 +150,19 @@ class MatchingEngine(VectorStore):
         # I'm only getting the first one because queries receives an array and the similarity_search 
         # method only recevies one query. This means that the match method will always return an array
         # with only one element.
+
+        index_id = None
+
+        for index in self.endpoint.deployed_indexes:
+            if index.index == self.index.resource_name:
+                index_id = index.id
+                break
+        
+        if index_id == None:
+            raise ValueError(f"No index with id {self.index.resource_name} deployed on enpoint {self.endpoint.display_name}.")
+
         response = self.endpoint.match(
-            deployed_index_id=self.index.id,
+            deployed_index_id=index_id,
             queries=embedding_query,
             num_neighbors=k,
         )[0]
@@ -173,3 +181,13 @@ class MatchingEngine(VectorStore):
         bucket = client.get_bucket(self.gcs_bucket_uri)
         blob = bucket.blob(gcs_location)
         return blob.download_as_string()
+
+
+if __name__ == "__main__":
+    me = MatchingEngine(
+        project_id="scafati-joonix",
+        region="us-central1",
+        gcs_bucket_uri="gs://langchain-integration",
+        index_name="glove_100_1_langchain",
+        endpoint_name="tree_ah_glove_deployed_langchain"
+    )
