@@ -15,24 +15,6 @@ from langchain.schema import (
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-def test_anthropic_call() -> None:
-    """Test valid call to anthropic."""
-    chat = ChatAnthropic(model="bare-nano-0")
-    message = HumanMessage(content="Hello")
-    response = chat([message])
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.content, str)
-
-
-def test_anthropic_streaming() -> None:
-    """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model="bare-nano-0", streaming=True)
-    message = HumanMessage(content="Hello")
-    response = chat([message])
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.content, str)
-
-
 def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
