@@ -74,6 +74,7 @@ class MatchingEngine(VectorStore):
     def _create_index_by_id(self, index_id: str) -> "aiplatform.MatchingEngineIndex":
         """TODO add docs"""
         logger.debug(f"Creating matching engine index with id {index_id} {self.project_id} {self.region}.")
+        logger.debug(f"projects/{self.project_id}/locations/{self.region}/indexes/{index_id}")
         return aiplatform.MatchingEngineIndex(
             index_name=f"projects/{self.project_id}/locations/{self.region}/indexes/{index_id}"
         )
