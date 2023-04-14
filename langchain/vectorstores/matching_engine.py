@@ -3,7 +3,7 @@
 import json
 from google.cloud import aiplatform
 from google.cloud import storage
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 from typing import Any, Iterable, List, Optional, Union
 import uuid
 
@@ -48,12 +48,14 @@ class MatchingEngine(VectorStore):
         self.endpoint = self._create_endpoint_by_name(endpoint_name)
         
 
-    def _create_credentials_from_file(self, json_credentials_path: Union[str, None]) -> ServiceAccountCredentials:
+    def _create_credentials_from_file(self, json_credentials_path: Union[str, None]) -> service_account.Credentials:
         """TODO docs"""
+
+        credentials = None
         if json_credentials_path is not None:
-            with open(self.json_credentials_path, "r") as f:
-                creds_file = json.load(f)
-                self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(creds_file)
+            credentials = service_account.Credentials.from_service_account_file(json_credentials_path)
+
+        return credentials
     
     def _init_aiplatform(self, project_id: str, region: str, gcs_bucket_uri: str) -> None:
         """TODO add docs"""
