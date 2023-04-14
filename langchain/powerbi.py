@@ -1,8 +1,6 @@
 """Wrapper around a Power BI endpoint."""
-from __future__ import annotations
-
 import logging
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
@@ -24,16 +22,16 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     If the model is not RLS enabled, this will be ignored.
     """
 
-    group_id: str | None
+    group_id: Optional[str]
     dataset_id: str
-    table_names: list[str]
-    credential: ChainedTokenCredential | InteractiveCredential | None = None
-    token: str | None = None
-    impersonated_user_name: str | None = None
+    table_names: List[str]
+    credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
+    token: Optional[str] = None
+    impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(1, gt=0, le=10)
-    aiosession: aiohttp.ClientSession | None = Field(default=None)
+    aiosession: Optional[aiohttp.ClientSession] = Field(default=None)
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
-    schemas: dict[str, str] = Field(default_factory=dict, init=False)
+    schemas: Dict[str, str] = Field(default_factory=dict, init=False)
 
     @root_validator(pre=True, allow_reuse=True)
     def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -50,7 +48,7 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
         return f"{self.base_url}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
-    def headers(self) -> dict[str, str]:
+    def headers(self) -> Dict[str, str]:
         """Get the token."""
         token = None
         if self.token:
@@ -83,8 +81,8 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
         return self.get_table_info()
 
     def _get_tables_to_query(
-        self, table_names: List[str] | str | None = None
-    ) -> list[str]:
+        self, table_names: Optional[Union[List[str], str]] = None
+    ) -> List[str]:
         """Get the tables names that need to be queried."""
         if table_names is not None:
             if (
@@ -97,20 +95,22 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
                 return [table_names]
         return self.table_names
 
-    def _get_tables_todo(self, tables_todo: list[str]) -> list[str]:
+    def _get_tables_todo(self, tables_todo: List[str]) -> List[str]:
         for table in tables_todo:
             if table in self.schemas:
                 tables_todo.remove(table)
         return tables_todo
 
-    def _get_schema_for_tables(self, table_names: list[str]) -> str:
+    def _get_schema_for_tables(self, table_names: List[str]) -> str:
         """Create a string of the table schemas for the supplied tables."""
         schemas = [
             schema for table, schema in self.schemas.items() if table in table_names
         ]
         return ", ".join(schemas)
 
-    def get_table_info(self, table_names: List[str] | str | None = None) -> str:
+    def get_table_info(
+        self, table_names: Optional[Union[List[str], str]] = None
+    ) -> str:
         """Get information about specified tables."""
         tables_requested = self._get_tables_to_query(table_names)
         tables_todo = self._get_tables_todo(tables_requested)
@@ -130,7 +130,9 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 
-    async def aget_table_info(self, table_names: List[str] | str | None = None) -> str:
+    async def aget_table_info(
+        self, table_names: Optional[Union[List[str], str]] = None
+    ) -> str:
         """Get information about specified tables."""
         tables_requested = self._get_tables_to_query(table_names)
         tables_todo = self._get_tables_todo(tables_requested)
@@ -192,7 +194,8 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
 
 
 def json_to_md(
-    json_contents: list[dict[str, str | int | float]], table_name: str | None = None
+    json_contents: List[Dict[str, Union[str, int, float]]],
+    table_name: Optional[str] = None,
 ) -> str:
     """Converts a JSON object to a markdown table."""
     output_md = ""
