@@ -247,3 +247,4 @@ if __name__ == "__main__":
     )
 
     print(me.similarity_search("Cristian Castro"))
+    me.add_texts(["Cristian Castro", "Hannah Montanna"])
