@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, List
+from typing import Any, Dict, Iterable, List
 
 import aiohttp
 import requests
@@ -35,8 +35,8 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
     schemas: dict[str, str] = Field(default_factory=dict, init=False)
 
-    @root_validator
-    def token_or_credential_present(cls, values: dict) -> dict:
+    @root_validator(pre=True, allow_reuse=True)
+    def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credentials" in values:
             return values
