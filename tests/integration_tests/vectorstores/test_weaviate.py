@@ -69,6 +69,7 @@ class TestWeaviate:
         """Test end to end construction and MRR search."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
+
         docsearch = Weaviate.from_texts(
             texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
         )

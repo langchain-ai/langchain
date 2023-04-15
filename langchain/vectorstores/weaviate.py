@@ -45,7 +45,7 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
-        embedding: Embeddings,
+        embedding: Optional[Embeddings] = None,
         attributes: Optional[List[str]] = None,
     ):
         """Initialize with Weaviate client."""
@@ -150,7 +150,13 @@ class Weaviate(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        embedding = self._embedding.embed_query(query)
+        if self._embedding is not None:
+            embedding = self._embedding.embed_query(query)
+        else:
+            raise ValueError(
+                "max_marginal_relevance_search requires a suitable Embeddings object"
+            )
+
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         results = (
