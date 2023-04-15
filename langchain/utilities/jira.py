@@ -5,7 +5,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
-from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_CREATE_PROMPT
+from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT
 
 import json
 
@@ -13,7 +13,7 @@ import json
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira_client: Any  #: :meta private:
+    jira: Any  #: :meta private:
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
@@ -28,6 +28,11 @@ class JiraAPIWrapper(BaseModel):
             "id": "create",
             "name": "Create Issue",
             "description": JIRA_CREATE_PROMPT,
+        },
+        {
+            "id": "other",
+            "name": "All jira operations other than create and jql",
+            "description": JIRA_CATCH_ALL_PROMPT,
         }
     ]
 
@@ -66,7 +71,7 @@ class JiraAPIWrapper(BaseModel):
             username=jira_username,
             password=jira_api_token,
             cloud=True)
-        values["jira_client"] = jira
+        values["jira"] = jira
 
         return values
 
@@ -104,7 +109,7 @@ class JiraAPIWrapper(BaseModel):
         return parsed_string, raw_string
 
     def search(self, query: str) -> str:
-        jql_response = self.jira_client.jql(query)
+        jql_response = self.jira.jql(query)
         parsed, raw = self.jql_results_to_text(jql_response)
         return parsed
 
@@ -112,9 +117,16 @@ class JiraAPIWrapper(BaseModel):
         try:
             params = json.loads(query)
             print(params)
-            self.jira_client.create_issue(fields=dict(params))
+            self.jira.create_issue(fields=dict(params))
         except ValueError as e:
             print("Error: JSON provided by LLM incorrect")
+            print(e)
+
+    def other(self, query: str) -> str:
+        try:
+            exec(query)
+        except ValueError as e:
+            print("Error: jira call provided by LLM incorrect")
             print(e)
 
     def run(self, mode: str, query: str) -> str:
@@ -123,7 +135,5 @@ class JiraAPIWrapper(BaseModel):
             return self.search(query)
         elif mode == "create":
             return self.create(query)
-        # elif mode == "update":
-        #     return self.update(query)
-        # elif mode == "delete":
-        #     return self.delete(query)
+        elif mode == "other":
+            return self.other(query)
