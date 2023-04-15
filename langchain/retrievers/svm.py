@@ -22,7 +22,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
     index: Any
     texts: List[str]
     k: int = 4
-    relevancy_threshold: Optional[float] = None
+    relevancy_threshold: float = None
 
     class Config:
 
