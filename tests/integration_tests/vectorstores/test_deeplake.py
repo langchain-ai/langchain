@@ -1,10 +1,4 @@
 """Test Deep Lake functionality."""
-import os
-
-os.environ["BUGGER_OFF"] = "true"
-os.environ["DEEPLAKE_DOWNLOAD_PATH"] = "./testing/local_storage"
-os.environ["DEEPLAKE_PYTEST_ENABLED"] = "true"
-
 import deeplake
 import pytest
 from pytest import FixtureRequest
@@ -12,7 +6,6 @@ from pytest import FixtureRequest
 from langchain.docstore.document import Document
 from langchain.vectorstores import DeepLake
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
 
 
 @pytest.fixture
