@@ -201,7 +201,7 @@ class Annoy(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -236,7 +236,7 @@ class Annoy(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
