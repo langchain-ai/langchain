@@ -13,7 +13,9 @@ logger = logging.getLogger(__file__)
 class DiffbotLoader(BaseLoader):
     """Loader that loads Diffbot file json."""
 
-    def __init__(self, api_token: str, urls: List[str], continue_on_failure: bool = True):
+    def __init__(
+        self, api_token: str, urls: List[str], continue_on_failure: bool = True
+    ):
         """Initialize with API token, ids, and key."""
         self.api_token = api_token
         self.urls = urls
