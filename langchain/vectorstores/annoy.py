@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import pickle
 import uuid
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -49,12 +50,14 @@ class Annoy(VectorStore):
         self,
         embedding_function: Callable,
         index: Any,
+        metric: str,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
+        self.metric = metric
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
 
@@ -265,7 +268,9 @@ class Annoy(VectorStore):
         **kwargs: Any,
     ) -> Annoy:
         if metric not in INDEX_METRICS:
-            raise ValueError(f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}")
+            raise ValueError(
+                f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}"
+            )
         annoy = dependable_annoy_import()
         if not embeddings:
             raise ValueError("embeddings must be provided to build AnnoyIndex")
@@ -283,7 +288,7 @@ class Annoy(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(embedding.embed_query, index, docstore, index_to_id)
+        return cls(embedding.embed_query, index, metric, docstore, index_to_id)
 
     @classmethod
     def from_texts(
@@ -378,19 +383,21 @@ class Annoy(VectorStore):
         """
         path = Path(folder_path)
         os.makedirs(path, exist_ok=True)
-        # save index
+        # save index, index config, docstore and index_to_docstore_id
+        config_object = ConfigParser()
+        config_object["ANNOY"] = {
+            "f": self.index.f,
+            "metric": self.metric,
+        }
         self.index.save(str(path / "index.annoy"), prefault=prefault)
-        # save docstore and index_to_docstore_id
         with open(path / "index.pkl", "wb") as file:
-            pickle.dump((self.docstore, self.index_to_docstore_id), file)
+            pickle.dump((self.docstore, self.index_to_docstore_id, config_object), file)
 
     @classmethod
     def load_local(
         cls,
         folder_path: str,
         embeddings: Embeddings,
-        f: int = 0,
-        metric: str = DEFAULT_METRIC,
     ) -> Annoy:
         """Load Annoy index, docstore, and index_to_docstore_id to disk.
 
@@ -398,21 +405,21 @@ class Annoy(VectorStore):
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries.
-            f: Number of dimensions in the embeddings.
-            metric: Metric to use for the index.
         """
-        if metric not in INDEX_METRICS:
-            raise ValueError(f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}")
+
         path = Path(folder_path)
         # load index separately since it is not picklable
         annoy = dependable_annoy_import()
-        # derive embedding dimensionality from random doc if not provided
-        if not f:
-            f = len(embeddings.embed_documents(["dimension"])[0])
+        # load docstore and index_to_docstore_id
+        with open(path / "index.pkl", "rb") as file:
+            docstore, index_to_docstore_id, config_object = pickle.load(file)
+
+        f = int(config_object["ANNOY"]["f"])
+        metric = config_object["ANNOY"]["metric"]
 
         index = annoy.AnnoyIndex(f, metric=metric)
         index.load(str(path / "index.annoy"))
-        # load docstore and index_to_docstore_id
-        with open(path / "index.pkl", "rb") as file:
-            docstore, index_to_docstore_id = pickle.load(file)
-        return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
+
+        return cls(
+            embeddings.embed_query, index, metric, docstore, index_to_docstore_id
+        )
