@@ -1,21 +1,27 @@
 import json
+from typing import List
 
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseToolInterface
+
+FINISH_NAME = "finish"
 
 
 class PromptGenerator:
-    """
-    A class for generating custom prompt strings based on constraints, commands, resources, and performance evaluations.
+    """A class for generating custom prompt strings.
+
+    Does this based on constraints, commands, resources, and performance evaluations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the PromptGenerator object.
+
+        Starts with empty lists of constraints, commands, resources,
+        and performance evaluations.
         """
-        Initialize the PromptGenerator object with empty lists of constraints, commands, resources, and performance evaluations.
-        """
-        self.constraints = []
-        self.commands = []
-        self.resources = []
-        self.performance_evaluation = []
+        self.constraints: List[str] = []
+        self.commands: List[BaseToolInterface] = []
+        self.resources: List[str] = []
+        self.performance_evaluation: List[str] = []
         self.response_format = {
             "thoughts": {
                 "text": "thought",
@@ -27,7 +33,7 @@ class PromptGenerator:
             "command": {"name": "command name", "args": {"arg name": "value"}},
         }
 
-    def add_constraint(self, constraint):
+    def add_constraint(self, constraint: str) -> None:
         """
         Add a constraint to the constraints list.
 
@@ -36,16 +42,16 @@ class PromptGenerator:
         """
         self.constraints.append(constraint)
 
-    def add_tool(self, tool: BaseTool):
+    def add_tool(self, tool: BaseToolInterface) -> None:
         self.commands.append(tool)
 
-    def _generate_command_string(self, tool):
+    def _generate_command_string(self, tool: BaseToolInterface) -> str:
         args_string = ", ".join(
             f'"{key}": "{value}"' for key, value in tool.args.items()
         )
         return f"{tool.name}: {tool.description}, args: {args_string}"
 
-    def add_resource(self, resource):
+    def add_resource(self, resource: str) -> None:
         """
         Add a resource to the resources list.
 
@@ -54,7 +60,7 @@ class PromptGenerator:
         """
         self.resources.append(resource)
 
-    def add_performance_evaluation(self, evaluation):
+    def add_performance_evaluation(self, evaluation: str) -> None:
         """
         Add a performance evaluation item to the performance_evaluation list.
 
@@ -63,7 +69,7 @@ class PromptGenerator:
         """
         self.performance_evaluation.append(evaluation)
 
-    def _generate_numbered_list(self, items, item_type="list"):
+    def _generate_numbered_list(self, items: list, item_type: str = "list") -> str:
         """
         Generate a numbered list from given items based on the item_type.
 
@@ -75,14 +81,20 @@ class PromptGenerator:
             str: The formatted numbered list.
         """
         if item_type == "command":
-            return "\n".join(
-                f"{i+1}. {self._generate_command_string(item)}"
+            command_strings = [
+                f"{i + 1}. {self._generate_command_string(item)}"
                 for i, item in enumerate(items)
+            ]
+            finish_description = (
+                "use this to signal that you have finished all your objectives"
             )
+            finish_args = '"response": "final response to let people know you have finished your objectives"'
+            finish_string = f"{len(items) + 1}. {FINISH_NAME}: {finish_description}, args: {finish_args}"
+            return "\n".join(command_strings + [finish_string])
         else:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
-    def generate_prompt_string(self):
+    def generate_prompt_string(self) -> str:
         """
         Generate a prompt string based on the constraints, commands, resources, and performance evaluations.
 
@@ -101,9 +113,10 @@ class PromptGenerator:
         return prompt_string
 
 
-def get_prompt(tools):
-    """
-    This function generates a prompt string that includes various constraints, commands, resources, and performance evaluations.
+def get_prompt(tools: List[BaseToolInterface]) -> str:
+    """This function generates a prompt string.
+
+    It includes various constraints, commands, resources, and performance evaluations.
 
     Returns:
         str: The generated prompt string.

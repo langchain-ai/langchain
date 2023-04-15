@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List, Optional
 
 from langchain.auto_agents.autogpt.output_parser import (
@@ -5,28 +7,26 @@ from langchain.auto_agents.autogpt.output_parser import (
     BaseAutoGPTOutputParser,
 )
 from langchain.auto_agents.autogpt.prompt import AutoGPTPrompt
+from langchain.auto_agents.autogpt.prompt_generator import FINISH_NAME
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import AIMessage, Document, HumanMessage, SystemMessage
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    Document,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
 
 
-class Agent:
-    """Agent class for interacting with Auto-GPT.
-
-    Attributes:
-        ai_name: The name of the agent.
-        memory: The memory object to use.
-        full_message_history: The full message history.
-        next_action_count: The number of actions to execute.
-        prompt: The prompt to use.
-        user_input: The user input.
-    """
+class AutoGPT:
+    """Agent class for interacting with Auto-GPT."""
 
     def __init__(
         self,
-        ai_name,
+        ai_name: str,
         memory: VectorStoreRetriever,
         chain: LLMChain,
         output_parser: BaseAutoGPTOutputParser,
@@ -34,7 +34,7 @@ class Agent:
     ):
         self.ai_name = ai_name
         self.memory = memory
-        self.full_message_history = []
+        self.full_message_history: List[BaseMessage] = []
         self.next_action_count = 0
         self.chain = chain
         self.output_parser = output_parser
@@ -49,19 +49,20 @@ class Agent:
         tools: List[BaseTool],
         llm: BaseChatModel,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
-    ):
+    ) -> AutoGPT:
         prompt = AutoGPTPrompt(
             ai_name=ai_name,
             ai_role=ai_role,
             tools=tools,
             input_variables=["memory", "messages", "goals", "user_input"],
+            token_counter=llm.get_num_tokens,
         )
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             ai_name, memory, chain, output_parser or AutoGPTOutputParser(), tools
         )
 
-    def run(self, goals: List[str]):
+    def run(self, goals: List[str]) -> str:
         user_input = "Determine which next command to use, and respond using the format specified above:"
         # Interaction Loop
         loop_count = 0
@@ -85,6 +86,8 @@ class Agent:
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
             tools = {t.name: t for t in self.tools}
+            if action.name == FINISH_NAME:
+                return action.args["response"]
             if action.name in tools:
                 tool = tools[action.name]
                 observation = tool.call(action.args)

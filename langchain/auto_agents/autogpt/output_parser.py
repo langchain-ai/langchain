@@ -1,7 +1,8 @@
 import json
-from typing import Dict, NamedTuple, Union
+from abc import abstractmethod
+from typing import Dict, NamedTuple
 
-from langchain.schema import AgentAction, AgentFinish, BaseOutputParser
+from langchain.schema import BaseOutputParser
 
 
 class AutoGPTAction(NamedTuple):
@@ -10,6 +11,7 @@ class AutoGPTAction(NamedTuple):
 
 
 class BaseAutoGPTOutputParser(BaseOutputParser):
+    @abstractmethod
     def parse(self, text: str) -> AutoGPTAction:
         """Return AutoGPTAction"""
 

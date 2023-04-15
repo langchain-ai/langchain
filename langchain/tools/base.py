@@ -149,7 +149,7 @@ class BaseTool(BaseToolInterface):
         """Run the tool."""
         return self.call({"tool_input": tool_input}, **kwargs)
 
-    async def arun(self, tool_input: str, **kwargs) -> str:
+    async def arun(self, tool_input: str, **kwargs: Any) -> str:
         """Run the tool asynchronously."""
         observation = await self.acall({"tool_input": tool_input}, **kwargs)
         return observation
