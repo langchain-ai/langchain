@@ -54,6 +54,10 @@ class GitLoader(BaseLoader):
 
             file_path = os.path.join(self.repo_path, item.path)
 
+            ignored_files = repo.ignored([file_path])
+            if len(ignored_files):
+                continue
+
             # uses filter to skip files
             if self.file_filter and not self.file_filter(file_path):
                 continue
