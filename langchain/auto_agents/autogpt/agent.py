@@ -1,13 +1,15 @@
-from langchain.auto_agents.autogpt.prompt import AutoGPTPrompt
-from langchain.chat_models.base import BaseChatModel
-from langchain.tools.base import BaseTool
-from langchain.chains.llm import LLMChain
-from langchain.agents.agent import AgentOutputParser
 from typing import List, Optional
-from langchain.schema import SystemMessage, Document
 
+from langchain.auto_agents.autogpt.output_parser import (
+    AutoGPTOutputParser,
+    BaseAutoGPTOutputParser,
+)
+from langchain.auto_agents.autogpt.prompt import AutoGPTPrompt
+from langchain.chains.llm import LLMChain
+from langchain.chat_models.base import BaseChatModel
+from langchain.schema import AIMessage, Document, HumanMessage, SystemMessage
+from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
-from langchain.auto_agents.autogpt.output_parser import AutoGPTOutputParser
 
 
 class Agent:
@@ -21,13 +23,15 @@ class Agent:
         prompt: The prompt to use.
         user_input: The user input.
     """
-    def __init__(self,
-                 ai_name,
-                 memory: VectorStoreRetriever,
-                 chain: LLMChain,
-                 output_parser: AgentOutputParser,
-                 tools: List[BaseTool],
-                 ):
+
+    def __init__(
+        self,
+        ai_name,
+        memory: VectorStoreRetriever,
+        chain: LLMChain,
+        output_parser: BaseAutoGPTOutputParser,
+        tools: List[BaseTool],
+    ):
         self.ai_name = ai_name
         self.memory = memory
         self.full_message_history = []
@@ -37,52 +41,60 @@ class Agent:
         self.tools = tools
 
     @classmethod
-    def from_llm_and_tools(cls,     ai_name: str,
-    ai_role: str,
-                           memory: VectorStoreRetriever,
-    tools: List[BaseTool], llm: BaseChatModel, output_parser: Optional[AgentOutputParser] = None):
-        prompt = AutoGPTPrompt(ai_name=ai_name, ai_role=ai_role, tools=tools, input_variables=["memory", "messages", "goals"])
+    def from_llm_and_tools(
+        cls,
+        ai_name: str,
+        ai_role: str,
+        memory: VectorStoreRetriever,
+        tools: List[BaseTool],
+        llm: BaseChatModel,
+        output_parser: Optional[BaseAutoGPTOutputParser] = None,
+    ):
+        prompt = AutoGPTPrompt(
+            ai_name=ai_name,
+            ai_role=ai_role,
+            tools=tools,
+            input_variables=["memory", "messages", "goals", "user_input"],
+        )
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            ai_name,
-            memory,
-            chain,
-            output_parser or AutoGPTOutputParser(),
-            tools
+            ai_name, memory, chain, output_parser or AutoGPTOutputParser(), tools
         )
 
-
     def run(self, goals: List[str]):
+        user_input = "Determine which next command to use, and respond using the format specified above:"
         # Interaction Loop
         loop_count = 0
         while True:
-             # Discontinue if continuous limit is reached
+            # Discontinue if continuous limit is reached
             loop_count += 1
 
             # Send message to AI, get response
             assistant_reply = self.chain.run(
                 goals=goals,
                 messages=self.full_message_history,
-                memory=self.memory
+                memory=self.memory,
+                user_input=user_input,
             )
 
             # Print Assistant thoughts
             print(assistant_reply)
+            self.full_message_history.append(HumanMessage(content=user_input))
+            self.full_message_history.append(AIMessage(content=assistant_reply))
 
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
             tools = {t.name: t for t in self.tools}
-            if action.tool in tools:
-                 tool = tools[action.tool]
-                 observation = tool.run(action.tool_input)
-                 result = f"Command {tool.name} returned: {observation}"
+            if action.name in tools:
+                tool = tools[action.name]
+                observation = tool.call(action.args)
+                result = f"Command {tool.name} returned: {observation}"
             else:
-                result = f"Unknown command '{action.tool}'. Please refer to the 'COMMANDS' list for available commands and only respond in the specified JSON format."
+                result = f"Unknown command '{action.name}'. Please refer to the 'COMMANDS' list for available commands and only respond in the specified JSON format."
 
-
-            memory_to_add = (f"Assistant Reply: {assistant_reply} "
-                            f"\nResult: {result} "
-                             )
+            memory_to_add = (
+                f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
+            )
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
             self.full_message_history.append(SystemMessage(content=result))

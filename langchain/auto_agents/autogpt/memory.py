@@ -1,4 +1,5 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from pydantic import Field
 
 from langchain.memory.chat_memory import BaseChatMemory, get_prompt_input_key
@@ -6,9 +7,9 @@ from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class AutoGPTMemory(BaseChatMemory):
-
     retriever: VectorStoreRetriever = Field(exclude=True)
     """VectorStoreRetriever object to connect to."""
+
     @property
     def memory_variables(self) -> List[str]:
         return ["chat_history", "relevant_context"]
