@@ -24,6 +24,13 @@ logger = logging.getLogger()
 class TextSplitter(ABC):
     """Interface for splitting text into chunks."""
 
+    # define constants for the separator position
+    class position:
+        NONE = 0
+        START = 1
+        END = 2
+        BOTH = 3
+
     def __init__(
         self,
         chunk_size: int = 4000,
@@ -64,15 +71,25 @@ class TextSplitter(ABC):
         metadatas = [doc.metadata for doc in documents]
         return self.create_documents(texts, metadatas)
 
-    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
+    def _join_docs(self, docs: List[str], separator: str, position: int = 0) -> Optional[str]:
         text = separator.join(docs)
+        if position == self.position.START:
+            # add the separator at the beginning
+            text = separator + text
+        elif position == self.position.END:
+            # add the separator at the end
+            text = text + separator
+        elif position == self.position.BOTH:
+            # add the separator at the beginning and the end
+            text = separator + text + separator
+        # remove extra spaces
         text = text.strip()
         if text == "":
             return None
         else:
             return text
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+    def _merge_splits(self, splits: Iterable[str], separator: str, position: int = 0) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
@@ -92,7 +109,7 @@ class TextSplitter(ABC):
                         f"which is longer than the specified {self._chunk_size}"
                     )
                 if len(current_doc) > 0:
-                    doc = self._join_docs(current_doc, separator)
+                    doc = self._join_docs(current_doc, separator, position)
                     if doc is not None:
                         docs.append(doc)
                     # Keep on popping if:
@@ -109,7 +126,7 @@ class TextSplitter(ABC):
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += _len + (separator_len if len(current_doc) > 1 else 0)
-        doc = self._join_docs(current_doc, separator)
+        doc = self._join_docs(current_doc, separator, position)
         if doc is not None:
             docs.append(doc)
         return docs
@@ -236,6 +253,23 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     Recursively tries to split by different characters to find one
     that works.
+
+    Each separator can be:
+        * a string
+        * a list containing the separator and the position
+
+    Example:
+
+    separators = [
+        ["\n## ", TextSplitter.position.START],
+        ["\n### ", TextSplitter.position.START],
+        ["\n```", TextSplitter.position.BOTH],
+        "\n\n",
+        [".", TextSplitter.position.END],
+        "\n",
+        " ",
+        ""
+    ]
     """
 
     def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
@@ -243,17 +277,31 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str, prev_separator = None) -> List[str]:
         """Split incoming text and return chunks."""
         final_chunks = []
-        # Get appropriate separator to use
-        separator = self._separators[-1]
-        for _s in self._separators:
-            if _s == "":
-                separator = _s
-                break
-            if _s in text:
-                separator = _s
+        while True:
+            # Get the next separator to use using the previous separator
+            if prev_separator and prev_separator in self._separators:
+                prev_separator_index = self._separators.index(prev_separator)
+                if prev_separator_index < len(self._separators) - 1:
+                    separator = self._separators[prev_separator_index + 1]
+                else:
+                    separator = ""
+            else:
+                separator = self._separators[0]
+            # save the separator for the next iteration
+            prev_separator = separator
+            # if the separator is a list, get the position to re-add the separator
+            if isinstance(separator, list):
+                position = separator[1]
+                separator = separator[0]
+            else:
+                position = self.position.NONE
+            # if the separator is not in the text, try the next one
+            if separator not in text:
+                continue
+            else:
                 break
         # Now that we have the separator, split the text
         if separator:
@@ -267,13 +315,13 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 _good_splits.append(s)
             else:
                 if _good_splits:
-                    merged_text = self._merge_splits(_good_splits, separator)
+                    merged_text = self._merge_splits(_good_splits, separator, position)
                     final_chunks.extend(merged_text)
                     _good_splits = []
-                other_info = self.split_text(s)
+                other_info = self.split_text(s, prev_separator)
                 final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, separator)
+            merged_text = self._merge_splits(_good_splits, separator, position)
             final_chunks.extend(merged_text)
         return final_chunks
 
