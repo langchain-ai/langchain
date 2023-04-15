@@ -32,7 +32,6 @@ class Agent:
         self.memory = memory
         self.full_message_history = []
         self.next_action_count = 0
-        self.user_input = "Determine which next command to use, and respond using the format specified above:"
         self.chain = chain
         self.output_parser = output_parser
         self.tools = tools
@@ -42,7 +41,7 @@ class Agent:
     ai_role: str,
                            memory: VectorStoreRetriever,
     tools: List[BaseTool], llm: BaseChatModel, output_parser: Optional[AgentOutputParser] = None):
-        prompt = AutoGPTPrompt(ai_name=ai_name, ai_role=ai_role, tools=tools, input_variables=["memory", "messages", "user_input"])
+        prompt = AutoGPTPrompt(ai_name=ai_name, ai_role=ai_role, tools=tools, input_variables=["memory", "messages", "goals"])
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             ai_name,
@@ -53,7 +52,7 @@ class Agent:
         )
 
 
-    def run(self):
+    def run(self, goals: List[str]):
         # Interaction Loop
         loop_count = 0
         while True:
@@ -62,7 +61,7 @@ class Agent:
 
             # Send message to AI, get response
             assistant_reply = self.chain.run(
-                user_input=self.user_input,
+                goals=goals,
                 messages=self.full_message_history,
                 memory=self.memory
             )
@@ -72,14 +71,17 @@ class Agent:
 
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
-            tool = {t.name: t for t in self.tools}[action.tool]
-            # Execute command
-            observation = tool.run(action.tool_input)
-            result = f"Command {tool.name} returned: {observation}"
+            tools = {t.name: t for t in self.tools}
+            if action.tool in tools:
+                 tool = tools[action.tool]
+                 observation = tool.run(action.tool_input)
+                 result = f"Command {tool.name} returned: {observation}"
+            else:
+                result = f"Unknown command '{action.tool}'. Please refer to the 'COMMANDS' list for available commands and only respond in the specified JSON format."
+
 
             memory_to_add = (f"Assistant Reply: {assistant_reply} "
                             f"\nResult: {result} "
-                            f"\nHuman Feedback: {self.user_input} "
                              )
 
             self.memory.add_documents([Document(page_content=memory_to_add)])

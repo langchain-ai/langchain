@@ -13,10 +13,8 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     ai_name: str
     ai_role: str
     tools: List[BaseTool]
-    ai_goals: List[str] = Field(default=["Increase net worth", "Grow Twitter Account",
-                    "Develop and manage multiple businesses autonomously"])
 
-    def construct_full_prompt(self) -> str:
+    def construct_full_prompt(self, goals) -> str:
         """
         Returns a prompt to the user with the class information in an organized fashion.
 
@@ -31,7 +29,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
 
         # Construct full prompt
         full_prompt = f"You are {self.ai_name}, {self.ai_role}\n{prompt_start}\n\nGOALS:\n\n"
-        for i, goal in enumerate(self.ai_goals):
+        for i, goal in enumerate(goals):
             full_prompt += f"{i+1}. {goal}\n"
 
         full_prompt += f"\n\n{get_prompt(self.tools)}"
@@ -42,11 +40,11 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
         relevant_memory = memory.get_relevant_documents(str(previous_messages[-2:]))
-        messages.append(SystemMessage(content=self.construct_full_prompt()))
+        messages.append(SystemMessage(content=self.construct_full_prompt(kwargs["goals"])))
         messages.append(SystemMessage(content=f"The current time and date is {time.strftime('%c')}"))
         messages.append(SystemMessage(content=f"This reminds you of these events from your past:\n{relevant_memory}\n\n"))
         messages.extend(previous_messages[-2:])
-        messages.append(HumanMessage(content=kwargs["user_input"]))
+        messages.append(HumanMessage(content="Determine which next command to use, and respond using the format specified above:"))
         return messages
 
 
