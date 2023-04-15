@@ -60,6 +60,8 @@ class Annoy(VectorStore):
 
     def add_texts(
         self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
         raise NotImplementedError(
@@ -358,6 +360,7 @@ class Annoy(VectorStore):
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
+
         return cls.__from(
             texts, embeddings, embedding, metadatas, metric, trees, n_jobs, **kwargs
         )
@@ -370,14 +373,13 @@ class Annoy(VectorStore):
                 and index_to_docstore_id to.
             prefault: Whether to pre-load the index into memory.
         """
-        folder_path = Path(folder_path)
-        os.makedirs(folder_path, exist_ok=True)
-        annoy = dependable_annoy_import()
+        path = Path(folder_path)
+        os.makedirs(path, exist_ok=True)
         # save index
-        self.index.save(str(folder_path / "index.annoy"), prefault=prefault)
+        self.index.save(str(path / "index.annoy"), prefault=prefault)
         # save docstore and index_to_docstore_id
-        with open(folder_path / "index.pkl", "wb") as f:
-            pickle.dump((self.docstore, self.index_to_docstore_id), f)
+        with open(path / "index.pkl", "wb") as file:
+            pickle.dump((self.docstore, self.index_to_docstore_id), file)
 
     @classmethod
     def load_local(
@@ -407,6 +409,6 @@ class Annoy(VectorStore):
         index = annoy.AnnoyIndex(f, metric=metric)
         index.load(str(path / "index.annoy"))
         # load docstore and index_to_docstore_id
-        with open(path / "index.pkl", "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+        with open(path / "index.pkl", "rb") as file:
+            docstore, index_to_docstore_id = pickle.load(file)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)

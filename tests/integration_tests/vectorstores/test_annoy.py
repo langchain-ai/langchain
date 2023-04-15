@@ -119,5 +119,5 @@ def test_annoy_local_save_load() -> None:
     loaded_docsearch = Annoy.load_local(temp_dir.name, FakeEmbeddings())
 
     assert docsearch.index_to_docstore_id == loaded_docsearch.index_to_docstore_id
-    assert docsearch.docstore._dict == loaded_docsearch.docstore._dict
+    assert docsearch.docstore.__dict__ == loaded_docsearch.docstore.__dict__
     assert loaded_docsearch.index is not None
