@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-from langchain.docstore.base import AddableMixin, Docstore
+from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.docstore.in_memory import InMemoryDocstore
 from langchain.embeddings.base import Embeddings
@@ -269,7 +269,10 @@ class Annoy(VectorStore):
     ) -> Annoy:
         if metric not in INDEX_METRICS:
             raise ValueError(
-                f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}"
+                (
+                    f"Unsupported distance metric: {metric}. "
+                    f"Expected one of {list(INDEX_METRICS)}"
+                )
             )
         annoy = dependable_annoy_import()
         if not embeddings:
@@ -406,7 +409,6 @@ class Annoy(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries.
         """
-
         path = Path(folder_path)
         # load index separately since it is not picklable
         annoy = dependable_annoy_import()
