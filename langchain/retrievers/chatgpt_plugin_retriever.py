@@ -21,20 +21,9 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
 
         arbitrary_types_allowed = True
 
-    def get_relevant_documents(
-        self,
-        query: str,
-        filter: Optional[dict[str, str]] = None,
-        top_k: Optional[int] = 3,
-    ) -> List[Document]:
-        response = requests.post(
-            f"{self.url}/query",
-            json={"queries": [{"query": query, "filter": filter, "top_k": top_k}]},
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.bearer_token}",
-            },
-        )
+    def get_relevant_documents(self, query: str) -> List[Document]:
+        url, json, headers = self._create_request(query)
+        response = requests.post(url, json=json, headers=headers)
         results = response.json()["results"][0]["results"]
         docs = []
         for d in results:
@@ -42,18 +31,8 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
             docs.append(Document(page_content=content, metadata=d))
         return docs
 
-    async def aget_relevant_documents(
-        self,
-        query: str,
-        filter: Optional[dict[str, str]] = None,
-        top_k: Optional[int] = 3,
-    ) -> List[Document]:
-        url = f"{self.url}/query"
-        json = ({"queries": [{"query": query, "filter": filter, "top_k": top_k}]},)
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.bearer_token}",
-        }
+    async def aget_relevant_documents(self, query: str) -> List[Document]:
+        url, json, headers = self._create_request(query)
 
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
