@@ -44,7 +44,7 @@ ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]
 CMD ["tests/unit_tests"]
 
 # Use a multi-stage build to run integration tests
-FROM dependencies AS integration_tests
+FROM dependencies AS vectorstores_tests
 
 # Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
 COPY . .
@@ -55,5 +55,5 @@ RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with "test" --wi
 ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]
 
 # Set the default command to run vectorstores integration tests
-CMD ["tests/integration_tests"]
-#CMD["tests/integration_tests/vectorstores_new"]
+#CMD ["tests/integration_tests"]
+CMD ["tests/integration_tests/vectorstores_new/"]
