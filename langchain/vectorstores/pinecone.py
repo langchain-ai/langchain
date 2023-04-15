@@ -242,7 +242,6 @@ class Pinecone(VectorStore):
             for j, line in enumerate(lines_batch):
                 metadata[j][text_key] = line
             to_upsert = zip(ids_batch, embeds, metadata)
-            print('to_upsert', ids_batch)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key, namespace)
