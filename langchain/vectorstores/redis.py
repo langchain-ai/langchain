@@ -104,6 +104,7 @@ class Redis(VectorStore):
             client = redis.from_url(url=redis_url, **kwargs)
 
             # check if redis has redisearch module installed
+            # FIXME: DvirDu: We should always check for this
             if check_module:
                 await self._check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
 
@@ -121,9 +122,6 @@ class Redis(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         index_name: str,
-        metadatas: Optional[List[dict]] = None,
-        keys: Optional[List[dict]] = None,
-        **kwargs
     ):
         """"""
         try:
@@ -137,17 +135,17 @@ class Redis(VectorStore):
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
-        # Load redis client
-        client = await self._load_redis_client(self, index_name, **kwargs)
 
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
         # Prefix for the document keys
         prefix = self._redis_prefix(index_name)
         # Check if index exists
-        if not await self._check_redis_index_exists(client, index_name):
+        if not await self._check_redis_index_exists(self.client, index_name):
             # Constants
-            dim = len(embeddings[0])
+
+            # Create embeddings for the first document to get the dimension
+            # TODO: This is a hack to get the dimension of the embeddings, we should
+            # find a better way to do this.
+            dim = len(embedding.embed_documents(texts[0]))
             distance_metric = (
                 "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
             )
@@ -165,14 +163,10 @@ class Redis(VectorStore):
                 ),
             )
             # Create Redis Index
-            await client.ft(index_name).create_index(
+            await self.client.ft(index_name).create_index(
                 fields=schema,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
-
-        # Write initial batch of documents
-        await self._write_redis_batch(self, client, prefix, texts, metadatas, keys, embeddings=embeddings)
-        return client, index_name
 
     async def _query_redis(self, embedding: List[float], k: int) -> List[Document]:
         """"""
@@ -223,40 +217,6 @@ class Redis(VectorStore):
             for result in results.docs
         ]
 
-    async def _write_redis_batch(
-        self,
-        client: RedisType,
-        prefix: str,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        keys: Optional[List[dict]] = None,
-        embeddings: Optional[List[float]] = None,
-        embedding_function: Optional[Callable] = None
-    ) -> List[str]:
-        """ """
-        # Init list of keys
-        ids: List[str] = []
-        # Write data to redis in a pipeline
-        pipeline = await client.pipeline(transaction=False)
-        for i, text in enumerate(texts):
-            # Use provided key otherwise use default key
-            key = keys[i] if keys else self._redis_key(prefix)
-            metadata = metadatas[i] if metadatas else {}
-            embedding = embeddings[i] if embeddings else embedding_function(text)
-            await pipeline.hset(
-                key,
-                mapping={
-                    "content": text,
-                    "content_vector": np.array(
-                        embedding, dtype=np.float32
-                    ).tobytes(),
-                    "metadata": json.dumps(metadata),
-                },
-            )
-            ids.append(key)
-        await pipeline.execute()
-        return ids
-
     def add_texts(
         self,
         texts: Iterable[str],
@@ -277,7 +237,29 @@ class Redis(VectorStore):
         """Add texts data to an existing index."""
         prefix = self._redis_prefix(self.index_name)
         keys = kwargs.get("keys")
-        ids = await self._write_redis_batch(self.client, prefix, texts, metadatas, keys, embedding_function=self.embedding_function)
+        # Get embeddings in batch
+        embeddings = self.embedding_function(texts)
+                # Init list of keys
+        ids: List[str] = []
+        # Write data to redis in a pipeline
+        pipeline = await self.client.pipeline(transaction=False)
+        for i, text in enumerate(texts):
+            # Use provided key otherwise use default key
+            key = keys[i] if keys else self._redis_key(prefix)
+            metadata = metadatas[i] if metadatas else {}
+            embedding = embeddings[i]
+            await pipeline.hset(
+                key,
+                mapping={
+                    "content": text,
+                    "content_vector": np.array(
+                        embedding, dtype=np.float32
+                    ).tobytes(),
+                    "metadata": json.dumps(metadata),
+                },
+            )
+            ids.append(key)
+        await pipeline.execute()
         return ids
 
     async def asimilarity_search_with_score(
@@ -412,12 +394,10 @@ class Redis(VectorStore):
                 )
         """
         loop = asyncio.get_event_loop()
-        keys = kwargs.pop("keys", None)
-        # Setup Redis Index
-        client, index_name = loop.run_until_complete(
-            cls._setup_redis_index(cls, texts, embedding, index_name, metadatas, keys, **kwargs)
+        instance = loop.run_until_complete(
+            cls.afrom_texts(texts, embedding, index_name, metadatas, **kwargs)
         )
-        return cls(client, index_name, embedding.embed_query, loop=loop)
+        return instance
 
     @classmethod
     async def afrom_texts(
@@ -428,10 +408,12 @@ class Redis(VectorStore):
         index_name: Optional[str] = None,
         **kwargs: Any
     ) -> Redis:
-        keys = kwargs.pop("keys", None)
-        # Setup Redis Index
-        client, index_name = await cls._setup_redis_index(cls, texts, embedding, index_name, metadatas, keys, **kwargs)
-        return cls(client, index_name, embedding.embed_query)
+        # Setup Redis client
+        client = await cls._load_redis_client(cls, index_name=index_name, **kwargs)
+        instance = cls(client, index_name, embedding.embed_query)
+        await instance._setup_redis_index(texts, embedding, index_name)
+        await instance.aadd_texts(texts, metadatas, **kwargs)
+        return instance
 
     @staticmethod
     def drop_index(
@@ -481,7 +463,7 @@ class Redis(VectorStore):
         """Connect to an existing Redis index."""
         loop = asyncio.get_event_loop()
         client = loop.run_until_complete(
-            cls._load_redis_client(cls, index_name, **kwargs)
+            cls._load_redis_client(cls, index_name = index_name, check_index = True, **kwargs)
         )
         return cls(client, index_name, embedding.embed_query, loop=loop)
 
