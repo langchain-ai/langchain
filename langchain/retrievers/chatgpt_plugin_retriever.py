@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from typing import List, Optional
 
 import aiohttp
@@ -13,6 +12,8 @@ from langchain.schema import BaseRetriever, Document
 class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     url: str
     bearer_token: str
+    top_k: int = 3
+    filter: dict | None = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
@@ -70,3 +71,20 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
             content = d.pop("text")
             docs.append(Document(page_content=content, metadata=d))
         return docs
+
+    def _create_request(self, query: str) -> tuple[str, dict, dict]:
+        url = f"{self.url}/query"
+        json = {
+            "queries": [
+                {
+                    "query": query,
+                    "filter": self.filter,
+                    "top_k": self.top_k,
+                }
+            ]
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.bearer_token}",
+        }
+        return url, json, headers
