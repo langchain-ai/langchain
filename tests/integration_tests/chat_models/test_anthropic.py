@@ -20,6 +20,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
+        model="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -35,6 +36,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
+        model="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
