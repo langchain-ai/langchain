@@ -3,6 +3,7 @@ import pytest
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import (
+    TextSplitter,
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -135,5 +136,57 @@ Bye!\n\n-H."""
         "ggg",
         "some how.",
         "Bye!\n\n-H.",
+    ]
+    assert output == expected_output
+
+
+def test_recursive_text_splitter_separators() -> None:
+    """Test keeping some separators on text splitter."""
+
+    markdown_document = """# Header 1
+
+The description for this
+
+- Item 1
+- Item 2
+- Item 3
+
+## Header 2
+
+Here is some code:
+
+```python
+import something
+
+def add(a, b):
+    return a + b
+
+def another(arg1, arg2, arg3):
+    pass
+```
+After the code block
+
+This is the last paragraph
+"""
+
+    separators = [
+        ["\n## ", TextSplitter.position.START],
+        ["\n### ", TextSplitter.position.START],
+        ["\n```", TextSplitter.position.BOTH],
+        "\n\n",
+        [".", TextSplitter.position.END],
+        "\n",
+        " ",
+        ""
+    ]
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=70, chunk_overlap=0, separators=separators)
+    output = splitter.split_text(markdown_document)
+    expected_output = [
+        "# Header 1\n\nThe description for this\n\n- Item 1\n- Item 2\n- Item 3",
+        "## Header 2\n\nHere is some code:\n\n```python\nimport something",
+        'def add(a, b):\n    return a + b',
+        'def another(arg1, arg2, arg3):\n    pass\n```\nAfter the code block',
+        'This is the last paragraph'
     ]
     assert output == expected_output
