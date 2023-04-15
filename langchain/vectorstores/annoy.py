@@ -264,7 +264,8 @@ class Annoy(VectorStore):
         n_jobs: int = -1,
         **kwargs: Any,
     ) -> Annoy:
-        assert metric in INDEX_METRICS, f"Invalid metric {metric}"
+        if metric not in INDEX_METRICS:
+            raise ValueError(f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}")
         annoy = dependable_annoy_import()
         f = len(embeddings[0])
         index = annoy.AnnoyIndex(f, metric=metric)
