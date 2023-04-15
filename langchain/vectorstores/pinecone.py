@@ -231,6 +231,7 @@ class Pinecone(VectorStore):
                 ids_batch = ids[i:i_end]
             else:
                 ids_batch = [str(uuid.uuid4()) for n in range(i, i_end)]
+
             # create embeddings
             embeds = embedding.embed_documents(lines_batch)
             # prep metadata and upsert batch
@@ -241,7 +242,7 @@ class Pinecone(VectorStore):
             for j, line in enumerate(lines_batch):
                 metadata[j][text_key] = line
             to_upsert = zip(ids_batch, embeds, metadata)
-
+            print('to_upsert', ids_batch)
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key, namespace)

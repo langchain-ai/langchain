@@ -10,7 +10,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
 
-index_name = "langchain-test-index"  # name of the index
+index_name = "demo1"#"langchain-test-index"  # name of the index
 namespace_name = "langchain-test-namespace"  # name of the namespace
 dimension = 1536  # dimension of the embeddings
 
@@ -34,6 +34,7 @@ class TestPinecone:
 
     @classmethod
     def setup_class(cls) -> None:
+        print("setup_class")
         reset_pinecone()
 
         cls.index = pinecone.Index(index_name)
@@ -61,6 +62,7 @@ class TestPinecone:
 
     @classmethod
     def teardown_class(cls) -> None:
+        print("teardown_class")
         index_stats = cls.index.describe_index_stats()
         for _namespace_name in index_stats["namespaces"].keys():
             cls.index.delete(delete_all=True, namespace=_namespace_name)
@@ -130,8 +132,9 @@ class TestPinecone:
             namespace=namespace_name,
         )
         output = docsearch.similarity_search_with_score(
-            "foo", k=3, namespace=namespace_name
+            "foo", k=300, namespace=namespace_name
         )
+
         docs = [o[0] for o in output]
         scores = [o[1] for o in output]
         sorted_documents = sorted(docs, key=lambda x: x.metadata["page"])
@@ -151,6 +154,7 @@ class TestPinecone:
         # Create two indexes with the same name but different namespaces
         texts_1 = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts_1))]
+
         Pinecone.from_texts(
             texts_1,
             embedding_openai,
