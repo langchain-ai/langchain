@@ -81,7 +81,8 @@ class Chroma(VectorStore):
                 self._client_settings = chromadb.config.Settings()
                 if persist_directory is not None:
                     self._client_settings = chromadb.config.Settings(
-                        chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
+                        chroma_db_impl="duckdb+parquet",
+                        persist_directory=persist_directory,
                     )
             self._client = chromadb.Client(self._client_settings)
 
@@ -282,7 +283,7 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.Client] = None,  
+        client: Optional[chromadb.Client] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -349,6 +350,5 @@ class Chroma(VectorStore):
             collection_name=collection_name,
             persist_directory=persist_directory,
             client_settings=client_settings,
-            client=client, 
-
+            client=client,
         )
