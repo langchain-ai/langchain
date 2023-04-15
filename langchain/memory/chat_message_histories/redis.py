@@ -11,6 +11,14 @@ from langchain.schema import (
     messages_from_dict,
 )
 
+try:
+    import redis
+except ImportError:
+    raise ValueError(
+        "Could not import redis python package. "
+        "Please install it with `pip install redis`."
+    )
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,27 +26,15 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         session_id: str,
-        url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
-        **kwargs: Any
+        redis_client: Optional[redis.client] = None,
     ):
-        try:
-            import redis
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-
-        try:
-            self.redis_client = redis.Redis.from_url(url=url, **kwargs)
-        except redis.exceptions.ConnectionError as error:
-            logger.error(error)
 
         self.session_id = session_id
         self.key_prefix = key_prefix
         self.ttl = ttl
+        self.redis_client = redis_client
 
     @property
     def key(self) -> str:
@@ -52,6 +48,13 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         items = [json.loads(m.decode("utf-8")) for m in _items[::-1]]
         messages = messages_from_dict(items)
         return messages
+
+    def from_url(self, url: str, **kwargs: Any) -> None:
+        """Constructs redis client from url"""
+        try:
+            self.redis_client = redis.Redis.from_url(url=url, **kwargs)
+        except redis.exceptions.ConnectionError as error:
+            logger.error(error)
 
     def add_user_message(self, message: str) -> None:
         self.append(HumanMessage(content=message))
