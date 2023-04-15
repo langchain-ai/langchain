@@ -246,7 +246,6 @@ class Annoy(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
         embedding = self.embedding_function(query)
         docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
         return docs
@@ -260,6 +259,7 @@ class Annoy(VectorStore):
         metadatas: Optional[List[dict]] = None,
         metric: str = DEFAULT_METRIC,
         trees: int = 100,
+        n_jobs: int = -1,
         **kwargs: Any,
     ) -> Annoy:
         assert metric in INDEX_METRICS, f"Invalid metric {metric}"
@@ -268,7 +268,7 @@ class Annoy(VectorStore):
         index = annoy.AnnoyIndex(f, metric=metric)
         for i, emb in enumerate(embeddings):
             index.add_item(i, emb)
-        index.build(trees)
+        index.build(trees, n_jobs=n_jobs)
 
         documents = []
         for i, text in enumerate(texts):
@@ -286,9 +286,20 @@ class Annoy(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        metric: str = DEFAULT_METRIC,
+        trees: int = 100,
+        n_jobs: int = -1,
         **kwargs: Any,
     ) -> Annoy:
         """Construct Annoy wrapper from raw documents.
+
+        Args:
+            texts: List of documents to index.
+            embedding: Embedding function to use.
+            metadatas: List of metadata dictionaries to associate with documents.
+            metric: Metric to use for indexing. Defaults to "angular".
+            trees: Number of trees to use for indexing. Defaults to 100.
+            n_jobs: Number of jobs to use for indexing. Defaults to -1.
 
         This is a user friendly interface that:
             1. Embeds documents.
@@ -306,7 +317,9 @@ class Annoy(VectorStore):
                 index = Annoy.from_texts(texts, embeddings)
         """
         embeddings = embedding.embed_documents(texts)
-        return cls.__from(texts, embeddings, embedding, metadatas, **kwargs)
+        return cls.__from(
+            texts, embeddings, embedding, metadatas, metric, trees, n_jobs, **kwargs
+        )
 
     @classmethod
     def from_embeddings(
@@ -314,9 +327,20 @@ class Annoy(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        metric: str = DEFAULT_METRIC,
+        trees: int = 100,
+        n_jobs: int = -1,
         **kwargs: Any,
     ) -> Annoy:
         """Construct Annoy wrapper from embeddings.
+
+        Args:
+            text_embeddings: List of tuples of (text, embedding)
+            embedding: Embedding function to use.
+            metadatas: List of metadata dictionaries to associate with documents.
+            metric: Metric to use for indexing. Defaults to "angular".
+            trees: Number of trees to use for indexing. Defaults to 100.
+            n_jobs: Number of jobs to use for indexing. Defaults to -1
 
         This is a user friendly interface that:
             1. Creates an in memory docstore with provided embeddings
@@ -334,7 +358,9 @@ class Annoy(VectorStore):
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
-        return cls.__from(texts, embeddings, embedding, metadatas, **kwargs)
+        return cls.__from(
+            texts, embeddings, embedding, metadatas, metric, trees, n_jobs, **kwargs
+        )
 
     def save_local(self, folder_path: str, prefault: bool = False) -> None:
         """Save Annoy index, docstore, and index_to_docstore_id to disk.
