@@ -88,7 +88,8 @@ class LlamaCpp(LLM):
     """The number of tokens to look back when applying the repeat_penalty."""
 
     client_verbose: Optional[bool] = True
-    """A flag to indicate whether to print detailed information during the execution of the program."""
+    """A flag to indicate whether to print detailed information 
+    during the execution of the program."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

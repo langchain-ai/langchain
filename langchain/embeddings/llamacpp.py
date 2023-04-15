@@ -54,7 +54,8 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     Should be a number between 1 and n_ctx."""
 
     client_verbose: Optional[bool] = True
-    """A flag to indicate whether to print detailed information during the execution of the program."""
+    """A flag to indicate whether to print detailed information 
+    during the execution of the program."""
 
     class Config:
         """Configuration for this pydantic object."""
