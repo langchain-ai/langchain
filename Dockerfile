@@ -49,7 +49,7 @@ FROM dependencies AS vectorstores_tests
 # Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
 COPY . .
 
-RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with "test" --with "test_integration"
+RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with "test" --with "test_integration_vectorstores"
 
 # Set the entrypoint to run integration tests using Poetry
 ENTRYPOINT ["/opt/poetry/bin/poetry", "run", "pytest"]

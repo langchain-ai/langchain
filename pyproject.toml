@@ -103,12 +103,22 @@ transformers = "^4.27.4"
 pandas = "^2.0.0"
 deeplake = "^3.2.21"
 weaviate-client = "^3.15.5"
-#torch = "^1.0.0"
+torch = "^1.0.0"
 chromadb = "^0.3.21"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 gptcache = "^0.1.9"
 promptlayer = "^0.1.80"
+
+[tool.poetry.group.test_integration_vectorstores]
+optional = true
+
+[tool.poetry.group.test_integration_vectorstores.dependencies]
+pytest-vcr = "^1.0.2"
+tiktoken = "^0.3.3"
+chromadb = "^0.3.21"
+python-dotenv = "^1.0.0"
+pinecone-client = "^2.2.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
