@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import BaseModel, Extra, root_validator
@@ -43,14 +53,14 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
 
 
 def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
-    """Use tenacity to retry the completion call."""
+    """Use tenacity to retry the embedding call."""
     retry_decorator = _create_retry_decorator(embeddings)
 
     @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
+    def _embed_with_retry(**kwargs: Any) -> Any:
         return embeddings.client.create(**kwargs)
 
-    return _completion_with_retry(**kwargs)
+    return _embed_with_retry(**kwargs)
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -99,6 +109,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
+    allowed_special: Union[Literal["all"], Set[str]] = set()
+    disallowed_special: Union[Literal["all"], Set[str], Tuple[()]] = "all"
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 6
@@ -176,7 +188,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         return values
 
@@ -195,7 +207,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             for i, text in enumerate(texts):
                 # replace newlines, which can negatively affect performance.
                 text = text.replace("\n", " ")
-                token = encoding.encode(text)
+                token = encoding.encode(
+                    text,
+                    allowed_special=self.allowed_special,
+                    disallowed_special=self.disallowed_special,
+                )
                 for j in range(0, len(token), self.embedding_ctx_length):
                     tokens += [token[j : j + self.embedding_ctx_length]]
                     indices += [i]
@@ -226,15 +242,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for OpenAIEmbeddings. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
-        # replace newlines, which can negatively affect performance.
+        # handle large input text
         if self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
+            # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
             return embed_with_retry(self, input=[text], engine=engine)["data"][0][
                 "embedding"
@@ -253,7 +270,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # handle large batches of texts
+        # handle batches of large input text
         if self.embedding_ctx_length > 0:
             return self._get_len_safe_embeddings(texts, engine=self.document_model_name)
         else:
@@ -275,7 +292,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             text: The text to embed.
 
         Returns:
-            Embeddings for the text.
+            Embedding for the text.
         """
         embedding = self._embedding_func(text, engine=self.query_model_name)
         return embedding

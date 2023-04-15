@@ -53,6 +53,15 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     successful_requests: int = 0
     total_cost: float = 0.0
 
+    def __repr__(self) -> str:
+        return (
+            f"Tokens Used: {self.total_tokens}\n"
+            f"\tPrompt Tokens: {self.prompt_tokens}\n"
+            f"\tCompletion Tokens: {self.completion_tokens}\n"
+            f"Successful Requests: {self.successful_requests}\n"
+            f"Total Cost (USD): ${self.total_cost}"
+        )
+
     @property
     def always_verbose(self) -> bool:
         """Whether to call verbose callbacks even if verbose is False."""
