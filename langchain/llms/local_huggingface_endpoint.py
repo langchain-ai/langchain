@@ -1,9 +1,9 @@
 """Wrapper around custom APIs."""
+import asyncio
+from functools import partial
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-import asyncio
-from functools import partial
 from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
@@ -100,9 +100,7 @@ class LocalHuggingFaceEndpoint(LLM):
             raise ValueError(f"Error raised by inference endpoint: {e}")
         response_dict = response.json()
         if "error" in response_dict:
-            raise ValueError(
-                f"Error raised by inference API: {response_dict['error']}"
-            )
+            raise ValueError(f"Error raised by inference API: {response_dict['error']}")
         if self.task == "text-generation":
             # Text generation return includes the starter text.
             text = response_dict[0]["generated_text"][len(prompt) :]
@@ -116,9 +114,8 @@ class LocalHuggingFaceEndpoint(LLM):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
-        
+
     async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to custom inference endpoint."""
         func = partial(self._call, prompt, stop)
-        return await asyncio.get_event_loop().run_in_executor(None, func)        
-        
+        return await asyncio.get_event_loop().run_in_executor(None, func)

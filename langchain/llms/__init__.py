@@ -13,10 +13,10 @@ from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain.llms.local_huggingface_endpoint import LocalHuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.llamacpp import LlamaCpp
+from langchain.llms.local_huggingface_endpoint import LocalHuggingFaceEndpoint
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
