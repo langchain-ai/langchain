@@ -1,16 +1,16 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
-import re
 from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.output_parsers.conversational_agent_output_parser import ConversationalAgentOutputParser
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseLanguageModel, BaseOutputParser
 from langchain.tools.base import BaseTool
 
 
@@ -18,6 +18,7 @@ class ConversationalAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
+    output_parser: BaseOutputParser
 
     @property
     def _agent_type(self) -> str:
@@ -77,15 +78,7 @@ class ConversationalAgent(Agent):
         return self.ai_prefix
 
     def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
-        if f"{self.ai_prefix}:" in llm_output:
-            return self.ai_prefix, llm_output.split(f"{self.ai_prefix}:")[-1].strip()
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
-        match = re.search(regex, llm_output)
-        if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
-        action = match.group(1)
-        action_input = match.group(2)
-        return action.strip(), action_input.strip(" ").strip('"')
+        return self.output_parser.parse(llm_output)
 
     @classmethod
     def from_llm_and_tools(
@@ -95,6 +88,7 @@ class ConversationalAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        output_parser: Optional[BaseOutputParser] = None,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
@@ -103,6 +97,7 @@ class ConversationalAgent(Agent):
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
+        _output_parser = output_parser or ConversationalAgentOutputParser(tools=tools, llm=llm, FORMAT_INSTRUCTIONS=FORMAT_INSTRUCTIONS)
         prompt = cls.create_prompt(
             tools,
             ai_prefix=ai_prefix,
@@ -119,5 +114,5 @@ class ConversationalAgent(Agent):
         )
         tool_names = [tool.name for tool in tools]
         return cls(
-            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, **kwargs
+            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, output_parser=_output_parser, **kwargs
         )

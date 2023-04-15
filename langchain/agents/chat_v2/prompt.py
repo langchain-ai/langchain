@@ -61,24 +61,3 @@ def create_prompt(
     return AgentScratchPadChatPromptTemplate(
         input_variables=input_variables, messages=messages
     )
-
-
-class ChatOutputParser(AgentOutputParser):
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if "Final Answer:" in text:
-            return AgentFinish(
-                # Return values is generally always a dictionary with a single `output` key
-                # It is not recommended to try anything else at the moment :)
-                return_values={"output": text.split("Final Answer:")[-1].strip()},
-                log=text,
-            )
-        try:
-            _, action, _ = text.split("```")
-            response = json.loads(action.strip())
-            agent_action = AgentAction(
-                tool=response["action"], tool_input=response["action_input"], log=text
-            )
-            return agent_action
-
-        except Exception:
-            raise ValueError(f"Could not parse LLM output: {text}")

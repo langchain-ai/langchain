@@ -1,6 +1,7 @@
 """Common schema objects."""
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar
 
@@ -380,6 +381,14 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+    def is_json_parsable(self, s: str):
+        """Helper to validate whether LLM output is JSON Parsable."""
+        try:
+            json.loads(s)
+            return True
+        except ValueError:
+            return False
 
 
 class OutputParserException(Exception):

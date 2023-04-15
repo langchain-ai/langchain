@@ -1,17 +1,17 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from __future__ import annotations
 
-import re
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
 from langchain.agents.agent_types import AgentType
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.output_parsers.mrkl_agent_output_parser import MRKLAgentOutputParser
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseLanguageModel, BaseOutputParser
 from langchain.tools.base import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
@@ -30,29 +30,10 @@ class ChainConfig(NamedTuple):
     action: Callable
     action_description: str
 
-
-def get_action_and_input(llm_output: str) -> Tuple[str, str]:
-    """Parse out the action and input from the LLM output.
-
-    Note: if you're specifying a custom prompt for the ZeroShotAgent,
-    you will need to ensure that it meets the following Regex requirements.
-    The string starting with "Action:" and the following string starting
-    with "Action Input:" should be separated by a newline.
-    """
-    if FINAL_ANSWER_ACTION in llm_output:
-        return "Final Answer", llm_output.split(FINAL_ANSWER_ACTION)[-1].strip()
-    # \s matches against tab/newline/whitespace
-    regex = r"Action: (.*?)[\n]*Action Input:[\s]*(.*)"
-    match = re.search(regex, llm_output, re.DOTALL)
-    if not match:
-        raise ValueError(f"Could not parse LLM output: `{llm_output}`")
-    action = match.group(1).strip()
-    action_input = match.group(2)
-    return action, action_input.strip(" ").strip('"')
-
-
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
+
+    output_parser: BaseOutputParser
 
     @property
     def _agent_type(self) -> str:
@@ -106,6 +87,7 @@ class ZeroShotAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        output_parser: Optional[BaseOutputParser] = None,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
@@ -124,8 +106,9 @@ class ZeroShotAgent(Agent):
             prompt=prompt,
             callback_manager=callback_manager,
         )
+        _output_parser = output_parser or MRKLAgentOutputParser(tools=tools, llm=llm, FORMAT_INSTRUCTIONS=FORMAT_INSTRUCTIONS)
         tool_names = [tool.name for tool in tools]
-        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, output_parser=_output_parser, **kwargs)
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
@@ -137,7 +120,7 @@ class ZeroShotAgent(Agent):
                 )
 
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        return get_action_and_input(text)
+        return self.output_parser.parse(text)
 
 
 class MRKLChain(AgentExecutor):

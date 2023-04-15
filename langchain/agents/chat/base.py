@@ -1,8 +1,8 @@
-import json
 from typing import Any, List, Optional, Sequence, Tuple
 
 from langchain.agents.agent import Agent
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.output_parsers.chat_agent_output_parser import ChatAgentOutputParser
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
@@ -11,13 +11,15 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AgentAction, BaseLanguageModel
+from langchain.schema import AgentAction, BaseLanguageModel, BaseOutputParser
 from langchain.tools import BaseTool
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class ChatAgent(Agent):
+    output_parser: BaseOutputParser
+
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
@@ -46,13 +48,7 @@ class ChatAgent(Agent):
     def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
         if FINAL_ANSWER_ACTION in text:
             return "Final Answer", text.split(FINAL_ANSWER_ACTION)[-1].strip()
-        try:
-            _, action, _ = text.split("```")
-            response = json.loads(action.strip())
-            return response["action"], response["action_input"]
-
-        except Exception:
-            raise ValueError(f"Could not parse LLM output: {text}")
+        return self.output_parser.parse(text)
 
     @property
     def _stop(self) -> List[str]:
@@ -89,10 +85,12 @@ class ChatAgent(Agent):
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
-        cls._validate_tools(tools)
+        cls._validate_tools(tools),
+        _output_parser = output_parser or ChatAgentOutputParser(llm, tools, FORMAT_INSTRUCTIONS=FORMAT_INSTRUCTIONS)
         prompt = cls.create_prompt(
             tools,
             prefix=prefix,
@@ -106,7 +104,7 @@ class ChatAgent(Agent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
-        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+        return cls(llm_chain=llm_chain, allowed_tools=tool_names, output_parser=_output_parser, **kwargs)
 
     @property
     def _agent_type(self) -> str:
