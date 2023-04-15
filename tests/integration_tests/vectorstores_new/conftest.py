@@ -21,8 +21,8 @@ def vcr_config() -> dict:
 
     def before_record_request(request: Request) -> Union[Request, None]:
         if (
-                request.uri == "https://openaipublic.blob.core.windows.net/encodings"
-                               "/cl100k_base.tiktoken"
+            request.uri == "https://openaipublic.blob.core.windows.net/encodings"
+            "/cl100k_base.tiktoken"
         ):
             return None
         return request
@@ -72,11 +72,6 @@ def embedding() -> OpenAIEmbeddings:
     # Double check that the API key is set
     assert os.getenv("OPENAI_API_KEY") is not None
     return OpenAIEmbeddings()
-
-
-@pytest.fixture(scope="function")
-def collection_name() -> str:
-    return "langchain-test-collection"
 
 
 # Define a fixture that returns a query string to use for testing

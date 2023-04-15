@@ -59,13 +59,6 @@ class TestChromaFilesystemStatic(FilesystemTestStatic):
 
         change_default_db_directory(cls.db_dir)
 
-    @pytest.mark.xfail(reason="duplicate documents are not handled correctly")
-    async def test_from_texts_with_ids(self, *args: Any, **kwargs: Any) -> None:
-        """
-        FIXME:
-        This test is failing because duplicate documents are not handled correctly
-        """
-
     @pytest.mark.asyncio
     @pytest.mark.skip(reason="Not implemented yet")
     async def test_from_texts_async(self, **args: Any) -> None:

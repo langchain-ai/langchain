@@ -20,6 +20,8 @@ from langchain.vectorstores import VectorStore
 # Set up logging configuration
 logging.basicConfig(level=logging.DEBUG)
 
+DEFAULT_COLLECTION_NAME = "langchain-test-collection"
+
 
 class BaseTest:
     """
@@ -33,7 +35,7 @@ class BaseTest:
 
     vector_store_class: Type[VectorStore]
     vector_store: Union[VectorStore, None] = None
-    collection_name: str = "langchain-test-collection"
+    collection_name: str = DEFAULT_COLLECTION_NAME
     docsearch: Union[VectorStore, None] = None
     logger: logging.Logger
 
@@ -106,7 +108,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -126,7 +128,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_with_ids(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test adding documents to a VectorStore with ids.
@@ -153,14 +155,17 @@ class MixinStaticTest(BaseTest, ABC):
         assert len(first) == len(second)
         ids = [uuid.uuid4().hex for _ in range(len(texts))]
         self.docsearch.add_texts(texts, ids=ids, embedding=embedding)
-        duplicated = self.docsearch.similarity_search(query, k=1)
-        # Ensure that one duplicate is inserted.
+        duplicated = self.docsearch.similarity_search(query, k=2)
+
+        # Ensure that at least one duplicate is inserted.
         assert len(duplicated) == len(first) * 2
+        assert first[0].page_content == duplicated[0].page_content
+        assert first[0].page_content == duplicated[1].page_content
 
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_async(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -177,10 +182,10 @@ class MixinStaticTest(BaseTest, ABC):
 
     @pytest.mark.vcr()
     def test_from_documents(
-            self,
-            documents: List[Document],
-            embedding: Embeddings,
-            query: str,
+        self,
+        documents: List[Document],
+        embedding: Embeddings,
+        query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
@@ -198,11 +203,11 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_documents_async(
-            self,
-            documents: List[Document],
-            embedding: Embeddings,
-            collection_name: str,
-            query: str,
+        self,
+        documents: List[Document],
+        embedding: Embeddings,
+        collection_name: str,
+        query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
