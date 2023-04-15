@@ -267,6 +267,8 @@ class Annoy(VectorStore):
         if metric not in INDEX_METRICS:
             raise ValueError(f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}")
         annoy = dependable_annoy_import()
+        if not embeddings:
+            raise ValueError("embeddings must be provided to build AnnoyIndex")
         f = len(embeddings[0])
         index = annoy.AnnoyIndex(f, metric=metric)
         for i, emb in enumerate(embeddings):
