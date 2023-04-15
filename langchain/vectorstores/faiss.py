@@ -316,12 +316,7 @@ class FAISS(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(
-            embedding.embed_query,
-            index,
-            docstore,
-            index_to_id,
-        )
+        return cls(embedding.embed_query, index, docstore, index_to_id, **kwargs)
 
     @classmethod
     def from_texts(
