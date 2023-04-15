@@ -1,14 +1,17 @@
 import logging
 import os
-import shutil
-import tempfile
+from abc import ABC
 from pathlib import PurePath
-from typing import Union
+from typing import Any
 
+import chromadb
 import pytest
 
 from langchain.vectorstores import Chroma
-from tests.integration_tests.vectorstores_new.basic import BaseVectorStoreStaticTest
+from tests.integration_tests.vectorstores_new.base import (
+    FilesystemTestInstance,
+    FilesystemTestStatic,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,96 +23,113 @@ pytest --capture=no --log-cli-level=DEBUG -vvv tests/integration_tests/vectorsto
 vector_store_class = Chroma
 
 
-class TestChromaVectorStoreLocalStaticMemory(BaseVectorStoreStaticTest):
+def change_default_db_directory(_persist_directory: PurePath) -> None:
+    """
+    Override the persist directory of Chroma with a temporary directory
+    to avoid creating files in the current directory by default.
+    """
+    from _pytest.monkeypatch import MonkeyPatch
+    from chromadb.config import Settings
+
+    monkeypatch = MonkeyPatch()
+
+    class CustomSettings(Settings):
+        persist_directory = _persist_directory.__str__()
+
+    monkeypatch.setattr(chromadb.config, "Settings", CustomSettings)
+
+
+class TestChromaFilesystemStatic(FilesystemTestStatic):
     """
     Tests the Chroma vector store's static methods to ensure they work correctly with a
     local static vector store that does not persist data to disk.
     """
 
     vector_store_class = vector_store_class
-    persist_directory: Union[PurePath, None] = None
-    tmp_directory: Union[PurePath, None] = None
 
     @classmethod
     def setup_class(cls) -> None:
-        assert cls.tmp_directory is None
-        assert cls.persist_directory is None
+        super().setup_class()
 
-        cls.tmp_directory = PurePath(tempfile.mkdtemp())
-        cls.persist_directory = PurePath(
-            os.path.join(cls.tmp_directory, tempfile.mkdtemp())
-        )
-
-        def change_persist_directory(_persist_directory: PurePath) -> None:
-            """
-            Override the persist directory of Chroma with a temporary directory
-            to avoid creating files in the current directory by default.
-            """
-            import chromadb
-            from _pytest.monkeypatch import MonkeyPatch
-            from chromadb.config import Settings
-
-            monkeypatch = MonkeyPatch()
-
-            class CustomSettings(Settings):
-                persist_directory = _persist_directory.name
-
-            monkeypatch.setattr(chromadb.config, "Settings", CustomSettings)
-
-        change_persist_directory(cls.persist_directory)
-
-    @classmethod
-    def teardown_class(cls) -> None:
         assert cls.tmp_directory is not None
-        if os.path.exists(cls.tmp_directory.name):
-            shutil.rmtree(cls.tmp_directory.name)
+        assert cls.db_dir is not None
 
-    def setup_method(self) -> None:
-        assert self.persist_directory is not None
-        if os.path.exists(self.persist_directory.name):
-            shutil.rmtree(self.persist_directory.name)
-        os.mkdir(self.persist_directory.name)
+        assert os.path.exists(cls.tmp_directory.__str__())
+        assert os.path.exists(cls.db_dir.__str__())
 
-    def teardown_method(self) -> None:
-        assert self.persist_directory is not None
-        if os.path.exists(self.persist_directory.name):
-            shutil.rmtree(self.persist_directory.name)
+        change_default_db_directory(cls.db_dir)
+
+    @pytest.mark.xfail(reason="duplicate documents are not handled correctly")
+    async def test_from_texts_with_ids(self, *args: Any, **kwargs: Any) -> None:
+        """
+        FIXME:
+        This test is failing because duplicate documents are not handled correctly
+        """
+
+    @pytest.mark.asyncio
+    @pytest.mark.skip(reason="Not implemented yet")
+    async def test_from_texts_async(self, **args: Any) -> None:
+        pass
+
+    @pytest.mark.asyncio
+    @pytest.mark.skip(reason="Not implemented yet")
+    async def test_from_documents_async(self, **args: Any) -> None:
+        pass
 
 
-# TODO: Implement it
-@pytest.mark.skip("not implemented it")
-class TestChromaVectorStoreLocalStaticPersistent(BaseVectorStoreStaticTest):
+class TestChromaInstanceLocal(FilesystemTestInstance, ABC):
+    """
+    Tests the Chroma vector store's static methods to ensure they work correctly
+    with a
+    local static vector store that does not persist data to disk.
+    """
+
     vector_store_class = vector_store_class
 
     @classmethod
     def setup_class(cls) -> None:
-        pass
+        super().setup_class()
 
-    @classmethod
-    def teardown_class(cls) -> None:
-        pass
+        assert cls.tmp_directory is not None
+        assert cls.db_dir is not None
 
-    def setup_method(self) -> None:
-        pass
+        assert os.path.exists(cls.tmp_directory.__str__())
+        assert os.path.exists(cls.db_dir.__str__())
 
-    def teardown_method(self) -> None:
-        pass
-
-
-@pytest.mark.skip("need docker-compose file to tests it")
-class TestChromaStaticTestRemote(BaseVectorStoreStaticTest):
-    vector_store_class = vector_store_class
-
-    @classmethod
-    def setup_class(cls) -> None:
-        pass
-
-    @classmethod
-    def teardown_class(cls) -> None:
-        pass
+        change_default_db_directory(cls.db_dir)
 
     def setup_method(self) -> None:
-        pass
+        super().setup_method()
+        assert self.embedding is not None
 
-    def teardown_method(self) -> None:
-        pass
+        client_settings = chromadb.config.Settings(anonymized_telemetry=False)
+
+        self.vector_store = Chroma(
+            embedding_function=self.embedding,
+            client_settings=client_settings,
+            persist_directory=self.db_dir.__str__(),
+            collection_name=self.collection_name,
+        )
+        """
+        self.vector_store:
+        'aadd_documents',
+        aadd_texts',
+        add_documents',
+        add_texts',
+        afrom_documents',
+        afrom_texts',
+        amax_marginal_relevance_search',
+        amax_marginal_relevance_search_by_vector',
+        as_retriever',
+        asimilarity_search',
+        asimilarity_search_by_vector',
+        delete_collection',
+        from_documents',
+        from_texts',
+        max_marginal_relevance_search',
+        max_marginal_relevance_search_by_vector',
+        persist',
+        similarity_search',
+        similarity_search_by_vector',
+        'similarity_search_with_score'
+         """

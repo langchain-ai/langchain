@@ -27,7 +27,7 @@ Any new dependencies should be added by running:
 
 ```bash
 # add package and install it after adding:
-poetry add tiktoken@latest --group "test_integration" && poetry install --with test_integration
+poetry add pyfakefs@latest --group "test_integration" && poetry install --with test_integration
 ```
 
 Before running any tests, you should start a specific Docker container that has all the
