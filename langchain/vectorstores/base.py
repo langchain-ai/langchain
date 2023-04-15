@@ -1,14 +1,18 @@
 """Interface for vector stores."""
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional
+from functools import partial
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.schema import BaseRetriever
+
+VST = TypeVar("VST", bound="VectorStore")
 
 
 class VectorStore(ABC):
@@ -81,7 +85,12 @@ class VectorStore(ABC):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search, query, k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -101,10 +110,15 @@ class VectorStore(ABC):
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to embedding vector."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_by_vector, embedding, k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -122,13 +136,18 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     async def amax_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
-        raise NotImplementedError
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.max_marginal_relevance_search, query, k, fetch_k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -146,18 +165,18 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     async def amax_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         raise NotImplementedError
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[VST],
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -165,11 +184,11 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls,
+        cls: Type[VST],
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -178,22 +197,22 @@ class VectorStore(ABC):
     @classmethod
     @abstractmethod
     def from_texts(
-        cls,
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
 
     @classmethod
     async def afrom_texts(
-        cls,
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         raise NotImplementedError
 
@@ -243,3 +262,13 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
+
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add documents to vectorstore."""
+        return self.vectorstore.add_documents(documents, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Add documents to vectorstore."""
+        return await self.vectorstore.aadd_documents(documents, **kwargs)

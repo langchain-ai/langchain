@@ -28,7 +28,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     """Chain interacts with an OpenAPI endpoint using natural language."""
 
     api_request_chain: LLMChain
-    api_response_chain: LLMChain
+    api_response_chain: Optional[LLMChain]
     api_operation: APIOperation
     requests: Requests = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
@@ -144,15 +144,18 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         self.callback_manager.on_text(
             response_text, color="blue", end="\n", verbose=self.verbose
         )
-        _answer = self.api_response_chain.predict_and_parse(
-            response=response_text,
-            instructions=instructions,
-        )
-        answer = cast(str, _answer)
-        self.callback_manager.on_text(
-            answer, color="yellow", end="\n", verbose=self.verbose
-        )
-        return self._get_output(answer, intermediate_steps)
+        if self.api_response_chain is not None:
+            _answer = self.api_response_chain.predict_and_parse(
+                response=response_text,
+                instructions=instructions,
+            )
+            answer = cast(str, _answer)
+            self.callback_manager.on_text(
+                answer, color="yellow", end="\n", verbose=self.verbose
+            )
+            return self._get_output(answer, intermediate_steps)
+        else:
+            return self._get_output(response_text, intermediate_steps)
 
     @classmethod
     def from_url_and_method(
@@ -184,6 +187,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests: Optional[Requests] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
+        raw_response: bool = False,
         **kwargs: Any
         # TODO: Handle async
     ) -> "OpenAPIEndpointChain":
@@ -196,7 +200,10 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         requests_chain = APIRequesterChain.from_llm_and_typescript(
             llm, typescript_definition=operation.to_typescript(), verbose=verbose
         )
-        response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
+        if raw_response:
+            response_chain = None
+        else:
+            response_chain = APIResponderChain.from_llm(llm, verbose=verbose)
         _requests = requests or Requests()
         return cls(
             api_request_chain=requests_chain,
