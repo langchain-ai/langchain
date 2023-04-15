@@ -1,5 +1,6 @@
 """Test Weaviate functionality."""
 import logging
+import os
 from typing import Generator, Union
 
 import pytest
@@ -16,8 +17,12 @@ cd tests/integration_tests/vectorstores/docker-compose
 docker compose -f weaviate.yml up
 """
 
-
 class TestWeaviate:
+    @classmethod
+    def setup_class(cls) -> None:
+        if not os.getenv("OPENAI_API_KEY"):
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+
     @pytest.fixture(scope="class", autouse=True)
     def weaviate_url(self) -> Union[str, Generator[str, None, None]]:
         """Return the weaviate url."""
@@ -29,12 +34,12 @@ class TestWeaviate:
         client.schema.delete_all()
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_similarity_search_without_metadata(self, weaviate_url: str) -> None:
+    def test_similarity_search_without_metadata(self, weaviate_url: str, embedding_openai: OpenAIEmbeddings) -> None:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
         docsearch = Weaviate.from_texts(
             texts,
-            OpenAIEmbeddings(),
+            embedding_openai,
             weaviate_url=weaviate_url,
         )
 
@@ -42,24 +47,31 @@ class TestWeaviate:
         assert output == [Document(page_content="foo")]
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_similarity_search_with_metadata(self, weaviate_url: str) -> None:
+    def test_similarity_search_with_metadata(self, weaviate_url: str, embedding_openai: OpenAIEmbeddings) -> None:
         """Test end to end construction and search with metadata."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = Weaviate.from_texts(
-            texts, OpenAIEmbeddings(), metadatas=metadatas, weaviate_url=weaviate_url
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
         )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
-    def test_max_marginal_relevance_search(self, weaviate_url: str) -> None:
+    @pytest.mark.vcr(ignore_localhost=True)
+    def test_max_marginal_relevance_search(self, weaviate_url: str, embedding_openai: OpenAIEmbeddings) -> None:
         """Test end to end construction and MRR search."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = Weaviate.from_texts(
-            texts,  OpenAIEmbeddings(), metadatas=metadatas, weaviate_url=weaviate_url
+            texts,  embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
         )
-        output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
+        # if lambda=1 the algorithm should be equivalent to standard ranking
+        standard_ranking = docsearch.similarity_search("foo", k=2)
+        output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3, lambda_mult=1.)
+        assert output == standard_ranking
+
+        # if lambda=0 the algorithm should favour maximal diversity
+        output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3, lambda_mult=0.)
         assert output == [
             Document(page_content="foo", metadata={"page": 0}),
             Document(page_content="bar", metadata={"page": 1}),
