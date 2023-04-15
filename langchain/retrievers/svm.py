@@ -22,7 +22,7 @@ class SVMRetriever(BaseRetriever, BaseModel):
     index: Any
     texts: List[str]
     k: int = 4
-    relevancy_threshold: float = 0.8
+    relevancy_threshold: Optional[float] = None
 
     class Config:
 
@@ -56,7 +56,10 @@ class SVMRetriever(BaseRetriever, BaseModel):
         top_k_results = []
         for row in sorted_ix[1 : self.k + 1]:
             doc = Document(page_content=self.texts[row - 1])
-             if similarities[row - 1] >= self.relevancy_threshold:
+            if self.relevancy_threshold is not None:
+                if similarities[row - 1] >= self.relevancy_threshold:
+                    top_k_results.append(doc)
+            else:
                 top_k_results.append(doc)
         return top_k_results
 
