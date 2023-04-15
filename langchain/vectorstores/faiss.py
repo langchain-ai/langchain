@@ -303,7 +303,6 @@ class FAISS(VectorStore):
         embeddings: List[List[float]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> FAISS:
         faiss = dependable_faiss_import()
@@ -317,13 +316,7 @@ class FAISS(VectorStore):
         docstore = InMemoryDocstore(
             {index_to_id[i]: doc for i, doc in enumerate(documents)}
         )
-        return cls(
-            embedding.embed_query,
-            index,
-            docstore,
-            index_to_id,
-            normalize_score_fn=normalize_score_fn,
-        )
+        return cls(embedding.embed_query, index, docstore, index_to_id, **kwargs)
 
     @classmethod
     def from_texts(
@@ -331,7 +324,6 @@ class FAISS(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
@@ -357,7 +349,6 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
-            normalize_score_fn=normalize_score_fn,
             **kwargs,
         )
 
@@ -367,7 +358,6 @@ class FAISS(VectorStore):
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        normalize_score_fn: Optional[Callable[[float], float]] = None,
         **kwargs: Any,
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents.
@@ -394,14 +384,13 @@ class FAISS(VectorStore):
             embeddings,
             embedding,
             metadatas,
-            normalize_score_fn=normalize_score_fn,
             **kwargs,
         )
 
     def save_local(self, folder_path: str) -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
-        Args:s
+        Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
         """
@@ -435,14 +424,6 @@ class FAISS(VectorStore):
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
 
-    def _get_similarity_score(self, score: float) -> float:
-        if self.normalize_score_fn is None:
-            raise ValueError(
-                "normalize_score_fn must be provided to"
-                " FAISS constructor to normalize scores"
-            )
-        return self.normalize_score_fn(score)
-
     def _similarity_search_with_normalized_similarities(
         self,
         query: str,
@@ -450,7 +431,10 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
+        if self.normalize_score_fn is None:
+            raise ValueError(
+                "normalize_score_fn must be provided to"
+                " FAISS constructor to normalize scores"
+            )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [
-            (doc, self._get_similarity_score(score)) for doc, score in docs_and_scores
-        ]
+        return [(doc, self.normalize_score_fn(score)) for doc, score in docs_and_scores]
