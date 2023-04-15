@@ -20,11 +20,9 @@ def vcr_config() -> dict:
         return response
 
     def before_record_request(request: Request) -> Union[Request, None]:
-        if (
-            request.uri == "https://openaipublic.blob.core.windows.net/encodings"
-            "/cl100k_base.tiktoken"
-        ):
+        if request.host not in ["api.openai.com"]:
             return None
+
         return request
 
     return {
