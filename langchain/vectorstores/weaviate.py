@@ -135,7 +135,10 @@ class Weaviate(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5
+        self, query: str, 
+        k: int = 4, 
+        fetch_k: int = 20,
+        **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -150,6 +153,8 @@ class Weaviate(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        lambda_mult = kwargs.get("lambda_mult", 0.5)
+
         if self._embedding is not None:
             embedding = self._embedding.embed_query(query)
         else:
