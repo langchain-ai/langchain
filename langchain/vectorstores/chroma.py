@@ -193,6 +193,7 @@ class Chroma(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -227,6 +228,7 @@ class Chroma(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity

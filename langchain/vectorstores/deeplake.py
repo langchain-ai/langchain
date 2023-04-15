@@ -391,7 +391,7 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -411,7 +411,7 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
