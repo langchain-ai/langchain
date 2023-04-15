@@ -5,7 +5,11 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
+from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_CREATE_PROMPT
 
+import json
+
+# todo: add update and delete operations, add jql error back to response, solve pagination issue
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
@@ -14,7 +18,18 @@ class JiraAPIWrapper(BaseModel):
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
 
-    operations: List[str] = ["create", "update", "delete", "search"]
+    operations: List[str] = [
+        {
+            "id": "jql",
+            "name": "JQL",
+            "description": JIRA_JQL_PROMPT,
+        },
+        {
+            "id": "create",
+            "name": "Create Issue",
+            "description": JIRA_CREATE_PROMPT,
+        }
+    ]
 
     class Config:
         """Configuration for this pydantic object."""
@@ -22,6 +37,7 @@ class JiraAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def list(self) -> List[str]:
+        # todo make this a list of dicts with name and description
         return self.operations
 
     @root_validator()
@@ -58,13 +74,8 @@ class JiraAPIWrapper(BaseModel):
         raw_string = json.dumps(issues, indent=4)
         # Start string
         parsed_string = "Returned issues:\n\n"
-        i = 0
         # Process json
         for issue in issues["issues"]:
-            i += 1
-            # Max ten issues
-            if i > 10:
-                break
             # Simple fields
             key = issue["key"]
             summary = issue["fields"]["summary"]
@@ -94,22 +105,21 @@ class JiraAPIWrapper(BaseModel):
 
     def search(self, query: str) -> str:
         jql_response = self.jira_client.jql(query)
-        parsed, raw = jql_results_to_text(jql_response)
+        parsed, raw = self.jql_results_to_text(jql_response)
         return parsed
 
     def create(self, query: str) -> str:
         try:
             params = json.loads(query)
-            params["project"] = {"id": 10000}
-            params["labels"] = ["ai-created"]
             print(params)
             self.jira_client.create_issue(fields=dict(params))
-        except ValueError:
+        except ValueError as e:
             print("Error: JSON provided by LLM incorrect")
+            print(e)
 
     def run(self, mode: str, query: str) -> str:
         """Run query through Jira and parse result."""
-        if mode == "search":
+        if mode == "jql":
             return self.search(query)
         elif mode == "create":
             return self.create(query)
