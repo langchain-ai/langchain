@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -21,10 +21,12 @@ class GitLoader(BaseLoader):
         repo_path: str,
         clone_url: Optional[str] = None,
         branch: Optional[str] = "main",
+        file_filter: Optional[Callable[[str], bool]] = None,
     ):
         self.repo_path = repo_path
         self.clone_url = clone_url
         self.branch = branch
+        self.file_filter = file_filter
 
     def load(self) -> List[Document]:
         try:
@@ -47,28 +49,39 @@ class GitLoader(BaseLoader):
         docs: List[Document] = []
 
         for item in repo.tree().traverse():
-            if isinstance(item, Blob):
-                file_path = os.path.join(self.repo_path, item.path)
-                rel_file_path = os.path.relpath(file_path, self.repo_path)
-                try:
-                    with open(file_path, "rb") as f:
-                        content = f.read()
-                        file_type = os.path.splitext(item.name)[1]
+            if not isinstance(item, Blob):
+                continue
 
-                        # loads only text files
-                        try:
-                            text_content = content.decode("utf-8")
-                        except UnicodeDecodeError:
-                            continue
+            file_path = os.path.join(self.repo_path, item.path)
 
-                        metadata = {
-                            "file_path": rel_file_path,
-                            "file_name": item.name,
-                            "file_type": file_type,
-                        }
-                        doc = Document(page_content=text_content, metadata=metadata)
-                        docs.append(doc)
-                except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+            ignored_files = repo.ignored([file_path])
+            if len(ignored_files):
+                continue
+
+            # uses filter to skip files
+            if self.file_filter and not self.file_filter(file_path):
+                continue
+
+            rel_file_path = os.path.relpath(file_path, self.repo_path)
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read()
+                    file_type = os.path.splitext(item.name)[1]
+
+                    # loads only text files
+                    try:
+                        text_content = content.decode("utf-8")
+                    except UnicodeDecodeError:
+                        continue
+
+                    metadata = {
+                        "file_path": rel_file_path,
+                        "file_name": item.name,
+                        "file_type": file_type,
+                    }
+                    doc = Document(page_content=text_content, metadata=metadata)
+                    docs.append(doc)
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
 
         return docs

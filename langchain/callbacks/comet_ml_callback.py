@@ -34,12 +34,10 @@ def _get_experiment(
 ) -> Any:
     comet_ml = import_comet_ml()
 
-    experiment = comet_ml.config.get_global_experiment()
-    if experiment is None:
-        experiment = comet_ml.Experiment(  # type: ignore
-            workspace=workspace,
-            project_name=project_name,
-        )
+    experiment = comet_ml.Experiment(  # type: ignore
+        workspace=workspace,
+        project_name=project_name,
+    )
 
     return experiment
 
@@ -132,7 +130,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         warning = (
             "The comet_ml callback is currently in beta and is subject to change "
             "based on updates to `langchain`. Please report any issues to "
-            "https://github.com/comet_ml/issue_tracking/issues with the tag "
+            "https://github.com/comet-ml/issue_tracking/issues with the tag "
             "`langchain`."
         )
         comet_ml.LOGGER.warning(warning)
