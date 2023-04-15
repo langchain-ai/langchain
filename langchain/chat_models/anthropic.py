@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra
 
@@ -26,17 +26,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         .. code-block:: python
             import anthropic
             from langchain.llms import Anthropic
-            model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
-
-            # Simplest invocation, automatically wrapped with HUMAN_PROMPT
-            # and AI_PROMPT.
-            response = model("What are the biggest risks facing humanity?")
-
-            # Or if you want to use the chat mode, build a few-shot-prompt, or
-            # put words in the Assistant's mouth, use HUMAN_PROMPT and AI_PROMPT:
-            raw_prompt = "What are the biggest risks facing humanity?"
-            prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
-            response = model(prompt)
+            model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
 
     class Config:
@@ -98,7 +88,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        if stop:
+            params["stop_sequences"] = stop
 
         if self.streaming:
             completion = ""
@@ -120,7 +112,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
-        params = {"prompt": prompt, "stop_sequences": stop, **self._default_params}
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
+        if stop:
+            params["stop_sequences"] = stop
 
         if self.streaming:
             completion = ""

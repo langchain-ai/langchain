@@ -10,7 +10,7 @@ from langchain.utils import get_from_dict_or_env
 
 class _AnthropicCommon(BaseModel):
     client: Any = None  #: :meta private:
-    model: str = "claude-latest"
+    model: str = "claude-v1"
     """Model name to use."""
 
     max_tokens_to_sample: int = 256
