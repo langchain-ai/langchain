@@ -8,7 +8,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
-
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 def _default_schema(index_name: str) -> Dict:
     return {
@@ -42,6 +42,7 @@ class Weaviate(VectorStore):
         client: Any,
         index_name: str,
         text_key: str,
+        embedding: Embeddings,
         attributes: Optional[List[str]] = None,
     ):
         """Initialize with Weaviate client."""
@@ -58,6 +59,7 @@ class Weaviate(VectorStore):
             )
         self._client = client
         self._index_name = index_name
+        self._embedding = embedding
         self._text_key = text_key
         self._query_attrs = [self._text_key]
         if attributes is not None:
@@ -130,7 +132,7 @@ class Weaviate(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -145,8 +147,25 @@ class Weaviate(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        raise NotImplementedError
+        embedding = self._embedding.embed_query(query)
+        vector = {"vector": embedding}
+        query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        results = query_obj.with_additional("vector") \
+                           .with_near_vector(vector) \
+                           .with_limit(fetch_k).do()
+
+        payload = results["data"]["Get"][self._index_name]
+        embeddings = [result["_additional"]["vector"] for result in payload]
+        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k, lambda_mult=lambda_mult)
         
+        docs = []
+        for idx in mmr_selected:
+            text = payload[idx].pop(self._text_key)
+            payload[idx].pop("_additional")
+            meta = payload[idx]
+            docs.append(Document(page_content=text, metadata=meta))
+        return docs
+
     @classmethod
     def from_texts(
         cls: Type[Weaviate],
@@ -219,10 +238,10 @@ class Weaviate(VectorStore):
                     "class_name": index_name,
                 }
                 if embeddings is not None:
-                    params["vector"] = (embeddings[i],)
+                    params["vector"] = embeddings[i]
 
                 batch.add_data_object(**params)
 
             batch.flush()
 
-        return cls(client, index_name, text_key, attributes)
+        return cls(client, index_name, text_key, embedding, attributes)
