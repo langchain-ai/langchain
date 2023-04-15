@@ -218,12 +218,17 @@ def _create_api_controller_tool(
             for method, route in matches
         ]
         endpoint_docs_by_name = {name: docs for name, _, docs in api_spec.endpoints}
+
         docs_str = ""
         for endpoint_name in endpoint_names:
-            docs = endpoint_docs_by_name.get(endpoint_name)
-            if not docs:
+            found_match = False
+            for name, _, docs in api_spec.endpoints:
+                regex_name = re.compile(re.sub("\{.*?\}", ".*", name))
+                if regex_name.match(endpoint_name):
+                    found_match = True
+                    docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
+            if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
-            docs_str += f"== Docs for {endpoint_name} == \n{yaml.dump(docs)}\n"
 
         agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
         return agent.run(plan_str)
