@@ -401,7 +401,8 @@ class Annoy(VectorStore):
             f: Number of dimensions in the embeddings.
             metric: Metric to use for the index.
         """
-        assert metric in INDEX_METRICS, f"Invalid metric {metric}"
+        if metric not in INDEX_METRICS:
+            raise ValueError(f"Unsupported distance metric: {metric}. Expected one of {list(INDEX_METRICS)}")
         path = Path(folder_path)
         # load index separately since it is not picklable
         annoy = dependable_annoy_import()
