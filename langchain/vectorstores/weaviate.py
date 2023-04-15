@@ -4,11 +4,14 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List, Optional, Type
 from uuid import uuid4
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
 
 def _default_schema(index_name: str) -> Dict:
     return {
@@ -150,14 +153,19 @@ class Weaviate(VectorStore):
         embedding = self._embedding.embed_query(query)
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
-        results = query_obj.with_additional("vector") \
-                           .with_near_vector(vector) \
-                           .with_limit(fetch_k).do()
+        results = (
+            query_obj.with_additional("vector")
+            .with_near_vector(vector)
+            .with_limit(fetch_k)
+            .do()
+        )
 
         payload = results["data"]["Get"][self._index_name]
         embeddings = [result["_additional"]["vector"] for result in payload]
-        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k, lambda_mult=lambda_mult)
-        
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
+        )
+
         docs = []
         for idx in mmr_selected:
             text = payload[idx].pop(self._text_key)
