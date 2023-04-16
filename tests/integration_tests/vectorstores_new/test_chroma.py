@@ -1,7 +1,5 @@
 import logging
-import os
 from abc import ABC
-from pathlib import PurePath
 from typing import Any
 
 import chromadb
@@ -25,22 +23,6 @@ vector_store_class = Chroma
 DEFAULT_COLLECTION_NAME = "langchain-test-collection"
 
 
-def change_default_db_directory(_persist_directory: PurePath) -> None:
-    """
-    Override the persist directory of Chroma with a temporary directory
-    to avoid creating files in the current directory by default.
-    """
-    from _pytest.monkeypatch import MonkeyPatch
-    from chromadb.config import Settings
-
-    monkeypatch = MonkeyPatch()
-
-    class CustomSettings(Settings):
-        persist_directory = _persist_directory.__str__()
-
-    monkeypatch.setattr(chromadb.config, "Settings", CustomSettings)
-
-
 class TestChromaFilesystemStatic(FilesystemTestStatic):
     """
     Tests the Chroma vector store's static methods to ensure they work correctly with a
@@ -52,14 +34,6 @@ class TestChromaFilesystemStatic(FilesystemTestStatic):
     @classmethod
     def setup_class(cls) -> None:
         super().setup_class()
-
-        assert cls.tmp_directory is not None
-        assert cls.db_dir is not None
-
-        assert os.path.exists(cls.tmp_directory.__str__())
-        assert os.path.exists(cls.db_dir.__str__())
-
-        change_default_db_directory(cls.db_dir)
 
     @pytest.mark.asyncio
     @pytest.mark.skip(reason="Not implemented yet")
@@ -85,14 +59,6 @@ class TestChromaInstanceLocal(FilesystemTestInstance, ABC):
     def setup_class(cls) -> None:
         super().setup_class()
 
-        assert cls.tmp_directory is not None
-        assert cls.db_dir is not None
-
-        assert os.path.exists(cls.tmp_directory.__str__())
-        assert os.path.exists(cls.db_dir.__str__())
-
-        change_default_db_directory(cls.db_dir)
-
     def setup_method(self) -> None:
         super().setup_method()
         assert self.embedding is not None
@@ -102,5 +68,4 @@ class TestChromaInstanceLocal(FilesystemTestInstance, ABC):
         self.vector_store = Chroma(
             embedding_function=self.embedding,
             client_settings=client_settings,
-            persist_directory=self.db_dir.__str__(),
         )

@@ -1,7 +1,6 @@
 # tests/integration_tests/vectorstores_new/basic.py
 import logging
 import os
-import shutil
 import tempfile
 import uuid
 from abc import ABC, abstractmethod
@@ -9,6 +8,8 @@ from pathlib import PurePath
 from typing import List, Type, Union
 
 import pytest
+import tiktoken
+import vcr
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from langchain.embeddings import OpenAIEmbeddings
@@ -35,6 +36,7 @@ class BaseTest:
     vector_store: Union[VectorStore, None] = None
     docsearch: Union[VectorStore, None] = None
     logger: logging.Logger
+    patcher: Union[Patcher, None] = None
 
     @pytest.fixture(autouse=True)
     def _setup_logger(self) -> None:
@@ -46,38 +48,50 @@ class BaseTest:
 
 
 class FileSystemTest:
+    """
+    Used for tests that require a filesystem to be mocked out to avoid creating some
+    artifacts by vectorstore in the real filesystem.
+    For example, Chroma creates a .chroma directory in the current directory by default.
+    """
+
     patcher: Union[Patcher, None] = None
-    tmp_directory: Union[PurePath, None] = None
-    db_dir: Union[PurePath, None] = None
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures")
+    cassettes_path = os.path.join(os.path.dirname(__file__), "cassettes")
 
     @classmethod
     def setup_class(cls) -> None:
-        assert cls.tmp_directory is None
-        assert cls.db_dir is None
         assert cls.patcher is None
+        import certifi
 
-        cls.tmp_directory = PurePath(tempfile.mkdtemp())
-        cls.db_dir = PurePath(os.path.join(cls.tmp_directory, tempfile.mkdtemp()))
+        encoding = tiktoken.get_encoding("cl100k_base")
+        print(encoding.encode("tiktoken is great!"))
 
-        assert os.path.exists(cls.tmp_directory.__str__())
-        assert os.path.exists(cls.db_dir.__str__())
+        cls.patcher = Patcher(
+            # modules_to_reload=[tiktoken,vcr],
+            additional_skip_names=[tiktoken, vcr, certifi],
+            use_cache=False,
+        )
+        cls.patcher.setUp()
+
+        cls.patcher.fs.add_real_directory(certifi.where(), read_only=True)
+
+        cls.patcher.fs.add_real_directory(cls.fixture_path, read_only=True)
+        cls.patcher.fs.add_real_directory(cls.cassettes_path, read_only=False)
+
+
 
     @classmethod
     def teardown_class(cls) -> None:
-        assert cls.tmp_directory is not None
-        if os.path.exists(cls.tmp_directory.__str__()):
-            shutil.rmtree(cls.tmp_directory.__str__())
+        assert cls.patcher is not None
+        cls.patcher.tearDown()
 
     def setup_method(self) -> None:
-        assert self.db_dir is not None
-        if os.path.exists(self.db_dir.__str__()):
-            shutil.rmtree(self.db_dir.__str__())
-        os.mkdir(self.db_dir.__str__())
+        assert self.patcher is not None
+        self.patcher.resume()
 
     def teardown_method(self) -> None:
-        assert self.db_dir is not None
-        if os.path.exists(self.db_dir.__str__()):
-            shutil.rmtree(self.db_dir.__str__())
+        assert self.patcher is not None
+        self.patcher.pause()
 
 
 class MixinStaticTest(BaseTest, ABC):
@@ -105,7 +119,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts(
-        self, texts: List[str], embedding: Embeddings, query: str
+            self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -124,7 +138,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_with_ids(
-        self, texts: List[str], embedding: Embeddings, query: str
+            self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test adding documents to a VectorStore with ids.
@@ -160,7 +174,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_async(
-        self, texts: List[str], embedding: Embeddings, query: str
+            self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -176,10 +190,10 @@ class MixinStaticTest(BaseTest, ABC):
 
     @pytest.mark.vcr()
     def test_from_documents(
-        self,
-        documents: List[Document],
-        embedding: Embeddings,
-        query: str,
+            self,
+            documents: List[Document],
+            embedding: Embeddings,
+            query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
@@ -196,10 +210,10 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_documents_async(
-        self,
-        documents: List[Document],
-        embedding: Embeddings,
-        query: str,
+            self,
+            documents: List[Document],
+            embedding: Embeddings,
+            query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
