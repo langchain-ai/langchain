@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from langchain.tools.base import BaseToolInterface
+from langchain.tools.base import BaseTool
 
 FINISH_NAME = "finish"
 
@@ -19,7 +19,7 @@ class PromptGenerator:
         and performance evaluations.
         """
         self.constraints: List[str] = []
-        self.commands: List[BaseToolInterface] = []
+        self.commands: List[BaseTool] = []
         self.resources: List[str] = []
         self.performance_evaluation: List[str] = []
         self.response_format = {
@@ -42,12 +42,12 @@ class PromptGenerator:
         """
         self.constraints.append(constraint)
 
-    def add_tool(self, tool: BaseToolInterface) -> None:
+    def add_tool(self, tool: BaseTool) -> None:
         self.commands.append(tool)
 
-    def _generate_command_string(self, tool: BaseToolInterface) -> str:
+    def _generate_command_string(self, tool: BaseTool) -> str:
         args_string = ", ".join(
-            f'"{key}": "{value}"' for key, value in tool.args.items()
+            f'"{arg.name}": "{arg.description}"' for arg in tool.args
         )
         return f"{tool.name}: {tool.description}, args: {args_string}"
 
@@ -75,7 +75,8 @@ class PromptGenerator:
 
         Args:
             items (list): A list of items to be numbered.
-            item_type (str, optional): The type of items in the list. Defaults to 'list'.
+            item_type (str, optional): The type of items in the list.
+                Defaults to 'list'.
 
         Returns:
             str: The formatted numbered list.
@@ -88,15 +89,20 @@ class PromptGenerator:
             finish_description = (
                 "use this to signal that you have finished all your objectives"
             )
-            finish_args = '"response": "final response to let people know you have finished your objectives"'
-            finish_string = f"{len(items) + 1}. {FINISH_NAME}: {finish_description}, args: {finish_args}"
+            finish_args = (
+                '"response": "final response to let '
+                'people know you have finished your objectives"'
+            )
+            finish_string = (
+                f"{len(items) + 1}. {FINISH_NAME}: "
+                f"{finish_description}, args: {finish_args}"
+            )
             return "\n".join(command_strings + [finish_string])
         else:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
     def generate_prompt_string(self) -> str:
-        """
-        Generate a prompt string based on the constraints, commands, resources, and performance evaluations.
+        """Generate a prompt string.
 
         Returns:
             str: The generated prompt string.
@@ -104,16 +110,20 @@ class PromptGenerator:
         formatted_response_format = json.dumps(self.response_format, indent=4)
         prompt_string = (
             f"Constraints:\n{self._generate_numbered_list(self.constraints)}\n\n"
-            f"Commands:\n{self._generate_numbered_list(self.commands, item_type='command')}\n\n"
+            f"Commands:\n"
+            f"{self._generate_numbered_list(self.commands, item_type='command')}\n\n"
             f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
-            f"Performance Evaluation:\n{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            f"You should only respond in JSON format as described below \nResponse Format: \n{formatted_response_format} \nEnsure the response can be parsed by Python json.loads"
+            f"Performance Evaluation:\n"
+            f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
+            f"You should only respond in JSON format as described below "
+            f"\nResponse Format: \n{formatted_response_format} "
+            f"\nEnsure the response can be parsed by Python json.loads"
         )
 
         return prompt_string
 
 
-def get_prompt(tools: List[BaseToolInterface]) -> str:
+def get_prompt(tools: List[BaseTool]) -> str:
     """This function generates a prompt string.
 
     It includes various constraints, commands, resources, and performance evaluations.
@@ -127,10 +137,14 @@ def get_prompt(tools: List[BaseToolInterface]) -> str:
 
     # Add constraints to the PromptGenerator object
     prompt_generator.add_constraint(
-        "~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files."
+        "~4000 word limit for short term memory. "
+        "Your short term memory is short, "
+        "so immediately save important information to files."
     )
     prompt_generator.add_constraint(
-        "If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember."
+        "If you are unsure how you previously did something "
+        "or want to recall past events, "
+        "thinking about similar events will help you remember."
     )
     prompt_generator.add_constraint("No user assistance")
     prompt_generator.add_constraint(
@@ -153,7 +167,8 @@ def get_prompt(tools: List[BaseToolInterface]) -> str:
 
     # Add performance evaluations to the PromptGenerator object
     prompt_generator.add_performance_evaluation(
-        "Continuously review and analyze your actions to ensure you are performing to the best of your abilities."
+        "Continuously review and analyze your actions "
+        "to ensure you are performing to the best of your abilities."
     )
     prompt_generator.add_performance_evaluation(
         "Constructively self-criticize your big-picture behavior constantly."
@@ -162,7 +177,8 @@ def get_prompt(tools: List[BaseToolInterface]) -> str:
         "Reflect on past decisions and strategies to refine your approach."
     )
     prompt_generator.add_performance_evaluation(
-        "Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps."
+        "Every command has a cost, so be smart and efficient. "
+        "Aim to complete tasks in the least number of steps."
     )
 
     # Generate the prompt string

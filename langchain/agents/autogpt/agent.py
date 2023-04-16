@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from langchain.auto_agents.autogpt.output_parser import (
+from langchain.agents.autogpt.output_parser import (
     AutoGPTOutputParser,
     BaseAutoGPTOutputParser,
 )
-from langchain.auto_agents.autogpt.prompt import AutoGPTPrompt
-from langchain.auto_agents.autogpt.prompt_generator import FINISH_NAME
+from langchain.agents.autogpt.prompt import AutoGPTPrompt
+from langchain.agents.autogpt.prompt_generator import FINISH_NAME
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
@@ -63,7 +63,10 @@ class AutoGPT:
         )
 
     def run(self, goals: List[str]) -> str:
-        user_input = "Determine which next command to use, and respond using the format specified above:"
+        user_input = (
+            "Determine which next command to use, "
+            "and respond using the format specified above:"
+        )
         # Interaction Loop
         loop_count = 0
         while True:
@@ -90,10 +93,14 @@ class AutoGPT:
                 return action.args["response"]
             if action.name in tools:
                 tool = tools[action.name]
-                observation = tool.call(action.args)
+                observation = tool.run(action.args)
                 result = f"Command {tool.name} returned: {observation}"
             else:
-                result = f"Unknown command '{action.name}'. Please refer to the 'COMMANDS' list for available commands and only respond in the specified JSON format."
+                result = (
+                    f"Unknown command '{action.name}'. "
+                    f"Please refer to the 'COMMANDS' list for available "
+                    f"commands and only respond in the specified JSON format."
+                )
 
             memory_to_add = (
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "

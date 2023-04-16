@@ -3,24 +3,28 @@ from typing import Any, Callable, List
 
 from pydantic import BaseModel
 
-from langchain.auto_agents.autogpt.prompt_generator import get_prompt
+from langchain.agents.autogpt.prompt_generator import get_prompt
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
 from langchain.schema import BaseMessage, HumanMessage, SystemMessage
-from langchain.tools.base import BaseToolInterface
+from langchain.tools.base import BaseTool
 from langchain.vectorstores.base import VectorStoreRetriever
 
 
 class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     ai_name: str
     ai_role: str
-    tools: List[BaseToolInterface]
+    tools: List[BaseTool]
     token_counter: Callable[[str], int]
     send_token_limit: int = 4196
 
     def construct_full_prompt(self, goals: List[str]) -> str:
-        prompt_start = """Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications. If you have completed all your tasks, make sure to use the "finish" command."""
+        prompt_start = """Your decisions must always be made independently 
+            without seeking user assistance. Play to your strengths 
+            as an LLM and pursue simple strategies with no legal complications. 
+            If you have completed all your tasks, 
+            make sure to use the "finish" command."""
 
         # Construct full prompt
         full_prompt = (
@@ -52,9 +56,11 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
             relevant_memory_tokens = sum(
                 [self.token_counter(doc) for doc in relevant_memory]
             )
-        memory_message = SystemMessage(
-            content=f"This reminds you of these events from your past:\n{relevant_memory}\n\n"
+        content_format = (
+            f"This reminds you of these events "
+            f"from your past:\n{relevant_memory}\n\n"
         )
+        memory_message = SystemMessage(content=content_format)
         used_tokens += len(memory_message.content)
         historical_messages: List[BaseMessage] = []
         for message in previous_messages[-10:][::-1]:
