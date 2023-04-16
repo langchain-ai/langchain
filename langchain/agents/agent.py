@@ -819,6 +819,13 @@ class AgentExecutor(Chain):
         start_time = time.time()
         # We now enter the agent loop (until it returns something).
         while self._should_continue(iterations, time_elapsed):
+            if (
+                self.max_iterations is not None
+                and iterations >= self.max_iterations - 1
+            ):
+                # This is our last iteration, so we force the agent to stop
+                inputs["input"] += "\n\nYou must now respond directly to the human."
+
             next_step_output = self._take_next_step(
                 name_to_tool_map, color_mapping, inputs, intermediate_steps
             )
