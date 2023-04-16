@@ -60,16 +60,12 @@ class SVMRetriever(BaseRetriever, BaseModel):
         if zero_index != 0:
             sorted_ix[0], sorted_ix[zero_index] = sorted_ix[zero_index], sorted_ix[0]
 
-        normalized_similarities = (similarities - np.min(similarities)) / (np.max(similarities) - np.min(similarities))
+        normalized_similarities = (similarities - np.min(similarities)) / (np.max(similarities) - np.min(similarities) + 1e-6)
 
         top_k_results = []
         for row in sorted_ix[1:self.k+1]:
-            doc = Document(page_content=self.texts[row - 1])
-            if self.relevancy_threshold is not None:
-                if normalized_similarities[row] >= self.relevancy_threshold:
-                    top_k_results.append(doc)
-            else:
-                top_k_results.append(doc)
+            if self.relevancy_threshold is None or normalized_similarities[row] >= self.relevancy_threshold:
+                top_k_results.append(Document(page_content=self.texts[row - 1]))
         return top_k_results
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
