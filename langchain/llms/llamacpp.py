@@ -1,13 +1,10 @@
 """Wrapper around llama.cpp."""
 import logging
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Optional, Coroutine, Generator, Iterable, AsyncIterable, AsyncGenerator
-import queue
+from typing import Any, Dict, List, Optional, Generator
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
-from langchain.llms.base import LLM, Generation, LLMResult
+from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +87,8 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
-    verbose: Optional[bool] = Field(default=False)
+    streaming: bool = False
+    """Whether to stream the results, token by token when calling the model to generate output."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -144,33 +142,10 @@ class LlamaCpp(LLM):
             "top_p": self.top_p,
             "logprobs": self.logprobs,
             "echo": self.echo,
-            "stop_sequences": self.stop,
+            "stop_sequences": self.stop, # Note, the key is different here due to conventon among the LLM classes
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
         }
-
-    def _prepare_params(self, stop: Optional[List[str]] = None, **config: Any) -> Dict[str, Any]:
-        """Prepare the parameters for calling llama_cpp, using defaults and input while checking for conflicts."""
-        params = self._default_params
-        if self.stop and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop:
-            params["stop_sequences"] = self.stop
-        else:
-            params["stop_sequences"] = []
-        
-        input_args = {
-            "max_tokens": params["max_tokens"],
-            "temperature": params["temperature"],
-            "top_p": params["top_p"],
-            "logprobs": params["logprobs"],
-            "echo": params["echo"],
-            "stop": params["stop_sequences"],
-            "repeat_penalty": params["repeat_penalty"],
-            "top_k": params["top_k"],
-        }
-        input_args.update(config)
-        return input_args
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -182,7 +157,32 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None, **config: Any) -> str:
+    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Prforms sanity check, preparing paramaters in format needed by llama_cpp.
+
+        Args:
+            stop (Optional[List[str]]): List of stop sequences for llama_cpp.
+        
+        Returns:
+            Dictionary containing the combined parameters.
+        """
+
+        # Raise error if stop sequences are in both input and default params
+        if self.stop and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        
+        params = self._default_params
+        
+        # llamaa_cpp expects the "stop" key not this, so we remove it:
+        params.pop("stop_sequences")
+
+        # then sets it as configured, or default to an empty list:
+        params["stop"] = self.stop or stop or []
+
+        return params
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the Llama model and return the output.
 
         Args:
@@ -195,117 +195,35 @@ class LlamaCpp(LLM):
         Example:
             .. code-block:: python
 
-                from langchain.llms import LlamaCppEmbeddings
-                llm = LlamaCppEmbeddings(model_path="/path/to/local/llama/model.bin")
+                from langchain.llms import LlamaCpp
+                llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
                 llm("This is a prompt.")
         """
-
-        params = self._prepare_params(stop, **config)
-        text = self.client(
-            prompt=prompt,
-            max_tokens=params["max_tokens"],
-            temperature=params["temperature"],
-            top_p=params["top_p"],
-            logprobs=params["logprobs"],
-            echo=params["echo"],
-            stop=params["stop_sequences"],
-            repeat_penalty=params["repeat_penalty"],
-            top_k=params["top_k"],
-        )
-        return text["choices"][0]["text"]
-
-    async def _agenerate(
-        self, prompts: List[str], 
-        stop: Optional[List[str]] = None, 
-        stream: bool = True, 
-        **config: Any
-    ) -> AsyncGenerator[str, None]:
-        """
-        Asynchronous generator for streaming tokens from the Llama models.
-
-        Args:
-            prompts: A list of prompts to use for generation.
-            stop: A list of strings to stop generation when encountered.
-            stream: Whether to stream tokens as they are generated.
-            config: Additional configuration parameters for the client.
-
-        Yields:
-            An async iterable of generated token strings.
-        """
-        params = self._prepare_params(stop, **config)
-
-        if stream:
-            for generation in self.client(prompt=prompts[0], stream=stream, **params):
-                chunk = generation['choices'][0]['text']
-            if self.verbose:
-                print(chunk, end="", flush=True)
-            yield chunk
+        print("Prompt: ", prompt)
+        if self.streaming:
+            # If streaming is enabled, we use the stream 
+            # method that yields as they are generated
+            # and return the combined strings from the first choices's text:
+            combined_text_output = ""
+            for token in self.stream(prompt=prompt, stop=stop):
+                combined_text_output += token["choices"][0]["text"]
+            return combined_text_output
         else:
-            result = self.client(prompt=prompts[0], stream=stream, **params)
-            text = result['choices'][0]['text']
-            if self.verbose:
-                print(text)
-            yield text
 
-    def _run_coroutine(self, coroutine: Coroutine) -> Generator[str, None, None]:
-        """
-        Executes the given coroutine and yields individual tokens.
+            params = self._get_parameters(stop)
+            result = self.client(prompt=prompt, **params)
+            return result["choices"][0]["text"]
 
-        Args:
-            coroutine: The coroutine to execute.
 
-        Yields:
-            Individual tokens as strings.
-        """
-        chunk_queue = queue.Queue()
-
-        async def _enqueue_chunks():
-            async for chunk in coroutine:
-                chunk_queue.put(chunk)
-            chunk_queue.put(None)
-
-        def _run_coroutine_internal():
-            asyncio.run(_enqueue_chunks())
-
-        executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(_run_coroutine_internal)
-
-        while True:
-            chunk = chunk_queue.get(timeout=60)
-            if chunk is None:
-                break
-            yield chunk
-
-        future.result()
-        executor.shutdown(wait=True)
-    def stream(self, prompt: str, stop: Optional[List[str]] = None, **config: Any) -> Iterable[str]:
-        """
-        Stream tokens from the Llama model.
-
-        Args:
-            prompt: The prompt to use for generation.
-            stop: A list of strings to stop generation when encountered.
-            config: Additional configuration parameters for the client.
-
-        Returns:
-            An iterable of generated tokens.
-        """
-        prepared_params = self._prepare_params(stop, **config)
-        generator = self._agenerate([prompt], **prepared_params)
-        return self._run_coroutine(generator)
-
-    def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
-    ) -> LLMResult:
-        generator = self._agenerate(prompts, stop=stop)
-        result = LLMResult(generations=[[Generation(text="")]])
-        
-        for token in self._run_coroutine(generator):
-            result.generations[0][0].text += token
+    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator[Dict, None, None]:
+        params = self._get_parameters(stop)
+        result = self.client(prompt=prompt, stream=True, **params)
+        for chunk in result:
+            token = chunk["choices"][0]["text"]
+            log_probs = chunk["choices"][0].get("logprobs", None)
             self.callback_manager.on_llm_new_token(
-                {"choices": [{"text": token}]},
-                verbose=self.verbose,
+                token=token, 
+                verbose=self.verbose, 
+                log_probs=log_probs
             )
-
-        return result
-
+            yield chunk

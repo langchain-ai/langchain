@@ -35,19 +35,22 @@ def test_llamacpp_inference() -> None:
     llm = LlamaCpp(model_path=model_path)
     output = llm("Say foo:")
     assert isinstance(output, str)
+    assert len(output) > 1
 
 def test_llamacpp_streaming() -> None:
     """Test streaming tokens from LlamaCpp."""
     model_path = get_model()
     llm = LlamaCpp(model_path=model_path, max_tokens=10)
     generator = llm.stream("Q: How do you say 'hello' in German? A:'",stop=["'"])
-
+    stream_results_string = ''
     assert isinstance(generator, Generator)
 
-    for token in generator:
-        assert isinstance(token, str)
-        # Note that this does not match the OpenAI format:
-        # assert isinstance(token["choices"][0]["text"], str)
+    for chunk in generator:
+        assert not isinstance(chunk, str)
+        # Note that this matches the OpenAI format:
+        assert isinstance(chunk["choices"][0]["text"], str)
+        stream_results_string += chunk["choices"][0]["text"]
+    assert len(stream_results_string.strip()) > 1
 
 def test_llamacpp_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
