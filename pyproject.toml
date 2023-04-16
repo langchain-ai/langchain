@@ -63,6 +63,7 @@ gptcache = {version = ">=0.1.7", optional = true}
 atlassian-python-api = "^3.36.0"
 pytesseract = "^0.3.10"
 html2text = "^2020.1.16"
+numexpr = "^2.8.4"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
