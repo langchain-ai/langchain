@@ -21,9 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const { MendableFloatingButton } = Mendable;
     
 
+    const iconSpan1 = React.createElement('span', {
+    }, '🦜');
+
+    const iconSpan2 = React.createElement('span', {
+    }, '🔗');
+
     const icon = React.createElement('p', {
-      style: { color: '#ffffff', fontSize: '22px',width: '48px', height: '48px', margin: '0px', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    }, '🦜🔗');
+      style: { color: '#ffffff', fontSize: '22px',width: '48px', height: '48px', margin: '0px', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
+    }, [iconSpan1, iconSpan2]);
 
     
     

@@ -7,8 +7,8 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
-from langchain.python import PythonREPL
 from langchain.schema import BaseLanguageModel
+from langchain.utilities import PythonREPL
 
 
 class LLMMathChain(Chain):
