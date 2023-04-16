@@ -1,16 +1,16 @@
-from typing import Dict
+from typing import List
 
-from langchain.tools.base import BaseMultiArgTool
+from langchain.tools.base import ArgInfo, BaseTool
 
 
-class ReadFileTool(BaseMultiArgTool):
+class ReadFileTool(BaseTool):
     name: str = "read_file"
-    tool_args: Dict[str, str] = {"file": "<file>"}
+    tool_args: List[ArgInfo] = [ArgInfo(name="file_path", description="name of file")]
     description: str = "Read file from disk"
 
-    def _run(self, file: str) -> str:
+    def _run(self, file_path: str) -> str:
         try:
-            with open(file, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             return content
         except Exception as e:

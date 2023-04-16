@@ -1,20 +1,23 @@
 import os
-from typing import Dict
+from typing import List
 
-from langchain.tools.base import BaseMultiArgTool
+from langchain.tools.base import ArgInfo, BaseTool
 
 
-class WriteFileTool(BaseMultiArgTool):
+class WriteFileTool(BaseTool):
     name: str = "write_file"
-    tool_args: Dict[str, str] = {"file": "<file>", "text": "<text>"}
+    tool_args: List[ArgInfo] = [
+        ArgInfo(name="file_path", description="name of file"),
+        ArgInfo(name="text", description="text to write to file"),
+    ]
     description: str = "Write file to disk"
 
-    def _run(self, file: str, text: str) -> str:
+    def _run(self, file_path: str, text: str) -> str:
         try:
-            directory = os.path.dirname(file)
+            directory = os.path.dirname(file_path)
             if not os.path.exists(directory) and directory:
                 os.makedirs(directory)
-            with open(file, "w", encoding="utf-8") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 f.write(text)
             return "File written to successfully."
         except Exception as e:
