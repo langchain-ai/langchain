@@ -7,11 +7,9 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
 from langchain.vectorstores.pinecone import Pinecone
-from tests.integration_tests.vectorstores_new.base import (
-    DEFAULT_COLLECTION_NAME,
-    StaticTest,
-)
+from tests.integration_tests.vectorstores_new.base import StaticTest
 
+DEFAULT_COLLECTION_NAME = "langchain-test-collection"
 DEFAULT_INDEX_NAME = "langchain-test-index"
 dimension = 1536
 

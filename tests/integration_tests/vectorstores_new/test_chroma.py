@@ -22,6 +22,8 @@ pytest --capture=no --log-cli-level=DEBUG -vvv tests/integration_tests/vectorsto
 # Define the Chroma vector store class to be used in the tests
 vector_store_class = Chroma
 
+DEFAULT_COLLECTION_NAME = "langchain-test-collection"
+
 
 def change_default_db_directory(_persist_directory: PurePath) -> None:
     """
@@ -101,28 +103,4 @@ class TestChromaInstanceLocal(FilesystemTestInstance, ABC):
             embedding_function=self.embedding,
             client_settings=client_settings,
             persist_directory=self.db_dir.__str__(),
-            collection_name=self.collection_name,
         )
-        """
-        self.vector_store:
-        'aadd_documents',
-        aadd_texts',
-        add_documents',
-        add_texts',
-        afrom_documents',
-        afrom_texts',
-        amax_marginal_relevance_search',
-        amax_marginal_relevance_search_by_vector',
-        as_retriever',
-        asimilarity_search',
-        asimilarity_search_by_vector',
-        delete_collection',
-        from_documents',
-        from_texts',
-        max_marginal_relevance_search',
-        max_marginal_relevance_search_by_vector',
-        persist',
-        similarity_search',
-        similarity_search_by_vector',
-        'similarity_search_with_score'
-         """

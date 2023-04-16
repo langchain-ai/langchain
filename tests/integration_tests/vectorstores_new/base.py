@@ -20,8 +20,6 @@ from langchain.vectorstores import VectorStore
 # Set up logging configuration
 logging.basicConfig(level=logging.DEBUG)
 
-DEFAULT_COLLECTION_NAME = "langchain-test-collection"
-
 
 class BaseTest:
     """
@@ -35,7 +33,6 @@ class BaseTest:
 
     vector_store_class: Type[VectorStore]
     vector_store: Union[VectorStore, None] = None
-    collection_name: str = DEFAULT_COLLECTION_NAME
     docsearch: Union[VectorStore, None] = None
     logger: logging.Logger
 
@@ -118,7 +115,6 @@ class MixinStaticTest(BaseTest, ABC):
         self.docsearch = self.vector_store_class.from_texts(
             texts=texts,
             embedding=embedding,
-            collection_name=self.collection_name,
         )
 
         self.ensure_functional(query=query)
@@ -137,7 +133,6 @@ class MixinStaticTest(BaseTest, ABC):
         self.docsearch = self.vector_store_class.from_texts(
             texts=texts,
             embedding=embedding,
-            collection_name=self.collection_name,
         )
 
         first = self.docsearch.similarity_search(query, k=1)
@@ -175,7 +170,6 @@ class MixinStaticTest(BaseTest, ABC):
         self.docsearch = await self.vector_store_class.afrom_texts(
             texts=texts,
             embedding=embedding,
-            collection_name=self.collection_name,
         )
 
         await self.ensure_functional_async(query=query)
@@ -195,7 +189,6 @@ class MixinStaticTest(BaseTest, ABC):
         self.docsearch = self.vector_store_class.from_documents(
             documents=documents,
             embedding=embedding,
-            collection_name=self.collection_name,
         )
 
         self.ensure_functional(query=query)
@@ -206,7 +199,6 @@ class MixinStaticTest(BaseTest, ABC):
         self,
         documents: List[Document],
         embedding: Embeddings,
-        collection_name: str,
         query: str,
     ) -> None:
         """
@@ -217,7 +209,6 @@ class MixinStaticTest(BaseTest, ABC):
         self.docsearch = await self.vector_store_class.afrom_documents(
             documents=documents,
             embedding=embedding,
-            collection_name=collection_name,
         )
 
         await self.ensure_functional_async(query=query)
