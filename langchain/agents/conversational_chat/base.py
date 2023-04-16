@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
 
+from pydantic import Field
+
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser
 from langchain.agents.conversational_chat.prompt import (
@@ -32,6 +34,8 @@ from langchain.tools.base import BaseTool
 
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
+
+    output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:

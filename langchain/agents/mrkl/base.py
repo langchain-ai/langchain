@@ -1,8 +1,7 @@
 """Attempt to implement MRKL systems as described in arxiv.org/pdf/2205.00445.pdf."""
 from __future__ import annotations
 
-import re
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 from pydantic import Field
 

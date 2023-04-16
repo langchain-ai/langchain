@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Sequence, Tuple
 
+from pydantic import Field
+
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
@@ -16,6 +18,8 @@ from langchain.tools import BaseTool
 
 
 class ChatAgent(Agent):
+    output_parser: AgentOutputParser = Field(default_factory=ChatOutputParser)
+
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""

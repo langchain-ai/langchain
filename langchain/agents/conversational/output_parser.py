@@ -6,7 +6,7 @@ from langchain.schema import AgentAction, AgentFinish
 
 
 class ConvoOutputParser(AgentOutputParser):
-    ai_prefix: str
+    ai_prefix: str = "AI"
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         if f"{self.ai_prefix}:" in text:

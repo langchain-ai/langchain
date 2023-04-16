@@ -1,4 +1,3 @@
-import re
 from typing import Union
 
 from langchain.agents.agent import AgentOutputParser

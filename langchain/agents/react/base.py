@@ -1,6 +1,7 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
-import re
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence
+
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -17,6 +18,8 @@ from langchain.tools.base import BaseTool
 
 class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
+
+    output_parser: AgentOutputParser = Field(default_factory=ReActOutputParser)
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:

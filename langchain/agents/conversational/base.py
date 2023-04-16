@@ -1,8 +1,9 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
-import re
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence
+
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -19,6 +20,7 @@ class ConversationalAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
+    output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
 
     @classmethod
     def _get_default_output_parser(
@@ -114,5 +116,9 @@ class ConversationalAgent(Agent):
             ai_prefix=ai_prefix
         )
         return cls(
-            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, **kwargs
+            llm_chain=llm_chain,
+            allowed_tools=tool_names,
+            ai_prefix=ai_prefix,
+            output_parser=_output_parser,
+            **kwargs,
         )

@@ -1,5 +1,7 @@
 """Chain that does self ask with search."""
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence, Union
+
+from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -15,6 +17,8 @@ from langchain.utilities.serpapi import SerpAPIWrapper
 
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
+
+    output_parser: AgentOutputParser = Field(default_factory=SelfAskOutputParser)
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:

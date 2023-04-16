@@ -9,7 +9,7 @@ from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.prompts import PromptTemplate
-from langchain.schema import AgentAction, AgentFinish
+from langchain.schema import AgentAction
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
