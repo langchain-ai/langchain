@@ -9,7 +9,7 @@ from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_ISSUE_CREATE_PROMP
     JIRA_GET_ALL_PROJECTS_PROMPT
 
 
-# todo: think about error handling, more specific api specs, better response parsing - keep as json, also jql/project limits
+# todo: think about error handling, more specific api specs, and jql/project limits
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
@@ -25,12 +25,12 @@ class JiraAPIWrapper(BaseModel):
             "description": JIRA_JQL_PROMPT,
         },
         {
-            "mode": "project",
+            "mode": "get_projects",
             "name": "Get Projects",
             "description": JIRA_GET_ALL_PROJECTS_PROMPT,
         },
         {
-            "mode": "create",
+            "mode": "create_issue",
             "name": "Create Issue",
             "description": JIRA_ISSUE_CREATE_PROMPT,
         },
@@ -43,7 +43,6 @@ class JiraAPIWrapper(BaseModel):
 
     class Config:
         """Configuration for this pydantic object."""
-
         extra = Extra.forbid
 
     def list(self) -> List[str]:
@@ -78,14 +77,9 @@ class JiraAPIWrapper(BaseModel):
 
         return values
 
-    def parse_jql_result(self, issues: Dict) -> str:
-        # Start string
-        parsed_string = ""
-        count = 0
-        # Process json
+    def parse_issues(self, issues: Dict) -> str:
+        parsed = []
         for issue in issues["issues"]:
-            count += 1
-            # Simple fields
             key = issue["key"]
             summary = issue["fields"]["summary"]
             created = issue["fields"]["created"][0:10]
@@ -95,8 +89,7 @@ class JiraAPIWrapper(BaseModel):
                 assignee = issue["fields"]["assignee"]["displayName"]
             except:
                 assignee = "None"
-            # Related issues
-            rel_issues = ""
+            rel_issues = {}
             for related_issue in issue["fields"]["issuelinks"]:
                 if "inwardIssue" in related_issue.keys():
                     rel_type = related_issue["type"]["inward"]
@@ -106,36 +99,34 @@ class JiraAPIWrapper(BaseModel):
                     rel_type = related_issue["type"]["outward"]
                     rel_key = related_issue["outwardIssue"]["key"]
                     rel_summary = related_issue["outwardIssue"]["fields"]["summary"]
-                rel_issues += f"""  {rel_type} {rel_key} {rel_summary}"""
-            # Add text
-            parsed_string += f"""Issue key: {key}\n Summary: {summary}\n Created on: {created}\n Assignee: {assignee}\n Priority: {priority}\n Status: {status}\n{rel_issues}\n"""
-        # Return parsed string
-        return parsed_string, count
+                rel_issues = {"type": rel_type, "key": rel_key, "summary": rel_summary}
+            parsed.append(
+                {"key": key, "summary": summary, "created": created, "assignee": assignee, "priority": priority,
+                 "status": status, "related_issues": rel_issues})
+        return parsed
 
     def parse_projects(self, projects):
-        count = 0
-        parsed = ""
+        parsed = []
         for project in projects:
-            count += 1
             id = project['id']
             key = project['key']
             name = project['name']
             type = project['projectTypeKey']
             style = project['style']
-            parsed += f"""id: {id}\n key: {key}\n name: {name}\n type: {type}\n style: {style}\n"""
-        return parsed, count
+            parsed.append({"id": id, "key": key, "name": name, "type": type, "style": style})
+        return parsed
 
     def search(self, query: str) -> str:
-        jql_response = self.jira.jql(query)
-        parsed, count = self.parse_jql_result(jql_response)
-        parsed += f"""Found {count} issues: \n\n {parsed}"""
-        return parsed
+        issues = self.jira.jql(query)
+        parsed_issues = self.parse_issues(issues)
+        parsed_issues = "Found " + str(len(parsed_issues)) + " issues:\n" + str(parsed_issues)
+        return parsed_issues
 
     def project(self) -> str:
         projects = self.jira.projects()
-        parsed, count = self.parse_projects(projects)
-        parsed += f"""Found {count} projects: \n\n {parsed}"""
-        return parsed
+        parsed_projects = self.parse_projects(projects)
+        parsed_projects = "Found " + str(len(parsed_projects)) + " projects:\n" + str(parsed_projects)
+        return parsed_projects
 
     def create(self, query: str) -> str:
         try:
@@ -148,21 +139,18 @@ class JiraAPIWrapper(BaseModel):
         params = json.loads(query)
         self.jira.create_issue(fields=dict(params))
 
-
     def other(self, query: str) -> str:
         context = {"self": self}
         exec(f"result = {query}", context)
         result = context["result"]
         return result
 
-
     def run(self, mode: str, query: str) -> str:
-        """Run query through Jira and parse result."""
         if mode == "jql":
             return self.search(query)
-        elif mode == "project":
+        elif mode == "get_projects":
             return self.project()
-        elif mode == "create":
+        elif mode == "create_issue":
             return self.create(query)
         elif mode == "other":
             return self.other(query)
