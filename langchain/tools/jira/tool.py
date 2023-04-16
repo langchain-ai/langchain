@@ -14,8 +14,6 @@ class JiraAction(BaseTool):
 
     def _run(self, instructions: str) -> str:
         """Use the Atlassian Jira API to run an operation."""
-        print()
-        print(instructions)
         return self.api_wrapper.run(self.action_id, instructions)
 
     async def _arun(self, _: str) -> str:

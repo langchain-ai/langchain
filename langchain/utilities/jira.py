@@ -5,7 +5,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
-from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT
+from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_ISSUE_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT, JIRA_GET_ALL_PROJECTS_PROMPT
 
 import json
 
@@ -25,9 +25,14 @@ class JiraAPIWrapper(BaseModel):
             "description": JIRA_JQL_PROMPT,
         },
         {
+            "id": "project",
+            "name": "Get Projects",
+            "description": JIRA_GET_ALL_PROJECTS_PROMPT,
+        },
+        {
             "id": "create",
             "name": "Create Issue",
-            "description": JIRA_CREATE_PROMPT,
+            "description": JIRA_ISSUE_CREATE_PROMPT,
         },
         {
             "id": "other",
@@ -75,12 +80,13 @@ class JiraAPIWrapper(BaseModel):
 
         return values
 
-    def jql_results_to_text(self, issues):
-        raw_string = json.dumps(issues, indent=4)
+    def jql_results_to_text(self, issues: Dict) -> str:
         # Start string
-        parsed_string = "Returned issues:\n\n"
+        parsed_string = ""
+        count = 0
         # Process json
         for issue in issues["issues"]:
+            count +=1
             # Simple fields
             key = issue["key"]
             summary = issue["fields"]["summary"]
@@ -104,35 +110,52 @@ class JiraAPIWrapper(BaseModel):
                     rel_summary = related_issue["outwardIssue"]["fields"]["summary"]
                 rel_issues += f"""        {rel_type} {rel_key} {rel_summary}"""
             # Add text
-            parsed_string += f"""{key}: {summary}\n    Created on: {created}\n    Assignee: {assignee}\n    Priority: {priority}\n    Status: {status}\n{rel_issues}\n\n"""
+            parsed_string += f"""{key}: {summary}\n    Created on: {created}\n    Assignee: {assignee}\n    Priority: {priority}\n    Status: {status}\n{rel_issues}\n"""
         # Return parsed string
-        return parsed_string, raw_string
+        return parsed_string, count
 
     def search(self, query: str) -> str:
         jql_response = self.jira.jql(query)
-        parsed, raw = self.jql_results_to_text(jql_response)
+        parsed, count = self.jql_results_to_text(jql_response)
+        parsed += f"""Found {count} issues: \n\n {parsed}"""
         return parsed
 
     def create(self, query: str) -> str:
-        try:
-            params = json.loads(query)
-            print(params)
-            self.jira.create_issue(fields=dict(params))
-        except ValueError as e:
-            print("Error: JSON provided by LLM incorrect")
-            print(e)
+        params = json.loads(query)
+        print(params)
+        self.jira.create_issue(fields=dict(params))
 
     def other(self, query: str) -> str:
-        try:
-            exec(query)
-        except ValueError as e:
-            print("Error: jira call provided by LLM incorrect")
-            print(e)
+        context = {"self": self}
+        exec(f"result = {query}", context)
+        result = context["result"]
+        return result
+
+    def project(self) -> str:
+        projects = self.jira.projects()
+        parsed, count = self.parse_projects(projects)
+        parsed += f"""Found {count} projects: \n\n {parsed}"""
+        return parsed
+
+    def parse_projects(self, projects):
+        count = 0
+        parsed = ""
+        for project in projects:
+            count += 1
+            id = project['id']
+            key = project['key']
+            name = project['name']
+            type = project['projectTypeKey']
+            style = project['style']
+            parsed += f"""id: {id}\n key: {key}\n name: {name}\n type: {type}\n style: {style}\n"""
+        return parsed, count
 
     def run(self, mode: str, query: str) -> str:
         """Run query through Jira and parse result."""
         if mode == "jql":
             return self.search(query)
+        elif mode == "project":
+            return self.project()
         elif mode == "create":
             return self.create(query)
         elif mode == "other":
