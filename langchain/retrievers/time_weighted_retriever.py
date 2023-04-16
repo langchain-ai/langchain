@@ -71,10 +71,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Tuple[Document, float]]
-        docs_and_scores = (
-            self.vectorstore.similarity_search_with_normalized_similarities(
-                query, **self.search_kwargs
-            )
+        docs_and_scores = self.vectorstore.similarity_search_with_relevance_scores(
+            query, **self.search_kwargs
         )
         results = {}
         for fetched_doc, cosine_distance in docs_and_scores:
@@ -108,6 +106,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         return result
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
+        """Return documents that are relevant to the query."""
         raise NotImplementedError
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
@@ -128,4 +127,14 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
         """Add documents to vectorstore."""
-        raise NotImplementedError
+        current_time = kwargs.get("current_time", datetime.now())
+        # Avoid mutating input documents
+        dup_docs = [deepcopy(d) for d in documents]
+        for i, doc in enumerate(dup_docs):
+            if "last_accessed_at" not in doc.metadata:
+                doc.metadata["last_accessed_at"] = current_time
+            if "created_at" not in doc.metadata:
+                doc.metadata["created_at"] = current_time
+            doc.metadata["buffer_idx"] = len(self.memory_stream) + i
+        self.memory_stream.extend(dup_docs)
+        return await self.vectorstore.aadd_documents(dup_docs, **kwargs)
