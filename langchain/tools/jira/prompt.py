@@ -27,7 +27,8 @@ JIRA_JQL_PROMPT = \
 JIRA_CATCH_ALL_PROMPT = \
     ("""
     This tool is a wrapper around atlassian-python-api's Jira API.
-    There are other dedicated tools for creating and searching for issues, but this tool can be used to perform any other actions allowed by the atlassian-python-api Jira API.
+    There are other dedicated tools for fetching all projects, and creating and searching for issues, 
+    use this tool if you need to perform any other actions allowed by the atlassian-python-api Jira API.
     The input to this tool is line of python code that calls a function from atlassian-python-api's Jira API
     For example, to update the summary field of an issue, you would pass in the following string:
     self.jira.update_issue_field(key, {{"summary": "New summary"}})

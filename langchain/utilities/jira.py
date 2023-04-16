@@ -5,11 +5,12 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
-from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_ISSUE_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT, JIRA_GET_ALL_PROJECTS_PROMPT
+from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_ISSUE_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT, \
+    JIRA_GET_ALL_PROJECTS_PROMPT
 
 import json
 
-# todo: add update and delete operations, add jql error back to response, solve pagination issue
+
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
@@ -80,13 +81,13 @@ class JiraAPIWrapper(BaseModel):
 
         return values
 
-    def jql_results_to_text(self, issues: Dict) -> str:
+    def parse_jql_result(self, issues: Dict) -> str:
         # Start string
         parsed_string = ""
         count = 0
         # Process json
         for issue in issues["issues"]:
-            count +=1
+            count += 1
             # Simple fields
             key = issue["key"]
             summary = issue["fields"]["summary"]
@@ -114,29 +115,6 @@ class JiraAPIWrapper(BaseModel):
         # Return parsed string
         return parsed_string, count
 
-    def search(self, query: str) -> str:
-        jql_response = self.jira.jql(query)
-        parsed, count = self.jql_results_to_text(jql_response)
-        parsed += f"""Found {count} issues: \n\n {parsed}"""
-        return parsed
-
-    def create(self, query: str) -> str:
-        params = json.loads(query)
-        print(params)
-        self.jira.create_issue(fields=dict(params))
-
-    def other(self, query: str) -> str:
-        context = {"self": self}
-        exec(f"result = {query}", context)
-        result = context["result"]
-        return result
-
-    def project(self) -> str:
-        projects = self.jira.projects()
-        parsed, count = self.parse_projects(projects)
-        parsed += f"""Found {count} projects: \n\n {parsed}"""
-        return parsed
-
     def parse_projects(self, projects):
         count = 0
         parsed = ""
@@ -149,6 +127,29 @@ class JiraAPIWrapper(BaseModel):
             style = project['style']
             parsed += f"""id: {id}\n key: {key}\n name: {name}\n type: {type}\n style: {style}\n"""
         return parsed, count
+
+    def search(self, query: str) -> str:
+        jql_response = self.jira.jql(query)
+        parsed, count = self.parse_jql_result(jql_response)
+        parsed += f"""Found {count} issues: \n\n {parsed}"""
+        return parsed
+
+    def project(self) -> str:
+        projects = self.jira.projects()
+        parsed, count = self.parse_projects(projects)
+        parsed += f"""Found {count} projects: \n\n {parsed}"""
+        return parsed
+
+    def create(self, query: str) -> str:
+        params = json.loads(query)
+        print(params)
+        self.jira.create_issue(fields=dict(params))
+
+    def other(self, query: str) -> str:
+        context = {"self": self}
+        exec(f"result = {query}", context)
+        result = context["result"]
+        return result
 
     def run(self, mode: str, query: str) -> str:
         """Run query through Jira and parse result."""
