@@ -227,7 +227,7 @@ class FAISS(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -262,7 +262,11 @@ class FAISS(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -404,40 +408,48 @@ class FAISS(VectorStore):
             **kwargs,
         )
 
-    def save_local(self, folder_path: str) -> None:
+    def save_local(self, folder_path: str, index_name: str = "index") -> None:
         """Save FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to save index, docstore,
                 and index_to_docstore_id to.
+            index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
         path.mkdir(exist_ok=True, parents=True)
 
         # save index separately since it is not picklable
         faiss = dependable_faiss_import()
-        faiss.write_index(self.index, str(path / "index.faiss"))
+        faiss.write_index(
+            self.index, str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # save docstore and index_to_docstore_id
-        with open(path / "index.pkl", "wb") as f:
+        with open(path / "{index_name}.pkl".format(index_name=index_name), "wb") as f:
             pickle.dump((self.docstore, self.index_to_docstore_id), f)
 
     @classmethod
-    def load_local(cls, folder_path: str, embeddings: Embeddings) -> FAISS:
+    def load_local(
+        cls, folder_path: str, embeddings: Embeddings, index_name: str = "index"
+    ) -> FAISS:
         """Load FAISS index, docstore, and index_to_docstore_id to disk.
 
         Args:
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
+            index_name: for saving with a specific index file name
         """
         path = Path(folder_path)
         # load index separately since it is not picklable
         faiss = dependable_faiss_import()
-        index = faiss.read_index(str(path / "index.faiss"))
+        index = faiss.read_index(
+            str(path / "{index_name}.faiss".format(index_name=index_name))
+        )
 
         # load docstore and index_to_docstore_id
-        with open(path / "index.pkl", "rb") as f:
+        with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
 

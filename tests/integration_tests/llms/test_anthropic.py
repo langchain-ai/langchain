@@ -32,7 +32,6 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
-        model="claude-v1",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -55,7 +54,6 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
-        model="claude-v1",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,

@@ -50,7 +50,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     def _get_combined_score(
         self,
         document: Document,
-        vector_salience: Optional[float],
+        vector_relevance: Optional[float],
         current_time: datetime,
     ) -> float:
         """Return the combined score for a document."""
@@ -63,8 +63,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         for key in self.other_score_keys:
             if key in document.metadata:
                 score += document.metadata[key]
-        if vector_salience is not None:
-            score += vector_salience
+        if vector_relevance is not None:
+            score += vector_relevance
         print(score)
         return score
 
@@ -75,10 +75,10 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             query, **self.search_kwargs
         )
         results = {}
-        for fetched_doc, cosine_distance in docs_and_scores:
+        for fetched_doc, relevance in docs_and_scores:
             buffer_idx = fetched_doc.metadata["buffer_idx"]
             doc = self.memory_stream[buffer_idx]
-            results[buffer_idx] = (doc, (1 - cosine_distance))
+            results[buffer_idx] = (doc, relevance)
         return results
 
     def get_relevant_documents(self, query: str) -> List[Document]:
@@ -91,8 +91,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         # If a doc is considered salient, update the salience score
         docs_and_scores.update(self.get_salient_docs(query))
         rescored_docs = [
-            (doc, self._get_combined_score(doc, salience, current_time))
-            for doc, salience in docs_and_scores.values()
+            (doc, self._get_combined_score(doc, relevance, current_time))
+            for doc, relevance in docs_and_scores.values()
         ]
         rescored_docs.sort(key=lambda x: x[1], reverse=True)
         result = []
