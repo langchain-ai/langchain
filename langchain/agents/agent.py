@@ -30,7 +30,7 @@ from langchain.schema import (
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class BaseSingleActionAgent(BaseModel):
