@@ -13,7 +13,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 distance_metric_map = {
     "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
