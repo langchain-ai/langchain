@@ -112,7 +112,7 @@ def test_faiss_local_save_load() -> None:
     assert new_docsearch.index is not None
 
 
-def test_faiss_similarity_search_with_normalized_similarities() -> None:
+def test_faiss_similarity_search_with_relevance_scores() -> None:
     """Test the similarity search with normalized similarities."""
     texts = ["foo", "bar", "baz"]
     docsearch = FAISS.from_texts(
@@ -120,7 +120,7 @@ def test_faiss_similarity_search_with_normalized_similarities() -> None:
         FakeEmbeddings(),
         normalize_score_fn=lambda score: 1.0 - score / math.sqrt(2),
     )
-    outputs = docsearch.similarity_search_with_normalized_similarities("foo", k=1)
+    outputs = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     output, score = outputs[0]
     assert output == Document(page_content="foo")
     assert score == 1.0
@@ -135,7 +135,7 @@ def test_faiss_invalid_normalize_fn() -> None:
     with pytest.raises(
         ValueError, match="Normalized similarity scores must be between 0 and 1"
     ):
-        docsearch.similarity_search_with_normalized_similarities("foo", k=1)
+        docsearch.similarity_search_with_relevance_scores("foo", k=1)
 
 
 def test_missing_normalize_score_fn() -> None:
@@ -143,4 +143,4 @@ def test_missing_normalize_score_fn() -> None:
     with pytest.raises(ValueError):
         texts = ["foo", "bar", "baz"]
         faiss_instance = FAISS.from_texts(texts, FakeEmbeddings())
-        faiss_instance.similarity_search_with_normalized_similarities("foo", k=2)
+        faiss_instance.similarity_search_with_relevance_scores("foo", k=2)

@@ -441,7 +441,7 @@ class FAISS(VectorStore):
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
 
-    def _similarity_search_with_normalized_similarities(
+    def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
