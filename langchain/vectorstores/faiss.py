@@ -30,9 +30,9 @@ def dependable_faiss_import() -> Any:
     return faiss
 
 
-def _default_normalize_score_fn(score: float) -> float:
+def _default_relevance_score_fn(score: float) -> float:
     """Return a similarity score on a scale [0, 1]."""
-    # The 'correct' normalization function
+    # The 'correct' relevance function
     # may differ depending on a few things, including:
     # - the distance / similarity metric used by the VectorStore
     # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
@@ -63,16 +63,16 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
-        normalize_score_fn: Optional[
+        relevance_score_fn: Optional[
             Callable[[float], float]
-        ] = _default_normalize_score_fn,
+        ] = _default_relevance_score_fn,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
         self.index = index
         self.docstore = docstore
         self.index_to_docstore_id = index_to_docstore_id
-        self.normalize_score_fn = normalize_score_fn
+        self.relevance_score_fn = relevance_score_fn
 
     def __add(
         self,
@@ -448,10 +448,10 @@ class FAISS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        if self.normalize_score_fn is None:
+        if self.relevance_score_fn is None:
             raise ValueError(
                 "normalize_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self.normalize_score_fn(score)) for doc, score in docs_and_scores]
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
