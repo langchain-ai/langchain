@@ -1,14 +1,13 @@
 """Functionality for loading agents."""
 import json
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.agent_types import AgentType
 from langchain.agents.chat.base import ChatAgent
-from langchain.agents.chat_v2.base import ChatAgentV2
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
@@ -19,14 +18,13 @@ from langchain.chains.loading import load_chain, load_chain_from_config
 from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
 
-AGENT_TO_CLASS = {
+AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
     AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
     AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
     AgentType.SELF_ASK_WITH_SEARCH: SelfAskWithSearchAgent,
     AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
     AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
     AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
-    AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION_V2: ChatAgentV2,
 }
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"

@@ -2,8 +2,9 @@
 import re
 from typing import Any, List, Optional, Sequence, Tuple
 
-from langchain.agents.agent import Agent, AgentExecutor
+from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
+from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
@@ -16,6 +17,10 @@ from langchain.tools.base import BaseTool
 
 class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
+
+    @classmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
+        return ReActOutputParser()
 
     @property
     def _agent_type(self) -> str:
@@ -36,27 +41,6 @@ class ReActDocstoreAgent(Agent):
             raise ValueError(
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
-
-    def _fix_text(self, text: str) -> str:
-        return text + "\nAction:"
-
-    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        action_prefix = "Action: "
-        if not text.strip().split("\n")[-1].startswith(action_prefix):
-            return None
-        action_block = text.strip().split("\n")[-1]
-
-        action_str = action_block[len(action_prefix) :]
-        # Parse out the action and the directive.
-        re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
-        if re_matches is None:
-            raise ValueError(f"Could not parse action directive: {action_str}")
-        return re_matches.group(1), re_matches.group(2)
-
-    @property
-    def finish_tool_name(self) -> str:
-        """Name of the tool of when to finish the chain."""
-        return "Finish"
 
     @property
     def observation_prefix(self) -> str:
