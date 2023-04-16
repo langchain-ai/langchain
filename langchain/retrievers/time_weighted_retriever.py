@@ -27,8 +27,8 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     memory_stream: List[Document] = Field(default_factory=list)
     """The memory_stream of documents to search through."""
 
-    decay_factor: float = Field(default=0.99)
-    """The exponential decay factor used as decay_factor ** (hrs_passed)."""
+    decay_rate: float = Field(default=0.01)
+    """The exponential decay factor used as (1.0-decay_rate)**(hrs_passed)."""
 
     k: int = 4
     """The maximum number of documents to retrieve in a given call."""
@@ -58,14 +58,12 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
             current_time,
             document.metadata["last_accessed_at"],
         )
-        score = self.decay_factor**hours_passed
-        print(score)
+        score = (1.0 - self.decay_rate) ** hours_passed
         for key in self.other_score_keys:
             if key in document.metadata:
                 score += document.metadata[key]
         if vector_relevance is not None:
             score += vector_relevance
-        print(score)
         return score
 
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
