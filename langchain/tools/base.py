@@ -63,7 +63,7 @@ class BaseTool(ABC, BaseModel):
     ) -> str:
         """Run the tool."""
         if isinstance(tool_input, str):
-            if len(self.args) > 0:
+            if len(self.args) > 1:
                 raise ValueError("Cannot call run on tools with > 1 argument")
             key = self.args[0].name
             run_input = {key: tool_input}
@@ -100,7 +100,7 @@ class BaseTool(ABC, BaseModel):
     ) -> str:
         """Run the tool asynchronously."""
         if isinstance(tool_input, str):
-            if len(self.args) > 0:
+            if len(self.args) > 1:
                 raise ValueError("Cannot call run on tools with > 1 argument")
             key = self.args[0].name
             run_input = {key: tool_input}
