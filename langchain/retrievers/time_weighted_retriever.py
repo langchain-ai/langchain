@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.faiss import FAISS
+from langchain.vectorstores.base import VectorStore
 
 
 def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
@@ -17,7 +17,7 @@ def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     """Retriever combining embededing similarity with recency."""
 
-    vectorstore: FAISS
+    vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""
 
     search_kwargs: dict = Field(default_factory=lambda: dict(k=100))

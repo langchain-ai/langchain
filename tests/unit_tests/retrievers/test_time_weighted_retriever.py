@@ -86,7 +86,7 @@ class MockVectorStore(VectorStore):
         """Return VectorStore initialized from texts and embeddings."""
         return cls()
 
-    def _similarity_search_with_normalized_similarities(
+    def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
@@ -129,8 +129,8 @@ def test_get_combined_score(
         document, vector_salience, current_time
     )
     expected_score = (
-        time_weighted_retriever.decay_factor**expected_hours_passed + vector_salience
-    )
+        1.0 - time_weighted_retriever.decay_rate
+    ) ** expected_hours_passed + vector_salience
     assert combined_score == pytest.approx(expected_score)
 
 
