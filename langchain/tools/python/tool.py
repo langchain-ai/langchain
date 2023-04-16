@@ -28,13 +28,13 @@ class PythonREPLTool(BaseTool):
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
     sanitize_input: bool = True
 
-    def _run(self, tool_input: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the tool."""
         if self.sanitize_input:
-            tool_input = tool_input.strip().strip("```")
-        return self.python_repl.run(tool_input)
+            query = query.strip().strip("```")
+        return self.python_repl.run(query)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("PythonReplTool does not support async")
 
@@ -64,13 +64,13 @@ class PythonAstREPLTool(BaseTool):
             )
         return values
 
-    def _run(self, tool_input: str) -> str:
+    def _run(self, query: str) -> str:
         """Use the tool."""
         try:
             if self.sanitize_input:
                 # Remove the triple backticks from the query.
-                tool_input = tool_input.strip().strip("```")
-            tree = ast.parse(tool_input)
+                query = query.strip().strip("```")
+            tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
@@ -91,6 +91,6 @@ class PythonAstREPLTool(BaseTool):
         except Exception as e:
             return str(e)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("PythonReplTool does not support async")

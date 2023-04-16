@@ -1,5 +1,6 @@
 """Base implementation for tools or skills."""
 
+import inspect
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
@@ -31,7 +32,9 @@ class BaseTool(ABC, BaseModel):
     @property
     def args(self) -> List[ArgInfo]:
         if self.tool_args is None:
-            return [ArgInfo(name="tool_input", description="")]
+            # Get the name expected in the run function
+            var_names = inspect.signature(self._run).parameters.keys()
+            return [ArgInfo(name=name, description="") for name in var_names]
         else:
             return self.tool_args
 
@@ -64,7 +67,7 @@ class BaseTool(ABC, BaseModel):
         """Run the tool."""
         if isinstance(tool_input, str):
             if len(self.args) > 1:
-                raise ValueError("Cannot call run on tools with > 1 argument")
+                raise ValueError("Cannot pass in a string when > 1 argument expected")
             key = self.args[0].name
             run_input = {key: tool_input}
         else:
@@ -101,7 +104,7 @@ class BaseTool(ABC, BaseModel):
         """Run the tool asynchronously."""
         if isinstance(tool_input, str):
             if len(self.args) > 1:
-                raise ValueError("Cannot call run on tools with > 1 argument")
+                raise ValueError("Cannot pass in a string when > 1 argument expected")
             key = self.args[0].name
             run_input = {key: tool_input}
         else:
@@ -146,5 +149,5 @@ class BaseTool(ABC, BaseModel):
         return observation
 
     def __call__(self, tool_input: str) -> str:
-        """Make tools callable with str input."""
+        """Make tool callable."""
         return self.run(tool_input)
