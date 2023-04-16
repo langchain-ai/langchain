@@ -1,6 +1,7 @@
 """Wrapper around FAISS vector database."""
 from __future__ import annotations
 
+import math
 import pickle
 import uuid
 from pathlib import Path
@@ -29,6 +30,20 @@ def dependable_faiss_import() -> Any:
     return faiss
 
 
+def _default_normalize_score_fn(score: float) -> float:
+    """Return a similarity score on a scale [0, 1]."""
+    # The 'correct' normalization function
+    # may differ depending on a few things, including:
+    # - the distance / similarity metric used by the VectorStore
+    # - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+    # - embedding dimensionality
+    # - etc.
+    # This function converts the euclidean norm of normalized embeddings
+    # (0 is most similar, sqrt(2) most dissimilar)
+    # to a similarity function (0 to 1)
+    return 1.0 - score / math.sqrt(2)
+
+
 class FAISS(VectorStore):
     """Wrapper around FAISS vector database.
 
@@ -48,7 +63,9 @@ class FAISS(VectorStore):
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
-        normalize_score_fn: Optional[Callable[[float], float]] = None,
+        normalize_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_normalize_score_fn,
     ):
         """Initialize with necessary components."""
         self.embedding_function = embedding_function
@@ -424,7 +441,7 @@ class FAISS(VectorStore):
             docstore, index_to_docstore_id = pickle.load(f)
         return cls(embeddings.embed_query, index, docstore, index_to_docstore_id)
 
-    def _similarity_search_with_normalized_similarities(
+    def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,

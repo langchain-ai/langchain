@@ -81,17 +81,17 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
-    def similarity_search_with_normalized_similarities(
+    def similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and similarity scores, normalized on a scale from 0 to 1.
+        """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
         """
-        docs_and_similarities = self._similarity_search_with_normalized_similarities(
+        docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
         )
         if any(
@@ -99,18 +99,18 @@ class VectorStore(ABC):
             for _, similarity in docs_and_similarities
         ):
             raise ValueError(
-                "Normalized similarity scores must be between"
+                "Relevance scores must be between"
                 f" 0 and 1, got {docs_and_similarities}"
             )
         return docs_and_similarities
 
-    def _similarity_search_with_normalized_similarities(
+    def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and similarity scores, normalized on a scale from 0 to 1.
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
 
         0 is dissimilar, 1 is most similar.
         """
