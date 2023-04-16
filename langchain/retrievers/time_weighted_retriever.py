@@ -1,9 +1,9 @@
 """Retriever that combines embedding similarity with recency in retrieving values."""
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.faiss import FAISS
@@ -11,7 +11,7 @@ from langchain.vectorstores.faiss import FAISS
 
 def _get_hours_passed(time: datetime, ref_time: datetime) -> float:
     """Get the hours passed between two datetime objects."""
-    return (time - ref_time).total_seconds() / 60
+    return (time - ref_time).total_seconds() / 3600
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
@@ -30,7 +30,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     decay_factor: float = Field(default=0.99)
     """The exponential decay factor used as decay_factor ** (hrs_passed)."""
 
-    k: int = 15
+    k: int = 4
     """The maximum number of documents to retrieve in a given call."""
 
     other_score_keys: List[str] = []
@@ -68,18 +68,13 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         print(score)
         return score
 
-    @property
-    def _similarity_search_with_score(
-        self,
-    ) -> Callable[[str], List[Tuple[Document, float]]]:
-        """Search the vector store for related docs and their similarities."""
-        return self.vectorstore.similarity_search_with_score  # type: ignore
-
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Tuple[Document, float]]
-        docs_and_scores = self.vectorstore.similarity_search_with_score(
-            query, **self.search_kwargs
+        docs_and_scores = (
+            self.vectorstore.similarity_search_with_normalized_similarities(
+                query, **self.search_kwargs
+            )
         )
         results = {}
         for fetched_doc, cosine_distance in docs_and_scores:
@@ -106,8 +101,10 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         # Ensure frequently accessed memories aren't forgotten
         current_time = datetime.now()
         for doc, _ in rescored_docs[: self.k]:
-            doc.metadata["last_accessed_at"] = current_time
-            result.append(doc)
+            # TODO: Update vector store doc once `update` method is exposed.
+            buffered_doc = self.memory_stream[doc.metadata["buffer_idx"]]
+            buffered_doc.metadata["last_accessed_at"] = current_time
+            result.append(buffered_doc)
         return result
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
