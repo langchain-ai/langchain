@@ -1,5 +1,5 @@
 """Load Data from a Confluence Space"""
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -125,7 +125,7 @@ class ConfluenceLoader(BaseLoader):
         label: Optional[str] = None,
         cql: Optional[str] = None,
         include_attachments: bool = False,
-        limit: int = 50,
+        limit: Optional[int] = 50,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -165,32 +165,30 @@ class ConfluenceLoader(BaseLoader):
         text_maker.ignore_images = True
 
         if space_key:
-            pages = self.confluence.get_all_pages_from_space(
-                space=space_key, limit=limit, expand="body.storage.value"
+            pages = self.paginate_request(
+                self.confluence.get_all_pages_from_space,
+                space=space_key,
+                limit=limit,
+                expand="body.storage.value",
             )
             for page in pages:
                 doc = self.process_page(page, include_attachments, text_maker)
                 docs.append(doc)
 
         if label:
-            pages = self.confluence.get_all_pages_by_label(
-                label=label, limit=limit, expand="body.storage.value"
+            pages = self.paginate_request(
+                self.confluence.get_all_pages_by_label,
+                label=label,
+                limit=limit,
+                expand="body.storage.value",
             )
             for page in pages:
                 doc = self.process_page(page, include_attachments, text_maker)
                 docs.append(doc)
 
         if cql:
-            pages = self.confluence.cql(
-                cql=cql, limit=limit, expand="body.storage.value"
-            )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, text_maker)
-                docs.append(doc)
-
-        if label:
-            pages = self.confluence.get_all_pages_by_label(
-                label=label, expand="body.storage.value"
+            pages = self.paginate_request(
+                self.confluence.cql, cql=cql, limit=limit, expand="body.storage.value"
             )
             for page in pages:
                 doc = self.process_page(page, include_attachments, text_maker)
@@ -204,6 +202,37 @@ class ConfluenceLoader(BaseLoader):
                 doc = self.process_page(page, include_attachments, text_maker)
                 docs.append(doc)
 
+        return docs
+
+    def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
+        """Paginate the various methods to retrieve groups of pages.
+
+        Unforunately, due to page size, sometimes the Confluence API
+        doesn't match the limit value. Also, due to the Atlassian Python
+        package, we don't get the "next" values from the "_links" key because
+        they only return the value from the results key. So here, the pagination
+        starts from 0 and goes until the limit. We have to manually check if there
+        are more docs based on the length of the returned list of pages, rather than
+        just checking for the presence of a `next` key in the response like this page
+        would have you do:
+        https://developer.atlassian.com/server/confluence/pagination-in-the-rest-api/
+
+        :param retrieval_method: Function used to retrieve docs
+        :type retrieval_method: callable
+        :return: List of documents
+        :rtype: List
+        """
+
+        limit = kwargs["limit"]
+        page = 0
+        docs = []
+        while page < limit:
+            batch = retrieval_method(**kwargs, start=page)
+            if len(batch) < limit:
+                page = limit
+            else:
+                page += len(batch)
+            docs.extend(batch)
         return docs
 
     def process_page(

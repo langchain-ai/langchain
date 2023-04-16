@@ -28,3 +28,12 @@ def test_load_full_confluence_space() -> None:
 
     assert len(docs) == 14
     assert docs[0].page_content is not None
+
+
+@pytest.mark.skipif(not confluence_installed, reason="Atlassian package not installed")
+def test_confluence_pagination() -> None:
+    loader = ConfluenceLoader(url="https://templates.atlassian.net/wiki/")
+    docs = loader.load(space_key="RD", limit=5)
+
+    assert len(docs) == 5
+    assert docs[0].page_content is not None
