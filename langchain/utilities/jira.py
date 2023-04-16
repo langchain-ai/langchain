@@ -8,9 +8,8 @@ from langchain.utils import get_from_dict_or_env
 from langchain.tools.jira.prompt import JIRA_JQL_PROMPT, JIRA_ISSUE_CREATE_PROMPT, JIRA_CATCH_ALL_PROMPT, \
     JIRA_GET_ALL_PROJECTS_PROMPT
 
-import json
 
-
+# todo: think about error handling, more specific api specs, better response parsing - keep as json, also jql/project limits
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
@@ -21,23 +20,23 @@ class JiraAPIWrapper(BaseModel):
 
     operations: List[str] = [
         {
-            "id": "jql",
-            "name": "JQL",
+            "mode": "jql",
+            "name": "JQL Query",
             "description": JIRA_JQL_PROMPT,
         },
         {
-            "id": "project",
+            "mode": "project",
             "name": "Get Projects",
             "description": JIRA_GET_ALL_PROJECTS_PROMPT,
         },
         {
-            "id": "create",
+            "mode": "create",
             "name": "Create Issue",
             "description": JIRA_ISSUE_CREATE_PROMPT,
         },
         {
-            "id": "other",
-            "name": "All jira operations other than create and jql",
+            "mode": "other",
+            "name": "Catch all Jira API call",
             "description": JIRA_CATCH_ALL_PROMPT,
         }
     ]
@@ -48,7 +47,6 @@ class JiraAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def list(self) -> List[str]:
-        # todo make this a list of dicts with name and description
         return self.operations
 
     @root_validator()
@@ -65,7 +63,6 @@ class JiraAPIWrapper(BaseModel):
 
         try:
             from atlassian import Jira
-
         except ImportError:
             raise ImportError(
                 "atlassian-python-api is not installed. "
@@ -109,9 +106,9 @@ class JiraAPIWrapper(BaseModel):
                     rel_type = related_issue["type"]["outward"]
                     rel_key = related_issue["outwardIssue"]["key"]
                     rel_summary = related_issue["outwardIssue"]["fields"]["summary"]
-                rel_issues += f"""        {rel_type} {rel_key} {rel_summary}"""
+                rel_issues += f"""  {rel_type} {rel_key} {rel_summary}"""
             # Add text
-            parsed_string += f"""{key}: {summary}\n    Created on: {created}\n    Assignee: {assignee}\n    Priority: {priority}\n    Status: {status}\n{rel_issues}\n"""
+            parsed_string += f"""Issue key: {key}\n Summary: {summary}\n Created on: {created}\n Assignee: {assignee}\n Priority: {priority}\n Status: {status}\n{rel_issues}\n"""
         # Return parsed string
         return parsed_string, count
 
@@ -141,15 +138,23 @@ class JiraAPIWrapper(BaseModel):
         return parsed
 
     def create(self, query: str) -> str:
+        try:
+            import json
+        except ImportError:
+            raise ImportError(
+                "json is not installed. "
+                "Please install it with `pip install json`"
+            )
         params = json.loads(query)
-        print(params)
         self.jira.create_issue(fields=dict(params))
+
 
     def other(self, query: str) -> str:
         context = {"self": self}
         exec(f"result = {query}", context)
         result = context["result"]
         return result
+
 
     def run(self, mode: str, query: str) -> str:
         """Run query through Jira and parse result."""

@@ -21,7 +21,7 @@ class JiraToolkit(BaseToolkit):
             JiraAction(
                 name=action["name"],
                 description=action["description"],
-                action_id=action["id"],
+                mode=action["mode"],
                 api_wrapper=jira_api_wrapper,
             )
             for action in actions
