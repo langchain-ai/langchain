@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _results_to_docs(results: Any) -> List[Document]:

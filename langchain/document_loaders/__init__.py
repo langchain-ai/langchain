@@ -16,6 +16,7 @@ from langchain.document_loaders.college_confidential import CollegeConfidentialL
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
+from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
@@ -141,6 +142,7 @@ __all__ = [
     "SitemapLoader",
     "DuckDBLoader",
     "BigQueryLoader",
+    "DiffbotLoader",
     "BiliBiliLoader",
     "SlackDirectoryLoader",
     "GitLoader",

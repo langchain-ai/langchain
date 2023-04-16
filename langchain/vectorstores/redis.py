@@ -16,7 +16,7 @@ from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 # required modules
