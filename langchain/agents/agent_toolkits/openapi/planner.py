@@ -5,8 +5,8 @@ from typing import List, Optional
 
 import yaml
 
-from langchain.llms import AzureOpenAI
-from langchain.chat_models import AzureChatOpenAI
+from pydantic import Field
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -48,6 +48,7 @@ def _get_default_llm_chain_factory(prompt):
             prompt=prompt,
         )
     return factory
+
 
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     name = "requests_get"
