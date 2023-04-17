@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.139"
+version = "0.0.141"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -60,6 +60,7 @@ psycopg2-binary = {version = "^2.9.5", optional = true}
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
 gptcache = {version = ">=0.1.7", optional = true}
+numexpr = "^2.8.4"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
