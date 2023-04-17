@@ -1,8 +1,8 @@
 """Interface for tools."""
-from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Union
+from inspect import Parameter, signature
+from typing import Any, Awaitable, Callable, List, Optional, Union
 
-from langchain.tools.base import BaseTool
+from langchain.tools.base import ArgInfo, BaseTool
 
 
 class Tool(BaseTool):
@@ -47,6 +47,21 @@ class InvalidTool(BaseTool):
         return f"{tool_name} is not a valid tool, try another one."
 
 
+def _get_clean_type_name(annotation: Any) -> str:
+    if annotation == Parameter.empty:
+        return ""
+
+    if getattr(annotation, "__origin__", None) == Union:
+        types = ", ".join([_get_clean_type_name(arg) for arg in annotation.__args__])
+        return f"Union[{types}]"
+
+    if getattr(annotation, "__origin__", None) == Optional:
+        optional_type = _get_clean_type_name(annotation.__args__[0])
+        return f"Optional[{optional_type}]"
+
+    return annotation.__name__
+
+
 def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -73,9 +88,15 @@ def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
             assert func.__doc__, "Function must have a docstring"
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
-            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
+            func_signature = signature(func)
+            description = f"{tool_name}{func_signature} - {func.__doc__.strip()}"
+            tool_args: List[ArgInfo] = []
+            for param_name, parameter in func_signature.parameters.items():
+                annotation = _get_clean_type_name(parameter.annotation)
+                tool_args.append(ArgInfo(name=param_name, description=annotation))
             tool_ = Tool(
                 name=tool_name,
+                tool_args=tool_args,
                 func=func,
                 description=description,
                 return_direct=return_direct,
