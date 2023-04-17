@@ -150,8 +150,6 @@ class Weaviate(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        lambda_mult = kwargs.get("lambda_mult", 0.5)
-
         if self._embedding is not None:
             embedding = self._embedding.embed_query(query)
         else:
@@ -159,6 +157,27 @@ class Weaviate(VectorStore):
                 "max_marginal_relevance_search requires a suitable Embeddings object"
             )
 
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, **kwargs
+        )
+
+    def max_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        lambda_mult = kwargs.get("lambda_mult", 0.5)
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         results = (
@@ -180,6 +199,7 @@ class Weaviate(VectorStore):
             payload[idx].pop("_additional")
             meta = payload[idx]
             docs.append(Document(page_content=text, metadata=meta))
+
         return docs
 
     @classmethod

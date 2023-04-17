@@ -88,3 +88,32 @@ class TestWeaviate:
             Document(page_content="foo", metadata={"page": 0}),
             Document(page_content="bar", metadata={"page": 1}),
         ]
+
+    @pytest.mark.vcr(ignore_localhost=True)
+    def test_max_marginal_relevance_search_by_vector(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and MRR search by vector."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+
+        docsearch = Weaviate.from_texts(
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        foo_embedding = embedding_openai.embed_query("foo")
+
+        # if lambda=1 the algorithm should be equivalent to standard ranking
+        standard_ranking = docsearch.similarity_search("foo", k=2)
+        output = docsearch.max_marginal_relevance_search_by_vector(
+            foo_embedding, k=2, fetch_k=3, lambda_mult=1.0
+        )
+        assert output == standard_ranking
+
+        # if lambda=0 the algorithm should favour maximal diversity
+        output = docsearch.max_marginal_relevance_search_by_vector(
+            foo_embedding, k=2, fetch_k=3, lambda_mult=0.0
+        )
+        assert output == [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="bar", metadata={"page": 1}),
+        ]
