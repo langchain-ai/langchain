@@ -96,7 +96,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self,
         task_type: Optional[str] = "inference",
         workspace: Optional[str] = None,
-        project_name: Optional[str] = "comet-langchain-demo",
+        project_name: Optional[str] = None,
         tags: Optional[Sequence] = None,
         name: Optional[str] = None,
         visualizations: Optional[List[str]] = None,
