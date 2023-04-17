@@ -116,6 +116,13 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         docs = self._get_docs(inputs)
+        for doc in docs:
+            if "source" not in doc.metadata:
+                raise ValueError(
+                    f"Q&A with sources require document sources to be embedded as metadata when ingested into vectorstore. The document {doc.id} in your input documents does not have source in meta. "
+                    "Make sure to pass in metadata in your vectorstore when ingesting documents."
+                )
+
         answer = self.combine_documents_chain.run(input_documents=docs, **inputs)
         if re.search(r"SOURCES:\s", answer):
             answer, sources = re.split(r"SOURCES:\s", answer)
