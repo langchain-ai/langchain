@@ -375,6 +375,9 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -400,7 +403,14 @@ class Redis(VectorStore):
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+        )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
