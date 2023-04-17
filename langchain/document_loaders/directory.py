@@ -12,7 +12,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 FILE_LOADER_TYPE = Union[
     Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader]
 ]
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _is_visible(p: Path) -> bool:

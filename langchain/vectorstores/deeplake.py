@@ -13,7 +13,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 distance_metric_map = {
     "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
@@ -97,6 +97,7 @@ class DeepLake(VectorStore):
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
         num_workers: int = 4,
+        **kwargs: Any,
     ) -> None:
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
@@ -113,14 +114,18 @@ class DeepLake(VectorStore):
         self._deeplake = deeplake
 
         if deeplake.exists(dataset_path, token=token):
-            self.ds = deeplake.load(dataset_path, token=token, read_only=read_only)
+            self.ds = deeplake.load(
+                dataset_path, token=token, read_only=read_only, **kwargs
+            )
             logger.warning(
                 f"Deep Lake Dataset in {dataset_path} already exists, "
                 f"loading from the storage"
             )
             self.ds.summary()
         else:
-            self.ds = deeplake.empty(dataset_path, token=token, overwrite=True)
+            self.ds = deeplake.empty(
+                dataset_path, token=token, overwrite=True, **kwargs
+            )
 
             with self.ds:
                 self.ds.create_tensor(
@@ -386,7 +391,7 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -406,7 +411,7 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -466,8 +471,7 @@ class DeepLake(VectorStore):
             DeepLake: Deep Lake dataset.
         """
         deeplake_dataset = cls(
-            dataset_path=dataset_path,
-            embedding_function=embedding,
+            dataset_path=dataset_path, embedding_function=embedding, **kwargs
         )
         deeplake_dataset.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return deeplake_dataset
