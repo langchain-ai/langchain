@@ -2064,14 +2064,14 @@ grpc = ["grpcio (>=1.44.0,<2.0.0dev)"]
 
 [[package]]
 name = "gptcache"
-version = "0.1.11"
+version = "0.1.12"
 description = "GPTCache, a powerful caching library that can be used to speed up and lower the cost of chat applications that rely on the LLM service. GPTCache works as a memcache for AIGC applications, similar to how Redis works for traditional applications."
 category = "main"
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "gptcache-0.1.11-py3-none-any.whl", hash = "sha256:114afdfbce429734c11ef50cca7669942a5ab39180b372b187cff5ffb3438c94"},
-    {file = "gptcache-0.1.11.tar.gz", hash = "sha256:d4a18a7587e45916fb406c2e949f2d225cdf1f8fecd0f68ee3de2e7a9cfe30c2"},
+    {file = "gptcache-0.1.12-py3-none-any.whl", hash = "sha256:6cfae74be4c5dcabc6c9eda509bd238914c7bacc6209bb198eb270a8480200f8"},
+    {file = "gptcache-0.1.12.tar.gz", hash = "sha256:8e23d658fc51a96ec033a34345922b4e15aea637ad16ea227e71020cbd0a6820"},
 ]
 
 [package.dependencies]
