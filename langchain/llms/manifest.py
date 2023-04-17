@@ -28,7 +28,7 @@ class ManifestWrapper(LLM):
         except ImportError:
             raise ValueError(
                 "Could not import manifest python package. "
-                "Please it install it with `pip install manifest-ml`."
+                "Please install it with `pip install manifest-ml`."
             )
         return values
 

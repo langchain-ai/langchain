@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
+WIKIPEDIA_MAX_QUERY_LENGTH = 300
+
 
 class WikipediaAPIWrapper(BaseModel):
     """Wrapper around WikipediaAPI.
@@ -31,13 +33,13 @@ class WikipediaAPIWrapper(BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import wikipedia python package. "
-                "Please it install it with `pip install wikipedia`."
+                "Please install it with `pip install wikipedia`."
             )
         return values
 
     def run(self, query: str) -> str:
         """Run Wikipedia search and get page summaries."""
-        search_results = self.wiki_client.search(query)
+        search_results = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
         summaries = []
         len_search_results = len(search_results)
         if len_search_results == 0:

@@ -9,7 +9,7 @@ from pydantic import root_validator
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.utils import get_from_dict_or_env
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class AzureChatOpenAI(ChatOpenAI):
@@ -87,7 +87,7 @@ class AzureChatOpenAI(ChatOpenAI):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion

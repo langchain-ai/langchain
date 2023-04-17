@@ -18,7 +18,7 @@ from typing import (
 
 from langchain.docstore.document import Document
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class TextSplitter(ABC):
@@ -131,7 +131,7 @@ class TextSplitter(ABC):
         except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please it install it with `pip install transformers`."
+                "Please install it with `pip install transformers`."
             )
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
@@ -139,6 +139,7 @@ class TextSplitter(ABC):
     def from_tiktoken_encoder(
         cls,
         encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
@@ -150,11 +151,13 @@ class TextSplitter(ABC):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
 
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding(encoding_name)
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
 
         def _tiktoken_encoder(text: str, **kwargs: Any) -> int:
             return len(
@@ -193,6 +196,7 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         encoding_name: str = "gpt2",
+        model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
@@ -205,10 +209,14 @@ class TokenTextSplitter(TextSplitter):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
-        # create a GPT-3 encoder instance
-        self._tokenizer = tiktoken.get_encoding(encoding_name)
+
+        if model_name is not None:
+            enc = tiktoken.encoding_for_model(model_name)
+        else:
+            enc = tiktoken.get_encoding(encoding_name)
+        self._tokenizer = enc
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
 

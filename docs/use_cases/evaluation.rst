@@ -1,5 +1,5 @@
 Evaluation
-==============
+==========
 
 .. note::
    `Conceptual Guide <https://docs.langchain.com/docs/use-cases/evaluation>`_
@@ -83,7 +83,7 @@ The existing examples we have are:
 
 
 Other Examples
-------------
+--------------
 
 In addition, we also have some more generic resources for evaluation.
 

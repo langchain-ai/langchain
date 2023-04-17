@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -193,6 +193,7 @@ class Chroma(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -227,6 +228,7 @@ class Chroma(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -269,7 +271,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Chroma],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -307,7 +309,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[Chroma],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
