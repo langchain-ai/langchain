@@ -9,7 +9,7 @@ import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 default_header_template = {
     "User-Agent": "",
@@ -21,6 +21,18 @@ default_header_template = {
     "Connection": "keep-alive",
     "Upgrade-Insecure-Requests": "1",
 }
+
+
+def _build_metadata(soup: Any, url: str) -> dict:
+    """Build metadata from BeautifulSoup output."""
+    metadata = {"source": url}
+    if title := soup.find("title"):
+        metadata["title"] = title.get_text()
+    if description := soup.find("meta", attrs={"name": "description"}):
+        metadata["description"] = description.get("content", None)
+    if html := soup.find("html"):
+        metadata["language"] = html.get("lang", None)
+    return metadata
 
 
 class WebBaseLoader(BaseLoader):
@@ -148,7 +160,7 @@ class WebBaseLoader(BaseLoader):
         for path in self.web_paths:
             soup = self._scrape(path)
             text = soup.get_text()
-            metadata = {"source": path}
+            metadata = _build_metadata(soup, path)
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
@@ -159,8 +171,9 @@ class WebBaseLoader(BaseLoader):
         results = self.scrape_all(self.web_paths)
         docs = []
         for i in range(len(results)):
-            text = results[i].get_text()
-            metadata = {"source": self.web_paths[i]}
+            soup = results[i]
+            text = soup.get_text()
+            metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
