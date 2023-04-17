@@ -1,25 +1,36 @@
 """Interface for tools."""
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Type, Union
 
-from langchain.tools.base import BaseTool
+from pydantic import BaseModel
+
+from langchain.tools.base import BaseTool, create_args_schema_model_from_signature
 
 
 class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Callable[[str], str]
+    func: Callable
     coroutine: Optional[Callable[[str], Awaitable[str]]] = None
 
-    def _run(self, tool_input: str) -> str:
-        """Use the tool."""
-        return self.func(tool_input)
+    @property
+    def args(self) -> Type[BaseModel]:
+        """Generate an input pydantic model."""
+        if self.args_schema is not None:
+            return self.args_schema
+        # We re-define `args` here so we can infer the arguments
+        # from self.func rather than self._run (which isn't informative)
+        return create_args_schema_model_from_signature(self.func)
 
-    async def _arun(self, tool_input: str) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        """Use the tool."""
+        return self.func(*args, **kwargs)
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(tool_input)
+            return await self.coroutine(*args, **kwargs)
         raise NotImplementedError("Tool does not support async")
 
     # TODO: this is for backwards compatibility, remove in future
@@ -69,14 +80,16 @@ def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable[[str], str]) -> Tool:
+        def _make_tool(func: Callable) -> Tool:
             assert func.__doc__, "Function must have a docstring"
             # Description example:
-            #   search_api(query: str) - Searches the API for the query.
+            # search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
+            args_schema = create_args_schema_model_from_signature(func)
             tool_ = Tool(
                 name=tool_name,
                 func=func,
+                args_schema=args_schema,
                 description=description,
                 return_direct=return_direct,
             )

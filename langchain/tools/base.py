@@ -2,12 +2,29 @@
 
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, Extra, Field, create_model, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+
+
+def create_args_schema_model_from_signature(run_func: Callable) -> Type[BaseModel]:
+    """Create a pydantic model type from a function's signature."""
+    signature_ = inspect.signature(run_func)
+    field_definitions: Dict[str, Tuple[Any, Optional[Any]]] = {}
+    for name, param in signature_.parameters.items():
+        if name == "self":
+            continue
+        default_value = (
+            param.default if param.default != inspect.Parameter.empty else None
+        )
+        annotation = (
+            param.annotation if param.annotation != inspect.Parameter.empty else Any
+        )
+        field_definitions[name] = (annotation, default_value)
+    return create_model("ArgsModel", **field_definitions)  # type: ignore
 
 
 class BaseTool(ABC, BaseModel):
@@ -32,17 +49,7 @@ class BaseTool(ABC, BaseModel):
         """Generate an input pydantic model."""
         if self.args_schema is not None:
             return self.args_schema
-
-        signature_ = inspect.signature(self._run)
-        field_definitions: Dict[str, Tuple[Any, Optional[Any]]] = {}
-        for name, param in signature_.parameters.items():
-            if name == "self":
-                continue
-            default_value = (
-                param.default if param.default != inspect.Parameter.empty else None
-            )
-            field_definitions[name] = (param.annotation, default_value)
-        return create_model("ArgsModel", **field_definitions)  # type: ignore
+        return create_args_schema_model_from_signature(self._run)
 
     def _parse_input(
         self,

@@ -1,5 +1,6 @@
 """Test tool utils."""
-from typing import Optional, Type
+from datetime import datetime
+from typing import Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -48,6 +49,36 @@ def test_structured_args() -> None:
     expected_result = "1 True {'foo': 'bar'}"
     args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
+
+
+def test_structured_args_decorator() -> None:
+    """Test functionality with structured arguments parsed as a decorator."""
+
+    @tool
+    def structured_tool_input(
+        arg1: int, arg2: Union[float, datetime], opt_arg: Optional[dict] = None
+    ) -> str:
+        """Return the arguments directly."""
+        return f"{arg1}, {arg2}, {opt_arg}"
+
+    assert isinstance(structured_tool_input, Tool)
+    assert structured_tool_input.name == "structured_tool_input"
+    args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
+    expected_result = "1, 0.001, {'foo': 'bar'}"
+    assert structured_tool_input.run(args) == expected_result
+
+
+def test_empty_args_decorator() -> None:
+    """Test functionality with no args parsed as a decorator."""
+
+    @tool
+    def empty_tool_input() -> str:
+        """Return a constant."""
+        return "the empty result"
+
+    assert isinstance(empty_tool_input, Tool)
+    assert empty_tool_input.name == "empty_tool_input"
+    assert empty_tool_input.run({}) == "the empty result"
 
 
 def test_named_tool_decorator() -> None:
@@ -99,7 +130,7 @@ def test_missing_docstring() -> None:
             return "API result"
 
 
-def test_create_tool_posistional_args() -> None:
+def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")
     assert test_tool("foo") == "foo"
