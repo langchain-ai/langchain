@@ -10,7 +10,7 @@
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, root_validator, validator
 
@@ -190,8 +190,8 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
                 pass
 
         return returns
-
-    def _fetch_files_recursive(self, service, folder_id):
+    
+    def _fetch_files_recursive(self, service, folder_id) -> List[Dict[str, Union[str, List[str]]]]:
         """Fetch all files and subfolders recursively."""
         results = (
             service.files()
