@@ -215,6 +215,38 @@ class LlamaCpp(LLM):
     def stream(
         self, prompt: str, stop: Optional[List[str]] = None
     ) -> Generator[Dict, None, None]:
+        """Yields results objects as they are generated in real time.
+
+        BETA: this is a beta feature while we figure out the right abstraction:
+        Once that happens, this interface could change.
+
+        It also calls the callback manager's on_llm_new_token event with
+        similar parameters to the OpenAI LLM class method of the same name.
+
+        Args:
+            prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            A generator representing the stream of tokens being generated.
+
+        Yields:
+            A dictionary like objects containing a string token and metadata.
+            See llama-cpp-python docs and below for more.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.llms import LlamaCpp
+                llm = LlamaCpp(
+                    model_path="/path/to/local/model.bin",
+                    temperature = 0.5
+                )
+                for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'", stop=["'","\n"]):
+                    result = chunk["choices"][0]
+                    print(result["text"], end='', flush=True)
+
+        """
         params = self._get_parameters(stop)
         result = self.client(prompt=prompt, stream=True, **params)
         for chunk in result:
