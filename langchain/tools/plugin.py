@@ -74,7 +74,7 @@ class AIPluginTool(BaseRequestsTool, BaseTool):
         open_api_spec = marshal_spec(open_api_spec_str)
         openapi_schema = OpenAPISpec.from_spec_dict(open_api_spec)
 
-        spec_description = cls.generate_api_spec(cls, openapi_schema)        
+        spec_description = cls.generate_api_spec(openapi_schema)        
         api_spec = (
             f"Usage Guide: {plugin.description_for_model}\n\n"
             f"OpenAPI Spec: {spec_description}"
@@ -82,11 +82,12 @@ class AIPluginTool(BaseRequestsTool, BaseTool):
 
         operations = {}
         # TODO: Add support for other HTTP methods
-        for (path, info) in openapi_schema.paths.items():
-            if info.get:
-                operations[(path, "get")] = APIOperation.from_openapi_spec(openapi_schema, path, "get")
-            if info.post:
-                operations[(path, "post")] = APIOperation.from_openapi_spec(openapi_schema, path, "post")
+        if openapi_schema.paths:
+            for (path, info) in openapi_schema.paths.items():
+                if info.get:
+                    operations[(path, "get")] = APIOperation.from_openapi_spec(openapi_schema, path, "get")
+                if info.post:
+                    operations[(path, "post")] = APIOperation.from_openapi_spec(openapi_schema, path, "post")
 
         print("Description: ", description)
         return cls(
@@ -99,15 +100,16 @@ class AIPluginTool(BaseRequestsTool, BaseTool):
             requests_wrapper=TextRequestsWrapper()
         )
 
-    @staticmethod
+    @classmethod
     def generate_api_spec(cls, openapi_schema: OpenAPISpec) -> str:
         """Generate a token-optimized API spec for using the tool."""
         operations: List[APIOperation] = []
-        for (path, info) in openapi_schema.paths.items():
-            if info.get:
-                operations.append(APIOperation.from_openapi_spec(openapi_schema, path, "get"))
-            if info.post:
-                operations.append(APIOperation.from_openapi_spec(openapi_schema, path, "post"))
+        if openapi_schema.paths:
+            for (path, info) in openapi_schema.paths.items():
+                if info.get:
+                    operations.append(APIOperation.from_openapi_spec(openapi_schema, path, "get"))
+                if info.post:
+                    operations.append(APIOperation.from_openapi_spec(openapi_schema, path, "post"))
 
         base_str = ""
         for op in operations:
