@@ -9,6 +9,13 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 
+# Those environment variables turn on Deep Lake pytest mode.
+# It significantly makes tests run much faster.
+# Need to run before `import deeplake`
+os.environ["BUGGER_OFF"] = "true"
+os.environ["DEEPLAKE_DOWNLOAD_PATH"] = "./testing/local_storage"
+os.environ["DEEPLAKE_PYTEST_ENABLED"] = "true"
+
 
 # This fixture returns a dictionary containing filter_headers options
 # for replacing certain headers with dummy values during cassette playback
