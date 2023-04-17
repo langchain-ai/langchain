@@ -102,6 +102,14 @@ def test_bad_action_input_line() -> None:
         get_action_and_input(llm_output)
 
 
+def test_no_action_input_line() -> None:
+    """Test handling when no action input found."""
+    llm_output = "Thought: I need to search for NBA\n" "Action: Search"
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Search"
+    assert action_input is None
+
+
 def test_bad_action_line() -> None:
     """Test handling when no action input found."""
     llm_output = (
