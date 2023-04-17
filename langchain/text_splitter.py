@@ -62,7 +62,7 @@ class TextSplitter(ABC):
         """Split documents."""
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        return self.create_documents(texts, metadatas)
+        return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
