@@ -1,11 +1,19 @@
-from typing import List
+from typing import Type
 
-from langchain.tools.base import ArgInfo, BaseTool
+from pydantic import BaseModel, Field
+
+from langchain.tools.base import BaseTool
+
+
+class WriteFileInput(BaseModel):
+    """Input for WriteFileTool."""
+
+    file_path: str = Field(..., description="name of file")
 
 
 class ReadFileTool(BaseTool):
     name: str = "read_file"
-    tool_args: List[ArgInfo] = [ArgInfo(name="file_path", description="name of file")]
+    tool_args: Type[BaseModel] = WriteFileInput
     description: str = "Read file from disk"
 
     def _run(self, file_path: str) -> str:
@@ -17,4 +25,5 @@ class ReadFileTool(BaseTool):
             return "Error: " + str(e)
 
     async def _arun(self, tool_input: str) -> str:
+        # TODO: Add aiofiles method
         raise NotImplementedError

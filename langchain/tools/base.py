@@ -2,23 +2,21 @@
 
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, create_model, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 
 
-class ArgInfo(BaseModel):
-    name: str
-    description: str
-
-
 class BaseTool(ABC, BaseModel):
+    """Interface LangChain tools must implement."""
+
     name: str
     description: str
-    tool_args: Optional[List[ArgInfo]] = None
+    args_schema: Optional[Type[BaseModel]] = None
+    """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     verbose: bool = False
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
@@ -30,13 +28,35 @@ class BaseTool(ABC, BaseModel):
         arbitrary_types_allowed = True
 
     @property
-    def args(self) -> List[ArgInfo]:
-        if self.tool_args is None:
-            # Get the name expected in the run function
-            var_names = inspect.signature(self._run).parameters.keys()
-            return [ArgInfo(name=name, description="") for name in var_names]
-        else:
-            return self.tool_args
+    def args(self) -> Type[BaseModel]:
+        """Generate an input pydantic model."""
+        if self.args_schema is not None:
+            return self.args_schema
+
+        signature_ = inspect.signature(self._run)
+        field_definitions: Dict[str, Tuple[Any, Optional[Any]]] = {}
+        for name, param in signature_.parameters.items():
+            if name == "self":
+                continue
+            default_value = (
+                param.default if param.default != inspect.Parameter.empty else None
+            )
+            field_definitions[name] = (param.annotation, default_value)
+        return create_model("ArgsModel", **field_definitions)  # type: ignore
+
+    def _parse_input(
+        self,
+        tool_input: Union[str, Dict],
+    ) -> BaseModel:
+        """Convert tool input to pydantic model."""
+        pydantic_input_type = self.args
+        if isinstance(tool_input, str):
+            # For backwards compatibility, a tool that only takes
+            # a single string input will be converted to a dict.
+            # to be validated.
+            field_name = next(iter(pydantic_input_type.__fields__))
+            tool_input = {field_name: tool_input}
+        return pydantic_input_type.parse_obj(tool_input)
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(
@@ -65,26 +85,20 @@ class BaseTool(ABC, BaseModel):
         **kwargs: Any
     ) -> str:
         """Run the tool."""
-        if isinstance(tool_input, str):
-            if len(self.args) > 1:
-                raise ValueError("Cannot pass in a string when > 1 argument expected")
-            key = self.args[0].name
-            run_input = {key: tool_input}
-        else:
-            run_input = tool_input
+        run_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
             verbose_ = self.verbose
         self.callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            str(run_input),
+            str(run_input.dict()),
             verbose=verbose_,
             color=start_color,
             **kwargs,
         )
         try:
-            observation = self._run(**run_input)
+            observation = self._run(**run_input.dict())
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
             raise e
@@ -102,13 +116,7 @@ class BaseTool(ABC, BaseModel):
         **kwargs: Any
     ) -> str:
         """Run the tool asynchronously."""
-        if isinstance(tool_input, str):
-            if len(self.args) > 1:
-                raise ValueError("Cannot pass in a string when > 1 argument expected")
-            key = self.args[0].name
-            run_input = {key: tool_input}
-        else:
-            run_input = tool_input
+        run_input = self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -116,7 +124,7 @@ class BaseTool(ABC, BaseModel):
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
-                str(run_input),
+                str(run_input.dict()),
                 verbose=verbose_,
                 color=start_color,
                 **kwargs,
@@ -124,14 +132,14 @@ class BaseTool(ABC, BaseModel):
         else:
             self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
-                str(run_input),
+                str(run_input.dict()),
                 verbose=verbose_,
                 color=start_color,
                 **kwargs,
             )
         try:
             # We then call the tool on the tool input to get an observation
-            observation = await self._arun(**run_input)
+            observation = await self._arun(**run_input.dict())
         except (Exception, KeyboardInterrupt) as e:
             if self.callback_manager.is_async:
                 await self.callback_manager.on_tool_error(e, verbose=verbose_)

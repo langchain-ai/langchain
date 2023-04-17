@@ -1,7 +1,11 @@
 """Test tool utils."""
+from typing import Optional, Type
+
 import pytest
+from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
+from langchain.tools.base import BaseTool
 
 
 def test_unnamed_decorator() -> None:
@@ -16,6 +20,34 @@ def test_unnamed_decorator() -> None:
     assert search_api.name == "search_api"
     assert not search_api.return_direct
     assert search_api("test") == "API result"
+
+
+class _MockSchema(BaseModel):
+    arg1: int
+    arg2: bool
+    arg3: Optional[dict] = None
+
+
+class _MockStructuredTool(BaseTool):
+    name = "structured_api"
+    args_schema: Type[BaseModel] = _MockSchema
+    description = "A Structured Tool"
+
+    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        return f"{arg1} {arg2} {arg3}"
+
+    async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        raise NotImplementedError
+
+
+def test_structured_args() -> None:
+    """Test functionality with structured arguments."""
+    structured_api = _MockStructuredTool()
+    assert isinstance(structured_api, BaseTool)
+    assert structured_api.name == "structured_api"
+    expected_result = "1 True {'foo': 'bar'}"
+    args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
+    assert structured_api.run(args) == expected_result
 
 
 def test_named_tool_decorator() -> None:
