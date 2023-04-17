@@ -44,7 +44,7 @@ class LLMBashChain(Chain):
     @property
     def output_keys(self) -> List[str]:
         """Expect output key.
-
+ 
         :meta private:
         """
         return [self.output_key]
@@ -72,7 +72,7 @@ class LLMBashChain(Chain):
 
         else:
             raise ValueError(f"unknown format from LLM: {t}")
-        return {self.output_key: output}
+        return {self.output_key: output} 
 
     @property
     def _chain_type(self) -> str:
