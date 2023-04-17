@@ -435,8 +435,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -770,8 +770,8 @@ class OpenAIChat(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
