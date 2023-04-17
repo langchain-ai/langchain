@@ -10,7 +10,7 @@ from langchain.llms.utils import enforce_stop_tokens
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation")
+VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
 
 logger = logging.getLogger()
 
@@ -83,7 +83,7 @@ class HuggingFacePipeline(LLM):
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         try:
-            if task == "text-generation":
+            if task == "text-generation" or task == "summarization":
                 model = AutoModelForCausalLM.from_pretrained(model_id, **_model_kwargs)
             elif task == "text2text-generation":
                 model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **_model_kwargs)
@@ -153,6 +153,8 @@ class HuggingFacePipeline(LLM):
             text = response[0]["generated_text"][len(prompt) :]
         elif self.pipeline.task == "text2text-generation":
             text = response[0]["generated_text"]
+        elif self.pipeline.task == "summarization":
+            text = response[0]["summary_text"]
         else:
             raise ValueError(
                 f"Got invalid task {self.pipeline.task}, "
