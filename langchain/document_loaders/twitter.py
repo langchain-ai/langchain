@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from tweepy import OAuthHandler
 
 
-def _dependable_tweepy_import() -> "tweepy":
+def _dependable_tweepy_import() -> tweepy:
     try:
         import tweepy
     except ImportError:
@@ -33,7 +33,7 @@ class TwitterTweetLoader(BaseLoader):
 
     def __init__(
         self,
-        auth_handler: "OAuthHandler",
+        auth_handler: OAuthHandler,
         twitter_users: Sequence[str],
         number_tweets: Optional[int] = 100,
     ):
