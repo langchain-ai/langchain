@@ -174,7 +174,7 @@ class LlamaCpp(LLM):
         
         params = self._default_params
         
-        # llamaa_cpp expects the "stop" key not this, so we remove it:
+        # llama_cpp expects the "stop" key not this, so we remove it:
         params.pop("stop_sequences")
 
         # then sets it as configured, or default to an empty list:
@@ -199,7 +199,6 @@ class LlamaCpp(LLM):
                 llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
                 llm("This is a prompt.")
         """
-        print("Prompt: ", prompt)
         if self.streaming:
             # If streaming is enabled, we use the stream 
             # method that yields as they are generated
