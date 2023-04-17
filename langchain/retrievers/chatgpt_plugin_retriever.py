@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 import aiohttp
 import requests
@@ -13,8 +13,8 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     url: str
     bearer_token: str
     top_k: int = 3
-    filter: dict | None = None
-    aiosession: aiohttp.ClientSession | None = None
+    filter: Optional[dict] = None
+    aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
         """Configuration for this pydantic object."""
