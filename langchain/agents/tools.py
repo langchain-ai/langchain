@@ -11,8 +11,10 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Callable
-    coroutine: Optional[Callable[[str], Awaitable[str]]] = None
+    func: Callable[..., str]
+    """The function to run when the tool is called."""
+    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    """The asynchronous version of the function."""
 
     @property
     def args(self) -> Type[BaseModel]:
