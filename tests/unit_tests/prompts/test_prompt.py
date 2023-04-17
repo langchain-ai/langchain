@@ -145,3 +145,73 @@ def test_partial() -> None:
     assert new_result == "This is a 3 test."
     result = prompt.format(foo="foo")
     assert result == "This is a foo test."
+
+
+def test_prompt_from_jinja2_template() -> None:
+    """Test prompts can be constructed from a jinja2 template."""
+    # Empty input variable.
+    template = """Hello there
+There is no variable here
+Cool huh?
+    """
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template, input_variables=[], template_format="jinja2"
+    )
+    assert prompt == expected_prompt
+
+    # Multiple input variables.
+    template = """\
+Hello world
+
+Your variable: {{ var }}
+
+{# This will not get rendered #}
+
+{% if verbose %}
+Congrats! You just turned on verbose mode and got extra messages!
+{% endif %}
+
+{% for i in dummy_list %}
+The value in dummy_list is {{ i }}
+{% endfor %}
+"""
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["dummy_list", "var", "verbose"],
+        template_format="jinja2",
+    )
+
+    assert prompt == expected_prompt
+
+    # Multiple input variables with repeats.
+    template = """\
+Hello world
+
+Your variable: {{ var }}
+
+{# This will not get rendered #}
+
+{% if verbose %}
+Congrats! You just turned on verbose mode and got extra messages!
+{% endif %}
+
+{% for i in dummy_list %}
+The value in dummy_list is {{ i }}
+{% endfor %}
+
+{% if verbose %}
+Your variable again: {{ var }}
+{% endif %}
+"""
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["dummy_list", "var", "verbose"],
+        template_format="jinja2",
+    )
+    # Ordering is not enforced
+    assert set(prompt.input_variables) == set(expected_prompt.input_variables)
+    prompt.input_variables = expected_prompt.input_variables
+    assert prompt == expected_prompt
