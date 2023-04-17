@@ -1,10 +1,8 @@
 # tests/integration_tests/vectorstores_new/basic.py
 import logging
 import os
-import tempfile
 import uuid
 from abc import ABC, abstractmethod
-from pathlib import PurePath
 from typing import List, Type, Union
 
 import pytest
@@ -78,8 +76,6 @@ class FileSystemTest:
         cls.patcher.fs.add_real_directory(cls.fixture_path, read_only=True)
         cls.patcher.fs.add_real_directory(cls.cassettes_path, read_only=False)
 
-
-
     @classmethod
     def teardown_class(cls) -> None:
         assert cls.patcher is not None
@@ -119,7 +115,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -138,7 +134,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_with_ids(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test adding documents to a VectorStore with ids.
@@ -174,7 +170,7 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_texts_async(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
@@ -190,10 +186,10 @@ class MixinStaticTest(BaseTest, ABC):
 
     @pytest.mark.vcr()
     def test_from_documents(
-            self,
-            documents: List[Document],
-            embedding: Embeddings,
-            query: str,
+        self,
+        documents: List[Document],
+        embedding: Embeddings,
+        query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
@@ -210,10 +206,10 @@ class MixinStaticTest(BaseTest, ABC):
     @pytest.mark.vcr()
     @pytest.mark.asyncio
     async def test_from_documents_async(
-            self,
-            documents: List[Document],
-            embedding: Embeddings,
-            query: str,
+        self,
+        documents: List[Document],
+        embedding: Embeddings,
+        query: str,
     ) -> None:
         """
         Test creating a VectorStore from a list of Documents.
