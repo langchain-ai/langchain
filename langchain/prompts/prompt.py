@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Set, Union
 
 from jinja2 import Environment, meta
 from pydantic import Extra, root_validator
@@ -15,11 +15,11 @@ from langchain.prompts.base import (
 )
 
 
-def _get_jinja2_variables_from_template(template: str) -> List[str]:
+def _get_jinja2_variables_from_template(template: str) -> Set[str]:
     env = Environment()
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
-    return list(variables)
+    return variables
 
 
 class PromptTemplate(StringPromptTemplate):

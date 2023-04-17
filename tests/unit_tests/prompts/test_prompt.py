@@ -211,7 +211,4 @@ Your variable again: {{ var }}
         input_variables=["dummy_list", "var", "verbose"],
         template_format="jinja2",
     )
-    # Ordering is not enforced
-    assert set(prompt.input_variables) == set(expected_prompt.input_variables)
-    prompt.input_variables = expected_prompt.input_variables
     assert prompt == expected_prompt
