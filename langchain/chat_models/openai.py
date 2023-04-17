@@ -26,7 +26,7 @@ from langchain.schema import (
 )
 from langchain.utils import get_from_dict_or_env
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:

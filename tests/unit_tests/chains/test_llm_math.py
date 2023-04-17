@@ -13,7 +13,7 @@ def fake_llm_math_chain() -> LLMMathChain:
     complex_question = _PROMPT_TEMPLATE.format(question="What is the square root of 2?")
     queries = {
         _PROMPT_TEMPLATE.format(question="What is 1 plus 1?"): "Answer: 2",
-        complex_question: "```python\nprint(2**.5)\n```",
+        complex_question: "```text\n2**.5\n```",
         _PROMPT_TEMPLATE.format(question="foo"): "foo",
     }
     fake_llm = FakeLLM(queries=queries)
@@ -31,7 +31,7 @@ def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
     """Test complex question that should need python."""
     question = "What is the square root of 2?"
     output = fake_llm_math_chain.run(question)
-    assert output == f"Answer: {2**.5}\n"
+    assert output == f"Answer: {2**.5}"
 
 
 def test_error(fake_llm_math_chain: LLMMathChain) -> None:
