@@ -9,6 +9,7 @@ from langchain.callbacks.base import CallbackManager
 
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
+
 def get_model() -> str:
     """Download model. f
     From https://huggingface.co/Sosaka/Alpaca-native-4bit-ggml/,
@@ -37,12 +38,13 @@ def test_llamacpp_inference() -> None:
     assert isinstance(output, str)
     assert len(output) > 1
 
+
 def test_llamacpp_streaming() -> None:
     """Test streaming tokens from LlamaCpp."""
     model_path = get_model()
     llm = LlamaCpp(model_path=model_path, max_tokens=10)
-    generator = llm.stream("Q: How do you say 'hello' in German? A:'",stop=["'"])
-    stream_results_string = ''
+    generator = llm.stream("Q: How do you say 'hello' in German? A:'", stop=["'"])
+    stream_results_string = ""
     assert isinstance(generator, Generator)
 
     for chunk in generator:
@@ -52,11 +54,12 @@ def test_llamacpp_streaming() -> None:
         stream_results_string += chunk["choices"][0]["text"]
     assert len(stream_results_string.strip()) > 1
 
+
 def test_llamacpp_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     MAX_TOKENS = 5
-    OFF_BY_ONE = 1 # There may be an off by one error in the upstream code!
-    
+    OFF_BY_ONE = 1  # There may be an off by one error in the upstream code!
+
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = LlamaCpp(

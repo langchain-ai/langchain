@@ -142,7 +142,7 @@ class LlamaCpp(LLM):
             "top_p": self.top_p,
             "logprobs": self.logprobs,
             "echo": self.echo,
-            "stop_sequences": self.stop, # Note, the key is different here due to conventon among the LLM classes
+            "stop_sequences": self.stop,  # Note, the key is different here due to conventon among the LLM classes
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
         }
@@ -163,7 +163,7 @@ class LlamaCpp(LLM):
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for llama_cpp.
-        
+
         Returns:
             Dictionary containing the combined parameters.
         """
@@ -171,9 +171,9 @@ class LlamaCpp(LLM):
         # Raise error if stop sequences are in both input and default params
         if self.stop and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
-        
+
         params = self._default_params
-        
+
         # llama_cpp expects the "stop" key not this, so we remove it:
         params.pop("stop_sequences")
 
@@ -200,7 +200,7 @@ class LlamaCpp(LLM):
                 llm("This is a prompt.")
         """
         if self.streaming:
-            # If streaming is enabled, we use the stream 
+            # If streaming is enabled, we use the stream
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
@@ -208,21 +208,19 @@ class LlamaCpp(LLM):
                 combined_text_output += token["choices"][0]["text"]
             return combined_text_output
         else:
-
             params = self._get_parameters(stop)
             result = self.client(prompt=prompt, **params)
             return result["choices"][0]["text"]
 
-
-    def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator[Dict, None, None]:
+    def stream(
+        self, prompt: str, stop: Optional[List[str]] = None
+    ) -> Generator[Dict, None, None]:
         params = self._get_parameters(stop)
         result = self.client(prompt=prompt, stream=True, **params)
         for chunk in result:
             token = chunk["choices"][0]["text"]
             log_probs = chunk["choices"][0].get("logprobs", None)
             self.callback_manager.on_llm_new_token(
-                token=token, 
-                verbose=self.verbose, 
-                log_probs=log_probs
+                token=token, verbose=self.verbose, log_probs=log_probs
             )
             yield chunk
