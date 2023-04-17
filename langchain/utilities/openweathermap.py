@@ -13,8 +13,8 @@ class OpenWeatherMapAPIWrapper(BaseModel):
     Docs for using:
 
     1. Go to OpenWeatherMap and sign up for an API key
-    3. Save your API KEY into OPENWEATHERMAP_API_KEY env variable
-    4. pip install wolframalpha
+    2. Save your API KEY into OPENWEATHERMAP_API_KEY env variable
+    3. pip install pyowm
     """
 
     owm: Any

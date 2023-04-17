@@ -114,20 +114,7 @@ async def acompletion_with_retry(
 
 
 class BaseOpenAI(BaseLLM):
-    """Wrapper around OpenAI large language models.
-
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="text-davinci-003")
-    """
+    """Wrapper around OpenAI large language models."""
 
     client: Any  #: :meta private:
     model_name: str = "text-davinci-003"
@@ -448,8 +435,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -459,15 +446,9 @@ class BaseOpenAI(BaseLLM):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
             )
-        encoder = "gpt2"
-        if self.model_name in ("text-davinci-003", "text-davinci-002"):
-            encoder = "p50k_base"
-        if self.model_name.startswith("code"):
-            encoder = "p50k_base"
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding(encoder)
 
-        # encode the text using the GPT-3 encoder
+        enc = tiktoken.encoding_for_model(self.model_name)
+
         tokenized_text = enc.encode(text)
 
         # calculate the number of tokens in the encoded text
@@ -541,7 +522,20 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """Generic OpenAI class that uses model name."""
+    """Wrapper around OpenAI large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import OpenAI
+            openai = OpenAI(model_name="text-davinci-003")
+    """
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
@@ -549,7 +543,20 @@ class OpenAI(BaseOpenAI):
 
 
 class AzureOpenAI(BaseOpenAI):
-    """Azure specific OpenAI class that uses deployment name."""
+    """Wrapper around Azure-specific OpenAI large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import AzureOpenAI
+            openai = AzureOpenAI(model_name="text-davinci-003")
+    """
 
     deployment_name: str = ""
     """Deployment name to use."""
@@ -763,8 +770,8 @@ class OpenAIChat(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken

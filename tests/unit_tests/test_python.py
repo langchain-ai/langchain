@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-from langchain.python import PythonREPL
 from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
+from langchain.utilities import PythonREPL
 
 _SAMPLE_CODE = """
 ```
