@@ -1,4 +1,5 @@
 """Wrappers on top of vector stores."""
+from langchain.vectorstores.annoy import Annoy
 from langchain.vectorstores.atlas import AtlasDB
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
@@ -23,4 +24,5 @@ __all__ = [
     "OpenSearchVectorSearch",
     "AtlasDB",
     "DeepLake",
+    "Annoy",
 ]
