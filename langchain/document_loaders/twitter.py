@@ -56,7 +56,7 @@ class TwitterTweetLoader(BaseLoader):
             response = ""
             for tweet in tweets:
                 response += (
-                    f"Created At:{tweet['created_at']}," f"Content:{tweet['text']}\n"
+                    f"Created At:{tweet['created_at']},Content:{tweet['text']}\n"
                 )
 
             user = api.get_user(screen_name=username)
