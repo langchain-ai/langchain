@@ -1,6 +1,8 @@
 """Interface for tools."""
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from langchain.tools.base import BaseTool, create_args_schema_model_from_signature
 
@@ -13,6 +15,15 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
+
+    @property
+    def args(self) -> Type[BaseModel]:
+        """Generate an input pydantic model."""
+        if self.args_schema is not None:
+            return self.args_schema
+        # Infer the schema directly from the function to add more structured
+        # arguments.
+        return create_args_schema_model_from_signature(self.func)
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""

@@ -120,17 +120,26 @@ def test_unnamed_tool_decorator_return_direct() -> None:
     assert search_api.return_direct
 
 
-def test_tool_with_kwarg() -> None:
+def test_tool_with_kwargs() -> None:
     """Test functionality when only return direct is provided."""
 
     @tool(return_direct=True)
-    def search_api(*args: Any, **kwargs: Any) -> str:
+    def search_api(
+        arg_1: float, *args: Any, ping: Optional[str] = None, **kwargs: Any
+    ) -> str:
         """Search the API for the query."""
-        return f"foo={args}, kwargs={kwargs}"
+        return f"arg_1={arg_1}, foo={args}, ping={ping}, kwargs={kwargs}"
 
     assert isinstance(search_api, Tool)
-    result = search_api.run(tool_input={"args": "fam", "kwargs": {"bar": "baz"}})
-    assert result == "foo=('fam',), kwargs={'bar': 'baz'}"
+    result = search_api.run(
+        tool_input={
+            "arg_1": 3.2,
+            "args": "fam",
+            "kwargs": {"bar": "baz"},
+            "ping": "pong",
+        }
+    )
+    assert result == "arg_1=3.2, foo=('fam',), ping=pong, kwargs={'bar': 'baz'}"
 
 
 def test_missing_docstring() -> None:
