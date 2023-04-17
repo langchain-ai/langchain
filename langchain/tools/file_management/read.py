@@ -5,15 +5,15 @@ from pydantic import BaseModel, Field
 from langchain.tools.base import BaseTool
 
 
-class WriteFileInput(BaseModel):
-    """Input for WriteFileTool."""
+class ReadFileInput(BaseModel):
+    """Input for ReadFileTool."""
 
     file_path: str = Field(..., description="name of file")
 
 
 class ReadFileTool(BaseTool):
     name: str = "read_file"
-    tool_args: Type[BaseModel] = WriteFileInput
+    tool_args: Type[BaseModel] = ReadFileInput
     description: str = "Read file from disk"
 
     def _run(self, file_path: str) -> str:
