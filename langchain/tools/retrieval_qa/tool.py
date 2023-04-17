@@ -13,8 +13,8 @@ from langchain.tools.base import BaseTool
 class BaseRetrievalQAInfo(BaseModel):
     """Base class to store information"""
 
-    llm: BaseLanguageModel
-    retriever: BaseRetriever
+    llm: BaseLanguageModel = Field(exclude=True)
+    retriever: BaseRetriever = Field(exclude=True)
     name: str
     description: str
 
@@ -25,6 +25,7 @@ class BaseRetrievalQAInfo(BaseModel):
 
     @staticmethod
     def _get_template(name: str, description: str, include_sources: bool) -> str:
+        """generate template from name and description."""
         base_template: str = (
             f"Userful for when you need to answer questions about {name}. "
             f"Whenever you need information about {description} "
@@ -49,6 +50,7 @@ class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
 
     @staticmethod
     def get_description(name: str, description: str) -> str:
+        """get description from template"""
         template: str = BaseRetrievalQAInfo._get_template(
             name=name, description=description, include_sources=False
         )
@@ -67,7 +69,9 @@ class RetrievalQATool(BaseRetrievalQAInfo, BaseTool):
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("RetrievalQATool does not support async")
+        chain = self._load_chain()
+        result = await chain.arun(query)
+        return result
 
 
 class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
@@ -75,6 +79,7 @@ class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
 
     @staticmethod
     def get_description(name: str, description: str) -> str:
+        """get description from template"""
         template: str = BaseRetrievalQAInfo._get_template(
             name=name, description=description, include_sources=True
         )
@@ -95,6 +100,8 @@ class RetrievalQAWithSourcesTool(BaseRetrievalQAInfo, BaseTool):
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously"""
-        raise NotImplementedError(
-            "RetrievalQAWithSourcesTool does not support async"
+        chain = self._load_chain()
+        result = await chain.arun(
+            inputs={chain.question_key: query}, return_only_outputs=True
         )
+        return json.dumps(result)

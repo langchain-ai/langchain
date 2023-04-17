@@ -6,8 +6,21 @@ Sometimes, you will be asked to provide sources for your questions, in which cas
 If the question does not seem relevant to any of the tools provided, just return "I don't know" as the answer.
 """
 
+
 ROUTER_PREFIX = """You are an agent designed to answer questions.
 You have access to tools for interacting with different sources, and the inputs to the tools are questions.
 Your main task is to decide which of the tools is relevant for answering question at hand.
 For complex questions, you can break the question down into sub questions and use tools to answers the sub questions.
 """
+
+SUFFIX = """Begin!"
+
+Question: {input}
+Thought: I should look at the contents in documents.
+{agent_scratchpad}"""
+
+ROUTER_SUFFIX = """Begin!"
+
+Question: {input}
+Thought: I should decide which tool is relevant for answering the question.
+{agent_scratchpad}"""

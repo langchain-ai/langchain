@@ -77,14 +77,18 @@ class RetrievalQARouterToolkit(BaseToolkit):
         arbitrary_types_allowed = True
 
     def _make_tool(self, rq_info: BaseRetrievalQAInfo) -> BaseTool:
+        """get a tool for tools"""
         base_retrieval_qa_tool = (
             RetrievalQAWithSourcesTool if self.include_sources else RetrievalQATool
         )
-        qa_tool = base_retrieval_qa_tool(
-            name=rq_info.name,
-            description=rq_info.description,
-            retriever=rq_info.retriever,
-            llm=rq_info.llm,
+        qa_tool = cast(
+            BaseTool,
+            base_retrieval_qa_tool(
+                name=rq_info.name,
+                description=rq_info.description,
+                retriever=rq_info.retriever,
+                llm=rq_info.llm,
+            ),
         )
         return qa_tool
 
