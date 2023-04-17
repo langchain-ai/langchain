@@ -55,8 +55,11 @@ def _to_args_and_kwargs(model: BaseModel) -> Tuple[Sequence, dict]:
         value = getattr(model, name)
         # Handle *args in the function signature
         if field.field_info.extra.get("extra", {}).get("is_var_positional"):
-            if value is not None:
+            if isinstance(value, str):
+                # Base case for backwards compatability
                 args.append(value)
+            elif value is not None:
+                args.extend(value)
         # Handle **kwargs in the function signature
         elif field.field_info.extra.get("extra", {}).get("is_var_keyword"):
             if value is not None:

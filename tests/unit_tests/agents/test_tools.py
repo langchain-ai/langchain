@@ -1,6 +1,6 @@
 """Test tool utils."""
 from datetime import datetime
-from typing import Optional, Type, Union
+from typing import Any, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -118,6 +118,19 @@ def test_unnamed_tool_decorator_return_direct() -> None:
     assert isinstance(search_api, Tool)
     assert search_api.name == "search_api"
     assert search_api.return_direct
+
+
+def test_tool_with_kwarg() -> None:
+    """Test functionality when only return direct is provided."""
+
+    @tool(return_direct=True)
+    def search_api(*args: Any, **kwargs: Any) -> str:
+        """Search the API for the query."""
+        return f"foo={args}, kwargs={kwargs}"
+
+    assert isinstance(search_api, Tool)
+    result = search_api.run(tool_input={"args": "fam", "kwargs": {"bar": "baz"}})
+    assert result == "foo=('fam',), kwargs={'bar': 'baz'}"
 
 
 def test_missing_docstring() -> None:
