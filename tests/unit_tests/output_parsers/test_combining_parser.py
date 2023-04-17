@@ -22,26 +22,25 @@ DEF_README = """```json
 
 def test_combining_dict_result() -> None:
     """Test combining result."""
-    combining_parser = CombiningOutputParser(
-        parsers=[
-            StructuredOutputParser(
-                response_schemas=[
-                    ResponseSchema(
-                        name="answer", description="answer to the user's question"
-                    ),
-                    ResponseSchema(
-                        name="source",
-                        description="source used to answer the user's question, should be a website.",
-                    ),
-                ]
-            ),
-            RegexParser(
-                regex=r"Confidence: (A|B|C), Explanation: (.*)",
-                output_keys=["confidence", "explanation"],
-                default_output_key="noConfidence",
-            ),
-        ]
-    )
+    parsers = [
+        StructuredOutputParser(
+            response_schemas=[
+                ResponseSchema(
+                    name="answer", description="answer to the user's question"
+                ),
+                ResponseSchema(
+                    name="source",
+                    description="source used to answer the user's question",
+                ),
+            ]
+        ),
+        RegexParser(
+            regex=r"Confidence: (A|B|C), Explanation: (.*)",
+            output_keys=["confidence", "explanation"],
+            default_output_key="noConfidence",
+        ),
+    ]
+    combining_parser = CombiningOutputParser(parsers=parsers)
     result_dict = combining_parser.parse(DEF_README)
     print("parse_result:", result_dict)
     assert DEF_EXPECTED_RESULT == result_dict

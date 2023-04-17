@@ -36,7 +36,7 @@ class CombiningOutputParser(BaseOutputParser):
         initial = f"For your first output: {self.parsers[0].get_format_instructions()}"
         subsequent = "\n".join(
             [
-                f"Complete that output fully. Then produce another output, separated by two newline characters: {p.get_format_instructions()}"
+                f"Complete that output fully. Then produce another output, separated by two newline characters: {p.get_format_instructions()}"  # noqa: E501
                 for p in self.parsers[1:]
             ]
         )
