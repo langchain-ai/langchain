@@ -328,7 +328,15 @@ class Redis(VectorStore):
                 },
             )
         pipeline.execute()
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
 
     @staticmethod
     def drop_index(
@@ -410,6 +418,7 @@ class Redis(VectorStore):
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
+            **kwargs,
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
