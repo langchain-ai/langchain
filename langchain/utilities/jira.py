@@ -18,7 +18,7 @@ class JiraAPIWrapper(BaseModel):
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
 
-    operations: List[str] = [
+    operations: List[Dict] = [
         {
             "mode": "jql",
             "name": "JQL Query",
@@ -45,7 +45,7 @@ class JiraAPIWrapper(BaseModel):
         """Configuration for this pydantic object."""
         extra = Extra.forbid
 
-    def list(self) -> List[str]:
+    def list(self) -> List[Dict]:
         return self.operations
 
     @root_validator()
@@ -105,7 +105,7 @@ class JiraAPIWrapper(BaseModel):
                  "status": status, "related_issues": rel_issues})
         return parsed
 
-    def parse_projects(self, projects):
+    def parse_projects(self, projects) -> str:
         parsed = []
         for project in projects:
             id = project['id']
@@ -137,13 +137,13 @@ class JiraAPIWrapper(BaseModel):
                 "Please install it with `pip install json`"
             )
         params = json.loads(query)
-        self.jira.create_issue(fields=dict(params))
+        return self.jira.create_issue(fields=dict(params))
 
     def other(self, query: str) -> str:
         context = {"self": self}
         exec(f"result = {query}", context)
         result = context["result"]
-        return result
+        return str(result)
 
     def run(self, mode: str, query: str) -> str:
         if mode == "jql":
