@@ -4,7 +4,7 @@ from pathlib import Path
 
 def is_relative_to(path: Path, root: Path) -> bool:
     """Check if path is relative to root."""
-    if sys.version_info > (3, 8):
+    if sys.version_info >= (3, 9):
         # No need for a try/except block in Python 3.8+.
         return path.is_relative_to(root)
     try:
