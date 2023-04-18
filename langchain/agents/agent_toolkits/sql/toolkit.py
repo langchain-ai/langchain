@@ -5,7 +5,6 @@ from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.llms.base import BaseLLM
-from langchain.llms.openai import OpenAI
 from langchain.sql_database import SQLDatabase
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
