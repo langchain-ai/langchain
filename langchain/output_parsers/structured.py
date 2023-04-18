@@ -56,3 +56,7 @@ class StructuredOutputParser(BaseOutputParser):
                     f"to be present, but got {json_obj}"
                 )
         return json_obj
+
+    @property
+    def _type(self) -> str:
+        return "structured"

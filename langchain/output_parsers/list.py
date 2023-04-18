@@ -9,6 +9,10 @@ from langchain.schema import BaseOutputParser
 class ListOutputParser(BaseOutputParser):
     """Class to parse the output of an LLM call to a list."""
 
+    @property
+    def _type(self) -> str:
+        return "list"
+
     @abstractmethod
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
