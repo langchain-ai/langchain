@@ -8,7 +8,7 @@ Full documentation on all methods, classes, and APIs in LangChain.
    :maxdepth: 1
 
    ./reference/prompts.rst
-   LLMs<./refeence/modules/llms>
+   LLMs<./reference/modules/llms>
    ./reference/utils.rst
    Chains<./reference/modules/chains>
    Agents<./reference/modules/agents>
