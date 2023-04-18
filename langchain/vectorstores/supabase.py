@@ -28,7 +28,7 @@ class SupabaseVectorStore(VectorStore):
     below on modifying the `match_documents` function into return matched embeddings.
     """
 
-    _client: Any
+    _client: supabase.client.Client
     # This is the embedding function. Don't confuse with the embedding vectors.
     # We should perhaps rename the underlying Embedding base class to EmbeddingFunction or something
     _embedding: Embeddings
@@ -96,7 +96,7 @@ class SupabaseVectorStore(VectorStore):
         cls: Type["SupabaseVectorStore"],
         documents: List[Document],
         embedding: Embeddings,
-        client: Any,
+        client: supabase.client.Client,
         table_name: str,
         query_name: Union[str, None] = None,
     ) -> "SupabaseVectorStore":
