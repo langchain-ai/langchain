@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from termcolor import colored
+
 from langchain.experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
     BaseAutoGPTOutputParser,
@@ -21,6 +23,7 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.tools.base import BaseTool
+from langchain.tools.human.tool import HumanInputRun
 from langchain.vectorstores.base import VectorStoreRetriever
 
 
@@ -34,6 +37,7 @@ class AutoGPT:
         chain: LLMChain,
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
+        feedback_tool: Optional[HumanInputRun] = None,
     ):
         self.ai_name = ai_name
         self.memory = memory
@@ -42,6 +46,7 @@ class AutoGPT:
         self.chain = chain
         self.output_parser = output_parser
         self.tools = tools
+        self.feedback_tool = feedback_tool
 
     @classmethod
     def from_llm_and_tools(
@@ -51,6 +56,7 @@ class AutoGPT:
         memory: VectorStoreRetriever,
         tools: List[BaseTool],
         llm: BaseChatModel,
+        human_in_the_loop: bool = False,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
     ) -> AutoGPT:
         prompt = AutoGPTPrompt(
@@ -60,9 +66,15 @@ class AutoGPT:
             input_variables=["memory", "messages", "goals", "user_input"],
             token_counter=llm.get_num_tokens,
         )
+        human_feedback_tool = HumanInputRun() if human_in_the_loop else None
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            ai_name, memory, chain, output_parser or AutoGPTOutputParser(), tools
+            ai_name,
+            memory,
+            chain,
+            output_parser or AutoGPTOutputParser(),
+            tools,
+            feedback_tool=human_feedback_tool,
         )
 
     def run(self, goals: List[str]) -> str:
@@ -113,6 +125,14 @@ class AutoGPT:
             memory_to_add = (
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
+            color = "red" if observation.lower().startswith("Error") else "green"
+            print(colored("Last Observation: " + observation, color))
+            if self.feedback_tool is not None:
+                feedback = f"\n{self.feedback_tool.run('Input: ')}"
+                if feedback in {"q", "stop"}:
+                    print("EXITING")
+                    break
+                memory_to_add += feedback
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
             self.full_message_history.append(SystemMessage(content=result))
