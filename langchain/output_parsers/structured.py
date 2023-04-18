@@ -40,8 +40,8 @@ class StructuredOutputParser(BaseOutputParser):
     def parse(self, text: str) -> Any:
         if "```json" not in text:
             raise OutputParserException(
-                f"Got invalid return object. Expected markdown code snippet with JSON"
-                "object, but got {text}"
+                f"Got invalid return object. Expected markdown code snippet with JSON "
+                f"object, but got:\n{text}"
             )
 
         json_string = text.split("```json")[1].strip().strip("```").strip()
