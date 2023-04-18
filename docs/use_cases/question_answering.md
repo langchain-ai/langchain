@@ -78,7 +78,6 @@ The following resources exist:
 
 - [QA With Sources Notebook](../modules/chains/index_examples/qa_with_sources.ipynb): A notebook walking through how to accomplish this task.
 - [VectorDB QA With Sources Notebook](../modules/chains/index_examples/vector_db_qa_with_sources.ipynb): A notebook walking through how to do question answering with sources over a vector database. This can often be useful for when you have a LOT of documents, and you don't want to pass them all to the LLM, but rather first want to do some semantic search over embeddings.
-- [Semantic search over a group chat with Sources Notebook](../modules/chains/index_examples/semantic-search-over-chat.ipynb): A notebook that semantically searches over a group chat conversation.
 
 ## Additional Related Resources
 
@@ -86,3 +85,9 @@ Additional related resources include:
 
 - [Utilities for working with Documents](/modules/utils/how_to_guides.rst): Guides on how to use several of the utilities which will prove helpful for this task, including Text Splitters (for splitting up long documents) and Embeddings & Vectorstores (useful for the above Vector DB example).
 - [CombineDocuments Chains](/modules/indexes/combine_docs.md): A conceptual overview of specific types of chains by which you can accomplish this task.
+
+## End-to-end examples
+
+For examples to this done in an end-to-end manner, please see the following resources:
+
+- [Semantic search over a group chat with Sources Notebook](question_answering/semantic-search-over-chat.ipynb): A notebook that semantically searches over a group chat conversation.
