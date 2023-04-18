@@ -7,6 +7,9 @@ from langchain.document_loaders.base import BaseLoader
 if TYPE_CHECKING:
     import pandas as pd
 
+else:
+    from typing import Any as pd
+
 
 class DiscordChatLoader(BaseLoader):
     """Load Discord chat logs."""
