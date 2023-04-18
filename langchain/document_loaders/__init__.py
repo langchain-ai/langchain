@@ -148,6 +148,6 @@ __all__ = [
     "BiliBiliLoader",
     "SlackDirectoryLoader",
     "GitLoader",
-    "ImageCaptionLoader",
     "TwitterTweetLoader",
+    "ImageCaptionLoader",
 ]
