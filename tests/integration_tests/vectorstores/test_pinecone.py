@@ -132,7 +132,7 @@ class TestPinecone:
             namespace=namespace_name,
         )
         output = docsearch.similarity_search_with_score(
-            "foo", k=300, namespace=namespace_name
+            "foo", k=3, namespace=namespace_name
         )
 
         docs = [o[0] for o in output]
