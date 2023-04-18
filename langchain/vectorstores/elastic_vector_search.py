@@ -195,7 +195,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+        filter: Optional[dict] = None,
         **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -220,7 +220,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
+        filter: Optional[dict] = None,
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
