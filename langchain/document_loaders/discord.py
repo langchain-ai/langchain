@@ -1,10 +1,11 @@
 """Load from Discord chat dump"""
-from typing import List
-
-import pandas as pd
+from typing import TYPE_CHECKING, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class DiscordChatLoader(BaseLoader):
