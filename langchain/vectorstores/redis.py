@@ -119,9 +119,8 @@ class Redis(VectorStore):
 
     async def _setup_redis_index(
         self,
-        texts: List[str],
-        embedding: Embeddings,
         index_name: str,
+        dim: int
     ):
         """"""
         try:
@@ -132,20 +131,13 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-        # Name of the search index if not given
-        if not index_name:
-            index_name = uuid.uuid4().hex
-
         # Prefix for the document keys
         prefix = self._redis_prefix(index_name)
         # Check if index exists
         if not await self._check_redis_index_exists(self.client, index_name):
-            # Constants
-
             # Create embeddings for the first document to get the dimension
             # TODO: This is a hack to get the dimension of the embeddings, we should
             # find a better way to do this.
-            dim = len(embedding.embed_documents(texts[0]))
             distance_metric = (
                 "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
             )
@@ -221,25 +213,25 @@ class Redis(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        embeddings: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add texts data to an existing index."""
         return self.loop.run_until_complete(
-            self.aadd_texts(texts, metadatas, **kwargs)
+            self.aadd_texts(texts, metadatas, embeddings, **kwargs)
         )
 
     async def aadd_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        embeddings: Optional[List[float]] = None,
         **kwargs: Any
     ) -> List[str]:
         """Add texts data to an existing index."""
         prefix = self._redis_prefix(self.index_name)
         keys = kwargs.get("keys")
-        # Get embeddings in batch
-        embeddings = self.embedding_function(texts)
-                # Init list of keys
+        # Init list of keys
         ids: List[str] = []
         # Write data to redis in a pipeline
         pipeline = await self.client.pipeline(transaction=False)
@@ -247,7 +239,7 @@ class Redis(VectorStore):
             # Use provided key otherwise use default key
             key = keys[i] if keys else self._redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
-            embedding = embeddings[i]
+            embedding = embeddings[i] if embeddings else self.embedding_function(text)
             await pipeline.hset(
                 key,
                 mapping={
@@ -256,7 +248,7 @@ class Redis(VectorStore):
                         embedding, dtype=np.float32
                     ).tobytes(),
                     "metadata": json.dumps(metadata),
-                },
+                }
             )
             ids.append(key)
         await pipeline.execute()
@@ -395,7 +387,7 @@ class Redis(VectorStore):
         """
         loop = asyncio.get_event_loop()
         instance = loop.run_until_complete(
-            cls.afrom_texts(texts, embedding, index_name, metadatas, **kwargs)
+            cls.afrom_texts(texts, embedding, metadatas, index_name, **kwargs)
         )
         return instance
 
@@ -408,11 +400,16 @@ class Redis(VectorStore):
         index_name: Optional[str] = None,
         **kwargs: Any
     ) -> Redis:
+        # Check index name
+        if not index_name:
+            index_name = uuid.uuid4().hex
         # Setup Redis client
         client = await cls._load_redis_client(cls, index_name=index_name, **kwargs)
         instance = cls(client, index_name, embedding.embed_query)
-        await instance._setup_redis_index(texts, embedding, index_name)
-        await instance.aadd_texts(texts, metadatas, **kwargs)
+        embeddings = embedding.embed_documents(texts)
+        dim = len(embeddings[0])
+        await instance._setup_redis_index(index_name, dim)
+        await instance.aadd_texts(texts, metadatas, embeddings, **kwargs)
         return instance
 
     @staticmethod
@@ -462,10 +459,23 @@ class Redis(VectorStore):
     ) -> Redis:
         """Connect to an existing Redis index."""
         loop = asyncio.get_event_loop()
-        client = loop.run_until_complete(
-            cls._load_redis_client(cls, index_name = index_name, check_index = True, **kwargs)
+        instance = loop.run_until_complete(
+            cls.afrom_existing_index(embedding, index_name, **kwargs)
         )
-        return cls(client, index_name, embedding.embed_query, loop=loop)
+        return instance
+
+    @classmethod
+    async def afrom_existing_index(
+        cls,
+        embedding: Embeddings,
+        index_name: str,
+        **kwargs: Any,
+    ) -> Redis:
+        """Connect to an existing Redis index."""
+        client = await cls._load_redis_client(
+            cls, index_name=index_name, check_index=True, **kwargs
+        )
+        return cls(client, index_name, embedding.embed_query)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
