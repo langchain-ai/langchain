@@ -1,4 +1,6 @@
 """Load from Discord chat dump"""
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, List
 
 from langchain.docstore.document import Document
@@ -6,9 +8,6 @@ from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
     import pandas as pd
-
-else:
-    from typing import Any as pd
 
 
 class DiscordChatLoader(BaseLoader):
