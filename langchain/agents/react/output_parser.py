@@ -16,7 +16,9 @@ class ReActOutputParser(AgentOutputParser):
         # Parse out the action and the directive.
         re_matches = re.search(r"(.*?)\[(.*?)\]", action_str)
         if re_matches is None:
-            raise OutputParserException(f"Could not parse action directive: {action_str}")
+            raise OutputParserException(
+                f"Could not parse action directive: {action_str}"
+            )
         action, action_input = re_matches.group(1), re_matches.group(2)
         if action == "Finish":
             return AgentFinish({"output": action_input}, text)

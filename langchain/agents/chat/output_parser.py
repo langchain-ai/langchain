@@ -9,7 +9,6 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 
 
 class ChatOutputParser(AgentOutputParser):
-
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
