@@ -10,7 +10,7 @@ Overall, Assistant is a powerful system that can help with a wide range of tasks
 FORMAT_INSTRUCTIONS = """RESPONSE FORMAT INSTRUCTIONS
 ----------------------------
 
-When responding to me please, please output a response in one of two formats:
+When responding to me, please output a response in one of two formats:
 
 **Option 1:**
 Use this if you want the human to use a tool.
