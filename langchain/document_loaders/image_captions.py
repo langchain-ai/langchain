@@ -4,7 +4,7 @@ By default, the loader utilizes the pre-trained BLIP image captioning model.
 https://huggingface.co/Salesforce/blip-image-captioning-base
 
 """
-from typing import List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import requests
 
@@ -24,7 +24,7 @@ class ImageCaptionLoader(BaseLoader):
         """
         Initialize with a list of image paths
         """
-        if type(path_images) is str:
+        if isinstance(path_images, str):
             self.image_paths = [path_images]
         else:
             self.image_paths = path_images
@@ -38,7 +38,7 @@ class ImageCaptionLoader(BaseLoader):
         """
         try:
             from transformers import BlipForConditionalGeneration, BlipProcessor
-        except:
+        except ImportError:
             raise ValueError(
                 "transformers package not found, please install with"
                 "`pip install transformers`"
@@ -58,16 +58,16 @@ class ImageCaptionLoader(BaseLoader):
         return results
 
     def _get_captions_and_metadata(
-        self, model, processor, path_image
+        self, model: Any, processor: Any, path_image: str
     ) -> Tuple[str, dict]:
         """
         Helper function for getting the captions and metadata of an image
         """
         try:
             from PIL import Image
-        except:
+        except ImportError:
             raise ValueError(
-                "PIL package not found, pleaes install with" "`pip install pillow`"
+                "PIL package not found, please install with `pip install pillow`"
             )
 
         try:
@@ -77,7 +77,7 @@ class ImageCaptionLoader(BaseLoader):
                 )
             else:
                 image = Image.open(path_image).convert("RGB")
-        except:
+        except Exception:
             raise ValueError(f"Could not get image data for {path_image}")
 
         inputs = processor(image, "an image of", return_tensors="pt")
