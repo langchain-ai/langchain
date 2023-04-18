@@ -1,4 +1,4 @@
-from langchain.retrievers.document_filters.compression_chain import LLMChainCompressor
+from langchain.retrievers.document_filters.compression_chain import LLMChainDocumentCompressor
 from langchain.retrievers.document_filters.pipeline import DocumentFilterPipeline
 from langchain.retrievers.document_filters.redundant_embeddings import (
     EmbeddingRedundantDocumentFilter,
@@ -13,7 +13,7 @@ __all__ = [
     "DocumentFilterPipeline",
     "EmbeddingRedundantDocumentFilter",
     "EmbeddingRelevancyDocumentFilter",
-    "LLMChainCompressor",
+    "LLMChainDocumentCompressor",
     "LLMChainDocumentFilter",
     "SplitterDocumentFilter",
 ]

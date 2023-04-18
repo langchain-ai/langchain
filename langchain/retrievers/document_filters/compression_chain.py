@@ -20,7 +20,7 @@ def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
 class NoOutputParser(BaseOutputParser[str]):
     """Parse outputs that could return a null string of some sort."""
 
-    no_output_str: str = "__NO_OUTPUT__"
+    no_output_str: str = "NO_OUTPUT"
 
     def parse(self, text: str) -> str:
         cleaned_text = text.strip()
@@ -39,7 +39,7 @@ def _get_default_chain_prompt() -> PromptTemplate:
     )
 
 
-class LLMChainCompressor(BaseDocumentFilter):
+class LLMChainDocumentCompressor(BaseDocumentFilter):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 
@@ -72,7 +72,7 @@ class LLMChainCompressor(BaseDocumentFilter):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-    ) -> "LLMChainCompressor":
+    ) -> "LLMChainDocumentCompressor":
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
