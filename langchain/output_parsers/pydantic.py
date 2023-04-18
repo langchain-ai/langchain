@@ -43,3 +43,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         schema_str = json.dumps(reduced_schema)
 
         return PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
+
+    @property
+    def _type(self) -> str:
+        return "pydantic"

@@ -5,11 +5,14 @@ import logging
 import sys
 import warnings
 from typing import (
+    AbstractSet,
     Any,
     Callable,
+    Collection,
     Dict,
     Generator,
     List,
+    Literal,
     Mapping,
     Optional,
     Set,
@@ -114,20 +117,7 @@ async def acompletion_with_retry(
 
 
 class BaseOpenAI(BaseLLM):
-    """Wrapper around OpenAI large language models.
-
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
-
-    Example:
-        .. code-block:: python
-
-            from langchain.llms import OpenAI
-            openai = OpenAI(model_name="text-davinci-003")
-    """
+    """Wrapper around OpenAI large language models."""
 
     client: Any  #: :meta private:
     model_name: str = "text-davinci-003"
@@ -151,6 +141,7 @@ class BaseOpenAI(BaseLLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
@@ -162,6 +153,10 @@ class BaseOpenAI(BaseLLM):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
+    """Set of special tokens that are allowed。"""
+    disallowed_special: Union[Literal["all"], Collection[str]] = "all"
+    """Set of special tokens that are not allowed。"""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
         """Initialize the OpenAI object."""
@@ -205,6 +200,12 @@ class BaseOpenAI(BaseLLM):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -215,6 +216,10 @@ class BaseOpenAI(BaseLLM):
             import openai
 
             openai.api_key = openai_api_key
+            if openai_api_base:
+                print("USING API_BASE: ")
+                print(openai_api_base)
+                openai.api_base = openai_api_base
             if openai_organization:
                 print("USING ORGANIZATION: ")
                 print(openai_organization)
@@ -437,8 +442,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -448,29 +453,20 @@ class BaseOpenAI(BaseLLM):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install tiktoken`."
             )
-        encoder = "gpt2"
-        if self.model_name in ("text-davinci-003", "text-davinci-002"):
-            encoder = "p50k_base"
-        if self.model_name.startswith("code"):
-            encoder = "p50k_base"
-        # create a GPT-3 encoder instance
-        enc = tiktoken.get_encoding(encoder)
 
-        # encode the text using the GPT-3 encoder
-        tokenized_text = enc.encode(text)
+        enc = tiktoken.encoding_for_model(self.model_name)
+
+        tokenized_text = enc.encode(
+            text,
+            allowed_special=self.allowed_special,
+            disallowed_special=self.disallowed_special,
+        )
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a model.
-
-        text-davinci-003: 4,097 tokens
-        text-curie-001: 2,048 tokens
-        text-babbage-001: 2,048 tokens
-        text-ada-001: 2,048 tokens
-        code-davinci-002: 8,000 tokens
-        code-cushman-001: 2,048 tokens
 
         Args:
             modelname: The modelname we want to know the context size for.
@@ -483,20 +479,37 @@ class BaseOpenAI(BaseLLM):
 
                 max_tokens = openai.modelname_to_contextsize("text-davinci-003")
         """
-        if modelname == "text-davinci-003":
-            return 4097
-        elif modelname == "text-curie-001":
-            return 2048
-        elif modelname == "text-babbage-001":
-            return 2048
-        elif modelname == "text-ada-001":
-            return 2048
-        elif modelname == "code-davinci-002":
-            return 8000
-        elif modelname == "code-cushman-001":
-            return 2048
-        else:
-            return 4097
+        model_token_mapping = {
+            "gpt-4": 8192,
+            "gpt-4-0314": 8192,
+            "gpt-4-32k": 32768,
+            "gpt-4-32k-0314": 32768,
+            "gpt-3.5-turbo": 4096,
+            "gpt-3.5-turbo-0301": 4096,
+            "text-ada-001": 2049,
+            "ada": 2049,
+            "text-babbage-001": 2040,
+            "babbage": 2049,
+            "text-curie-001": 2049,
+            "curie": 2049,
+            "davinci": 2049,
+            "text-davinci-003": 4097,
+            "text-davinci-002": 4097,
+            "code-davinci-002": 8001,
+            "code-davinci-001": 8001,
+            "code-cushman-002": 2048,
+            "code-cushman-001": 2048,
+        }
+
+        context_size = model_token_mapping.get(modelname, None)
+
+        if context_size is None:
+            raise ValueError(
+                f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
+                "Known models are: " + ", ".join(model_token_mapping.keys())
+            )
+
+        return context_size
 
     def max_tokens_for_prompt(self, prompt: str) -> int:
         """Calculate the maximum number of tokens possible to generate for a prompt.
@@ -520,7 +533,20 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """Generic OpenAI class that uses model name."""
+    """Wrapper around OpenAI large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import OpenAI
+            openai = OpenAI(model_name="text-davinci-003")
+    """
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
@@ -528,7 +554,20 @@ class OpenAI(BaseOpenAI):
 
 
 class AzureOpenAI(BaseOpenAI):
-    """Azure specific OpenAI class that uses deployment name."""
+    """Wrapper around Azure-specific OpenAI large language models.
+
+    To use, you should have the ``openai`` python package installed, and the
+    environment variable ``OPENAI_API_KEY`` set with your API key.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.llms import AzureOpenAI
+            openai = AzureOpenAI(model_name="text-davinci-003")
+    """
 
     deployment_name: str = ""
     """Deployment name to use."""
@@ -567,12 +606,17 @@ class OpenAIChat(BaseLLM):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     prefix_messages: List = Field(default_factory=list)
     """Series of messages for Chat input."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
+    """Set of special tokens that are allowed。"""
+    disallowed_special: Union[Literal["all"], Collection[str]] = "all"
+    """Set of special tokens that are not allowed。"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -599,6 +643,12 @@ class OpenAIChat(BaseLLM):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
@@ -606,6 +656,8 @@ class OpenAIChat(BaseLLM):
             import openai
 
             openai.api_key = openai_api_key
+            if openai_api_base:
+                openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
         except ImportError:
@@ -733,8 +785,8 @@ class OpenAIChat(BaseLLM):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python < 3.8
+        if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -748,7 +800,11 @@ class OpenAIChat(BaseLLM):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
         # encode the text using the GPT-3.5-Turbo encoder
-        tokenized_text = enc.encode(text)
+        tokenized_text = enc.encode(
+            text,
+            allowed_special=self.allowed_special,
+            disallowed_special=self.disallowed_special,
+        )
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
