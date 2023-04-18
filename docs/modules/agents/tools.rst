@@ -24,6 +24,7 @@ Next, we have some examples of customizing and generically working with tools
 
    ./tools/custom_tools.ipynb
    ./tools/multi_input_tool.ipynb
+   ./tools/tool_input_validation.ipynb
 
 
 In this documentation we cover generic tooling functionality (eg how to create your own)
