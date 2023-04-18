@@ -11,6 +11,22 @@ from langchain.retrievers.document_filters.base import (
 )
 
 
+def _filter_similar_embeddings(
+    embedded_docs: List[List[float]], similarity_fn: Callable, threshold: float
+) -> List[int]:
+    """Filter redundant documents based on the similarity of their embeddings."""
+    similarity = np.tril(similarity_fn(embedded_docs, embedded_docs), k=-1)
+    redundant = np.where(similarity > threshold)
+    redundant_stacked = np.column_stack(redundant)
+    redundant_sorted = np.argsort(similarity[redundant])[::-1]
+    included_idxs = set(range(len(embedded_docs)))
+    for first_idx, second_idx in redundant_stacked[redundant_sorted]:
+        if first_idx in included_idxs and second_idx in included_idxs:
+            # Default to dropping the second document of any highly similar pair.
+            included_idxs.remove(second_idx)
+    return list(sorted(included_idxs))
+
+
 class EmbeddingRedundantDocumentFilter(BaseDocumentFilter):
     """Filter that drops redundant documents."""
 
@@ -29,19 +45,6 @@ class EmbeddingRedundantDocumentFilter(BaseDocumentFilter):
 
         arbitrary_types_allowed = True
 
-    def _filter_embeddings(self, embedded_docs: List[List[float]]) -> List[int]:
-        """Filter redundant documents based on the similarity of their embeddings."""
-        similarity = np.tril(self.similarity_fn(embedded_docs, embedded_docs), k=-1)
-        redundant = np.where(similarity > self.similarity_threshold)
-        redundant_stacked = np.column_stack(redundant)
-        redundant_sorted = np.argsort(similarity[redundant])[::-1]
-        included_idxs = set(range(len(embedded_docs)))
-        for first_idx, second_idx in redundant_stacked[redundant_sorted]:
-            if first_idx in included_idxs and second_idx in included_idxs:
-                # Default to dropping the second document of any highly similar pair.
-                included_idxs.remove(second_idx)
-        return list(sorted(included_idxs))
-
     def _get_embedded_docs(self, docs: List[_RetrievedDocument]) -> List[List[float]]:
         if len(docs) and "embedded_doc" in docs[0].query_metadata:
             embedded_docs = [doc.query_metadata["embedded_doc"] for doc in docs]
@@ -58,7 +61,9 @@ class EmbeddingRedundantDocumentFilter(BaseDocumentFilter):
     ) -> List[_RetrievedDocument]:
         """Filter down documents."""
         embedded_docs = self._get_embedded_docs(docs)
-        included_idxs = self._filter_embeddings(embedded_docs)
+        included_idxs = _filter_similar_embeddings(
+            embedded_docs, self.similarity_fn, self.similarity_threshold
+        )
         docs = [docs[i] for i in sorted(included_idxs)]
         return docs
 
