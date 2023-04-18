@@ -1,5 +1,5 @@
 """Wrapper around HuggingFace embedding models."""
-from typing import Any, List,Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -32,14 +32,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     cache_folder: Optional[str] = None
     """Path to store models. Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
 
-
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
         try:
             import sentence_transformers
 
-            self.client = sentence_transformers.SentenceTransformer(self.model_name,self.cache_folder)
+            self.client = sentence_transformers.SentenceTransformer(
+                self.model_name, self.cache_folder
+            )
         except ImportError:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
