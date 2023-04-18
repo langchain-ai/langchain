@@ -613,6 +613,10 @@ class OpenAIChat(BaseLLM):
     """Series of messages for Chat input."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
+    """Set of special tokens that are allowed。"""
+    disallowed_special: Union[Literal["all"], Collection[str]] = "all"
+    """Set of special tokens that are not allowed。"""
 
     class Config:
         """Configuration for this pydantic object."""
