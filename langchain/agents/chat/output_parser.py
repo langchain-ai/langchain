@@ -14,7 +14,7 @@ class ChatOutputParser(AgentOutputParser):
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
         try:
-            _, action, _ = text.split("```")
+            action  = text.split("```")[1]
             response = json.loads(action.strip())
             return AgentAction(response["action"], response["action_input"], text)
 
