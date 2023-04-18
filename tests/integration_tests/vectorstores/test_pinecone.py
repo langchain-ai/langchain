@@ -34,7 +34,6 @@ class TestPinecone:
 
     @classmethod
     def setup_class(cls) -> None:
-        print("setup_class")
         reset_pinecone()
 
         cls.index = pinecone.Index(index_name)
@@ -62,7 +61,6 @@ class TestPinecone:
 
     @classmethod
     def teardown_class(cls) -> None:
-        print("teardown_class")
         index_stats = cls.index.describe_index_stats()
         for _namespace_name in index_stats["namespaces"].keys():
             cls.index.delete(delete_all=True, namespace=_namespace_name)
@@ -86,7 +84,6 @@ class TestPinecone:
         unique_id = uuid.uuid4().hex
         needs = f"foobuu {unique_id} booo"
         texts.insert(0, needs)
-
         docsearch = Pinecone.from_texts(
             texts=texts,
             embedding=embedding_openai,
@@ -134,7 +131,6 @@ class TestPinecone:
         output = docsearch.similarity_search_with_score(
             "foo", k=3, namespace=namespace_name
         )
-
         docs = [o[0] for o in output]
         scores = [o[1] for o in output]
         sorted_documents = sorted(docs, key=lambda x: x.metadata["page"])
