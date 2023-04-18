@@ -1,9 +1,12 @@
 from itertools import repeat
 from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
+import numpy as np
+
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
 class SupabaseVectorStore(VectorStore):
@@ -15,6 +18,9 @@ class SupabaseVectorStore(VectorStore):
     to a subset of documents based on your own authorization or business logic.
 
     Note that the Supabase Python client does not yet support async operations.
+
+    If you'd like to use `max_marginal_relevance_search`, please review the instructions
+    below on modifying the `match_documents` function into return matched embeddings.
     """
 
     _client: Any
@@ -150,6 +156,31 @@ class SupabaseVectorStore(VectorStore):
 
         return match_result
 
+    def similarity_search_by_vector_returning_embeddings(
+        self, query: List[float], k: int
+    ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+        match_documents_params = dict(query_embedding=query, match_count=k)
+        res = self._client.rpc(self.query_name, match_documents_params).execute()
+
+        match_result = [
+            (
+                Document(
+                    metadata=search.get("metadata", {}),  # type: ignore
+                    page_content=search.get("content", ""),
+                ),
+                search.get("similarity", 0.0),
+                # Supabase returns a vector type as its string represation (!).
+                # This is a hack to convert the string to numpy array.
+                np.fromstring(
+                    search.get("embedding", "").strip("[]"), np.float32, sep=","
+                ),
+            )
+            for search in res.data
+            if search.get("content")
+        ]
+
+        return match_result
+
     @staticmethod
     def _texts_to_documents(
         texts: Iterable[str], metadatas: Optional[Iterable[dict[Any, Any]]] = None
@@ -210,3 +241,88 @@ class SupabaseVectorStore(VectorStore):
             id_list.extend(ids)
 
         return id_list
+
+    def max_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        result = self.similarity_search_by_vector_returning_embeddings(
+            embedding, fetch_k
+        )
+
+        matched_documents = [doc_tuple[0] for doc_tuple in result]
+        matched_embeddings = [doc_tuple[2] for doc_tuple in result]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array([embedding], dtype=np.float32), matched_embeddings, k=k
+        )
+
+        filtered_documents = [matched_documents[i] for i in mmr_selected]
+
+        return filtered_documents
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+
+        `max_marginal_relevance_search` requires that `query_name` returns matched
+        embeddings alongside the match documents. The following function function
+        demonstrates how to do this:
+        ```sql
+        CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536), match_count int)
+            RETURNS TABLE(
+                id bigint,
+                content text,
+                metadata jsonb,
+                embedding vector(1536),
+                similarity float)
+            LANGUAGE plpgsql
+            AS $$
+            # variable_conflict use_column
+        BEGIN
+            RETURN query
+            SELECT
+                id,
+                content,
+                metadata,
+                embedding,
+                1 -(docstore.embedding <=> query_embedding) AS similarity
+            FROM
+                docstore
+            ORDER BY
+                docstore.embedding <=> query_embedding
+            LIMIT match_count;
+        END;
+        $$;```
+        """
+        embedding = self._embedding.embed_documents([query])
+        docs = self.max_marginal_relevance_search_by_vector(embedding[0], k, fetch_k)
+        return docs
