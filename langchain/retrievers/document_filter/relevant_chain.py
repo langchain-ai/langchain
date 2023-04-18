@@ -2,9 +2,12 @@
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain import BasePromptTemplate, LLMChain, PromptTemplate
-from langchain.document_filter.base import BaseDocumentFilter
-from langchain.document_filter.relevant_chain_prompt import prompt_template
 from langchain.output_parsers.boolean import BooleanOutputParser
+from langchain.retrievers.document_filter.base import (
+    BaseDocumentFilter,
+    RetrievedDocument,
+)
+from langchain.retrievers.document_filter.relevant_chain_prompt import prompt_template
 from langchain.schema import BaseLanguageModel, Document
 
 
@@ -32,8 +35,10 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    def filter(self, docs: List[Document], query: str) -> List[Document]:
-        """Filter down documents."""
+    def filter(
+        self, docs: List[RetrievedDocument], query: str
+    ) -> List[RetrievedDocument]:
+        """Filter down documents based on their relevance to the query."""
         filtered_docs = []
         for doc in docs:
             _input = self.get_input(query, doc)
@@ -42,7 +47,9 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
                 filtered_docs.append(doc)
         return filtered_docs
 
-    def afilter(self, docs: List[Document], query: str) -> List[Document]:
+    async def afilter(
+        self, docs: List[RetrievedDocument], query: str
+    ) -> List[RetrievedDocument]:
         """Filter down documents."""
         raise NotImplementedError
 
