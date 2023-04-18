@@ -36,7 +36,7 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     @root_validator(pre=True, allow_reuse=True)
     def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that at least one of token and credentials is present."""
-        if "token" in values or "credentials" in values:
+        if "token" in values or "credential" in values:
             return values
         raise ValueError("Please provide either a credential or a token.")
 
