@@ -15,7 +15,9 @@ class MRKLOutputParser(AgentOutputParser):
             )
         # \s matches against tab/newline/whitespace
         # Action Input section optional to allow for no-input actions.
-        regex = r"Action\s*\d*\s*:\s*([ \S]*)(\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*))?$"
+        regex = (
+            r"Action\s*\d*\s*:\s*([ \S]*)(\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*))?$"
+        )
         match = re.search(regex, text, re.DOTALL)
         if not match:
             raise ValueError(f"Could not parse LLM output: `{text}`")
