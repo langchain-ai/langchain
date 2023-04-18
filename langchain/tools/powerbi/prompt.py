@@ -53,3 +53,8 @@ Question: What was the average of <column> in <table>?
 DAX: EVALUATE ROW("Average", AVERAGE(<table>[<column>]))
 ----
 """
+
+BAD_REQUEST_RESPONSE = (
+    "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
+)
+BAD_REQUEST_RESPONSE_ESCALATED = "You already tried this, please try a different query."

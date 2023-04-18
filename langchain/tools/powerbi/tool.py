@@ -12,6 +12,8 @@ from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY,
     DEFAULT_FEWSHOT_EXAMPLES,
+    BAD_REQUEST_RESPONSE,
+    BAD_REQUEST_RESPONSE_ESCALATED,
 )
 from langchain.powerbi import json_to_md
 
@@ -45,33 +47,59 @@ class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
 
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
     """
+    session_cache: dict[str, Any] = Field(default_factory=dict)
+
+    def _check_cache(self, tool_input: str) -> str | None:
+        """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
+        if tool_input not in self.session_cache:
+            return None
+        if self.session_cache[tool_input] == BAD_REQUEST_RESPONSE:
+            self.session_cache[tool_input] = BAD_REQUEST_RESPONSE_ESCALATED
+        return self.session_cache[tool_input]
 
     def _run(self, tool_input: str) -> str:
         """Execute the query, return the results or an error message."""
+        if cache := self._check_cache(tool_input):
+            return cache
         try:
-            result = self.powerbi.run(command=tool_input)
+            self.session_cache[tool_input] = self.powerbi.run(command=tool_input)
         except Exception as exc:  # pylint: disable=broad-except
             if "bad request" in str(exc).lower():
-                return "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
-            if "unauthorized" in str(exc).lower():
-                return "Unauthorized. Try changing your authentication, do not retry."
-            return str(exc)
-        if "results" in result:
-            return json_to_md(result["results"][0]["tables"][0]["rows"])
-        return result
+                self.session_cache[tool_input] = BAD_REQUEST_RESPONSE
+            elif "unauthorized" in str(exc).lower():
+                self.session_cache[
+                    tool_input
+                ] = "Unauthorized. Try changing your authentication, do not retry."
+            else:
+                self.session_cache[tool_input] = str(exc)
+            return self.session_cache[tool_input]
+        if "results" in self.session_cache[tool_input]:
+            self.session_cache[tool_input] = json_to_md(
+                self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
+            )
+        return self.session_cache[tool_input]
 
     async def _arun(self, tool_input: str) -> str:
+        """Execute the query, return the results or an error message."""
+        if cache := self._check_cache(tool_input):
+            return cache
         try:
-            result = await self.powerbi.arun(command=tool_input)
+            self.session_cache[tool_input] = await self.powerbi.arun(command=tool_input)
         except Exception as exc:  # pylint: disable=broad-except
             if "bad request" in str(exc).lower():
-                return "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
-            if "unauthorized" in str(exc).lower():
-                return "Unauthorized. Try changing your authentication, do not retry."
-            return str(exc)
-        if "results" in result:
-            return json_to_md(result["results"][0]["tables"][0]["rows"])
-        return result
+                self.session_cache[tool_input] = BAD_REQUEST_RESPONSE
+            elif "unauthorized" in str(exc).lower():
+                self.session_cache[
+                    tool_input
+                ] = "Unauthorized. Try changing your authentication, do not retry."
+            else:
+                self.session_cache[tool_input] = str(exc)
+            return self.session_cache[tool_input]
+        if "results" in self.session_cache[tool_input]:
+            self.session_cache[tool_input] = json_to_md(
+                self.session_cache[tool_input]["results"][0]["tables"][0]["rows"]
+            )
+        return self.session_cache[tool_input]
 
 
 class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
