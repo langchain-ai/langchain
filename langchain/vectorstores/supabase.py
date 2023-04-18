@@ -91,28 +91,6 @@ class SupabaseVectorStore(VectorStore):
             query_name=query_name,
         )
 
-    @classmethod
-    def from_documents(
-        cls: Type["SupabaseVectorStore"],
-        documents: List[Document],
-        embedding: Embeddings,
-        client: supabase.client.Client,
-        table_name: str,
-        query_name: Union[str, None] = None,
-    ) -> "SupabaseVectorStore":
-        """Return VectorStore initialized from Documents."""
-
-        texts = [doc.page_content for doc in documents]
-        embeddings = embedding.embed_documents(texts)
-        _ids = cls._add_vectors(client, table_name, embeddings, documents)
-
-        return cls(
-            client=client,
-            embedding=embedding,
-            table_name=table_name,
-            query_name=query_name,
-        )
-
     def add_vectors(
         self, vectors: List[List[float]], documents: List[Document]
     ) -> List[str]:
