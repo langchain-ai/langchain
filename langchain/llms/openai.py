@@ -153,9 +153,9 @@ class BaseOpenAI(BaseLLM):
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    allowed_special: Union[Literal["all"], AbstractSet[str]] = (set(),)
+    allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
     """Set of special tokens that are allowed。"""
-    disallowed_special: Union[Literal["all"], Collection[str]] = ("all",)
+    disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
 
     def __new__(cls, **data: Any) -> Union[OpenAIChat, BaseOpenAI]:  # type: ignore
