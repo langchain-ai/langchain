@@ -1,4 +1,4 @@
-"""Test filtering pipelines."""
+"""Integration test for filtering pipelines."""
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_filters import (
     DocumentFilterPipeline,

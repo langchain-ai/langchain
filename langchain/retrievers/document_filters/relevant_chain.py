@@ -61,5 +61,5 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
         **kwargs: Any
     ) -> "LLMChainDocumentFilter":
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=llm_chain, **kwargs)

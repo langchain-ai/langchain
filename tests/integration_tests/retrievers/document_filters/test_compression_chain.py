@@ -1,4 +1,4 @@
-"""Test LLMChainCompressor."""
+"""Integration test for LLMChainCompressor."""
 from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.document_filters import LLMChainCompressor
 from langchain.retrievers.document_filters.base import RetrievedDocument
