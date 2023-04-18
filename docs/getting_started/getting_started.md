@@ -244,7 +244,8 @@ from langchain import OpenAI, ConversationChain
 llm = OpenAI(temperature=0)
 conversation = ConversationChain(llm=llm, verbose=True)
 
-conversation.predict(input="Hi there!")
+output = conversation.predict(input="Hi there!")
+print(output)
 ```
 
 ```pycon
@@ -262,7 +263,8 @@ AI:
 ```
 
 ```python
-conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+output = conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+print(output)
 ```
 
 ```pycon
