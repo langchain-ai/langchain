@@ -1,6 +1,8 @@
 """Loader that fetches a sitemap and loads those URLs."""
 import re
 from typing import Any, Callable, List, Optional
+from urllib.parse import urlparse
+
 
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
@@ -16,6 +18,7 @@ class SitemapLoader(WebBaseLoader):
     def __init__(
         self,
         web_path: str,
+        sitemap_discovery: bool = False,
         filter_urls: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
     ):
@@ -39,6 +42,44 @@ class SitemapLoader(WebBaseLoader):
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
+
+    # if web_path is a str
+    @property
+    def _base_url(self) -> str:
+        base_url = f"urlparse(self.web_path).scheme + '://' + urlparse(self.web_path).netloc"
+        return base_url 
+    
+    def find_sitemap_in_robotstxt(self) -> str:
+        """Find sitemap in robots.txt."""
+        sitemap_urls = []
+        robots_txt_url = self._base_url + "/robots.txt"
+        response = requests.get(robots_txt_url)
+        if response.status_code == 200:
+            site_map_urls = re.findall(r"Sitemap: (\S+)", response.text, re.IGNORECASE)
+        
+        return site_map_urls
+
+    def find_sitemap_in_html(self) -> str: 
+        """Find sitemap in homepage html."""
+        sitemap_urls = []
+        
+        response = requests.get(self._base_url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            for link in soup.find_all("a"):
+                if "sitemap" in link.get("href").lower():
+                    sitemap_urls.append(self._base  + link.get("href"))
+        return site_map_urls
+
+    @property
+    def web_path(self) -> str:
+        if self.discover_sitemap:
+            sitemap_urls = self.find_sitemap_in_robotstxt()
+            if not sitemap_urls:
+                sitemap_urls = self.find_sitemap_in_html()
+            if not sitemap_urls:
+                raise ValueError("No sitemap found in robots.txt or homepage html")
+        return sitemap_urls[0]
 
     def parse_sitemap(self, soup: Any) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts."""
