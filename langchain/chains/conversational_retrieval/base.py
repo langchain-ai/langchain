@@ -22,8 +22,14 @@ from langchain.vectorstores.base import VectorStore
 def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
     buffer = ""
     for human_s, ai_s in chat_history:
-        human = "Human: " + human_s
-        ai = "Assistant: " + ai_s
+        if type(human_s) == str():
+            human = "Human: " + human_s
+        else:
+            human = "Human: " + str(human_s)
+        if type(ai_s) == str():
+            ai = "Assistant: " + ai_s
+        else:
+            ai = "Assistant: " + ai_s
         buffer += "\n" + "\n".join([human, ai])
     return buffer
 
@@ -161,11 +167,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
-        doc_chain = load_qa_chain(
-            llm,
-            chain_type=chain_type,
-            prompt=qa_prompt,
-        )
+        doc_chain = load_qa_chain(llm, chain_type=chain_type, prompt=qa_prompt,)
         condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
             retriever=retriever,
@@ -215,11 +217,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
-        doc_chain = load_qa_chain(
-            llm,
-            chain_type=chain_type,
-            prompt=qa_prompt,
-        )
+        doc_chain = load_qa_chain(llm, chain_type=chain_type, prompt=qa_prompt,)
         condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
             vectorstore=vectorstore,
