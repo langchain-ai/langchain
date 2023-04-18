@@ -14,45 +14,47 @@ from langchain.vectorstores.utils import maximal_marginal_relevance
 
 class Milvus(VectorStore):
     """Wrapper around the Milvus vector database."""
+
     index_params = {
         "FLAT": {"params": {"nprobe": 10}},
         "IVF_FLAT": {"params": {"nprobe": 10}},
         "IVF_SQ8": {"params": {"nprobe": 10}},
         "IVF_PQ": {"params": {"nprobe": 10}},
         "HNSW": {"params": {"ef": 10}},
-        "ANNOY": {"params": {"search_k": 10}}
+        "ANNOY": {"params": {"search_k": 10}},
     }
     # see https://milvus.io/docs/build_index.md
     supported_index_types_and_build_param = {
-        "FLAT": {"metric_type": "IP",
-                 "index_type": "FLAT",
-                 "params": {"nlist": 1024}},
-        "IVF_FLAT": {"metric_type": "IP",
-                     "index_type": "IVF_FLAT",
-                     "params": {"nlist": 1024}},
-        "IVF_SQ8": {"metric_type": "IP",
-                    "index_type": "IVF_SQ8",
-                    "params": {"nlist": 1024}},
-        "IVF_PQ": {"metric_type": "IP",
-                   "index_type": "IVF_PQ",
-                   "params": {"nlist": 1024, "m": 10, "nbits": 8}},
+        "FLAT": {"metric_type": "IP", "index_type": "FLAT", "params": {"nlist": 1024}},
+        "IVF_FLAT": {
+            "metric_type": "IP",
+            "index_type": "IVF_FLAT",
+            "params": {"nlist": 1024},
+        },
+        "IVF_SQ8": {
+            "metric_type": "IP",
+            "index_type": "IVF_SQ8",
+            "params": {"nlist": 1024},
+        },
+        "IVF_PQ": {
+            "metric_type": "IP",
+            "index_type": "IVF_PQ",
+            "params": {"nlist": 1024, "m": 10, "nbits": 8},
+        },
         "HNSW": {
             "index_type": "HNSW",
             "metric_type": "L2",
             "params": {"M": 8, "efConstruction": 64},
         },
-        "ANNOY": {"index_type": "ANNOY",
-                  "metric_type": "IP",
-                  "params": {"n_trees": 8}},
-
+        "ANNOY": {"index_type": "ANNOY", "metric_type": "IP", "params": {"n_trees": 8}},
     }
 
     def __init__(
-            self,
-            embedding_function: Embeddings,
-            connection_args: dict,
-            collection_name: str,
-            text_field: str,
+        self,
+        embedding_function: Embeddings,
+        connection_args: dict,
+        collection_name: str,
+        text_field: str,
     ):
         """Initialize wrapper around the milvus vector database.
 
@@ -102,12 +104,12 @@ class Milvus(VectorStore):
                 self.vector_field = x.name
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            partition_name: Optional[str] = None,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        partition_name: Optional[str] = None,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
 
@@ -153,22 +155,23 @@ class Milvus(VectorStore):
         return res.primary_keys
 
     def _worker_search(
-            self,
-            query: str,
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            partition_names: Optional[List[str]] = None,
-            round_decimal: int = -1,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        partition_names: Optional[List[str]] = None,
+        round_decimal: int = -1,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> Tuple[List[float], List[Tuple[Document, Any, Any]]]:
         # Load the collection into memory for searching.
         self.col.load()
         # Decide to use default params if not passed in.
         if param is None:
             index_type = self.col.indexes[0].params["index_type"]
-            # get metric type ensures that the index type is compatible with the build index
+            # get metric type ensures that the index type
+            # is compatible with the build index
             metric_type = self.col.indexes[0].params["metric_type"]
             param = self.index_params[index_type]
             param["metric_type"] = metric_type
@@ -205,15 +208,15 @@ class Milvus(VectorStore):
         return data[0], ret
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            partition_names: Optional[List[str]] = None,
-            round_decimal: int = -1,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        partition_names: Optional[List[str]] = None,
+        round_decimal: int = -1,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results.
 
@@ -241,16 +244,16 @@ class Milvus(VectorStore):
         return [(x, y) for x, y, _ in result]
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            partition_names: Optional[List[str]] = None,
-            round_decimal: int = -1,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        partition_names: Optional[List[str]] = None,
+        round_decimal: int = -1,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
 
@@ -307,15 +310,15 @@ class Milvus(VectorStore):
         return ret
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            param: Optional[dict] = None,
-            expr: Optional[str] = None,
-            partition_names: Optional[List[str]] = None,
-            round_decimal: int = -1,
-            timeout: Optional[int] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        partition_names: Optional[List[str]] = None,
+        round_decimal: int = -1,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
 
@@ -342,11 +345,11 @@ class Milvus(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> Milvus:
         """Create a Milvus collection, indexes it with HNSW, and insert data.
 
@@ -432,7 +435,9 @@ class Milvus(VectorStore):
         collection = Collection(collection_name, schema)
         # Index parameters for the collection
         index_type = kwargs.get("index_type", "HNSW")
-        assert index_type in cls.supported_index_types_and_build_param.keys(), "Unsupported index type"
+        assert (
+            index_type in cls.supported_index_types_and_build_param.keys()
+        ), "Unsupported index type"
         index = cls.supported_index_types_and_build_param[index_type]
         # Create the index
         collection.create_index(vector_field, index)

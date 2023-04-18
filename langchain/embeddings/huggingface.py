@@ -48,18 +48,23 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str], normalize_embeddings: bool = True) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], normalize_embeddings: bool = True
+    ) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
-            normalize_embeddings: Whether to normalize the embeddings. Important for cosine similarity search.
+            normalize_embeddings: Whether to normalize the embeddings.
+            Important for cosine similarity search.
 
         Returns:
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client.encode(texts, normalize_embeddings=normalize_embeddings)
+        embeddings = self.client.encode(
+            texts, normalize_embeddings=normalize_embeddings
+        )
         return embeddings.tolist()
 
     def embed_query(self, text: str, normalize_embeddings: bool = True) -> List[float]:
@@ -67,7 +72,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         Args:
             text: The text to embed.
-            normalize_embeddings: Whether to normalize the embeddings. Important for cosine similarity search.
+            normalize_embeddings: Whether to normalize the embeddings.
+            Important for cosine similarity search.
 
         Returns:
             Embeddings for the text.
