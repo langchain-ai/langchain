@@ -20,12 +20,12 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[float], filter: dict = None) -> Dict:
-    if filter is None:
-        filter = {"match_all": {}}
-    else:
+def _default_script_query(query_vector: List[float], filter: dict) -> Dict:
+    if filter:
         (key, value), = filter.items()
         filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
+    else:
+        filter = {"match_all": {}}
     return {
         "script_score": {
             "query": filter,
