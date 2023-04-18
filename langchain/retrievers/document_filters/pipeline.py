@@ -1,7 +1,7 @@
 """DocumentFilter that uses a pipeline of other filters."""
 from typing import List
 
-from langchain.retrievers.document_filter.base import (
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )

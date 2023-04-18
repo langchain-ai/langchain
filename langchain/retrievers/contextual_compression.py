@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Extra
 
-from langchain.retrievers.document_filter.base import (
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )
@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
-    """"""
+    """Retriever that wraps a base retriever and then filters the results."""
 
     base_filter: BaseDocumentFilter
     """Filter for filtering documents."""

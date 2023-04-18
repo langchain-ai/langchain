@@ -3,29 +3,27 @@ from typing import Callable, Dict, List, Optional
 
 import numpy as np
 from pydantic import root_validator
-from sklearn.metrics.pairwise import cosine_similarity
 
 from langchain.embeddings.base import Embeddings
-from langchain.retrievers.document_filter.base import (
+from langchain.math_utils import cosine_similarity
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )
-
-SIMILARITY_FN_TYPE = Callable[[List[List[float]], List[List[float]]], List[List[float]]]
 
 
 class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""
-    similarity_fn: SIMILARITY_FN_TYPE = cosine_similarity
-    """Similarity function for comparing documents to the query. Function expected to 
-    take as input two matrices (List[List[float]]) and return a matrix of normalized
-    similarity scores. Defaults to sklearn.metrics.pairwise.cosine_similarity."""
+    similarity_fn: Callable = cosine_similarity
+    """Similarity function for comparing documents. Function expected to take as input
+    two matrices (List[List[float]]) and return a matrix of scores where higher values
+    indicate greater similarity."""
     k: Optional[int] = 20
     """The number of relevant documents to return. Can be set to None, in which case
     `similarity_threshold` must be specified. Defaults to 20."""
     similarity_threshold: Optional[float]
-    """Normalized threshold for determining when two documents are similar enough
+    """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
 

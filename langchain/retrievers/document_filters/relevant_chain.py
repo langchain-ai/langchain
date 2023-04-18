@@ -3,11 +3,11 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain import BasePromptTemplate, LLMChain, PromptTemplate
 from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.retrievers.document_filter.base import (
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )
-from langchain.retrievers.document_filter.relevant_chain_prompt import prompt_template
+from langchain.retrievers.document_filters.relevant_chain_prompt import prompt_template
 from langchain.schema import BaseLanguageModel, Document
 
 

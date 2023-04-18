@@ -2,14 +2,14 @@
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain import LLMChain, PromptTemplate
-from langchain.retrievers.document_filter.base import (
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )
-from langchain.retrievers.document_filter.compression_chain_prompt import (
+from langchain.retrievers.document_filters.compression_chain_prompt import (
     prompt_template,
 )
-from langchain.schema import BaseLanguageModel, Document
+from langchain.schema import BaseLanguageModel, BaseOutputParser, Document
 
 
 def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
@@ -17,9 +17,25 @@ def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
     return {"question": query, "context": doc.page_content}
 
 
+class NoOutputParser(BaseOutputParser[str]):
+    """Parse outputs that could return a null string of some sort."""
+
+    no_output_str: str = "__NO_OUTPUT__"
+
+    def parse(self, text: str) -> str:
+        cleaned_text = text.strip()
+        if cleaned_text == self.no_output_str:
+            return ""
+        return cleaned_text
+
+
 def _get_default_chain_prompt() -> PromptTemplate:
+    output_parser = NoOutputParser()
+    template = prompt_template.format(no_output_str=output_parser.no_output_str)
     return PromptTemplate(
-        template=prompt_template, input_variables=["question", "context"]
+        template=template,
+        input_variables=["question", "context"],
+        output_parser=output_parser,
     )
 
 
@@ -37,7 +53,7 @@ class LLMChainCompressor(BaseDocumentFilter):
         compressed_docs = []
         for doc in docs:
             _input = self.get_input(query, doc)
-            output = self.llm_chain.predict(**_input)
+            output = self.llm_chain.predict_and_parse(**_input)
             if len(output) == 0:
                 continue
             compressed_docs.append(

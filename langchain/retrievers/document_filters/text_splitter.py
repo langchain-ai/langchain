@@ -1,7 +1,7 @@
 """Wrapper for using TextSplitter as a BaseDocumentFilter."""
 from typing import Any, List
 
-from langchain.retrievers.document_filter.base import (
+from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     RetrievedDocument,
 )
