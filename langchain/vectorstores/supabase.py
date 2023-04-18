@@ -60,6 +60,7 @@ class SupabaseVectorStore(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict[Any, Any]]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         docs = self._texts_to_documents(texts, metadatas)
 
