@@ -72,7 +72,7 @@ class SupabaseVectorStore(VectorStore):
         cls: Type["SupabaseVectorStore"],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict[Any, Any]]] = None,
+        metadatas: Optional[List[dict]] = None,
         *,
         client: supabase.client.Client,
         table_name: str,
