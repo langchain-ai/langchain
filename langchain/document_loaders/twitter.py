@@ -1,14 +1,14 @@
 """Twitter document loader."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
     import tweepy
-    from tweepy import OAuthHandler, OAuth2BearerHandler
+    from tweepy import OAuth2BearerHandler, OAuthHandler
 
 
 def _dependable_tweepy_import() -> tweepy:
@@ -26,8 +26,8 @@ class TwitterTweetLoader(BaseLoader):
     Read tweets of user twitter handle.
 
     First you need to go to
-    ` https://developer.twitter.com/en/docs/twitter-api
-    /getting-started/getting-access-to-the-twitter-api `
+    `https://developer.twitter.com/en/docs/twitter-api
+    /getting-started/getting-access-to-the-twitter-api`
     to get your token. And create a v2 version of the app.
     """
 
@@ -38,7 +38,6 @@ class TwitterTweetLoader(BaseLoader):
         number_tweets: Optional[int] = 100,
     ):
         self.auth = auth_handler
-
         self.twitter_users = twitter_users
         self.number_tweets = number_tweets
 
@@ -47,20 +46,27 @@ class TwitterTweetLoader(BaseLoader):
         tweepy = _dependable_tweepy_import()
         api = tweepy.API(self.auth, parser=tweepy.parsers.JSONParser())
 
-        results = []
+        results: List[Document] = []
         for username in self.twitter_users:
             tweets = api.user_timeline(screen_name=username, count=self.number_tweets)
-            response = self._format_tweets(tweets)
             user = api.get_user(screen_name=username)
-            results.append(Document(page_content=response, metadata=user))
+            docs = self._format_tweets(tweets, user)
+            results.extend(docs)
         return results
 
-    def _format_tweets(self, tweets: List[Dict[str, Any]]) -> str:
+    def _format_tweets(
+        self, tweets: List[Dict[str, Any]], user_info: dict
+    ) -> Iterable[Document]:
         """Format tweets into a string."""
-        response = ""
         for tweet in tweets:
-            response += f"Created At:{tweet['created_at']},Content:{tweet['text']}\n"
-        return response
+            metadata = {
+                "created_at": tweet["created_at"],
+                "user_info": user_info,
+            }
+            yield Document(
+                page_content=tweet["text"],
+                metadata=metadata,
+            )
 
     @classmethod
     def from_bearer_token(
