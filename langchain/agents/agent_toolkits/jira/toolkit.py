@@ -13,9 +13,7 @@ class JiraToolkit(BaseToolkit):
     tools: List[BaseTool] = []
 
     @classmethod
-    def from_jira_api_wrapper(
-        cls, jira_api_wrapper: JiraAPIWrapper
-    ) -> "JiraToolkit":
+    def from_jira_api_wrapper(cls, jira_api_wrapper: JiraAPIWrapper) -> "JiraToolkit":
         actions = jira_api_wrapper.list()
         tools = [
             JiraAction(

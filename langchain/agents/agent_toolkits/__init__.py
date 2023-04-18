@@ -1,6 +1,7 @@
 """Agent toolkits."""
 
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
+from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
@@ -20,7 +21,6 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
-from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 
 __all__ = [
     "create_json_agent",

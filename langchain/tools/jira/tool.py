@@ -1,13 +1,7 @@
-from typing import Any, Dict, Optional
-
-from pydantic import Field, root_validator
-
-from langchain.tools.base import BaseTool
-from langchain.utilities.jira import JiraAPIWrapper
-
 """
-This tool allows agents to interact with the atlassian-python-api library and operate on a Jira instance.
-for more information on the atlassian-python-api library, see https://atlassian-python-api.readthedocs.io/jira.html
+This tool allows agents to interact with the atlassian-python-api library
+and operate on a Jira instance. For more information on the
+atlassian-python-api library, see https://atlassian-python-api.readthedocs.io/jira.html
 
 To use this tool, you must first set as environment variables:
     JIRA_API_TOKEN
@@ -34,6 +28,12 @@ agent = initialize_agent(
 )
 ```
 """
+from pydantic import Field
+
+from langchain.tools.base import BaseTool
+from langchain.utilities.jira import JiraAPIWrapper
+
+
 class JiraAction(BaseTool):
     api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
     mode: str
