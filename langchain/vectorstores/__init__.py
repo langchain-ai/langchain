@@ -11,6 +11,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 
 __all__ = [
     "ElasticVectorSearch",
@@ -25,4 +26,5 @@ __all__ = [
     "AtlasDB",
     "DeepLake",
     "Annoy",
+    "MyScale"
 ]

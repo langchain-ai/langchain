@@ -1,8 +1,10 @@
 """Wrapper around MyScale vector database."""
 from __future__ import annotations
 
+import json
+from pydantic import BaseSettings
 from hashlib import sha1
-from typing import List, Any, Optional, Iterable, Dict
+from typing import List, Any, Optional, Iterable, Dict, Tuple
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -10,12 +12,13 @@ import sqlparse
 import tqdm
 from threading import Thread
 
+
 def clean_parsed(parsed):
-    return [p for p in parsed 
-            if p.is_keyword or \
-                type(p) in [sqlparse.sql.Parenthesis, sqlparse.sql.Identifier]]    
-    
-    
+    return [p for p in parsed
+            if p.is_keyword or
+            type(p) in [sqlparse.sql.Parenthesis, sqlparse.sql.Identifier]]
+
+
 def has_mul_sub_str(s, *args):
     for a in args:
         if a not in s:
@@ -23,77 +26,82 @@ def has_mul_sub_str(s, *args):
     return True
 
 
+class MyScaleSettings(BaseSettings):
+    """MyScale Client Configuration
+
+    Attribute:
+        myscale_host (str) : An URL to connect to MyScale backend. Defaults to 'localhost'.
+        myscale_port (int) : URL port to connect with HTTP. Defaults to 8123.
+        username (str) : Usernamed to login. Defaults to None.
+        password (str) : Password to login. Defaults to None.
+        database (str) : Database name to find the table. Defaults to 'default'.
+        table (str) : Table name to operate on. Defaults to 'vector_table'.
+        metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'.
+        column_map (Dict) : Column type map to given schema. Must set if schema is not None.
+                            Must have keys: `text`, `id`, `vector`, must be same size to number of columns.
+                            Other key type could be arbitary. For example
+                            ```python
+                            {
+                                'id': 'text_id',
+                                'vector': 'text_embedding',
+                                'text': 'text_plain',
+                                'metadata': 'metadata_dictionary_in_json',
+                                'this-can-be-any-type': 'a-column-of-meow-cats'
+                                ...
+                            }
+                            ```
+                            Defaults to identity map.
+
+    Returns:
+        _type_: _description_
+    """
+    myscale_host: str = "localhost"
+    myscale_port: int = 8123
+
+    username: str = None
+    password: str = None
+
+    index_type: str = 'IVFFLAT'
+
+    column_map: Dict[str, str] = {
+        'id': 'id',
+        'text': 'text',
+        'vector': 'vector',
+        'metadata': 'metadata'
+    }
+
+    database: str = 'default'
+    table: str = 'vector_table'
+    metric: str = 'cosine'
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
 class MyScale(VectorStore):
     """Wrapper around MyScale vector database
-    
+
     You need a `clickhouse-connect` python package, and a valid account to connect to MyScale.
-    
+
     MyScale can not only search with simple vector indexes, it also supports complex query
     with multiple conditions, constraints and even sub-queries.
     For more information, please visit [myscale official site](https://docs.myscale.com/en/overview/)
-    
-    This wrapper provides both the high level schema and a customizable one,
-    Just in case if you have a custom table structure to search.
-     
-    If you want to customize it, just set both `schema` and `vector_args`
-    If `schema` is None, then the vector index will fallback to simple high level schema
-    
-    *** ATTENTION ***: Please be careful here, only use this if you know what you are doing!
-    - On advanced use: customized schema
-        should be the `CREATE TABLE` clause you would like to use.
-        NOTE: Assuming your schema have **constraints** on vectors
     """
+
     def __init__(self,
                  embedding_function: Embeddings,
-                 host: str = 'localhost',
-                 port: int = 8123,
-                 username: str = None,
-                 password: str = None,
-                 # simple arguments
-                 database: str = 'default',
-                 table: str = 'vector_table',
-                 metric: str = 'cosine',
-                 # advanced use to myscale
-                 schema: str = None,
-                 schema_colmap: dict = None) -> None:
-        """Initialize MyScale with wrapped functions
-        
-        It accepts structured params as well as a customized sql schema.
-        Feel free to plugin any existing data to play with langchain
+                 config: MyScaleSettings = MyScaleSettings(),
+                 create_table: bool = True) -> None:
+        """MyScale Wrapper to LangChain
 
-        Args:
-            embedding_function (Embeddings): Function used to embed the text
-            host (str, optional): An URL to connect to MyScale backend. Defaults to 'localhost'.
-            port (int, optional): URL port to connect with HTTP. Defaults to 8123.
-            username (str, optional): Usernamed to login. Defaults to None.
-            password (str, optional): Password to login. Defaults to None.
-            database (str, optional): Database name to find the table. Defaults to 'default'.
-            table (str, optional): Table name to operate on. Defaults to 'vector_table'.
-            metric (str, optional): Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'.
-            schema (str, optional): Customized schema to the table. 
-                                    If set, parameters ('database', 'table', 'metric') will not be effective at all.
-                                    Defaults to None.
-            schema_colmap (dict, optional): Column type map to given schema. Must set if schema is not None.
-                                    Must have keys: `text`, `id`, `vector`, must be same size to number of columns.
-                                    Other key type could be arbitary. For example
-                                    ```python
-                                    {
-                                        'id': 'text_id',
-                                        'vector': 'text_embedding',
-                                        'text': 'text_plain',
-                                        'this-can-be-any-type': 'a-column-of-meow-cats'
-                                        ...
-                                    }
-                                    ```
-                                    Defaults to None.
+            embedding_function (Embeddings): 
+            config (MytScaleSettings): Configuration to MyScale Client
+            create_table (bool, optional): Create table if you want. Defaults to True.
 
-        Raises:
-            ValueError: 
-                - When customized schema is used, if the format of `database.table` is not valid, then raise
-            AssertionError: 
-                - When customized schema is used, if params does not contain valid schema
-                - When customized schema is used, if params does not contain any constraint, then raise
-                - When customized schema is used, if model dim mismatches schema dim, then raise
         """
         try:
             from clickhouse_connect import get_client
@@ -102,98 +110,50 @@ class MyScale(VectorStore):
                 "Could not import clickhouse connect python package. "
                 "Please install it with `pip install clickhouse-connect`."
             )
-        try:
-            import sqlparse
-        except ImportError:
-            raise ValueError(
-                "Could not import sqlparse python package. "
-                "Please install it with `pip install sqlparse`."
-            )
         super().__init__()
-        assert table and database and host and port
+        self.config = config
+        assert self.config.myscale_host and self.config.myscale_port
+        assert self.config.column_map and self.config.database and self.config.table and self.config.metric
+        for k in ['id', 'vector', 'text', 'metadata']:
+            assert k in self.config.column_map
+        # FIXME @ fangruil: this should be myscale syntax
+        assert self.config.metric in ['l2Distance', 'cosineDistance']
+
         # initialize the schema
         dim = len(embedding_function('try this out'))
-        
-        if schema is not None:
-            assert schema_colmap
-            assert 'id' in schema_colmap and 'text' in schema_colmap and 'vector' in schema_colmap
-            # if customized schema is given, parse it
-            parsed = [i for i in  sqlparse.parse(schema) if i.get_type().upper() == 'CREATE']
-            assert len(parsed) >= 1
-            parsed = parsed[0]
-            schema_ = str(parsed)
-            parsed = clean_parsed(parsed)
-            tid = str([p for p in parsed if type(p) is sqlparse.sql.Identifier][0]).split('.')
-            if len(tid) == 1:
-                database, table = 'default', tid[0]
-            elif len(tid) == 2:
-                database, table = tid
-            else:
-                raise ValueError(f'Invalid table identifier {tid}')
-            params = None
-            for p in parsed:
-                if type(p) is sqlparse.sql.Parenthesis:
-                    params = str(p).split(',')
-                    # SAN CHECK
-                    # If you have constraints inside
-                    if sum([1 if has_mul_sub_str(str(_p).upper(), 'CONSTRAINT', 'CHECK', 'LENGTH') \
-                        else 0 for _p in params]) < 1:
-                        raise AssertionError('We can\'t find any constraints at all. For your own safety, add at least one constraint on vector length.')
-                    # If you have correct dimension constraints
-                    _cons_dim = int([_p for _p in params \
-                        if has_mul_sub_str(str(_p).upper(), 'CONSTRAINT', 'CHECK', 'LENGTH(')][0].split('=')[-1])
-                    if dim != _cons_dim:
-                        raise AssertionError(f'Constraint dimension mismatch to the embedding model you provided, which are {_cons_dim} and {dim}')
-                    vec_def = str(p)[str(p).find('INDEX'):].split(')')[0]
-                    # TODO @ fangruil fix it to myscale grammar
-                    vector_column_ = vec_def.split(' ')[2]
-                    metric_ = vec_def.split(',')[-1].translate({ord('\''):'', ord(' '):''})
-            if not params:
-                raise AssertionError('We can\'t find a parameter for your table. Please check your SQL.')
-            colmap_ = schema_colmap
-            assert vector_column_ in [v for _, v in colmap_.items()]
-        else:
-            assert metric in ['cosine', 'l2', 'ip']
-            vector_column_ = 'vector'
-            metric_ = metric
-            schema_ = f"""
-                CREATE TABLE IF NOT EXISTS {database}.{table}(
-                    id String,
-                    text String,
-                    vector Array(Float32),
-                    CONSTRAINT cons_vec_len CHECK length(vector) = {dim},
-                    VECTOR INDEX vec_idx vector TYPE IVFFLAT('metric_type={metric_}', 'ncentroids=1000')
-                )
-            """
-            colmap_ = {
-                'id': 'id',
-                'text': 'text',
-                'vector': 'vector'
-            }
-            
-        self.metric = metric_
-        self.database = database
-        self.table = table
-        self.vector_column = vector_column_
-        self.colmap = colmap_
+
+        # FIXME @ fangruil: this should be myscale syntax
+        # VECTOR INDEX vec_idx {self.config.column_map['vector']} TYPE {self.config.index_type}('metric_type={self.config.metric}') GRANULARITY 1,
+        schema_ = f"""
+            CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+                {self.config.column_map['id']} String,
+                {self.config.column_map['text']} String,
+                {self.config.column_map['vector']} Array(Float32),
+                {self.config.column_map['metadata']} String,
+                CONSTRAINT cons_vec_len CHECK length({self.config.column_map['vector']}) = {dim},
+                INDEX vidx {self.config.column_map['vector']} TYPE annoy(10, 'cosineDistance') GRANULARITY 1,
+            ) ENGINE = MergeTree ORDER BY {self.config.column_map['id']}
+        """
+        self.config = config
         self.dim = dim
         self.embedding_function = embedding_function
+
         # Create a connection to myscale
-        self.client = get_client(host=host, 
-                                 port=port, 
-                                 username=username,
-                                 password=password)
-        self.client.command('SET allow_experimental_annoy_index=1')
-        self.client.command(schema_)
-        
-        
+        self.client = get_client(host=self.config.myscale_host,
+                                 port=self.config.myscale_port,
+                                 username=self.config.username,
+                                 password=self.config.password)
+        if create_table:
+            # FIXME @ fangruil: this should be our ann benchmark switch
+            self.client.command('SET allow_experimental_annoy_index=1')
+            self.client.command(schema_)
+
     def add_texts(
         self,
         texts: Iterable[str],
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
-        colmap_override: dict = None,
-        extra_columns: Dict[str, Iterable[Any]] = None,
+        metadata: List[dict] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -202,8 +162,7 @@ class MyScale(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             ids: Optional list of ids to associate with the texts.
             batch_size: Batch size of insertion
-            extra_columns: Optional column data to be inserted
-            colmap_override: Override the class column map
+            metadata: Optional column data to be inserted
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -211,19 +170,14 @@ class MyScale(VectorStore):
         """
         # Embed and create the documents
         ids = ids or [sha1(t.encode('utf-8')).hexdigest() for t in texts]
-        if colmap_override:
-            colmap_ = colmap_override
-        else:
-            colmap_ = self.colmap
-        
+        colmap_ = self.config.column_map
+
         transac = []
-        column_names = {colmap_['id']: ids, 
-                        colmap_['text']: texts, 
-                        colmap_['vector']: map(self.embedding_function, texts)}
-        if extra_columns:
-            for k, v in extra_columns.items():
-                assert len(list(v)) == len(texts)
-                column_names[k] = v
+        column_names = {colmap_['id']: ids,
+                        colmap_['text']: texts,
+                        colmap_['vector']: map(self.embedding_function, texts), }
+        if metadata:
+            column_names[colmap_['metadata']] = map(json.dumps, metadata)
         assert len(set(colmap_)-set(column_names)) >= 0
         keys, values = zip(*column_names.items())
         t = None
@@ -232,80 +186,168 @@ class MyScale(VectorStore):
             if len(transac) == batch_size:
                 if t:
                     t.join()
-                t = Thread(target=self.client.insert, 
-                           args=[self.table, transac], 
-                           kwargs={'column_names':keys,
-                                   'database':self.database})
+                t = Thread(target=self.client.insert,
+                           args=[self.config.table, transac],
+                           kwargs={'column_names': keys,
+                                   'database': self.config.database})
                 t.start()
                 transac = []
         if len(transac) > 0:
             if t:
                 t.join()
-            self.client.insert(self.table, transac, 
-                               column_names=keys, database=self.database)
-            
+            self.client.insert(self.config.table, transac,
+                               column_names=keys, database=self.config.database)
+        return ids
+
     @classmethod
     def from_texts(
         cls,
-        embedding_function: Embeddings,
         texts: Iterable[str],
-        host: str = 'localhost',
-        port: int = 8123,
-        username: str = None,
-        password: str = None,
-        database: str = 'default',
-        table: str = 'vector_table',
-        metric: str = 'cosine',
-        schema: str = None,
-        schema_colmap: dict = None,
+        embedding_function: Embeddings,
+        config: MyScaleSettings = MyScaleSettings(),
         text_ids: Optional[Iterable] = None,
         batch_size: int = 32,
-        colmap_override: dict = None,
-        extra_columns: Dict[str, Iterable[Any]] = None,
+        metadata: List[dict] = None,
         **kwargs: Any,
     ) -> MyScale:
-        ctx = cls(embedding_function, 
-                  host=host, 
-                  port=port,
-                  username=username,
-                  password=password,
-                  database=database,
-                  table=table,
-                  metric=metric,
-                  schema=schema,
-                  schema_colmap=schema_colmap)
-        ctx.add_texts(texts, ids=text_ids, batch_size=batch_size,
-                      colmap_override=colmap_override, 
-                      extra_columns=extra_columns)
+        """Create Myscale wrapper with existing texts
+
+        Args:
+            embedding_function (Embeddings): Function to extract text embedding
+            texts (Iterable[str]): List or tuple of strings to be added
+            config (MyScaleSettings, Optional): Myscale configuration
+            text_ids (Optional[Iterable], optional): IDs for the texts. Defaults to None.
+            batch_size (int, optional): Batchsize when transmitting data to MyScale. Defaults to 32.
+            metadata (List[dict], optional): metadata to texts. Defaults to None.
+
+        Returns:
+            MyScale: _description_
+        """
+        ctx = cls(embedding_function,
+                  config)
+        ctx.add_texts(texts, ids=text_ids, batch_size=batch_size, metadata=metadata)
         return ctx
-    
-    
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
-        return super().similarity_search(query, k, **kwargs)
-        
-        
+
+    def __repr__(self):
+        """Text representation for myscale. easy to use with `str(Myscale())`
+
+        Returns:
+            _type_: _description_
+        """
+        _repr = f'\033[92m\033[1m{self.config.database}.{self.config.table} @ {self.config.myscale_host}:{self.config.myscale_port}\033[0m\n\n'
+        _repr += f'\033[1musername: {self.config.username}\033[0m\n\n'
+        _repr += '-' * 51 + '\n'
+        for r in i.client.query(f'DESC {i.config.database}.{i.config.table}').named_results():
+            _repr += f"|\033[94m{r['name']:24s}\033[0m|\033[96m{r['type']:24s}\033[0m|\n"
+        _repr += '-' * 51 + '\n'
+        return _repr
+
+    def _build_qstr(self, q_emb: List[float], topk: int, where_condition: str) -> str:
+        q_emb = ','.join(map(str, q_emb))
+
+        # FIXME @ fangruil: this should be myscale distance function
+        q_str = f"""
+            SELECT {self.config.column_map['text']}, {self.config.column_map['metadata']}, dist
+            FROM {self.config.database}.{self.config.table}
+            {where_condition}
+            ORDER BY cosineDistance({self.config.column_map['vector']}, [{q_emb}]) AS dist
+            LIMIT {topk}
+            """
+        return q_str
+
+    def similarity_search(
+        self, query: str, k: int = 4, where_condition: Optional[str] = None, **kwargs: Any
+    ) -> List[Document]:
+        """Perform a similarity search with MyScale
+
+        Args:
+            query (str): query string
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_condition (Optional[str], optional): where condition string. Defaults to None.
+
+            NOTE: `where_condition` is a hacked string. Please do not let end-user to fill this out.
+                   Please be aware of SQL injection.
+
+        Returns:
+            List[Document]: List of Documents
+        """
+        return self.similarity_search_by_vector(self.embedding_function(query), k, where_condition, **kwargs)
+
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, where_condition: Optional[str] = None, **kwargs: Any
+    ) -> List[Document]:
+        """Perform a similarity search with MyScale by vectors
+
+        Args:
+            query (str): query string
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_condition (Optional[str], optional): where condition string. Defaults to None.
+
+            NOTE: `where_condition` is a hacked string. Please do not let end-user to fill this out.
+                   Please be aware of SQL injection.
+
+        Returns:
+            List[Document]: List of (Document, similarity)
+        """
+        if not where_condition:
+            where_condition = ""
+        q_str = self._build_qstr(embedding, k, where_condition)
+        return [Document(page_content=r[self.config.column_map['text']],
+                         metadata=json.loads(r[self.config.column_map['metadata']])
+                         if type(r[self.config.column_map['metadata']]) is str and
+                         len((r[self.config.column_map['metadata']])) > 0 else {})
+                for r in self.client.query(q_str).named_results()]
+
+    def similarity_search_with_relevance_scores(self,
+                                                query: str,
+                                                k: int = 4,
+                                                where_condition: Optional[str] = None,
+                                                **kwargs: Any) -> List[Tuple[Document, float]]:
+        """Perform a similarity search with MyScale
+
+        Args:
+            query (str): query string
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            where_condition (Optional[str], optional): where condition string. Defaults to None.
+
+            NOTE: `where_condition` is a hacked string. Please do not let end-user to fill this out.
+                   Please be aware of SQL injection.
+
+        Returns:
+            List[Document]: List of documents
+        """
+        if not where_condition:
+            where_condition = ""
+        q_str = self._build_qstr(self.embedding_function(query), k, where_condition)
+        return [(Document(page_content=r[self.config.column_map['text']],
+                          metadata=json.loads(r[self.config.column_map['metadata']])
+                          if type(r[self.config.column_map['metadata']]) is str and
+                          len((r[self.config.column_map['metadata']])) > 0 else {}),
+                 r['dist'])
+                for r in self.client.query(q_str).named_results()]
+
 
 if __name__ == '__main__':
     import string
     import random
-    i = MyScale.from_texts(
-        lambda x: list([random.random() for _ in range(512)]), port=8124,
-        schema="""
-        CREATE TABLE IF NOT EXISTS default.vtable(
-                text_id String,
-                text_plain String,
-                text_feature Array(Float32),
-                text_author String,
-                CONSTRAINT cons_vec_len CHECK length(text_feature) = 512,
-                INDEX vidx text_feature TYPE annoy(10, 'cosineDistance') GRANULARITY 1,
-            ) ENGINE = MergeTree ORDER BY text_id
-        """,
-        schema_colmap={
-            'id': 'text_id',
-            'text': 'text_plain',
-            'vector': 'text_feature',
-            'other': 'text_author',
-        }, texts=[''.join(random.choices(string.ascii_uppercase + string.digits, k=1000)) for _ in range(1000)]
-        )
-    # i.add_texts([''.join(random.choices(string.ascii_uppercase + string.digits, k=1000)) for _ in range(1000)])
-    i.client.command('DROP TABLE IF EXISTS default.vtable')
+
+    config = MyScaleSettings()
+    config.metric = 'cosineDistance'
+    config.index_type = 'annoy'
+    config.column_map = {
+        'id': 'text_id',
+        'text': 'text_plain',
+        'vector': 'text_feature',
+        'metadata': 'text_metadata'
+    }
+    config.myscale_port = 8124
+    i = MyScale.from_texts(lambda x: list([random.random() for _ in range(512)]), config=config,
+                           texts=[''.join(random.choices(
+                               string.ascii_uppercase + string.digits, k=1000)) for _ in range(1000)],
+                           #    metadata=[{'which': 'who'} for _ in range(1000)]
+                           )
+    i.similarity_search('where is your daddy?')
+    i.similarity_search_by_vector(list([random.random() for _ in range(512)]))
+    i.similarity_search_with_relevance_scores('where is your daddy?')
+    print(str(i))
+    i.client.command(f'DROP TABLE IF EXISTS {i.config.database}.{i.config.table}')
