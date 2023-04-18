@@ -1,14 +1,14 @@
 """Twitter document loader."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
 if TYPE_CHECKING:
     import tweepy
-    from tweepy import OAuthHandler
+    from tweepy import OAuthHandler, OAuth2BearerHandler
 
 
 def _dependable_tweepy_import() -> tweepy:
@@ -33,7 +33,7 @@ class TwitterTweetLoader(BaseLoader):
 
     def __init__(
         self,
-        auth_handler: OAuthHandler,
+        auth_handler: Union[OAuthHandler, OAuth2BearerHandler],
         twitter_users: Sequence[str],
         number_tweets: Optional[int] = 100,
     ):
@@ -63,6 +63,22 @@ class TwitterTweetLoader(BaseLoader):
         return response
 
     @classmethod
+    def from_bearer_token(
+        cls,
+        oauth2_bearer_token: str,
+        twitter_users: Sequence[str],
+        number_tweets: Optional[int] = 100,
+    ) -> TwitterTweetLoader:
+        """Create a TwitterTweetLoader from OAuth2 bearer token."""
+        tweepy = _dependable_tweepy_import()
+        auth = tweepy.OAuth2BearerHandler(oauth2_bearer_token)
+        return cls(
+            auth_handler=auth,
+            twitter_users=twitter_users,
+            number_tweets=number_tweets,
+        )
+
+    @classmethod
     def from_secrets(
         cls,
         access_token: str,
@@ -71,7 +87,8 @@ class TwitterTweetLoader(BaseLoader):
         consumer_secret: str,
         twitter_users: Sequence[str],
         number_tweets: Optional[int] = 100,
-    ) -> "TwitterTweetLoader":
+    ) -> TwitterTweetLoader:
+        """Create a TwitterTweetLoader from access tokens and secrets."""
         tweepy = _dependable_tweepy_import()
         auth = tweepy.OAuthHandler(
             access_token=access_token,
