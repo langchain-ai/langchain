@@ -146,6 +146,28 @@ def _default_approximate_search_query(
     }
 
 
+def _approximate_search_query_with_boolean_filter(
+    query_vector: List[float],
+    boolean_filter: Dict,
+    size: int = 4,
+    k: int = 4,
+    vector_field: str = "vector_field",
+    subquery_clause: str = "must",
+) -> Dict:
+    """For Approximate k-NN Search, with Boolean Filter."""
+    return {
+        "size": size,
+        "query": {
+            "bool": {
+                "filter": boolean_filter,
+                subquery_clause: [
+                    {"knn": {vector_field: {"vector": query_vector, "k": k}}}
+                ],
+            }
+        },
+    }
+
+
 def _default_script_query(
     query_vector: List[float],
     space_type: str = "l2",
@@ -317,6 +339,11 @@ class OpenSearchVectorSearch(VectorStore):
 
             size: number of results the query actually returns; default: 4
 
+            boolean_filter: A Boolean filter consists of a Boolean query that
+            contains a k-NN query and a filter
+
+            subquery_clause: Query clause on the knn vector field; default: "must"
+
         Optional Args for Script Scoring Search:
             search_type: "script_scoring"; default: "approximate_search"
 
@@ -339,11 +366,19 @@ class OpenSearchVectorSearch(VectorStore):
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
         metadata_field = _get_kwargs_value(kwargs, "metadata_field", "metadata")
         vector_field = _get_kwargs_value(kwargs, "vector_field", "vector_field")
+
         if search_type == "approximate_search":
             size = _get_kwargs_value(kwargs, "size", 4)
-            search_query = _default_approximate_search_query(
-                embedding, size, k, vector_field
-            )
+            boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
+            subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
+            if boolean_filter != {}:
+                search_query = _approximate_search_query_with_boolean_filter(
+                    embedding, boolean_filter, size, k, vector_field, subquery_clause
+                )
+            else:
+                search_query = _default_approximate_search_query(
+                    embedding, size, k, vector_field
+                )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = _get_kwargs_value(kwargs, "space_type", "l2")
             pre_filter = _get_kwargs_value(kwargs, "pre_filter", MATCH_ALL_QUERY)
