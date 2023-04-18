@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
-from typing import List, Dict, Tuple, Optional
 
 import requests
 import yaml
 from pydantic import BaseModel
 
+from langchain.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
 from langchain.tools.openapi.utils.api_models import APIOperation, OpenAPISpec
 from langchain.tools.requests.tool import BaseRequestsTool
-from langchain.requests import TextRequestsWrapper
 
 
 class ApiConfig(BaseModel):
