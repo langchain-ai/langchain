@@ -463,7 +463,20 @@ class OpenSearchVectorSearch(VectorStore):
         opensearch_url = get_from_dict_or_env(
             kwargs, "opensearch_url", "OPENSEARCH_URL"
         )
-        client = _get_opensearch_client(opensearch_url)
+        # List of arguments that needs to be removed from kwargs
+        # before passing kwargs to get opensearch client
+        keys_list = [
+            "opensearch_url",
+            "index_name",
+            "is_appx_search",
+            "vector_field",
+            "text_field",
+            "engine",
+            "space_type",
+            "ef_search",
+            "ef_construction",
+            "m",
+        ]
         embeddings = embedding.embed_documents(texts)
         _validate_embeddings_and_bulk_size(len(embeddings), bulk_size)
         dim = len(embeddings[0])
@@ -488,6 +501,8 @@ class OpenSearchVectorSearch(VectorStore):
         else:
             mapping = _default_scripting_text_mapping(dim)
 
+        [kwargs.pop(key, None) for key in keys_list]
+        client = _get_opensearch_client(opensearch_url, **kwargs)
         client.indices.create(index=index_name, body=mapping)
         _bulk_ingest_embeddings(
             client, index_name, embeddings, texts, metadatas, vector_field, text_field
