@@ -37,6 +37,7 @@ from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
+from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -148,4 +149,5 @@ __all__ = [
     "SlackDirectoryLoader",
     "GitLoader",
     "TwitterTweetLoader",
+    "ImageCaptionLoader",
 ]
