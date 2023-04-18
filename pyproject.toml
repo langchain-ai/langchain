@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.141"
+version = "0.0.142"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -61,6 +61,9 @@ pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
 azure-identity = "^1.12.0"
 gptcache = {version = ">=0.1.7", optional = true}
+atlassian-python-api = {version = "^3.36.0", optional=true}
+pytesseract = {version = "^0.3.10", optional=true}
+html2text = {version="^2020.1.16", optional=true}
 numexpr = "^2.8.4"
 
 

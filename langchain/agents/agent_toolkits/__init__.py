@@ -1,6 +1,7 @@
 """Agent toolkits."""
 
 from langchain.agents.agent_toolkits.csv.base import create_csv_agent
+from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
 from langchain.agents.agent_toolkits.json.base import create_json_agent
 from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
@@ -44,4 +45,5 @@ __all__ = [
     "create_pandas_dataframe_agent",
     "create_csv_agent",
     "ZapierToolkit",
+    "JiraToolkit",
 ]

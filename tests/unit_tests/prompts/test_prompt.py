@@ -145,3 +145,70 @@ def test_partial() -> None:
     assert new_result == "This is a 3 test."
     result = prompt.format(foo="foo")
     assert result == "This is a foo test."
+
+
+def test_prompt_from_jinja2_template() -> None:
+    """Test prompts can be constructed from a jinja2 template."""
+    # Empty input variable.
+    template = """Hello there
+There is no variable here {
+Will it get confused{ }? 
+    """
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template, input_variables=[], template_format="jinja2"
+    )
+    assert prompt == expected_prompt
+
+    # Multiple input variables.
+    template = """\
+Hello world
+
+Your variable: {{ foo }}
+
+{# This will not get rendered #}
+
+{% if bar %}
+You just set bar boolean variable to true
+{% endif %}
+
+{% for i in foo_list %}
+{{ i }}
+{% endfor %}
+"""
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["bar", "foo", "foo_list"],
+        template_format="jinja2",
+    )
+
+    assert prompt == expected_prompt
+
+    # Multiple input variables with repeats.
+    template = """\
+Hello world
+
+Your variable: {{ foo }}
+
+{# This will not get rendered #}
+
+{% if bar %}
+You just set bar boolean variable to true
+{% endif %}
+
+{% for i in foo_list %}
+{{ i }}
+{% endfor %}
+
+{% if bar %}
+Your variable again: {{ foo }}
+{% endif %}
+"""
+    prompt = PromptTemplate.from_template(template, template_format="jinja2")
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["bar", "foo", "foo_list"],
+        template_format="jinja2",
+    )
+    assert prompt == expected_prompt

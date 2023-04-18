@@ -16,7 +16,7 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 def get_action_and_input(text: str) -> Tuple[str, str]:
     output = MRKLOutputParser().parse(text)
     if isinstance(output, AgentAction):
-        return output.tool, output.tool_input
+        return output.tool, str(output.tool_input)
     else:
         return "Final Answer", output.return_values["output"]
 

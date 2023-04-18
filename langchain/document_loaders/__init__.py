@@ -37,6 +37,7 @@ from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
+from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -61,6 +62,7 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileIOLoader,
     UnstructuredFileLoader,
@@ -146,4 +148,6 @@ __all__ = [
     "BiliBiliLoader",
     "SlackDirectoryLoader",
     "GitLoader",
+    "TwitterTweetLoader",
+    "ImageCaptionLoader",
 ]
