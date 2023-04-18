@@ -76,6 +76,10 @@ class RetryOutputParser(BaseOutputParser[T]):
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
 
+    @property
+    def _type(self) -> str:
+        return self.parser._type
+
 
 class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """Wraps a parser and tries to fix parsing errors.
