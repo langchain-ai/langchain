@@ -6,19 +6,22 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+
 class ObsidianLoader(BaseLoader):
     """Loader that loads Obsidian files from disk."""
 
     FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
-    def __init__(self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True):
+    def __init__(
+        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+    ):
         """Initialize with path."""
         self.file_path = path
         self.encoding = encoding
         self.collect_metadata = collect_metadata
 
     def _parse_front_matter(self, content: str) -> dict:
-        """Parse front matter metadata from the given content and return it as a dictionary."""
+        """Parse front matter metadata from the content and return it as a dict."""
         if not self.collect_metadata:
             return {}
         match = self.FRONT_MATTER_REGEX.search(content)
