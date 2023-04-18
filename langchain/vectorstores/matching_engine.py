@@ -328,24 +328,42 @@ class MatchingEngine(VectorStore):
     def from_texts(
         cls: Type["MatchingEngine"], 
         texts: List[str],
-        embedding: Embeddings,
+        embedding: Embeddings = None,
         metadatas: Optional[List[dict]] = None, 
         project_id: str = None,
         region: str = None,
         gcs_bucket_uri: str = None,
-        index_name: str = None,
-        endpoint_name: str = None,
+        index_id: str = None,
+        endpoint_id: str = None,
         **kwargs: Any,
     ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings.
-        # TODO(tomaspiaggio) document arguments
+
+        Note that this function shouldn't be run more than once. Otherwise,
+        the texts will be added multiple times to the index and GCS.
+
+        Args:
+            texts: The texts that will get .
+            embedding: The :class:`Embeddings` that will be used for
+            embedding the texts.
+            metadatas: List of metadatas. Defaults to None..
+            project_id: The GCP project id.
+            region: The default location making the API calls. It must have
+            the same location as the GCS bucket. TODO(scafati98) is this correct?.
+            gcs_bucket_uri: The location where the vectors will be stored in
+            order for the index to be created.
+            index_id: The id of the created index TODO(scafati98) link to notebook to where the index is created and the enpoint is printed.
+            endpoint_id: The id of the created endpoint TODO(scafati98) idem arriba.
+
+        Returns:
+            A configured MatchingEngine with the texts added to the index.
         """
         matching_engine = cls(
             project_id=project_id,
             region=region,
             gcs_bucket_uri=gcs_bucket_uri,
-            index_name=index_name,
-            endpoint_id=endpoint_name,
+            index_id=index_id,
+            endpoint_id=endpoint_id,
             embedder=embedding
         )
 
