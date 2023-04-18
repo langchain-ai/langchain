@@ -17,6 +17,8 @@ from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
 
+HUB_MODEL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
+
 
 class MatchingEngine(VectorStore):
     """Vertex Matching Engine implementation of the vector store.
@@ -35,7 +37,7 @@ class MatchingEngine(VectorStore):
         index_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
         endpoint_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
         json_credentials_path: Union[str, None] = None,
-        embedder: Embeddings = TensorflowHubEmbeddings(model_url="https://tfhub.dev/google/universal-sentence-encoder-multilingual/3")
+        embedder: Embeddings = TensorflowHubEmbeddings(model_url=HUB_MODEL)
     ):
         """Vertex Matching Engine implementation of the vector store.
 
@@ -45,13 +47,13 @@ class MatchingEngine(VectorStore):
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
         operation, updating the index takes close to one hour.
-            TODO: create docs for this module: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores.rst
-            TODO: preconditio for this class the index and the endpoint must exist
+            TODO(scafati98): create docs for this module: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores.rst
+            TODO: precondition for this class the index and the endpoint must exist
             TODO: add aiplatform and storage dependencies to poetry
             Attributes:
                 project_id: The GCS project id.
                 region: The default location making the API calls. It must have
-                the same location as the GCS bucket. TODO(scafati98) is this correct?
+                the same location as the GCS bucket.
                 gcs_bucket_uri: The location where the vectors will be stored in
                 order for the index to be created.
                 index_id: The id of the created index TODO(scafati98) link to notebook to where the index is created and the enpoint is printed.
@@ -126,7 +128,7 @@ class MatchingEngine(VectorStore):
         Args:
             project_id: The GCP project id.
             region: The default location making the API calls. It must have
-            the same location as the GCS bucket. TODO(scafati98) is this correct?
+            the same location as the GCS bucket and must be regional.
             gcs_bucket_uri: GCS staging location.
         """
         logger.debug(f"Initializing AI Platform for project {project_id} on "
@@ -145,10 +147,10 @@ class MatchingEngine(VectorStore):
         """Creates a MatchingEngineIndex object by id.
 
         Args:
-            index_id: The created index id.
+            index_id: The created index id. TODO(scafati98) link notebook
 
         Returns:
-            A configured MatchingEngineIndex. TODO(scafati98) link notebook
+            A configured MatchingEngineIndex.
         """
         logger.debug(f"Creating matching engine index with id {index_id}.")
         return aiplatform.MatchingEngineIndex(
@@ -165,10 +167,10 @@ class MatchingEngine(VectorStore):
         """Creates a MatchingEngineIndexEndpoint object by id.
 
         Args:
-            endpoint_id: The created endpoint id.
+            endpoint_id: The created endpoint id. TODO(scafati98) link notebook
 
         Returns:
-            A configured MatchingEngineIndexEndpoint. TODO(scafati98) link notebook
+            A configured MatchingEngineIndexEndpoint.
         """
         logger.debug(f"Creating endpoint with id {endpoint_id}.")
         return aiplatform.MatchingEngineIndexEndpoint(
@@ -349,7 +351,7 @@ class MatchingEngine(VectorStore):
             metadatas: List of metadatas. Defaults to None..
             project_id: The GCP project id.
             region: The default location making the API calls. It must have
-            the same location as the GCS bucket. TODO(scafati98) is this correct?.
+            the same location as the GCS bucket and must be regional.
             gcs_bucket_uri: The location where the vectors will be stored in
             order for the index to be created.
             index_id: The id of the created index TODO(scafati98) link to notebook to where the index is created and the enpoint is printed.
