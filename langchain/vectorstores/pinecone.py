@@ -85,7 +85,6 @@ class Pinecone(VectorStore):
             metadata = metadatas[i] if metadatas else {}
             metadata[self._text_key] = text
             docs.append((ids[i], embedding, metadata))
-
         # upsert to Pinecone
         self._index.upsert(vectors=docs, namespace=namespace, batch_size=batch_size)
         return ids
@@ -242,6 +241,7 @@ class Pinecone(VectorStore):
             for j, line in enumerate(lines_batch):
                 metadata[j][text_key] = line
             to_upsert = zip(ids_batch, embeds, metadata)
+
             # upsert to Pinecone
             index.upsert(vectors=list(to_upsert), namespace=namespace)
         return cls(index, embedding.embed_query, text_key, namespace)

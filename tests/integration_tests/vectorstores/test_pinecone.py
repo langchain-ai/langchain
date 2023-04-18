@@ -84,6 +84,7 @@ class TestPinecone:
         unique_id = uuid.uuid4().hex
         needs = f"foobuu {unique_id} booo"
         texts.insert(0, needs)
+
         docsearch = Pinecone.from_texts(
             texts=texts,
             embedding=embedding_openai,
@@ -150,7 +151,6 @@ class TestPinecone:
         # Create two indexes with the same name but different namespaces
         texts_1 = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts_1))]
-
         Pinecone.from_texts(
             texts_1,
             embedding_openai,
