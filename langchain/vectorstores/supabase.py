@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from itertools import repeat
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 
@@ -7,6 +9,9 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
+
+if TYPE_CHECKING:
+    import supabase
 
 
 class SupabaseVectorStore(VectorStore):
@@ -32,22 +37,19 @@ class SupabaseVectorStore(VectorStore):
 
     def __init__(
         self,
-        client: Any,
+        client: supabase.client.Client,
         embedding: Embeddings,
         table_name: str,
         query_name: Union[str, None] = None,
     ) -> None:
         """Initialize with supabase client."""
         try:
-            import supabase
+            import supabase  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import supabase python package. "
                 "Please install it with `pip install supabase`."
             )
-
-        if not isinstance(client, supabase.client.Client):
-            raise ValueError("client should be an instance of supabase.client.Client")
 
         self._client = client
         self._embedding: Embeddings = embedding
@@ -69,8 +71,9 @@ class SupabaseVectorStore(VectorStore):
         cls: Type["SupabaseVectorStore"],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict[Any, Any]]],
-        client: Any,
+        metadatas: Optional[List[dict[Any, Any]]] = None,
+        *,
+        client: supabase.client.Client,
         table_name: str,
         query_name: Union[str, None] = None,
         **kwargs: Any,
@@ -198,22 +201,12 @@ class SupabaseVectorStore(VectorStore):
 
     @staticmethod
     def _add_vectors(
-        client: Any,
+        client: supabase.client.Client,
         table_name: str,
         vectors: List[List[float]],
         documents: List[Document],
     ) -> List[str]:
         """Add vectors to Supabase table."""
-        try:
-            import supabase
-        except ImportError:
-            raise ValueError(
-                "Could not import supabase python package. "
-                "Please install it with `pip install supabase`."
-            )
-
-        if not isinstance(client, supabase.client.Client):
-            raise ValueError("client should be an instance of supabase.client.Client")
 
         rows: List[dict[str, Any]] = [
             {
