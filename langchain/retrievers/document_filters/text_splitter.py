@@ -3,7 +3,7 @@ from typing import Any, List
 
 from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
-    RetrievedDocument,
+    _RetrievedDocument,
 )
 from langchain.text_splitter import TextSplitter
 
@@ -18,14 +18,14 @@ class SplitterDocumentFilter(BaseDocumentFilter):
         arbitrary_types_allowed = True
 
     def filter(
-        self, docs: List[RetrievedDocument], query: str, **kwargs: Any
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str, **kwargs: Any
+    ) -> List[_RetrievedDocument]:
         """Split the retrieved documents."""
         reg_docs = [rdoc.to_document() for rdoc in docs]
         split_docs = self.splitter.split_documents(reg_docs)
-        return [RetrievedDocument.from_document(doc) for doc in split_docs]
+        return [_RetrievedDocument.from_document(doc) for doc in split_docs]
 
     async def afilter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         raise NotImplementedError

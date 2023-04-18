@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional
 from langchain import LLMChain, PromptTemplate
 from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
-    RetrievedDocument,
+    _RetrievedDocument,
 )
 from langchain.retrievers.document_filters.compression_chain_prompt import (
     prompt_template,
@@ -47,8 +47,8 @@ class LLMChainCompressor(BaseDocumentFilter):
     """Callable for constructing the chain input from the query and a Document."""
 
     def filter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         """Compress page content of raw documents."""
         compressed_docs = []
         for doc in docs:
@@ -57,13 +57,13 @@ class LLMChainCompressor(BaseDocumentFilter):
             if len(output) == 0:
                 continue
             compressed_docs.append(
-                RetrievedDocument(page_content=output, metadata=doc.metadata)
+                _RetrievedDocument(page_content=output, metadata=doc.metadata)
             )
         return compressed_docs
 
     async def afilter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         raise NotImplementedError
 
     @classmethod

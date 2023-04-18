@@ -8,7 +8,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
-    RetrievedDocument,
+    _RetrievedDocument,
 )
 
 
@@ -39,7 +39,7 @@ class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
             raise ValueError("Must specify one of `k` or `similarity_threshold`.")
         return values
 
-    def _get_embedded_docs(self, docs: List[RetrievedDocument]) -> List[List[float]]:
+    def _get_embedded_docs(self, docs: List[_RetrievedDocument]) -> List[List[float]]:
         if len(docs) and "embedded_doc" in docs[0].query_metadata:
             embedded_docs = [doc.query_metadata["embedded_doc"] for doc in docs]
         else:
@@ -51,8 +51,8 @@ class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
         return embedded_docs
 
     def filter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         """Filter documents based on similarity of their embeddings to the query."""
         embedded_docs = self._get_embedded_docs(docs)
         embedded_query = self.embeddings.embed_query(query)
@@ -69,7 +69,7 @@ class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
         return docs
 
     async def afilter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         """Filter down documents."""
         raise NotImplementedError

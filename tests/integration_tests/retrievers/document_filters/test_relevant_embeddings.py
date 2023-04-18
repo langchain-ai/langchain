@@ -3,7 +3,7 @@ import numpy as np
 
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_filters import EmbeddingRelevancyDocumentFilter
-from langchain.retrievers.document_filters.base import RetrievedDocument
+from langchain.retrievers.document_filters.base import _RetrievedDocument
 
 
 def test_embedding_relevant_document_filter() -> None:
@@ -12,7 +12,7 @@ def test_embedding_relevant_document_filter() -> None:
         "I wish there were better Italian restaurants in my neighborhood.",
         "My favorite color is green",
     ]
-    docs = [RetrievedDocument(page_content=t) for t in texts]
+    docs = [_RetrievedDocument(page_content=t) for t in texts]
     embeddings = OpenAIEmbeddings()
     relevant_filter = EmbeddingRelevancyDocumentFilter(
         embeddings=embeddings, similarity_threshold=0.75
@@ -33,7 +33,7 @@ def test_embedding_relevant_document_filter_with_metadata() -> None:
     embedded_query = embeddings.embed_query(query)
     query_metadata = {"embedded_doc": np.zeros(len(embedded_query))}
     docs = [
-        RetrievedDocument(page_content=t, query_metadata=query_metadata) for t in texts
+        _RetrievedDocument(page_content=t, query_metadata=query_metadata) for t in texts
     ]
     docs[-1].query_metadata = {"embedded_doc": embedded_query}
     relevant_filter = EmbeddingRelevancyDocumentFilter(

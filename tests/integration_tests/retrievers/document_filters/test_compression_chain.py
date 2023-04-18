@@ -1,7 +1,7 @@
 """Integration test for LLMChainCompressor."""
 from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.document_filters import LLMChainCompressor
-from langchain.retrievers.document_filters.base import RetrievedDocument
+from langchain.retrievers.document_filters.base import _RetrievedDocument
 
 
 def test_llm_chain_compressor_filter() -> None:
@@ -13,7 +13,7 @@ def test_llm_chain_compressor_filter() -> None:
         "The Roman Empire collapsed in 476 AD after the fall of Rome.",
         "Let's go to Olive Garden!",
     ]
-    doc = RetrievedDocument(page_content=" ".join(texts))
+    doc = _RetrievedDocument(page_content=" ".join(texts))
     compressor = LLMChainCompressor.from_llm(ChatOpenAI())
     actual = compressor.filter([doc], "Tell me about the Roman Empire")[0].page_content
     expected_returned = [0, 2, 4]
@@ -28,7 +28,7 @@ def test_llm_chain_compressor_filter_empty() -> None:
         "Don't you just love Caesar salad?",
         "Let's go to Olive Garden!",
     ]
-    doc = RetrievedDocument(page_content=" ".join(texts))
+    doc = _RetrievedDocument(page_content=" ".join(texts))
     compressor = LLMChainCompressor.from_llm(ChatOpenAI())
     actual = compressor.filter([doc], "Tell me about the Roman Empire")
     assert len(actual) == 0

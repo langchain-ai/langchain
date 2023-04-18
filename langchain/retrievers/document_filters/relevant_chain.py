@@ -5,7 +5,7 @@ from langchain import BasePromptTemplate, LLMChain, PromptTemplate
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
-    RetrievedDocument,
+    _RetrievedDocument,
 )
 from langchain.retrievers.document_filters.relevant_chain_prompt import prompt_template
 from langchain.schema import BaseLanguageModel, Document
@@ -35,8 +35,8 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
     """Callable for constructing the chain input from the query and a Document."""
 
     def filter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
         for doc in docs:
@@ -47,8 +47,8 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
         return filtered_docs
 
     async def afilter(
-        self, docs: List[RetrievedDocument], query: str
-    ) -> List[RetrievedDocument]:
+        self, docs: List[_RetrievedDocument], query: str
+    ) -> List[_RetrievedDocument]:
         """Filter down documents."""
         raise NotImplementedError
 

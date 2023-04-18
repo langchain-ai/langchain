@@ -6,7 +6,7 @@ from langchain.retrievers.document_filters import (
     EmbeddingRelevancyDocumentFilter,
     SplitterDocumentFilter,
 )
-from langchain.retrievers.document_filters.base import RetrievedDocument
+from langchain.retrievers.document_filters.base import _RetrievedDocument
 from langchain.text_splitter import CharacterTextSplitter
 
 
@@ -27,7 +27,7 @@ def test_pipeline_filter() -> None:
         "This sentence was about cows",
         "foo bar baz",
     ]
-    docs = [RetrievedDocument(page_content=". ".join(texts))]
+    docs = [_RetrievedDocument(page_content=". ".join(texts))]
     actual = pipeline_filter.filter(docs, "Tell me about farm animals")
     assert len(actual) == 1
     assert actual[0].page_content in texts[:2]
