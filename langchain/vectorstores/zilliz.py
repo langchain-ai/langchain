@@ -1,6 +1,7 @@
 """Wrapper around the Zilliz vector database."""
 from __future__ import annotations
 
+import uuid
 import hashlib
 from typing import Any, Iterable, List, Optional, Tuple
 
@@ -342,9 +343,9 @@ class Zilliz(VectorStore):
         cls,
         texts: List[str],
         embedding: Embeddings,
-        collection_name: str,
-        partition_name: Optional[str] = None,
         metadatas: Optional[List[dict]] = None,
+        collection_name: Optional[str] = None,
+        partition_name: Optional[str] = None,
         ids: Optional[List[str]] = None,
         primary_field: str = PRIMARY_FIELD,
         vector_field: str = VECTOR_FIELD,
@@ -384,6 +385,9 @@ class Zilliz(VectorStore):
         # Determine embedding dim
         embeddings = embedding.embed_query(texts[0])
         dim = len(embeddings)
+        
+        collection_name = collection_name or "c" + str(uuid.uuid4().hex)
+
         fields = []
         # Determine metadata schema
         if metadatas:
