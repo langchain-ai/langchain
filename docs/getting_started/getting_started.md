@@ -46,7 +46,7 @@ LangChain provides many modules that can be used to build language model applica
 
 
 
-`````{dropdown} LLMs: Get predictions from a language model
+## LLMs: Get predictions from a language model
 
 The most basic building block of LangChain is calling an LLM on some input.
 Let's walk through a simple example of how to do this. 
@@ -77,10 +77,9 @@ Feetful of Fun
 ```
 
 For more details on how to use LLMs within LangChain, see the [LLM getting started guide](../modules/models/llms/getting_started.ipynb).
-`````
 
 
-`````{dropdown} Prompt Templates: Manage prompts for LLMs
+## Prompt Templates: Manage prompts for LLMs
 
 Calling an LLM is a great first step, but it's just the beginning.
 Normally when you use an LLM in an application, you are not sending user input directly to the LLM.
@@ -115,11 +114,10 @@ What is a good name for a company that makes colorful socks?
 
 [For more details, check out the getting started guide for prompts.](../modules/prompts/chat_prompt_template.ipynb)
 
-`````
 
 
 
-`````{dropdown} Chains: Combine LLMs and prompts in multi-step workflows
+## Chains: Combine LLMs and prompts in multi-step workflows
 
 Up until now, we've worked with the PromptTemplate and LLM primitives by themselves. But of course, a real application is not just one primitive, but rather a combination of them.
 
@@ -159,10 +157,7 @@ This is one of the simpler types of chains, but understanding how it works will 
 
 [For more details, check out the getting started guide for chains.](../modules/chains/getting_started.ipynb)
 
-`````
-
-
-`````{dropdown} Agents: Dynamically Call Chains Based on User Input
+## Agents: Dynamically Call Chains Based on User Input
 
 So far the chains we've looked at run in a predetermined order.
 
@@ -234,10 +229,8 @@ Final Answer: The high temperature in SF yesterday in Fahrenheit raised to the .
 ```
 
 
-`````
 
-
-`````{dropdown} Memory: Add State to Chains and Agents
+## Memory: Add State to Chains and Agents
 
 So far, all the chains and agents we've gone through have been stateless. But often, you may want a chain or agent to have some concept of "memory" so that it may remember information about its previous interactions. The clearest and simple example of this is when designing a chatbot - you want it to remember previous messages so it can use context from that to have a better conversation. This would be a type of "short-term memory". On the more complex side, you could imagine a chain/agent remembering key pieces of information over time - this would be a form of "long-term memory". For more concrete ideas on the latter, see this [awesome paper](https://memprompt.com/).
 
@@ -251,7 +244,8 @@ from langchain import OpenAI, ConversationChain
 llm = OpenAI(temperature=0)
 conversation = ConversationChain(llm=llm, verbose=True)
 
-conversation.predict(input="Hi there!")
+output = conversation.predict(input="Hi there!")
+print(output)
 ```
 
 ```pycon
@@ -269,7 +263,8 @@ AI:
 ```
 
 ```python
-conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+output = conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
+print(output)
 ```
 
 ```pycon
@@ -287,7 +282,6 @@ AI:
 > Finished chain.
 " That's great! What would you like to talk about?"
 ```
-`````
 
 ## Building a Language Model Application: Chat Models
 
@@ -295,8 +289,8 @@ Similarly, you can use chat models instead of LLMs. Chat models are a variation 
 
 Chat model APIs are fairly new, so we are still figuring out the correct abstractions.
 
+## Get Message Completions from a Chat Model
 
-`````{dropdown} Get Message Completions from a Chat Model
 You can get chat completions by passing one or more messages to the chat model. The response will be a message. The types of messages currently supported in LangChain are `AIMessage`, `HumanMessage`, `SystemMessage`, and `ChatMessage` -- `ChatMessage` takes in an arbitrary role parameter. Most of the time, you'll just be dealing with `HumanMessage`, `AIMessage`, and `SystemMessage`.
 
 ```python
@@ -350,9 +344,9 @@ You can recover things like token usage from this LLMResult:
 result.llm_output['token_usage']
 # -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
 ```
-`````
 
-`````{dropdown} Chat Prompt Templates
+
+## Chat Prompt Templates
 Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
 
 For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
@@ -378,9 +372,8 @@ chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_mes
 chat(chat_prompt.format_prompt(input_language="English", output_language="French", text="I love programming.").to_messages())
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
 ```
-`````
 
-`````{dropdown} Chains with Chat Models
+## Chains with Chat Models
 The `LLMChain` discussed in the above section can be used with chat models as well:
 
 ```python
@@ -404,9 +397,8 @@ chain = LLMChain(llm=chat, prompt=chat_prompt)
 chain.run(input_language="English", output_language="French", text="I love programming.")
 # -> "J'aime programmer."
 ```
-`````
 
-`````{dropdown} Agents with Chat Models
+## Agents with Chat Models
 Agents can also be used with chat models, you can initialize one using `AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION` as the agent type.
 
 ```python
@@ -465,9 +457,7 @@ Final Answer: 2.169459462491557
 > Finished chain.
 '2.169459462491557'
 ```
-`````
-
-`````{dropdown} Memory: Add State to Chains and Agents
+## Memory: Add State to Chains and Agents
 You can use Memory with chains and agents initialized with chat models. The main difference between this and Memory for LLMs is that rather than trying to condense all previous messages into a string, we can keep them as their own unique memory object.
 
 ```python
@@ -501,4 +491,4 @@ conversation.predict(input="I'm doing well! Just having a conversation with an A
 conversation.predict(input="Tell me about yourself.")
 # -> "Sure! I am an AI language model created by OpenAI. I was trained on a large dataset of text from the internet, which allows me to understand and generate human-like language. I can answer questions, provide information, and even have conversations like this one. Is there anything else you'd like to know about me?"
 ```
-`````
+
