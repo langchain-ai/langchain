@@ -19,8 +19,8 @@ class SupabaseVectorStore(VectorStore):
     extension installed and a `match_documents` (or similar) function. For more details:
     https://js.langchain.com/docs/modules/indexes/vector_stores/integrations/supabase
 
-    You can implement your own `match_documents` function in order to limit the search space
-    to a subset of documents based on your own authorization or business logic.
+    You can implement your own `match_documents` function in order to limit the search
+    space to a subset of documents based on your own authorization or business logic.
 
     Note that the Supabase Python client does not yet support async operations.
 
@@ -30,7 +30,8 @@ class SupabaseVectorStore(VectorStore):
 
     _client: supabase.client.Client
     # This is the embedding function. Don't confuse with the embedding vectors.
-    # We should perhaps rename the underlying Embedding base class to EmbeddingFunction or something
+    # We should perhaps rename the underlying Embedding base class to EmbeddingFunction
+    # or something
     _embedding: Embeddings
     table_name: str
     query_name: str
@@ -73,13 +74,18 @@ class SupabaseVectorStore(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        *,
-        client: supabase.client.Client,
-        table_name: str,
+        client: Optional[supabase.client.Client] = None,
+        table_name: Optional[str] = None,
         query_name: Union[str, None] = None,
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
         """Return VectorStore initialized from texts and embeddings."""
+
+        if not client:
+            raise ValueError("Supabase client is required.")
+
+        if not table_name:
+            raise ValueError("Supabase documentg table_name is required.")
 
         embeddings = embedding.embed_documents(texts)
         docs = cls._texts_to_documents(texts, metadatas)
@@ -196,7 +202,8 @@ class SupabaseVectorStore(VectorStore):
             for idx, embedding in enumerate(vectors)
         ]
 
-        # According to the SupabaseVectorStore JS implementation, the best chunk size is 500
+        # According to the SupabaseVectorStore JS implementation, the best chunk size
+        # is 500
         chunk_size = 500
         id_list: List[str] = []
         for i in range(0, len(rows), chunk_size):
@@ -269,7 +276,8 @@ class SupabaseVectorStore(VectorStore):
         embeddings alongside the match documents. The following function function
         demonstrates how to do this:
         ```sql
-        CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536), match_count int)
+        CREATE FUNCTION match_documents_embeddings(query_embedding vector(1536),
+                                                   match_count int)
             RETURNS TABLE(
                 id bigint,
                 content text,
