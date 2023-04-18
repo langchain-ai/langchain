@@ -10,7 +10,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.pinecone import Pinecone
 
-index_name = "demo1"#"langchain-test-index"  # name of the index
+index_name = "langchain-test-index"  # name of the index
 namespace_name = "langchain-test-namespace"  # name of the namespace
 dimension = 1536  # dimension of the embeddings
 
