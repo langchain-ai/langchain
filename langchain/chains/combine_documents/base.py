@@ -7,7 +7,26 @@ from pydantic import Field
 
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
+from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+
+
+def format_document(doc: Document, prompt: BasePromptTemplate) -> str:
+    """Format a document into a string based on a prompt template."""
+    base_info = {"page_content": doc.page_content}
+    base_info.update(doc.metadata)
+    missing_metadata = set(prompt.input_variables).difference(base_info)
+    if len(missing_metadata) > 0:
+        required_metadata = [
+            iv for iv in prompt.input_variables if iv != "page_content"
+        ]
+        raise ValueError(
+            f"Document prompt requires documents to have metadata variables: "
+            f"{required_metadata}. Received document with missing metadata: "
+            f"{list(missing_metadata)}."
+        )
+    document_info = {k: base_info[k] for k in prompt.input_variables}
+    return prompt.format(**document_info)
 
 
 class BaseCombineDocumentsChain(Chain, ABC):
