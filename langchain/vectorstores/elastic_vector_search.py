@@ -192,7 +192,11 @@ class ElasticVectorSearch(VectorStore, ABC):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -204,7 +208,6 @@ class ElasticVectorSearch(VectorStore, ABC):
             List of Documents most similar to the query.
         """
         embedding = self.embedding.embed_query(query)
-        filter = kwargs.get("filter")
         script_query = _default_script_query(embedding, filter)
         response = self.client.search(index=self.index_name, query=script_query, size=k)
         hits = [hit["_source"] for hit in response["hits"]["hits"]]
@@ -217,6 +220,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
@@ -227,14 +231,10 @@ class ElasticVectorSearch(VectorStore, ABC):
             List of Documents most similar to the query.
         """
         embedding = self.embedding.embed_query(query)
-        filter = kwargs.get("filter")
         script_query = _default_script_query(embedding, filter)
         response = self.client.search(
             index=self.index_name, query=script_query, size=k)
         hits = [hit for hit in response["hits"]["hits"]]
-        # documents = [
-        #     Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
-        # ]
         documents = [
             (
                 Document(page_content=hit["_source"]["text"],
