@@ -179,9 +179,6 @@ class MatchingEngine(VectorStore):
         if index_id == None:
             raise ValueError(f"No index with id {self.index.resource_name} deployed on enpoint {self.endpoint.display_name}.")
 
-        # I'm only getting the first one because queries receives an array and the similarity_search 
-        # method only recevies one query. This means that the match method will always return an array
-        # with only one element.
         response = self.endpoint.match(
             deployed_index_id=index_id,
             queries=embedding_query,
@@ -195,7 +192,11 @@ class MatchingEngine(VectorStore):
 
         results = []
 
-        for doc in response:
+        # I'm only getting the first one because queries receives an array and the similarity_search 
+        # method only recevies one query. This means that the match method will always return an array
+        # with only one element.
+        for doc in response[0]:
+            print(doc)
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(Document(page_content=page_content))
 
@@ -244,10 +245,10 @@ if __name__ == "__main__":
     me = MatchingEngine(
         project_id="scafati-joonix",
         region="us-central1",
-        gcs_bucket_uri="langchain-integration",
-        index_id="1419223220854194176",
-        endpoint_id="4789041642034167808"
+        gcs_bucket_uri="langchain-integration-512",
+        index_id="1114104346099843072",
+        endpoint_id="562413391746957312"
     )
 
-    print(me.similarity_search("Cristian Castro"))
     me.add_texts(["Cristian Castro", "Hannah Montanna"])
+    print(me.similarity_search("Cristian Castro"))
