@@ -75,7 +75,7 @@ This will install all requirements for running the package, examples, linting, f
 
 ❗Note: If you're running Poetry 1.4.1 and receive a `WheelFileValidationError` for `debugpy` during installation, you can try either downgrading to Poetry 1.4.0 or disabling "modern installation" (`poetry config installer.modern-installation false`) and re-install requirements. See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
-Now, you should be able to run the common tasks in the following section.
+Now, you should be able to run the common tasks in the following section. To double check, run `make test`, all tests should pass. If they don't you may need to pip install additional dependencies, such as `numexpr` and `openapi_schema_pydantic`.
 
 ## ✅Common Tasks
 

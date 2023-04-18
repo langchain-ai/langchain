@@ -19,6 +19,7 @@ from langchain.memory.simple import SimpleMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
 from langchain.memory.token_buffer import ConversationTokenBufferMemory
+from langchain.memory.vectorstore import VectorStoreRetrieverMemory
 
 __all__ = [
     "CombinedMemory",
@@ -38,4 +39,5 @@ __all__ = [
     "RedisChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "PostgresChatMessageHistory",
+    "VectorStoreRetrieverMemory",
 ]

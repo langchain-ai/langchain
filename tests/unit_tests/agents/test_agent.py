@@ -37,7 +37,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     bad_action_name = "BadAction"
     responses = [
         f"I'm turning evil\nAction: {bad_action_name}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
@@ -92,7 +92,7 @@ def test_agent_with_callbacks_global() -> None:
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
@@ -138,7 +138,7 @@ def test_agent_with_callbacks_local() -> None:
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager, verbose=True)
     tools = [
@@ -186,7 +186,7 @@ def test_agent_with_callbacks_not_verbose() -> None:
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses, callback_manager=manager)
     tools = [
@@ -217,7 +217,7 @@ def test_agent_tool_return_direct() -> None:
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [
@@ -243,7 +243,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
     tool = "Search"
     responses = [
         f"FooBarBaz\nAction: {tool}\nAction Input: misalignment",
-        "Oh well\nAction: Final Answer\nAction Input: curses foiled again",
+        "Oh well\nFinal Answer: curses foiled again",
     ]
     fake_llm = FakeListLLM(responses=responses)
     tools = [

@@ -30,7 +30,7 @@ from langchain.schema import (
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class BaseSingleActionAgent(BaseModel):
@@ -99,6 +99,16 @@ class BaseSingleActionAgent(BaseModel):
                 f"Got unsupported early_stopping_method `{early_stopping_method}`"
             )
 
+    @classmethod
+    def from_llm_and_tools(
+        cls,
+        llm: BaseLanguageModel,
+        tools: Sequence[BaseTool],
+        callback_manager: Optional[BaseCallbackManager] = None,
+        **kwargs: Any,
+    ) -> BaseSingleActionAgent:
+        raise NotImplementedError
+
     @property
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
@@ -107,7 +117,7 @@ class BaseSingleActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _dict["_type"] = self._agent_type
+        _dict["_type"] = str(self._agent_type)
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -219,7 +229,7 @@ class BaseMultiActionAgent(BaseModel):
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
-        _dict["_type"] = self._agent_type
+        _dict["_type"] = str(self._agent_type)
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -326,6 +336,7 @@ class Agent(BaseSingleActionAgent):
     """
 
     llm_chain: LLMChain
+    output_parser: AgentOutputParser
     allowed_tools: Optional[List[str]] = None
     max_retries: int = 6
 
@@ -422,10 +433,8 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        action = self._get_next_action(full_inputs)
-        if action.tool == self.finish_tool_name:
-            return AgentFinish({"output": action.tool_input}, action.log)
-        return action
+        full_output = self.llm_chain.predict(**full_inputs)
+        return self.output_parser.parse(full_output)
 
     async def aplan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
@@ -441,10 +450,8 @@ class Agent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        action = await self._aget_next_action(full_inputs)
-        if action.tool == self.finish_tool_name:
-            return AgentFinish({"output": action.tool_input}, action.log)
-        return action
+        full_output = await self.llm_chain.apredict(**full_inputs)
+        return self.output_parser.parse(full_output)
 
     def get_full_inputs(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
@@ -454,11 +461,6 @@ class Agent(BaseSingleActionAgent):
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
         return full_inputs
-
-    @property
-    def finish_tool_name(self) -> str:
-        """Name of the tool to use to finish the chain."""
-        return "Final Answer"
 
     @property
     def input_keys(self) -> List[str]:
@@ -507,11 +509,17 @@ class Agent(BaseSingleActionAgent):
         pass
 
     @classmethod
+    @abstractmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
+        """Get default output parser for this class."""
+
+    @classmethod
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
@@ -522,7 +530,13 @@ class Agent(BaseSingleActionAgent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
-        return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+        _output_parser = output_parser or cls._get_default_output_parser()
+        return cls(
+            llm_chain=llm_chain,
+            allowed_tools=tool_names,
+            output_parser=_output_parser,
+            **kwargs,
+        )
 
     def return_stopped_response(
         self,
@@ -552,14 +566,10 @@ class Agent(BaseSingleActionAgent):
             full_inputs = {**kwargs, **new_inputs}
             full_output = self.llm_chain.predict(**full_inputs)
             # We try to extract a final answer
-            parsed_output = self._extract_tool_and_input(full_output)
-            if parsed_output is None:
-                # If we cannot extract, we just return the full output
-                return AgentFinish({"output": full_output}, full_output)
-            tool, tool_input = parsed_output
-            if tool == self.finish_tool_name:
+            parsed_output = self.output_parser.parse(full_output)
+            if isinstance(parsed_output, AgentFinish):
                 # If we can extract, we send the correct stuff
-                return AgentFinish({"output": tool_input}, full_output)
+                return parsed_output
             else:
                 # If we can extract, but the tool is not the final tool,
                 # we just return the full output
