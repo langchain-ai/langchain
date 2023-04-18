@@ -1,4 +1,4 @@
-""""""
+"""Retriever that wraps a base retriever and filters the results."""
 from typing import List
 
 from pydantic import BaseModel, Extra
@@ -11,7 +11,7 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
-    """Retriever that wraps a base retriever and then filters the results."""
+    """Retriever that wraps a base retriever and filters the results."""
 
     base_filter: BaseDocumentFilter
     """Filter for filtering documents."""

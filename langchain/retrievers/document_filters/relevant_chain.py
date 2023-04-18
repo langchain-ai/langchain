@@ -1,4 +1,4 @@
-""""""
+"""Filter that uses an LLM to drop documents that aren't relevant to the query."""
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain import BasePromptTemplate, LLMChain, PromptTemplate
@@ -12,7 +12,6 @@ from langchain.schema import BaseLanguageModel, Document
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
-    """"""
     return PromptTemplate(
         template=prompt_template,
         input_variables=["question", "context"],
