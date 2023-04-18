@@ -89,7 +89,6 @@ class AnalyzeDocumentChain(Chain):
     """Chain that splits documents, then analyzes it in pieces."""
 
     input_key: str = "input_document"  #: :meta private:
-    output_key: str = "output_text"  #: :meta private:
     text_splitter: TextSplitter = Field(default_factory=RecursiveCharacterTextSplitter)
     combine_docs_chain: BaseCombineDocumentsChain
 
@@ -107,7 +106,7 @@ class AnalyzeDocumentChain(Chain):
 
         :meta private:
         """
-        return [self.output_key]
+        return self.combine_docs_chain.output_keys
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         document = inputs[self.input_key]
