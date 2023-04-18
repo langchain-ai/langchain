@@ -64,9 +64,14 @@ class BaseTool(ABC, BaseModel):
         tool_input: Union[str, Dict],
     ) -> Union[BaseModel, str]:
         """Convert tool input to pydantic model."""
-        if isinstance(tool_input, str):
-            return tool_input
         input_args = self.args
+        if isinstance(tool_input, str):
+            if issubclass(input_args, BaseModel):
+                key_ = next(iter(input_args.__fields__.keys()))
+                input_args.parse_obj({key_: tool_input})
+            # Passing as a positional argument is more straightforward for
+            # backwards compatability
+            return tool_input
         if issubclass(input_args, BaseModel):
             return input_args.parse_obj(tool_input)
         else:
