@@ -30,7 +30,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
-    """Path to store models. Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
+    """Path to store models. 
+    Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
