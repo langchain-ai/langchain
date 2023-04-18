@@ -23,6 +23,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceInstructEmbeddings,
 )
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
+from langchain.embeddings.vertexai import VertexAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ __all__ = [
     "FakeEmbeddings",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
+    "VertexAIEmbeddings",
 ]
 
 
