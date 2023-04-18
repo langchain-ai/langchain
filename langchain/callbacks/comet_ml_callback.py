@@ -371,7 +371,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.starts += 1
 
         tool = action.tool
-        tool_input = action.tool_input
+        tool_input = str(action.tool_input)
         log = action.log
 
         resp = self._init_resp()
