@@ -139,10 +139,13 @@ def _create_schema_if_multiarg(
     func: Callable,
 ) -> Optional[Type[BaseModel]]:
     signature_ = inspect.signature(func)
-    if len(signature_.parameters) > 1:
-        return _create_args_schema_model_from_signature(func)
-    else:
+    parameters = signature_.parameters
+    if len(parameters) == 1 and next(iter(parameters.values())).annotation == str:
+        # Default tools take a single string as input and don't need a dynamic
+        # schema validation
         return None
+    else:
+        return _create_args_schema_model_from_signature(func)
 
 
 def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:

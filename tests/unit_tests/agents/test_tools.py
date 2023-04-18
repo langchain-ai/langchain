@@ -34,8 +34,8 @@ class _MockStructuredTool(BaseTool):
     args_schema: Type[BaseModel] = _MockSchema
     description = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        return f"{arg1} {arg2} {arg3}"
+    def _run(self, schema: BaseModel) -> str:
+        return f"{schema.arg1} {schema.arg2} {schema.arg3}"
 
     async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         raise NotImplementedError
