@@ -180,6 +180,8 @@ class Anthropic(LLM, _AnthropicCommon):
             stop_sequences=stop,
             **self._default_params,
         )
+        if "detail" in response:
+            raise RuntimeError(response["detail"])
         return response["completion"]
 
     async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
@@ -209,6 +211,8 @@ class Anthropic(LLM, _AnthropicCommon):
             stop_sequences=stop,
             **self._default_params,
         )
+        if "detail" in response:
+            raise RuntimeError(response["detail"])
         return response["completion"]
 
     def stream(self, prompt: str, stop: Optional[List[str]] = None) -> Generator:
