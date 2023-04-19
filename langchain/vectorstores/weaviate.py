@@ -212,6 +212,7 @@ class Weaviate(VectorStore):
                 )
         """
         weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
+        weaviate_api_key = get_from_dict_or_env(kwargs, "weaviate_api_key", "WEAVIATE_API_KEY")
 
         try:
             from weaviate import Client
@@ -222,7 +223,9 @@ class Weaviate(VectorStore):
                 "Please install it with `pip instal weaviate-client`"
             )
 
-        client = Client(weaviate_url)
+        auth = weaviate.auth.AuthApiKey(api_key=weaviate_api_key) if weaviate_api_key else None
+
+        client = Client(weaviate_url, auth_client_secret=auth)
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
         embeddings = embedding.embed_documents(texts) if embedding else None
         text_key = "text"
