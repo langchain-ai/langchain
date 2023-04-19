@@ -131,7 +131,7 @@ class AutoGPT:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
                     print("EXITING")
-                    break
+                    return "EXITING"
                 memory_to_add += feedback
 
             self.memory.add_documents([Document(page_content=memory_to_add)])

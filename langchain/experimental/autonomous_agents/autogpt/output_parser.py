@@ -17,7 +17,7 @@ class BaseAutoGPTOutputParser(BaseOutputParser):
         """Return AutoGPTAction"""
 
 
-def preprocess_json_input(input_str):
+def preprocess_json_input(input_str: str) -> str:
     # Replace single backslashes with double backslashes, while leaving already escaped ones intact
     corrected_str = re.sub(
         r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", input_str
@@ -35,7 +35,8 @@ class AutoGPTOutputParser(BaseAutoGPTOutputParser):
                 parsed = json.loads(preprocessed_text, strict=False)
             except:
                 return AutoGPTAction(
-                    name="ERROR", args=f"Could not parse invalid json: {text}"
+                    name="ERROR",
+                    args={"error": f"Could not parse invalid json: {text}"},
                 )
         try:
             return AutoGPTAction(
@@ -44,5 +45,5 @@ class AutoGPTOutputParser(BaseAutoGPTOutputParser):
             )
         except KeyError as e:
             return AutoGPTAction(
-                name="ERROR", args=f"Incomplete command args: {parsed}"
+                name="ERROR", args={"error": f"Incomplete command args: {parsed}"}
             )
