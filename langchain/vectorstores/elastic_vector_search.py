@@ -207,7 +207,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = similarity_search_with_score()
+        docs_and_scores = self.similarity_search_with_score()
         documents = [d[0] for d in docs_and_scores]
         return documents
 
