@@ -1,8 +1,10 @@
 """Generic utility functions."""
-import os
-from typing import Any, Dict, Optional, Callable
-from functools import wraps
 import logging
+import os
+import time
+import traceback
+from functools import wraps
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,12 @@ def get_from_dict_or_env(
             f"  `{key}` as a named parameter."
         )
 
-def retry_helper(attempts:Optional[int]=3, sleep:Optional[bool]=True, sleep_time:Optional[int]=2) -> Callable: 
+
+def retry_helper(
+    attempts: Optional[int] = 3,
+    sleep: Optional[bool] = True,
+    sleep_time: Optional[int] = 2,
+) -> Callable:
     """Simple retry decorator to avoid boilerplate
 
     :param attempts: Number of attempts to try the request, defaults to 3
@@ -36,18 +43,21 @@ def retry_helper(attempts:Optional[int]=3, sleep:Optional[bool]=True, sleep_time
     :return: Result of the original function
     :rtype: Callable
     """
-    def retry_decorator(f:typing.Callable[[str], None]):
+
+    def retry_decorator(f: Callable[[str], None]) -> Callable:
         @wraps(f)
-        def retry(*args, **kwargs):
-            for attempt in range(1,attempts):
-                try: 
+        def retry(*args: Any, **kwargs: Any) -> Any:
+            for attempt in range(1, attempts):  # type: ignore[arg-type]
+                try:
                     return f(*args, **kwargs)
                 except BaseException as e:
                     logger.debug(traceback.format_exc())
-                    logger.info(f'Error: {str(e)} Retry {attempt} of {attempts}')
-                if sleep: 
-                    time.sleep(sleep_time)
-            else: 
-                raise RuntimeError(f'Retries exceeded for method {f.__name__}')
+                    logger.info(f"Error: {str(e)} Retry {attempt} of {attempts}")
+                if sleep:
+                    time.sleep(sleep_time)  # type: ignore[arg-type]
+            else:
+                raise RuntimeError(f"Retries exceeded for method {f.__name__}")
+
         return retry
+
     return retry_decorator
