@@ -77,7 +77,7 @@ This is a collection of LangChain tutorials and videos.
 - [Run `BabyAGI` with Langchain Agents (with Python Code)](https://youtu.be/WosPGHPObx8) by [1littlecoder](https://www.youtube.com/@1littlecoder)
 - [How to Use Langchain With `Zapier` | Write and Send Email with GPT-3 | OpenAI API Tutorial](https://youtu.be/p9v2-xEa9A0) by [StarMorph AI](https://www.youtube.com/@starmorph)
 - [Use Your Locally Stored Files To Get Response From GPT - `OpenAI` | Langchain | Python](https://youtu.be/NC1Ni9KS-rk) by [Shweta Lodha](https://www.youtube.com/@shweta-lodha)
-- [Langchain JS | How to Use GPT-3, GPT-4 to Reference your own Data | `OpenAI Embeddings` Intro](https://youtu.be/veV2I-NEjaM) by [StarMorph AI](https://www.youtube.com/@starmorph)
+- [`Langchain JS` | How to Use GPT-3, GPT-4 to Reference your own Data | `OpenAI Embeddings` Intro](https://youtu.be/veV2I-NEjaM) by [StarMorph AI](https://www.youtube.com/@starmorph)
 - [The easiest way to work with large language models | Learn LangChain in 10min](https://youtu.be/kmbS6FDQh7c) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [4 Autonomous AI Agents: “Westworld” simulation `BabyAGI`, `AutoGPT`, `Camel`, `LangChain`](https://youtu.be/yWbnH6inT_U) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [AI CAN SEARCH THE INTERNET? Langchain Agents + OpenAI ChatGPT](https://youtu.be/J-GL0htqda8) by [tylerwhatsgood](https://www.youtube.com/@tylerwhatsgood)
