@@ -112,7 +112,6 @@ tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
 gptcache = "^0.1.9"
 promptlayer = "^0.1.80"
-playwright = "^1.32.1"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
