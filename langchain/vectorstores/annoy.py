@@ -367,7 +367,7 @@ class Annoy(VectorStore):
                 from langchain import Annoy
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                db = Annoy.from_texts(texts, embeddings)
+                db = Annoy.from_embeddings(text_embeddings, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
