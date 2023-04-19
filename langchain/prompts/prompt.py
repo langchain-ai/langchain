@@ -3,29 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Union
 
 from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
+    _get_jinja2_variables_from_template,
     check_valid_template,
 )
-
-
-def _get_jinja2_variables_from_template(template: str) -> Set[str]:
-    try:
-        from jinja2 import Environment, meta
-    except ImportError:
-        raise ImportError(
-            "jinja2 not installed, which is needed to use the jinja2_formatter. "
-            "Please install it with `pip install jinja2`."
-        )
-    env = Environment()
-    ast = env.parse(template)
-    variables = meta.find_undeclared_variables(ast)
-    return variables
 
 
 class PromptTemplate(StringPromptTemplate):
