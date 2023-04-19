@@ -4,7 +4,6 @@ from typing import Sequence, Union
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.react.eval_prompt import EVAL_CHAT_PROMPT
 from langchain.schema import AgentAction, OutputParserException
 from langchain.tools.base import BaseTool
@@ -30,7 +29,7 @@ Description: {tool.description}"""
     def get_agent_trajectory(steps: Union[str, list[tuple[AgentAction, str]]]) -> str:
         if isinstance(steps, str):
             return steps
-        
+
         return "\n\n".join(
             [
                 f"""Step {i}:
@@ -66,10 +65,7 @@ Tool output: {output}"""
             return ["score", "reasoning"]
         return ["score"]
 
-    def _call(
-        self, inputs: dict[str, str]
-    ) -> dict[str, str]:
-
+    def _call(self, inputs: dict[str, str]) -> dict[str, str]:
         raw_output = self.eval_chain.run(
             dict(
                 tool_descriptions=self._tools_description,
@@ -77,7 +73,7 @@ Tool output: {output}"""
             )
         )
 
-        if not "Score:" in raw_output:
+        if "Score:" not in raw_output:
             raise OutputParserException(
                 f"Could not find score in model eval output: {raw_output}"
             )
@@ -86,9 +82,9 @@ Tool output: {output}"""
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        if not score_str.isdigit():
+        if not score_str.isdigit() and 1 <= int(score_str) <= 5:
             raise OutputParserException(
-                f"Score is not a digit in model eval: {raw_output}"
+                f"Score is not a digit in the range 1-5: {raw_output}"
             )
 
         if self.return_reasoning:
