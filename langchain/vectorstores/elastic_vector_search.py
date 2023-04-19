@@ -20,7 +20,7 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[float], filter: dict) -> Dict:
+def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
     if filter:
         (key, value), = filter.items()
         filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
@@ -207,13 +207,8 @@ class ElasticVectorSearch(VectorStore, ABC):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(query)
-        script_query = _default_script_query(embedding, filter)
-        response = self.client.search(index=self.index_name, query=script_query, size=k)
-        hits = [hit["_source"] for hit in response["hits"]["hits"]]
-        documents = [
-            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
-        ]
+        docs_and_scores = similarity_search_with_score()
+        documents = [d[0] for d in docs_and_scores]
         return documents
 
     def similarity_search_with_score(
@@ -235,14 +230,14 @@ class ElasticVectorSearch(VectorStore, ABC):
         response = self.client.search(
             index=self.index_name, query=script_query, size=k)
         hits = [hit for hit in response["hits"]["hits"]]
-        documents = [
+        docs_and_scores = [
             (
                 Document(page_content=hit["_source"]["text"],
                         metadata=hit["_source"]["metadata"]),
                 hit['_score']
             ) for hit in hits
         ]
-        return documents
+        return docs_and_scores
 
     @classmethod
     def from_texts(
