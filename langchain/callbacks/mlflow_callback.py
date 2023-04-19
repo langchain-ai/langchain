@@ -1,3 +1,4 @@
+import time
 import hashlib
 import json
 import random
@@ -138,7 +139,7 @@ def analyze_text(
         "difficult_words": textstat.difficult_words(text),
         "linsear_write_formula": textstat.linsear_write_formula(text),
         "gunning_fog": textstat.gunning_fog(text),
-        "text_standard": textstat.text_standard(text),
+        # "text_standard": textstat.text_standard(text),
         "fernandez_huerta": textstat.fernandez_huerta(text),
         "szigriszt_pazos": textstat.szigriszt_pazos(text),
         "gutierrez_polini": textstat.gutierrez_polini(text),
@@ -206,11 +207,11 @@ class MlflowLogger:
     """
 
     def __init__(self, **kwargs):
-        mlflow = import_mlflow()
+        self.mlflow = import_mlflow()
         tracking_uri = get_from_dict_or_env(
             kwargs, "tracking_uri", "MLFLOW_TRACKING_URI"
         )
-        self.mlfc = mlflow.MlflowClient(tracking_uri=tracking_uri)
+        self.mlfc = self.mlflow.MlflowClient(tracking_uri=tracking_uri)
 
         # User can set other env variables described here
         # > https://www.mlflow.org/docs/latest/tracking.html#logging-to-a-tracking-server
@@ -227,12 +228,12 @@ class MlflowLogger:
 
         self.start_run(kwargs["run_name"], kwargs["run_tags"])
 
-    def start_run(self, name: str, tags: list = []):
+    def start_run(self, name: str, tags: dict[str, str]):
         """To start a new run, auto generates the random suffix for name"""
         if name.endswith("-%"):
             rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
             name = name.replace("%", rname)
-        self.run = self.mlfc.create_run(self.mlf_exp_id, run_name=name)
+        self.run = self.mlfc.create_run(self.mlf_exp_id, run_name=name, tags=tags)
 
     def finish_run(self):
         """To finish the run."""
@@ -240,17 +241,15 @@ class MlflowLogger:
 
     def metric(self, key: str, value: float):
         """To log metric to mlflow server."""
-        # metric value only of type float or int
-        if not isinstance(value, float) and not isinstance(value, int):
-            return
         self.mlfc.log_metric(self.run.info.run_id, key, value)
 
-    def json(self, data: Any):
+    def metrics(self, data: dict[str, float], step=0):
         """To log all metrics in the input dict."""
-        for k, v in data.items():
-            self.metric(k, v)
+        ts = int(time.time() * 1000)
+        metrics = [self.mlflow.entities.Metric(k, v, ts, step) for k, v in data.items()]
+        self.mlfc.log_batch(self.run.info.run_id, metrics=metrics)
 
-    def jsonf(self, data: Any, filename: str):
+    def jsonf(self, data: dict[str, float], filename: str):
         """To log the input data as json file artifact."""
         self.mlfc.log_dict(self.run.info.run_id, data, f"{filename}.json")
 
@@ -290,7 +289,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         self,
         name: Optional[str] = "langchainrun-%",
         experiment: Optional[str] = "langchain",
-        tags: Optional[Sequence] = [],
+        tags: Optional[Dict] = {},
         tracking_uri: Optional[str] = None,
     ) -> None:
         """Initialize callback handler."""
@@ -367,7 +366,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         for idx, prompt in enumerate(prompts):
             prompt_resp = deepcopy(resp)
@@ -387,7 +386,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_llm_new_token", "token": token})
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_llm_token_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -406,7 +405,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update(flatten_dict(response.llm_output or {}))
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         for generations in response.generations:
             for idx, generation in enumerate(generations):
@@ -418,7 +417,10 @@ class MlflowCallbackHandler(BaseCallbackHandler):
                         nlp=self.nlp,
                     )
                 )
-                self.mlflg.json(generation_resp.pop("text_complexity_metrics"))
+                self.mlflg.metrics(
+                    generation_resp.pop("text_complexity_metrics"),
+                    step=self.metrics["step"],
+                )
                 self.records["on_llm_end_records"].append(generation_resp)
                 self.records["action_records"].append(generation_resp)
                 self.mlflg.jsonf(resp, f"llm_end_{llm_ends}_generation_{idx}")
@@ -449,7 +451,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         chain_input = inputs["input"]
 
@@ -481,7 +483,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_chain_end", "outputs": outputs["output"]})
         resp.update(self.metrics)
 
-        self.mlfg.json(self.metrics)
+        self.mlfg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_chain_end_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -509,7 +511,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update(flatten_dict(serialized))
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_tool_start_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -527,7 +529,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_tool_end", "output": output})
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_tool_end_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -553,7 +555,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         resp.update({"action": "on_text", "text": text})
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_text_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -576,7 +578,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         )
         resp.update(self.metrics)
 
-        self.mlflg.json(self.metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_agent_finish_records"].append(resp)
         self.records["action_records"].append(resp)
@@ -599,7 +601,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
             }
         )
         resp.update(self.metrics)
-        self.mlflg.json(metrics)
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
         self.records["on_agent_action_records"].append(resp)
         self.records["action_records"].append(resp)
         self.mlflg.jsonf(resp, f"agent_action_{tool_starts}")
@@ -628,7 +630,7 @@ class MlflowCallbackHandler(BaseCallbackHandler):
             "difficult_words",
             "linsear_write_formula",
             "gunning_fog",
-            "text_standard",
+            # "text_standard",
             "fernandez_huerta",
             "szigriszt_pazos",
             "gutierrez_polini",
@@ -666,7 +668,6 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         return session_analysis_df
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False):
-
         pd = import_pandas()
         self.mlflg.table("action_records", pd.DataFrame(self.records["action_records"]))
         session_analysis_df = self._create_session_analysis_df()
