@@ -29,11 +29,7 @@ class UnstructuredURLLoader(BaseLoader):
                 "`pip install unstructured`"
             )
 
-        if "headers" in unstructured_kwargs:
-            headers = unstructured_kwargs.pop("headers")
-        else:
-            headers = {}
-
+        headers = unstructured_kwargs.pop("headers", {})
         if len(headers.keys()) != 0:
             warn_about_headers = False
             if self.__is_non_html_available():
