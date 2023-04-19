@@ -38,6 +38,12 @@ class StructuredOutputParser(BaseOutputParser):
         return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
     def parse(self, text: str) -> Any:
+        if "```json" not in text:
+            raise OutputParserException(
+                f"Got invalid return object. Expected markdown code snippet with JSON "
+                f"object, but got:\n{text}"
+            )
+
         json_string = text.split("```json")[1].strip().strip("```").strip()
         try:
             json_obj = json.loads(json_string)
@@ -50,3 +56,7 @@ class StructuredOutputParser(BaseOutputParser):
                     f"to be present, but got {json_obj}"
                 )
         return json_obj
+
+    @property
+    def _type(self) -> str:
+        return "structured"

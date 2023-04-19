@@ -18,7 +18,7 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
     try:
         from jinja2 import Template
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
         )
