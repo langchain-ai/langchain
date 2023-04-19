@@ -15,7 +15,7 @@ class ReadFileInput(BaseModel):
 
 class ReadFileTool(BaseTool):
     name: str = "read_file"
-    tool_args: Type[BaseModel] = ReadFileInput
+    args_schema: Type[BaseModel] = ReadFileInput
     description: str = "Read file from disk"
     root_dir: Optional[str] = None
     """Directory to read file from.

@@ -16,7 +16,7 @@ class WriteFileInput(BaseModel):
 
 class WriteFileTool(BaseTool):
     name: str = "write_file"
-    tool_args: Type[BaseModel] = WriteFileInput
+    args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"
     root_dir: Optional[str] = None
     """Directory to write file to.
