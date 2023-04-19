@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Iterable, List, Optional, Type, Union
+from typing import Any, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings import TensorflowHubEmbeddings
@@ -12,8 +12,6 @@ from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger()
-
-HUB_MODEL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 
 
 class MatchingEngine(VectorStore):
@@ -472,4 +470,4 @@ class MatchingEngine(VectorStore):
     @classmethod
     def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
         """This function returns the default embedding."""
-        return TensorflowHubEmbeddings(model_url=HUB_MODEL)
+        return TensorflowHubEmbeddings()
