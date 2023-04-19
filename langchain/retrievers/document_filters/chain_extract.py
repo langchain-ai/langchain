@@ -6,7 +6,7 @@ from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     _RetrievedDocument,
 )
-from langchain.retrievers.document_filters.compression_chain_prompt import (
+from langchain.retrievers.document_filters.chain_extract_prompt import (
     prompt_template,
 )
 from langchain.schema import BaseLanguageModel, BaseOutputParser, Document
@@ -39,7 +39,7 @@ def _get_default_chain_prompt() -> PromptTemplate:
     )
 
 
-class LLMChainDocumentCompressor(BaseDocumentFilter):
+class LLMChainExtractionDocumentFilter(BaseDocumentFilter):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 
@@ -72,7 +72,7 @@ class LLMChainDocumentCompressor(BaseDocumentFilter):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-    ) -> "LLMChainDocumentCompressor":
+    ) -> "LLMChainExtractionDocumentFilter":
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input

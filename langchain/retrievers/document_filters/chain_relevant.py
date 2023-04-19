@@ -7,7 +7,7 @@ from langchain.retrievers.document_filters.base import (
     BaseDocumentFilter,
     _RetrievedDocument,
 )
-from langchain.retrievers.document_filters.relevant_chain_prompt import prompt_template
+from langchain.retrievers.document_filters.chain_relevant_prompt import prompt_template
 from langchain.schema import BaseLanguageModel, Document
 
 
@@ -24,7 +24,7 @@ def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
     return {"question": query, "context": doc.page_content}
 
 
-class LLMChainDocumentFilter(BaseDocumentFilter):
+class LLMChainRelevancyDocumentFilter(BaseDocumentFilter):
     """Filter that drops documents that aren't relevant to the query."""
 
     llm_chain: LLMChain
@@ -58,7 +58,7 @@ class LLMChainDocumentFilter(BaseDocumentFilter):
         llm: BaseLanguageModel,
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any
-    ) -> "LLMChainDocumentFilter":
+    ) -> "LLMChainRelevancyDocumentFilter":
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         llm_chain = LLMChain(llm=llm, prompt=_prompt)
         return cls(llm_chain=llm_chain, **kwargs)
