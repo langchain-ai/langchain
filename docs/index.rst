@@ -63,6 +63,10 @@ Use Cases
 
 The above modules can be used in a variety of ways. LangChain also provides guidance and assistance in this. Below are some of the common use cases LangChain supports.
 
+- `Autonomous Agents <./use_cases/autonomous_agents.html>`_: Autonomous agents are long running agents that take many steps in an attempt to accomplish an objective. Examples include AutoGPT and BabyAGI.
+
+- `Agent Simulations <./use_cases/agent_simulations.html>`_: Putting agents in a sandbox and observing how they interact with each other or to events can be an interesting way to observe their long-term memory abilities.
+
 - `Personal Assistants <./use_cases/personal_assistants.html>`_: The main LangChain use case. Personal assistants need to take actions, remember interactions, and have knowledge about your data.
 
 - `Question Answering <./use_cases/question_answering.html>`_: The second big LangChain use case. Answering questions over specific documents, only utilizing the information in those documents to construct an answer.
@@ -89,6 +93,8 @@ The above modules can be used in a variety of ways. LangChain also provides guid
    :hidden:
 
    ./use_cases/personal_assistants.md
+   ./use_cases/autonomous_agents.md
+   ./use_cases/agent_simulations.md
    ./use_cases/question_answering.md
    ./use_cases/chatbots.md
    ./use_cases/tabular.rst
