@@ -29,6 +29,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
+    normalize_embeddings: bool = True
+    """Whether to normalize the embeddings.Important for cosine similarity search."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -48,38 +50,35 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(
-        self, texts: List[str], normalize_embeddings: bool = True
-    ) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
-            normalize_embeddings: Whether to normalize the embeddings.
-            Important for cosine similarity search.
 
         Returns:
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         embeddings = self.client.encode(
-            texts, normalize_embeddings=normalize_embeddings
+            texts, normalize_embeddings=self.normalize_embeddings
         )
         return embeddings.tolist()
 
-    def embed_query(self, text: str, normalize_embeddings: bool = True) -> List[float]:
+    def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
             text: The text to embed.
-            normalize_embeddings: Whether to normalize the embeddings.
             Important for cosine similarity search.
 
         Returns:
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client.encode(text, normalize_embeddings=normalize_embeddings)
+        embedding = self.client.encode(
+            text, normalize_embeddings=self.normalize_embeddings
+        )
         return embedding.tolist()
 
 
