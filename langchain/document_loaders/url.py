@@ -39,7 +39,7 @@ class UnstructuredURLLoader(BaseLoader):
 
             if warn_about_headers:
                 logger.warning(
-                    "You are using old version of unstructured. "
+                    "You are using an old version of unstructured. "
                     "The headers parameter is ignored"
                 )
 
