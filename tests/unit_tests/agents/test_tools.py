@@ -1,6 +1,6 @@
 """Test tool utils."""
 from datetime import datetime
-from typing import Any, Optional, Type, Union
+from typing import Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
