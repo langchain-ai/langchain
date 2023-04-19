@@ -5,7 +5,6 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, Dict, List, Set, Union
 
-from jinja2 import Environment, meta
 from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
@@ -16,6 +15,13 @@ from langchain.prompts.base import (
 
 
 def _get_jinja2_variables_from_template(template: str) -> Set[str]:
+    try:
+        from jinja2 import Environment, meta
+    except ImportError:
+        raise ValueError(
+            "jinja2 not installed, which is needed to use the jinja2_formatter. "
+            "Please install it with `pip install jinja2`."
+        )
     env = Environment()
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
