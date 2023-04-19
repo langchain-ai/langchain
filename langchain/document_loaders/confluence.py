@@ -4,6 +4,8 @@ from typing import Any, Callable, List, Optional, Union
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+from langchain.utils import retry_helper
+
 
 class ConfluenceLoader(BaseLoader):
     """
@@ -44,8 +46,14 @@ class ConfluenceLoader(BaseLoader):
     :type oauth2: dict, optional
     :param cloud: _description_, defaults to True
     :type cloud: bool, optional
-    :raises ValueError: _description_
-    :raises ImportError: _description_
+    :param retry: Whether or not to retry if a request fails, defaults to True
+    :type retry: bool, optional
+    :param wait_for_retry: Whether or not to retry, defaults to True
+    :type wait_for_retry: bool, optional
+    :param retry_seconds: How long to wait between retries, defaults to 2
+    :type retry_seconds: int, optional
+    :raises ValueError: Error(s) while validating input
+    :raises ImportError: Package not installed
     """
 
     def __init__(
@@ -54,13 +62,19 @@ class ConfluenceLoader(BaseLoader):
         api_key: Optional[str] = None,
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
-        cloud: bool = True,
+        cloud: Optional[bool] = True,
+        retry: Optional[bool] = True, 
+        wait_for_retry: Optional[bool] = True,
+        retry_seconds: Optional[int] = 2
     ):
         errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2)
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
 
         self.base_url = url
+        self.retry = retry
+        self.wait_for_retry = wait_for_retry
+        self.retry_seconds = retry_seconds
 
         try:
             from atlassian import Confluence  # noqa: F401
@@ -76,6 +90,7 @@ class ConfluenceLoader(BaseLoader):
             self.confluence = Confluence(
                 url=url, username=username, password=api_key, cloud=cloud
             )
+
 
     @staticmethod
     def validate_init_args(
@@ -196,9 +211,9 @@ class ConfluenceLoader(BaseLoader):
 
         if page_ids:
             for page_id in page_ids:
-                page = self.confluence.get_page_by_id(
+                page = etry_helper(self.retry, self.wait_for_retry, self.retry_seconds, self.confluence.get_page_by_id(
                     page_id=page_id, expand="body.storage.value"
-                )
+                ))
                 doc = self.process_page(page, include_attachments, text_maker)
                 docs.append(doc)
 
@@ -249,6 +264,7 @@ class ConfluenceLoader(BaseLoader):
             page_content=text, metadata={"title": page["title"], "id": page["id"]}
         )
 
+    # @retry_helper(ConfluenceLoader.retry, ConfluenceLoader.wait_for_retry, ConfluenceLoader.retry_seconds)
     def process_attachment(self, page_id: str) -> List[str]:
         try:
             import requests  # noqa: F401
