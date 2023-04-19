@@ -1,12 +1,12 @@
 from langchain import LLMChain, PromptTemplate
-from langchain.llms import BaseLLM
+from langchain.schema import BaseLanguageModel
 
 
 class TaskExecutionChain(LLMChain):
     """Chain to execute tasks."""
 
     @classmethod
-    def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
+    def from_llm(cls, llm: BaseLanguageModel, verbose: bool = True) -> LLMChain:
         """Get the response parser."""
         execution_template = (
             "You are an AI who performs one task based on the following objective: "

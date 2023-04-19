@@ -2,12 +2,12 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from task_creation import TaskCreationChain
-from task_execution import TaskExecutionChain
-from task_prioritization import TaskPrioritizationChain
+from langchain.experimental.autonomous_agents.baby_agi.task_creation import TaskCreationChain
+from langchain.experimental.autonomous_agents.baby_agi.task_execution import TaskExecutionChain
+from langchain.experimental.autonomous_agents.baby_agi.task_prioritization import TaskPrioritizationChain
 
 from langchain.chains.base import Chain
-from langchain.llms import BaseLLM
+from langchain.schema import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
 
@@ -15,9 +15,9 @@ class BabyAGI(Chain, BaseModel):
     """Controller model for the BabyAGI agent."""
 
     task_list: deque = Field(default_factory=deque)
-    task_creation_chain: TaskCreationChain = Field(...)
-    task_prioritization_chain: TaskPrioritizationChain = Field(...)
-    execution_chain: TaskExecutionChain = Field(...)
+    task_creation_chain: Chain = Field(...)
+    task_prioritization_chain: Chain = Field(...)
+    execution_chain: Chain = Field(...)
     task_id_counter: int = Field(1)
     vectorstore: VectorStore = Field(init=False)
     max_iterations: Optional[int] = None
@@ -151,9 +151,10 @@ class BabyAGI(Chain, BaseModel):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         vectorstore: VectorStore,
         verbose: bool = False,
+        task_execution_chain: Optional[Chain] = None,
         **kwargs: Dict[str, Any],
     ) -> "BabyAGI":
         """Initialize the BabyAGI Controller."""
@@ -161,7 +162,10 @@ class BabyAGI(Chain, BaseModel):
         task_prioritization_chain = TaskPrioritizationChain.from_llm(
             llm, verbose=verbose
         )
-        execution_chain = TaskExecutionChain.from_llm(llm, verbose=verbose)
+        if task_execution_chain is None:
+            execution_chain = TaskExecutionChain.from_llm(llm, verbose=verbose)
+        else:
+            execution_chain = task_execution_chain
         return cls(
             task_creation_chain=task_creation_chain,
             task_prioritization_chain=task_prioritization_chain,
