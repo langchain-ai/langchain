@@ -87,10 +87,24 @@ class WebBaseLoader(BaseLoader):
             raise ValueError("Multiple webpaths found.")
         return self.web_paths[0]
 
-    async def _fetch(self, url: str) -> str:
+    async def _fetch(
+        self,
+        url: str,
+        retries: int = 3,
+        cooldown: int = 2,
+        backoff: float = 1.5
+    ) -> str:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=self.session.headers) as response:
-                return await response.text()
+            for i in range(retries):
+                try:
+                    async with session.get(url, headers=self.session.headers) as response:
+                        return await response.text()
+                except aiohttp.ClientConnectionError as e:
+                    if i == retries - 1:
+                        raise
+                    else:
+                        logger.warning(f"Error fetching {url} with attempt {i + 1}/{retries}: {e}. Retrying...")
+                        await asyncio.sleep(cooldown * backoff ** i)
 
     async def _fetch_with_rate_limit(
         self, url: str, semaphore: asyncio.Semaphore
