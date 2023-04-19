@@ -4,10 +4,6 @@ import json
 import logging
 import time
 import uuid
-
-from google.cloud import aiplatform
-from google.cloud import storage
-from google.oauth2 import service_account
 from typing import Any, Iterable, List, Optional, Type, Union
 
 from langchain.docstore.document import Document
@@ -26,58 +22,80 @@ class MatchingEngine(VectorStore):
     While the embeddings are stored in the Matching Engine, the embedded
     documents will be stored in GCS.
 
+    An existing Index and corresponding Endpoint are preconditions for
+    using this module.
+
+    See usage in docs/modules/indexes/vectorstores/examples/matchingengine.ipynb
+
     Note that this implementation is mostly meant for reading if you are
     planning to do a real time implementation. While reading is a real time
     operation, updating the index takes close to one hour."""
 
-    def __init__(self,
+    def __init__(
+        self,
         project_id: str,
         region: str,
         gcs_bucket_uri: str,
-        index_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
-        endpoint_id: str, # TODO document and tell the user that they need to run some lines to create the matching engine -> notebook de quickstart
-        json_credentials_path: Union[str, None] = None,
-        embedder: Embeddings = TensorflowHubEmbeddings(model_url=HUB_MODEL)
+        index: "MatchingEngineIndex",
+        endpoint: "MatchingEngineIndexEndpoint",
+        embedding: Embeddings,
+        credentials: "Credentials" = None
     ):
         """Vertex Matching Engine implementation of the vector store.
 
         While the embeddings are stored in the Matching Engine, the embedded
         documents will be stored in GCS.
 
+        An existing Index and corresponding Endpoint are preconditions for
+        using this module.
+
+        See usage in
+        docs/modules/indexes/vectorstores/examples/matchingengine.ipynb.
+
         Note that this implementation is mostly meant for reading if you are
         planning to do a real time implementation. While reading is a real time
         operation, updating the index takes close to one hour.
-            TODO(scafati98): create docs for this module: https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/vectorstores.rst
-            TODO: precondition for this class the index and the endpoint must exist
-            TODO: add aiplatform and storage dependencies to poetry
-            Attributes:
-                project_id: The GCS project id.
-                region: The default location making the API calls. It must have
-                the same location as the GCS bucket.
-                gcs_bucket_uri: The location where the vectors will be stored in
-                order for the index to be created.
-                index_id: The id of the created index TODO(scafati98) link to notebook to where the index is created and the enpoint is printed.
-                endpoint_id: The id of the created endpoint TODO(scafati98) idem arriba.
-                json_credentials_path (Optional): Path where the GCS
-                credentials are stored on the local file system. If none are
-                provided, then the default login will be used.
-                embedder: A :class:`Embeddings` that will be used for
-                embedding the text sent. If none is sent, then the
-                multilingual Tensorflow Universal Sentence Encoder will be used.
+
+        Attributes:
+            project_id: The GCS project id.
+            region: The default location making the API calls. It must have
+            the same location as the GCS bucket.
+            gcs_bucket_uri: The location where the vectors will be stored in
+            order for the index to be created.
+            index: The created index class. See
+            ~:func:`MatchingEngine.from_components`.
+            endpoint: The created endpoint class. See
+            ~:func:`MatchingEngine.from_components`.
+            credentials (Optional): Created GCP credentials.
+            embedding: A :class:`Embeddings` that will be used for
+            embedding the text sent. If none is sent, then the
+            multilingual Tensorflow Universal Sentence Encoder will be used.
         """
         super().__init__()
-        logger.debug(f"Constructor.")
+        self._validate_google_libraries_installation()
+        self.gcs_bucket_uri = self._validate_gcs_bucket(gcs_bucket_uri)
+        self._init_aiplatform(project_id, region, self.gcs_bucket_uri)
+
         self.project_id = project_id
         self.region = region
         self.gcs_client = None
-        self.gcs_bucket_uri = self._validate_gcs_bucket(gcs_bucket_uri)
-        self.embedder = embedder
+        self.embedding = embedding
+        self.credentials = credentials
+        self.index = index
+        self.endpoint = endpoint
 
-        self.credentials = self._create_credentials_from_file(
-            json_credentials_path)
-        self._init_aiplatform(project_id, region, self.gcs_bucket_uri)
-        self.index = self._create_index_by_id(index_id)
-        self.endpoint = self._create_endpoint_by_id(endpoint_id)
+    def _validate_google_libraries_installation(self) -> None:
+        """Validates that Google libraries that are needed are installed."""
+        try:
+            from google.cloud import aiplatform
+            from google.cloud import storage
+            from google.oauth2 import service_account
+        except ImportError:
+            raise ImportError(
+                "You must run `pip install --upgrade "
+                "google-cloud-aiplatform google-cloud-storage`"
+                "to use the MatchingEngine Vectorstore."
+            )
 
     def _validate_gcs_bucket(self, gcs_bucket_uri: str) -> str:
         """Validates the gcs_bucket_uri as a bucket name.
@@ -95,10 +113,11 @@ class MatchingEngine(VectorStore):
                              f"the bucket name. Received {gcs_bucket_uri}")
         return gcs_bucket_uri
 
+    @classmethod
     def _create_credentials_from_file(
-        self,
+        cls,
         json_credentials_path: Optional[str]
-    ) -> Optional[service_account.Credentials]:
+    ) -> Optional["service_account.Credentials"]:
         """Creates credentials for GCP.
 
         Args:
@@ -109,6 +128,8 @@ class MatchingEngine(VectorStore):
              An optional of Credentials or None, in which case the default
              will be used.
         """
+
+        from google.oauth2 import service_account
 
         credentials = None
         if json_credentials_path is not None:
@@ -131,6 +152,9 @@ class MatchingEngine(VectorStore):
             the same location as the GCS bucket and must be regional.
             gcs_bucket_uri: GCS staging location.
         """
+
+        from google.cloud import aiplatform
+
         logger.debug(f"Initializing AI Platform for project {project_id} on "
                      f"{region} and for {gcs_bucket_uri}.")
         aiplatform.init(
@@ -140,44 +164,61 @@ class MatchingEngine(VectorStore):
             credentials=self.credentials
         )
 
+    @classmethod
     def _create_index_by_id(
-        self,
-        index_id: str
+        cls,
+        index_id: str,
+        project_id: str,
+        region: str,
+        credentials: "Credentials"
     ) -> "aiplatform.MatchingEngineIndex":
         """Creates a MatchingEngineIndex object by id.
 
         Args:
-            index_id: The created index id. TODO(scafati98) link notebook
+            index_id: The created index id.
 
         Returns:
             A configured MatchingEngineIndex.
         """
+
+        from google.cloud import aiplatform
+
         logger.debug(f"Creating matching engine index with id {index_id}.")
         return aiplatform.MatchingEngineIndex(
             index_name=index_id,
-            project=self.project_id,
-            location=self.region,
-            credentials=self.credentials
+            project=project_id,
+            location=region,
+            credentials=credentials
         )
-    
+
+    @classmethod
     def _create_endpoint_by_id(
-        self,
-        endpoint_id: str
+        cls,
+        endpoint_id: str,
+        project_id: str,
+        region: str,
+        credentials: "Credentials"
     ) -> "aiplatform.MatchingEngineIndexEndpoint":
         """Creates a MatchingEngineIndexEndpoint object by id.
 
         Args:
-            endpoint_id: The created endpoint id. TODO(scafati98) link notebook
+            endpoint_id: The created endpoint id.
 
         Returns:
             A configured MatchingEngineIndexEndpoint.
+            :param project_id:
+            :param region:
+            :param credentials:
         """
+
+        from google.cloud import aiplatform
+
         logger.debug(f"Creating endpoint with id {endpoint_id}.")
         return aiplatform.MatchingEngineIndexEndpoint(
             index_endpoint_name=endpoint_id,
-            project=self.project_id,
-            location=self.region,
-            credentials=self.credentials,
+            project=project_id,
+            location=region,
+            credentials=credentials,
         )
 
     def add_texts(
@@ -197,7 +238,7 @@ class MatchingEngine(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         logger.debug(f"Embedding documents.")
-        embeddings = self.embedder.embed_documents(list(texts))
+        embeddings = self.embedding.embed_documents(list(texts))
         jsons = []
         ids = []
         # Could be improved with async.
@@ -241,12 +282,15 @@ class MatchingEngine(VectorStore):
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
-    def _get_gcs_client(self) -> storage.Client:
+    def _get_gcs_client(self) -> "storage.Client":
         """Lazily creates a GCS client.
 
         Returns:
             A configured GCS client.
         """
+
+        from google.cloud import storage
+
         if self.gcs_client is None:            
             self.gcs_client = storage.Client(
                 credentials=self.credentials, 
@@ -272,7 +316,7 @@ class MatchingEngine(VectorStore):
         """
 
         logger.debug(f"Embedding query {query}.")
-        embedding_query = self.embedder.embed_documents([query])
+        embedding_query = self.embedding.embed_documents([query])
 
         index_id = None
 
@@ -337,6 +381,7 @@ class MatchingEngine(VectorStore):
         gcs_bucket_uri: str = None,
         index_id: str = None,
         endpoint_id: str = None,
+        credentials_path: str = None,
         **kwargs: Any,
     ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings.
@@ -348,26 +393,73 @@ class MatchingEngine(VectorStore):
             texts: The texts that will get .
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
-            metadatas: List of metadatas. Defaults to None..
+            metadatas: List of metadatas. Defaults to None.
             project_id: The GCP project id.
             region: The default location making the API calls. It must have
             the same location as the GCS bucket and must be regional.
             gcs_bucket_uri: The location where the vectors will be stored in
             order for the index to be created.
-            index_id: The id of the created index TODO(scafati98) link to notebook to where the index is created and the enpoint is printed.
-            endpoint_id: The id of the created endpoint TODO(scafati98) idem arriba.
+            index_id: The id of the created index.
+            endpoint_id: The id of the created endpoint.
+            credentials_path: The path of the Google credentials on the local
+            file system.
 
         Returns:
             A configured MatchingEngine with the texts added to the index.
         """
-        matching_engine = cls(
+        matching_engine = cls.from_components(
             project_id=project_id,
             region=region,
             gcs_bucket_uri=gcs_bucket_uri,
             index_id=index_id,
             endpoint_id=endpoint_id,
-            embedder=embedding
+            credentials_path=credentials_path
         )
 
         matching_engine.add_texts(texts=texts, metadatas=metadatas)
         return matching_engine
+
+    @classmethod
+    def from_components(
+        cls: Type["MatchingEngine"],
+        project_id: str,
+        region: str,
+        gcs_bucket_uri: str,
+        index_id: str,
+        endpoint_id: str,
+        credentials_path: str,
+        embedding: Embeddings = None
+    ) -> "MatchingEngine":
+        """Takes the object creation out of the constructor.
+
+        Args:
+            project_id: The GCP project id.
+            region: The default location making the API calls. It must have
+            the same location as the GCS bucket and must be regional.
+            gcs_bucket_uri: The location where the vectors will be stored in
+            order for the index to be created.
+            index_id: The id of the created index.
+            endpoint_id: The id of the created endpoint.
+            credentials_path: The path of the Google credentials on the local
+            file system.
+            embedding: The :class:`Embeddings` that will be used for
+            embedding the texts.
+
+        Returns:
+            A configured MatchingEngine with the texts added to the index.
+        """
+        credentials = cls._create_credentials_from_file(credentials_path)
+        index = cls._create_index_by_id(index_id, project_id, region,
+                                        credentials)
+        endpoint = cls._create_endpoint_by_id(endpoint_id, project_id,
+                                              region, credentials)
+        embedding = embedding or TensorflowHubEmbeddings(model_url=HUB_MODEL)
+        return cls(
+            project_id=project_id,
+            region=region,
+            gcs_bucket_uri=gcs_bucket_uri,
+            index=index,
+            endpoint=endpoint,
+            embedding=embedding,
+            credentials=credentials
+        )
