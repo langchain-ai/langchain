@@ -18,7 +18,7 @@ def _get_jinja2_variables_from_template(template: str) -> Set[str]:
     try:
         from jinja2 import Environment, meta
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
         )
