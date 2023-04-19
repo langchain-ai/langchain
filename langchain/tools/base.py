@@ -24,6 +24,8 @@ class BaseTool(ABC, BaseModel):
     name: str
     description: str
     args_schema: Optional[Type[BaseModel]] = None
+    """An optional filter function that determines whether the input to the tool is appropriate."""
+    filter_func: Optional[Callable[..., bool]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     verbose: bool = False
@@ -100,6 +102,11 @@ class BaseTool(ABC, BaseModel):
         )
         try:
             args, kwargs = _to_args_and_kwargs(tool_input)
+            if self.filter_func is not None:
+                if not self.filter_func(*args, **kwargs):
+                    raise PermissionError(
+                        "The tools filter function has blocked the input to the tool. Try a different input."
+                    )
             observation = self._run(*args, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
@@ -142,6 +149,11 @@ class BaseTool(ABC, BaseModel):
         try:
             # We then call the tool on the tool input to get an observation
             args, kwargs = _to_args_and_kwargs(tool_input)
+            if self.filter_func is not None:
+                if not self.filter_func(*args, **kwargs):
+                    raise PermissionError(
+                        "The tools filter function has blocked the input to the tool. Try a different input."
+                    )
             observation = await self._arun(*args, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
             if self.callback_manager.is_async:
