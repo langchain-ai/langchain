@@ -1,9 +1,10 @@
 """Base implementation for tools or skills."""
 
 from abc import ABC, abstractmethod
+from inspect import signature
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validate_arguments, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
@@ -36,28 +37,28 @@ class BaseTool(ABC, BaseModel):
         arbitrary_types_allowed = True
 
     @property
-    def args(self) -> Union[Type[BaseModel], Type[str]]:
-        """Generate an input pydantic model."""
-        return str if self.args_schema is None else self.args_schema
+    def args(self) -> dict:
+        if self.args_schema is not None:
+            return self.args_schema.schema()["properties"]
+        else:
+            inferred_model = validate_arguments(self._run).model  # type: ignore
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self._run).parameters
+            return {k: schema[k] for k in valid_keys}
 
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
     ) -> None:
         """Convert tool input to pydantic model."""
-        input_args = self.args
+        input_args = self.args_schema
         if isinstance(tool_input, str):
-            if issubclass(input_args, BaseModel):
+            if input_args is not None:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
         else:
-            if issubclass(input_args, BaseModel):
+            if input_args is not None:
                 input_args.validate(tool_input)
-            else:
-                raise ValueError(
-                    f"args_schema required for tool {self.name} in order to"
-                    f" accept input of type {type(tool_input)}"
-                )
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(

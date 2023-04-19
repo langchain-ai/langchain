@@ -16,6 +16,16 @@ class Tool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
 
+    @property
+    def args(self) -> dict:
+        if self.args_schema is not None:
+            return self.args_schema.schema()["properties"]
+        else:
+            inferred_model = validate_arguments(self.func).model  # type: ignore
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self.func).parameters
+            return {k: schema[k] for k in valid_keys}
+
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
         return self.func(*args, **kwargs)
