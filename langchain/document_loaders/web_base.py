@@ -101,7 +101,8 @@ class WebBaseLoader(BaseLoader):
                         raise
                     else:
                         logger.warning(
-                            f"Error fetching {url} with attempt {i + 1}/{retries}: {e}. Retrying..."
+                            f"Error fetching {url} with attempt "
+                            f"{i + 1}/{retries}: {e}. Retrying..."
                         )
                         await asyncio.sleep(cooldown * backoff**i)
         raise ValueError("retry count exceeded")
