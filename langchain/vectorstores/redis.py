@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import nest_asyncio
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Type
 
@@ -17,6 +18,8 @@ from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
+
+nest_asyncio.apply()
 logger = logging.getLogger()
 
 
@@ -27,6 +30,10 @@ REDIS_REQUIRED_MODULES = [
         "ver": 20400
     },
 ]
+
+class RedisClient:
+    sync:
+    _async: 
 
 
 class Redis(VectorStore):
@@ -83,7 +90,7 @@ class Redis(VectorStore):
         logger.info("Index already exists")
         return True
 
-    async def _load_redis_client(
+    async def _load_client(
         self,
         index_name: str,
         check_module: bool = True,
@@ -118,7 +125,7 @@ class Redis(VectorStore):
 
         return client
 
-    async def _setup_redis_index(
+    async def _create_index(
         self,
         index_name: str,
         dim: int
@@ -156,7 +163,7 @@ class Redis(VectorStore):
                 ),
             )
             # Create Redis Index
-            await self.client.ft(index_name).create_index(
+            return await self.client.ft(index_name).create_index(
                 fields=schema,
                 definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
             )
@@ -387,10 +394,9 @@ class Redis(VectorStore):
                 )
         """
         loop = asyncio.get_event_loop()
-        instance = loop.run_until_complete(
-            cls.afrom_texts(texts, embedding, metadatas, index_name, **kwargs)
-        )
-        return instance
+        return loop.run_until_complete(
+                cls.afrom_texts(texts, embedding, metadatas, index_name, **kwargs)
+            )
 
     @classmethod
     async def afrom_texts(
@@ -405,11 +411,11 @@ class Redis(VectorStore):
         if not index_name:
             index_name = uuid.uuid4().hex
         # Setup Redis client
-        client = await cls._load_redis_client(cls, index_name=index_name, **kwargs)
+        client = await cls._load_client(cls, index_name=index_name, **kwargs)
         instance = cls(client, index_name, embedding.embed_query)
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
-        await instance._setup_redis_index(index_name, dim)
+        await instance._create_index(index_name, dim)
         await instance.aadd_texts(texts, metadatas, embeddings, **kwargs)
         return instance
 
@@ -460,14 +466,9 @@ class Redis(VectorStore):
     ) -> Redis:
         """Connect to an existing Redis index."""
         loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import nest_asyncio
-            nest_asyncio.apply()
-            return asyncio.run(cls.afrom_existing_index(embedding, index_name, **kwargs, loop=loop))
-        instance = loop.run_until_complete(
-            cls.afrom_existing_index(embedding, index_name, **kwargs, loop=loop)
+        return loop.run_until_complete(
+            cls.afrom_existing_index(embedding, index_name, loop=loop, **kwargs)
         )
-        return instance
 
     @classmethod
     async def afrom_existing_index(
@@ -478,7 +479,7 @@ class Redis(VectorStore):
     ) -> Redis:
         """Connect to an existing Redis index."""
         loop = kwargs.pop("loop", None)
-        client = await cls._load_redis_client(
+        client = await cls._load_client(
             cls, index_name=index_name, check_index=True, **kwargs)
         return cls(client = client, index_name = index_name, embedding_function = embedding.embed_query, loop = loop, **kwargs)
 
@@ -507,7 +508,7 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         return loop.run_until_complete(
             self.aget_relevant_documents(query)
         )
