@@ -273,7 +273,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
@@ -365,7 +366,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
@@ -400,7 +402,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
