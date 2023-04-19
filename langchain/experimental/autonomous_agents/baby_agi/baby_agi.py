@@ -2,9 +2,15 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from langchain.experimental.autonomous_agents.baby_agi.task_creation import TaskCreationChain
-from langchain.experimental.autonomous_agents.baby_agi.task_execution import TaskExecutionChain
-from langchain.experimental.autonomous_agents.baby_agi.task_prioritization import TaskPrioritizationChain
+from langchain.experimental.autonomous_agents.baby_agi.task_creation import (
+    TaskCreationChain,
+)
+from langchain.experimental.autonomous_agents.baby_agi.task_execution import (
+    TaskExecutionChain,
+)
+from langchain.experimental.autonomous_agents.baby_agi.task_prioritization import (
+    TaskPrioritizationChain,
+)
 
 from langchain.chains.base import Chain
 from langchain.schema import BaseLanguageModel
@@ -163,7 +169,7 @@ class BabyAGI(Chain, BaseModel):
             llm, verbose=verbose
         )
         if task_execution_chain is None:
-            execution_chain = TaskExecutionChain.from_llm(llm, verbose=verbose)
+            execution_chain: Chain = TaskExecutionChain.from_llm(llm, verbose=verbose)
         else:
             execution_chain = task_execution_chain
         return cls(
