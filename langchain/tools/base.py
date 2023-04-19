@@ -100,8 +100,8 @@ class BaseTool(ABC, BaseModel):
             **kwargs,
         )
         try:
-            args, kwargs = _to_args_and_kwargs(tool_input)
-            observation = self._run(*args, **kwargs)
+            tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
+            observation = self._run(*tool_args, **tool_kwargs)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
             raise e
