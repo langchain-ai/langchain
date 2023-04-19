@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from pydantic import ValidationError
 from termcolor import colored
 
+from langchain.chains.llm import LLMChain
+from langchain.chat_models.base import BaseChatModel
 from langchain.experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
     BaseAutoGPTOutputParser,
@@ -12,9 +15,6 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from pydantic import ValidationError
-from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
     BaseMessage,

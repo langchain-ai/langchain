@@ -35,23 +35,18 @@ class BaseTool(ABC, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @property
-    def args(self) -> Union[Type[BaseModel], Type[str]]:
-        """Generate an input pydantic model."""
-        return str if self.args_schema is None else self.args_schema
-
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
     ) -> None:
         """Convert tool input to pydantic model."""
-        input_args = self.args
+        input_args = self.args_schema
         if isinstance(tool_input, str):
-            if issubclass(input_args, BaseModel):
+            if input_args is not None:
                 key_ = next(iter(input_args.__fields__.keys()))
                 input_args.validate({key_: tool_input})
         else:
-            if issubclass(input_args, BaseModel):
+            if input_args is not None:
                 input_args.validate(tool_input)
             else:
                 raise ValueError(

@@ -46,8 +46,11 @@ class PromptGenerator:
         self.commands.append(tool)
 
     def _generate_command_string(self, tool: BaseTool) -> str:
-        schema = json.dumps(tool.args.schema()["properties"])
-        return f"{tool.name}: {tool.description}, args json schema: {schema}"
+        output = f"{tool.name}: {tool.description}"
+        schema = tool.args_schema
+        if schema is not None:
+            output += f", args json schema: {json.dumps(schema.schema()['properties'])}"
+        return output
 
     def add_resource(self, resource: str) -> None:
         """

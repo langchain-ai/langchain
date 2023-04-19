@@ -2,6 +2,8 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+from langchain.chains.base import Chain
 from langchain.experimental.autonomous_agents.baby_agi.task_creation import (
     TaskCreationChain,
 )
@@ -11,8 +13,6 @@ from langchain.experimental.autonomous_agents.baby_agi.task_execution import (
 from langchain.experimental.autonomous_agents.baby_agi.task_prioritization import (
     TaskPrioritizationChain,
 )
-
-from langchain.chains.base import Chain
 from langchain.schema import BaseLanguageModel
 from langchain.vectorstores.base import VectorStore
 
