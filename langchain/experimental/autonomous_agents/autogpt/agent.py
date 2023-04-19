@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import List, Optional
 
 from pydantic import ValidationError
-from termcolor import colored
 
 from langchain.chains.llm import LLMChain
 from langchain.chat_models.base import BaseChatModel
@@ -126,7 +125,12 @@ class AutoGPT:
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
             color = "red" if observation.lower().startswith("Error") else "green"
-            print(colored("Last Observation: " + observation, color))
+            try:
+                from termcolor import colored
+
+                print(colored("Last Observation: " + observation, color))
+            except ImportError:
+                print("Last Observation: " + observation, color)
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
