@@ -35,7 +35,7 @@ class MatchingEngine(VectorStore):
         self,
         project_id: str,
         region: str,
-        gcs_bucket_uri: str,
+        gcs_bucket_name: str,
         index: "MatchingEngineIndex",
         endpoint: "MatchingEngineIndexEndpoint",
         embedding: Embeddings,
@@ -60,7 +60,7 @@ class MatchingEngine(VectorStore):
             project_id: The GCS project id.
             region: The default location making the API calls. It must have
             the same location as the GCS bucket.
-            gcs_bucket_uri: The location where the vectors will be stored in
+            gcs_bucket_name: The location where the vectors will be stored in
             order for the index to be created.
             index: The created index class. See
             ~:func:`MatchingEngine.from_components`.
@@ -73,8 +73,8 @@ class MatchingEngine(VectorStore):
         """
         super().__init__()
         self._validate_google_libraries_installation()
-        self.gcs_bucket_uri = self._validate_gcs_bucket(gcs_bucket_uri)
-        self._init_aiplatform(project_id, region, self.gcs_bucket_uri)
+        self.gcs_bucket_name = self._validate_gcs_bucket(gcs_bucket_name)
+        self._init_aiplatform(project_id, region, self.gcs_bucket_name)
 
         self.project_id = project_id
         self.region = region
@@ -97,21 +97,22 @@ class MatchingEngine(VectorStore):
                 "to use the MatchingEngine Vectorstore."
             )
 
-    def _validate_gcs_bucket(self, gcs_bucket_uri: str) -> str:
+    @staticmethod
+    def _validate_gcs_bucket(gcs_bucket_name: str) -> str:
         """Validates the gcs_bucket_uri as a bucket name.
 
         Args:
-              gcs_bucket_uri: The received bucket uri.
+              gcs_bucket_name: The received bucket uri.
 
         Returns:
               A valid gcs_bucket_uri or throws ValueError if full path is
               provided.
         """
-        gcs_bucket_uri = gcs_bucket_uri.replace("gs://", "")
-        if "/" in gcs_bucket_uri:
+        gcs_bucket_name = gcs_bucket_name.replace("gs://", "")
+        if "/" in gcs_bucket_name:
             raise ValueError(f"The argument gcs_bucket_uri should only be "
-                             f"the bucket name. Received {gcs_bucket_uri}")
-        return gcs_bucket_uri
+                             f"the bucket name. Received {gcs_bucket_name}")
+        return gcs_bucket_name
 
     @classmethod
     def _create_credentials_from_file(
@@ -260,10 +261,10 @@ class MatchingEngine(VectorStore):
         filename = f"{filename_prefix}/{time.time()}.json"
         self._upload_to_gcs(result_str, filename)
         logger.debug(f"Uploaded updated json with embeddings to "
-                     f"{self.gcs_bucket_uri}/{filename}.")
+                     f"{self.gcs_bucket_name}/{filename}.")
 
         self.index = self.index.update_embeddings(
-            contents_delta_uri=f"gs://{self.gcs_bucket_uri}/{filename_prefix}/"
+            contents_delta_uri=f"gs://{self.gcs_bucket_name}/{filename_prefix}/"
         )
 
         logger.debug(f"Updated index with new configuration.")
@@ -278,7 +279,7 @@ class MatchingEngine(VectorStore):
             gcs_location: The location where the data will be stored.
         """
         client = self._get_gcs_client()
-        bucket = client.get_bucket(self.gcs_bucket_uri)
+        bucket = client.get_bucket(self.gcs_bucket_name)
         blob = bucket.blob(gcs_location)
         blob.upload_from_string(data)
 
@@ -318,20 +319,8 @@ class MatchingEngine(VectorStore):
         logger.debug(f"Embedding query {query}.")
         embedding_query = self.embedding.embed_documents([query])
 
-        index_id = None
-
-        for index in self.endpoint.deployed_indexes:
-            if index.index == self.index.resource_name:
-                index_id = index.id
-                break
-        
-        if index_id == None:
-            raise ValueError(f"No index with id {self.index.resource_name} "
-                             f"deployed on enpoint "
-                             f"{self.endpoint.display_name}.")
-
         response = self.endpoint.match(
-            deployed_index_id=index_id,
+            deployed_index_id=self._get_index_id(),
             queries=embedding_query,
             num_neighbors=k,
         )
@@ -348,14 +337,28 @@ class MatchingEngine(VectorStore):
         # means that the match method will always return an array with only
         # one element.
         for doc in response[0]:
-            print(doc)
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(Document(page_content=page_content))
 
         logger.debug(f"Downloaded documents for query.")
             
         return results
-    
+
+    def _get_index_id(self) -> str:
+        """Gets the correct index id for the endpoint.
+
+        Returns:
+            The index id if found (which should be found) or throws
+            ValueError otherwise.
+        """
+        for index in self.endpoint.deployed_indexes:
+            if index.index == self.index.resource_name:
+                return index.id
+
+        raise ValueError(f"No index with id {self.index.resource_name} "
+                         f"deployed on enpoint "
+                         f"{self.endpoint.display_name}.")
+
     def _download_from_gcs(self, gcs_location: str) -> str:
         """Downloads from GCS in text format.
 
@@ -366,7 +369,7 @@ class MatchingEngine(VectorStore):
             The string contents of the file.
         """
         client = self._get_gcs_client()
-        bucket = client.get_bucket(self.gcs_bucket_uri)
+        bucket = client.get_bucket(self.gcs_bucket_name)
         blob = bucket.blob(gcs_location)
         return blob.download_as_string()
     
@@ -375,13 +378,7 @@ class MatchingEngine(VectorStore):
         cls: Type["MatchingEngine"], 
         texts: List[str],
         embedding: Embeddings = None,
-        metadatas: Optional[List[dict]] = None, 
-        project_id: str = None,
-        region: str = None,
-        gcs_bucket_uri: str = None,
-        index_id: str = None,
-        endpoint_id: str = None,
-        credentials_path: str = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings.
@@ -394,26 +391,35 @@ class MatchingEngine(VectorStore):
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
             metadatas: List of metadatas. Defaults to None.
-            project_id: The GCP project id.
-            region: The default location making the API calls. It must have
-            the same location as the GCS bucket and must be regional.
-            gcs_bucket_uri: The location where the vectors will be stored in
-            order for the index to be created.
-            index_id: The id of the created index.
-            endpoint_id: The id of the created endpoint.
-            credentials_path: The path of the Google credentials on the local
-            file system.
+
+            Required kwargs:
+                project_id: The GCP project id.
+                region: The default location making the API calls. It must have
+                the same location as the GCS bucket and must be regional.
+                gcs_bucket_uri: The location where the vectors will be stored in
+                order for the index to be created.
+                index_id: The id of the created index.
+                endpoint_id: The id of the created endpoint.
+                credentials_path: The path of the Google credentials on the
+                local file system.
 
         Returns:
             A configured MatchingEngine with the texts added to the index.
         """
+        required_kwargs = ["project_id", "region", "gcs_bucket_uri",
+                           "index_id", "endpoint_id","credentials_path"]
+        missing = [x for x in required_kwargs if x not in kwargs]
+        if len(missing) != 0:
+            raise ValueError(f"Missing required kwargs: {missing}")
+
         matching_engine = cls.from_components(
-            project_id=project_id,
-            region=region,
-            gcs_bucket_uri=gcs_bucket_uri,
-            index_id=index_id,
-            endpoint_id=endpoint_id,
-            credentials_path=credentials_path
+            project_id=kwargs["project_id"],
+            region=kwargs["region"],
+            gcs_bucket_uri=kwargs["gcs_bucket_uri"],
+            index_id=kwargs["index_id"],
+            endpoint_id=kwargs["endpoint_id"],
+            credentials_path=kwargs["credentials_path"],
+            embedding=embedding or cls._get_default_embeddings()
         )
 
         matching_engine.add_texts(texts=texts, metadatas=metadatas)
@@ -427,7 +433,7 @@ class MatchingEngine(VectorStore):
         gcs_bucket_uri: str,
         index_id: str,
         endpoint_id: str,
-        credentials_path: str,
+        credentials_path: Optional[str] = None,
         embedding: Embeddings = None
     ) -> "MatchingEngine":
         """Takes the object creation out of the constructor.
@@ -440,8 +446,8 @@ class MatchingEngine(VectorStore):
             order for the index to be created.
             index_id: The id of the created index.
             endpoint_id: The id of the created endpoint.
-            credentials_path: The path of the Google credentials on the local
-            file system.
+            credentials_path: (Optional) The path of the Google credentials on
+            the local file system.
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
 
@@ -453,13 +459,17 @@ class MatchingEngine(VectorStore):
                                         credentials)
         endpoint = cls._create_endpoint_by_id(endpoint_id, project_id,
                                               region, credentials)
-        embedding = embedding or TensorflowHubEmbeddings(model_url=HUB_MODEL)
         return cls(
             project_id=project_id,
             region=region,
-            gcs_bucket_uri=gcs_bucket_uri,
+            gcs_bucket_name=gcs_bucket_uri,
             index=index,
             endpoint=endpoint,
-            embedding=embedding,
+            embedding=embedding or cls._get_default_embeddings(),
             credentials=credentials
         )
+
+    @classmethod
+    def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
+        """This function returns the default embedding."""
+        return TensorflowHubEmbeddings(model_url=HUB_MODEL)
