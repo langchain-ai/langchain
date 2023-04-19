@@ -16,5 +16,5 @@ usage of LangChain's collection of tools.
 - [Baby AGI with Tools](autonomous_agents/baby_agi_with_agent.ipynb): building off the above notebook, this example substitutes in an agent with tools as the execution tools, allowing it to actually take actions.
 
 
-## AutoGPT ([Original Repo] (https://github.com/Significant-Gravitas/Auto-GPT))
+## AutoGPT ([Original Repo](https://github.com/Significant-Gravitas/Auto-GPT))
 - [AutoGPT](autonomous_agents/autogpt.ipynb): a notebook implementing AutoGPT in LangChain primitives
