@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from langchain import LLMChain, PromptTemplate
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
 from langchain.retrievers.document_filters.chain_extract_prompt import (
@@ -39,19 +39,19 @@ def _get_default_chain_prompt() -> PromptTemplate:
     )
 
 
-class LLMChainExtractionDocumentFilter(BaseDocumentFilter):
+class LLMChainExtractor(BaseDocumentCompressor):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Compress page content of raw documents."""
         compressed_docs = []
-        for doc in docs:
+        for doc in documents:
             _input = self.get_input(query, doc)
             output = self.llm_chain.predict_and_parse(**_input)
             if len(output) == 0:
@@ -61,8 +61,8 @@ class LLMChainExtractionDocumentFilter(BaseDocumentFilter):
             )
         return compressed_docs
 
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         raise NotImplementedError
 
@@ -72,7 +72,7 @@ class LLMChainExtractionDocumentFilter(BaseDocumentFilter):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-    ) -> "LLMChainExtractionDocumentFilter":
+    ) -> "LLMChainExtractor":
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input

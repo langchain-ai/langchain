@@ -6,7 +6,7 @@ import numpy as np
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
 
@@ -27,7 +27,7 @@ def _filter_similar_embeddings(
     return list(sorted(included_idxs))
 
 
-class EmbeddingRedundantDocumentFilter(BaseDocumentFilter):
+class EmbeddingRedundantDocumentFilter(BaseDocumentCompressor):
     """Filter that drops redundant documents."""
 
     embeddings: Embeddings
@@ -56,18 +56,18 @@ class EmbeddingRedundantDocumentFilter(BaseDocumentFilter):
                 doc.query_metadata["embedded_doc"] = embedding
         return embedded_docs
 
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Filter down documents."""
-        embedded_docs = self._get_embedded_docs(docs)
+        embedded_docs = self._get_embedded_docs(documents)
         included_idxs = _filter_similar_embeddings(
             embedded_docs, self.similarity_fn, self.similarity_threshold
         )
-        docs = [docs[i] for i in sorted(included_idxs)]
-        return docs
+        documents = [documents[i] for i in sorted(included_idxs)]
+        return documents
 
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         raise NotImplementedError

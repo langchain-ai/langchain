@@ -4,10 +4,10 @@ from typing import Any, Callable, Dict, List, Optional
 from langchain import BasePromptTemplate, LLMChain, PromptTemplate
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
-from langchain.retrievers.document_filters.chain_relevant_prompt import prompt_template
+from langchain.retrievers.document_filters.chain_filter_prompt import prompt_template
 from langchain.schema import BaseLanguageModel, Document
 
 
@@ -24,7 +24,7 @@ def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
     return {"question": query, "context": doc.page_content}
 
 
-class LLMChainRelevancyDocumentFilter(BaseDocumentFilter):
+class LLMChainFilter(BaseDocumentCompressor):
     """Filter that drops documents that aren't relevant to the query."""
 
     llm_chain: LLMChain
@@ -34,20 +34,20 @@ class LLMChainRelevancyDocumentFilter(BaseDocumentFilter):
     get_input: Callable[[str, Document], dict] = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
-        for doc in docs:
+        for doc in documents:
             _input = self.get_input(query, doc)
             include_doc = self.llm_chain.predict_and_parse(**_input)
             if include_doc:
                 filtered_docs.append(doc)
         return filtered_docs
 
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Filter down documents."""
         raise NotImplementedError

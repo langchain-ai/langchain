@@ -1,7 +1,7 @@
 """Integration test for filtering pipelines."""
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers.document_filters import (
-    DocumentFilterPipeline,
+    DocumentCompressorPipeline,
     EmbeddingRedundantDocumentFilter,
     EmbeddingRelevancyDocumentFilter,
     SplitterDocumentFilter,
@@ -19,8 +19,8 @@ def test_pipeline_filter() -> None:
     relevant_filter = EmbeddingRelevancyDocumentFilter(
         embeddings=embeddings, similarity_threshold=0.8
     )
-    pipeline_filter = DocumentFilterPipeline(
-        filters=[splitter_filter, redundant_filter, relevant_filter]
+    pipeline_filter = DocumentCompressorPipeline(
+        compressors=[splitter_filter, redundant_filter, relevant_filter]
     )
     texts = [
         "This sentence is about cows",
@@ -28,6 +28,6 @@ def test_pipeline_filter() -> None:
         "foo bar baz",
     ]
     docs = [_RetrievedDocument(page_content=". ".join(texts))]
-    actual = pipeline_filter.filter(docs, "Tell me about farm animals")
+    actual = pipeline_filter.compress_documents(docs, "Tell me about farm animals")
     assert len(actual) == 1
     assert actual[0].page_content in texts[:2]

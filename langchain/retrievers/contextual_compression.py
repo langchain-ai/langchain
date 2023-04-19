@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel, Extra
 
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
 from langchain.schema import BaseRetriever, Document
@@ -13,7 +13,7 @@ from langchain.schema import BaseRetriever, Document
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
     """Retriever that wraps a base retriever and filters the results."""
 
-    base_filter: BaseDocumentFilter
+    base_filter: BaseDocumentCompressor
     """Filter for filtering documents."""
 
     base_retriever: BaseRetriever
@@ -36,7 +36,7 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         """
         docs = self.base_retriever.get_relevant_documents(query)
         retrieved_docs = [_RetrievedDocument.from_document(doc) for doc in docs]
-        compressed_docs = self.base_filter.filter(retrieved_docs, query)
+        compressed_docs = self.base_filter.compress_documents(retrieved_docs, query)
         return [rdoc.to_document() for rdoc in compressed_docs]
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
@@ -50,5 +50,7 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
         """
         docs = await self.base_retriever.aget_relevant_documents(query)
         retrieved_docs = [_RetrievedDocument.from_document(doc) for doc in docs]
-        compressed_docs = await self.base_filter.afilter(retrieved_docs, query)
+        compressed_docs = await self.base_filter.acompress_documents(
+            retrieved_docs, query
+        )
         return [rdoc.to_document() for rdoc in compressed_docs]

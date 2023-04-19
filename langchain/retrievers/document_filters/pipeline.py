@@ -1,28 +1,28 @@
-"""DocumentFilter that uses a pipeline of other filters."""
+"""Document compressor that uses a pipeline of other compressors."""
 from typing import List
 
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
 
 
-class DocumentFilterPipeline(BaseDocumentFilter):
-    """DocumentFilter that uses a pipeline of other filters."""
+class DocumentCompressorPipeline(BaseDocumentCompressor):
+    """Document compressor that uses a pipeline of other compressors."""
 
-    filters: List[BaseDocumentFilter]
+    compressors: List[BaseDocumentCompressor]
     """List of document filters that are chained together and run in sequence."""
 
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
-        """Filter down documents."""
-        for _filter in self.filters:
-            docs = _filter.filter(docs, query)
-        return docs
+        """Compress retrieved documents given the query context."""
+        for _compressor in self.compressors:
+            documents = _compressor.compress_documents(documents, query)
+        return documents
 
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
-        """Filter down documents."""
+        """Compress retrieved documents given the query context."""
         raise NotImplementedError

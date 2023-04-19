@@ -13,7 +13,7 @@ def test_embedding_redundant_document_filter() -> None:
     docs = [_RetrievedDocument(page_content=t) for t in texts]
     embeddings = OpenAIEmbeddings()
     redundant_filter = EmbeddingRedundantDocumentFilter(embeddings=embeddings)
-    actual = redundant_filter.filter(docs, "foo")
+    actual = redundant_filter.compress_documents(docs, "foo")
     assert len(actual) == 2
     assert set(texts[:2]).intersection([d.page_content for d in actual])
 
@@ -26,5 +26,5 @@ def test_embedding_redundant_document_filter_with_query_metadata() -> None:
     ]
     embeddings = OpenAIEmbeddings()
     redundant_filter = EmbeddingRedundantDocumentFilter(embeddings=embeddings)
-    actual = redundant_filter.filter(docs, "foo")
+    actual = redundant_filter.compress_documents(docs, "foo")
     assert len(actual) == 1

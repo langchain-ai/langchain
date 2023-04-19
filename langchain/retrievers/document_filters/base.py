@@ -23,17 +23,17 @@ class _RetrievedDocument(Document):
         return cls(page_content=doc.page_content, metadata=doc.metadata)
 
 
-class BaseDocumentFilter(BaseModel, ABC):
-    """Interface for retrieved document filters."""
+class BaseDocumentCompressor(BaseModel, ABC):
+    """Interface for retrieved document compressors."""
 
     @abstractmethod
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
-        """Filter down documents."""
+        """Compress retrieved documents given the query context."""
 
     @abstractmethod
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
-        """Filter down documents."""
+        """Compress retrieved documents given the query context."""

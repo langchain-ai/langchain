@@ -1,4 +1,4 @@
-"""DocumentFilter that uses embeddings to drop documents unrelated to the query."""
+"""Document compressor that uses embeddings to drop documents unrelated to the query."""
 from typing import Callable, Dict, List, Optional
 
 import numpy as np
@@ -7,12 +7,12 @@ from pydantic import root_validator
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_filters.base import (
-    BaseDocumentFilter,
+    BaseDocumentCompressor,
     _RetrievedDocument,
 )
 
 
-class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
+class EmbeddingsFilter(BaseDocumentCompressor):
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""
     similarity_fn: Callable = cosine_similarity
@@ -50,11 +50,11 @@ class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
                 doc.query_metadata["embedded_doc"] = embedding
         return embedded_docs
 
-    def filter(
-        self, docs: List[_RetrievedDocument], query: str
+    def compress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Filter documents based on similarity of their embeddings to the query."""
-        embedded_docs = self._get_embedded_docs(docs)
+        embedded_docs = self._get_embedded_docs(documents)
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_docs)[0]
         included_idxs = np.arange(len(embedded_docs))
@@ -65,11 +65,11 @@ class EmbeddingRelevancyDocumentFilter(BaseDocumentFilter):
                 similarity[included_idxs] > self.similarity_threshold
             )
             included_idxs = included_idxs[similar_enough]
-        docs = [docs[i] for i in included_idxs]
-        return docs
+        documents = [documents[i] for i in included_idxs]
+        return documents
 
-    async def afilter(
-        self, docs: List[_RetrievedDocument], query: str
+    async def acompress_documents(
+        self, documents: List[_RetrievedDocument], query: str
     ) -> List[_RetrievedDocument]:
         """Filter down documents."""
         raise NotImplementedError

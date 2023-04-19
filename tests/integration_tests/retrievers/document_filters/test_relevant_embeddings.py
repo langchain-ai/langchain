@@ -17,7 +17,7 @@ def test_embedding_relevant_document_filter() -> None:
     relevant_filter = EmbeddingRelevancyDocumentFilter(
         embeddings=embeddings, similarity_threshold=0.75
     )
-    actual = relevant_filter.filter(docs, "What did I say about food?")
+    actual = relevant_filter.compress_documents(docs, "What did I say about food?")
     assert len(actual) == 2
     assert len(set(texts[:2]).intersection([d.page_content for d in actual])) == 2
 
@@ -39,6 +39,6 @@ def test_embedding_relevant_document_filter_with_metadata() -> None:
     relevant_filter = EmbeddingRelevancyDocumentFilter(
         embeddings=embeddings, similarity_threshold=0.75
     )
-    actual = relevant_filter.filter(docs, query)
+    actual = relevant_filter.compress_documents(docs, query)
     assert len(actual) == 1
     assert texts[-1] == actual[0].page_content
