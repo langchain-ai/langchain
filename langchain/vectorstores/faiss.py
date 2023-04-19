@@ -396,7 +396,8 @@ class FAISS(VectorStore):
                 from langchain import FAISS
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
-                faiss = FAISS.from_embeddings(text_embeddings, embeddings)
+                text_embeddings = embeddings.embed_documents(texts)
+                faiss = FAISS.from_embeddings(list(zip(texts, text_embeddings)), embeddings)
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
