@@ -35,10 +35,11 @@ class Redis(VectorStore):
         client: RedisType,
         index_name: str,
         embedding_function: Callable,
+        loop = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
-        self.loop = kwargs.pop('loop', asyncio.get_event_loop())
+        self.loop =  asyncio.get_event_loop() if loop is None else loop
         self.embedding_function = embedding_function
         self.index_name = index_name
         self.client = client
@@ -459,8 +460,12 @@ class Redis(VectorStore):
     ) -> Redis:
         """Connect to an existing Redis index."""
         loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import nest_asyncio
+            nest_asyncio.apply()
+            return asyncio.run(cls.afrom_existing_index(embedding, index_name, **kwargs, loop=loop))
         instance = loop.run_until_complete(
-            cls.afrom_existing_index(embedding, index_name, **kwargs)
+            cls.afrom_existing_index(embedding, index_name, **kwargs, loop=loop)
         )
         return instance
 
@@ -472,10 +477,10 @@ class Redis(VectorStore):
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
+        loop = kwargs.pop("loop", None)
         client = await cls._load_redis_client(
-            cls, index_name=index_name, check_index=True, **kwargs
-        )
-        return cls(client, index_name, embedding.embed_query)
+            cls, index_name=index_name, check_index=True, **kwargs)
+        return cls(client = client, index_name = index_name, embedding_function = embedding.embed_query, loop = loop, **kwargs)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
