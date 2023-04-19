@@ -125,8 +125,8 @@ class AutoGPT:
             memory_to_add = (
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
-            color = "red" if observation.lower().startswith("Error") else "green"
-            print(colored("Last Observation: " + observation, color))
+            color = "red" if str(observation).lower().startswith("Error") else "green"
+            print(colored("Last Observation: " + str(observation)[:500], color))
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
