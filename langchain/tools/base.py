@@ -105,7 +105,7 @@ class BaseTool(ABC, BaseModel):
             if self.filter_func is not None:
                 if not self.filter_func(*args, **kwargs):
                     raise PermissionError(
-                        "The tools filter function has blocked the input to the tool. Try a different input."
+                        "The {self.name} tool's filter function has blocked the input. Try a different input."
                     )
             observation = self._run(*args, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
@@ -152,7 +152,7 @@ class BaseTool(ABC, BaseModel):
             if self.filter_func is not None:
                 if not self.filter_func(*args, **kwargs):
                     raise PermissionError(
-                        "The tools filter function has blocked the input to the tool. Try a different input."
+                        f"The {self.name} tool's filter function has blocked the input. Try a different input."
                     )
             observation = await self._arun(*args, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
