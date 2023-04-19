@@ -15,7 +15,7 @@ class WriteFileInput(BaseModel):
 
 class WriteFileTool(BaseTool):
     name: str = "write_file"
-    tool_args: Type[BaseModel] = WriteFileInput
+    args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"
 
     def _run(self, file_path: str, text: str) -> str:
@@ -29,6 +29,6 @@ class WriteFileTool(BaseTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(self, file_path: str, text: str) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

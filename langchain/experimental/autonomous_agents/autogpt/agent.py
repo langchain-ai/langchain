@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from termcolor import colored
+from pydantic import ValidationError
 
+from langchain.chains.llm import LLMChain
+from langchain.chat_models.base import BaseChatModel
 from langchain.experimental.autonomous_agents.autogpt.output_parser import (
     AutoGPTOutputParser,
     BaseAutoGPTOutputParser,
@@ -12,9 +14,6 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
-from pydantic import ValidationError
-from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -125,8 +124,6 @@ class AutoGPT:
             memory_to_add = (
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
-            color = "red" if str(observation).lower().startswith("Error") else "green"
-            print(colored("Last Observation: " + str(observation)[:500], color))
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
