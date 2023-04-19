@@ -1,9 +1,10 @@
 """Base implementation for tools or skills."""
 
 from abc import ABC, abstractmethod
+from inspect import signature
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 
-from pydantic import BaseModel, Extra, Field, validator, validate_arguments
+from pydantic import BaseModel, Extra, Field, validate_arguments, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
@@ -36,11 +37,14 @@ class BaseTool(ABC, BaseModel):
         arbitrary_types_allowed = True
 
     @property
-    def args(self) -> Type[BaseModel]:
+    def args(self) -> dict:
         if self.args_schema is not None:
-            return self.args_schema
+            return self.args_schema.schema()["properties"]
         else:
-            return validate_arguments(self.run).model  # type: ignore
+            inferred_model = validate_arguments(self._run).model  # type: ignore
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self._run).parameters
+            return {k: schema[k] for k in valid_keys}
 
     def _parse_input(
         self,
