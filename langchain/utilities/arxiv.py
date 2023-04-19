@@ -1,5 +1,5 @@
 """Util that calls Arxiv."""
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from pydantic import BaseModel, Extra, root_validator
 
