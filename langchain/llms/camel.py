@@ -2,8 +2,9 @@
 
 from typing import Any, List, Mapping, Optional
 
-from pydantic import Extra
 import requests
+from pydantic import Extra
+
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -30,38 +31,58 @@ class Camel(LLM):
 
     # Model parameters
     top_k: Optional[int] = None
-    """(Default: None). Integer to define the top tokens considered within the sample operation to create new text."""
+    """(Default: None). Integer to define the top tokens considered within the sample
+     operation to create new text."""
 
     top_p: Optional[float] = None
-    """(Default: None). Float to define the tokens that are within the sample operation of text generation. Add tokens in the sample for more probable to least probable until the sum of the probabilities is greater than top_p."""
+    """(Default: None). Float to define the tokens that are within the sample operation
+    of text generation. Add tokens in the sample for more probable to least probable 
+    until the sum of the probabilities is greater than top_p."""
 
     temperature: float = 1.0
-    """(Default: 1.0). Float (0.0-100.0). The temperature of the sampling operation. 1 means regular sampling, 0 means always take the highest score, 100.0 is getting closer to uniform probability."""
+    """(Default: 1.0). Float (0.0-100.0). The temperature of the sampling operation. 1 
+    means regular sampling, 0 means always take the highest score, 100.0 is getting 
+    closer to uniform probability."""
 
     repetition_penalty: Optional[float] = None
-    """(Default: None). Float (0.0-100.0). The more a token is used within generation the more it is penalized to not be picked in successive generation passes."""
+    """(Default: None). Float (0.0-100.0). The more a token is used within generation 
+    the more it is penalized to not be picked in successive generation passes."""
 
     max_new_tokens: Optional[int] = None
-    """	(Default: None). Int (0-250). The amount of new tokens to be generated, this does not include the input length; it is an estimate of the size of generated text you want. Each new tokens slows down the request, so look for balance between response times and length of text generated."""
+    """	(Default: None). Int (0-250). The amount of new tokens to be generated, this 
+    does not include the input length; it is an estimate of the size of generated 
+    text you want. Each new tokens slows down the request, so look for balance between
+    response times and length of text generated."""
 
     max_time: Optional[float] = None
-    """(Default: None). Float (0-120.0). The amount of time in seconds that the query should take maximum. Network can cause some overhead so it will be a soft limit. Use that in combination with max_new_tokens for best results."""
+    """(Default: None). Float (0-120.0). The amount of time in seconds that the query 
+    should take maximum. Network can cause some overhead so it will be a soft limit. 
+    Use that in combination with max_new_tokens for best results."""
 
     return_full_text: bool = True
-    """(Default: True). Bool. If set to False, the return results will not contain the original query making it easier for prompting."""
+    """(Default: True). Bool. If set to False, the return results will not contain 
+    the original query making it easier for prompting."""
 
     num_return_sequences: int = 1
     """(Default: 1). Integer. The number of propositions you want to be returned."""
 
     do_sample: bool = True
-    """(Default: True). Bool. Whether or not to use sampling, use greedy decoding otherwise."""
+    """(Default: True). Bool. Whether or not to use sampling, use greedy decoding 
+    otherwise."""
 
     # Huggingface API options
     use_cache: bool = True
-    """(Default: True). Boolean. There is a cache layer on the inference API to speedup requests we have already seen. Most models can use those results as is as models are deterministic (meaning the results will be the same anyway). However if you use a non deterministic model, you can set this parameter to prevent the caching mechanism from being used resulting in a real new query."""
+    """(Default: True). Boolean. There is a cache layer on the inference API to 
+    speedup requests we have already seen. Most models can use those results as 
+    is as models are deterministic (meaning the results will be the same anyway). 
+    However if you use a non deterministic model, you can set this parameter to 
+    prevent the caching mechanism from being used resulting in a real new query."""
 
     wait_for_model: bool = False
-    """	(Default: False) Boolean. If the model is not ready, wait for it instead of receiving 503. It limits the number of requests required to get your inference done. It is advised to only set this flag to true after receiving a 503 error as it will limit hanging in your application to known places."""
+    """	(Default: False) Boolean. If the model is not ready, wait for it instead of 
+    receiving 503. It limits the number of requests required to get your inference 
+    done. It is advised to only set this flag to true after receiving a 503 error as 
+    it will limit hanging in your application to known places."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -93,7 +114,7 @@ class Camel(LLM):
         """Return type of llm."""
         return "camel"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None):
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call out to Camel API
 
         Args:
@@ -129,9 +150,3 @@ class Camel(LLM):
             # Everyone else is doing this so it must be important
             text = enforce_stop_tokens(text, stop)
         return text
-
-
-if __name__ == "__main__":
-    camel = Camel(wait_for_model=True)
-    output = camel._call("test this")
-    print(output)
