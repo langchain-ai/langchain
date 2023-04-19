@@ -75,7 +75,7 @@ class MyScaleSettings(BaseSettings):
     }
 
     database: str = 'default'
-    table: str = 'vector_table'
+    table: str = 'langchain'
     metric: str = 'cosine'
 
     def __getitem__(self, item):
