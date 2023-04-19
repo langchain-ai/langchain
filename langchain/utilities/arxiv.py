@@ -43,7 +43,7 @@ class ArxivAPIWrapper(BaseModel):
             )
         return values
 
-    def run(self, query: str) -> List[str]:
+    def run(self, query: str) -> str:
         """
         Run Arxiv search and get the document meta information.
         See https://lukasschwab.me/arxiv.py/index.html#Search
@@ -55,10 +55,10 @@ class ArxivAPIWrapper(BaseModel):
                 f"Published: {result.updated.date()}\nTitle: {result.title}\n"
                 f"Authors: {', '.join(a.name for a in result.authors)}\n"
                 f"Summary: {result.summary}"
-                for result in self.arxiv_search(
+                for result in self.arxiv_search(  # type: ignore
                     query[: self.ARXIV_MAX_QUERY_LENGTH], max_results=self.top_k_results
                 ).results()
             ]
-            return docs
-        except self.arxiv_exceptions:
-            return []
+            return "\n\n".join(docs) if docs else "No good Arxiv Result was found"
+        except self.arxiv_exceptions as ex:
+            return f"Arxiv exception: {ex}"
