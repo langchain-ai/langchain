@@ -6,6 +6,8 @@ from typing import Any, List, Optional, Union
 import aiohttp
 import requests
 
+from tqdm.asyncio import tqdm_asyncio
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -103,7 +105,7 @@ class WebBaseLoader(BaseLoader):
         for url in urls:
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
-        return await asyncio.gather(*tasks)
+        return await tqdm_asyncio.gather(*tasks, desc="Fetching pages", ascii=True, mininterval=1)
 
     @staticmethod
     def _check_parser(parser: str) -> None:
