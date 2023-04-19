@@ -85,6 +85,7 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
     llm_chain: LLMChain = Field(init=False)
     name = "query_checker_sql_db"
     description = """
+    Input to this tool is a SQL query string, output is a validated SQL query string.
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with query_sql_db!
     """
