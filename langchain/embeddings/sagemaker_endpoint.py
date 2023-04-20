@@ -71,17 +71,17 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """
      Example:
         .. code-block:: python
-        
+
         from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
         class ContentHandler(ContentHandlerBase):
                 content_type = "application/json"
                 accepts = "application/json"
 
-                def transform_input(self, prompt: str, model_kwargs: Dict) -> bytes:
-                    input_str = json.dumps({prompt: prompt, **model_kwargs})
+                def transform_input(self, prompts: List[str], model_kwargs: Dict) -> bytes:
+                    input_str = json.dumps({prompts: prompts, **model_kwargs})
                     return input_str.encode('utf-8')
-                
+
                 def transform_output(self, output: bytes) -> str:
                     response_json = json.loads(output.read().decode("utf-8"))
                     return response_json[0]["generated_text"]
@@ -135,7 +135,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
             )
         return values
 
-    def _embedding_func(self, texts: List[str]) -> List[float]:
+    def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """Call out to SageMaker Inference embedding endpoint."""
         # replace newlines, which can negatively affect performance.
         texts = list(map(lambda x: x.replace("\n", " "), texts))
@@ -161,7 +161,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         return self.content_handler.transform_output(response["Body"])
 
     def embed_documents(
-        self, texts: List[str], chunk_size: int = 64
+            self, texts: List[str], chunk_size: int = 64
     ) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
@@ -178,8 +178,8 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         results = []
         _chunk_size = len(texts) if chunk_size > len(texts) else chunk_size
         for i in range(0, len(texts), _chunk_size):
-            response = self._embedding_func(texts[i : i + _chunk_size])
-            results.append(response)
+            response = self._embedding_func(texts[i: i + _chunk_size])
+            results.extend(response)
         return results
 
     def embed_query(self, text: str) -> List[float]:
@@ -191,4 +191,4 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self._embedding_func([text])
+        return self._embedding_func([text])[0]
