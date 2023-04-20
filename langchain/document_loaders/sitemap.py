@@ -40,10 +40,9 @@ class SitemapLoader(WebBaseLoader):
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
 
-    def parse_sitemap(self, sitemap_url: str) -> List[dict]:
+    def parse_sitemap(self, soup: any) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts."""
         els = []
-        soup = self.scrape_all([sitemap_url], "xml")[0]
         for url in soup.find_all("url"):
             loc = url.find("loc")
             if not loc:
@@ -66,15 +65,16 @@ class SitemapLoader(WebBaseLoader):
             loc = sitemap.find("loc")
             if not loc:
                 continue
+            soup_child = self.scrape_all([loc.text], "xml")[0]
 
-            for child in self.parse_sitemap(loc.text):
-                els.append(child)
+            els.extend(self.parse_sitemap(soup_child))
         return els
 
     def load(self) -> List[Document]:
         """Load sitemap."""
+        soup = self.scrape("xml")
 
-        els = self.parse_sitemap(self.web_path)
+        els = self.parse_sitemap(soup)
 
         results = self.scrape_all([el["loc"].strip() for el in els if "loc" in el])
 
