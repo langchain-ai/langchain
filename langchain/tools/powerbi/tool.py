@@ -1,4 +1,3 @@
-# flake8: noqa: E501
 """Tools for interacting with a Power BI dataset."""
 from typing import Any, Dict
 
@@ -21,12 +20,12 @@ class QueryPowerBITool(BaseTool):
     name = "query_powerbi"
     description = """
     Input to this tool is a detailed and correct DAX query, output is a result from the dataset.
-    If the query is not correct, an error message will be returned. 
+    If the query is not correct, an error message will be returned.
     If an error is returned with Bad request in it, rewrite the query and try again.
     If an error is returned with Unauthorized in it, do not try again, but tell the user to change their authentication.
 
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
-    """
+    """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
@@ -36,7 +35,10 @@ class QueryPowerBITool(BaseTool):
         arbitrary_types_allowed = True
 
     def _check_cache(self, tool_input: str) -> str | None:
-        """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
+        """Check if the input is present in the cache.
+
+        If the value is a bad request, overwrite with the escalated version,
+        if not present return None."""
         if tool_input not in self.session_cache:
             return None
         if self.session_cache[tool_input] == BAD_REQUEST_RESPONSE:
@@ -95,10 +97,9 @@ class InfoPowerBITool(BaseTool):
     description = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_powerbi first!
-    
-    Example Input: "table1, table2, table3"
-    """
 
+    Example Input: "table1, table2, table3"
+    """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:
@@ -126,11 +127,11 @@ class ListPowerBITool(BaseTool):
 
         arbitrary_types_allowed = True
 
-    def _run(self, tool_input: str = "") -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
-    async def _arun(self, tool_input: str = "") -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
@@ -143,7 +144,7 @@ class InputToQueryTool(BaseTool):
     Use this tool to create the DAX query from a question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
 
     Example Input: "How many records are in table1?"
-    """
+    """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
     template: str = QUESTION_TO_QUERY
@@ -166,7 +167,7 @@ class InputToQueryTool(BaseTool):
             "examples",
         ]:
             raise ValueError(
-                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 # pylint: disable=C0301
+                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 E501 # pylint: disable=C0301
             )
         return llm_chain
 
