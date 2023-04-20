@@ -34,9 +34,14 @@ class GenerativeAgentsMemory(BaseMemory):
 
     memory_importance: float = 0.0  # : :meta private:
     max_tokens_limit: int = 1200  # : :meta private:
+    # input keys
     queries_key: str = "queries"
-    answer_key: str = "relevant_memories"
-    add_key: str = "add"
+    most_recent_memories_token_key: str = "most_recent_memories_token"
+    add_memory_key: str = "add_memory"
+    # output keys
+    relevant_memories_key: str = "relevant_memories"
+    relevant_memories_simple_key: str = "relevant_memories_simple"
+    most_recent_memories_key: str = "most_recent_memories"
 
     @staticmethod
     def _parse_list(text: str) -> List[str]:
@@ -136,27 +141,60 @@ class GenerativeAgentsMemory(BaseMemory):
         """Fetch related memories."""
         return self.memory_retriever.get_relevant_documents(observation)
 
+    def format_memories_detail(self, relevant_memories: List[Document]) -> str:
+        content_strs = set()
+        content = []
+        for mem in relevant_memories:
+            if mem.page_content in content_strs:
+                continue
+            content_strs.add(mem.page_content)
+            created_time = mem.metadata["created_at"].strftime(
+                "%B %d, %Y, %I:%M %p")
+            content.append(f"- {created_time}: {mem.page_content.strip()}")
+        return "\n".join([f"{mem}" for mem in content])
+
+    def format_memories_simple(self, relevant_memories: List[Document]) -> str:
+        return "; ".join([f"{mem.page_content}" for mem in relevant_memories])
+
+    def _get_memories_until_limit(self, consumed_tokens: int) -> str:
+        """Reduce the number of tokens in the documents."""
+        result = []
+        for doc in self.memory_retriever.memory_stream[::-1]:
+            if consumed_tokens >= self.max_tokens_limit:
+                break
+            consumed_tokens += self.llm.get_num_tokens(doc.page_content)
+            if consumed_tokens < self.max_tokens_limit:
+                result.append(doc)
+        return self.format_memories_simple(result)
+
     @property
     def memory_variables(self) -> List[str]:
         """Input keys this memory class will load dynamically."""
-        return [self.answer_key]
+        return []
 
-    def load_memory_variables(self, inputs: Dict[str, List[str]]) -> Dict[str, List[Document]]:
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, List[Document]]:
         """Return key-value pairs given the text input to the chain.
 
         If None, return all memories
         """
-        queries = inputs[self.queries_key]
-        relevant_memories = [
-            mem for query in queries for mem in self.fetch_memories(query)]
-        relevant_memories_str = "\n".join(
-            [f"{mem.page_content}" for mem in relevant_memories])
-        return {self.answer_key: relevant_memories_str}
+        queries = inputs.get(self.queries_key)
+        if queries is not None:
+            relevant_memories = [
+                mem for query in queries for mem in self.fetch_memories(query)]
+            return {
+                self.relevant_memories_key: self.format_memories_detail(relevant_memories),
+                self.relevant_memories_simple_key: self.format_memories_simple(
+                    relevant_memories)
+            }
+
+        most_recent_memories_token = inputs.get(self.most_recent_memories_token_key)
+        if most_recent_memories_token is not None:
+            return {self.most_recent_memories_key: self._get_memories_until_limit(most_recent_memories_token)}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this model run to memory."""
         # TODO: fix the save memory key
-        mem = outputs.get(self.add_key)
+        mem = outputs.get(self.add_memory_key)
         if mem:
             self.add_memory(mem)
 
