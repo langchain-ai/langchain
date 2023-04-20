@@ -1,7 +1,5 @@
 """Power BI agent."""
-from __future__ import annotations
-
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
@@ -19,8 +17,8 @@ from langchain.utilities.powerbi import PowerBIDataset
 
 def create_pbi_agent(
     llm: BaseLLM,
-    toolkit: PowerBIToolkit | None,
-    powerbi: PowerBIDataset | None = None,
+    toolkit: Optional[PowerBIToolkit],
+    powerbi: Optional[PowerBIDataset] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_PREFIX,
     suffix: str = POWERBI_SUFFIX,
@@ -29,8 +27,8 @@ def create_pbi_agent(
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: dict[str, Any] | None = None,
-    **kwargs: dict[str, Any],
+    agent_kwargs: Optional[Dict[str, Any]] | None = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
     if toolkit is None:

@@ -1,7 +1,5 @@
 """Power BI agent."""
-from __future__ import annotations
-
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
@@ -19,18 +17,18 @@ from langchain.utilities.powerbi import PowerBIDataset
 
 def create_pbi_chat_agent(
     llm: BaseChatModel,
-    toolkit: PowerBIToolkit | None,
-    powerbi: PowerBIDataset | None = None,
-    callback_manager: BaseCallbackManager | None = None,
+    toolkit: Optional[PowerBIToolkit],
+    powerbi: Optional[PowerBIDataset] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = POWERBI_CHAT_PREFIX,
     suffix: str = POWERBI_CHAT_SUFFIX,
     examples: Optional[str] = None,
-    input_variables: list[str] | None = None,
+    input_variables: Optional[List[str]] = None,
     memory: Optional[BaseChatMemory] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: dict[str, Any] | None = None,
-    **kwargs: dict[str, Any],
+    agent_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an Chat LLM and tools.
 

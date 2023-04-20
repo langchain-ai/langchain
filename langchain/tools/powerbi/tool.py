@@ -1,22 +1,17 @@
-# flake8: noqa
 """Tools for interacting with a Power BI dataset."""
-from __future__ import annotations
+from typing import Any, Dict
 
-from typing import Any
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Field, validator
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.openai import OpenAI
-from langchain.prompts import PromptTemplate
-from langchain.utilities.powerbi import PowerBIDataset
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
-    QUESTION_TO_QUERY,
-    DEFAULT_FEWSHOT_EXAMPLES,
     BAD_REQUEST_RESPONSE,
     BAD_REQUEST_RESPONSE_ESCALATED,
+    DEFAULT_FEWSHOT_EXAMPLES,
+    QUESTION_TO_QUERY,
 )
-from langchain.utilities.powerbi import json_to_md
+from langchain.utilities.powerbi import PowerBIDataset, json_to_md
 
 
 class QueryPowerBITool(
@@ -33,9 +28,8 @@ class QueryPowerBITool(
 
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
     """
-    session_cache: dict[str, Any] = Field(default_factory=dict)
-
     powerbi: PowerBIDataset = Field(exclude=True)
+    session_cache: Dict[str, Any] = {}
 
     def _check_cache(self, tool_input: str) -> str | None:
         """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
