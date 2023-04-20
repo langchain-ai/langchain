@@ -1,44 +1,39 @@
 import os
 import tempfile
-from typing import Generator, List
+import threading
+from typing import List
 
 import certifi
-import pytest
 import tiktoken
+import tiktoken_ext
 from pyfakefs.fake_filesystem_unittest import Patcher
 
-from langchain.document_loaders import TextLoader
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Chroma
 
 """
-pytest --capture=no --timeout=30 --log-cli-level=DEBUG -vvv tests/integration_tests/vectorstores_new/test_chroma_stuck.py
+pytest --capture=no --timeout=3  --log-cli-level=DEBUG -vvv tests/integration_tests/vectorstores_new/test_chroma_stuck.py
 """  # noqa: E501
 
+os.environ["TIKTOKEN_CACHE_DIR"] = os.path.join(
+    tempfile.gettempdir(), ".tiktoken_cache"
+)
 
-@pytest.fixture(scope="function")
-def texts() -> Generator[List[str], None, None]:
-    # Load the texts from a file located in the fixtures directory
-    documents = TextLoader(
-        os.path.join(os.path.dirname(__file__), "fixtures", "sharks.txt")
-    ).load()
-
-    yield [doc.page_content for doc in documents]
+if not os.path.exists(os.environ["TIKTOKEN_CACHE_DIR"]):
+    os.makedirs(os.environ["TIKTOKEN_CACHE_DIR"])
 
 
-# Define a fixture that returns an instance of the OpenAIEmbeddings class
-@pytest.fixture(scope="function")
-def embedding() -> OpenAIEmbeddings:
-    # Double check that the API key is set
-    assert os.getenv("OPENAI_API_KEY") is not None
-    return OpenAIEmbeddings()
+def print_threads(msg: str = "") -> None:
+    print("#############################################")
+    print(msg)
+    for t in threading.enumerate():
+        print(t)
 
-
-# Define a fixture that returns a query string to use for testing
-@pytest.fixture(scope="module")
-def query() -> str:
-    return "sharks"
+        print(f"Name: {t.name}")
+        print(f"Ident: {t.ident}")
+        print(f"Alive: {t.is_alive()}")
+        print(f"Daemon: {t.daemon}")
+    print("#############################################")
 
 
 class TestManualChroma:
@@ -47,43 +42,44 @@ class TestManualChroma:
     local static vector store that does not persist data to disk.
     """
 
-    # @pytest.fixture(autouse=True)
-    # def _prepare_tiktoken(self) -> None:
-    #     print("")
-    #     print("prepare_tiktoken start")
-    #     encoding = tiktoken.get_encoding("cl100k_base")
-    #     print(encoding.encode("tiktoken is great!"))
-    #
-    #     yield
-    #
-    #     print("prepare_tiktoken end")
-
     @classmethod
     def teardown_class(cls) -> None:
         print("teardown_class")
 
     def test_from_texts(
-            self, texts: List[str], embedding: Embeddings, query: str
+        self, texts: List[str], embedding: Embeddings, query: str
     ) -> None:
         """
         Test creating a VectorStore from a list of texts.
         """
         print("test_from_texts")
-        additional_skip_names = [tiktoken,tiktoken.registry,tiktoken.core,tiktoken.model]
 
-        with Patcher(additional_skip_names=additional_skip_names) as patcher:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        print(encoding.encode("tiktoken is great!"))
+
+        print_threads("before patcher:")
+
+        with Patcher(use_cache=False) as patcher:
             patcher.fs.add_real_directory(certifi.where(), read_only=True)
-            # Because tiktoken saved downloaded models in temp dir
-            patcher.fs.add_mount_point(tempfile.gettempdir(), can_exist=True)
-            print("1 start")
+            patcher.fs.add_real_directory(
+                os.environ["TIKTOKEN_CACHE_DIR"], read_only=False
+            )
 
-            self.docsearch = Chroma.from_texts(
+            patcher.fs.add_real_directory(
+                tiktoken_ext.__path__._path[0], read_only=True
+            )
+
+            docsearch = Chroma.from_texts(
                 texts=texts,
                 embedding=embedding,
             )
 
-            self.docsearch._client.reset()
-            self.docsearch = None
-            print("1 end")
+            docsearch.similarity_search("sharks", 1)
 
+        print_threads("after patcher:")
+
+        for t in threading.enumerate():
+            if t.name == "MainThread":
+                continue
+            t.daemon = False
         print("end")
