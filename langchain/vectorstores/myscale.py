@@ -143,6 +143,7 @@ class MyScale(VectorStore):
         """
         self.dim = dim
         self.embedding_function = embedding_function
+        self.dist_order = 'DESC' if self.config.metric in ['cosine', 'l2'] else 'ASC'
 
         # Create a connection to myscale
         self.client = get_client(host=self.config.host,
@@ -268,7 +269,7 @@ class MyScale(VectorStore):
     def _build_qstr(self, q_emb: List[float], topk: int, where_str: Optional[str] = None) -> str:
         q_emb = ','.join(map(str, q_emb))
         if where_str:
-            where_str = f"WHERE {where_str}"
+            where_str = f"PREWHERE {where_str}"
         else:
             where_str = ''
 
@@ -276,7 +277,7 @@ class MyScale(VectorStore):
             SELECT {self.config.column_map['text']}, {self.config.column_map['metadata']}, dist
             FROM {self.config.database}.{self.config.table}
             {where_str}
-            ORDER BY distance({self.config.column_map['vector']}, [{q_emb}]) AS dist
+            ORDER BY distance({self.config.column_map['vector']}, [{q_emb}]) AS dist {self.dist_order}
             LIMIT {topk}
             """
         return q_str

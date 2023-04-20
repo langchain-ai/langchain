@@ -3,6 +3,18 @@
 This page covers how to use MyScale vector database within LangChain.
 It is broken into two parts: installation and setup, and then references to specific MyScale wrappers.
 
+With MyScale, you can manage both structured and unstructured (vectorized) data, and perform joint queries and analytics on both types of data using SQL. Plus, MyScale's cloud-native OLAP architecture, built on top of ClickHouse, enables lightning-fast data processing even on massive datasets.
+
+## Introduction
+
+[Overview to MyScale and High performance vector search](https://docs.myscale.com/en/overview/)
+
+You can now register on our SaaS and [start a cluster now!](https://docs.myscale.com/en/quickstart/)
+
+If you are also interested in how we managed to integrate SQL and vector, please refer to [this document](https://docs.myscale.com/en/vector-reference/) for further syntax reference.
+
+We also deliver with live demo on huggingface! Please checkout our [huggingface space](https://huggingface.co/myscale)! They search millions of vector within a blink!
+
 ## Installation and Setup
 - Install the Python SDK with `pip install clickhouse-connect`
   
