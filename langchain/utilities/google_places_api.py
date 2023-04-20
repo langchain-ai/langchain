@@ -2,11 +2,9 @@
 """
 
 import logging
-import os
-import sys
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
@@ -14,9 +12,14 @@ from langchain.utils import get_from_dict_or_env
 class GooglePlacesAPIWrapper(BaseModel):
     """Wrapper around Google Places API.
 
-    To use, you should have the ``googlemaps`` python package installed, **an API key for the google maps platform**, and the enviroment variable ''GPLACES_API_KEY'' set with your API key , or pass 'gplaces_api_key' as a named parameter to the constructor.
+    To use, you should have the ``googlemaps`` python package installed,
+     **an API key for the google maps platform**,
+     and the enviroment variable ''GPLACES_API_KEY''
+     set with your API key , or pass 'gplaces_api_key'
+     as a named parameter to the constructor.
 
-    By default, this will return the all the results on the input query. You can use the top_k_results argument to limit the number of results.
+    By default, this will return the all the results on the input query.
+     You can use the top_k_results argument to limit the number of results.
 
     Example:
         .. code-block:: python
@@ -38,7 +41,7 @@ class GooglePlacesAPIWrapper(BaseModel):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key is in your environment variable as ``GPLACES_API_KEY``."""
+        """Validate that api key is in your environment variable."""
         gplaces_api_key = get_from_dict_or_env(
             values, "gplaces_api_key", "GPLACES_API_KEY"
         )
@@ -55,7 +58,7 @@ class GooglePlacesAPIWrapper(BaseModel):
         return values
 
     def run(self, query: str) -> str:
-        """Run Places search and get k number of places that exists that match the description"""
+        """Run Places search and get k number of places that exists that match."""
         search_results = self.google_map_client.places(query)["results"]
         num_to_return = len(search_results)
 
@@ -85,7 +88,7 @@ class GooglePlacesAPIWrapper(BaseModel):
             formatted_details = self.format_place_details(place_details)
             return formatted_details
         except Exception as e:
-            logging.error(f"An Error occured while fetching place details: {e}")
+            logging.error(f"An Error occurred while fetching place details: {e}")
             return None
 
     def format_place_details(self, place_details: Dict[str, Any]) -> Optional[str]:
@@ -99,7 +102,10 @@ class GooglePlacesAPIWrapper(BaseModel):
             )
             website = place_details.get("result", {}).get("website", "Unknown")
 
-            formatted_details = f"{name}\nAddress: {address}\nPhone: {phone_number}\nWebsite: {website}\n\n"
+            formatted_details = (
+                f"{name}\nAddress: {address}\n"
+                f"Phone: {phone_number}\nWebsite: {website}\n\n"
+            )
             return formatted_details
         except Exception as e:
             logging.error(f"An error occurred while formatting place details: {e}")
