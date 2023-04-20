@@ -84,8 +84,8 @@ class SupabaseVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         client: Optional[supabase.client.Client] = None,
-        table_name: Optional[str] = None,
-        query_name: Union[str, None] = None,
+        table_name: Optional[str] = "documents",
+        query_name: Union[str, None] = "match_documents",
         **kwargs: Any,
     ) -> "SupabaseVectorStore":
         """Return VectorStore initialized from texts and embeddings."""
