@@ -7,7 +7,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 
 
-def test_embeddings_redundant_document_filter() -> None:
+def test_embeddings_redundant_filter() -> None:
     texts = [
         "What happened to all of my cookies?",
         "Where did all of my cookies go?",
@@ -21,7 +21,7 @@ def test_embeddings_redundant_document_filter() -> None:
     assert set(texts[:2]).intersection([d.page_content for d in actual])
 
 
-def test_embeddings_redundant_document_filter_with_state() -> None:
+def test_embeddings_redundant_filter_with_state() -> None:
     texts = ["What happened to all of my cookies?", "foo bar baz"]
     state = {"embedded_doc": [0.5] * 10}
     docs = [_DocumentWithState(page_content=t, state=state) for t in texts]

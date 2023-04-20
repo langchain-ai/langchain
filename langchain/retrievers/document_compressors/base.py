@@ -1,4 +1,4 @@
-"""Interface for retrieved document filters."""
+"""Interface for retrieved document compressors."""
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
