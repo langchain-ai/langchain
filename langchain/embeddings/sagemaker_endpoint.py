@@ -179,7 +179,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         _chunk_size = len(texts) if chunk_size > len(texts) else chunk_size
         for i in range(0, len(texts), _chunk_size):
             response = self._embedding_func(texts[i : i + _chunk_size])
-            results.append(response)
+            results.extend(response)
         return results
 
     def embed_query(self, text: str) -> List[float]:
