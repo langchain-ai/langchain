@@ -5,16 +5,16 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from langchain.docstore.document import Document
-from langchain.vectorstores.analyticdb import AnalyticDBVector
+from langchain.vectorstores.analyticdb import AnalyticDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
-CONNECTION_STRING = AnalyticDBVector.connection_string_from_db_params(
-    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2cffi"),
-    host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
-    port=int(os.environ.get("TEST_PGVECTOR_PORT", "5432")),
-    database=os.environ.get("TEST_PGVECTOR_DATABASE", "postgres"),
-    user=os.environ.get("TEST_PGVECTOR_USER", "postgres"),
-    password=os.environ.get("TEST_PGVECTOR_PASSWORD", "postgres"),
+CONNECTION_STRING = AnalyticDB.connection_string_from_db_params(
+    driver=os.environ.get("PG_DRIVER", "psycopg2cffi"),
+    host=os.environ.get("PG_HOST", "localhost"),
+    port=int(os.environ.get("PG_HOST", "5432")),
+    database=os.environ.get("PG_DATABASE", "postgres"),
+    user=os.environ.get("PG_USER", "postgres"),
+    password=os.environ.get("PG_PASSWORD", "postgres"),
 )
 
 
@@ -38,7 +38,7 @@ class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
 def test_analyticdb() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -53,7 +53,7 @@ def test_analyticdb_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -69,7 +69,7 @@ def test_analyticdb_with_metadatas_with_scores() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -85,7 +85,7 @@ def test_analyticdb_with_filter_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -101,7 +101,7 @@ def test_analyticdb_with_filter_distant_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -118,7 +118,7 @@ def test_analyticdb_with_filter_no_match() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = AnalyticDBVector.from_texts(
+    docsearch = AnalyticDB.from_texts(
         texts=texts,
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -132,7 +132,7 @@ def test_analyticdb_with_filter_no_match() -> None:
 
 def test_analyticdb_collection_with_metadata() -> None:
     """Test end to end collection construction"""
-    pgvector = AnalyticDBVector(
+    pgvector = AnalyticDB(
         collection_name="test_collection",
         collection_metadata={"foo": "bar"},
         embedding_function=FakeEmbeddingsWithAdaDimension(),

@@ -106,7 +106,7 @@ class QueryResult:
     distance: float
 
 
-class AnalyticDBVector(VectorStore):
+class AnalyticDB(VectorStore):
     """
     VectorStore implementation using AnalyticDB.
     AnalyticDB is a distributed full PostgresSQL syntax cloud-native database.
@@ -348,7 +348,7 @@ class AnalyticDBVector(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> AnalyticDBVector:
+    ) -> AnalyticDB:
         """
         Return VectorStore initialized from texts and embeddings.
         Postgres connection string is required
@@ -394,7 +394,7 @@ class AnalyticDBVector(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> AnalyticDBVector:
+    ) -> AnalyticDB:
         """
         Return VectorStore initialized from documents and embeddings.
         Postgres connection string is required
