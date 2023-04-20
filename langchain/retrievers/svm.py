@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any, List, Optional
 
 import numpy as np
+import concurrent.futures
 from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
@@ -14,7 +15,8 @@ from langchain.schema import BaseRetriever, Document
 
 
 def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
-    return np.array([embeddings.embed_query(split) for split in contexts])
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
 class SVMRetriever(BaseRetriever, BaseModel):
