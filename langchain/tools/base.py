@@ -1,75 +1,22 @@
 """Base implementation for tools or skills."""
 
-import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
+from inspect import signature
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 
-from pydantic import BaseModel, Extra, Field, create_model, validator
+from pydantic import BaseModel, Extra, Field, validate_arguments, validator
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 
 
-def create_args_schema_model_from_signature(run_func: Callable) -> Type[BaseModel]:
-    """Create a pydantic model type from a function's signature."""
-    signature_ = inspect.signature(run_func)
-    field_definitions: Dict[str, Any] = {}
-
-    for name, param in signature_.parameters.items():
-        if name == "self":
-            continue
-        default_value = (
-            param.default if param.default != inspect.Parameter.empty else None
-        )
-        annotation = (
-            param.annotation if param.annotation != inspect.Parameter.empty else Any
-        )
-        # Handle functions with *args in the signature
-        if param.kind == inspect.Parameter.VAR_POSITIONAL:
-            field_definitions[name] = (
-                Any,
-                Field(default=None, extra={"is_var_positional": True}),
-            )
-        # handle functions with **kwargs in the signature
-        elif param.kind == inspect.Parameter.VAR_KEYWORD:
-            field_definitions[name] = (
-                Any,
-                Field(default=None, extra={"is_var_keyword": True}),
-            )
-        # Handle all other named parameters
-        else:
-            is_keyword_only = param.kind == inspect.Parameter.KEYWORD_ONLY
-            field_definitions[name] = (
-                annotation,
-                Field(
-                    default=default_value, extra={"is_keyword_only": is_keyword_only}
-                ),
-            )
-    return create_model("ArgsModel", **field_definitions)  # type: ignore
-
-
-def _to_args_and_kwargs(model: BaseModel) -> Tuple[Sequence, dict]:
-    args = []
-    kwargs = {}
-    for name, field in model.__fields__.items():
-        value = getattr(model, name)
-        # Handle *args in the function signature
-        if field.field_info.extra.get("extra", {}).get("is_var_positional"):
-            if isinstance(value, str):
-                # Base case for backwards compatability
-                args.append(value)
-            elif value is not None:
-                args.extend(value)
-        # Handle **kwargs in the function signature
-        elif field.field_info.extra.get("extra", {}).get("is_var_keyword"):
-            if value is not None:
-                kwargs.update(value)
-        elif field.field_info.extra.get("extra", {}).get("is_keyword_only"):
-            kwargs[name] = value
-        else:
-            args.append(value)
-
-    return tuple(args), kwargs
+def _to_args_and_kwargs(run_input: Union[str, Dict]) -> Tuple[Sequence, dict]:
+    # For backwards compatability, if run_input is a string,
+    # pass as a positional argument.
+    if isinstance(run_input, str):
+        return (run_input,), {}
+    else:
+        return [], run_input
 
 
 class BaseTool(ABC, BaseModel):
@@ -90,31 +37,28 @@ class BaseTool(ABC, BaseModel):
         arbitrary_types_allowed = True
 
     @property
-    def args(self) -> Type[BaseModel]:
-        """Generate an input pydantic model."""
+    def args(self) -> dict:
         if self.args_schema is not None:
-            return self.args_schema
-        return create_args_schema_model_from_signature(self._run)
+            return self.args_schema.schema()["properties"]
+        else:
+            inferred_model = validate_arguments(self._run).model  # type: ignore
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self._run).parameters
+            return {k: schema[k] for k in valid_keys}
 
     def _parse_input(
         self,
         tool_input: Union[str, Dict],
-    ) -> BaseModel:
+    ) -> None:
         """Convert tool input to pydantic model."""
-        pydantic_input_type = self.args
+        input_args = self.args_schema
         if isinstance(tool_input, str):
-            # For backwards compatibility, a tool that only takes
-            # a single string input will be converted to a dict.
-            # to be validated.
-            field_name = next(iter(pydantic_input_type.__fields__))
-            tool_input = {field_name: tool_input}
-        if pydantic_input_type is not None:
-            return pydantic_input_type.parse_obj(tool_input)
+            if input_args is not None:
+                key_ = next(iter(input_args.__fields__.keys()))
+                input_args.validate({key_: tool_input})
         else:
-            raise ValueError(
-                f"args_schema required for tool {self.name} in order to"
-                f" accept input of type {type(tool_input)}"
-            )
+            if input_args is not None:
+                input_args.validate(tool_input)
 
     @validator("callback_manager", pre=True, always=True)
     def set_callback_manager(
@@ -143,21 +87,21 @@ class BaseTool(ABC, BaseModel):
         **kwargs: Any,
     ) -> str:
         """Run the tool."""
-        run_input = self._parse_input(tool_input)
+        self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
             verbose_ = self.verbose
         self.callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            str(run_input),
+            tool_input if isinstance(tool_input, str) else str(tool_input),
             verbose=verbose_,
             color=start_color,
             **kwargs,
         )
         try:
-            args, kwargs = _to_args_and_kwargs(run_input)
-            observation = self._run(*args, **kwargs)
+            tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
+            observation = self._run(*tool_args, **tool_kwargs)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
             raise e
@@ -175,7 +119,7 @@ class BaseTool(ABC, BaseModel):
         **kwargs: Any,
     ) -> str:
         """Run the tool asynchronously."""
-        run_input = self._parse_input(tool_input)
+        self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
             verbose_ = verbose
         else:
@@ -183,7 +127,7 @@ class BaseTool(ABC, BaseModel):
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
-                str(run_input.dict()),
+                tool_input if isinstance(tool_input, str) else str(tool_input),
                 verbose=verbose_,
                 color=start_color,
                 **kwargs,
@@ -191,14 +135,14 @@ class BaseTool(ABC, BaseModel):
         else:
             self.callback_manager.on_tool_start(
                 {"name": self.name, "description": self.description},
-                str(run_input.dict()),
+                tool_input if isinstance(tool_input, str) else str(tool_input),
                 verbose=verbose_,
                 color=start_color,
                 **kwargs,
             )
         try:
             # We then call the tool on the tool input to get an observation
-            args, kwargs = _to_args_and_kwargs(run_input)
+            args, kwargs = _to_args_and_kwargs(tool_input)
             observation = await self._arun(*args, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
             if self.callback_manager.is_async:
