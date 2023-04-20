@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
 
 
-class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
+class PowerBIDataset(BaseModel):
     """Create PowerBI engine from dataset ID and credential or token.
 
     Use either the credential or a supplied token to authenticate.
@@ -42,6 +42,11 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     sample_rows_in_table_info: int = Field(1, gt=0, le=10)
     aiosession: Optional[aiohttp.ClientSession] = None
     schemas: Dict[str, str] = Field(default_factory=dict, init=False)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True, allow_reuse=True)
     def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:

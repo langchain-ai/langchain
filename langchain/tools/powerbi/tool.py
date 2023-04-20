@@ -29,6 +29,11 @@ class QueryPowerBITool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
     session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def _check_cache(self, tool_input: str) -> str | None:
         """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
         if tool_input not in self.session_cache:
@@ -95,6 +100,11 @@ class InfoPowerBITool(BaseTool):
 
     powerbi: PowerBIDataset = Field(exclude=True)
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def _run(self, tool_input: str) -> str:
         """Get the schema for tables in a comma-separated list."""
         return self.powerbi.get_table_info(tool_input.split(", "))
@@ -109,6 +119,11 @@ class ListPowerBITool(BaseTool):
     name = "list_tables_powerbi"
     description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def _run(self, tool_input: str = "") -> str:
         """Get the names of the tables."""
@@ -132,6 +147,11 @@ class InputToQueryTool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
     template: str = QUESTION_TO_QUERY
     examples: str = DEFAULT_FEWSHOT_EXAMPLES
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
