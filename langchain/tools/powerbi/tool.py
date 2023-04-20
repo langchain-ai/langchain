@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 """Tools for interacting with a Power BI dataset."""
 from typing import Any, Dict
 
