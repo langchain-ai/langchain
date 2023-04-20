@@ -1,9 +1,10 @@
-import os
-from typing import Type
+from pathlib import Path
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
 from langchain.tools.base import BaseTool
+from langchain.tools.file_management.utils import get_validated_relative_path
 
 
 class WriteFileInput(BaseModel):
@@ -15,20 +16,27 @@ class WriteFileInput(BaseModel):
 
 class WriteFileTool(BaseTool):
     name: str = "write_file"
-    tool_args: Type[BaseModel] = WriteFileInput
+    args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"
+    root_dir: Optional[str] = None
+    """Directory to write file to.
+
+    If specified, raises an error for file_paths oustide root_dir."""
 
     def _run(self, file_path: str, text: str) -> str:
+        write_path = (
+            get_validated_relative_path(Path(self.root_dir), file_path)
+            if self.root_dir
+            else Path(file_path)
+        )
         try:
-            directory = os.path.dirname(file_path)
-            if not os.path.exists(directory) and directory:
-                os.makedirs(directory)
-            with open(file_path, "w", encoding="utf-8") as f:
+            write_path.parent.mkdir(exist_ok=True, parents=False)
+            with write_path.open("w", encoding="utf-8") as f:
                 f.write(text)
-            return "File written to successfully."
+            return f"File written successfully to {file_path}."
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(self, file_path: str, text: str) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

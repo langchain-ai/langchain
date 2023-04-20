@@ -1,6 +1,6 @@
 """Test tool utils."""
 from datetime import datetime
-from typing import Any, Optional, Type, Union
+from typing import Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel
@@ -125,21 +125,27 @@ def test_tool_with_kwargs() -> None:
 
     @tool(return_direct=True)
     def search_api(
-        arg_1: float, *args: Any, ping: Optional[str] = None, **kwargs: Any
+        arg_1: float,
+        ping: str = "hi",
     ) -> str:
         """Search the API for the query."""
-        return f"arg_1={arg_1}, foo={args}, ping={ping}, kwargs={kwargs}"
+        return f"arg_1={arg_1}, ping={ping}"
 
     assert isinstance(search_api, Tool)
     result = search_api.run(
         tool_input={
             "arg_1": 3.2,
-            "args": "fam",
-            "kwargs": {"bar": "baz"},
             "ping": "pong",
         }
     )
-    assert result == "arg_1=3.2, foo=('fam',), ping=pong, kwargs={'bar': 'baz'}"
+    assert result == "arg_1=3.2, ping=pong"
+
+    result = search_api.run(
+        tool_input={
+            "arg_1": 3.2,
+        }
+    )
+    assert result == "arg_1=3.2, ping=hi"
 
 
 def test_missing_docstring() -> None:
