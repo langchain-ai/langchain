@@ -1,10 +1,9 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
 from langchain.retrievers.document_filters.base import (
     BaseDocumentCompressor,
-    _RetrievedDocument,
 )
 from langchain.retrievers.document_filters.chain_extract_prompt import (
     prompt_template,
@@ -47,8 +46,8 @@ class LLMChainExtractor(BaseDocumentCompressor):
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         """Compress page content of raw documents."""
         compressed_docs = []
         for doc in documents:
@@ -56,14 +55,12 @@ class LLMChainExtractor(BaseDocumentCompressor):
             output = self.llm_chain.predict_and_parse(**_input)
             if len(output) == 0:
                 continue
-            compressed_docs.append(
-                _RetrievedDocument(page_content=output, metadata=doc.metadata)
-            )
+            compressed_docs.append(Document(page_content=output, metadata=doc.metadata))
         return compressed_docs
 
     async def acompress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         raise NotImplementedError
 
     @classmethod

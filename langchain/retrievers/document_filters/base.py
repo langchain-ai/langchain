@@ -1,39 +1,68 @@
 """Interface for retrieved document filters."""
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Optional, Sequence
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from langchain.schema import Document
-
-
-class _RetrievedDocument(Document):
-    """Wrapper for a retrieved document that includes metadata about the query."""
-
-    query_metadata: dict = Field(default_factory=dict)
-    """Metadata associated with the query for which the document was retrieved."""
-
-    def to_document(self) -> Document:
-        """Convert the RetrievedDocument to a Document."""
-        return Document(page_content=self.page_content, metadata=self.metadata)
-
-    @classmethod
-    def from_document(cls, doc: Document) -> "_RetrievedDocument":
-        """Create a RetrievedDocument from a Document."""
-        return cls(page_content=doc.page_content, metadata=doc.metadata)
+from langchain.document_transformers import DocumentTransformerPipeline
+from langchain.schema import BaseDocumentTransformer, Document
 
 
-class BaseDocumentCompressor(BaseModel, ABC):
-    """Interface for retrieved document compressors."""
+class DocumentCompressorMixin(ABC):
+    """"""
 
     @abstractmethod
     def compress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
 
     @abstractmethod
     async def acompress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
+
+
+class BaseDocumentCompressor(
+    DocumentCompressorMixin, BaseDocumentTransformer, BaseModel, ABC
+):
+    """Interface for retrieved document compressors."""
+
+    def transform_documents(
+        self, documents: Sequence[Document], query: Optional[str] = None, **kwargs: Any
+    ) -> Sequence[Document]:
+        """"""
+        if query is None:
+            raise ValueError(
+                "Keyword argument `query` must be non-null when passed in to "
+                "BaseDocumentCompressor.transform_documents."
+            )
+        return self.compress_documents(documents, query)
+
+    async def atransform_documents(
+        self, documents: Sequence[Document], query: Optional[str] = None, **kwargs: Any
+    ) -> Sequence[Document]:
+        """"""
+        if query is None:
+            raise ValueError(
+                "Keyword argument `query` must be non-null when passed in to "
+                "BaseDocumentCompressor.transform_documents."
+            )
+        return await self.acompress_documents(documents, query)
+
+
+class DocumentCompressorPipeline(DocumentCompressorMixin, DocumentTransformerPipeline):
+    """Document compressor that uses a pipeline of transformers."""
+
+    def compress_documents(
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
+        """Compress retrieved documents given the query context."""
+        return self.transform_documents(documents, query=query)
+
+    async def acompress_documents(
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
+        """Compress retrieved documents given the query context."""
+        return await self.atransform_documents(documents, query=query)

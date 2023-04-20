@@ -1,23 +1,17 @@
+from langchain.retrievers.document_filters.base import DocumentCompressorPipeline
 from langchain.retrievers.document_filters.chain_extract import (
     LLMChainExtractor,
 )
 from langchain.retrievers.document_filters.chain_filter import (
-    LLMChainRelevancyDocumentFilter,
+    LLMChainFilter,
 )
 from langchain.retrievers.document_filters.embeddings_filter import (
-    EmbeddingRelevancyDocumentFilter,
+    EmbeddingsFilter,
 )
-from langchain.retrievers.document_filters.embeddings_redundant import (
-    EmbeddingRedundantDocumentFilter,
-)
-from langchain.retrievers.document_filters.pipeline import DocumentCompressorPipeline
-from langchain.retrievers.document_filters.text_splitter import SplitterDocumentFilter
 
 __all__ = [
     "DocumentCompressorPipeline",
-    "EmbeddingRedundantDocumentFilter",
-    "EmbeddingRelevancyDocumentFilter",
+    "EmbeddingsFilter",
     "LLMChainExtractor",
-    "LLMChainRelevancyDocumentFilter",
-    "SplitterDocumentFilter",
+    "LLMChainFilter",
 ]

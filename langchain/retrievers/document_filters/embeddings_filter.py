@@ -1,15 +1,19 @@
 """Document compressor that uses embeddings to drop documents unrelated to the query."""
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
 from pydantic import root_validator
 
+from langchain.document_transformers import (
+    _get_embeddings_from_stateful_docs,
+    get_stateful_documents,
+)
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
 from langchain.retrievers.document_filters.base import (
     BaseDocumentCompressor,
-    _RetrievedDocument,
 )
+from langchain.schema import Document
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
@@ -39,25 +43,17 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             raise ValueError("Must specify one of `k` or `similarity_threshold`.")
         return values
 
-    def _get_embedded_docs(self, docs: List[_RetrievedDocument]) -> List[List[float]]:
-        if len(docs) and "embedded_doc" in docs[0].query_metadata:
-            embedded_docs = [doc.query_metadata["embedded_doc"] for doc in docs]
-        else:
-            embedded_docs = self.embeddings.embed_documents(
-                [d.page_content for d in docs]
-            )
-            for doc, embedding in zip(docs, embedded_docs):
-                doc.query_metadata["embedded_doc"] = embedding
-        return embedded_docs
-
     def compress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
-        embedded_docs = self._get_embedded_docs(documents)
+        stateful_documents = get_stateful_documents(documents)
+        embedded_documents = _get_embeddings_from_stateful_docs(
+            self.embeddings, stateful_documents
+        )
         embedded_query = self.embeddings.embed_query(query)
-        similarity = self.similarity_fn([embedded_query], embedded_docs)[0]
-        included_idxs = np.arange(len(embedded_docs))
+        similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
+        included_idxs = np.arange(len(embedded_documents))
         if self.k is not None:
             included_idxs = np.argsort(similarity)[::-1][: self.k]
         if self.similarity_threshold is not None:
@@ -65,11 +61,10 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 similarity[included_idxs] > self.similarity_threshold
             )
             included_idxs = included_idxs[similar_enough]
-        documents = [documents[i] for i in included_idxs]
-        return documents
+        return [stateful_documents[i] for i in included_idxs]
 
     async def acompress_documents(
-        self, documents: List[_RetrievedDocument], query: str
-    ) -> List[_RetrievedDocument]:
+        self, documents: Sequence[Document], query: str
+    ) -> Sequence[Document]:
         """Filter down documents."""
         raise NotImplementedError
