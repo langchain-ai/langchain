@@ -54,9 +54,6 @@ class TestManualChroma:
         """
         print("test_from_texts")
 
-        encoding = tiktoken.get_encoding("cl100k_base")
-        print(encoding.encode("tiktoken is great!"))
-
         print_threads("before patcher:")
 
         with Patcher(use_cache=False) as patcher:
@@ -65,9 +62,12 @@ class TestManualChroma:
                 os.environ["TIKTOKEN_CACHE_DIR"], read_only=False
             )
 
+            # fix error with tiktoken not finding model files
             patcher.fs.add_real_directory(
                 tiktoken_ext.__path__._path[0], read_only=True
             )
+            encoding = tiktoken.get_encoding("cl100k_base")
+            print(encoding.encode("tiktoken is great!"))
 
             docsearch = Chroma.from_texts(
                 texts=texts,
@@ -78,8 +78,4 @@ class TestManualChroma:
 
         print_threads("after patcher:")
 
-        for t in threading.enumerate():
-            if t.name == "MainThread":
-                continue
-            t.daemon = False
         print("end")
