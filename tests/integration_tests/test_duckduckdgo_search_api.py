@@ -6,7 +6,7 @@ from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 def ddg_installed() -> bool:
     try:
-        from duckduckgo_search import ddg
+        from duckduckgo_search import ddg  # noqa: F401
 
         return True
     except Exception as e:

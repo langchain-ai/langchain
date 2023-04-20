@@ -30,7 +30,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
         try:
-            from duckduckgo_search import ddg
+            from duckduckgo_search import ddg  # noqa: F401
         except ImportError:
             raise ValueError(
                 "Could not import duckduckgo-search python package. "
