@@ -47,5 +47,7 @@ class PowerBIToolkit(BaseToolkit):
             QueryPowerBITool(powerbi=self.powerbi),
             InfoPowerBITool(powerbi=self.powerbi),
             ListPowerBITool(powerbi=self.powerbi),
-            InputToQueryTool(powerbi=self.powerbi, llm_chain=chain),
+            InputToQueryTool(
+                powerbi=self.powerbi, llm_chain=chain, examples=self.examples
+            ),
         ]

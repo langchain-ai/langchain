@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
-from aiohttp.http_exceptions import HttpProcessingError
-from pydantic import BaseModel, Field, HttpUrl, root_validator
+from aiohttp import ServerTimeoutError
+from pydantic import BaseModel, Field, root_validator
+from requests.exceptions import Timeout
+
+from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RESPONSE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +20,8 @@ if TYPE_CHECKING:
     from azure.core.exceptions import ClientAuthenticationError
     from azure.identity import ChainedTokenCredential
     from azure.identity._internal import InteractiveCredential
+
+BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
 
 
 class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
@@ -34,8 +40,7 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(1, gt=0, le=10)
-    aiosession: Optional[aiohttp.ClientSession] = Field(default=None)
-    base_url: HttpUrl = Field("https://api.powerbi.com/v1.0/myorg/datasets/")
+    aiosession: Optional[aiohttp.ClientSession] = None
     schemas: Dict[str, str] = Field(default_factory=dict, init=False)
 
     @root_validator(pre=True, allow_reuse=True)
@@ -49,8 +54,8 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
     def request_url(self) -> str:
         """Get the request url."""
         if self.group_id:
-            return f"{self.base_url}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
-        return f"{self.base_url}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+            return f"{BASE_URL}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+        return f"{BASE_URL}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -59,9 +64,14 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
         if self.token:
             token = self.token
         if self.credential:
-            token = self.credential.get_token(
-                "https://analysis.windows.net/powerbi/api/.default"
-            ).token
+            try:
+                token = self.credential.get_token(
+                    "https://analysis.windows.net/powerbi/api/.default"
+                ).token
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                raise ClientAuthenticationError(
+                    "Could not get a token from the supplied credentials."
+                ) from exc
         if not token:
             raise ClientAuthenticationError("No credential or token supplied.")
 
@@ -124,14 +134,15 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
                 result = self.run(
                     f"EVALUATE TOPN({self.sample_rows_in_table_info}, {table})"
                 )
-            except requests.exceptions.Timeout:
+            except Timeout:
                 _LOGGER.warning("Timeout while getting table info for %s", table)
                 continue
-            except requests.exceptions.HTTPError as err:
-                _LOGGER.warning(
-                    "HTTP error while getting table info for %s: %s", table, err
-                )
-                return "Error with the connection to PowerBI, please review your authentication credentials."  # noqa: E501 # pylint: disable=C0301
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                if "bad request" in str(exc).lower():
+                    return BAD_REQUEST_RESPONSE
+                if "unauthorized" in str(exc).lower():
+                    return UNAUTHORIZED_RESPONSE
+                return str(exc)
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 
@@ -146,14 +157,15 @@ class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):
                 result = await self.arun(
                     f"EVALUATE TOPN({self.sample_rows_in_table_info}, {table})"
                 )
-            except aiohttp.ServerTimeoutError:
+            except ServerTimeoutError:
                 _LOGGER.warning("Timeout while getting table info for %s", table)
                 continue
-            except HttpProcessingError as err:
-                _LOGGER.warning(
-                    "HTTP error while getting table info for %s: %s", table, err
-                )
-                return "Error with the connection to PowerBI, please review your authentication credentials."  # noqa: E501 # pylint: disable=C0301
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                if "bad request" in str(exc).lower():
+                    return BAD_REQUEST_RESPONSE
+                if "unauthorized" in str(exc).lower():
+                    return UNAUTHORIZED_RESPONSE
+                return str(exc)
             self.schemas[table] = json_to_md(result["results"][0]["tables"][0]["rows"])
         return self._get_schema_for_tables(tables_requested)
 

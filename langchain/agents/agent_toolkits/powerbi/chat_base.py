@@ -13,6 +13,7 @@ from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.utilities.powerbi import PowerBIDataset
 
 

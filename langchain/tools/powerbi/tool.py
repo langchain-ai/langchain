@@ -22,10 +22,7 @@ from langchain.utilities.powerbi import json_to_md
 class QueryPowerBITool(
     BaseTool,
 ):
-    """Tool for querying a Power BI Dataset.
-
-    TODO: test contents of aiohttp responses to catch bad request vs bad auth.
-    """
+    """Tool for querying a Power BI Dataset."""
 
     name = "query_powerbi"
     description = """
@@ -131,19 +128,18 @@ class ListPowerBITool(BaseTool):
 
 
 class InputToQueryTool(BaseTool):
-    """Use an LLM to parse the question to a DAX query.
-    Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
+    """Use an LLM to parse the question to a DAX query."""
 
-    llm_chain: LLMChain
-    template: str = QUESTION_TO_QUERY
-    examples: str = DEFAULT_FEWSHOT_EXAMPLES
     name = "question_to_query_powerbi"
     description = """
     Use this tool to create the DAX query from a question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
 
     Example Input: "How many records are in table1?"
     """
+    llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
+    template: str = QUESTION_TO_QUERY
+    examples: str = DEFAULT_FEWSHOT_EXAMPLES
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
