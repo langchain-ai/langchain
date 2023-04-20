@@ -3,9 +3,11 @@
 No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
+
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Extra
+from pydantic.class_validators import root_validator
 
 
 class DuckDuckGoSearchAPIWrapper(BaseModel):
@@ -25,6 +27,18 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that python package exists in environment."""
+        try:
+            from duckduckgo_search import ddg  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "Could not import duckduckgo-search python package. "
+                "Please install it with `pip install duckduckgo-search`."
+            )
+        return values
+
     def run(self, query: str) -> str:
         from duckduckgo_search import ddg
 
@@ -36,12 +50,10 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             time=self.time,
             max_results=self.max_results,
         )
-        snippets = []
 
         if len(results) == 0:
             return "No good DuckDuckGo Search Result was found"
-        for result in results:
-            snippets.append(result["body"])
+        snippets = [result["body"] for result in results]
         return " ".join(snippets)
 
     def results(self, query: str, num_results: int) -> List[Dict]:
@@ -59,7 +71,6 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
         """
         from duckduckgo_search import ddg
 
-        metadata_results = []
         results = ddg(
             query,
             region=self.region,
@@ -70,12 +81,12 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
         if len(results) == 0:
             return [{"Result": "No good DuckDuckGo Search Result was found"}]
-        for result in results:
-            metadata_result = {
+
+        def to_metadata(result: Dict) -> Dict:
+            return {
                 "snippet": result["body"],
                 "title": result["title"],
                 "link": result["href"],
             }
-            metadata_results.append(metadata_result)
 
-        return metadata_results
+        return [to_metadata(result) for result in results]
