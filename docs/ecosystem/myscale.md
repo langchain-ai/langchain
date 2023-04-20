@@ -17,6 +17,28 @@ We also deliver with live demo on huggingface! Please checkout our [huggingface 
 
 ## Installation and Setup
 - Install the Python SDK with `pip install clickhouse-connect`
+
+### Setting up envrionments
+
+There are two ways to set up parameters for myscale index.
+
+1. Environment Variables
+
+    Before you run the app, please set the environment variable with `export`:
+    `export MYSCALE_URL='<your-endpoints-url>' MYSCALE_PORT=<your-endpoints-port> MYSCALE_USERNAME=<your-username> MYSCALE_PASSWORD=<your-password> ...`
+
+    You can easily find your account, password and other info on our SaaS. For details please refer to [this document](https://docs.myscale.com/en/cluster-management/)
+    Every attributes under `MyScaleSettings` can be set with prefix `MYSCALE_` and is case insensitive.
+
+2. Create `MyScaleSettings` object with parameters
+
+
+    ```python
+    from langchain.vectorstores import MyScale, MyScaleSettings
+    config = MyScaleSetting(host="<your-backend-url>", port=8443, ...)
+    index = MyScale(embedding_function, config)
+    index.add_documents(...)
+    ```
   
 ## Wrappers
 supported functions:

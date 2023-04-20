@@ -159,7 +159,7 @@ class MyScale(VectorStore):
         self.BS = "\\"
         self.must_escape = ("\\", "'")
         self.embedding_function = embedding.embed_query
-        self.dist_order = "DESC" if self.config.metric in ["cosine", "l2"] else "ASC"
+        self.dist_order = "ASC" if self.config.metric in ["cosine", "l2"] else "DESC"
 
         # Create a connection to myscale
         self.client = get_client(
