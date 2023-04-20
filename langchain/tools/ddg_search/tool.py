@@ -1,10 +1,12 @@
 """Tool for the DuckDuckGo search API."""
 
+from pydantic import Field
+
 from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 
-class DuckDuckGoSearchRun(BaseTool):
+class DuckDuckGoSearchTool(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
 
     name = "DuckDuckGo Search"
@@ -13,7 +15,9 @@ class DuckDuckGoSearchRun(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
     )
-    api_wrapper: DuckDuckGoSearchAPIWrapper
+    api_wrapper: DuckDuckGoSearchAPIWrapper = Field(
+        default_factory=DuckDuckGoSearchAPIWrapper
+    )
 
     def _run(self, query: str) -> str:
         """Use the tool."""
