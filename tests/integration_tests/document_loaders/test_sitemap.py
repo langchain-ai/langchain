@@ -18,3 +18,13 @@ def test_filter_sitemap() -> None:
     documents = loader.load()
     assert len(documents) == 1
     assert "🦜🔗" in documents[0].page_content
+
+def test_discover_sitemap_url() -> None:
+    """Test sitemap discovery from homepage."""
+    loader = SitemapLoader("https://langchain.readthedocs.io/",
+                           discover_sitemap=True)
+    documents = loader.load()
+    assert len(documents) > 1
+    assert "🦜🔗" in documents[0].page_content
+    assert loader.web_path == "https://langchain.readthedocs.io/sitemap.xml"
+    

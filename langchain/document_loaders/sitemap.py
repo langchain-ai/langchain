@@ -18,7 +18,7 @@ class SitemapLoader(WebBaseLoader):
     def __init__(
         self,
         web_path: str,
-        sitemap_discovery: bool = False,
+        discover_sitemap: bool = False,
         filter_urls: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
     ):
