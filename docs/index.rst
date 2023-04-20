@@ -159,6 +159,8 @@ Additional collection of resources we think may be useful as you develop your ap
 
 - `Discord <https://discord.gg/6adMQxSpJS>`_: Join us on our Discord to discuss all things LangChain!
 
+- `YouTube <./youtube.html>`_: A collection of the LangChain tutorials and videos.
+
 - `Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>`_: As you move your LangChains into production, we'd love to offer more comprehensive support. Please fill out this form and we'll set up a dedicated support Slack channel.
 
 
