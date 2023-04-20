@@ -1,4 +1,4 @@
-"""Tool for the Wikipedia API."""
+"""Tool for the Arxiv API."""
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.arxiv import ArxivAPIWrapper
