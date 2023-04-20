@@ -8,7 +8,7 @@ from pydantic import BaseModel, Extra, Field, validator
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
-from langchain.powerbi import PowerBIDataset
+from langchain.utilities.powerbi import PowerBIDataset
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
     QUESTION_TO_QUERY,
@@ -16,7 +16,7 @@ from langchain.tools.powerbi.prompt import (
     BAD_REQUEST_RESPONSE,
     BAD_REQUEST_RESPONSE_ESCALATED,
 )
-from langchain.powerbi import json_to_md
+from langchain.utilities.powerbi import json_to_md
 
 
 class BasePowerBIDatabaseTool(BaseModel):

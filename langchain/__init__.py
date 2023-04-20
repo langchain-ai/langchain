@@ -40,7 +40,6 @@ from langchain.llms import (
     Writer,
 )
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from langchain.powerbi import PowerBIDataset
 from langchain.prompts import (
     BasePromptTemplate,
     FewShotPromptTemplate,
@@ -51,6 +50,7 @@ from langchain.sql_database import SQLDatabase
 from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper

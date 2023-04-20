@@ -13,7 +13,7 @@ from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chat_models.base import BaseChatModel
 from langchain.memory import ConversationBufferMemory
-from langchain.powerbi import PowerBIDataset
+from langchain.utilities.powerbi import PowerBIDataset
 
 
 def create_pbi_chat_agent(

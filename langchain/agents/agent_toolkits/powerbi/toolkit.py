@@ -7,7 +7,6 @@ from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.chains.llm import LLMChain
-from langchain.powerbi import PowerBIDataset
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.tools import BaseTool
@@ -18,6 +17,7 @@ from langchain.tools.powerbi.tool import (
     ListPowerBITool,
     QueryPowerBITool,
 )
+from langchain.utilities.powerbi import PowerBIDataset
 
 
 class PowerBIToolkit(BaseToolkit):

@@ -1,16 +1,21 @@
 """Wrapper around a Power BI endpoint."""
+
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
 from aiohttp.http_exceptions import HttpProcessingError
-from azure.core.exceptions import ClientAuthenticationError
-from azure.identity import ChainedTokenCredential
-from azure.identity._internal import InteractiveCredential
 from pydantic import BaseModel, Field, HttpUrl, root_validator
 
 _LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from azure.core.exceptions import ClientAuthenticationError
+    from azure.identity import ChainedTokenCredential
+    from azure.identity._internal import InteractiveCredential
 
 
 class PowerBIDataset(BaseModel, arbitrary_types_allowed=True):

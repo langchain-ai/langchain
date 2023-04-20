@@ -14,7 +14,7 @@ from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.base import BaseLLM
-from langchain.powerbi import PowerBIDataset
+from langchain.utilities.powerbi import PowerBIDataset
 
 
 def create_pbi_agent(
