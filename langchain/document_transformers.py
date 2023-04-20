@@ -2,18 +2,23 @@
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
 from langchain.schema import BaseDocumentTransformer, Document
 
 
-class DocumentTransformerPipeline(BaseDocumentTransformer):
+class DocumentTransformerPipeline(BaseDocumentTransformer, BaseModel):
     """Document transformer that uses a pipeline of other transformed."""
 
     transformers: List[BaseDocumentTransformer]
     """List of document filters that are chained together and run in sequence."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
@@ -84,7 +89,7 @@ def _get_embeddings_from_stateful_docs(
     return embedded_documents
 
 
-class EmbeddingsRedundantFilter(BaseDocumentTransformer):
+class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     """Filter that drops redundant documents by comparing their embeddings."""
 
     embeddings: Embeddings

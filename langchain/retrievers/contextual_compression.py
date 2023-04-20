@@ -10,10 +10,10 @@ from langchain.schema import BaseRetriever, Document
 
 
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
-    """Retriever that wraps a base retriever and filters the results."""
+    """Retriever that wraps a base retriever and compresses the results."""
 
-    base_filter: BaseDocumentCompressor
-    """Filter for filtering documents."""
+    base_compressor: BaseDocumentCompressor
+    """Compressor for compressing retrieved documents."""
 
     base_retriever: BaseRetriever
     """Base Retriever to use for getting relevant documents."""
@@ -34,7 +34,7 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             Sequence of relevant documents
         """
         docs = self.base_retriever.get_relevant_documents(query)
-        compressed_docs = self.base_filter.compress_documents(docs, query)
+        compressed_docs = self.base_compressor.compress_documents(docs, query)
         return list(compressed_docs)
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
@@ -47,5 +47,5 @@ class ContextualCompressionRetriever(BaseRetriever, BaseModel):
             List of relevant documents
         """
         docs = await self.base_retriever.aget_relevant_documents(query)
-        compressed_docs = await self.base_filter.acompress_documents(docs, query)
+        compressed_docs = await self.base_compressor.acompress_documents(docs, query)
         return list(compressed_docs)

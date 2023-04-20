@@ -1,10 +1,10 @@
-"""Integration test for LLMChainCompressor."""
+"""Integration test for LLMChainExtractor."""
 from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.document_compressors import LLMChainExtractor
-from langchain.retrievers.document_compressors.base import _RetrievedDocument
+from langchain.schema import Document
 
 
-def test_llm_chain_compressor_filter() -> None:
+def test_llm_chain_extractor() -> None:
     texts = [
         "The Roman Empire followed the Roman Republic.",
         "I love chocolate chip cookies—my mother makes great cookies.",
@@ -13,7 +13,7 @@ def test_llm_chain_compressor_filter() -> None:
         "The Roman Empire collapsed in 476 AD after the fall of Rome.",
         "Let's go to Olive Garden!",
     ]
-    doc = _RetrievedDocument(page_content=" ".join(texts))
+    doc = Document(page_content=" ".join(texts))
     compressor = LLMChainExtractor.from_llm(ChatOpenAI())
     actual = compressor.compress_documents([doc], "Tell me about the Roman Empire")[
         0
@@ -24,13 +24,13 @@ def test_llm_chain_compressor_filter() -> None:
     assert all([texts[i] not in actual for i in expected_not_returned])
 
 
-def test_llm_chain_compressor_filter_empty() -> None:
+def test_llm_chain_extractor_empty() -> None:
     texts = [
         "I love chocolate chip cookies—my mother makes great cookies.",
         "Don't you just love Caesar salad?",
         "Let's go to Olive Garden!",
     ]
-    doc = _RetrievedDocument(page_content=" ".join(texts))
+    doc = Document(page_content=" ".join(texts))
     compressor = LLMChainExtractor.from_llm(ChatOpenAI())
     actual = compressor.compress_documents([doc], "Tell me about the Roman Empire")
     assert len(actual) == 0
