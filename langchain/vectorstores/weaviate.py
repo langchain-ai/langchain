@@ -217,7 +217,7 @@ class Weaviate(VectorStore):
         )
 
         try:
-            from weaviate import AuthApiKey, Client
+            from weaviate import Client
             from weaviate.auth import AuthApiKey
             from weaviate.util import get_valid_uuid
         except ImportError:
@@ -226,9 +226,7 @@ class Weaviate(VectorStore):
                 "Please install it with `pip instal weaviate-client`"
             )
 
-        auth = (
-            AuthApiKey(api_key=weaviate_api_key) if weaviate_api_key is not "" else None
-        )
+        auth = AuthApiKey(api_key=weaviate_api_key) if weaviate_api_key != "" else None
 
         client = Client(weaviate_url, auth_client_secret=auth)
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
