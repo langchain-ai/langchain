@@ -211,7 +211,7 @@ class MlflowLogger:
         tracking_uri = get_from_dict_or_env(
             kwargs, "tracking_uri", "MLFLOW_TRACKING_URI"
         )
-        self.mlfc = self.mlflow.MlflowClient(tracking_uri=tracking_uri)
+        self.mlflow.set_tracking_uri(tracking_uri)
 
         # User can set other env variables described here
         # > https://www.mlflow.org/docs/latest/tracking.html#logging-to-a-tracking-server
@@ -219,12 +219,11 @@ class MlflowLogger:
         experiment_name = get_from_dict_or_env(
             kwargs, "experiment_name", "MLFLOW_EXPERIMENT_NAME"
         )
-        self.mlf_exp = self.mlfc.get_experiment_by_name(experiment_name)
+        self.mlf_exp = self.mlflow.get_experiment_by_name(experiment_name)
         if self.mlf_exp is not None:
-            self.mlf_exp_id = self.mlf_exp.experiment_id
+            self.mlf_expid = self.mlf_exp.experiment_id
         else:
-            self.mlf_exp_id = self.mlfc.create_experiment(experiment_name)
-            self.mlf_exp = self.mlfc.get_experiment_by_name(experiment_name)
+            self.mlf_expid = self.mlflow.create_experiment(experiment_name)
 
         self.start_run(kwargs["run_name"], kwargs["run_tags"])
 
@@ -233,25 +232,37 @@ class MlflowLogger:
         if name.endswith("-%"):
             rname = "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
             name = name.replace("%", rname)
-        self.run = self.mlfc.create_run(self.mlf_exp_id, run_name=name, tags=tags)
+        self.run = self.mlflow.MlflowClient().create_run(
+            self.mlf_expid, run_name=name, tags=tags
+        )
 
     def finish_run(self):
         """To finish the run."""
-        self.mlfc.set_terminated(self.run.info.run_id)
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.end_run()
 
     def metric(self, key: str, value: float):
         """To log metric to mlflow server."""
-        self.mlfc.log_metric(self.run.info.run_id, key, value)
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_metric(key, value)
 
-    def metrics(self, data: dict[str, float], step=0):
+    def metrics(self, data: dict[str, float], step: Optional[int] = 0):
         """To log all metrics in the input dict."""
-        ts = int(time.time() * 1000)
-        metrics = [self.mlflow.entities.Metric(k, v, ts, step) for k, v in data.items()]
-        self.mlfc.log_batch(self.run.info.run_id, metrics=metrics)
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_metrics(data)
 
     def jsonf(self, data: dict[str, float], filename: str):
         """To log the input data as json file artifact."""
-        self.mlfc.log_dict(self.run.info.run_id, data, f"{filename}.json")
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_dict(data, f"{filename}.json")
 
     def table(self, name: str, df):
         """To log the input dataframe as a html table"""
@@ -259,15 +270,30 @@ class MlflowLogger:
 
     def html(self, html: str, filename: str):
         """To log the input html string as html file artifact."""
-        self.mlfc.log_text(self.run.info.run_id, html, f"{filename}.html")
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_text(html, f"{filename}.html")
 
     def text(self, text: str, filename: str):
         """To log the input text as text file artifact."""
-        self.mlfc.log_text(self.run.info.run_id, text, f"{filename}.txt")
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_text(text, f"{filename}.txt")
 
     def artifact(self, path: str):
         """To upload the file from given path as artifact."""
-        self.mlfc.log_artifact(self.run.info.run_id, path)
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.log_artifact(path)
+
+    def langchain_artifact(self, chain: Any):
+        with self.mlflow.start_run(
+            run_id=self.run.info.run_id, experiment_id=self.mlf_expid
+        ):
+            self.mlflow.langchain.log_model(chain, "langchain-model")
 
 
 class MlflowCallbackHandler(BaseCallbackHandler):
@@ -453,23 +479,12 @@ class MlflowCallbackHandler(BaseCallbackHandler):
 
         self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
-        chain_input = inputs["input"]
-
-        if isinstance(chain_input, str):
-            input_resp = deepcopy(resp)
-            input_resp["input"] = chain_input
-            self.records["on_chain_start_records"].append(input_resp)
-            self.records["action_records"].append(input_resp)
-            self.mlflg.jsonf(input_resp, f"chain_start_{chain_starts}")
-        elif isinstance(chain_input, list):
-            for idx, inp in enumerate(chain_input):
-                input_resp = deepcopy(resp)
-                input_resp.update(inp)
-                self.records["on_chain_start_records"].append(input_resp)
-                self.records["action_records"].append(input_resp)
-                self.mlflg.jsonf(input_resp, f"chain_start_{chain_starts}_input_{idx}")
-        else:
-            raise ValueError("Unexpected data format provided!")
+        chain_input = ",".join([f"{k}={v}" for k, v in inputs.items()])
+        input_resp = deepcopy(resp)
+        input_resp["inputs"] = chain_input
+        self.records["on_chain_start_records"].append(input_resp)
+        self.records["action_records"].append(input_resp)
+        self.mlflg.jsonf(input_resp, f"chain_start_{chain_starts}")
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain ends running."""
@@ -480,14 +495,15 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         chain_ends = self.metrics["chain_ends"]
 
         resp = {}
-        resp.update({"action": "on_chain_end", "outputs": outputs["output"]})
+        chain_output = ",".join([f"{k}={v}" for k, v in outputs.items()])
+        resp.update({"action": "on_chain_end", "outputs": chain_output})
         resp.update(self.metrics)
 
-        self.mlfg.metrics(self.metrics, step=self.metrics["step"])
+        self.mlflg.metrics(self.metrics, step=self.metrics["step"])
 
         self.records["on_chain_end_records"].append(resp)
         self.records["action_records"].append(resp)
-        self.mlfg.jsonf(resp, f"chain_end_{chain_ends}")
+        self.mlflg.jsonf(resp, f"chain_end_{chain_ends}")
 
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
@@ -677,16 +693,27 @@ class MlflowCallbackHandler(BaseCallbackHandler):
         self.mlflg.html("".join(chat_html.tolist()), "chat_html")
 
         if langchain_asset:
-            langchain_asset_path = Path(self.temp_dir.name, "model.json")
-            try:
-                langchain_asset.save(langchain_asset_path)
-            except ValueError:
-                langchain_asset.save_agent(langchain_asset_path)
-            except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
-                pass
-            self.mlflg.artifact(langchain_asset_path)
+            # To avoid circular import error
+            # mlflow only supports LLMChain asset
+            if "langchain.chains.llm.LLMChain" in str(type(langchain_asset)):
+                self.mlflg.langchain_artifact(langchain_asset)
+            else:
+                langchain_asset_path = Path(self.temp_dir.name, "model.json")
+                try:
+                    langchain_asset.save(langchain_asset_path)
+                    self.mlflg.artifact(langchain_asset_path)
+                except ValueError:
+                    try:
+                        langchain_asset.save_agent(langchain_asset_path)
+                        self.mlflg.artifact(langchain_asset_path)
+                    except AttributeError as ae:
+                        print("Could not save model.")
+                        print(repr(ae))
+                        pass
+                except NotImplementedError as e:
+                    print("Could not save model.")
+                    print(repr(e))
+                    pass
         if finish:
             self.mlflg.finish_run()
             self._reset()
