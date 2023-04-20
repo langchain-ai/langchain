@@ -24,7 +24,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import HuggingFaceEmbeddings
             model_name = "sentence-transformers/all-mpnet-base-v2"
             model_kwargs = {'device': 'cpu'}
-            hf = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kargs)
+            hf = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:
@@ -93,7 +93,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import HuggingFaceInstructEmbeddings
             model_name = "hkunlp/instructor-large"
             model_kwargs = {'device': 'cpu'}
-            hf = HuggingFaceInstructEmbeddings(model_name=model_name, model_kwargs=model_kargs)
+            hf = HuggingFaceInstructEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:
