@@ -30,7 +30,7 @@ def create_pbi_agent(
     top_k: int = 10,
     verbose: bool = False,
     agent_kwargs: dict[str, Any] | None = None,
-    **kwargs: Any,
+    **kwargs: dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
     if toolkit is None:
