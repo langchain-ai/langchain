@@ -9,7 +9,7 @@ REFINE_PROMPT_TMPL = (
     "------------\n"
     "{text}\n"
     "------------\n"
-    "Given the new context, refine the original summary"
+    "Given the new context, refine the original summary\n"
     "If the context isn't useful, return the original summary."
 )
 REFINE_PROMPT = PromptTemplate(

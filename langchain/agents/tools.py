@@ -2,9 +2,9 @@
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_arguments
 
-from langchain.tools.base import BaseTool, create_args_schema_model_from_signature
+from langchain.tools.base import BaseTool
 
 
 class Tool(BaseTool):
@@ -17,13 +17,14 @@ class Tool(BaseTool):
     """The asynchronous version of the function."""
 
     @property
-    def args(self) -> Type[BaseModel]:
-        """Generate an input pydantic model."""
+    def args(self) -> dict:
         if self.args_schema is not None:
-            return self.args_schema
-        # Infer the schema directly from the function to add more structured
-        # arguments.
-        return create_args_schema_model_from_signature(self.func)
+            return self.args_schema.schema()["properties"]
+        else:
+            inferred_model = validate_arguments(self.func).model  # type: ignore
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self.func).parameters
+            return {k: schema[k] for k in valid_keys}
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
@@ -60,8 +61,22 @@ class InvalidTool(BaseTool):
         return f"{tool_name} is not a valid tool, try another one."
 
 
-def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
+def tool(
+    *args: Union[str, Callable],
+    return_direct: bool = False,
+    args_schema: Optional[Type[BaseModel]] = None,
+    infer_schema: bool = True,
+) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
+
+    Args:
+        *args: The arguments to the tool.
+        return_direct: Whether to return directly from the tool rather
+            than continuing the agent loop.
+        args_schema: optional argument schema for user to specify
+        infer_schema: Whether to infer the schema of the arguments from
+            the function's signature. This also makes the resultant tool
+            accept a dictionary input to its `run()` function.
 
     Requires:
         - Function must be of type (str) -> str
@@ -87,11 +102,13 @@ def tool(*args: Union[str, Callable], return_direct: bool = False) -> Callable:
             # Description example:
             # search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            args_schema = create_args_schema_model_from_signature(func)
+            _args_schema = args_schema
+            if _args_schema is None and infer_schema:
+                _args_schema = validate_arguments(func).model  # type: ignore
             tool_ = Tool(
                 name=tool_name,
                 func=func,
-                args_schema=args_schema,
+                args_schema=_args_schema,
                 description=description,
                 return_direct=return_direct,
             )

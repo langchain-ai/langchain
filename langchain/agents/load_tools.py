@@ -11,6 +11,7 @@ from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.requests import TextRequestsWrapper
+from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
@@ -26,6 +27,7 @@ from langchain.tools.requests.tool import (
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
@@ -173,6 +175,10 @@ def _get_google_search(**kwargs: Any) -> BaseTool:
 
 def _get_wikipedia(**kwargs: Any) -> BaseTool:
     return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
+
+
+def _get_arxiv(**kwargs: Any) -> BaseTool:
+    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
