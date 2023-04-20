@@ -1,5 +1,5 @@
 """Tools for interacting with a Power BI dataset."""
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import Field, validator
 
@@ -34,7 +34,7 @@ class QueryPowerBITool(BaseTool):
 
         arbitrary_types_allowed = True
 
-    def _check_cache(self, tool_input: str) -> str | None:
+    def _check_cache(self, tool_input: str) -> Optional[str]:
         """Check if the input is present in the cache.
 
         If the value is a bad request, overwrite with the escalated version,
