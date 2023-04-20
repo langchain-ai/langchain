@@ -1,6 +1,6 @@
 """Unit tests for redundant embedding filtering."""
 from langchain.math_utils import cosine_similarity
-from langchain.retrievers.document_filters.embeddings_redundant import (
+from langchain.retrievers.document_compressors.embeddings_redundant import (
     _filter_similar_embeddings,
 )
 

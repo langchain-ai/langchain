@@ -1,12 +1,12 @@
 """Integration test for filtering pipelines."""
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.retrievers.document_filters import (
+from langchain.retrievers.document_compressors import (
     DocumentCompressorPipeline,
     EmbeddingRedundantDocumentFilter,
     EmbeddingRelevancyDocumentFilter,
     SplitterDocumentFilter,
 )
-from langchain.retrievers.document_filters.base import _RetrievedDocument
+from langchain.retrievers.document_compressors.base import _RetrievedDocument
 from langchain.text_splitter import CharacterTextSplitter
 
 

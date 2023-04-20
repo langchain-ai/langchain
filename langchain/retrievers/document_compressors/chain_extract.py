@@ -2,10 +2,10 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
-from langchain.retrievers.document_filters.base import (
+from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.retrievers.document_filters.chain_extract_prompt import (
+from langchain.retrievers.document_compressors.chain_extract_prompt import (
     prompt_template,
 )
 from langchain.schema import BaseLanguageModel, BaseOutputParser, Document

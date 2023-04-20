@@ -1,7 +1,7 @@
 """Integration test for embedding-based redundant doc filtering."""
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.retrievers.document_filters import EmbeddingRedundantDocumentFilter
-from langchain.retrievers.document_filters.base import _RetrievedDocument
+from langchain.retrievers.document_compressors import EmbeddingRedundantDocumentFilter
+from langchain.retrievers.document_compressors.base import _RetrievedDocument
 
 
 def test_embedding_redundant_document_filter() -> None:

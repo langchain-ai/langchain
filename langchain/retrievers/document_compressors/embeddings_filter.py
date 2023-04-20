@@ -10,7 +10,7 @@ from langchain.document_transformers import (
 )
 from langchain.embeddings.base import Embeddings
 from langchain.math_utils import cosine_similarity
-from langchain.retrievers.document_filters.base import (
+from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import Document

@@ -1,7 +1,7 @@
 """Integration test for LLMChainCompressor."""
 from langchain.chat_models import ChatOpenAI
-from langchain.retrievers.document_filters import LLMChainExtractor
-from langchain.retrievers.document_filters.base import _RetrievedDocument
+from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain.retrievers.document_compressors.base import _RetrievedDocument
 
 
 def test_llm_chain_compressor_filter() -> None:

@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Extra
 
-from langchain.retrievers.document_filters.base import (
+from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
 from langchain.schema import BaseRetriever, Document

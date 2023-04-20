@@ -2,8 +2,8 @@
 import numpy as np
 
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.retrievers.document_filters import EmbeddingRelevancyDocumentFilter
-from langchain.retrievers.document_filters.base import _RetrievedDocument
+from langchain.retrievers.document_compressors import EmbeddingRelevancyDocumentFilter
+from langchain.retrievers.document_compressors.base import _RetrievedDocument
 
 
 def test_embedding_relevant_document_filter() -> None:
