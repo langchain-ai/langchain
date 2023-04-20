@@ -13,7 +13,7 @@ class ChatGPTPluginRetriever(BaseRetriever, BaseModel):
     url: str
     bearer_token: str
     top_k: int = 3
-    filter: Optional[None] = None
+    filter: Optional[dict] = None
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:

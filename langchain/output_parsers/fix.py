@@ -41,3 +41,7 @@ class OutputFixingParser(BaseOutputParser[T]):
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
+
+    @property
+    def _type(self) -> str:
+        return self.parser._type
