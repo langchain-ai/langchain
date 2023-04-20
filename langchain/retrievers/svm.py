@@ -4,10 +4,10 @@ https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb"""
 
 from __future__ import annotations
 
+import concurrent.futures
 from typing import Any, List, Optional
 
 import numpy as np
-import concurrent.futures
 from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
