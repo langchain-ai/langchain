@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -31,7 +31,7 @@ class AgentAction(NamedTuple):
     """Agent's action to take."""
 
     tool: str
-    tool_input: str
+    tool_input: Union[str, dict]
     log: str
 
 
@@ -392,3 +392,18 @@ class OutputParserException(Exception):
     """
 
     pass
+
+
+D = TypeVar("D", bound=Document)
+
+
+class BaseDocumentTransformer(ABC, Generic[D]):
+    """Base interface for transforming documents."""
+
+    @abstractmethod
+    def transform_documents(self, documents: List[D], **kwargs: Any) -> List[D]:
+        """Transform a list of documents."""
+
+    @abstractmethod
+    async def atransform_documents(self, documents: List[D], **kwargs: Any) -> List[D]:
+        """Asynchronously transform a list of documents."""

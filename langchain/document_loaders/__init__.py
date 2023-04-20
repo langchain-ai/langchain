@@ -13,10 +13,13 @@ from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
+from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.dataframe import DataFrameLoader
+from langchain.document_loaders.diffbot import DiffbotLoader
 from langchain.document_loaders.directory import DirectoryLoader
+from langchain.document_loaders.discord import DiscordChatLoader
 from langchain.document_loaders.duckdb_loader import DuckDBLoader
 from langchain.document_loaders.email import (
     OutlookMessageLoader,
@@ -36,6 +39,7 @@ from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
 from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
+from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
 from langchain.document_loaders.notebook import NotebookLoader
@@ -60,6 +64,7 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredFileIOLoader,
     UnstructuredFileLoader,
@@ -141,7 +146,12 @@ __all__ = [
     "SitemapLoader",
     "DuckDBLoader",
     "BigQueryLoader",
+    "DiffbotLoader",
     "BiliBiliLoader",
     "SlackDirectoryLoader",
     "GitLoader",
+    "TwitterTweetLoader",
+    "ImageCaptionLoader",
+    "DiscordChatLoader",
+    "ConfluenceLoader",
 ]

@@ -7,8 +7,8 @@ from typing import Dict, Optional
 
 from pydantic import Field, root_validator
 
-from langchain.python import PythonREPL
 from langchain.tools.base import BaseTool
+from langchain.utilities import PythonREPL
 
 
 def _get_default_python_repl() -> PythonREPL:
@@ -89,7 +89,7 @@ class PythonAstREPLTool(BaseTool):
                     output = str(e)
                 return output
         except Exception as e:
-            return str(e)
+            return "{}: {}".format(type(e).__name__, str(e))
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""

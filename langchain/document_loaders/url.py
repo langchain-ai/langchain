@@ -5,7 +5,7 @@ from typing import Any, List
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class UnstructuredURLLoader(BaseLoader):
@@ -15,7 +15,6 @@ class UnstructuredURLLoader(BaseLoader):
         self,
         urls: List[str],
         continue_on_failure: bool = True,
-        headers: dict = {},
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -30,22 +29,36 @@ class UnstructuredURLLoader(BaseLoader):
                 "`pip install unstructured`"
             )
 
-        if not self.__is_headers_available() and len(headers.keys()) != 0:
-            logger.warning(
-                "You are using old version of unstructured. "
-                "The headers parameter is ignored"
-            )
+        headers = unstructured_kwargs.pop("headers", {})
+        if len(headers.keys()) != 0:
+            warn_about_headers = False
+            if self.__is_non_html_available():
+                warn_about_headers = not self.__is_headers_available_for_non_html()
+            else:
+                warn_about_headers = not self.__is_headers_available_for_html()
+
+            if warn_about_headers:
+                logger.warning(
+                    "You are using an old version of unstructured. "
+                    "The headers parameter is ignored"
+                )
 
         self.urls = urls
         self.continue_on_failure = continue_on_failure
         self.headers = headers
         self.unstructured_kwargs = unstructured_kwargs
 
-    def __is_headers_available(self) -> bool:
+    def __is_headers_available_for_html(self) -> bool:
         _unstructured_version = self.__version.split("-")[0]
         unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
 
         return unstructured_version >= (0, 5, 7)
+
+    def __is_headers_available_for_non_html(self) -> bool:
+        _unstructured_version = self.__version.split("-")[0]
+        unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
+
+        return unstructured_version >= (0, 5, 13)
 
     def __is_non_html_available(self) -> bool:
         _unstructured_version = self.__version.split("-")[0]
@@ -61,14 +74,20 @@ class UnstructuredURLLoader(BaseLoader):
         docs: List[Document] = list()
         for url in self.urls:
             try:
-                if self.headers and self.__is_headers_available():
-                    elements = partition_html(
-                        url=url, headers=self.headers, **self.unstructured_kwargs
-                    )
-                elif self.__is_non_html_available():
-                    elements = partition(url=url, **self.unstructured_kwargs)
+                if self.__is_non_html_available():
+                    if self.__is_headers_available_for_non_html():
+                        elements = partition(
+                            url=url, headers=self.headers, **self.unstructured_kwargs
+                        )
+                    else:
+                        elements = partition(url=url, **self.unstructured_kwargs)
                 else:
-                    elements = partition_html(url=url, **self.unstructured_kwargs)
+                    if self.__is_headers_available_for_html():
+                        elements = partition_html(
+                            url=url, headers=self.headers, **self.unstructured_kwargs
+                        )
+                    else:
+                        elements = partition_html(url=url, **self.unstructured_kwargs)
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
