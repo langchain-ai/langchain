@@ -6382,14 +6382,14 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "qdrant-client"
-version = "1.1.4"
+version = "1.1.5"
 description = "Client library for the Qdrant vector search engine"
 category = "main"
 optional = true
 python-versions = ">=3.7,<3.12"
 files = [
-    {file = "qdrant_client-1.1.4-py3-none-any.whl", hash = "sha256:12ad9dba63228cc5493e137bf35c59af56d84ca3a2b088c4298825d4893c7100"},
-    {file = "qdrant_client-1.1.4.tar.gz", hash = "sha256:92ad225bd770fb6a7ac10f75e38f53ffebe63c7f239b02fc7d2bc993246eb74c"},
+    {file = "qdrant_client-1.1.5-py3-none-any.whl", hash = "sha256:b7395c9c073ce9ab4e16da0e99ede04faa50782ff0830a9080fff024dc165555"},
+    {file = "qdrant_client-1.1.5.tar.gz", hash = "sha256:bb9a99edef0fcc26284e2b8038157ec77c3ceec982204be4eade4aef83f9c9e0"},
 ]
 
 [package.dependencies]
