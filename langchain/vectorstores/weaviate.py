@@ -212,10 +212,13 @@ class Weaviate(VectorStore):
                 )
         """
         weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
-        weaviate_api_key = get_from_dict_or_env(kwargs, "weaviate_api_key", "WEAVIATE_API_KEY")
+        weaviate_api_key = get_from_dict_or_env(
+            kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", ""
+        )
 
         try:
-            from weaviate import Client
+            from weaviate import AuthApiKey, Client
+            from weaviate.auth import AuthApiKey
             from weaviate.util import get_valid_uuid
         except ImportError:
             raise ValueError(
@@ -223,7 +226,9 @@ class Weaviate(VectorStore):
                 "Please install it with `pip instal weaviate-client`"
             )
 
-        auth = weaviate.auth.AuthApiKey(api_key=weaviate_api_key) if weaviate_api_key else None
+        auth = (
+            AuthApiKey(api_key=weaviate_api_key) if weaviate_api_key is not "" else None
+        )
 
         client = Client(weaviate_url, auth_client_secret=auth)
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
