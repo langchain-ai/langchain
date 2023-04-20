@@ -113,7 +113,9 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         try:
             from InstructorEmbedding import INSTRUCTOR
 
-            self.client = INSTRUCTOR(self.model_name, cache_folder=self.cache_folder, **model_kwargs)
+            self.client = INSTRUCTOR(
+                self.model_name, cache_folder=self.cache_folder, **model_kwargs
+            )
         except ImportError as e:
             raise ValueError("Dependencies for InstructorEmbedding not found.") from e
 
