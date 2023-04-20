@@ -27,7 +27,7 @@ def create_pbi_agent(
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: Optional[Dict[str, Any]] | None = None,
+    agent_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
