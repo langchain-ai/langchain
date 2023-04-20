@@ -1,0 +1,1 @@
+"""DuckDuckGo Search API toolkit."""
