@@ -273,7 +273,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
@@ -328,7 +329,15 @@ class Redis(VectorStore):
                 },
             )
         pipeline.execute()
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
 
     @staticmethod
     def drop_index(
@@ -357,7 +366,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
@@ -375,6 +385,9 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -389,7 +402,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
@@ -400,7 +414,15 @@ class Redis(VectorStore):
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)
