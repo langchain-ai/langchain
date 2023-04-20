@@ -13,13 +13,13 @@ Your main task is to decide which of the tools is relevant for answering questio
 For complex questions, you can break the question down into sub questions and use tools to answers the sub questions.
 """
 
-SUFFIX = """Begin!"
+SUFFIX = """Begin!
 
 Question: {input}
 Thought: I should look at the contents in documents.
 {agent_scratchpad}"""
 
-ROUTER_SUFFIX = """Begin!"
+ROUTER_SUFFIX = """Begin!
 
 Question: {input}
 Thought: I should decide which tool is relevant for answering the question.
