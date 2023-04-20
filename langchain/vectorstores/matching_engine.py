@@ -97,18 +97,18 @@ class MatchingEngine(VectorStore):
 
     @staticmethod
     def _validate_gcs_bucket(gcs_bucket_name: str) -> str:
-        """Validates the gcs_bucket_uri as a bucket name.
+        """Validates the gcs_bucket_name as a bucket name.
 
         Args:
               gcs_bucket_name: The received bucket uri.
 
         Returns:
-              A valid gcs_bucket_uri or throws ValueError if full path is
+              A valid gcs_bucket_name or throws ValueError if full path is
               provided.
         """
         gcs_bucket_name = gcs_bucket_name.replace("gs://", "")
         if "/" in gcs_bucket_name:
-            raise ValueError(f"The argument gcs_bucket_uri should only be "
+            raise ValueError(f"The argument gcs_bucket_name should only be "
                              f"the bucket name. Received {gcs_bucket_name}")
         return gcs_bucket_name
 
@@ -141,7 +141,7 @@ class MatchingEngine(VectorStore):
         self,
         project_id: str,
         region: str,
-        gcs_bucket_uri: str
+        gcs_bucket_name: str
     ) -> None:
         """Configures the aiplatform library.
 
@@ -149,17 +149,17 @@ class MatchingEngine(VectorStore):
             project_id: The GCP project id.
             region: The default location making the API calls. It must have
             the same location as the GCS bucket and must be regional.
-            gcs_bucket_uri: GCS staging location.
+            gcs_bucket_name: GCS staging location.
         """
 
         from google.cloud import aiplatform
 
         logger.debug(f"Initializing AI Platform for project {project_id} on "
-                     f"{region} and for {gcs_bucket_uri}.")
+                     f"{region} and for {gcs_bucket_name}.")
         aiplatform.init(
             project=project_id, 
             location=region, 
-            staging_bucket=gcs_bucket_uri,
+            staging_bucket=gcs_bucket_name,
             credentials=self.credentials
         )
 
@@ -377,6 +377,13 @@ class MatchingEngine(VectorStore):
         texts: List[str],
         embedding: Embeddings = None,
         metadatas: Optional[List[dict]] = None,
+        *,
+        project_id: str,
+        region: str,
+        gcs_bucket_name: str,
+        index_id: str,
+        endpoint_id: str,
+        credentials_path: Optional[str],
         **kwargs: Any,
     ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings.
@@ -389,34 +396,27 @@ class MatchingEngine(VectorStore):
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
             metadatas: List of metadatas. Defaults to None.
-
-            Required kwargs:
-                project_id: The GCP project id.
-                region: The default location making the API calls. It must have
-                the same location as the GCS bucket and must be regional.
-                gcs_bucket_uri: The location where the vectors will be stored in
-                order for the index to be created.
-                index_id: The id of the created index.
-                endpoint_id: The id of the created endpoint.
-                credentials_path: The path of the Google credentials on the
-                local file system.
+            project_id: The GCP project id.
+            region: The default location making the API calls. It must have
+            the same location as the GCS bucket and must be regional.
+            gcs_bucket_name: The location where the vectors will be stored in
+            order for the index to be created.
+            index_id: The id of the created index.
+            endpoint_id: The id of the created endpoint.
+            credentials_path: The path of the Google credentials on the
+            local file system.
 
         Returns:
             A configured MatchingEngine with the texts added to the index.
         """
-        required_kwargs = ["project_id", "region", "gcs_bucket_uri",
-                           "index_id", "endpoint_id","credentials_path"]
-        missing = [x for x in required_kwargs if x not in kwargs]
-        if len(missing) != 0:
-            raise ValueError(f"Missing required kwargs: {missing}")
 
         matching_engine = cls.from_components(
-            project_id=kwargs["project_id"],
-            region=kwargs["region"],
-            gcs_bucket_uri=kwargs["gcs_bucket_uri"],
-            index_id=kwargs["index_id"],
-            endpoint_id=kwargs["endpoint_id"],
-            credentials_path=kwargs["credentials_path"],
+            project_id=project_id,
+            region=region,
+            gcs_bucket_name=gcs_bucket_name,
+            index_id=index_id,
+            endpoint_id=endpoint_id,
+            credentials_path=credentials_path,
             embedding=embedding or cls._get_default_embeddings()
         )
 
@@ -428,7 +428,7 @@ class MatchingEngine(VectorStore):
         cls: Type["MatchingEngine"],
         project_id: str,
         region: str,
-        gcs_bucket_uri: str,
+        gcs_bucket_name: str,
         index_id: str,
         endpoint_id: str,
         credentials_path: Optional[str] = None,
@@ -440,7 +440,7 @@ class MatchingEngine(VectorStore):
             project_id: The GCP project id.
             region: The default location making the API calls. It must have
             the same location as the GCS bucket and must be regional.
-            gcs_bucket_uri: The location where the vectors will be stored in
+            gcs_bucket_name: The location where the vectors will be stored in
             order for the index to be created.
             index_id: The id of the created index.
             endpoint_id: The id of the created endpoint.
@@ -460,7 +460,7 @@ class MatchingEngine(VectorStore):
         return cls(
             project_id=project_id,
             region=region,
-            gcs_bucket_name=gcs_bucket_uri,
+            gcs_bucket_name=gcs_bucket_name,
             index=index,
             endpoint=endpoint,
             embedding=embedding or cls._get_default_embeddings(),
