@@ -9,32 +9,6 @@ from langchain.math_utils import cosine_similarity
 from langchain.schema import BaseDocumentTransformer, Document
 
 
-class DocumentTransformerPipeline(BaseDocumentTransformer, BaseModel):
-    """Document transformer that uses a pipeline of other transformed."""
-
-    transformers: List[BaseDocumentTransformer]
-    """List of document filters that are chained together and run in sequence."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform a list of documents."""
-        for _transformer in self.transformers:
-            documents = _transformer.transform_documents(documents, **kwargs)
-        return documents
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform a list of documents."""
-        raise NotImplementedError
-
-
 class _DocumentWithState(Document):
     """Wrapper for a document that includes arbitrary state."""
 
