@@ -33,6 +33,7 @@ from langchain.llms.sagemaker_endpoint import SagemakerEndpoint
 from langchain.llms.self_hosted import SelfHostedPipeline
 from langchain.llms.self_hosted_hugging_face import SelfHostedHuggingFaceLLM
 from langchain.llms.stochasticai import StochasticAI
+from langchain.llms.vertexai import VertexAI
 from langchain.llms.writer import Writer
 
 __all__ = [
@@ -71,6 +72,7 @@ __all__ = [
     "PredictionGuard",
     "HumanInputLLM",
     "HuggingFaceTextGenInference",
+    "VertexAI",
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -105,4 +107,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "writer": Writer,
     "rwkv": RWKV,
     "huggingface_textgen_inference": HuggingFaceTextGenInference,
+    "vertexai": VertexAI,
 }
