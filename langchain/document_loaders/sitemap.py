@@ -42,14 +42,16 @@ class SitemapLoader(WebBaseLoader):
 
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
-
+        if sitemap_discovery:
+            self.web_path = _modify_web_path()
+        
     # if web_path is a str
     @property
     def _base_url(self) -> str:
         base_url = f"urlparse(self.web_path).scheme + '://' + urlparse(self.web_path).netloc"
         return base_url 
     
-    def find_sitemap_in_robotstxt(self) -> str:
+    def _find_sitemap_in_robotstxt(self) -> str:
         """Find sitemap in robots.txt."""
         sitemap_urls = []
         robots_txt_url = self._base_url + "/robots.txt"
@@ -59,7 +61,7 @@ class SitemapLoader(WebBaseLoader):
         
         return site_map_urls
 
-    def find_sitemap_in_html(self) -> str: 
+    def _find_sitemap_in_html(self) -> str: 
         """Find sitemap in homepage html."""
         sitemap_urls = []
         
@@ -71,14 +73,13 @@ class SitemapLoader(WebBaseLoader):
                     sitemap_urls.append(self._base  + link.get("href"))
         return site_map_urls
 
-    @property
-    def web_path(self) -> str:
-        if self.discover_sitemap:
-            sitemap_urls = self.find_sitemap_in_robotstxt()
-            if not sitemap_urls:
-                sitemap_urls = self.find_sitemap_in_html()
-            if not sitemap_urls:
-                raise ValueError("No sitemap found in robots.txt or homepage html")
+    
+    def _modify_web_path(self) -> str:
+        sitemap_urls = self.find_sitemap_in_robotstxt()
+        if not sitemap_urls:
+            sitemap_urls = self.find_sitemap_in_html()
+        if not sitemap_urls:
+            raise ValueError("No sitemap found in robots.txt or the homepage html.")
         return sitemap_urls[0]
 
     def parse_sitemap(self, soup: Any) -> List[dict]:
