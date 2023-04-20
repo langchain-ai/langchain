@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel, Extra
 
 from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
+    DocumentCompressorMixin,
 )
 from langchain.schema import BaseRetriever, Document
 
@@ -12,7 +12,7 @@ from langchain.schema import BaseRetriever, Document
 class ContextualCompressionRetriever(BaseRetriever, BaseModel):
     """Retriever that wraps a base retriever and compresses the results."""
 
-    base_compressor: BaseDocumentCompressor
+    base_compressor: DocumentCompressorMixin
     """Compressor for compressing retrieved documents."""
 
     base_retriever: BaseRetriever
