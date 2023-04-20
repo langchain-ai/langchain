@@ -2,7 +2,9 @@
 
 import ast
 import sys
+import re
 from io import StringIO
+from contextlib import redirect_stdout
 from typing import Dict, Optional
 
 from pydantic import Field, root_validator
@@ -68,26 +70,25 @@ class PythonAstREPLTool(BaseTool):
         """Use the tool."""
         try:
             if self.sanitize_input:
-                # Remove the triple backticks from the query.
-                query = query.strip().strip("```")
+                # Remove backticks & python (if llm mistakes python console as terminal) from query
+                query = re.sub(r'(?i:python)|`', '', query).strip()
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
             module_end_str = ast.unparse(module_end)  # type: ignore
+            io_buffer = StringIO()
             try:
-                return eval(module_end_str, self.globals, self.locals)
+                with redirect_stdout(io_buffer):
+                    ret = eval(module_end_str, self.globals, self.locals)
+                    if ret is None:
+                        return io_buffer.getvalue()
+                    else:
+                        return ret
             except Exception:
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = StringIO()
-                try:
+                with redirect_stdout(io_buffer):
                     exec(module_end_str, self.globals, self.locals)
-                    sys.stdout = old_stdout
-                    output = mystdout.getvalue()
-                except Exception as e:
-                    sys.stdout = old_stdout
-                    output = str(e)
-                return output
+                return io_buffer.getvalue()
         except Exception as e:
             return "{}: {}".format(type(e).__name__, str(e))
 
