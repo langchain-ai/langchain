@@ -24,16 +24,11 @@ class BasePowerBIDatabaseTool(BaseModel):
 
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    # Override BaseTool.Config to appease mypy
-    # See https://github.com/pydantic/pydantic/issues/4173
-    class Config(BaseTool.Config):
-        """Configuration for this pydantic object."""
 
-        arbitrary_types_allowed = True
-        extra = Extra.forbid
-
-
-class QueryPowerBITool(BasePowerBIDatabaseTool, BaseTool):
+class QueryPowerBITool(
+    BaseTool,
+    BasePowerBIDatabaseTool,
+):
     """Tool for querying a Power BI Dataset.
 
     TODO: test contents of aiohttp responses to catch bad request vs bad auth.
