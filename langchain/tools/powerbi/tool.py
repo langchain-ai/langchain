@@ -2,7 +2,8 @@
 """Tools for interacting with a Power BI dataset."""
 from __future__ import annotations
 
-from pydantic import BaseModel, Extra, Field, validator  # pylint: disable=E0611
+from typing import Any
+from pydantic import BaseModel, Extra, Field, validator
 
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
