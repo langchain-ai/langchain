@@ -1,10 +1,19 @@
 """Load Data from a Confluence Space"""
 from typing import Any, Callable, List, Optional, Union
+import logging
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.utils import retry_helper
 
+from tenacity import (
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+logger = logging.getLogger(__name__)
 
 class ConfluenceLoader(BaseLoader):
     """
@@ -56,20 +65,19 @@ class ConfluenceLoader(BaseLoader):
         username: Optional[str] = None,
         oauth2: Optional[dict] = None,
         cloud: Optional[bool] = True,
-        retry: Optional[bool] = True,
         number_of_retries: Optional[int] = 3,
-        wait_for_retry: Optional[bool] = True,
-        retry_seconds: Optional[int] = 2,
+        min_retry_seconds: Optional[int] = 2,
+        max_retry_seconds: Optional[int] = 10
+
     ):
         errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2)
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
 
         self.base_url = url
-        self.retry = retry
         self.number_of_retries = number_of_retries
-        self.wait_for_retry = wait_for_retry
-        self.retry_seconds = retry_seconds
+        self.min_retry_seconds = min_retry_seconds
+        self.max_retry_seconds = max_retry_seconds
 
         try:
             from atlassian import Confluence  # noqa: F401
@@ -205,13 +213,12 @@ class ConfluenceLoader(BaseLoader):
 
         if page_ids:
             for page_id in page_ids:
-                # change the number of retries to only run it once.
-                if not self.retry:
-                    self.number_of_retries = 1
-                get_page = retry_helper(
-                    attempts=self.number_of_retries,
-                    sleep=self.wait_for_retry,
-                    sleep_time=self.retry_seconds,
+                get_page = retry(
+                    reraise=True,
+                    stop=stop_after_attempt(self.number_of_retries),
+                    wait=wait_exponential(multiplier=1, 
+                        min=self.min_retry_seconds, max=self.max_retry_seconds),
+                    before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(page_id=page_id, expand="body.storage.value")
                 doc = self.process_page(page, include_attachments, text_maker)
@@ -242,11 +249,13 @@ class ConfluenceLoader(BaseLoader):
         page = 0
         docs = []
         while page < limit:
-            get_pages = retry_helper(
-                attempts=self.number_of_retries,
-                sleep=self.wait_for_retry,
-                sleep_time=self.retry_seconds,
-            )(retrieval_method)
+            get_pages = retry(
+                    reraise=True,
+                    stop=stop_after_attempt(self.number_of_retries),
+                    wait=wait_exponential(multiplier=1, 
+                        min=self.min_retry_seconds, max=self.max_retry_seconds),
+                    before_sleep=before_sleep_log(logger, logging.WARNING),
+                )(retrieval_method)
             batch = get_pages(**kwargs, start=page)
             if len(batch) < limit:
                 page = limit
