@@ -7,6 +7,10 @@ from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
 
+class EmbeddingsContentHandler(ContentHandlerBase[List[str], List[List[float]]]):
+    """Content handler for LLM class."""
+
+
 class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
@@ -62,7 +66,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    content_handler: ContentHandlerBase
+    content_handler: EmbeddingsContentHandler
     """The content handler class that provides an input and
     output transform functions to handle formats between LLM
     and the endpoint.
@@ -72,9 +76,9 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
      Example:
         .. code-block:: python
 
-        from langchain.llms.sagemaker_endpoint import ContentHandlerBase
+        from langchain.embeddings.sagemaker_endpoint import EmbeddingsContentHandler
 
-        class ContentHandler(ContentHandlerBase):
+        class ContentHandler(EmbeddingsContentHandler):
                 content_type = "application/json"
                 accepts = "application/json"
 
@@ -82,10 +86,10 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                     input_str = json.dumps({prompts: prompts, **model_kwargs})
                     return input_str.encode('utf-8')
 
-                def transform_output(self, output: bytes) -> str:
+                def transform_output(self, output: bytes) -> List[List[float]]:
                     response_json = json.loads(output.read().decode("utf-8"))
-                    return response_json[0]["generated_text"]
-    """
+                    return response_json["vectors"]
+    """  # noqa: E501
 
     model_kwargs: Optional[Dict] = None
     """Key word arguments to pass to the model."""
@@ -161,7 +165,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         return self.content_handler.transform_output(response["Body"])
 
     def embed_documents(
-            self, texts: List[str], chunk_size: int = 64
+        self, texts: List[str], chunk_size: int = 64
     ) -> List[List[float]]:
         """Compute doc embeddings using a SageMaker Inference Endpoint.
 
@@ -178,7 +182,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
         results = []
         _chunk_size = len(texts) if chunk_size > len(texts) else chunk_size
         for i in range(0, len(texts), _chunk_size):
-            response = self._embedding_func(texts[i: i + _chunk_size])
+            response = self._embedding_func(texts[i : i + _chunk_size])
             results.extend(response)
         return results
 

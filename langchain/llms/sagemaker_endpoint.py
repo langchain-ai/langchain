@@ -1,14 +1,17 @@
 """Wrapper around Sagemaker InvokeEndpoint API."""
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Optional, Union
+from abc import abstractmethod
+from typing import Any, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
 from pydantic import Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
+INPUT_TYPE = TypeVar("INPUT_TYPE", bound=Union[str, List[str]])
+OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]]])
 
-class ContentHandlerBase(ABC):
+
+class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     """A handler class to transform input from LLM to a
     format that SageMaker endpoint expects. Similarily,
     the class also handles transforming output from the
@@ -53,6 +56,10 @@ class ContentHandlerBase(ABC):
         """Transforms the output from the model to string that
         the LLM class expects.
         """
+
+
+class LLMContentHandler(ContentHandlerBase[str, str]):
+    """Content handler for LLM class."""
 
 
 class SagemakerEndpoint(LLM):
@@ -110,7 +117,7 @@ class SagemakerEndpoint(LLM):
     See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
     """
 
-    content_handler: ContentHandlerBase
+    content_handler: LLMContentHandler
     """The content handler class that provides an input and
     output transform functions to handle formats between LLM
     and the endpoint.
@@ -120,7 +127,9 @@ class SagemakerEndpoint(LLM):
      Example:
         .. code-block:: python
 
-        class ContentHandler(ContentHandlerBase):
+        from langchain.llms.sagemaker_endpoint import LLMContentHandler
+
+        class ContentHandler(LLMContentHandler):
                 content_type = "application/json"
                 accepts = "application/json"
 
