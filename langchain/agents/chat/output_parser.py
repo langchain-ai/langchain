@@ -13,14 +13,22 @@ class ChatOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        if FINAL_ANSWER_ACTION in text:
+        ticks_index = text.find("```")
+        final_answer_index = text.find(FINAL_ANSWER_ACTION)
+
+        if ticks_index != -1 and (
+            final_answer_index == -1 or ticks_index < final_answer_index
+        ):
+            try:
+                action = text.split("```")[1]
+                response = json.loads(action.strip())
+                return AgentAction(response["action"], response["action_input"], text)
+            except Exception:
+                raise OutputParserException(f"Could not parse LLM output: {text}")
+
+        if final_answer_index != -1:
             return AgentFinish(
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
-        try:
-            action = text.split("```")[1]
-            response = json.loads(action.strip())
-            return AgentAction(response["action"], response["action_input"], text)
 
-        except Exception:
-            raise OutputParserException(f"Could not parse LLM output: {text}")
+        raise OutputParserException(f"Could not parse LLM output: {text}")
