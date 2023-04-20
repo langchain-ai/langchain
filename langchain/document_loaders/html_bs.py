@@ -24,7 +24,8 @@ class BSHTMLLoader(BaseLoader):
             import bs4  # noqa:F401
         except ImportError:
             raise ValueError(
-                "bs4 package not found, please install it with " "`pip install bs4`"
+                "beautifulsoup4 package not found, please install it with "
+                "`pip install beautifulsoup4`"
             )
 
         self.file_path = file_path
