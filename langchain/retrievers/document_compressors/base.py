@@ -1,14 +1,13 @@
 """Interface for retrieved document compressors."""
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from typing import List, Sequence, Union
 
 from pydantic import BaseModel
 
-from langchain.document_transformers import DocumentTransformerPipeline
 from langchain.schema import BaseDocumentTransformer, Document
 
 
-class DocumentCompressorMixin(ABC):
+class BaseDocumentCompressor(BaseModel, ABC):
     """"""
 
     @abstractmethod
@@ -24,45 +23,39 @@ class DocumentCompressorMixin(ABC):
         """Compress retrieved documents given the query context."""
 
 
-class BaseDocumentCompressor(
-    DocumentCompressorMixin, BaseDocumentTransformer, BaseModel, ABC
-):
-    """Interface for retrieved document compressors."""
-
-    def transform_documents(
-        self, documents: Sequence[Document], query: Optional[str] = None, **kwargs: Any
-    ) -> Sequence[Document]:
-        """"""
-        if query is None:
-            raise ValueError(
-                "Keyword argument `query` must be non-null when passed in to "
-                "BaseDocumentCompressor.transform_documents."
-            )
-        return self.compress_documents(documents, query)
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], query: Optional[str] = None, **kwargs: Any
-    ) -> Sequence[Document]:
-        """"""
-        if query is None:
-            raise ValueError(
-                "Keyword argument `query` must be non-null when passed in to "
-                "BaseDocumentCompressor.transform_documents."
-            )
-        return await self.acompress_documents(documents, query)
-
-
-class DocumentCompressorPipeline(DocumentCompressorMixin, DocumentTransformerPipeline):
+class DocumentCompressorPipeline(BaseDocumentCompressor):
     """Document compressor that uses a pipeline of transformers."""
+
+    transformers: List[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
+    """List of document filters that are chained together and run in sequence."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def compress_documents(
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
-        """Compress retrieved documents given the query context."""
-        return self.transform_documents(documents, query=query)
+        """Transform a list of documents."""
+        for _transformer in self.transformers:
+            if isinstance(_transformer, BaseDocumentCompressor):
+                documents = _transformer.compress_documents(documents, query)
+            elif isinstance(_transformer, BaseDocumentTransformer):
+                documents = _transformer.transform_documents(documents)
+            else:
+                raise ValueError(f"Got unexpected transformer type: {_transformer}")
+        return documents
 
     async def acompress_documents(
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
-        return await self.atransform_documents(documents, query=query)
+        for _transformer in self.transformers:
+            if isinstance(_transformer, BaseDocumentCompressor):
+                documents = await _transformer.acompress_documents(documents, query)
+            elif isinstance(_transformer, BaseDocumentTransformer):
+                documents = await _transformer.atransform_documents(documents)
+            else:
+                raise ValueError(f"Got unexpected transformer type: {_transformer}")
+        return documents
