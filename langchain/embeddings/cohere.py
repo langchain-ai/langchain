@@ -7,7 +7,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
-class CohereEmbeddings(BaseModel, Embeddings):
+class CohereEmbeddings(Embeddings):
     """Wrapper around Cohere embedding models.
 
     To use, you should have the ``cohere`` python package installed, and the

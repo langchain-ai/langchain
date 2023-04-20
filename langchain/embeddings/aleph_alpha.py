@@ -6,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
-class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
+class AlephAlphaAsymmetricSemanticEmbedding(Embeddings):
     """
     Wrapper for Aleph Alpha's Asymmetric Embeddings
     AA provides you with an endpoint to embed a document and a query.

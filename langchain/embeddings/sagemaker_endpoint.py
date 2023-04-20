@@ -7,7 +7,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.llms.sagemaker_endpoint import ContentHandlerBase
 
 
-class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
+class SagemakerEndpointEmbeddings(Embeddings):
     """Wrapper around custom Sagemaker Inference Endpoints.
 
     To use, you must supply the endpoint name from your deployed

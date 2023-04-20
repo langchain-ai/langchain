@@ -161,6 +161,15 @@ class LLMResult(BaseModel):
     """For arbitrary LLM provider specific output."""
 
 
+class EmbeddingResult(BaseModel):
+    """Class that contains all relevant information for an embedding result."""
+
+    embeddings: List[List[float]]
+    """List of the generated embeddings."""
+    llm_output: Optional[dict] = None
+    """For arbitrary LLM provider specific output."""
+
+
 class PromptValue(BaseModel, ABC):
     @abstractmethod
     def to_string(self) -> str:

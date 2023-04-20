@@ -10,7 +10,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 
 
-class JinaEmbeddings(BaseModel, Embeddings):
+class JinaEmbeddings(Embeddings):
     client: Any  #: :meta private:
 
     model_name: str = "ViT-B-32::openai"

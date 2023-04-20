@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Extra
 
 from langchain.embeddings.base import Embeddings
+from langchain.schema import EmbeddingResult
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -13,7 +14,7 @@ DEFAULT_QUERY_INSTRUCTION = (
 )
 
 
-class HuggingFaceEmbeddings(BaseModel, Embeddings):
+class HuggingFaceEmbeddings(Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
@@ -80,7 +81,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
-class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
+class HuggingFaceInstructEmbeddings(Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers``

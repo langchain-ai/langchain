@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -63,7 +63,7 @@ def embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) -> Any:
     return _embed_with_retry(**kwargs)
 
 
-class OpenAIEmbeddings(BaseModel, Embeddings):
+class OpenAIEmbeddings(Embeddings):
     """Wrapper around OpenAI embedding models.
 
     To use, you should have the ``openai`` python package installed, and the

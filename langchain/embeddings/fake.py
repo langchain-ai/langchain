@@ -4,16 +4,25 @@ import numpy as np
 from pydantic import BaseModel
 
 from langchain.embeddings.base import Embeddings
+from langchain.schema import EmbeddingResult
 
 
-class FakeEmbeddings(Embeddings, BaseModel):
+class FakeEmbeddings(Embeddings):
     size: int
 
     def _get_embedding(self) -> List[float]:
         return list(np.random.normal(size=self.size))
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self._get_embedding() for _ in texts]
+    def _embed_documents(self, texts: List[str]) -> EmbeddingResult:
+        embeddings = [self._get_embedding() for _ in texts]
+        result = EmbeddingResult(
+            embeddings=embeddings, llm_output={"token_usage": 100 * len(texts)}
+        )
+        return result
 
-    def embed_query(self, text: str) -> List[float]:
-        return self._get_embedding()
+    def _embed_query(self, text: str) -> EmbeddingResult:
+        embedding = self._get_embedding()
+        result = EmbeddingResult(
+            embeddings=[embedding], llm_output={"token_usage": 100}
+        )
+        return result

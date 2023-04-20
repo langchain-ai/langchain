@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from langchain.embeddings.base import Embeddings
 
 
-class LlamaCppEmbeddings(BaseModel, Embeddings):
+class LlamaCppEmbeddings(Embeddings):
     """Wrapper around llama.cpp embedding models.
 
     To use, you should have the llama-cpp-python library installed, and provide the

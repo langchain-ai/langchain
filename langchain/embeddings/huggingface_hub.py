@@ -10,7 +10,7 @@ DEFAULT_REPO_ID = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
-class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
+class HuggingFaceHubEmbeddings(Embeddings):
     """Wrapper around HuggingFaceHub embedding models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the

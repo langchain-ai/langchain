@@ -8,7 +8,7 @@ from langchain.embeddings.base import Embeddings
 DEFAULT_MODEL_URL = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
 
 
-class TensorflowHubEmbeddings(BaseModel, Embeddings):
+class TensorflowHubEmbeddings(Embeddings):
     """Wrapper around tensorflow_hub embedding models.
 
     To use, you should have the ``tensorflow_text`` python package installed.

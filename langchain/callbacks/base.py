@@ -4,7 +4,7 @@ import functools
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from langchain.schema import AgentAction, AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult, EmbeddingResult
 
 
 class BaseCallbackHandler(ABC):
@@ -93,6 +93,21 @@ class BaseCallbackHandler(ABC):
     @abstractmethod
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
+
+    # embeddings: non-abstract for now to avoid breaking changes
+    def on_embedding_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
+        """Run when embedding starts running."""
+        pass
+
+    def on_embedding_end(self, response: EmbeddingResult, **kwargs: Any) -> Any:
+        """Run when embedding ends running."""
+        pass
+
+    def on_embedding_error(self, error: BaseException, **kwargs: Any) -> Any:
+        """Run when embedding errors."""
+        pass
 
 
 class BaseCallbackManager(BaseCallbackHandler, ABC):
