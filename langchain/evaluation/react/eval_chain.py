@@ -1,5 +1,5 @@
 """A chain for evaluating ReAct style agents."""
-from typing import Sequence, Union
+from typing import Dict, List, Sequence, Tuple, Union
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -11,7 +11,7 @@ from langchain.tools.base import BaseTool
 
 class ReactEvalChain(Chain):
     llm: ChatOpenAI
-    agent_tools: list[BaseTool]
+    agent_tools: List[BaseTool]
     eval_chain: LLMChain
     return_reasoning: bool = False
 
@@ -26,7 +26,7 @@ Description: {tool.description}"""
         )
 
     @staticmethod
-    def get_agent_trajectory(steps: Union[str, list[tuple[AgentAction, str]]]) -> str:
+    def get_agent_trajectory(steps: Union[str, List[Tuple[AgentAction, str]]]) -> str:
         if isinstance(steps, str):
             return steps
 
@@ -56,18 +56,18 @@ Tool output: {output}"""
         )
 
     @property
-    def input_keys(self) -> list[str]:
+    def input_keys(self) -> List[str]:
         return ["question", "agent_trajectory", "answer"]
 
     @property
-    def output_keys(self) -> list[str]:
+    def output_keys(self) -> List[str]:
         if self.return_reasoning:
             return ["score", "reasoning"]
         return ["score"]
 
-    def _call(self, inputs: dict[str, str]) -> dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         raw_output = self.eval_chain.run(
-            dict(
+            Dict(
                 tool_descriptions=self._tools_description,
                 **inputs,
             )
