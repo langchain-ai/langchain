@@ -1,6 +1,6 @@
 # MyScale
 
-This page covers how to use the MyScale ecosystem within LangChain.
+This page covers how to use MyScale vector database within LangChain.
 It is broken into two parts: installation and setup, and then references to specific MyScale wrappers.
 
 ## Installation and Setup
@@ -21,7 +21,7 @@ supported functions:
 ### VectorStore
 
 There exists a wrapper around MyScale database, allowing you to use it as a vectorstore,
-whether for semantic search or example selection.
+whether for semantic search or similar example retrieval.
 
 To import this vectorstore:
 ```python

@@ -125,7 +125,6 @@ class MyScale(VectorStore):
         assert self.config.column_map and self.config.database and self.config.table and self.config.metric
         for k in ['id', 'vector', 'text', 'metadata']:
             assert k in self.config.column_map
-        # FIXME @ fangruil: this should be myscale syntax
         assert self.config.metric in ['ip', 'cosine', 'l2']
 
         # initialize the schema
@@ -200,13 +199,14 @@ class MyScale(VectorStore):
         column_names = {colmap_['id']: ids,
                         colmap_['text']: texts,
                         colmap_['vector']: map(self.embedding_function, texts)}
-        if metadatas:
-            column_names[colmap_['metadata']] = map(json.dumps, metadatas)
+        metadatas = metadatas or map(lambda x: {}, range(len(texts)))
+        column_names[colmap_['metadata']] = map(json.dumps, metadatas)
         assert len(set(colmap_)-set(column_names)) >= 0
         keys, values = zip(*column_names.items())
         try:
             t = None
             for v in tqdm.tqdm(zip(*values), desc='Inserting data...', total=len(texts)):
+                assert len(v[keys.index(self.config.column_map['vector'])]) == self.dim
                 transac.append(v)
                 if len(transac) == batch_size:
                     if t:
@@ -227,7 +227,7 @@ class MyScale(VectorStore):
     def from_texts(
         cls: MyScale,
         texts: Iterable[str],
-        embedding_function: Embeddings,
+        embedding: Embeddings,
         metadatas: List[dict] = None,
         config: MyScaleSettings = None,
         text_ids: Optional[Iterable] = None,
@@ -247,7 +247,7 @@ class MyScale(VectorStore):
         Returns:
             MyScale: _description_
         """
-        ctx = cls(embedding_function, config, **kwargs)
+        ctx = cls(embedding.embed_query, config, **kwargs)
         ctx.add_texts(texts, ids=text_ids, batch_size=batch_size, metadatas=metadatas)
         return ctx
 
@@ -272,7 +272,6 @@ class MyScale(VectorStore):
         else:
             where_str = ''
 
-        # FIXME @ fangruil: this should be myscale distance function
         q_str = f"""
             SELECT {self.config.column_map['text']}, {self.config.column_map['metadata']}, dist
             FROM {self.config.database}.{self.config.table}
@@ -356,3 +355,14 @@ class MyScale(VectorStore):
         except Exception as e:
             logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
             raise e
+
+    
+    def drop(self):
+        """ 
+        Helper function: Drop data in the index table
+        """
+        self.client.command(f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}")
+    
+    @property
+    def metadata_column(self):
+        return self.config.column_map['metadata']
