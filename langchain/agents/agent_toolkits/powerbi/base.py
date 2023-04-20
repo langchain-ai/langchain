@@ -25,32 +25,36 @@ def create_pbi_agent(
     prefix: str = POWERBI_PREFIX,
     suffix: str = POWERBI_SUFFIX,
     format_instructions: str = FORMAT_INSTRUCTIONS,
+    examples: Optional[str] = None,
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     verbose: bool = False,
+    agent_kwargs: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
     if toolkit is None:
         if powerbi is None:
             raise ValueError("Must provide either a toolkit or powerbi dataset")
-        toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm)
+        toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm, examples=examples)
     tools = toolkit.get_tools()
-    prefix = prefix.format(top_k=top_k)
-    prompt = ZeroShotAgent.create_prompt(
-        tools,
-        prefix=prefix,
-        suffix=suffix,
-        format_instructions=format_instructions,
-        input_variables=input_variables,
+
+    agent = ZeroShotAgent(
+        llm_chain=LLMChain(
+            llm=llm,
+            prompt=ZeroShotAgent.create_prompt(
+                tools,
+                prefix=prefix.format(top_k=top_k),
+                suffix=suffix,
+                format_instructions=format_instructions,
+                input_variables=input_variables,
+            ),
+            callback_manager=callback_manager,  # type: ignore
+            verbose=verbose,
+        ),
+        allowed_tools=[tool.name for tool in tools],
+        **(agent_kwargs or {}),
     )
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,  # type: ignore
-    )
-    tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=toolkit.get_tools(), verbose=verbose
+        agent=agent, tools=tools, verbose=verbose, **kwargs
     )

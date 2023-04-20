@@ -1,7 +1,7 @@
 """Power BI agent."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_toolkits.powerbi.prompt import (
@@ -23,38 +23,39 @@ def create_pbi_chat_agent(
     callback_manager: BaseCallbackManager | None = None,
     prefix: str = POWERBI_CHAT_PREFIX,
     suffix: str = POWERBI_CHAT_SUFFIX,
+    examples: Optional[str] = None,
     input_variables: list[str] | None = None,
+    memory: Optional[BaseChatMemory] = None,
     top_k: int = 10,
     verbose: bool = False,
     agent_kwargs: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Construct a pbi agent from an Chat LLM and tools."""
+    """Construct a pbi agent from an Chat LLM and tools.
+
+    If you supply only a toolkit and no powerbi dataset, the same LLM is used for both.
+    """
     if toolkit is None:
         if powerbi is None:
             raise ValueError("Must provide either a toolkit or powerbi dataset")
-        toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm)
+        toolkit = PowerBIToolkit(powerbi=powerbi, llm=llm, examples=examples)
     tools = toolkit.get_tools()
-
-    prefix = prefix.format(top_k=top_k)
-    agent_kwargs = agent_kwargs or {}
     agent = ConversationalChatAgent.from_llm_and_tools(
         llm=llm,
         tools=tools,
-        system_message=prefix,
+        system_message=prefix.format(top_k=top_k),
         user_message=suffix,
         input_variables=input_variables,
         callback_manager=callback_manager,
         verbose=verbose,
-        **agent_kwargs,
+        **(agent_kwargs or {}),
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
-        memory=ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        ),
+        memory=memory
+        or ConversationBufferMemory(memory_key="chat_history", return_messages=True),
         verbose=verbose,
         **agent_kwargs,
     )

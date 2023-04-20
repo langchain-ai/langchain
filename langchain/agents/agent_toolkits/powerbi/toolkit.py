@@ -1,7 +1,7 @@
 """Toolkit for interacting with a Power BI dataset."""
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
@@ -25,6 +25,7 @@ class PowerBIToolkit(BaseToolkit):
 
     powerbi: PowerBIDataset = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
+    examples: Optional[str] = None
 
     class Config:
         """Configuration for this pydantic object."""
