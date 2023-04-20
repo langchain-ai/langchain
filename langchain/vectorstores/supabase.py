@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from itertools import repeat
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
 
@@ -25,7 +34,7 @@ class SupabaseVectorStore(VectorStore):
     Note that the Supabase Python client does not yet support async operations.
 
     If you'd like to use `max_marginal_relevance_search`, please review the instructions
-    below on modifying the `match_documents` function into return matched embeddings.
+    below on modifying the `match_documents` function to return matched embeddings.
     """
 
     _client: supabase.client.Client
@@ -85,7 +94,7 @@ class SupabaseVectorStore(VectorStore):
             raise ValueError("Supabase client is required.")
 
         if not table_name:
-            raise ValueError("Supabase documentg table_name is required.")
+            raise ValueError("Supabase document table_name is required.")
 
         embeddings = embedding.embed_documents(texts)
         docs = cls._texts_to_documents(texts, metadatas)
@@ -171,7 +180,8 @@ class SupabaseVectorStore(VectorStore):
 
     @staticmethod
     def _texts_to_documents(
-        texts: Iterable[str], metadatas: Optional[Iterable[dict[Any, Any]]] = None
+        texts: Iterable[str],
+        metadatas: Optional[Iterable[dict[Any, Any]]] = None,
     ) -> List[Document]:
         """Return list of Documents from list of texts and metadatas."""
         if metadatas is None:
@@ -222,7 +232,11 @@ class SupabaseVectorStore(VectorStore):
         return id_list
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
