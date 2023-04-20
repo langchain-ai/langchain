@@ -87,7 +87,7 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
-    streaming: bool = False
+    streaming: bool = True
     """Whether to stream the results, token by token when calling the model to generate output."""
 
     @root_validator()
