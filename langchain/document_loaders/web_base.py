@@ -123,13 +123,12 @@ class WebBaseLoader(BaseLoader):
         try:
             from tqdm.asyncio import tqdm_asyncio
 
-            _runner = tqdm_asyncio
+            return await tqdm_asyncio.gather(
+                *tasks, desc="Fetching pages", ascii=True, mininterval=1
+            )
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
-            _runner = asyncio
-        return await _runner.gather(
-            *tasks, desc="Fetching pages", ascii=True, mininterval=1
-        )
+            return await asyncio.gather(*tasks)
 
     @staticmethod
     def _check_parser(parser: str) -> None:

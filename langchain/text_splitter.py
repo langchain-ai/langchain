@@ -17,11 +17,12 @@ from typing import (
 )
 
 from langchain.docstore.document import Document
+from langchain.schema import BaseDocumentTransformer
 
 logger = logging.getLogger(__name__)
 
 
-class TextSplitter(ABC):
+class TextSplitter(BaseDocumentTransformer[Document], ABC):
     """Interface for splitting text into chunks."""
 
     def __init__(
@@ -170,6 +171,18 @@ class TextSplitter(ABC):
             )
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
+
+    def transform_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[Document]:
+        """Transform list of documents by splitting them."""
+        return self.split_documents(documents)
+
+    async def atransform_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[Document]:
+        """Asynchronously transform a list of documents by splitting them."""
+        raise NotImplementedError
 
 
 class CharacterTextSplitter(TextSplitter):
