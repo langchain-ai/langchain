@@ -4,6 +4,7 @@ from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
+from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
@@ -20,6 +21,7 @@ __all__ = [
     "TextRequestsWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
+    "GooglePlacesAPIWrapper",
     "WolframAlphaAPIWrapper",
     "SerpAPIWrapper",
     "SearxSearchWrapper",
