@@ -42,11 +42,10 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             self.client = sentence_transformers.SentenceTransformer(
                 self.model_name, self.cache_folder
             )
-        except ImportError:
-            raise ValueError(
-                "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
-            )
+        except ImportError as exc:
+            raise ValueError("Could not import sentence_transformers python package. "
+                             "Please install it with `pip install sentence_transformers`."
+                             ) from exc
 
     class Config:
         """Configuration for this pydantic object."""
