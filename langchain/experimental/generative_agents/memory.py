@@ -1,67 +1,69 @@
-import math
-import faiss
+import logging
 import re
-from datetime import datetime, timedelta
-from typing import List, Optional, Tuple
-from termcolor import colored
-
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain
-from langchain.chat_models import ChatOpenAI
-from langchain.docstore import InMemoryDocstore
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
-from langchain.schema import BaseLanguageModel, Document, BaseMemory
-from langchain.vectorstores import FAISS
+from langchain.schema import BaseLanguageModel, BaseMemory, Document
 
-from typing import Dict, Any, List, Optional, Tuple
+logger = logging.getLogger(__name__)
 
 
-class GenerativeAgentsMemory(BaseMemory):
-
+class GenerativeAgentMemory(BaseMemory):
     llm: BaseLanguageModel
+    """The core language model."""
 
     memory_retriever: TimeWeightedVectorStoreRetriever
     """The retriever to fetch related memories."""
     verbose: bool = False
+
     reflection_threshold: Optional[float] = None
-    """When the total 'importance' of memories exceeds the above threshold, stop to reflect."""
+    """When aggregate_importance exceeds reflection_threshold, stop to reflect."""
 
     current_plan: List[str] = []
     """The current plan of the agent."""
 
-    memory_importance: float = 0.0  # : :meta private:
+    # A weight of 0.15 makes this less important than it
+    # would be otherwise, relative to salience and time
+    importance_weight: float = 0.15
+    """How much weight to assign the memory importance."""
+
+    aggregate_importance: float = 0.0  # : :meta private:
+    """Track the sum of the 'importance' of recent memories.
+    
+    Triggers reflection when it reaches reflection_threshold."""
+
     max_tokens_limit: int = 1200  # : :meta private:
     # input keys
     queries_key: str = "queries"
-    most_recent_memories_token_key: str = "most_recent_memories_token"
+    most_recent_memories_token_key: str = "recent_memories_key"
     add_memory_key: str = "add_memory"
     # output keys
     relevant_memories_key: str = "relevant_memories"
     relevant_memories_simple_key: str = "relevant_memories_simple"
     most_recent_memories_key: str = "most_recent_memories"
 
+    def chain(self, prompt: PromptTemplate) -> LLMChain:
+        return LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
+
     @staticmethod
     def _parse_list(text: str) -> List[str]:
         """Parse a newline-separated string into a list of strings."""
-        lines = re.split(r'\n', text.strip())
-        return [re.sub(r'^\s*\d+\.\s*', '', line).strip() for line in lines]
+        lines = re.split(r"\n", text.strip())
+        return [re.sub(r"^\s*\d+\.\s*", "", line).strip() for line in lines]
 
-    def _get_topics_of_reflection(self, last_k: int = 50) -> Tuple[str, str, str]:
+    def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
         """Return the 3 most salient high-level questions about recent observations."""
         prompt = PromptTemplate.from_template(
             "{observations}\n\n"
             + "Given only the information above, what are the 3 most salient"
-            + " high-level questions we can answer about the subjects in the statements?"
-            + " Provide each question on a new line.\n\n"
+            + " high-level questions we can answer about the subjects in"
+            + " the statements? Provide each question on a new line.\n\n"
         )
-        reflection_chain = LLMChain(
-            llm=self.llm, prompt=prompt, verbose=self.verbose)
         observations = self.memory_retriever.memory_stream[-last_k:]
         observation_str = "\n".join([o.page_content for o in observations])
-        result = reflection_chain.run(observations=observation_str)
+        result = self.chain(prompt).run(observations=observation_str)
         return self._parse_list(result)
 
     def _get_insights_on_topic(self, topic: str) -> List[str]:
@@ -73,19 +75,22 @@ class GenerativeAgentsMemory(BaseMemory):
             + " (example format: insight (because of 1, 5, 3))"
         )
         related_memories = self.fetch_memories(topic)
-        related_statements = "\n".join([f"{i+1}. {memory.page_content}"
-                                        for i, memory in
-                                        enumerate(related_memories)])
-        reflection_chain = LLMChain(
-            llm=self.llm, prompt=prompt, verbose=self.verbose)
-        result = reflection_chain.run(
-            topic=topic, related_statements=related_statements)
+        related_statements = "\n".join(
+            [
+                f"{i+1}. {memory.page_content}"
+                for i, memory in enumerate(related_memories)
+            ]
+        )
+        result = self.chain(prompt).run(
+            topic=topic, related_statements=related_statements
+        )
         # TODO: Parse the connections between memories and insights
         return self._parse_list(result)
 
     def pause_to_reflect(self) -> List[str]:
         """Reflect on recent observations and generate 'insights'."""
-        print(colored(f"Character is reflecting", "blue"))
+        if self.verbose:
+            logger.info("Character is reflecting")
         new_insights = []
         topics = self._get_topics_of_reflection()
         for topic in topics:
@@ -95,10 +100,8 @@ class GenerativeAgentsMemory(BaseMemory):
             new_insights.extend(insights)
         return new_insights
 
-    def _score_memory_importance(self, memory_content: str, weight: float = 0.15) -> float:
+    def _score_memory_importance(self, memory_content: str) -> float:
         """Score the absolute importance of the given memory."""
-        # A weight of 0.25 makes this less important than it
-        # would be otherwise, relative to salience and time
         prompt = PromptTemplate.from_template(
             "On the scale of 1 to 10, where 1 is purely mundane"
             + " (e.g., brushing teeth, making bed) and 10 is"
@@ -108,33 +111,34 @@ class GenerativeAgentsMemory(BaseMemory):
             + "\nMemory: {memory_content}"
             + "\nRating: "
         )
-        chain = LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
-        score = chain.run(memory_content=memory_content).strip()
-        # TODO: use better log function
+        score = self.chain(prompt).run(memory_content=memory_content).strip()
         if self.verbose:
-            print(colored(f"Importance score: {score}", "blue"))
+            logger.info(f"Importance score: {score}")
         match = re.search(r"^\D*(\d+)", score)
         if match:
-            return (float(score[0]) / 10) * weight
+            return (float(score[0]) / 10) * self.importance_weight
         else:
             return 0.0
 
     def add_memory(self, memory_content: str) -> List[str]:
         """Add an observation or memory to the agent's memory."""
         importance_score = self._score_memory_importance(memory_content)
-        self.memory_importance += importance_score
-        document = Document(page_content=memory_content, metadata={
-                            "importance": importance_score})
+        self.aggregate_importance += importance_score
+        document = Document(
+            page_content=memory_content, metadata={"importance": importance_score}
+        )
         result = self.memory_retriever.add_documents([document])
 
         # After an agent has processed a certain amount of memories (as measured by
         # aggregate importance), it is time to reflect on recent events to add
         # more synthesized memories to the agent's memory stream.
-        if (self.reflection_threshold is not None
-                and self.memory_importance > self.reflection_threshold):
+        if (
+            self.reflection_threshold is not None
+            and self.aggregate_importance > self.reflection_threshold
+        ):
             self.pause_to_reflect()
             # Hack to clear the importance from reflection
-            self.memory_importance = 0.0
+            self.aggregate_importance = 0.0
         return result
 
     def fetch_memories(self, observation: str) -> List[Document]:
@@ -148,8 +152,7 @@ class GenerativeAgentsMemory(BaseMemory):
             if mem.page_content in content_strs:
                 continue
             content_strs.add(mem.page_content)
-            created_time = mem.metadata["created_at"].strftime(
-                "%B %d, %Y, %I:%M %p")
+            created_time = mem.metadata["created_at"].strftime("%B %d, %Y, %I:%M %p")
             content.append(f"- {created_time}: {mem.page_content.strip()}")
         return "\n".join([f"{mem}" for mem in content])
 
@@ -172,24 +175,30 @@ class GenerativeAgentsMemory(BaseMemory):
         """Input keys this memory class will load dynamically."""
         return []
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, List[Document]]:
-        """Return key-value pairs given the text input to the chain.
-
-        If None, return all memories
-        """
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return key-value pairs given the text input to the chain."""
         queries = inputs.get(self.queries_key)
         if queries is not None:
             relevant_memories = [
-                mem for query in queries for mem in self.fetch_memories(query)]
+                mem for query in queries for mem in self.fetch_memories(query)
+            ]
             return {
-                self.relevant_memories_key: self.format_memories_detail(relevant_memories),
+                self.relevant_memories_key: self.format_memories_detail(
+                    relevant_memories
+                ),
                 self.relevant_memories_simple_key: self.format_memories_simple(
-                    relevant_memories)
+                    relevant_memories
+                ),
             }
 
         most_recent_memories_token = inputs.get(self.most_recent_memories_token_key)
         if most_recent_memories_token is not None:
-            return {self.most_recent_memories_key: self._get_memories_until_limit(most_recent_memories_token)}
+            return {
+                self.most_recent_memories_key: self._get_memories_until_limit(
+                    most_recent_memories_token
+                )
+            }
+        return {}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save the context of this model run to memory."""
