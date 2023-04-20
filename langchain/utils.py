@@ -1,6 +1,7 @@
 """Generic utility functions."""
 import os
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+
 
 def get_from_dict_or_env(
     data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
