@@ -14,9 +14,7 @@ from langchain.tools.powerbi.prompt import (
 from langchain.utilities.powerbi import PowerBIDataset, json_to_md
 
 
-class QueryPowerBITool(
-    BaseTool,
-):
+class QueryPowerBITool(BaseTool):
     """Tool for querying a Power BI Dataset."""
 
     name = "query_powerbi"
@@ -29,7 +27,7 @@ class QueryPowerBITool(
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
     """
     powerbi: PowerBIDataset = Field(exclude=True)
-    session_cache: Dict[str, Any] = {}
+    session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
     def _check_cache(self, tool_input: str) -> str | None:
         """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
