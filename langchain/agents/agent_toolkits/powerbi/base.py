@@ -56,5 +56,9 @@ def create_pbi_agent(
         **(agent_kwargs or {}),
     )
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=tools, verbose=verbose, **kwargs
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **kwargs,
     )
