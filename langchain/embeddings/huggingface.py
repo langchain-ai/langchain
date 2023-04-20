@@ -37,6 +37,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, model_kwargs: Optional[dict] = None, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+        model_kwargs = model_kwargs or {}
         try:
             import sentence_transformers
 
@@ -110,6 +111,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     def __init__(self, model_kwargs: Optional[dict] = None, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+        model_kwargs = model_kwargs or {}
         try:
             from InstructorEmbedding import INSTRUCTOR
 
