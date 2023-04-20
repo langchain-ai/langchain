@@ -33,20 +33,18 @@ class PowerBIToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        if self.llm is None:
-            pass
-        return [
-            QueryPowerBITool(powerbi=self.powerbi),  # type: ignore
-            InfoPowerBITool(powerbi=self.powerbi),  # type: ignore
-            ListPowerBITool(powerbi=self.powerbi),  # type: ignore
-            InputToQueryTool(  # type: ignore
-                powerbi=self.powerbi,
-                llm_chain=LLMChain(
-                    llm=self.llm,
-                    prompt=PromptTemplate(
-                        template=QUESTION_TO_QUERY,
-                        input_variables=["tool_input", "tables", "schemas", "examples"],
-                    ),
+        chain = (
+            LLMChain(
+                llm=self.llm,
+                prompt=PromptTemplate(
+                    template=QUESTION_TO_QUERY,
+                    input_variables=["tool_input", "tables", "schemas", "examples"],
                 ),
             ),
+        )
+        return [
+            QueryPowerBITool(powerbi=self.powerbi),
+            InfoPowerBITool(powerbi=self.powerbi),
+            ListPowerBITool(powerbi=self.powerbi),
+            InputToQueryTool(powerbi=self.powerbi, llm_chain=chain),
         ]

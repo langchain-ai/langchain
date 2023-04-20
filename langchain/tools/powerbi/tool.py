@@ -19,15 +19,8 @@ from langchain.tools.powerbi.prompt import (
 from langchain.utilities.powerbi import json_to_md
 
 
-class BasePowerBIDatabaseTool(BaseModel):
-    """Base tool for interacting with a Power BI Dataset."""
-
-    powerbi: PowerBIDataset = Field(exclude=True)
-
-
 class QueryPowerBITool(
     BaseTool,
-    BasePowerBIDatabaseTool,
 ):
     """Tool for querying a Power BI Dataset.
 
@@ -44,6 +37,8 @@ class QueryPowerBITool(
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
     """
     session_cache: dict[str, Any] = Field(default_factory=dict)
+
+    powerbi: PowerBIDataset = Field(exclude=True)
 
     def _check_cache(self, tool_input: str) -> str | None:
         """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
@@ -98,7 +93,7 @@ class QueryPowerBITool(
         return self.session_cache[tool_input]
 
 
-class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
+class InfoPowerBITool(BaseTool):
     """Tool for getting metadata about a PowerBI Dataset."""
 
     name = "schema_powerbi"
@@ -109,6 +104,8 @@ class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
     Example Input: "table1, table2, table3"
     """
 
+    powerbi: PowerBIDataset = Field(exclude=True)
+
     def _run(self, tool_input: str) -> str:
         """Get the schema for tables in a comma-separated list."""
         return self.powerbi.get_table_info(tool_input.split(", "))
@@ -117,11 +114,12 @@ class InfoPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         return await self.powerbi.aget_table_info(tool_input.split(", "))
 
 
-class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
+class ListPowerBITool(BaseTool):
     """Tool for getting tables names."""
 
     name = "list_tables_powerbi"
     description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
+    powerbi: PowerBIDataset = Field(exclude=True)
 
     def _run(self, tool_input: str = "") -> str:
         """Get the names of the tables."""
@@ -132,27 +130,20 @@ class ListPowerBITool(BasePowerBIDatabaseTool, BaseTool):
         return ", ".join(self.powerbi.get_table_names())
 
 
-class InputToQueryTool(BasePowerBIDatabaseTool, BaseTool):
+class InputToQueryTool(BaseTool):
     """Use an LLM to parse the question to a DAX query.
     Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
 
+    llm_chain: LLMChain
     template: str = QUESTION_TO_QUERY
     examples: str = DEFAULT_FEWSHOT_EXAMPLES
-    llm_chain: LLMChain = Field(
-        default_factory=lambda: LLMChain(
-            llm=OpenAI(temperature=0),  # type: ignore
-            prompt=PromptTemplate(
-                template=QUESTION_TO_QUERY,
-                input_variables=["tool_input", "tables", "schemas", "examples"],
-            ),
-        )
-    )
     name = "question_to_query_powerbi"
     description = """
     Use this tool to create the DAX query from a question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
 
     Example Input: "How many records are in table1?"
     """
+    powerbi: PowerBIDataset = Field(exclude=True)
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
