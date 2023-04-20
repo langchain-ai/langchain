@@ -142,6 +142,8 @@ class MyScale(VectorStore):
             ) ENGINE = MergeTree ORDER BY {self.config.column_map['id']}
         """
         self.dim = dim
+        self.BS = '\\'
+        self.must_escape = ('\\', '\'')
         self.embedding_function = embedding_function
         self.dist_order = 'DESC' if self.config.metric in ['cosine', 'l2'] else 'ASC'
 
@@ -154,11 +156,14 @@ class MyScale(VectorStore):
         self.client.command('SET allow_experimental_object_type=1')
         self.client.command(schema_)
     
+    def escape_str(self, value: str):
+        return ''.join(f'{self.BS}{c}' if c in self.must_escape else c for c in value)    
+
     def _build_istr(self, transac, column_names):
         ks = ','.join(column_names)
         _data = []
         for n in transac:
-            n = ','.join([f"'{str(_n)}'" for _n in n])
+            n = ','.join([f"'{self.escape_str(str(_n))}'" for _n in n])
             _data.append(f"({n})")
         i_str = f'''
                 INSERT INTO TABLE 
