@@ -1652,6 +1652,22 @@ numpy = "*"
 sqlalchemy = ">=1.3.19"
 
 [[package]]
+name = "duckduckgo-search"
+version = "2.8.6"
+description = "Search for words, documents, images, news, maps and text translation using the DuckDuckGo.com search engine."
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "duckduckgo_search-2.8.6-py3-none-any.whl", hash = "sha256:c9312ad278d03d059ba7ced978dd1bc7806bb735aa239948322936d0570d8d7f"},
+    {file = "duckduckgo_search-2.8.6.tar.gz", hash = "sha256:ffd620febb8c471bdb4aed520b26e645cd05ae79acdd78db6c0c927cb7b0237c"},
+]
+
+[package.dependencies]
+click = ">=8.1.3"
+requests = ">=2.28.2"
+
+[[package]]
 name = "ecdsa"
 version = "0.18.0"
 description = "ECDSA cryptographic signature library (pure python)"
@@ -9252,7 +9268,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search"]
 cohere = ["cohere"]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 openai = ["openai"]
@@ -9261,4 +9277,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "568b190c884e62df4e7bd897f402e3b6e61b24134af7f189f3d44b2ba5f00082"
+content-hash = "19a145090188b0b446c68ca33599f4d4943bf9fb1312bcfa98a23268101e1323"
