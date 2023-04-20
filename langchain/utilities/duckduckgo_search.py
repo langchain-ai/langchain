@@ -3,7 +3,6 @@
 No setup required. Free.
 https://pypi.org/project/duckduckgo-search/
 """
-
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Extra
@@ -50,7 +49,6 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             time=self.time,
             max_results=self.max_results,
         )
-
         if len(results) == 0:
             return "No good DuckDuckGo Search Result was found"
         snippets = [result["body"] for result in results]
