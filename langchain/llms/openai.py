@@ -217,12 +217,8 @@ class BaseOpenAI(BaseLLM):
 
             openai.api_key = openai_api_key
             if openai_api_base:
-                print("USING API_BASE: ")
-                print(openai_api_base)
                 openai.api_base = openai_api_base
             if openai_organization:
-                print("USING ORGANIZATION: ")
-                print(openai_organization)
                 openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
