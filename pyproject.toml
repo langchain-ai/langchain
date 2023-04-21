@@ -148,6 +148,9 @@ select = [
   "F",  # pyflakes
   "I",  # isort
 ]
+exclude = [
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
 
 [tool.mypy]
 ignore_missing_imports = "True"
