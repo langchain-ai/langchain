@@ -142,7 +142,7 @@ class LlamaCpp(LLM):
             "top_p": self.top_p,
             "logprobs": self.logprobs,
             "echo": self.echo,
-            "stop_sequences": self.stop,  # Note, the key is different here due to conventon among the LLM classes
+            "stop_sequences": self.stop,  # Note, key here is convention used among LLM classes
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
         }
