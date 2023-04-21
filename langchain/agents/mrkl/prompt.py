@@ -4,7 +4,7 @@ FORMAT_INSTRUCTIONS = """Use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
+Action: the action to take, should be one of [{tool_names}, None]
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
@@ -13,4 +13,4 @@ Final Answer: the final answer to the original input question"""
 SUFFIX = """Begin!
 
 Question: {input}
-Thought:{agent_scratchpad}"""
+{agent_scratchpad}"""
