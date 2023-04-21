@@ -42,9 +42,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
     """The MIME type of the response data returned from endpoint"""
 
     @abstractmethod
-    def transform_input(
-        self, prompt: Union[str, List[str]], model_kwargs: Dict
-    ) -> bytes:
+    def transform_input(self, prompt: INPUT_TYPE, model_kwargs: Dict) -> bytes:
         """Transforms the input to a format that model can accept
         as the request Body. Should return bytes or seekable file
         like object in the format specified in the content_type
@@ -52,7 +50,7 @@ class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
         """
 
     @abstractmethod
-    def transform_output(self, output: bytes) -> Any:
+    def transform_output(self, output: bytes) -> OUTPUT_TYPE:
         """Transforms the output from the model to string that
         the LLM class expects.
         """
