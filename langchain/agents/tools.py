@@ -4,7 +4,11 @@ from typing import Any, Awaitable, Callable, Optional, Type, Union
 
 from pydantic import BaseModel, validate_arguments
 
-from langchain.tools.base import BaseTool
+from langchain.tools.base import (
+    BaseTool,
+    create_schema_from_function,
+    get_filtered_args,
+)
 
 
 class Tool(BaseTool):
@@ -22,9 +26,7 @@ class Tool(BaseTool):
             return self.args_schema.schema()["properties"]
         else:
             inferred_model = validate_arguments(self.func).model  # type: ignore
-            schema = inferred_model.schema()["properties"]
-            valid_keys = signature(self.func).parameters
-            return {k: schema[k] for k in valid_keys}
+            return get_filtered_args(inferred_model, self.func)
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
@@ -104,7 +106,7 @@ def tool(
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             _args_schema = args_schema
             if _args_schema is None and infer_schema:
-                _args_schema = validate_arguments(func).model  # type: ignore
+                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
             tool_ = Tool(
                 name=tool_name,
                 func=func,

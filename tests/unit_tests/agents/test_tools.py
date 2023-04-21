@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseTool, MissingTypeHintError
 
 
 def test_unnamed_decorator() -> None:
@@ -51,6 +51,51 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
+def test_untyped_base_tool_returns_warning() -> None:
+    """Test that a BaseTool without type hints raises an exception.""" ""
+    with pytest.raises(MissingTypeHintError):
+
+        class _UntypedTool(BaseTool):
+            name = "structured_api"
+            args_schema = _MockSchema  # This would silently fail without the error.
+            description = "A Structured Tool"
+
+            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+                return f"{arg1} {arg2} {arg3}"
+
+            async def _arun(
+                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            ) -> str:
+                raise NotImplementedError
+
+
+def test_unschemafied_decorator_is_fine() -> None:
+    """Test that a BaseTool without a schema is fine."""
+
+    @tool(args_schema=_MockSchema)
+    def unschemafied_tool(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        """Return the arguments directly."""
+        return f"{arg1} {arg2} {arg3}"
+
+    assert isinstance(unschemafied_tool, Tool)
+    assert unschemafied_tool.args_schema == _MockSchema
+
+
+def test_decorated_function_schema_equivalent() -> None:
+    """Test that a BaseTool without a schema is equivalent to the one manually created."""
+
+    @tool
+    def unschemafied_tool(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+        """Return the arguments directly."""
+        return f"{arg1} {arg2} {arg3}"
+
+    assert isinstance(unschemafied_tool, Tool)
+    assert (
+        unschemafied_tool.args_schema.schema()["properties"]
+        == _MockSchema.schema()["properties"]
+    )
+
+
 def test_structured_args_decorator() -> None:
     """Test functionality with structured arguments parsed as a decorator."""
 
@@ -66,6 +111,10 @@ def test_structured_args_decorator() -> None:
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
     expected_result = "1, 0.001, {'foo': 'bar'}"
     assert structured_tool_input.run(args) == expected_result
+    assert (
+        structured_tool_input.args
+        == structured_tool_input.args_schema.schema()["properties"]
+    )
 
 
 def test_empty_args_decorator() -> None:
