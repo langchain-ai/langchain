@@ -285,7 +285,7 @@ class MyScale(VectorStore):
             Easy to use with `str(Myscale())`
 
         Returns:
-            repr: string to describe the table
+            repr: string to show connection info and data schema
         """
         _repr = f"\033[92m\033[1m{self.config.database}.{self.config.table} @ "
         _repr += f"{self.config.host}:{self.config.port}\033[0m\n\n"
