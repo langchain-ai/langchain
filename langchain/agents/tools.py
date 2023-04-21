@@ -1,8 +1,9 @@
 """Interface for tools."""
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type, Union
 
-from pydantic import BaseModel, validate_arguments
+from pydantic import BaseModel, validate_arguments, validator
 
 from langchain.tools.base import (
     BaseTool,
@@ -19,6 +20,13 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
+
+    @validator("func", pre=True, always=True)
+    def validate_func_not_partial(cls, func: Callable) -> Callable:
+        """Check that the function is not a partial."""
+        if isinstance(func, partial):
+            raise ValueError("Partial functions not yet supported in tools.")
+        return func
 
     @property
     def args(self) -> dict:
