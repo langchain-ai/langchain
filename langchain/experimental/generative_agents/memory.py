@@ -37,7 +37,7 @@ class GenerativeAgentMemory(BaseMemory):
     max_tokens_limit: int = 1200  # : :meta private:
     # input keys
     queries_key: str = "queries"
-    most_recent_memories_token_key: str = "recent_memories_key"
+    most_recent_memories_token_key: str = "recent_memories_token"
     add_memory_key: str = "add_memory"
     # output keys
     relevant_memories_key: str = "relevant_memories"
@@ -55,12 +55,13 @@ class GenerativeAgentMemory(BaseMemory):
 
     def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
         """Return the 3 most salient high-level questions about recent observations."""
-        prompt = PromptTemplate.from_template(
-            "{observations}\n\n"
-            + "Given only the information above, what are the 3 most salient"
-            + " high-level questions we can answer about the subjects in"
-            + " the statements? Provide each question on a new line.\n\n"
-        )
+        prompt = PromptTemplate.from_template("""
+Information:
+{observations}
+            
+Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements?
+Provide each question on a new line.
+""")
         observations = self.memory_retriever.memory_stream[-last_k:]
         observation_str = "\n".join([o.page_content for o in observations])
         result = self.chain(prompt).run(observations=observation_str)
@@ -68,12 +69,12 @@ class GenerativeAgentMemory(BaseMemory):
 
     def _get_insights_on_topic(self, topic: str) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
-        prompt = PromptTemplate.from_template(
-            "Statements about {topic}\n"
-            + "{related_statements}\n\n"
-            + "What 5 high-level insights can you infer from the above statements?"
-            + " (example format: insight (because of 1, 5, 3))"
-        )
+        prompt = PromptTemplate.from_template("""
+Statements about {topic}:
+{related_statements}
+
+What 5 high-level insights can you infer from the above statements? (example format: insight (because of 1, 5, 3))
+""")
         related_memories = self.fetch_memories(topic)
         related_statements = "\n".join(
             [
@@ -102,14 +103,13 @@ class GenerativeAgentMemory(BaseMemory):
 
     def _score_memory_importance(self, memory_content: str) -> float:
         """Score the absolute importance of the given memory."""
-        prompt = PromptTemplate.from_template(
-            "On the scale of 1 to 10, where 1 is purely mundane"
-            + " (e.g., brushing teeth, making bed) and 10 is"
-            + " extremely poignant (e.g., a break up, college"
-            + " acceptance), rate the likely poignancy of the"
-            + " following piece of memory. Respond with a single integer."
-            + "\nMemory: {memory_content}"
-            + "\nRating: "
+        prompt = PromptTemplate.from_template("""
+Memory: {memory_content}
+
+Rate the importance of this piece of memory, with a single integer from 1 to 10.
+1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, college acceptance)
+
+Rating: """
         )
         score = self.chain(prompt).run(memory_content=memory_content).strip()
         if self.verbose:
@@ -159,7 +159,7 @@ class GenerativeAgentMemory(BaseMemory):
     def format_memories_simple(self, relevant_memories: List[Document]) -> str:
         return "; ".join([f"{mem.page_content}" for mem in relevant_memories])
 
-    def _get_memories_until_limit(self, consumed_tokens: int) -> str:
+    def get_memories_until_limit(self, consumed_tokens: int) -> str:
         """Reduce the number of tokens in the documents."""
         result = []
         for doc in self.memory_retriever.memory_stream[::-1]:
@@ -194,7 +194,7 @@ class GenerativeAgentMemory(BaseMemory):
         most_recent_memories_token = inputs.get(self.most_recent_memories_token_key)
         if most_recent_memories_token is not None:
             return {
-                self.most_recent_memories_key: self._get_memories_until_limit(
+                self.most_recent_memories_key: self.get_memories_until_limit(
                     most_recent_memories_token
                 )
             }
