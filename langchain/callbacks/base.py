@@ -228,7 +228,7 @@ class CallbackManager(BaseCallbackManager):
         self, finish: AgentFinish, verbose: bool = False, **kwargs: Any
     ) -> None:
         """Run on agent end."""
-        self._handle_event("on_agent_finish", None, verbose, finish, **kwargs)
+        self._handle_event("on_agent_finish", "ignore_agent", verbose, finish, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
