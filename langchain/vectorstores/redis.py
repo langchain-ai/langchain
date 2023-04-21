@@ -16,7 +16,7 @@ from langchain.schema import BaseRetriever
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 # required modules
@@ -70,6 +70,9 @@ class Redis(VectorStore):
         redis_url: str,
         index_name: str,
         embedding_function: Callable,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -92,6 +95,9 @@ class Redis(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         self.client = redis_client
+        self.content_key = content_key
+        self.metadata_key = metadata_key
+        self.vector_key = vector_key
 
     def add_texts(
         self,
@@ -112,11 +118,11 @@ class Redis(VectorStore):
             pipeline.hset(
                 key,
                 mapping={
-                    "content": text,
-                    "content_vector": np.array(
+                    self.content_key: text,
+                    self.vector_key: np.array(
                         self.embedding_function(text), dtype=np.float32
                     ).tobytes(),
-                    "metadata": json.dumps(metadata),
+                    self.metadata_key: json.dumps(metadata),
                 },
             )
             ids.append(key)
@@ -191,8 +197,8 @@ class Redis(VectorStore):
         embedding = self.embedding_function(query)
 
         # Prepare the Query
-        return_fields = ["metadata", "content", "vector_score"]
-        vector_field = "content_vector"
+        return_fields = [self.metadata_key, self.content_key, "vector_score"]
+        vector_field = self.vector_key
         hybrid_fields = "*"
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{vector_field} $vector AS vector_score]"
@@ -232,6 +238,9 @@ class Redis(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
         """Construct RediSearch wrapper from raw documents.
@@ -264,7 +273,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
@@ -287,10 +297,10 @@ class Redis(VectorStore):
                 "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
             )
             schema = (
-                TextField(name="content"),
-                TextField(name="metadata"),
+                TextField(name=content_key),
+                TextField(name=metadata_key),
                 VectorField(
-                    "content_vector",
+                    vector_key,
                     "FLAT",
                     {
                         "TYPE": "FLOAT32",
@@ -313,15 +323,21 @@ class Redis(VectorStore):
             pipeline.hset(
                 key,
                 mapping={
-                    "content": text,
-                    "content_vector": np.array(
-                        embeddings[i], dtype=np.float32
-                    ).tobytes(),
-                    "metadata": json.dumps(metadata),
+                    content_key: text,
+                    vector_key: np.array(embeddings[i], dtype=np.float32).tobytes(),
+                    metadata_key: json.dumps(metadata),
                 },
             )
         pipeline.execute()
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
 
     @staticmethod
     def drop_index(
@@ -350,7 +366,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
         except ValueError as e:
             raise ValueError(f"Your redis connected error: {e}")
@@ -368,6 +385,9 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
+        content_key: str = "content",
+        metadata_key: str = "metadata",
+        vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
         """Connect to an existing Redis index."""
@@ -382,7 +402,8 @@ class Redis(VectorStore):
         try:
             # We need to first remove redis_url from kwargs,
             # otherwise passing it to Redis will result in an error.
-            kwargs.pop("redis_url")
+            if "redis_url" in kwargs:
+                kwargs.pop("redis_url")
             client = redis.from_url(url=redis_url, **kwargs)
             # check if redis has redisearch module installed
             _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
@@ -393,7 +414,15 @@ class Redis(VectorStore):
         except Exception as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
-        return cls(redis_url, index_name, embedding.embed_query)
+        return cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return RedisVectorStoreRetriever(vectorstore=self, **kwargs)

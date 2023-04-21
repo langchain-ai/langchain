@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class BSHTMLLoader(BaseLoader):
@@ -24,7 +24,8 @@ class BSHTMLLoader(BaseLoader):
             import bs4  # noqa:F401
         except ImportError:
             raise ValueError(
-                "bs4 package not found, please install it with " "`pip install bs4`"
+                "beautifulsoup4 package not found, please install it with "
+                "`pip install beautifulsoup4`"
             )
 
         self.file_path = file_path

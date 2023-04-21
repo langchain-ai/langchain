@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -81,6 +81,41 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+    def similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+        """
+        docs_and_similarities = self._similarity_search_with_relevance_scores(
+            query, k=k, **kwargs
+        )
+        if any(
+            similarity < 0.0 or similarity > 1.0
+            for _, similarity in docs_and_similarities
+        ):
+            raise ValueError(
+                "Relevance scores must be between"
+                f" 0 and 1, got {docs_and_similarities}"
+            )
+        return docs_and_similarities
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        raise NotImplementedError
+
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -118,7 +153,7 @@ class VectorStore(ABC):
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -136,18 +171,18 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     async def amax_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
 
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.max_marginal_relevance_search, query, k, fetch_k)
+        func = partial(self.max_marginal_relevance_search, query, k, fetch_k, **kwargs)
         return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -165,7 +200,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     async def amax_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         raise NotImplementedError
