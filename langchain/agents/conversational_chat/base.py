@@ -36,6 +36,7 @@ class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+    tool_response_template: str = TEMPLATE_TOOL_RESPONSE
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
@@ -93,7 +94,7 @@ class ConversationalChatAgent(Agent):
         for action, observation in intermediate_steps:
             thoughts.append(AIMessage(content=action.log))
             human_message = HumanMessage(
-                content=TEMPLATE_TOOL_RESPONSE.format(observation=observation)
+                content=self.tool_response_template.format(observation=observation)
             )
             thoughts.append(human_message)
         return thoughts
