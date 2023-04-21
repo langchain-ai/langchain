@@ -14,6 +14,7 @@ from langchain.tools.file_management.list_dir import ListDirectoryTool
 from langchain.tools.file_management.move import MoveFileTool
 from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
+from langchain.tools.file_management.edit import EditFileTool
 
 _FILE_TOOLS = {
     tool_cls.__fields__["name"].default: tool_cls
@@ -23,6 +24,7 @@ _FILE_TOOLS = {
         FileSearchTool,
         MoveFileTool,
         ReadFileTool,
+        EditFileTool,
         WriteFileTool,
         ListDirectoryTool,
     ]

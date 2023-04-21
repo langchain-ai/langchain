@@ -8,6 +8,7 @@ from langchain.tools.file_management.move import MoveFileTool
 from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.toolkit import FileManagementToolkit
 from langchain.tools.file_management.write import WriteFileTool
+from langchain.tools.file_management.edit import EditFileTool
 
 __all__ = [
     "CopyFileTool",
@@ -16,6 +17,7 @@ __all__ = [
     "MoveFileTool",
     "ReadFileTool",
     "WriteFileTool",
+    "EditFileTool",
     "ListDirectoryTool",
     "FileManagementToolkit",
 ]
