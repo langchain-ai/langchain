@@ -288,7 +288,7 @@ class ConfluenceLoader(BaseLoader):
         """
 
         max_pages = kwargs.pop("max_pages")
-        docs = []
+        docs: List[dict] = []
         while len(docs) < max_pages:
             get_pages = retry(
                 reraise=True,
