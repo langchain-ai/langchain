@@ -6,7 +6,7 @@ from langchain.document_loaders.python import PythonLoader
 
 
 @pytest.mark.parametrize("filename", ["default-encoding.py", "non-utf8-encoding.py"])
-def test_python_loader(filename) -> None:
+def test_python_loader(filename: str) -> None:
     """Test Python loader."""
     file_path = Path(__file__).parent.parent / "examples" / filename
     loader = PythonLoader(str(file_path))
