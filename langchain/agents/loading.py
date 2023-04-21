@@ -37,8 +37,6 @@ def _load_agent_from_tools(
     if config_type not in AGENT_TO_CLASS:
         raise ValueError(f"Loading {config_type} agent not supported")
 
-    if config_type not in AGENT_TO_CLASS:
-        raise ValueError(f"Loading {config_type} agent not supported")
     agent_cls = AGENT_TO_CLASS[config_type]
     combined_config = {**config, **kwargs}
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
