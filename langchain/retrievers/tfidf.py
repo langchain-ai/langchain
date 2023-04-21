@@ -2,7 +2,7 @@
 
 Largely based on
 https://github.com/asvskartheek/Text-Retrieval/blob/master/TF-IDF%20Search%20Engine%20(SKLEARN).ipynb"""
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -21,7 +21,12 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_texts(cls, texts: List[str], tfidf_params: Optional[Dict[str, Any]] = None, **kwargs: Any) -> "TFIDFRetriever":
+    def from_texts(
+        cls,
+        texts: List[str],
+        tfidf_params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
+    ) -> "TFIDFRetriever":
         from sklearn.feature_extraction.text import TfidfVectorizer
 
         if tfidf_params is None:
