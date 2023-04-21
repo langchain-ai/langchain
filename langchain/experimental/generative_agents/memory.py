@@ -60,7 +60,8 @@ class GenerativeAgentMemory(BaseMemory):
 Information:
 {observations}
             
-Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements?
+Given only the information above, what are the 3 most salient high-level questions 
+we can answer about the subjects in the statements?
 Provide each question on a new line.
 """
         )
@@ -76,7 +77,8 @@ Provide each question on a new line.
 Statements about {topic}:
 {related_statements}
 
-What 5 high-level insights can you infer from the above statements? (example format: insight (because of 1, 5, 3))
+What 5 high-level insights can you infer from the above statements?
+(example format: insight (because of 1, 5, 3))
 """
         )
         related_memories = self.fetch_memories(topic)
@@ -112,7 +114,8 @@ What 5 high-level insights can you infer from the above statements? (example for
 Memory: {memory_content}
 
 Rate the importance of this piece of memory, with a single integer from 1 to 10.
-1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, college acceptance)
+1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant
+(e.g., a break up, college acceptance)
 
 Rating: """
         )

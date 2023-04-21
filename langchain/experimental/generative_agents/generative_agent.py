@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -118,7 +118,8 @@ Observation: {observation}
     def generate_reaction(self, observation: str) -> Tuple[bool, str]:
         """React to a given observation."""
         call_to_action_template = f"""
-Should {self.name} react to the observation, and if so what would be the reaction? Respond in one line.
+Should {self.name} react to the observation, and if so what would be the reaction? 
+Respond in one line.
 If the action is to engage in dialogue, write:
 SAY: "what to say"
 otherwise, write:
