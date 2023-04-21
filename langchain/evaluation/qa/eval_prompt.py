@@ -18,7 +18,9 @@ STUDENT ANSWER: {result}
 TRUE ANSWER: {answer}
 GRADE:"""
 PROMPT = PromptTemplate(
-    input_variables=["query", "result", "answer"], template=template, output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT")
+    input_variables=["query", "result", "answer"],
+    template=template,
+    output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT"),
 )
 
 context_template = """You are a teacher grading a quiz.
@@ -37,7 +39,9 @@ CONTEXT: {context}
 STUDENT ANSWER: {result}
 GRADE:"""
 CONTEXT_PROMPT = PromptTemplate(
-    input_variables=["query", "context", "result"], template=context_template, output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT")
+    input_variables=["query", "context", "result"],
+    template=context_template,
+    output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT"),
 )
 
 
@@ -59,5 +63,7 @@ CONTEXT: {context}
 STUDENT ANSWER: {result}
 EXPLANATION:"""
 COT_PROMPT = PromptTemplate(
-    input_variables=["query", "context", "result"], template=cot_template, output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT")
+    input_variables=["query", "context", "result"],
+    template=cot_template,
+    output_parser=BooleanOutputParser(true_val="CORRECT", false_val="INCORRECT"),
 )
