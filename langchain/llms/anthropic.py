@@ -5,8 +5,14 @@ from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain.utils import get_from_dict_or_env
-from langchain.schema import BaseMessage, AIMessage, ChatMessage, SystemMessage, HumanMessage
 
 
 class _AnthropicCommon(BaseModel):
@@ -172,7 +178,6 @@ class Anthropic(LLM, _AnthropicCommon):
         return (
             text.rstrip()
         )  # trim off the trailing ' ' that might come from the "Assistant: "
-
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:

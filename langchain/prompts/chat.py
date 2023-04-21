@@ -15,9 +15,9 @@ from langchain.schema import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    PromptType,
     PromptValue,
     SystemMessage,
-    PromptType
 )
 
 

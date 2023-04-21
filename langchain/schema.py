@@ -2,8 +2,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
 from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -165,6 +175,7 @@ class LLMResult(BaseModel):
 class PromptType(Enum):
     string = "string"
     messages = "messages"
+
 
 class PromptValue(BaseModel, ABC):
     type: PromptType = PromptType.string
@@ -401,16 +412,17 @@ class OutputParserException(Exception):
     pass
 
 
-D = TypeVar("D", bound=Document)
-
-
-class BaseDocumentTransformer(ABC, Generic[D]):
+class BaseDocumentTransformer(ABC):
     """Base interface for transforming documents."""
 
     @abstractmethod
-    def transform_documents(self, documents: List[D], **kwargs: Any) -> List[D]:
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
         """Transform a list of documents."""
 
     @abstractmethod
-    async def atransform_documents(self, documents: List[D], **kwargs: Any) -> List[D]:
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
         """Asynchronously transform a list of documents."""
