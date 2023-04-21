@@ -1,9 +1,11 @@
 # YouTube
 
-This is a collection of LangChain tutorials and videos.
+This is a collection of `LangChain` tutorials and videos on `YouTube`.
 
-### Introduction to LangChain with Harrison Chase creator of LangChain
-- [LangChain Demo + Q&A with Harrison Chase](https://youtu.be/zaYTXQFR0_s) by [Full Stack Deep Learning](https://www.youtube.com/@FullStackDeepLearning)
+### Introduction to LangChain with Harrison Chase, creator of LangChain
+- [Building the Future with LLMs, `LangChain`, & `Pinecone`](https://youtu.be/nMniwlGyX-c) by [Pinecone](https://www.youtube.com/@pinecone-io)
+- [LangChain and Weaviate with Harrison Chase and Bob van Luijt - Weaviate Podcast #36](https://youtu.be/lhby7Ql7hbk) by [Weaviate • Vector Database](https://www.youtube.com/@Weaviate)
+- [LangChain Demo + Q&A with Harrison Chase](https://youtu.be/zaYTXQFR0_s?t=788) by [Full Stack Deep Learning](https://www.youtube.com/@FullStackDeepLearning)
 
 ## Tutorials
 
@@ -81,7 +83,6 @@ This is a collection of LangChain tutorials and videos.
 - [The easiest way to work with large language models | Learn LangChain in 10min](https://youtu.be/kmbS6FDQh7c) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [4 Autonomous AI Agents: “Westworld” simulation `BabyAGI`, `AutoGPT`, `Camel`, `LangChain`](https://youtu.be/yWbnH6inT_U) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [AI CAN SEARCH THE INTERNET? Langchain Agents + OpenAI ChatGPT](https://youtu.be/J-GL0htqda8) by [tylerwhatsgood](https://www.youtube.com/@tylerwhatsgood)
-- [Building the Future with LLMs, LangChain, & `Pinecone`](https://youtu.be/nMniwlGyX-c) by [Pinecone](https://www.youtube.com/@pinecone-io)
 - [`Weaviate` + LangChain for LLM apps presented by Erika Cardenas](https://youtu.be/7AGj4Td5Lgw) by [`Weaviate` • Vector Database](https://www.youtube.com/@Weaviate)
 - [Analyze Custom `CSV` Data with `GPT-4` using Langchain](https://youtu.be/Ew3sGdX8at4) by [Venelin Valkov](https://www.youtube.com/@venelin_valkov) 
 - [Langchain Overview - How to Use Langchain & `ChatGPT`](https://youtu.be/oYVYIq0lOtI) by [Python In Office](https://www.youtube.com/@pythoninoffice6568)
