@@ -20,7 +20,7 @@ def test_write_file_with_root_dir() -> None:
 def test_write_file_errs_outside_root_dir() -> None:
     """Test the WriteFile tool when a root dir is specified."""
     with TemporaryDirectory() as temp_dir:
-        tool = WriteFileTool(root_dir=temp_dir)
+        tool = WriteFileTool(root_dir=temp_dir, raise_errors=True)
         with pytest.raises(ValueError):
             tool.run({"file_path": "../file.txt", "text": "Hello, world!"})
 

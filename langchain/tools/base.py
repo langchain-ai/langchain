@@ -29,6 +29,7 @@ class BaseTool(ABC, BaseModel):
     return_direct: bool = False
     verbose: bool = False
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
+    raise_errors: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -78,6 +79,14 @@ class BaseTool(ABC, BaseModel):
     async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool asynchronously."""
 
+    def handle_error(self, error: Union[Exception, KeyboardInterrupt]) -> str:
+        """Handle an error raised by the tool."""
+        if isinstance(error, KeyboardInterrupt):
+            raise error
+        if self.raise_errors:
+            raise error
+        return f"Error: {error}, {type(error)}"
+
     def run(
         self,
         tool_input: Union[str, Dict],
@@ -103,8 +112,8 @@ class BaseTool(ABC, BaseModel):
             tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
             observation = self._run(*tool_args, **tool_kwargs)
         except (Exception, KeyboardInterrupt) as e:
-            self.callback_manager.on_tool_error(e, verbose=verbose_)
-            raise e
+            self.callback_manager.on_tool_error(e, verbose=verbose)
+            return self.handle_error(e)
         self.callback_manager.on_tool_end(
             observation, verbose=verbose_, color=color, name=self.name, **kwargs
         )
@@ -149,7 +158,7 @@ class BaseTool(ABC, BaseModel):
                 await self.callback_manager.on_tool_error(e, verbose=verbose_)
             else:
                 self.callback_manager.on_tool_error(e, verbose=verbose_)
-            raise e
+            return self.handle_error(e)
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_end(
                 observation, verbose=verbose_, color=color, name=self.name, **kwargs

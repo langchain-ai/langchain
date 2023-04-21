@@ -66,6 +66,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
+    raise_errors: bool = False,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -77,6 +78,8 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
+        raise_errors: Whether to raise exceptions when running the tool
+            rather than returning a string with the error message.
 
     Requires:
         - Function must be of type (str) -> str
@@ -111,6 +114,7 @@ def tool(
                 args_schema=_args_schema,
                 description=description,
                 return_direct=return_direct,
+                raise_errors=raise_errors,
             )
             return tool_
 

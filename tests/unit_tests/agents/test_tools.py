@@ -123,7 +123,7 @@ def test_unnamed_tool_decorator_return_direct() -> None:
 def test_tool_with_kwargs() -> None:
     """Test functionality when only return direct is provided."""
 
-    @tool(return_direct=True)
+    @tool(return_direct=True, raise_errors=True)
     def search_api(
         arg_1: float,
         ping: str = "hi",
