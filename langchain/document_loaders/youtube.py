@@ -114,7 +114,11 @@ class YoutubeLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load documents."""
         try:
-            from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
+            from youtube_transcript_api import (
+                NoTranscriptFound,
+                TranscriptsDisabled,
+                YouTubeTranscriptApi,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import youtube_transcript_api python package. "
@@ -129,7 +133,11 @@ class YoutubeLoader(BaseLoader):
             video_info = self._get_video_info()
             metadata.update(video_info)
 
-        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_id)
+        try:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_id)
+        except TranscriptsDisabled:
+            return []
+
         try:
             transcript = transcript_list.find_transcript([self.language])
         except NoTranscriptFound:

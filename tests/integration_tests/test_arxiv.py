@@ -1,4 +1,4 @@
-"""Integration test for Wikipedia API Wrapper."""
+"""Integration test for Arxiv API Wrapper."""
 import pytest
 
 from langchain.utilities import ArxivAPIWrapper
