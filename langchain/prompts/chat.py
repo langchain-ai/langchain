@@ -142,7 +142,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate, ABC):
     ) -> ChatPromptTemplate:
         messages = [
             ChatMessagePromptTemplate(
-                content=PromptTemplate.from_template(template), role=role
+                prompt=PromptTemplate.from_template(template), role=role
             )
             for role, template in string_messages
         ]
