@@ -16,6 +16,7 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
+from langchain.tools.multi_line_human.tool import MultiLineHumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
     RequestsDeleteTool,
@@ -218,6 +219,9 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
+def _get_multi_line_human_tool(**kwargs: Any) -> BaseTool:
+    return MultiLineHumanInputRun(**kwargs)
+
 
 _EXTRA_LLM_TOOLS = {
     "news-api": (_get_news_api, ["news_api_key"]),
@@ -242,6 +246,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
+    "multi_line_human": (_get_multi_line_human_tool, ["prompt_func", "input_func"]),
 }
 
 
