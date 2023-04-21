@@ -1,47 +1,44 @@
-# flake8: noqa
 """Tools for interacting with a Power BI dataset."""
-from __future__ import annotations
+from typing import Any, Dict, Optional
 
-from typing import Any
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Field, validator
 
 from langchain.chains.llm import LLMChain
-from langchain.llms.openai import OpenAI
-from langchain.prompts import PromptTemplate
-from langchain.utilities.powerbi import PowerBIDataset
 from langchain.tools.base import BaseTool
 from langchain.tools.powerbi.prompt import (
-    QUESTION_TO_QUERY,
-    DEFAULT_FEWSHOT_EXAMPLES,
     BAD_REQUEST_RESPONSE,
     BAD_REQUEST_RESPONSE_ESCALATED,
+    DEFAULT_FEWSHOT_EXAMPLES,
+    QUESTION_TO_QUERY,
 )
-from langchain.utilities.powerbi import json_to_md
+from langchain.utilities.powerbi import PowerBIDataset, json_to_md
 
 
-class QueryPowerBITool(
-    BaseTool,
-):
-    """Tool for querying a Power BI Dataset.
-
-    TODO: test contents of aiohttp responses to catch bad request vs bad auth.
-    """
+class QueryPowerBITool(BaseTool):
+    """Tool for querying a Power BI Dataset."""
 
     name = "query_powerbi"
     description = """
     Input to this tool is a detailed and correct DAX query, output is a result from the dataset.
-    If the query is not correct, an error message will be returned. 
+    If the query is not correct, an error message will be returned.
     If an error is returned with Bad request in it, rewrite the query and try again.
     If an error is returned with Unauthorized in it, do not try again, but tell the user to change their authentication.
 
     Example Input: "EVALUATE ROW("count", COUNTROWS(table1))"
-    """
-    session_cache: dict[str, Any] = Field(default_factory=dict)
-
+    """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
+    session_cache: Dict[str, Any] = Field(default_factory=dict, exclude=True)
 
-    def _check_cache(self, tool_input: str) -> str | None:
-        """Check if the input is present in the cache, if the value is a bad request, overwrite with the escalated version, if not present return None."""
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _check_cache(self, tool_input: str) -> Optional[str]:
+        """Check if the input is present in the cache.
+
+        If the value is a bad request, overwrite with the escalated version,
+        if not present return None."""
         if tool_input not in self.session_cache:
             return None
         if self.session_cache[tool_input] == BAD_REQUEST_RESPONSE:
@@ -100,11 +97,15 @@ class InfoPowerBITool(BaseTool):
     description = """
     Input to this tool is a comma-separated list of tables, output is the schema and sample rows for those tables.
     Be sure that the tables actually exist by calling list_tables_powerbi first!
-    
-    Example Input: "table1, table2, table3"
-    """
 
+    Example Input: "table1, table2, table3"
+    """  # noqa: E501
     powerbi: PowerBIDataset = Field(exclude=True)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def _run(self, tool_input: str) -> str:
         """Get the schema for tables in a comma-separated list."""
@@ -121,29 +122,38 @@ class ListPowerBITool(BaseTool):
     description = "Input is an empty string, output is a comma separated list of tables in the database."  # noqa: E501 # pylint: disable=C0301
     powerbi: PowerBIDataset = Field(exclude=True)
 
-    def _run(self, tool_input: str = "") -> str:
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _run(self, *args: Any, **kwargs: Any) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
-    async def _arun(self, tool_input: str = "") -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
 
 class InputToQueryTool(BaseTool):
-    """Use an LLM to parse the question to a DAX query.
-    Adapted from https://www.patterns.app/blog/2023/01/18/crunchbot-sql-analyst-gpt/"""
+    """Use an LLM to parse the question to a DAX query."""
 
-    llm_chain: LLMChain
-    template: str = QUESTION_TO_QUERY
-    examples: str = DEFAULT_FEWSHOT_EXAMPLES
     name = "question_to_query_powerbi"
     description = """
     Use this tool to create the DAX query from a question, the input is a fully formed question related to the powerbi dataset. Always use this tool before executing a query with query_powerbi!
 
     Example Input: "How many records are in table1?"
-    """
+    """  # noqa: E501
+    llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
+    template: str = QUESTION_TO_QUERY
+    examples: str = DEFAULT_FEWSHOT_EXAMPLES
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213
@@ -157,7 +167,7 @@ class InputToQueryTool(BaseTool):
             "examples",
         ]:
             raise ValueError(
-                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 # pylint: disable=C0301
+                "LLM chain for InputToQueryTool must have input variables ['tool_input', 'tables', 'schemas', 'examples']"  # noqa: C0301 E501 # pylint: disable=C0301
             )
         return llm_chain
 

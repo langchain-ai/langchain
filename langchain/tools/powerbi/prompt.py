@@ -58,3 +58,5 @@ BAD_REQUEST_RESPONSE = (
     "Bad request. Please ask the question_to_query_powerbi tool to provide the query."
 )
 BAD_REQUEST_RESPONSE_ESCALATED = "You already tried this, please try a different query."
+
+UNAUTHORIZED_RESPONSE = "Unauthorized. Try changing your authentication, do not retry."
