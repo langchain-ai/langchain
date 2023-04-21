@@ -10,6 +10,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain.utilities.selenium import SeleniumWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
@@ -25,6 +26,7 @@ __all__ = [
     "WolframAlphaAPIWrapper",
     "SerpAPIWrapper",
     "SearxSearchWrapper",
+    "SeleniumWrapper",
     "BingSearchAPIWrapper",
     "WikipediaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
