@@ -17,7 +17,7 @@ from langchain.prompts.prompt import PromptTemplate
 
 
 def _get_default_document_prompt() -> PromptTemplate:
-    return PromptTemplate(input_variables=["page_content"], template="{page_content}")
+    return PromptTemplate(input_variables=["page_content", "file_path"], template="File:\n{file_path}\nContent:\n{page_content}")
 
 
 class RefineDocumentsChain(BaseCombineDocumentsChain):
