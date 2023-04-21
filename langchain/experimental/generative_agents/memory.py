@@ -55,13 +55,15 @@ class GenerativeAgentMemory(BaseMemory):
 
     def _get_topics_of_reflection(self, last_k: int = 50) -> List[str]:
         """Return the 3 most salient high-level questions about recent observations."""
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 Information:
 {observations}
             
 Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements?
 Provide each question on a new line.
-""")
+"""
+        )
         observations = self.memory_retriever.memory_stream[-last_k:]
         observation_str = "\n".join([o.page_content for o in observations])
         result = self.chain(prompt).run(observations=observation_str)
@@ -69,12 +71,14 @@ Provide each question on a new line.
 
     def _get_insights_on_topic(self, topic: str) -> List[str]:
         """Generate 'insights' on a topic of reflection, based on pertinent memories."""
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 Statements about {topic}:
 {related_statements}
 
 What 5 high-level insights can you infer from the above statements? (example format: insight (because of 1, 5, 3))
-""")
+"""
+        )
         related_memories = self.fetch_memories(topic)
         related_statements = "\n".join(
             [
@@ -103,7 +107,8 @@ What 5 high-level insights can you infer from the above statements? (example for
 
     def _score_memory_importance(self, memory_content: str) -> float:
         """Score the absolute importance of the given memory."""
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 Memory: {memory_content}
 
 Rate the importance of this piece of memory, with a single integer from 1 to 10.

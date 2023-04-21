@@ -57,28 +57,34 @@ class GenerativeAgent(BaseModel):
         )
 
     def _get_entity_from_observation(self, observation: str) -> str:
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 Observation: {observation}
 What is the observed entity in the observation?
-Entity=""")
+Entity="""
+        )
         return self.chain(prompt).run(observation=observation).strip()
 
     def _get_entity_action(self, observation: str, entity_name: str) -> str:
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 Observation: {observation}
-What is the action {entity} doing in the observation?
-Action={entity} is """)
+What is the action {entity} is doing in the observation?
+Action={entity} is """
+        )
         return (
             self.chain(prompt).run(entity=entity_name, observation=observation).strip()
         )
 
     def summarize_related_memories(self, observation: str) -> str:
         """Summarize memories that are most relevant to an observation."""
-        prompt = PromptTemplate.from_template("""
+        prompt = PromptTemplate.from_template(
+            """
 {q1}?
 Context from memory:
 {relevant_memories}
-Relevant context: """)
+Relevant context: """
+        )
         entity_name = self._get_entity_from_observation(observation)
         entity_action = self._get_entity_action(observation, entity_name)
         q1 = f"What is the relationship between {self.name} and {entity_name}"
@@ -87,7 +93,8 @@ Relevant context: """)
 
     def _generate_reaction(self, observation: str, suffix: str) -> str:
         """React to a given observation or dialogue act."""
-        prompt = PromptTemplate.from_template(f"""
+        prompt = PromptTemplate.from_template(
+            f"""
 {self.get_summary()}
 It is {datetime.now().strftime("%B %d, %Y, %I:%M %p")}.
 {self.name}'s status: {self.status}
@@ -96,28 +103,32 @@ Summary of relevant context from {self.name}'s memory:
 Most recent observations: {{most_recent_memories}}
 Observation: {observation}
 
-{suffix}""")
-        consumed_tokens = self.llm.get_num_tokens(prompt.format(most_recent_memories=""))
-        return self.chain(prompt=prompt).run(recent_memories_token=consumed_tokens).strip()
+{suffix}"""
+        )
+        consumed_tokens = self.llm.get_num_tokens(
+            prompt.format(most_recent_memories="")
+        )
+        return (
+            self.chain(prompt=prompt).run(recent_memories_token=consumed_tokens).strip()
+        )
 
     def _clean_response(self, text: str) -> str:
         return re.sub(f"^{self.name} ", "", text.strip()).strip()
 
     def generate_reaction(self, observation: str) -> Tuple[bool, str]:
         """React to a given observation."""
-        call_to_action_template = (f"""
+        call_to_action_template = f"""
 Should {self.name} react to the observation, and if so what would be the reaction? Respond in one line.
 If the action is to engage in dialogue, write:
 SAY: "what to say"
 otherwise, write:
 REACT: {self.name}'s reaction (if anything).
 Either do nothing, react, or say something but not both.
-""")
+"""
         full_result = self._generate_reaction(observation, call_to_action_template)
         result = full_result.strip().split("\n")[0]
         self.memory.add_memory(
-            f"{self.name} observed "
-            f"{observation} and reacted by {result}"
+            f"{self.name} observed " f"{observation} and reacted by {result}"
         )
         if "REACT:" in result:
             reaction = self._clean_response(result.split("REACT:")[-1])
@@ -130,12 +141,12 @@ Either do nothing, react, or say something but not both.
 
     def generate_dialogue_response(self, observation: str) -> Tuple[bool, str]:
         """React to a given observation."""
-        call_to_action_template = (f"""
+        call_to_action_template = f"""
 What would {self.name} say? To end the conversation, write:
 GOODBYE: "what to say". 
 Otherwise to continue the conversation, write: 
 SAY: "what to say next"
-""")
+"""
         full_result = self._generate_reaction(observation, call_to_action_template)
         result = full_result.strip().split("\n")[0]
         if "GOODBYE:" in result:
@@ -170,12 +181,13 @@ SAY: "what to say next"
     def _compute_agent_summary(self) -> str:
         """"""
         prompt = PromptTemplate.from_template(
-"""
+            """
 How would you summarize {name}'s core characteristics given the following statements:
 {relevant_memories_simple}
 Do not embellish.
 
-Summary: """)
+Summary: """
+        )
         # The agent seeks to think about their core characteristics.
         return (
             self.chain(prompt)
@@ -195,11 +207,11 @@ Summary: """)
             self.summary = self._compute_agent_summary()
             self.last_refreshed = current_time
         age = self.age if self.age is not None else "N/A"
-        return (f"""
+        return f"""
 Name: {self.name} (age: {age})
 Innate traits: {self.traits}
 {self.summary}
-""")
+"""
 
     def get_full_header(self, force_refresh: bool = False) -> str:
         """Return a full header of the agent's status, summary, and current time."""
