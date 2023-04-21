@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import root_validator
+from typing import Any, Type
+
+from pydantic import BaseModel, root_validator
 
 from langchain.tools.browser.base import BaseBrowserTool
 from langchain.tools.browser.utils import get_current_page
@@ -9,6 +11,7 @@ from langchain.tools.browser.utils import get_current_page
 class ExtractTextTool(BaseBrowserTool):
     name: str = "extract_text"
     description: str = "Extract all the text on the page"
+    args_schema: Type[BaseModel] = BaseModel
 
     @root_validator
     def check_args(cls, values: dict) -> dict:
@@ -22,7 +25,7 @@ class ExtractTextTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(self) -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
         # Use Beautiful Soup since it's faster than looping through the elements
         from bs4 import BeautifulSoup

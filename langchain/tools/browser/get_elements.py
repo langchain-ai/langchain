@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import List, Optional, Sequence, Type
+from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
-from git import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from langchain.tools.browser.base import BaseBrowserTool

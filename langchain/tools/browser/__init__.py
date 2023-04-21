@@ -2,6 +2,7 @@
 
 from langchain.tools.browser.base import BaseBrowserTool
 from langchain.tools.browser.click import ClickTool
+from langchain.tools.browser.current_page import CurrentPageTool
 from langchain.tools.browser.extract_hyperlinks import ExtractHyperlinksTool
 from langchain.tools.browser.extract_text import ExtractTextTool
 from langchain.tools.browser.get_elements import GetElementsTool
@@ -18,4 +19,5 @@ __all__ = [
     "BaseBrowserTool",
     "BrowserToolkit",
     "ClickTool",
+    "CurrentPageTool",
 ]

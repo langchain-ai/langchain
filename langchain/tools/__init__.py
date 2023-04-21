@@ -9,19 +9,39 @@ from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.browser import (
+    NavigateTool,
+    NavigateBackTool,
+    ExtractTextTool,
+    ExtractHyperlinksTool,
+    GetElementsTool,
+    BaseBrowserTool,
+    BrowserToolkit,
+    ClickTool,
+    CurrentPageTool,
+)
 
 __all__ = [
-    "AIPluginTool",
     "APIOperation",
+    "BaseBrowserTool",
+    "BaseTool",
     "BingSearchResults",
     "BingSearchRun",
+    "BrowserToolkit",
+    "ClickTool",
+    "CurrentPageTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
     "DuckDuckGoSearchRun",
+    "ExtractHyperlinksTool",
+    "ExtractTextTool",
+    "GetElementsTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
     "IFTTTWebhook",
+    "NavigateBackTool",
+    "NavigateTool",
     "OpenAPISpec",
-    "BaseTool",
+    "AIPluginTool",
 ]
