@@ -1,6 +1,6 @@
 """Wrapper around llama.cpp."""
 import logging
-from typing import Any, Dict, List, Optional, Generator
+from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
@@ -159,7 +159,7 @@ class LlamaCpp(LLM):
 
     def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Prforms sanity check, preparing paramaters in format needed by llama_cpp.
+        Performs sanity check, preparing paramaters in format needed by llama_cpp.
 
         Args:
             stop (Optional[List[str]]): List of stop sequences for llama_cpp.
