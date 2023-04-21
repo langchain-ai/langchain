@@ -693,7 +693,7 @@ class AgentExecutor(Chain):
                     tool_run_kwargs["llm_prefix"] = ""
                 # We then call the tool on the tool input to get an observation
                 observation = tool.run(
-                    agent_action.tool_input,
+                    next(iter(inputs.values())) if return_direct else agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
                     **tool_run_kwargs,
@@ -752,7 +752,7 @@ class AgentExecutor(Chain):
                     tool_run_kwargs["llm_prefix"] = ""
                 # We then call the tool on the tool input to get an observation
                 observation = await tool.arun(
-                    agent_action.tool_input,
+                    next(iter(inputs.values())) if return_direct else agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
                     **tool_run_kwargs,
