@@ -1,7 +1,6 @@
 """Wrapper around the Milvus vector database."""
 from __future__ import annotations
 
-import uuid
 from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -331,7 +330,7 @@ class Milvus(VectorStore):
         Args:
             texts (List[str]): Text to insert.
             embedding (Embeddings): Embedding function to use.
-            metadatas (Optional[List[dict]], optional): Dict metatadata.
+            metadatas (Optional[List[dict]], optional): Dict metadata.
                 Defaults to None.
 
         Returns:
@@ -344,6 +343,7 @@ class Milvus(VectorStore):
                 DataType,
                 FieldSchema,
                 connections,
+                has_collection,
             )
             from pymilvus.orm.types import infer_dtype_bydata
         except ImportError:
@@ -354,14 +354,26 @@ class Milvus(VectorStore):
         # Connect to Milvus instance
         if not connections.has_connection("default"):
             connections.connect(**kwargs.get("connection_args", {"port": 19530}))
+        collection_name = (
+            "documents"
+            if "collection_name" not in kwargs
+            else kwargs["collection_name"]
+        )
+        primary_field = (
+            "vector_id" if "primary_field" not in kwargs else kwargs["primary_field"]
+        )
+        vector_field = (
+            "embedding" if "vector_field" not in kwargs else kwargs["vector_field"]
+        )
+        text_field = "content" if "text_field" not in kwargs else kwargs["text_field"]
+        if has_collection(collection_name):
+            raise ValueError(
+                f'Collection named "{collection_name}" already exists. '
+                "Use the Milvus base class to connect to an existing collection."
+            )
         # Determine embedding dim
         embeddings = embedding.embed_query(texts[0])
         dim = len(embeddings)
-        # Generate unique names
-        primary_field = "c" + str(uuid.uuid4().hex)
-        vector_field = "c" + str(uuid.uuid4().hex)
-        text_field = "c" + str(uuid.uuid4().hex)
-        collection_name = "c" + str(uuid.uuid4().hex)
         fields = []
         # Determine metadata schema
         if metadatas:
