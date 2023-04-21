@@ -24,7 +24,9 @@ class ConvoOutputParser(AgentOutputParser):
             cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
-        cleaned_output = cleaned_output.strip()
+        
+        # sometimes, two backquotes in text.
+        cleaned_output = cleaned_output.rstrip("`").strip()
         response = json.loads(cleaned_output)
         action, action_input = response["action"], response["action_input"]
         if action == "Final Answer":
