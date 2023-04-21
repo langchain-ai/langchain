@@ -27,11 +27,11 @@ class MultiLineHumanInputRun(BaseTool):
 
     name = "MultiLineHuman"
     description = (
-        "You can ask a human for guidance when you think you "
-        "got stuck or you are not sure what to do next. "
-        "The input should be a question for the human."
-        "This tool version is suitable when you need answers that span over "
-        "several lines."
+        "You can ask a human for guidance when you think you"
+        " got stuck or you are not sure what to do next."
+        " The input should be a question for the human."
+        " This tool version is suitable when you need answers that span over"
+        " several lines."
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
 
