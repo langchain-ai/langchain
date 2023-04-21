@@ -39,31 +39,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         """Return type of chat model."""
         return "anthropic-chat"
 
-    def _convert_one_message_to_text(self, message: BaseMessage) -> str:
-        if isinstance(message, ChatMessage):
-            message_text = f"\n\n{message.role.capitalize()}: {message.content}"
-        elif isinstance(message, HumanMessage):
-            message_text = f"{self.HUMAN_PROMPT} {message.content}"
-        elif isinstance(message, AIMessage):
-            message_text = f"{self.AI_PROMPT} {message.content}"
-        elif isinstance(message, SystemMessage):
-            message_text = f"{self.HUMAN_PROMPT} <admin>{message.content}</admin>"
-        else:
-            raise ValueError(f"Got unknown type {message}")
-        return message_text
 
-    def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:
-        """Format a list of strings into a single string with necessary newlines.
-
-        Args:
-            messages (List[BaseMessage]): List of BaseMessage to combine.
-
-        Returns:
-            str: Combined string with necessary newlines.
-        """
-        return "".join(
-            self._convert_one_message_to_text(message) for message in messages
-        )
 
     def _convert_messages_to_prompt(self, messages: List[BaseMessage]) -> str:
         """Format a list of messages into a full prompt for the Anthropic model

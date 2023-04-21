@@ -17,6 +17,7 @@ from langchain.schema import (
     HumanMessage,
     PromptValue,
     SystemMessage,
+    PromptType
 )
 
 
@@ -108,6 +109,7 @@ class SystemMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class ChatPromptValue(PromptValue):
+    type: PromptType = PromptType.messages
     messages: List[BaseMessage]
 
     def to_string(self) -> str:

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Extra, root_validator
 
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
+from langchain.schema import BaseMessage, AIMessage, ChatMessage, SystemMessage, HumanMessage
 
 
 class _AnthropicCommon(BaseModel):
@@ -126,6 +127,52 @@ class Anthropic(LLM, _AnthropicCommon):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "anthropic-llm"
+
+    def _convert_one_message_to_text(self, message: BaseMessage) -> str:
+        if isinstance(message, ChatMessage):
+            message_text = f"\n\n{message.role.capitalize()}: {message.content}"
+        elif isinstance(message, HumanMessage):
+            message_text = f"{self.HUMAN_PROMPT} {message.content}"
+        elif isinstance(message, AIMessage):
+            message_text = f"{self.AI_PROMPT} {message.content}"
+        elif isinstance(message, SystemMessage):
+            message_text = f"{self.HUMAN_PROMPT} <admin>{message.content}</admin>"
+        else:
+            raise ValueError(f"Got unknown type {message}")
+        return message_text
+
+    def _convert_messages_to_text(self, messages: List[BaseMessage]) -> str:
+        """Format a list of strings into a single string with necessary newlines.
+
+        Args:
+            messages (List[BaseMessage]): List of BaseMessage to combine.
+
+        Returns:
+            str: Combined string with necessary newlines.
+        """
+        return "".join(
+            self._convert_one_message_to_text(message) for message in messages
+        )
+
+    def _convert_messages_to_string(self, messages: List[BaseMessage]) -> str:
+        """Format a list of messages into a full prompt for the Anthropic model
+
+        Args:
+            messages (List[BaseMessage]): List of BaseMessage to combine.
+
+        Returns:
+            str: Combined string with necessary HUMAN_PROMPT and AI_PROMPT tags.
+        """
+        if not self.AI_PROMPT:
+            raise NameError("Please ensure the anthropic package is loaded")
+
+        if not isinstance(messages[-1], AIMessage):
+            messages.append(AIMessage(content=""))
+        text = self._convert_messages_to_text(messages)
+        return (
+            text.rstrip()
+        )  # trim off the trailing ' ' that might come from the "Assistant: "
+
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:

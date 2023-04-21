@@ -10,7 +10,7 @@ from pydantic import Extra, Field, validator
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
+from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue, BaseMessage, get_buffer_string, PromptType
 
 
 def _get_verbosity() -> bool:
@@ -100,16 +100,33 @@ class BaseLLM(BaseLanguageModel, ABC):
     ) -> LLMResult:
         """Run the LLM on the given prompts."""
 
+    def _convert_messages_to_string(self, messages: List[BaseMessage]) -> str:
+        return get_buffer_string(messages)
+
     def generate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        prompt_strings = [p.to_string() for p in prompts]
+        prompt_strings = []
+        for prompt in prompts:
+            if prompt.type == PromptType.string:
+                prompt_strings.append(prompt.to_string())
+            elif prompt.type == PromptType.messages:
+                prompt_strings.append(self._convert_messages_to_string(prompt.to_messages()))
+            else:
+                raise ValueError(f"Unexpected prompt type: {prompt.type}")
         return self.generate(prompt_strings, stop=stop)
 
     async def agenerate_prompt(
         self, prompts: List[PromptValue], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        prompt_strings = [p.to_string() for p in prompts]
+        prompt_strings = []
+        for prompt in prompts:
+            if prompt.type == PromptType.string:
+                prompt_strings.append(prompt.to_string())
+            elif prompt.type == PromptType.messages:
+                prompt_strings.append(self._convert_messages_to_string(prompt.to_messages()))
+            else:
+                raise ValueError(f"Unexpected prompt type: {prompt.type}")
         return await self.agenerate(prompt_strings, stop=stop)
 
     def generate(

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union
+from enum import Enum
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -161,7 +162,13 @@ class LLMResult(BaseModel):
     """For arbitrary LLM provider specific output."""
 
 
+class PromptType(Enum):
+    string = "string"
+    messages = "messages"
+
 class PromptValue(BaseModel, ABC):
+    type: PromptType = PromptType.string
+
     @abstractmethod
     def to_string(self) -> str:
         """Return prompt as string."""
