@@ -23,7 +23,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceEmbeddings
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceEmbeddings(model_name=model_name)
+            model_kwargs = {'device': 'cpu'}
+            hf = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:
@@ -33,14 +34,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, model_kwargs: Optional[dict] = None, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+        model_kwargs = model_kwargs or {}
         try:
             import sentence_transformers
 
             self.client = sentence_transformers.SentenceTransformer(
-                self.model_name, self.cache_folder
+                self.model_name, cache_folder=self.cache_folder, **model_kwargs
             )
         except ImportError:
             raise ValueError(
@@ -91,24 +93,31 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import HuggingFaceInstructEmbeddings
             model_name = "hkunlp/instructor-large"
-            hf = HuggingFaceInstructEmbeddings(model_name=model_name)
+            model_kwargs = {'device': 'cpu'}
+            hf = HuggingFaceInstructEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:
     model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
+    cache_folder: Optional[str] = None
+    """Path to store models. 
+    Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
     embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
     """Instruction to use for embedding documents."""
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
     """Instruction to use for embedding query."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, model_kwargs: Optional[dict] = None, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+        model_kwargs = model_kwargs or {}
         try:
             from InstructorEmbedding import INSTRUCTOR
 
-            self.client = INSTRUCTOR(self.model_name)
+            self.client = INSTRUCTOR(
+                self.model_name, cache_folder=self.cache_folder, **model_kwargs
+            )
         except ImportError as e:
             raise ValueError("Dependencies for InstructorEmbedding not found.") from e
 
