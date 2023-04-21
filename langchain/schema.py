@@ -370,17 +370,6 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         """Instructions on how the LLM output should be formatted."""
         raise NotImplementedError
 
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        raise NotImplementedError
-
-    def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of output parser."""
-        output_parser_dict = super().dict()
-        output_parser_dict["_type"] = self._type
-        return output_parser_dict
-
 
 class OutputParserException(Exception):
     """Exception that output parsers should raise to signify a parsing error.
