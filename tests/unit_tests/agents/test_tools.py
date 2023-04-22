@@ -1,14 +1,12 @@
 """Test tool utils."""
 from datetime import datetime
-from functools import partial
 from typing import Optional, Type, Union
-import pydantic
 
 import pytest
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import BaseTool, MissingTypeHintError
+from langchain.tools.base import BaseTool
 
 
 def test_unnamed_decorator() -> None:
@@ -53,59 +51,10 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
-def test_untyped_base_tool_returns_warning() -> None:
-    """Test that a BaseTool without type hints raises an exception.""" ""
-    with pytest.raises(MissingTypeHintError):
-
-        class _UntypedTool(BaseTool):
-            name = "structured_api"
-            # This would silently be ignored without the custom metaclass
-            args_schema = _MockSchema
-            description = "A Structured Tool"
-
-            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-                return f"{arg1} {arg2} {arg3}"
-
-            async def _arun(
-                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
-            ) -> str:
-                raise NotImplementedError
-
-
-def test_unschemafied_decorator_is_fine() -> None:
-    """Test that a BaseTool without a schema is fine."""
-
-    @tool(args_schema=_MockSchema)
-    def unschemafied_tool(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        """Return the arguments directly."""
-        return f"{arg1} {arg2} {arg3}"
-
-    assert isinstance(unschemafied_tool, Tool)
-    assert unschemafied_tool.args_schema == _MockSchema
-
-
-def test_decorated_function_schema_equivalent() -> None:
-    """Test that a BaseTool without a schema is equivalent to the one manually created."""
-
-    @tool
-    def structured_tool_input(
-        arg1: int, arg2: bool, arg3: Optional[dict] = None
-    ) -> str:
-        """Return the arguments directly."""
-        return f"{arg1} {arg2} {arg3}"
-
-    assert isinstance(structured_tool_input, Tool)
-    assert (
-        structured_tool_input.args_schema.schema()["properties"]
-        == _MockSchema.schema()["properties"]
-        == structured_tool_input.args
-    )
-
-
-def test_structured_args_decorator_no_infer_schema() -> None:
+def test_structured_args_decorator() -> None:
     """Test functionality with structured arguments parsed as a decorator."""
 
-    @tool(infer_schema=False)
+    @tool
     def structured_tool_input(
         arg1: int, arg2: Union[float, datetime], opt_arg: Optional[dict] = None
     ) -> str:
@@ -117,81 +66,6 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
     expected_result = "1, 0.001, {'foo': 'bar'}"
     assert structured_tool_input.run(args) == expected_result
-
-
-def test_structured_single_str_decorator_no_infer_schema() -> None:
-    """Test functionality with structured arguments parsed as a decorator."""
-
-    @tool(infer_schema=False)
-    def unstructured_tool_input(tool_input: str) -> str:
-        """Return the arguments directly."""
-        return f"{tool_input}"
-
-    assert isinstance(unstructured_tool_input, Tool)
-    assert unstructured_tool_input.args_schema is None
-
-
-def test_base_tool_inheritance_base_schema() -> None:
-    """Test functionality with structured arguments parsed as a decorator."""
-
-    class _MockSimpleTool(BaseTool):
-        name = "simple_tool"
-        description = "A Simple Tool"
-
-        def _run(self, tool_input: str) -> str:
-            return f"{tool_input}"
-
-        async def _arun(self, tool_input: str) -> str:
-            raise NotImplementedError
-
-    simple_tool = _MockSimpleTool()
-    assert simple_tool.args_schema is None
-    expected_args = {"tool_input": {"title": "Tool Input", "type": "string"}}
-    assert simple_tool.args == expected_args
-
-
-def test_tool_lambda_args_schema() -> None:
-    """Test args schema inference when the tool argument is a lambda function."""
-
-    tool = Tool(
-        name="tool",
-        description="A tool",
-        func=lambda tool_input: tool_input,
-    )
-    assert tool.args_schema is None
-    expected_args = {"tool_input": {"title": "Tool Input"}}
-    assert tool.args == expected_args
-
-
-def test_tool_lambda_multi_args_schema() -> None:
-    """Test args schema inference when the tool argument is a lambda function."""
-    tool = Tool(
-        name="tool",
-        description="A tool",
-        func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",  # type: ignore
-    )
-    assert tool.args_schema is None
-    expected_args = {
-        "tool_input": {"title": "Tool Input"},
-        "other_arg": {"title": "Other Arg"},
-    }
-    assert tool.args == expected_args
-
-
-def test_tool_partial_function_args_schema() -> None:
-    """Test args schema inference when the tool argument is a partial function."""
-
-    def func(tool_input: str, other_arg: str) -> str:
-        return tool_input + other_arg
-
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
-        # We don't yet support args_schema inference for partial functions
-        # so want to make sure we proactively raise an error
-        Tool(
-            name="tool",
-            description="A tool",
-            func=partial(func, other_arg="foo"),
-        )
 
 
 def test_empty_args_decorator() -> None:

@@ -1,15 +1,10 @@
 """Interface for tools."""
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type, Union
 
-from pydantic import BaseModel, validate_arguments, validator
+from pydantic import BaseModel, validate_arguments
 
-from langchain.tools.base import (
-    BaseTool,
-    create_schema_from_function,
-    get_filtered_args,
-)
+from langchain.tools.base import BaseTool
 
 
 class Tool(BaseTool):
@@ -21,20 +16,15 @@ class Tool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
 
-    @validator("func", pre=True, always=True)
-    def validate_func_not_partial(cls, func: Callable) -> Callable:
-        """Check that the function is not a partial."""
-        if isinstance(func, partial):
-            raise ValueError("Partial functions not yet supported in tools.")
-        return func
-
     @property
     def args(self) -> dict:
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         else:
             inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
+            schema = inferred_model.schema()["properties"]
+            valid_keys = signature(self.func).parameters
+            return {k: schema[k] for k in valid_keys}
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
@@ -114,7 +104,7 @@ def tool(
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
             _args_schema = args_schema
             if _args_schema is None and infer_schema:
-                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
+                _args_schema = validate_arguments(func).model  # type: ignore
             tool_ = Tool(
                 name=tool_name,
                 func=func,
