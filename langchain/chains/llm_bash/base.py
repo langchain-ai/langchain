@@ -1,13 +1,14 @@
 """Chain that interprets a prompt and executes bash code to perform bash operations."""
 from typing import Dict, List
 
-from pydantic import Extra
+from pydantic import Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
+from langchain.tools.shell.tool import ShellTool
 from langchain.utilities.bash import BashProcess
 
 
@@ -26,6 +27,7 @@ class LLMBashChain(Chain):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
     prompt: BasePromptTemplate = PROMPT
+    tool: ShellTool = Field(default_factory=ShellTool)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -51,7 +53,6 @@ class LLMBashChain(Chain):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
-        bash_executor = BashProcess()
         self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
         t = llm_executor.predict(question=inputs[self.input_key])
@@ -61,11 +62,10 @@ class LLMBashChain(Chain):
         if t.startswith("```bash"):
             # Split the string into a list of substrings
             command_list = t.split("\n")
-            print(command_list)
 
             # Remove the first and last substrings
             command_list = [s for s in command_list[1:-1]]
-            output = bash_executor.run(command_list)
+            output = self.tool.run({"commands": command_list})
 
             self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
             self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
