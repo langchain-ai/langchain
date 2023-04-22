@@ -52,6 +52,9 @@ class BaseConversationalRetrievalChain(Chain):
     output_key: str = "answer"
     return_source_documents: bool = False
     get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
+    standalone_questions : list = []
+    use_cache: bool = False
+    cache_similarity_threshold: float = 0.85
     """Return the source documents."""
 
     class Config:
@@ -92,11 +95,41 @@ class BaseConversationalRetrievalChain(Chain):
             )
         else:
             new_question = question
-        docs = self._get_docs(new_question, inputs)
-        new_inputs = inputs.copy()
-        new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+
+        if self.use_cache:
+             # get namespace to search standalone question in existing questions
+            cache_namespace = "cache-" + self.retriever.vectorstore._namespace
+
+            cache_result = self.retriever.vectorstore.similarity_search_with_score(new_question, namespace=cache_namespace)
+            if cache_result != []:
+                if cache_result[0][1] > self.cache_similarity_threshold:
+                    docs = cache_result[0][0]
+                    answer = cache_result[0][0].metadata["answer"]
+                else:
+                    docs = self._get_docs(new_question, inputs)
+                    new_inputs = inputs.copy()
+                    new_inputs["question"] = new_question
+                    new_inputs["chat_history"] = chat_history_str
+                    answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+                    cache_metadata = [{"section_type":"cache","answer":answer,"text":new_question}]
+                    self.retriever.vectorstore.add_texts(texts=[new_question], metadatas= cache_metadata, namespace= cache_namespace)
+
+            else:
+                docs = self._get_docs(new_question, inputs)
+                new_inputs = inputs.copy()
+                new_inputs["question"] = new_question
+                new_inputs["chat_history"] = chat_history_str
+                answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+                cache_metadata = [{"section_type":"cache","answer":answer,"text":new_question}]
+                self.retriever.vectorstore.add_texts(texts=[new_question], metadatas= cache_metadata, namespace= cache_namespace)
+        else:
+            docs = self._get_docs(new_question, inputs)
+            new_inputs = inputs.copy()
+            new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
+
+        self.standalone_questions.append(new_question)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
