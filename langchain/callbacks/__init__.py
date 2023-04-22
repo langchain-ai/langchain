@@ -20,6 +20,7 @@ __all__ = [
     "ClearMLCallbackHandler",
     "CometCallbackHandler",
     "AsyncIteratorCallbackHandler",
+    "VocodeCallbackHandler",
     "get_openai_callback",
     "tracing_enabled",
 ]
