@@ -61,7 +61,7 @@ psycopg2-binary = {version = "^2.9.5", optional = true}
 #boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
-azure-identity = "^1.12.0"
+azure-identity = {version = "^1.12.0", optional=true}
 gptcache = {version = ">=0.1.7", optional = true}
 atlassian-python-api = {version = "^3.36.0", optional=true}
 pytesseract = {version = "^0.3.10", optional=true}
@@ -142,7 +142,7 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 qdrant = ["qdrant-client"]
 openai = ["openai"]
 cohere = ["cohere"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity"]
 
 [tool.ruff]
 select = [
