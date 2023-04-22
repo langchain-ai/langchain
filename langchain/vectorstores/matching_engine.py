@@ -1,15 +1,21 @@
 """Vertex Matching Engine implementation of the vector store."""
+from __future__ import annotations
 
 import json
 import logging
 import time
 import uuid
-from typing import Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings import TensorflowHubEmbeddings
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+
+if TYPE_CHECKING:
+    from google.cloud import storage
+    from google.cloud.aiplatform import MatchingEngineIndex, MatchingEngineIndexEndpoint
+    from google.oauth2.service_account import Credentials
 
 logger = logging.getLogger()
 
@@ -30,13 +36,14 @@ class MatchingEngine(VectorStore):
     operation, updating the index takes close to one hour."""
 
     def __init__(
-            self,
-            project_id: str,
-            index: "MatchingEngineIndex",
-            endpoint: "MatchingEngineIndexEndpoint",
-            embedding: Embeddings,
-            gcs_client: "storage.Client",
-            credentials: "Credentials" = None,
+        self,
+        project_id: str,
+        index: MatchingEngineIndex,
+        endpoint: MatchingEngineIndexEndpoint,
+        embedding: Embeddings,
+        gcs_client: storage.Client,
+        gcs_bucket_name: str,
+        credentials: Credentials = None,
     ):
         """Vertex Matching Engine implementation of the vector store.
 
@@ -74,12 +81,12 @@ class MatchingEngine(VectorStore):
         self.embedding = embedding
         self.gcs_client = gcs_client
         self.credentials = credentials
+        self.gcs_bucket_name = gcs_bucket_name
 
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
-            from google.cloud import aiplatform
-            from google.cloud import storage
+            from google.cloud import aiplatform, storage
             from google.oauth2 import service_account
         except ImportError:
             raise ImportError(
@@ -89,10 +96,10 @@ class MatchingEngine(VectorStore):
             )
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -112,10 +119,7 @@ class MatchingEngine(VectorStore):
         for embedding, text in zip(embeddings, texts):
             id = str(uuid.uuid4())
             ids.append(id)
-            jsons.append({
-                "id": id,
-                "embedding": embedding
-            })
+            jsons.append({"id": id, "embedding": embedding})
             self._upload_to_gcs(text, f"documents/{id}")
 
         logger.debug(f"Uploaded {len(ids)} documents to GCS.")
@@ -126,8 +130,10 @@ class MatchingEngine(VectorStore):
         filename_prefix = f"indexes/{uuid.uuid4()}"
         filename = f"{filename_prefix}/{time.time()}.json"
         self._upload_to_gcs(result_str, filename)
-        logger.debug(f"Uploaded updated json with embeddings to "
-                     f"{self.gcs_bucket_name}/{filename}.")
+        logger.debug(
+            f"Uploaded updated json with embeddings to "
+            f"{self.gcs_bucket_name}/{filename}."
+        )
 
         self.index = self.index.update_embeddings(
             contents_delta_uri=f"gs://{self.gcs_bucket_name}/{filename_prefix}/"
@@ -149,10 +155,7 @@ class MatchingEngine(VectorStore):
         blob.upload_from_string(data)
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -203,9 +206,11 @@ class MatchingEngine(VectorStore):
             if index.index == self.index.resource_name:
                 return index.id
 
-        raise ValueError(f"No index with id {self.index.resource_name} "
-                         f"deployed on enpoint "
-                         f"{self.endpoint.display_name}.")
+        raise ValueError(
+            f"No index with id {self.index.resource_name} "
+            f"deployed on enpoint "
+            f"{self.endpoint.display_name}."
+        )
 
     def _download_from_gcs(self, gcs_location: str) -> str:
         """Downloads from GCS in text format.
@@ -222,18 +227,18 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def from_texts(
-            cls: Type["MatchingEngine"],
-            texts: List[str],
-            embedding: Embeddings = None,
-            metadatas: Optional[List[dict]] = None,
-            *,
-            project_id: str,
-            region: str,
-            gcs_bucket_name: str,
-            index_id: str,
-            endpoint_id: str,
-            credentials_path: Optional[str],
-            **kwargs: Any,
+        cls: Type["MatchingEngine"],
+        texts: List[str],
+        embedding: Embeddings = None,
+        metadatas: Optional[List[dict]] = None,
+        *,
+        project_id: str,
+        region: str,
+        gcs_bucket_name: str,
+        index_id: str,
+        endpoint_id: str,
+        credentials_path: Optional[str],
+        **kwargs: Any,
     ) -> "MatchingEngine":
         """Return VectorStore initialized from texts and embeddings.
 
@@ -266,7 +271,7 @@ class MatchingEngine(VectorStore):
             index_id=index_id,
             endpoint_id=endpoint_id,
             credentials_path=credentials_path,
-            embedding=embedding or cls._get_default_embeddings()
+            embedding=embedding or cls._get_default_embeddings(),
         )
 
         matching_engine.add_texts(texts=texts, metadatas=metadatas)
@@ -274,14 +279,14 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def from_components(
-            cls: Type["MatchingEngine"],
-            project_id: str,
-            region: str,
-            gcs_bucket_name: str,
-            index_id: str,
-            endpoint_id: str,
-            credentials_path: Optional[str] = None,
-            embedding: Embeddings = None
+        cls: Type["MatchingEngine"],
+        project_id: str,
+        region: str,
+        gcs_bucket_name: str,
+        index_id: str,
+        endpoint_id: str,
+        credentials_path: Optional[str] = None,
+        embedding: Embeddings = None,
     ) -> "MatchingEngine":
         """Takes the object creation out of the constructor.
 
@@ -303,10 +308,10 @@ class MatchingEngine(VectorStore):
         """
         gcs_bucket_name = cls._validate_gcs_bucket(gcs_bucket_name)
         credentials = cls._create_credentials_from_file(credentials_path)
-        index = cls._create_index_by_id(index_id, project_id, region,
-                                        credentials)
-        endpoint = cls._create_endpoint_by_id(endpoint_id, project_id,
-                                              region, credentials)
+        index = cls._create_index_by_id(index_id, project_id, region, credentials)
+        endpoint = cls._create_endpoint_by_id(
+            endpoint_id, project_id, region, credentials
+        )
 
         gcs_client = cls._get_gcs_client(credentials, project_id)
         cls._init_aiplatform(project_id, region, gcs_bucket_name, credentials)
@@ -317,7 +322,8 @@ class MatchingEngine(VectorStore):
             endpoint=endpoint,
             embedding=embedding or cls._get_default_embeddings(),
             gcs_client=gcs_client,
-            credentials=credentials
+            credentials=credentials,
+            gcs_bucket_name=gcs_bucket_name,
         )
 
     @classmethod
@@ -333,16 +339,16 @@ class MatchingEngine(VectorStore):
         """
         gcs_bucket_name = gcs_bucket_name.replace("gs://", "")
         if "/" in gcs_bucket_name:
-            raise ValueError(f"The argument gcs_bucket_name should only be "
-                             f"the bucket name. Received {gcs_bucket_name}")
+            raise ValueError(
+                f"The argument gcs_bucket_name should only be "
+                f"the bucket name. Received {gcs_bucket_name}"
+            )
         return gcs_bucket_name
-
 
     @classmethod
     def _create_credentials_from_file(
-            cls,
-            json_credentials_path: Optional[str]
-    ) -> Optional["service_account.Credentials"]:
+        cls, json_credentials_path: Optional[str]
+    ) -> Optional[Credentials]:
         """Creates credentials for GCP.
 
         Args:
@@ -359,18 +365,15 @@ class MatchingEngine(VectorStore):
         credentials = None
         if json_credentials_path is not None:
             credentials = service_account.Credentials.from_service_account_file(
-                json_credentials_path)
+                json_credentials_path
+            )
 
         return credentials
 
     @classmethod
     def _create_index_by_id(
-            cls,
-            index_id: str,
-            project_id: str,
-            region: str,
-            credentials: "Credentials"
-    ) -> "aiplatform.MatchingEngineIndex":
+        cls, index_id: str, project_id: str, region: str, credentials: "Credentials"
+    ) -> MatchingEngineIndex:
         """Creates a MatchingEngineIndex object by id.
 
         Args:
@@ -387,17 +390,13 @@ class MatchingEngine(VectorStore):
             index_name=index_id,
             project=project_id,
             location=region,
-            credentials=credentials
+            credentials=credentials,
         )
 
     @classmethod
     def _create_endpoint_by_id(
-            cls,
-            endpoint_id: str,
-            project_id: str,
-            region: str,
-            credentials: "Credentials"
-    ) -> "aiplatform.MatchingEngineIndexEndpoint":
+        cls, endpoint_id: str, project_id: str, region: str, credentials: "Credentials"
+    ) -> MatchingEngineIndexEndpoint:
         """Creates a MatchingEngineIndexEndpoint object by id.
 
         Args:
@@ -422,9 +421,7 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def _get_gcs_client(
-            cls,
-            credentials: "Credentials",
-            project_id: str
+        cls, credentials: "Credentials", project_id: str
     ) -> "storage.Client":
         """Lazily creates a GCS client.
 
@@ -434,18 +431,15 @@ class MatchingEngine(VectorStore):
 
         from google.cloud import storage
 
-        return storage.Client(
-            credentials=credentials,
-            project=project_id
-        )
+        return storage.Client(credentials=credentials, project=project_id)
 
     @classmethod
     def _init_aiplatform(
-            cls,
-            project_id: str,
-            region: str,
-            gcs_bucket_name: str,
-            credentials: "Credentials"
+        cls,
+        project_id: str,
+        region: str,
+        gcs_bucket_name: str,
+        credentials: "Credentials",
     ) -> None:
         """Configures the aiplatform library.
 
@@ -459,18 +453,18 @@ class MatchingEngine(VectorStore):
 
         from google.cloud import aiplatform
 
-        logger.debug(f"Initializing AI Platform for project {project_id} on "
-                     f"{region} and for {gcs_bucket_name}.")
+        logger.debug(
+            f"Initializing AI Platform for project {project_id} on "
+            f"{region} and for {gcs_bucket_name}."
+        )
         aiplatform.init(
             project=project_id,
             location=region,
             staging_bucket=gcs_bucket_name,
-            credentials=credentials
+            credentials=credentials,
         )
 
     @classmethod
     def _get_default_embeddings(cls) -> TensorflowHubEmbeddings:
         """This function returns the default embedding."""
         return TensorflowHubEmbeddings()
-
-
