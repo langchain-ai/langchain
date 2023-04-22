@@ -11,9 +11,11 @@ The following resources exist:
 - [ChatGPT Clone](../modules/agents/agent_executors/examples/chatgpt_clone.ipynb): A notebook walking through how to recreate a ChatGPT-like experience with LangChain.
 - [Conversation Memory](../modules/memory/getting_started.ipynb): A notebook walking through how to use different types of conversational memory.
 - [Conversation Agent](../modules/agents/agents/examples/conversational_agent.ipynb): A notebook walking through how to create an agent optimized for conversation.
-- [Voice Assistant](../modules/agents/agents/examples/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.
 
 
 Additional related resources include:
 - [Memory Key Concepts](../modules/memory.rst): Explanation of key concepts related to memory.
 - [Memory Examples](../modules/memory/how_to_guides.rst): A collection of how-to examples for working with memory.
+
+More end-to-end examples include:
+- [Voice Assistant](chatbots/voice_assistant.ipynb): A notebook walking through how to create a voice assistant using LangChain.
