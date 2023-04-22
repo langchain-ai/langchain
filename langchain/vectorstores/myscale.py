@@ -7,7 +7,6 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-import tqdm
 from pydantic import BaseSettings
 
 from langchain.docstore.document import Document
@@ -117,6 +116,13 @@ class MyScale(VectorStore):
                 "Could not import clickhouse connect python package. "
                 "Please install it with `pip install clickhouse-connect`."
             )
+        try:
+            from tqdm import tqdm
+
+            self.pgbar = tqdm
+        except ImportError:
+            # Just in case if tqdm is not installed
+            self.pgbar = lambda x: x
         super().__init__()
         if config is not None:
             self.config = config
@@ -229,7 +235,7 @@ class MyScale(VectorStore):
         keys, values = zip(*column_names.items())
         try:
             t = None
-            for v in tqdm.tqdm(
+            for v in self.pgbar(
                 zip(*values), desc="Inserting data...", total=len(metadatas)
             ):
                 assert len(v[keys.index(self.config.column_map["vector"])]) == self.dim
