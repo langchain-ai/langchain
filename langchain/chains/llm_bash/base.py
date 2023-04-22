@@ -9,7 +9,6 @@ from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.tools.shell.tool import ShellTool
-from langchain.utilities.bash import BashProcess
 
 
 class LLMBashChain(Chain):

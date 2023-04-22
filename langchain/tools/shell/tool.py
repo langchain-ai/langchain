@@ -1,10 +1,8 @@
+import platform
 import warnings
 from typing import List, Type
 
 from pydantic import BaseModel, Field, root_validator
-
-
-import platform
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.bash import BashProcess
@@ -18,10 +16,6 @@ class ShellInput(BaseModel):
         description="List of shell commands to run. Deserialized using json.loads",
     )
     """List of shell commands to run."""
-    restart_process: bool = Field(
-        default=False,
-        description="Whether to execute the commands in a new bash process.",
-    )
 
     @root_validator
     def _validate_commands(cls, values: dict) -> dict:
@@ -65,21 +59,10 @@ class ShellTool(BaseTool):
     args_schema: Type[BaseModel] = ShellInput
     """Schema for input arguments."""
 
-    def _restart_process(self) -> None:
-        """Restart the bash process."""
-        self.process = BashProcess(
-            return_err_output=self.process.return_err_output,
-            strip_newlines=self.process.strip_newlines,
-        )
-
-    def _run(self, commands: List[str], restart_process: bool = False) -> str:
+    def _run(self, commands: List[str]) -> str:
         """Run commands and return final output."""
-        if restart_process:
-            self._restart_process()
         return self.process.run(commands)
 
-    async def _arun(self, tool_input: str, restart_process: bool = False) -> str:
+    async def _arun(self, commands: List[str]) -> str:
         """Run commands asynchronously and return final output."""
-        if restart_process:
-            self._restart_process()
-        return await self.process.arun(tool_input)
+        return await self.process.arun(commands)

@@ -48,7 +48,7 @@ class BashProcess:
 
             if process.returncode != 0:
                 raise subprocess.CalledProcessError(
-                    process.returncode, commands, stderr
+                    process.returncode or -1, commands, stderr
                 )
 
             output = stdout.decode()
