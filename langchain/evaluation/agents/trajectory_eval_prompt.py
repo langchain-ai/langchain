@@ -1,4 +1,4 @@
-"""Prompt for ReAct evaluation chain."""
+"""Prompt for trajectory evaluation chain."""
 # flake8: noqa
 from langchain.schema import AIMessage
 from langchain.schema import HumanMessage
@@ -10,7 +10,7 @@ from langchain.prompts.chat import (
 )
 
 
-EVAL_TEMPLATE = """An AI language model has been given acces to the following set of tools to help answer a user's question.
+EVAL_TEMPLATE = """An AI language model has been given access to the following set of tools to help answer a user's question.
 
 The tools given to the AI model are:
 

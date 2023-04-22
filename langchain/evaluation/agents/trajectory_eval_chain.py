@@ -1,18 +1,41 @@
 """A chain for evaluating ReAct style agents."""
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.evaluation.react.eval_prompt import EVAL_CHAT_PROMPT
-from langchain.schema import AgentAction, OutputParserException
+from langchain.evaluation.agents.trajectory_eval_prompt import EVAL_CHAT_PROMPT
+from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
 from langchain.tools.base import BaseTool
 
 
-class ReactEvalChain(Chain):
-    llm: ChatOpenAI
+class TrajectoryEval(NamedTuple):
+    score: int
+    reasoning: str
+
+
+class TrajectoryOutputParser(BaseOutputParser):
+    def parse(self, text: str) -> TrajectoryEval:
+        if "Score:" not in text:
+            raise OutputParserException(
+                f"Could not find score in model eval output: {text}"
+            )
+
+        reasoning, score_str = text.split("Score: ")
+
+        reasoning, score_str = reasoning.strip(), score_str.strip()
+
+        if not score_str.isdigit() and 1 <= int(score_str) <= 5:
+            raise OutputParserException(
+                f"Score is not a digit in the range 1-5: {text}"
+            )
+        return TrajectoryEval(score=int(score_str), reasoning=reasoning)
+
+
+class TrajectoryEvalChain(Chain):
     agent_tools: List[BaseTool]
     eval_chain: LLMChain
+    output_parser: TrajectoryOutputParser
     return_reasoning: bool = False
 
     @property
@@ -45,14 +68,15 @@ Tool output: {output}"""
         cls,
         llm: ChatOpenAI,
         agent_tools: Sequence[BaseTool],
+        output_parser: Optional[TrajectoryOutputParser] = None,
         return_reasoning: bool = False,
-    ) -> "ReactEvalChain":
+    ) -> "TrajectoryEvalChain":
         eval_chain = LLMChain(llm=llm, prompt=EVAL_CHAT_PROMPT)
         return cls(
-            llm=llm,
             agent_tools=agent_tools,
             return_reasoning=return_reasoning,
             eval_chain=eval_chain,
+            output_parser=output_parser or TrajectoryOutputParser(),
         )
 
     @property
@@ -65,29 +89,13 @@ Tool output: {output}"""
             return ["score", "reasoning"]
         return ["score"]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         raw_output = self.eval_chain.run(
-            Dict(
-                tool_descriptions=self._tools_description,
-                **inputs,
-            )
+            {"tool_descriptions": self._tools_description, **inputs}
         )
-
-        if "Score:" not in raw_output:
-            raise OutputParserException(
-                f"Could not find score in model eval output: {raw_output}"
-            )
-
-        reasoning, score_str = raw_output.split("Score: ")
-
-        reasoning, score_str = reasoning.strip(), score_str.strip()
-
-        if not score_str.isdigit() and 1 <= int(score_str) <= 5:
-            raise OutputParserException(
-                f"Score is not a digit in the range 1-5: {raw_output}"
-            )
+        parsed_output = self.output_parser.parse(raw_output)
 
         if self.return_reasoning:
-            return {"score": score_str, "reasoning": reasoning}
+            return {"score": parsed_output.score, "reasoning": parsed_output.reasoning}
 
-        return {"score": score_str}
+        return {"score": parsed_output.score}
