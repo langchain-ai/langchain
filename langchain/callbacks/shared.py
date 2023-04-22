@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Union
 from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
-    CallbackManager,
 )
+from langchain.callbacks.manager import CallbackManager
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 

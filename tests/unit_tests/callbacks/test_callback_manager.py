@@ -4,10 +4,9 @@ from typing import Tuple
 import pytest
 
 from langchain.callbacks.base import (
-    AsyncCallbackManager,
     BaseCallbackManager,
-    CallbackManager,
 )
+from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.shared import SharedCallbackManager
 from langchain.schema import AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
