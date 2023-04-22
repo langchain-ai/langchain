@@ -27,6 +27,12 @@ class LlamaCpp(LLM):
     model_path: str
     """The path to the Llama model file."""
 
+    lora_base: Optional[str] = None
+    """The path to the Llama LoRA base model."""
+
+    lora_path: Optional[str] = None
+    """The path to the Llama LoRA. If None, no LoRa is loaded."""
+
     n_ctx: int = Field(512, alias="n_ctx")
     """Token context window."""
 
@@ -87,10 +93,15 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
+    use_mmap: Optional[bool] = True
+    """Whether to keep the model loaded in RAM"""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
+        lora_path = values["lora_path"]
+        lora_base = values["lora_base"]
         n_ctx = values["n_ctx"]
         n_parts = values["n_parts"]
         seed = values["seed"]
@@ -100,13 +111,19 @@ class LlamaCpp(LLM):
         use_mlock = values["use_mlock"]
         n_threads = values["n_threads"]
         n_batch = values["n_batch"]
+        use_mmap = values["use_mmap"]
         last_n_tokens_size = values["last_n_tokens_size"]
 
         try:
             from llama_cpp import Llama
 
+            if lora_path is not None:
+                use_mmap = False
+
             values["client"] = Llama(
                 model_path=model_path,
+                lora_base=lora_base,
+                lora_path=lora_path,
                 n_ctx=n_ctx,
                 n_parts=n_parts,
                 seed=seed,
@@ -116,6 +133,7 @@ class LlamaCpp(LLM):
                 use_mlock=use_mlock,
                 n_threads=n_threads,
                 n_batch=n_batch,
+                use_mmap=use_mmap,
                 last_n_tokens_size=last_n_tokens_size,
             )
         except ImportError:
