@@ -28,7 +28,7 @@ def _to_args_and_kwargs(run_input: Union[str, Dict]) -> Tuple[Sequence, dict]:
         return [], run_input
 
 
-class MissingTypeHintError(TypeError):
+class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
@@ -45,19 +45,21 @@ class ToolMetaclass(ModelMetaclass):
         if schema_type is not None:
             schema_annotations = dct.get("__annotations__", {})
             args_schema_type = schema_annotations.get("args_schema", None)
-            if args_schema_type is None:
+            if args_schema_type is None or args_schema_type == BaseModel:
+                # Throw errors for common mis-annotations.
+                # TODO: Use get_args / get_origin and fully
+                # specify valid annotations.
                 typehint_mandate = """
 class ChildTool(BaseTool):
-    args_schema = SchemaClass
-
-to
-
-class ChildTool(BaseTool):
-    args_schema: Type[BaseModel] = SchemaClass"""
-                raise MissingTypeHintError(
+    ...
+    args_schema: Type[BaseModel] = SchemaClass
+    ..."""
+                raise SchemaAnnotationError(
                     f"Tool definition for {name} must include valid type annotations"
                     f" for argument 'args_schema' to behave as expected.\n"
-                    f"Please change\n\n"
+                    f"Expected annotation of 'Type[BaseModel]'"
+                    f" but got '{args_schema_type}'.\n"
+                    f"Expected class looks like:\n"
                     f"{typehint_mandate}"
                 )
         # Pass through to Pydantic's metaclass
@@ -101,7 +103,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
 
     name: str
     description: str
-    args_schema: Optional[Type[BaseModel]] = Field(default_factory=lambda: None)
+    args_schema: Optional[Type[BaseModel]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     verbose: bool = False

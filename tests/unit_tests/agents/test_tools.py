@@ -2,13 +2,13 @@
 from datetime import datetime
 from functools import partial
 from typing import Optional, Type, Union
-import pydantic
 
+import pydantic
 import pytest
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import BaseTool, MissingTypeHintError
+from langchain.tools.base import BaseTool, SchemaAnnotationError
 
 
 def test_unnamed_decorator() -> None:
@@ -53,11 +53,11 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
-def test_untyped_base_tool_returns_warning() -> None:
+def test_unannotated_base_tool_raises_error() -> None:
     """Test that a BaseTool without type hints raises an exception.""" ""
-    with pytest.raises(MissingTypeHintError):
+    with pytest.raises(SchemaAnnotationError):
 
-        class _UntypedTool(BaseTool):
+        class _UnAnnotatedTool(BaseTool):
             name = "structured_api"
             # This would silently be ignored without the custom metaclass
             args_schema = _MockSchema
@@ -72,20 +72,73 @@ def test_untyped_base_tool_returns_warning() -> None:
                 raise NotImplementedError
 
 
-def test_unschemafied_decorator_is_fine() -> None:
-    """Test that a BaseTool without a schema is fine."""
+def test_misannotated_base_tool_raises_error() -> None:
+    """Test that a BaseTool with the incorrrect typehint raises an exception.""" ""
+    with pytest.raises(SchemaAnnotationError):
+
+        class _MisAnnotatedTool(BaseTool):
+            name = "structured_api"
+            # This would silently be ignored without the custom metaclass
+            args_schema: BaseModel = _MockSchema
+            description = "A Structured Tool"
+
+            def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+                return f"{arg1} {arg2} {arg3}"
+
+            async def _arun(
+                self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+            ) -> str:
+                raise NotImplementedError
+
+
+def test_forward_ref_annotated_base_tool_accepted() -> None:
+    """Test that a using forward ref annotation syntax is accepted.""" ""
+
+    class _ForwardRefAnnotatedTool(BaseTool):
+        name = "structured_api"
+        args_schema: "Type[BaseModel]" = _MockSchema
+        description = "A Structured Tool"
+
+        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+            return f"{arg1} {arg2} {arg3}"
+
+        async def _arun(
+            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        ) -> str:
+            raise NotImplementedError
+
+
+def test_subclass_annotated_base_tool_accepted() -> None:
+    """Test that a BaseTool with the incorrrect typehint raises an exception.""" ""
+
+    class _ForwardRefAnnotatedTool(BaseTool):
+        name = "structured_api"
+        args_schema: Type[_MockSchema] = _MockSchema
+        description = "A Structured Tool"
+
+        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+            return f"{arg1} {arg2} {arg3}"
+
+        async def _arun(
+            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        ) -> str:
+            raise NotImplementedError
+
+
+def test_decorator_with_specified_schema() -> None:
+    """Test that manually specified schemata are passed through to the tool."""
 
     @tool(args_schema=_MockSchema)
-    def unschemafied_tool(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def tool_func(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
 
-    assert isinstance(unschemafied_tool, Tool)
-    assert unschemafied_tool.args_schema == _MockSchema
+    assert isinstance(tool_func, Tool)
+    assert tool_func.args_schema == _MockSchema
 
 
 def test_decorated_function_schema_equivalent() -> None:
-    """Test that a BaseTool without a schema is equivalent to the one manually created."""
+    """Test that a BaseTool without a schema meets expectations."""
 
     @tool
     def structured_tool_input(
