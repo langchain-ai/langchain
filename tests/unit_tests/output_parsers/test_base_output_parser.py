@@ -7,7 +7,7 @@ import pytest
 
 from langchain.schema import BaseOutputParser
 
-_FAKE_PARSERS = {"FakeOutputParser"}
+_PARSERS_TO_SKIP = {"FakeOutputParser", "BaseOutputParser"}
 
 
 def non_abstract_subclasses(cls: Type[ABC]) -> List[Type]:
@@ -15,7 +15,7 @@ def non_abstract_subclasses(cls: Type[ABC]) -> List[Type]:
     subclasses = []
     for subclass in cls.__subclasses__():
         if not getattr(subclass, "__abstractmethods__", None):
-            if subclass.__name__ not in _FAKE_PARSERS:
+            if subclass.__name__ not in _PARSERS_TO_SKIP:
                 subclasses.append(subclass)
         subclasses.extend(non_abstract_subclasses(subclass))
     return subclasses
@@ -32,5 +32,12 @@ def test_all_subclasses_implement_type(cls: Type[BaseOutputParser]) -> None:
 
 
 def test_all_subclasses_implement_unique_type() -> None:
-    types = [cls._type for cls in non_abstract_subclasses(BaseOutputParser)]
-    assert len(types) == len(set(types))
+    types = []
+    for cls in non_abstract_subclasses(BaseOutputParser):
+        try:
+            types.append(cls._type.fget(MagicMock()))
+        except NotImplementedError:
+            # This is handled in the previous test
+            pass
+    dups = set([t for t in types if types.count(t) > 1])
+    assert not dups, f"Duplicate types: {dups}"
