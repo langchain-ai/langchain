@@ -71,7 +71,7 @@ class PythonAstREPLTool(BaseTool):
         try:
             if self.sanitize_input:
                 # Remove backticks & python (if llm mistakes python console as terminal) from query
-                query = re.sub(r'(?i:python)|`', '', query).strip()
+                query = re.sub(r"(?i:python)|`", "", query).strip()
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
             exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
