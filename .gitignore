@@ -145,3 +145,5 @@ wandb/
 
 *.pkl
 *.bin
+
+*replit*
