@@ -1,4 +1,5 @@
 from typing import List
+
 from elasticsearch import Elasticsearch
 from elasticsearch.client import MlClient
 
@@ -6,7 +7,7 @@ from elasticsearch.client import MlClient
 class ElasticsearchEmbeddings:
     """
     Wrapper around Elasticsearch embedding models.
-    
+
     This class provides an interface to generate embeddings using a model deployed
     in an Elasticsearch cluster. It requires an Elasticsearch connection object
     and the model_id of the model deployed in the cluster.
@@ -35,8 +36,7 @@ class ElasticsearchEmbeddings:
             List[List[float]]: A list of embeddings, one for each text in the input list.
         """
         response = self.ml_client.infer_trained_model(
-            model_id=self.model_id,
-            docs=[{"text": text} for text in texts]
+            model_id=self.model_id, docs=[{"text": text} for text in texts]
         )
         embeddings = [doc["results"][0]["vector"] for doc in response["docs"]]
         return embeddings
