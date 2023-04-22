@@ -154,6 +154,7 @@ class Weaviate(VectorStore):
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -187,8 +188,9 @@ class Weaviate(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
-                         of diversity among the results with 0 corresponding
-                         to maximum diversity and 1 to minimum diversity.
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
