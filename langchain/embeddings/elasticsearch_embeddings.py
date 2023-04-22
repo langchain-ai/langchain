@@ -5,58 +5,62 @@ from elasticsearch.client import MlClient
 
 class ElasticsearchEmbeddings:
     """
-    ElasticsearchEmbeddings is a class that wraps around Elasticsearch's
-    text embedding models to generate embeddings for the given text.
-
-    Attributes:
-        model_id (str): The model_id of the running Elasticsearch model used for generating embeddings.
-        es_client (Elasticsearch): An Elasticsearch client instance for connecting to the Elasticsearch cluster.
-        ml_client (MlClient): An Elasticsearch MlClient instance for interacting with machine learning models.
+    Wrapper around Elasticsearch embedding models.
+    
+    This class provides an interface to generate embeddings using a model deployed
+    in an Elasticsearch cluster. It requires an Elasticsearch connection object
+    and the model_id of the model deployed in the cluster.
     """
 
-    def __init__(self, model_id: str, es_connection: Elasticsearch):
+    def __init__(self, es_connection: Elasticsearch, model_id: str):
         """
-        Initializes an instance of ElasticsearchEmbeddings.
+        Initialize the ElasticsearchEmbeddings instance.
 
         Args:
-            model_id (str): The model_id of the running Elasticsearch model used for generating embeddings.
-            es_connection (Elasticsearch): An Elasticsearch client instance for connecting to the Elasticsearch cluster.
+            es_connection (Elasticsearch): An Elasticsearch connection object.
+            model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
         """
+        self.es_connection = es_connection
+        self.ml_client = MlClient(es_connection)
         self.model_id = model_id
-        self.es_client = es_connection
-        self.ml_client = MlClient(self.es_client)
 
-    def embed_text(self, text: str) -> List[float]:
+    def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
-        Generates an embedding for the input text using the specified Elasticsearch model.
+        Generate embeddings for the given texts using the Elasticsearch model.
 
         Args:
-            text (str): The input text to generate an embedding for.
+            texts (List[str]): A list of text strings to generate embeddings for.
 
         Returns:
-            List[float]: A list of floating-point numbers representing the embedding of the input text.
+            List[List[float]]: A list of embeddings, one for each text in the input list.
         """
         response = self.ml_client.infer_trained_model(
             model_id=self.model_id,
-            docs=[{"text_field": text}],
+            docs=[{"text": text} for text in texts]
         )
+        embeddings = [doc["results"][0]["vector"] for doc in response["docs"]]
+        return embeddings
 
-        return response["results"][0]["embedding"]
-
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
-        Generates embeddings for a list of input texts using the specified Elasticsearch model.
+        Generate embeddings for a list of documents.
 
         Args:
-            texts (List[str]): A list of input texts to generate embeddings for.
+            texts (List[str]): A list of document text strings to generate embeddings for.
 
         Returns:
-            List[List[float]]: A list of lists, where each inner list is a list of floating-point numbers representing
-                               the embedding of the corresponding input text.
+            List[List[float]]: A list of embeddings, one for each document in the input list.
         """
-        response = self.ml_client.infer_trained_model(
-            model_id=self.model_id,
-            docs=[{"text_field": text} for text in texts],
-        )
+        return self._embedding_func(texts)
 
-        return [result["embedding"] for result in response["results"]]
+    def embed_query(self, text: str) -> List[float]:
+        """
+        Generate an embedding for a single query text.
+
+        Args:
+            text (str): The query text to generate an embedding for.
+
+        Returns:
+            List[float]: The embedding for the input query text.
+        """
+        return self._embedding_func([text])[0]
