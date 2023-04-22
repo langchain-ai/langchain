@@ -1,12 +1,24 @@
 """Test MRKL functionality."""
 
+from typing import Tuple
+
 import pytest
 
-from langchain.agents.mrkl.base import ZeroShotAgent, get_action_and_input
+from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.prompts import PromptTemplate
+from langchain.schema import AgentAction, OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
+
+def get_action_and_input(text: str) -> Tuple[str, str]:
+    output = MRKLOutputParser().parse(text)
+    if isinstance(output, AgentAction):
+        return output.tool, str(output.tool_input)
+    else:
+        return "Final Answer", output.return_values["output"]
 
 
 def test_get_action_and_input() -> None:
@@ -86,7 +98,7 @@ def test_get_final_answer_multiline() -> None:
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
     llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
-    with pytest.raises(ValueError):
+    with pytest.raises(OutputParserException):
         get_action_and_input(llm_output)
 
 
@@ -95,7 +107,7 @@ def test_bad_action_line() -> None:
     llm_output = (
         "Thought: I need to search for NBA\n" "Thought: Search\n" "Action Input: NBA"
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(OutputParserException):
         get_action_and_input(llm_output)
 
 

@@ -89,7 +89,7 @@ class PythonAstREPLTool(BaseTool):
                     output = str(e)
                 return output
         except Exception as e:
-            return str(e)
+            return "{}: {}".format(type(e).__name__, str(e))
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
