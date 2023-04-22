@@ -30,6 +30,10 @@ class APIResponderOutputParser(BaseOutputParser):
         else:
             raise ValueError(f"No response found in output: {llm_output}.")
 
+    @property
+    def _type(self) -> str:
+        return "api_responder"
+
 
 class APIResponderChain(LLMChain):
     """Get the response parser."""

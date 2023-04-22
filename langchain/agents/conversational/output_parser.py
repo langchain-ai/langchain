@@ -24,3 +24,7 @@ class ConvoOutputParser(AgentOutputParser):
         action = match.group(1)
         action_input = match.group(2)
         return AgentAction(action.strip(), action_input.strip(" ").strip('"'), text)
+
+    @property
+    def _type(self) -> str:
+        return "conversational"

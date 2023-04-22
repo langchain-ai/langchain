@@ -25,3 +25,7 @@ class MRKLOutputParser(AgentOutputParser):
         action = match.group(1).strip()
         action_input = match.group(2)
         return AgentAction(action, action_input.strip(" ").strip('"'), text)
+
+    @property
+    def _type(self) -> str:
+        return "mrkl"

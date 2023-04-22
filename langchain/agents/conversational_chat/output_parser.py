@@ -31,3 +31,7 @@ class ConvoOutputParser(AgentOutputParser):
             return AgentFinish({"output": action_input}, text)
         else:
             return AgentAction(action, action_input, text)
+
+    @property
+    def _type(self) -> str:
+        return "conversational_chat"
