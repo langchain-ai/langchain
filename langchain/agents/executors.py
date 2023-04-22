@@ -1,10 +1,8 @@
 from typing import Dict, List, Tuple, Union
 
 from langchain.agents import AgentExecutor
-from langchain.agents.agent import AgentExecutor
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 from langchain.tools import BaseTool
-from langchain.tools.base import BaseTool
 
 
 class RetryAgentExecutor(AgentExecutor):
