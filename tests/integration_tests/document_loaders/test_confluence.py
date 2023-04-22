@@ -19,9 +19,9 @@ def test_load_single_confluence_page() -> None:
     assert docs[0].page_content is not None
     assert docs[0].metadata["id"] == "33189"
     assert docs[0].metadata["title"] == "An easy intro to using Confluence"
-    assert (
-        docs[0].metadata["source"]
-        == "https://templates.atlassian.net/wiki/spaces/RD/pages/33189/An+easy+intro+to+using+Confluence"
+    assert docs[0].metadata["source"] == (
+        "https://templates.atlassian.net/wiki/"
+        "spaces/RD/pages/33189/An+easy+intro+to+using+Confluence"
     )
 
 
