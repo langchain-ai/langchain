@@ -104,6 +104,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
+    embedding_size: int = 1536
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
@@ -150,7 +151,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _get_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for i in range(len(texts))]
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
             import tiktoken
 
@@ -179,15 +180,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
-            results: List[List[List[float]]] = [[] for i in range(len(texts))]
-            lens: List[List[int]] = [[] for i in range(len(texts))]
+            results: List[List[List[float]]] = [[] for _ in range(len(texts))]
+            lens: List[List[int]] = [[] for _ in range(len(texts))]
             for i in range(len(indices)):
                 results[indices[i]].append(batched_embeddings[i])
                 lens[indices[i]].append(len(batched_embeddings[i]))
 
             for i in range(len(texts)):
-                average = np.average(results[i], axis=0, weights=lens[i])
-                embeddings[i] = (average / np.linalg.norm(average)).tolist()
+                if not len(results[i]):
+                    embeddings[i] = np.zeros(self.embedding_size).tolist()
+                else:
+                    average = np.average(results[i], axis=0, weights=lens[i])
+                    embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
             return embeddings
 
