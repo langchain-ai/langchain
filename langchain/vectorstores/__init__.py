@@ -13,6 +13,7 @@ from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.weaviate import Weaviate
+from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
     "ElasticVectorSearch",
@@ -22,6 +23,7 @@ __all__ = [
     "Weaviate",
     "Qdrant",
     "Milvus",
+    "Zilliz",
     "Chroma",
     "OpenSearchVectorSearch",
     "AtlasDB",
