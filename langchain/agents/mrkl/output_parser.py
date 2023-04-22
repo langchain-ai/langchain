@@ -23,8 +23,12 @@ class MRKLOutputParser(AgentOutputParser):
         if not match:
             if not re.search(r"Action\s*\d*\s*:(.*?)", text, re.DOTALL):
                 error_message = "Invalid Format: Missing 'Action:' after 'Thought:'"
-            elif not re.search(r"\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL):
-                error_message = "Invalid Format: Missing 'Action Input:' after 'Action:'"
+            elif not re.search(
+                r"\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
+            ):
+                error_message = (
+                    "Invalid Format: Missing 'Action Input:' after 'Action:'"
+                )
             else:
                 raise OutputParserException(f"Could not parse LLM output: `{text}`")
             return AgentAction("Invalid LLM Output", error_message, text)
