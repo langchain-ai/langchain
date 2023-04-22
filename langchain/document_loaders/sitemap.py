@@ -40,7 +40,7 @@ class SitemapLoader(WebBaseLoader):
         self.filter_urls = filter_urls
         self.parsing_function = parsing_function or _default_parsing_function
 
-    def parse_sitemap(self, soup: any) -> List[dict]:
+    def parse_sitemap(self, soup: Any) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts."""
         els = []
         for url in soup.find_all("url"):
