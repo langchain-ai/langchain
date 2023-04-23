@@ -7,7 +7,6 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-ALCHEMY_API_KEY = os.environ.get("ALCHEMY_API_KEY", "docs-demo")
 
 class BlockchainDocumentLoader(BaseLoader):
     """Loads elements from a blockchain smart contract into Langchain documents.
@@ -24,9 +23,9 @@ class BlockchainDocumentLoader(BaseLoader):
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
     """
     
-    def __init__(self, contract_address: str, api_key: str = ALCHEMY_API_KEY):
+    def __init__(self, contract_address: str, api_key: str = "docs-demo"):
         self.contract_address = contract_address
-        self.api_key = api_key
+        self.api_key = os.environ.get("ALCHEMY_API_KEY") or api_key
     
     def load(self) -> List[Document]:
             if not self.api_key:
