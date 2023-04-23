@@ -1,7 +1,7 @@
 # Prediction Guard
 
 This page covers how to use the Prediction Guard ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Cohere wrappers.
+It is broken into two parts: installation and setup, and then references to specific Prediction Guard wrappers.
 
 ## Installation and Setup
 - Install the Python SDK with `pip install predictionguard`
