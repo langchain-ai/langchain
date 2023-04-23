@@ -184,7 +184,7 @@ class ZapierNLAWrapper(BaseModel):
                     raise Exception(
                         f"Request failed with status code {response.status}")
                 result = await response.json()
-                return json.dumps(result["result"])
+                return result["result"]
 
     def preview(
         self, action_id: str, instructions: str, params: Optional[Dict] = None
@@ -206,7 +206,8 @@ class ZapierNLAWrapper(BaseModel):
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
         return json.dumps(data)
-
+    
+    # type: ignore[no-untyped-def]
     async def arun_as_str(self, *args, **kwargs) -> str:
         """Async version of run_as_str. Converts the result of the arun
         function to a string."""
