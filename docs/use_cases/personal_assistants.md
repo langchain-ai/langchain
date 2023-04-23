@@ -20,3 +20,4 @@ Highlighting specific parts:
 Specific examples of this include:
 
 - [AI Plugins](agents/custom_agent_with_plugin_retrieval.ipynb): an implementation of an agent that is designed to be able to use all AI Plugins.
+- [Wikibase Agent](agents/wikibase_agent.ipynb): an implementation of an agent that is designed to interact with Wikibase.

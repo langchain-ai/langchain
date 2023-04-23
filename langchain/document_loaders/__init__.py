@@ -12,6 +12,7 @@ from langchain.document_loaders.azure_blob_storage_file import (
 from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
+from langchain.document_loaders.chatgpt import ChatGPTLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -55,8 +56,10 @@ from langchain.document_loaders.pdf import (
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
+from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
 from langchain.document_loaders.roam import RoamLoader
+from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
@@ -106,6 +109,7 @@ __all__ = [
     "OutlookMessageLoader",
     "UnstructuredEPubLoader",
     "UnstructuredMarkdownLoader",
+    "UnstructuredRTFLoader",
     "RoamLoader",
     "YoutubeLoader",
     "S3FileLoader",
@@ -154,4 +158,6 @@ __all__ = [
     "ImageCaptionLoader",
     "DiscordChatLoader",
     "ConfluenceLoader",
+    "PythonLoader",
+    "ChatGPTLoader",
 ]
