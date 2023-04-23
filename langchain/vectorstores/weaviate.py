@@ -286,6 +286,10 @@ class Weaviate(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
         if self._relevance_score_fn is None:
             raise ValueError(
                 "relevance_score_fn must be provided to"
