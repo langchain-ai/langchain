@@ -189,6 +189,9 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_text_common()
 
+    def __deepcopy__(self, memo):
+        return self
+
 
 class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake async callback handler for testing."""
@@ -298,3 +301,6 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         **kwargs: Any,
     ) -> None:
         self.on_text_common()
+
+    def __deepcopy__(self, memo):
+        return self

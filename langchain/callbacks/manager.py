@@ -488,15 +488,16 @@ class CallbackManager(BaseCallbackManager):
     @classmethod
     def configure(
         cls,
-        inheritable_handlers: Optional[
+        inheritable_callbacks: Optional[
             Union[BaseCallbackManager, List[BaseCallbackHandler]]
         ] = None,
-        local_handlers: Optional[
+        local_callbacks: Optional[
             Union[BaseCallbackManager, List[BaseCallbackHandler]]
         ] = None,
         verbose: bool = False,
     ) -> Optional[BaseCallbackManager]:
-        return _configure(cls, inheritable_handlers, local_handlers, verbose)
+        """Configure the callback manager."""
+        return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
 
 
 class AsyncCallbackManager(BaseCallbackManager):
@@ -589,15 +590,16 @@ class AsyncCallbackManager(BaseCallbackManager):
     @classmethod
     def configure(
         cls,
-        inheritable_handlers: Optional[
+        inheritable_callbacks: Optional[
             Union[BaseCallbackManager, List[BaseCallbackHandler]]
         ] = None,
-        local_handlers: Optional[
+        local_callbacks: Optional[
             Union[BaseCallbackManager, List[BaseCallbackHandler]]
         ] = None,
         verbose: bool = False,
     ) -> Optional[BaseCallbackManager]:
-        return _configure(cls, inheritable_handlers, local_handlers, verbose)
+        """Configure the callback manager."""
+        return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
 
 
 T = TypeVar("T", CallbackManager, AsyncCallbackManager)
@@ -605,23 +607,25 @@ T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 def _configure(
     callback_manager_cls: Type[T],
-    inheritable_handlers: Optional[Union[T, List[BaseCallbackHandler]]] = None,
-    local_handlers: Optional[Union[T, List[BaseCallbackHandler]]] = None,
+    inheritable_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
+    local_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
     verbose: bool = False,
 ) -> Optional[T]:
+    """Configure the callback manager."""
     callback_manager: Optional[T] = None
-    if inheritable_handlers or local_handlers:
-        if isinstance(inheritable_handlers, list) or not inheritable_handlers:
+    if inheritable_callbacks or local_callbacks:
+        if isinstance(inheritable_callbacks, list) or not inheritable_callbacks:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_handlers, inheritable_handlers=inheritable_handlers
+                handlers=inheritable_callbacks,
+                inheritable_handlers=inheritable_callbacks,
             )
         else:
-            callback_manager = inheritable_handlers
+            callback_manager = inheritable_callbacks
         callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
-            local_handlers
-            if isinstance(local_handlers, list)
-            else (local_handlers.handlers if local_handlers else [])
+            local_callbacks
+            if isinstance(local_callbacks, list)
+            else (local_callbacks.handlers if local_callbacks else [])
         )
         [callback_manager.add_handler(handler, False) for handler in local_handlers_]
 

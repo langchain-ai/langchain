@@ -1,10 +1,10 @@
 """Test CallbackManager."""
-import copy
 from typing import Tuple
 
 import pytest
 
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
+from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
@@ -198,3 +198,44 @@ def test_callback_manager_inheritance() -> None:
     child_manager = child_manager.get_child()
     assert child_manager.handlers == [handler1]
     assert child_manager.inheritable_handlers == [handler1]
+
+
+def test_callback_manager_configure() -> None:
+    """Test callback manager configuration."""
+    handler1, handler2, handler3, handler4 = (
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+    )
+
+    inheritable_callbacks = [handler1, handler2]
+    local_callbacks = [handler3, handler4]
+    configured_manager = CallbackManager.configure(
+        inheritable_callbacks=inheritable_callbacks,
+        local_callbacks=local_callbacks,
+        verbose=True,
+    )
+
+    assert len(configured_manager.handlers) == 5
+    assert len(configured_manager.inheritable_handlers) == 2
+    assert configured_manager.inheritable_handlers == inheritable_callbacks
+    assert configured_manager.handlers[:4] == inheritable_callbacks + local_callbacks
+    assert isinstance(configured_manager.handlers[4], StdOutCallbackHandler)
+    assert isinstance(configured_manager, CallbackManager)
+
+    async_local_callbacks = AsyncCallbackManager([handler3, handler4])
+    async_configured_manager = AsyncCallbackManager.configure(
+        inheritable_callbacks=inheritable_callbacks,
+        local_callbacks=async_local_callbacks,
+        verbose=False,
+    )
+
+    assert len(async_configured_manager.handlers) == 4
+    assert len(async_configured_manager.inheritable_handlers) == 2
+    assert async_configured_manager.inheritable_handlers == inheritable_callbacks
+    assert async_configured_manager.handlers == inheritable_callbacks + [
+        handler3,
+        handler4,
+    ]
+    assert isinstance(async_configured_manager, AsyncCallbackManager)
