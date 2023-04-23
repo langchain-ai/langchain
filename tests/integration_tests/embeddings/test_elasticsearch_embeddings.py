@@ -1,7 +1,10 @@
+"""Test elasticsearch_embeddings embeddings."""
+
 import pytest
+
 from elasticsearch import Elasticsearch
-from elasticsearch.client import MlClient
-from elasticsearch_embeddings import ElasticsearchEmbeddings
+
+from langchain.embeddings.elasticsearch_embeddings import ElasticsearchEmbeddings
 
 
 @pytest.fixture
@@ -16,7 +19,9 @@ def model_id() -> str:
     return "your_model_id"
 
 
-def test_elasticsearch_embedding_documents(es_connection: Elasticsearch, model_id: str) -> None:
+def test_elasticsearch_embedding_documents(
+    es_connection: Elasticsearch, model_id: str
+) -> None:
     """Test Elasticsearch embeddings."""
     documents = ["foo bar"]
     embedding = ElasticsearchEmbeddings(es_connection, model_id)
@@ -25,7 +30,9 @@ def test_elasticsearch_embedding_documents(es_connection: Elasticsearch, model_i
     assert len(output[0]) == 768  # Change 768 to the expected embedding size
 
 
-def test_elasticsearch_embedding_documents_multiple(es_connection: Elasticsearch, model_id: str) -> None:
+def test_elasticsearch_embedding_documents_multiple(
+    es_connection: Elasticsearch, model_id: str
+) -> None:
     """Test Elasticsearch embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
     embedding = ElasticsearchEmbeddings(es_connection, model_id)
@@ -36,7 +43,9 @@ def test_elasticsearch_embedding_documents_multiple(es_connection: Elasticsearch
     assert len(output[2]) == 768  # Change 768 to the expected embedding size
 
 
-def test_elasticsearch_embedding_query(es_connection: Elasticsearch, model_id: str) -> None:
+def test_elasticsearch_embedding_query(
+    es_connection: Elasticsearch, model_id: str
+) -> None:
     """Test Elasticsearch embeddings."""
     document = "foo bar"
     embedding = ElasticsearchEmbeddings(es_connection, model_id)
