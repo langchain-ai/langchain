@@ -36,9 +36,11 @@ class ElasticsearchEmbeddings:
             List[List[float]]: A list of embeddings, one for each text in the input list.
         """
         response = self.ml_client.infer_trained_model(
-            model_id=self.model_id, docs=[{"text": text} for text in texts]
+            model_id=self.model_id, docs=[{"text_field": text} for text in texts]
         )
-        embeddings = [doc["results"][0]["vector"] for doc in response["docs"]]
+
+        # {inference_results': [{'predicted_value': [....]},
+        embeddings = [doc["predicted_value"] for doc in response["inference_results"]]
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
