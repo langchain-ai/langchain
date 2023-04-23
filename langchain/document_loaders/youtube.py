@@ -249,7 +249,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
         from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
 
-        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_ids)
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         try:
             transcript = transcript_list.find_transcript([self.captions_language])
         except NoTranscriptFound:
