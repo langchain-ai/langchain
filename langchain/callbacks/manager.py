@@ -633,13 +633,12 @@ def _configure(
     if verbose or tracing_enabled:
         if not callback_manager:
             callback_manager = callback_manager_cls([])
-        std_out_handler = StdOutCallbackHandler()
 
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
         ):
-            callback_manager.add_handler(std_out_handler, False)
+            callback_manager.add_handler(StdOutCallbackHandler(), False)
 
         if tracing_enabled and not any(
             isinstance(handler, LangChainTracer)
