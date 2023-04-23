@@ -1,7 +1,7 @@
 """Loader that loads YouTube transcript."""
 from __future__ import annotations
-import logging
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -263,7 +263,6 @@ class GoogleApiYoutubeLoader(BaseLoader):
             transcript = transcript_list.find_transcript([self.captions_language])
         except NoTranscriptFound:
             for available_transcript in transcript_list:
-                available_lang = available_transcript.language_code
                 transcript = available_transcript.translate(self.captions_language)
                 continue
 
@@ -299,9 +298,9 @@ class GoogleApiYoutubeLoader(BaseLoader):
     def _get_document_for_channel(self, channel: str, **kwargs: Any) -> List[Document]:
         try:
             from youtube_transcript_api import (
-                TranscriptsDisabled,
                 NoTranscriptFound,
-            )  # noqa: F401
+                TranscriptsDisabled,
+            )
         except ImportError:
             raise ImportError(
                 "You must run"
@@ -341,7 +340,8 @@ class GoogleApiYoutubeLoader(BaseLoader):
                 except (TranscriptsDisabled, NoTranscriptFound) as e:
                     if self.continue_on_failure:
                         logger.error(
-                            f"Error fetching transscript {item['id']['videoId']}, exception: {e}"
+                            "Error fetching transscript "
+                            f" {item['id']['videoId']}, exception: {e}"
                         )
                     else:
                         raise e
