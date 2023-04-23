@@ -43,14 +43,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         try:
             import sentence_transformers
 
-            self.client = sentence_transformers.SentenceTransformer(
-                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-            )
-        except ImportError:
+        except ImportError as exc:
             raise ValueError(
                 "Could not import sentence_transformers python package. "
                 "Please install it with `pip install sentence_transformers`."
-            )
+            ) from exc
+
+        self.client = sentence_transformers.SentenceTransformer(
+            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+        )
 
     class Config:
         """Configuration for this pydantic object."""
