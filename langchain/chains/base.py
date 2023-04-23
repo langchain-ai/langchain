@@ -14,7 +14,10 @@ from langchain.schema import BaseMemory
 
 
 def _get_verbosity() -> bool:
-    return langchain.verbose
+    if hasattr(langchain, 'verbose'):
+        return langchain.verbose
+    else:
+        return None
 
 
 class Chain(BaseModel, ABC):
