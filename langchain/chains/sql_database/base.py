@@ -83,6 +83,21 @@ class SQLDatabaseChain(Chain):
         else:
             return [self.output_key, "intermediate_steps"]
 
+    @staticmethod
+    def normalize_sql_cmd(sql_cmd: str) -> str:
+        """Normalize the SQL command.
+
+        This is done by removing whitespaces and quotation marks.
+        """
+        sql_cmd = sql_cmd.strip()
+        if (
+            (sql_cmd.startswith('"') and sql_cmd.endswith('"'))
+            or (sql_cmd.startswith("'") and sql_cmd.endswith("'"))
+            and (len(sql_cmd) > 2)
+        ):
+            sql_cmd = sql_cmd[1:-1]
+        return sql_cmd
+
     def _call(
         self,
         inputs: Dict[str, Any],
