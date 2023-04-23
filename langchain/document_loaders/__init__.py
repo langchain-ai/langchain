@@ -38,6 +38,7 @@ from langchain.document_loaders.gutenberg import GutenbergLoader
 from langchain.document_loaders.hn import HNLoader
 from langchain.document_loaders.html import UnstructuredHTMLLoader
 from langchain.document_loaders.html_bs import BSHTMLLoader
+from langchain.document_loaders.hugging_face_dataset import HuggingFaceDatasetLoader
 from langchain.document_loaders.ifixit import IFixitLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
@@ -160,4 +161,5 @@ __all__ = [
     "ConfluenceLoader",
     "PythonLoader",
     "ChatGPTLoader",
+    "HuggingFaceDatasetLoader",
 ]
