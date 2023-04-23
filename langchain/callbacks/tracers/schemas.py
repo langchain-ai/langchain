@@ -58,7 +58,6 @@ class ChainRun(BaseRun):
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
-    child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = Field(default_factory=list)
 
 
 class ToolRun(BaseRun):
@@ -70,7 +69,6 @@ class ToolRun(BaseRun):
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
-    child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = Field(default_factory=list)
 
 
 ChainRun.update_forward_refs()

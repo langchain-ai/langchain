@@ -255,7 +255,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             raise TracerException("No ToolRun found to be traced")
 
         tool_run = self.run_map[run_id]
-        tool_run.tool_output = output
+        tool_run.output = output
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)
 
