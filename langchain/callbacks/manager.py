@@ -204,7 +204,7 @@ class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
 
     def get_child(self) -> CallbackManager:
         """Get a child callback manager."""
-        manager = CallbackManager(self.inheritable_handlers, parent_run_id=self.run_id)
+        manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -267,7 +267,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
         manager = AsyncCallbackManager(
-            self.inheritable_handlers, parent_run_id=self.run_id
+            [], parent_run_id=self.run_id
         )
         manager.set_handlers(self.inheritable_handlers)
         return manager
@@ -330,7 +330,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
 
     def get_child(self) -> CallbackManager:
         """Get a child callback manager."""
-        manager = CallbackManager(self.inheritable_handlers, parent_run_id=self.run_id)
+        manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -369,7 +369,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
         manager = AsyncCallbackManager(
-            self.inheritable_handlers, parent_run_id=self.run_id
+            [], parent_run_id=self.run_id
         )
         manager.set_handlers(self.inheritable_handlers)
         return manager

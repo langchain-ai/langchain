@@ -1,5 +1,6 @@
 """Test CallbackManager."""
 from typing import Tuple
+import copy
 
 import pytest
 
@@ -151,3 +152,49 @@ async def test_async_callback_manager_sync_handler() -> None:
     handler3 = FakeAsyncCallbackHandler()
     manager = AsyncCallbackManager([handler1, handler2, handler3])
     await _test_callback_manager_async(manager, handler1, handler2, handler3)
+
+
+def test_callback_manager_inheritance() -> None:
+    handler1, handler2, handler3, handler4 = (
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+        FakeCallbackHandler(),
+    )
+
+    callback_manager1 = CallbackManager([handler1, handler2])
+    assert callback_manager1.handlers == [handler1, handler2]
+    assert callback_manager1.inheritable_handlers == []
+
+    callback_manager2 = CallbackManager([])
+    assert callback_manager2.handlers == []
+    assert callback_manager2.inheritable_handlers == []
+
+    callback_manager2.set_handlers([handler1, handler2])
+    assert callback_manager2.handlers == [handler1, handler2]
+    assert callback_manager2.inheritable_handlers == [handler1, handler2]
+
+    callback_manager2.set_handlers([handler3, handler4], inherit=False)
+    assert callback_manager2.handlers == [handler3, handler4]
+    assert callback_manager2.inheritable_handlers == []
+
+    callback_manager2.add_handler(handler1)
+    assert callback_manager2.handlers == [handler3, handler4, handler1]
+    assert callback_manager2.inheritable_handlers == [handler1]
+
+    callback_manager2.add_handler(handler2, inherit=False)
+    assert callback_manager2.handlers == [handler3, handler4, handler1, handler2]
+    assert callback_manager2.inheritable_handlers == [handler1]
+
+    run_manager = callback_manager2.on_chain_start({"name": "foo"}, {})
+    child_manager = run_manager.get_child()
+    assert child_manager.handlers == [handler1]
+    assert child_manager.inheritable_handlers == [handler1]
+
+    child_manager = child_manager.on_tool_start({}, "")
+    assert child_manager.handlers == [handler1]
+    assert child_manager.inheritable_handlers == [handler1]
+
+    child_manager = child_manager.get_child()
+    assert child_manager.handlers == [handler1]
+    assert child_manager.inheritable_handlers == [handler1]
