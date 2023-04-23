@@ -101,13 +101,17 @@ class YoutubeLoader(BaseLoader):
     """Loader that loads Youtube transcripts."""
 
     def __init__(
-        self, video_id: str, add_video_info: bool = False, language: str = "en", continue_on_failure: bool = False
+        self,
+        video_id: str,
+        add_video_info: bool = False,
+        language: str = "en",
+        continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
         self.add_video_info = add_video_info
         self.language = language
-        self.continue_on_failure: continue_on_failure
+        self.continue_on_failure = continue_on_failure
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
@@ -259,7 +263,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
             transcript = transcript_list.find_transcript([self.captions_language])
         except NoTranscriptFound:
             for available_transcript in transcript_list:
-                available_lang=available_transcript.language_code
+                available_lang = available_transcript.language_code
                 transcript = available_transcript.translate(self.captions_language)
                 continue
 
@@ -294,7 +298,10 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     def _get_document_for_channel(self, channel: str, **kwargs: Any) -> List[Document]:
         try:
-            from youtube_transcript_api import TranscriptsDisabled, NoTranscriptFound  # noqa: F401
+            from youtube_transcript_api import (
+                TranscriptsDisabled,
+                NoTranscriptFound,
+            )  # noqa: F401
         except ImportError:
             raise ImportError(
                 "You must run"
@@ -323,11 +330,12 @@ class GoogleApiYoutubeLoader(BaseLoader):
                     meta_data.update(item["snippet"])
                 try:
                     page_content = self._get_transcripe_for_video_id(
-                            item["id"]["videoId"]
-                        )
+                        item["id"]["videoId"]
+                    )
                     video_ids.append(
-                        Document( page_content=page_content,
-                        metadata=meta_data,
+                        Document(
+                            page_content=page_content,
+                            metadata=meta_data,
                         )
                     )
                 except (TranscriptsDisabled, NoTranscriptFound) as e:
