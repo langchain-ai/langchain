@@ -200,22 +200,19 @@ class ZapierNLAWrapper(BaseModel):
         response.raise_for_status()
         return response.json()["input_params"]
 
-    # type: ignore[no-untyped-def]
-    def run_as_str(self, *args, **kwargs) -> str:
+    def run_as_str(self, *args, **kwargs) -> str:   # type: ignore[no-untyped-def]怎么用
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
         return json.dumps(data)
     
-    # type: ignore[no-untyped-def]
-    async def arun_as_str(self, *args, **kwargs) -> str:
+    async def arun_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]怎么用
         """Async version of run_as_str. Converts the result of the arun
         function to a string."""
         data = await self.arun(*args, **kwargs)
         return json.dumps(data)
 
-    # type: ignore[no-untyped-def]
-    def preview_as_str(self, *args, **kwargs) -> str:
+    def preview_as_str(self, *args, **kwargs) -> str:   # type: ignore[no-untyped-def]怎么用
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.preview(*args, **kwargs)
