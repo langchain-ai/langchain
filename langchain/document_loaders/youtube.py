@@ -10,7 +10,7 @@ from pydantic.dataclasses import dataclass
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 
 @dataclass
