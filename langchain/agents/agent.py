@@ -700,7 +700,7 @@ class AgentExecutor(Chain):
                 )
             elif agent_action.tool == "Invalid LLM Output":
                 # Passing the error message regarding the invalid format in llm output
-                observation = agent_action.tool_input
+                observation = str(agent_action.tool_input)
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
                 observation = InvalidTool().run(
