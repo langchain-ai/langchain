@@ -117,9 +117,6 @@ class LlamaCpp(LLM):
         try:
             from llama_cpp import Llama
 
-            if lora_path is not None:
-                use_mmap = False
-
             values["client"] = Llama(
                 model_path=model_path,
                 lora_base=lora_base,
