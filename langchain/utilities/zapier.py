@@ -13,11 +13,10 @@ developer support.
 """
 import json
 from typing import Dict, List, Optional
-
 import requests
 from pydantic import BaseModel, Extra, root_validator
 from requests import Request, Session
-import httpx
+import aiohttp
 from langchain.utils import get_from_dict_or_env
 
 
@@ -46,8 +45,6 @@ class ZapierNLAWrapper(BaseModel):
         extra = Extra.forbid
 
     def _get_session(self) -> Session:
-        """Gets session with correct headers, params and auth depending on
-        whether using api_key or oauth."""
         session = requests.Session()
         session.headers.update(
             {
@@ -62,35 +59,27 @@ class ZapierNLAWrapper(BaseModel):
             )
         else:
             session.params = {"api_key": self.zapier_nla_api_key}
-
         return session
 
-    async def _aget_session(self) -> httpx.AsyncClient:
+    async def _aget_session(self) -> aiohttp.ClientSession:
         """Async version of _get_session. Gets session with correct headers,
         params, and auth depending on whether using api_key or oauth."""
-        client = httpx.AsyncClient()
-        client.headers.update(
-            {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            }
-        )
-
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        session = aiohttp.ClientSession(headers=headers)
         if self.zapier_nla_oauth_access_token:
-            client.headers.update(
+            session.headers.update(
                 {"Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"}
             )
-        else:
-            client.params = {"api_key": self.zapier_nla_api_key}
-        print(f"Client headers: {client.headers}")
-        print(f"Client params: {client.params}")
-        return client
+        return session
 
     def _get_action_request(
         self, action_id: str, instructions: str, params: Optional[Dict] = None
     ) -> Request:
-        """Prepares a request for the given action with the provided instructions
-        and optional parameters."""
+        """Async version of _get_session. Gets session with correct headers,
+        params, and auth depending on whether using api_key or oauth."""
         data = params if params else {}
         data.update(
             {
@@ -103,16 +92,13 @@ class ZapierNLAWrapper(BaseModel):
             json=data,
         )
 
-    async def _aget_action_request(self, action_id: int, instructions: str, params: Optional[Dict] = None):
+    async def _aget_action_request(self, instructions: str, params: Optional[Dict] = None) -> Dict:
         """Async version of _get_action_request. Prepares a request for the given action with
         the provided instructions and optional parameters."""
         data = params if params else {}
-        data.update(
-            {
-            "instructions": instructions,
-            }
-        )
-        return self._get_action_request(action_id, instructions, params)
+        data.update({"instructions": instructions})
+
+        return data
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -176,6 +162,8 @@ class ZapierNLAWrapper(BaseModel):
         """
         session = self._get_session()
         request = self._get_action_request(action_id, instructions, params)
+        print("session.prepare_request(request)",
+              session.prepare_request(request))
         response = session.send(session.prepare_request(request))
         response.raise_for_status()
         return response.json()["result"]
@@ -183,12 +171,20 @@ class ZapierNLAWrapper(BaseModel):
     async def arun(self, action_id: str, instructions: str, params: Optional[Dict] = None) -> Dict:
         """Async version of run. Executes an action with the given instructions
         and optional parameters, returning the JSON result of the action."""
-        async with self._aget_session() as client:
-            request = await self._aget_action_request(action_id, instructions, params)
-            response = await client.post(json=request)
-            response.raise_for_status()
-            result = response.json()["result"]
-        return result
+        request_data = await self._aget_action_request(instructions, params)
+        url = f"https://nla.zapier.com/api/v1/exposed/{action_id}/execute/"
+
+        async with await self._aget_session() as client:
+            if self.zapier_nla_oauth_access_token is None:
+                params = None
+            else:
+                params = {"api_key": self.zapier_nla_api_key}
+            async with client.post(url, json=request_data, params=params) as response:
+                if response.status != 200:
+                    raise Exception(
+                        f"Request failed with status code {response.status}")
+                result = await response.json()
+                return json.dumps(result["result"])
 
     def preview(
         self, action_id: str, instructions: str, params: Optional[Dict] = None
@@ -204,18 +200,21 @@ class ZapierNLAWrapper(BaseModel):
         response.raise_for_status()
         return response.json()["input_params"]
 
-    def run_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    def run_as_str(self, *args, **kwargs) -> str:
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
         return json.dumps(data)
 
     async def arun_as_str(self, *args, **kwargs) -> str:
-        """Async version of run_as_str. Converts the result of the arun function to a string."""
+        """Async version of run_as_str. Converts the result of the arun
+        function to a string."""
         data = await self.arun(*args, **kwargs)
         return json.dumps(data)
 
-    def preview_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    def preview_as_str(self, *args, **kwargs) -> str:
         """Same as preview, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.preview(*args, **kwargs)

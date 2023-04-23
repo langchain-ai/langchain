@@ -86,8 +86,6 @@ from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 
 
