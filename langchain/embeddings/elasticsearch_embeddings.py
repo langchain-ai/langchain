@@ -11,6 +11,10 @@ class ElasticsearchEmbeddings:
     This class provides an interface to generate embeddings using a model deployed
     in an Elasticsearch cluster. It requires an Elasticsearch connection object
     and the model_id of the model deployed in the cluster.
+
+    In Elasticsearch you need to have an embedding model loaded and deployed.
+    - https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-trained-model.html
+    - https://www.elastic.co/guide/en/machine-learning/current/ml-nlp-deploy-models.html
     """
 
     def __init__(self, es_connection: Elasticsearch, model_id: str, input_field: str = 'text_field'):
@@ -22,6 +26,46 @@ class ElasticsearchEmbeddings:
             model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
             input_field (str): The name of the key for the input text field in the document.
                 Defaults to 'text_field'.
+
+
+        Example Usage:
+
+            import os
+            from elasticsearch import Elasticsearch
+            from langchain.embeddings.elasticsearch_embeddings import ElasticsearchEmbeddings
+    
+            es_cloudid = os.environ.get("ES_CLOUDID")
+            es_user = os.environ.get("ES_USER")
+            es_pass = os.environ.get("ES_PASS")
+            
+            # Connect to Elasticsearch
+            es_connection = Elasticsearch(cloud_id=es_cloudid, basic_auth=(es_user, es_pass))
+            
+            # Define the model ID and input field name (if different from default)
+            model_id = "your_model_id"
+            input_field = "your_input_field"  # Optional, only if different from 'text_field'
+            
+            # Initialize the ElasticsearchEmbeddings instance
+            embeddings_generator = ElasticsearchEmbeddings(es_connection, model_id, input_field)
+            
+            # Generate embeddings for a list of documents
+            documents = [
+                "This is an example document.",
+                "Another example document to generate embeddings for.",
+            ]
+            document_embeddings = embeddings_generator.embed_documents(documents)
+            
+            # Print the generated document embeddings
+            for i, doc_embedding in enumerate(document_embeddings):
+                print(f"Embedding for document {i + 1}: {doc_embedding}")
+            
+            # Generate an embedding for a single query text
+            query_text = "What is the meaning of life?"
+            query_embedding = embeddings_generator.embed_query(query_text)
+            
+            # Print the generated query embedding
+            print(f"Embedding for query: {query_embedding}")
+
         """
         self.es_connection = es_connection
         self.ml_client = MlClient(es_connection)
