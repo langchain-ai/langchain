@@ -22,7 +22,7 @@ def _default_text_mapping(dim: int) -> Dict:
 
 def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
     if filter:
-        (key, value), = filter.items()
+        ((key, value),) = filter.items()
         filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
     else:
         filter = {"match_all": {}}
@@ -192,11 +192,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         return ids
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -207,17 +203,12 @@ class ElasticVectorSearch(VectorStore, ABC):
         Returns:
             List of Documents most similar to the query.
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter)
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         documents = [d[0] for d in docs_and_scores]
         return documents
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
         Args:
@@ -228,15 +219,17 @@ class ElasticVectorSearch(VectorStore, ABC):
         """
         embedding = self.embedding.embed_query(query)
         script_query = _default_script_query(embedding, filter)
-        response = self.client.search(
-            index=self.index_name, query=script_query, size=k)
+        response = self.client.search(index=self.index_name, query=script_query, size=k)
         hits = [hit for hit in response["hits"]["hits"]]
         docs_and_scores = [
             (
-                Document(page_content=hit["_source"]["text"],
-                         metadata=hit["_source"]["metadata"]),
-                hit['_score']
-            ) for hit in hits
+                Document(
+                    page_content=hit["_source"]["text"],
+                    metadata=hit["_source"]["metadata"],
+                ),
+                hit["_score"],
+            )
+            for hit in hits
         ]
         return docs_and_scores
 
