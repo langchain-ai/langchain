@@ -103,7 +103,8 @@ class BabyAGI(Chain, BaseModel):
         results = self.vectorstore.similarity_search(query, k=k)
         if not results:
             return []
-        return [str(item.metadata["task"]) for item in results]
+
+        return filter(lambda item: "task" in item.metadata, results)
 
     def execute_task(self, objective: str, task: str, k: int = 5) -> str:
         """Execute a task."""
