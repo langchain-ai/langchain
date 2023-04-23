@@ -454,7 +454,7 @@ class DeepLake(VectorStore):
     ) -> DeepLake:
         """Create a Deep Lake dataset from a raw documents.
 
-        If a dataset_path is specified, the dataset will be persisted in that location, 
+        If a dataset_path is specified, the dataset will be persisted in that location,
         otherwise by default at `./deeplake`
 
         Args:
