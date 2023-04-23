@@ -15,7 +15,7 @@ from langchain.schema import BaseMemory
 
 def _get_verbosity() -> bool:
     try:
-        return langchain.verbose
+        getattr(langchain, "verbose")
     except AttributeError:
         return None
 
@@ -56,10 +56,10 @@ class Chain(BaseModel, ABC):
 
         This allows users to pass in None as verbose to access the global setting.
         """
-        if verbose is None:
-            return _get_verbosity()
-        else:
+        if verbose is not None:
             return verbose
+        else:
+            return _get_verbosity()
 
     @property
     @abstractmethod
