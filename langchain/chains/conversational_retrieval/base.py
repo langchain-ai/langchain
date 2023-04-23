@@ -174,6 +174,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         qa_prompt: Optional[BasePromptTemplate] = None,
         chain_type: str = "stuff",
+        verbose: bool = False,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
         """Load chain from LLM."""
@@ -181,8 +182,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             llm,
             chain_type=chain_type,
             prompt=qa_prompt,
+            verbose=verbose,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt, verbose=verbose)
         return cls(
             retriever=retriever,
             combine_docs_chain=doc_chain,
