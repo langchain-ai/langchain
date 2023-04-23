@@ -18,7 +18,7 @@ def test_normalize_sql_cmd_single_quotation_marks() -> None:
 
 
 @pytest.mark.parametrize("sql_cmd", ["", '"', "'", "x", None])
-def test_normalize_sql_cmd_no_change(sql_cmd) -> None:
+def test_normalize_sql_cmd_no_change(sql_cmd: str) -> None:
     result = SQLDatabaseChain.normalize_sql_cmd(sql_cmd)
     assert result == sql_cmd  # no change
 
