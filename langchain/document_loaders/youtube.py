@@ -340,8 +340,8 @@ class GoogleApiYoutubeLoader(BaseLoader):
                 except (TranscriptsDisabled, NoTranscriptFound) as e:
                     if self.continue_on_failure:
                         logger.error(
-                            "Error fetching transscript " +
-                            f" {item['id']['videoId']}, exception: {e}"
+                            "Error fetching transscript "
+                            + f" {item['id']['videoId']}, exception: {e}"
                         )
                     else:
                         raise e
