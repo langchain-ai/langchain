@@ -37,6 +37,10 @@ A minimal example on how to run LangChain on Vercel using Flask.
 
 A minimal example on how to deploy LangChain to DigitalOcean App Platform.
 
+## [Google Cloud Run](https://github.com/homanp/gcp-langchain)
+
+A minimal example on how to deploy LangChain to Google Cloud Run.
+
 ## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
 
 This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
