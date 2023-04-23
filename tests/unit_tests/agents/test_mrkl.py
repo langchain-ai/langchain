@@ -98,8 +98,9 @@ def test_get_final_answer_multiline() -> None:
 def test_bad_action_input_line() -> None:
     """Test handling when no action input found."""
     llm_output = "Thought: I need to search for NBA\n" "Action: Search\n" "Thought: NBA"
-    with pytest.raises(OutputParserException):
-        get_action_and_input(llm_output)
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Invalid LLM Output"
+    assert action_input == "Invalid Format: Missing 'Action Input:' after 'Action:'"
 
 
 def test_bad_action_line() -> None:
@@ -107,8 +108,9 @@ def test_bad_action_line() -> None:
     llm_output = (
         "Thought: I need to search for NBA\n" "Thought: Search\n" "Action Input: NBA"
     )
-    with pytest.raises(OutputParserException):
-        get_action_and_input(llm_output)
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "Invalid LLM Output"
+    assert action_input == "Invalid Format: Missing 'Action:' after 'Thought:'"
 
 
 def test_from_chains() -> None:
