@@ -8,7 +8,8 @@ import os
 import uuid
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager, RunManagerMixin, LLMManagerMixin, \
+    ChainManagerMixin, ToolManagerMixin
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -75,7 +76,7 @@ async def _ahandle_event(
     )
 
 
-class BaseRunManager(BaseCallbackHandler):
+class BaseRunManager(RunManagerMixin):
     """Base class for run manager (a bound callback manager)."""
 
     def __init__(
@@ -97,7 +98,7 @@ class RunManager(BaseRunManager):
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", "ignore_text", False, text, **kwargs)
+        _handle_event(self.handlers, "on_text", None, False, text, **kwargs)
 
 
 class AsyncRunManager(BaseRunManager):
@@ -106,11 +107,11 @@ class AsyncRunManager(BaseRunManager):
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
         await _ahandle_event(
-            self.handlers, "on_text", "ignore_text", False, text, **kwargs
+            self.handlers, "on_text", None, False, text, **kwargs
         )
 
 
-class CallbackManagerForLLMRun(RunManager):
+class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     """Callback manager for LLM run."""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -154,7 +155,7 @@ class CallbackManagerForLLMRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForLLMRun(AsyncRunManager):
+class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -198,7 +199,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager):
         )
 
 
-class CallbackManagerForChainRun(RunManager):
+class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
     def get_child(self) -> CallbackManager:
@@ -260,7 +261,7 @@ class CallbackManagerForChainRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForChainRun(AsyncRunManager):
+class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
     def get_child(self) -> AsyncCallbackManager:
@@ -324,7 +325,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager):
         )
 
 
-class CallbackManagerForToolRun(RunManager):
+class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
     """Callback manager for tool run."""
 
     def get_child(self) -> CallbackManager:
@@ -338,7 +339,7 @@ class CallbackManagerForToolRun(RunManager):
         _handle_event(
             self.handlers,
             "on_tool_end",
-            "ignore_tool",
+            "ignore_agent",
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -354,7 +355,7 @@ class CallbackManagerForToolRun(RunManager):
         _handle_event(
             self.handlers,
             "on_tool_error",
-            "ignore_tool",
+            "ignore_agent",
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -362,7 +363,7 @@ class CallbackManagerForToolRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForToolRun(AsyncRunManager):
+class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
 
     def get_child(self) -> AsyncCallbackManager:
@@ -378,7 +379,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager):
         await _ahandle_event(
             self.handlers,
             "on_tool_end",
-            "ignore_tool",
+            "ignore_agent",
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -394,7 +395,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager):
         await _ahandle_event(
             self.handlers,
             "on_tool_error",
-            "ignore_tool",
+            "ignore_agent",
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,

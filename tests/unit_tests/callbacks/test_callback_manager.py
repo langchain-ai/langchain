@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
-from langchain.schema import AgentFinish, LLMResult
+from langchain.schema import AgentAction, AgentFinish, LLMResult
 from tests.unit_tests.callbacks.fake_callback_handler import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -16,16 +16,23 @@ def _test_callback_manager(
     manager: CallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    manager.on_llm_start({}, [])
-    manager.on_llm_end(LLMResult(generations=[]))
-    manager.on_llm_error(Exception())
-    manager.on_chain_start({"name": "foo"}, {})
-    manager.on_chain_end({})
-    manager.on_chain_error(Exception())
-    manager.on_tool_start({}, "")
-    manager.on_tool_end("")
-    manager.on_tool_error(Exception())
-    manager.on_agent_finish(AgentFinish(log="", return_values={}))
+    run_manager = manager.on_llm_start({}, [])
+    run_manager.on_llm_end(LLMResult(generations=[]))
+    run_manager.on_llm_error(Exception())
+    run_manager.on_llm_new_token("foo")
+    run_manager.on_text("foo")
+
+    run_manager = manager.on_chain_start({"name": "foo"}, {})
+    run_manager.on_chain_end({})
+    run_manager.on_chain_error(Exception())
+    run_manager.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
+    run_manager.on_agent_finish(AgentFinish(log="", return_values={}))
+    run_manager.on_text("foo")
+
+    run_manager = manager.on_tool_start({}, "")
+    run_manager.on_tool_end("")
+    run_manager.on_tool_error(Exception())
+    run_manager.on_text("foo")
     _check_num_calls(handlers)
 
 
@@ -33,24 +40,42 @@ async def _test_callback_manager_async(
     manager: AsyncCallbackManager, *handlers: BaseFakeCallbackHandler
 ) -> None:
     """Test the CallbackManager."""
-    await manager.on_llm_start({}, [])
-    await manager.on_llm_end(LLMResult(generations=[]))
-    await manager.on_llm_error(Exception())
-    await manager.on_chain_start({"name": "foo"}, {})
-    await manager.on_chain_end({})
-    await manager.on_chain_error(Exception())
-    await manager.on_tool_start({}, "")
-    await manager.on_tool_end("")
-    await manager.on_tool_error(Exception())
-    await manager.on_agent_finish(AgentFinish(log="", return_values={}))
+    run_manager = await manager.on_llm_start({}, [])
+    await run_manager.on_llm_end(LLMResult(generations=[]))
+    await run_manager.on_llm_error(Exception())
+    await run_manager.on_llm_new_token("foo")
+    await run_manager.on_text("foo")
+
+    run_manager = await manager.on_chain_start({"name": "foo"}, {})
+    await run_manager.on_chain_end({})
+    await run_manager.on_chain_error(Exception())
+    await run_manager.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
+    await run_manager.on_agent_finish(AgentFinish(log="", return_values={}))
+    await run_manager.on_text("foo")
+
+    run_manager = await manager.on_tool_start({}, "")
+    await run_manager.on_tool_end("")
+    await run_manager.on_tool_error(Exception())
+    await run_manager.on_text("foo")
     _check_num_calls(handlers)
 
 
 def _check_num_calls(handlers: Tuple[BaseFakeCallbackHandler, ...]) -> None:
     for handler in handlers:
-        assert handler.starts == 3
+        assert handler.starts == 4
         assert handler.ends == 4
         assert handler.errors == 3
+        assert handler.text == 3
+
+        assert handler.llm_starts == 1
+        assert handler.llm_ends == 1
+        assert handler.llm_streams == 1
+
+        assert handler.chain_starts == 1
+        assert handler.chain_ends == 1
+
+        assert handler.tool_starts == 1
+        assert handler.tool_ends == 1
 
 
 def test_callback_manager() -> None:
@@ -66,9 +91,9 @@ def test_ignore_llm() -> None:
     handler1 = FakeCallbackHandler(ignore_llm_=True)
     handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_llm_start({}, [], verbose=True)
-    manager.on_llm_end(LLMResult(generations=[]), verbose=True)
-    manager.on_llm_error(Exception(), verbose=True)
+    run_manager = manager.on_llm_start({}, [])
+    run_manager.on_llm_end(LLMResult(generations=[]))
+    run_manager.on_llm_error(Exception())
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
@@ -79,12 +104,12 @@ def test_ignore_llm() -> None:
 
 def test_ignore_chain() -> None:
     """Test ignore chain param for callback handlers."""
-    handler1 = FakeCallbackHandler(ignore_chain_=True, always_verbose_=True)
-    handler2 = FakeCallbackHandler(always_verbose_=True)
+    handler1 = FakeCallbackHandler(ignore_chain_=True)
+    handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_chain_start({"name": "foo"}, {}, verbose=True)
-    manager.on_chain_end({}, verbose=True)
-    manager.on_chain_error(Exception(), verbose=True)
+    run_manager = manager.on_chain_start({"name": "foo"}, {})
+    run_manager.on_chain_end({})
+    run_manager.on_chain_error(Exception())
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
@@ -95,25 +120,24 @@ def test_ignore_chain() -> None:
 
 def test_ignore_agent() -> None:
     """Test ignore agent param for callback handlers."""
-    handler1 = FakeCallbackHandler(ignore_agent_=True, always_verbose_=True)
-    handler2 = FakeCallbackHandler(always_verbose_=True)
+    handler1 = FakeCallbackHandler(ignore_agent_=True)
+    handler2 = FakeCallbackHandler()
     manager = CallbackManager(handlers=[handler1, handler2])
-    manager.on_tool_start({}, "", verbose=True)
-    manager.on_tool_end("", verbose=True)
-    manager.on_tool_error(Exception(), verbose=True)
-    manager.on_agent_finish(AgentFinish({}, ""), verbose=True)
+    run_manager = manager.on_tool_start({}, "")
+    run_manager.on_tool_end("")
+    run_manager.on_tool_error(Exception())
     assert handler1.starts == 0
     assert handler1.ends == 0
     assert handler1.errors == 0
     assert handler2.starts == 1
-    assert handler2.ends == 2
+    assert handler2.ends == 1
     assert handler2.errors == 1
 
 
 @pytest.mark.asyncio
 async def test_async_callback_manager() -> None:
     """Test the AsyncCallbackManager."""
-    handler1 = FakeAsyncCallbackHandler(always_verbose_=True)
+    handler1 = FakeAsyncCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
     manager = AsyncCallbackManager([handler1, handler2])
     await _test_callback_manager_async(manager, handler1, handler2)
@@ -122,8 +146,8 @@ async def test_async_callback_manager() -> None:
 @pytest.mark.asyncio
 async def test_async_callback_manager_sync_handler() -> None:
     """Test the AsyncCallbackManager."""
-    handler1 = FakeCallbackHandler(always_verbose_=True)
+    handler1 = FakeCallbackHandler()
     handler2 = FakeAsyncCallbackHandler()
-    handler3 = FakeAsyncCallbackHandler(always_verbose_=True)
+    handler3 = FakeAsyncCallbackHandler()
     manager = AsyncCallbackManager([handler1, handler2, handler3])
     await _test_callback_manager_async(manager, handler1, handler2, handler3)

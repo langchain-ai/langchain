@@ -1,14 +1,11 @@
 """Base interfaces for tracing runs."""
 from __future__ import annotations
 
-import threading
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.shared import Singleton
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
@@ -293,51 +290,3 @@ class Tracer(BaseTracer, ABC):
                 "Cannot set a session while a trace is being recorded"
             )
         self._tracer_session = value
-
-
-@dataclass
-class TracerStack(threading.local):
-    """A stack of runs used for logging."""
-
-    stack: List[Union[LLMRun, ChainRun, ToolRun]] = field(default_factory=list)
-    execution_order: int = 1
-
-
-class SharedTracer(Singleton, BaseTracer, ABC):
-    """A thread-safe Singleton implementation of BaseTracer."""
-
-    _tracer_stack = TracerStack()
-    _tracer_session = None
-
-    @property
-    def _stack(self) -> List[Union[LLMRun, ChainRun, ToolRun]]:
-        """Get the tracer stack."""
-        return self._tracer_stack.stack
-
-    @property
-    def _execution_order(self) -> int:
-        """Get the execution order for a run."""
-        return self._tracer_stack.execution_order
-
-    @_execution_order.setter
-    def _execution_order(self, value: int) -> None:
-        """Set the execution order for a run."""
-        self._tracer_stack.execution_order = value
-
-    @property
-    def _session(self) -> Optional[TracerSession]:
-        """Get the tracing session."""
-        return self._tracer_session
-
-    @_session.setter
-    def _session(self, value: TracerSession) -> None:
-        """Set the tracing session."""
-        with self._lock:
-            # TODO: currently, we are only checking current thread's stack.
-            #  Need to make sure that we are not in the middle of a trace
-            #  in any thread.
-            if self._stack:
-                raise TracerException(
-                    "Cannot set a session while a trace is being recorded"
-                )
-            self._tracer_session = value

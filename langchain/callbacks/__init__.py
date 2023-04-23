@@ -8,19 +8,19 @@ from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
 )
+from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
 from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain.callbacks.shared import SharedCallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
-from langchain.callbacks.tracers import SharedLangChainTracer
+from langchain.callbacks.tracers import LangChainTracer
 from langchain.callbacks.wandb_callback import WandbCallbackHandler
 
 
 def get_callback_manager() -> BaseCallbackManager:
     """Return the shared callback manager."""
-    return SharedCallbackManager()
+    return CallbackManager([])
 
 
 def set_handler(handler: BaseCallbackHandler) -> None:
@@ -46,7 +46,7 @@ def set_default_callback_manager() -> None:
 
 def set_tracing_callback_manager(session_name: Optional[str] = None) -> None:
     """Set tracing callback manager."""
-    handler = SharedLangChainTracer()
+    handler = LangChainTracer()
     callback = get_callback_manager()
     callback.set_handlers([handler, StdOutCallbackHandler()])
     if session_name is None:
@@ -70,7 +70,6 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 __all__ = [
     "OpenAICallbackHandler",
-    "SharedCallbackManager",
     "StdOutCallbackHandler",
     "AimCallbackHandler",
     "WandbCallbackHandler",

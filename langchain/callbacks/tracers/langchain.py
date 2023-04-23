@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Union
 
 import requests
 
-from langchain.callbacks.tracers.base import BaseTracer, SharedTracer, Tracer
+from langchain.callbacks.tracers.base import BaseTracer, Tracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
@@ -110,10 +110,6 @@ class BaseLangChainTracer(BaseTracer, ABC):
     def _generate_id(self) -> Optional[Union[int, str]]:
         """Generate an id for a run."""
         return None
-
-
-class SharedLangChainTracer(SharedTracer, BaseLangChainTracer):
-    """Shared tracer that records LangChain execution to LangChain endpoint."""
 
 
 class LangChainTracer(Tracer, BaseLangChainTracer):

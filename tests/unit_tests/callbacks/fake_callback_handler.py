@@ -1,10 +1,9 @@
 """A fake callback handler for testing purposes."""
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from pydantic import BaseModel
 
 from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -18,21 +17,6 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_chain_: bool = False
     ignore_agent_: bool = False
 
-    @property
-    def ignore_llm(self) -> bool:
-        """Whether to ignore LLM callbacks."""
-        return self.ignore_llm_
-
-    @property
-    def ignore_chain(self) -> bool:
-        """Whether to ignore chain callbacks."""
-        return self.ignore_chain_
-
-    @property
-    def ignore_agent(self) -> bool:
-        """Whether to ignore agent callbacks."""
-        return self.ignore_agent_
-
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
     chain_ends: int = 0
@@ -41,6 +25,7 @@ class BaseFakeCallbackHandler(BaseModel):
     llm_streams: int = 0
     tool_starts: int = 0
     tool_ends: int = 0
+    agent_actions: int = 0
     agent_ends: int = 0
 
 
@@ -84,7 +69,7 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
         self.errors += 1
 
     def on_agent_action_common(self) -> None:
-        self.tool_starts += 1
+        self.agent_actions += 1
         self.starts += 1
 
     def on_agent_finish_common(self) -> None:
@@ -97,6 +82,20 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
 
 class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake callback handler for testing."""
+    @property
+    def ignore_llm(self) -> bool:
+        """Whether to ignore LLM callbacks."""
+        return self.ignore_llm_
+
+    @property
+    def ignore_chain(self) -> bool:
+        """Whether to ignore chain callbacks."""
+        return self.ignore_chain_
+
+    @property
+    def ignore_agent(self) -> bool:
+        """Whether to ignore agent callbacks."""
+        return self.ignore_agent_
 
     def on_llm_start(
         self,
@@ -182,9 +181,31 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_agent_finish_common()
 
+    def on_text(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        self.on_text_common()
+
 
 class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake async callback handler for testing."""
+
+    @property
+    def ignore_llm(self) -> bool:
+        """Whether to ignore LLM callbacks."""
+        return self.ignore_llm_
+
+    @property
+    def ignore_chain(self) -> bool:
+        """Whether to ignore chain callbacks."""
+        return self.ignore_chain_
+
+    @property
+    def ignore_agent(self) -> bool:
+        """Whether to ignore agent callbacks."""
+        return self.ignore_agent_
 
     async def on_llm_start(
         self,
