@@ -8,9 +8,7 @@ class TestBlockchainDocumentLoader(unittest.TestCase):
         self.loader = BlockchainDocumentLoader(self.contract_address)
 
     def test_get_nfts(self):
-        result = self.loader.load()
-        print(result[:2])
-        
+        result = self.loader.load()       
         self.assertIsInstance(result, list)
 
 if __name__ == "__main__":
