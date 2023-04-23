@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import logging
+import os
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 logging.basicConfig(
@@ -398,6 +402,55 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager):
         )
 
 
+def _configure(
+    callback_manager_cls: Type[CallbackManager] | Type[AsyncCallbackManager],
+    inheritable_handlers: Optional[
+        Union[BaseCallbackManager, List[BaseCallbackHandler]]
+    ] = None,
+    local_handlers: Optional[
+        Union[BaseCallbackManager, List[BaseCallbackHandler]]
+    ] = None,
+    verbose: bool = False,
+) -> Optional[BaseCallbackManager]:
+    callback_manager: Optional[BaseCallbackManager] = None
+    if inheritable_handlers or local_handlers:
+        if isinstance(inheritable_handlers, list) or not inheritable_handlers:
+            callback_manager = callback_manager_cls(
+                handlers=inheritable_handlers, inheritable_handlers=inheritable_handlers
+            )
+        else:
+            callback_manager = inheritable_handlers
+        callback_manager = copy.deepcopy(callback_manager)
+        local_handlers_ = (
+            local_handlers
+            if isinstance(local_handlers, list)
+            else (local_handlers.handlers if local_handlers else [])
+        )
+        [callback_manager.add_handler(handler, False) for handler in local_handlers_]
+
+    tracing_enabled = os.environ.get("LANGCHAIN_TRACING") is not None
+    if verbose or tracing_enabled:
+        if not callback_manager:
+            callback_manager = callback_manager_cls([])
+        std_out_handler = StdOutCallbackHandler()
+
+        if verbose and not any(
+            isinstance(handler, StdOutCallbackHandler)
+            for handler in callback_manager.handlers
+        ):
+            callback_manager.add_handler(std_out_handler, False)
+
+        if tracing_enabled and not any(
+            isinstance(handler, LangChainTracer)
+            for handler in callback_manager.handlers
+        ):
+            handler = LangChainTracer()
+            handler.load_default_session()
+            callback_manager.add_handler(handler, True)
+
+    return callback_manager
+
+
 class CallbackManager(BaseCallbackManager):
     """Callback manager that can be used to handle callbacks from langchain."""
 
@@ -479,6 +532,19 @@ class CallbackManager(BaseCallbackManager):
         return CallbackManagerForToolRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
+
+    @classmethod
+    def configure(
+        cls,
+        inheritable_handlers: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        local_handlers: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        verbose: bool = False,
+    ) -> Optional[BaseCallbackManager]:
+        return _configure(cls, inheritable_handlers, local_handlers, verbose)
 
 
 class AsyncCallbackManager(BaseCallbackManager):
@@ -567,3 +633,16 @@ class AsyncCallbackManager(BaseCallbackManager):
         return AsyncCallbackManagerForToolRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
+
+    @classmethod
+    def configure(
+        cls,
+        inheritable_handlers: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        local_handlers: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        verbose: bool = False,
+    ) -> Optional[BaseCallbackManager]:
+        return _configure(cls, inheritable_handlers, local_handlers, verbose)
