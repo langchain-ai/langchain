@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import logging
+import os
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain.callbacks.base import (
+    BaseCallbackHandler,
+    BaseCallbackManager,
+    ChainManagerMixin,
+    LLMManagerMixin,
+    RunManagerMixin,
+    ToolManagerMixin,
+)
+from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 logging.basicConfig(
@@ -71,7 +82,7 @@ async def _ahandle_event(
     )
 
 
-class BaseRunManager(BaseCallbackHandler):
+class BaseRunManager(RunManagerMixin):
     """Base class for run manager (a bound callback manager)."""
 
     def __init__(
@@ -93,7 +104,7 @@ class RunManager(BaseRunManager):
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", "ignore_text", False, text, **kwargs)
+        _handle_event(self.handlers, "on_text", None, False, text, **kwargs)
 
 
 class AsyncRunManager(BaseRunManager):
@@ -101,12 +112,10 @@ class AsyncRunManager(BaseRunManager):
 
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        await _ahandle_event(
-            self.handlers, "on_text", "ignore_text", False, text, **kwargs
-        )
+        await _ahandle_event(self.handlers, "on_text", None, False, text, **kwargs)
 
 
-class CallbackManagerForLLMRun(RunManager):
+class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     """Callback manager for LLM run."""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -150,7 +159,7 @@ class CallbackManagerForLLMRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForLLMRun(AsyncRunManager):
+class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -194,12 +203,12 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager):
         )
 
 
-class CallbackManagerForChainRun(RunManager):
+class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
     def get_child(self) -> CallbackManager:
         """Get a child callback manager."""
-        manager = CallbackManager(self.inheritable_handlers, parent_run_id=self.run_id)
+        manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -256,14 +265,12 @@ class CallbackManagerForChainRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForChainRun(AsyncRunManager):
+class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
-        manager = AsyncCallbackManager(
-            self.inheritable_handlers, parent_run_id=self.run_id
-        )
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -320,12 +327,12 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager):
         )
 
 
-class CallbackManagerForToolRun(RunManager):
+class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
     """Callback manager for tool run."""
 
     def get_child(self) -> CallbackManager:
         """Get a child callback manager."""
-        manager = CallbackManager(self.inheritable_handlers, parent_run_id=self.run_id)
+        manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -334,7 +341,7 @@ class CallbackManagerForToolRun(RunManager):
         _handle_event(
             self.handlers,
             "on_tool_end",
-            "ignore_tool",
+            "ignore_agent",
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -350,7 +357,7 @@ class CallbackManagerForToolRun(RunManager):
         _handle_event(
             self.handlers,
             "on_tool_error",
-            "ignore_tool",
+            "ignore_agent",
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -358,14 +365,12 @@ class CallbackManagerForToolRun(RunManager):
         )
 
 
-class AsyncCallbackManagerForToolRun(AsyncRunManager):
+class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
 
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
-        manager = AsyncCallbackManager(
-            self.inheritable_handlers, parent_run_id=self.run_id
-        )
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -374,7 +379,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager):
         await _ahandle_event(
             self.handlers,
             "on_tool_end",
-            "ignore_tool",
+            "ignore_agent",
             output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -390,7 +395,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager):
         await _ahandle_event(
             self.handlers,
             "on_tool_error",
-            "ignore_tool",
+            "ignore_agent",
             error,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
@@ -480,6 +485,20 @@ class CallbackManager(BaseCallbackManager):
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
 
+    @classmethod
+    def configure(
+        cls,
+        inheritable_callbacks: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        local_callbacks: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        verbose: bool = False,
+    ) -> Optional[BaseCallbackManager]:
+        """Configure the callback manager."""
+        return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
+
 
 class AsyncCallbackManager(BaseCallbackManager):
     """Async callback manager that can be used to handle callbacks from LangChain."""
@@ -567,3 +586,67 @@ class AsyncCallbackManager(BaseCallbackManager):
         return AsyncCallbackManagerForToolRun(
             run_id, self.handlers, self.inheritable_handlers, self.parent_run_id
         )
+
+    @classmethod
+    def configure(
+        cls,
+        inheritable_callbacks: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        local_callbacks: Optional[
+            Union[BaseCallbackManager, List[BaseCallbackHandler]]
+        ] = None,
+        verbose: bool = False,
+    ) -> Optional[BaseCallbackManager]:
+        """Configure the callback manager."""
+        return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
+
+
+T = TypeVar("T", CallbackManager, AsyncCallbackManager)
+
+
+def _configure(
+    callback_manager_cls: Type[T],
+    inheritable_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
+    local_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
+    verbose: bool = False,
+) -> Optional[T]:
+    """Configure the callback manager."""
+    callback_manager: Optional[T] = None
+    if inheritable_callbacks or local_callbacks:
+        if isinstance(inheritable_callbacks, list) or not inheritable_callbacks:
+            callback_manager = callback_manager_cls(
+                handlers=inheritable_callbacks,
+                inheritable_handlers=inheritable_callbacks,
+            )
+        else:
+            callback_manager = inheritable_callbacks
+        callback_manager = copy.deepcopy(callback_manager)
+        local_handlers_ = (
+            local_callbacks
+            if isinstance(local_callbacks, list)
+            else (local_callbacks.handlers if local_callbacks else [])
+        )
+        [callback_manager.add_handler(handler, False) for handler in local_handlers_]
+
+    tracing_enabled = os.environ.get("LANGCHAIN_TRACING") is not None
+    if verbose or tracing_enabled:
+        if not callback_manager:
+            callback_manager = callback_manager_cls([])
+        std_out_handler = StdOutCallbackHandler()
+
+        if verbose and not any(
+            isinstance(handler, StdOutCallbackHandler)
+            for handler in callback_manager.handlers
+        ):
+            callback_manager.add_handler(std_out_handler, False)
+
+        if tracing_enabled and not any(
+            isinstance(handler, LangChainTracer)
+            for handler in callback_manager.handlers
+        ):
+            handler = LangChainTracer()
+            handler.load_default_session()
+            callback_manager.add_handler(handler, True)
+
+    return callback_manager

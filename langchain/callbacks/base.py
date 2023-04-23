@@ -1,11 +1,159 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+import copy
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class BaseCallbackHandler:
+class LLMManagerMixin:
+    """Mixin for LLM callbacks."""
+
+    def on_llm_new_token(
+        self,
+        token: str,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on new LLM token. Only available when streaming is enabled."""
+
+    def on_llm_end(
+        self,
+        response: LLMResult,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when LLM ends running."""
+
+    def on_llm_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when LLM errors."""
+
+
+class ChainManagerMixin:
+    """Mixin for chain callbacks."""
+
+    def on_chain_end(
+        self,
+        outputs: Dict[str, Any],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when chain ends running."""
+
+    def on_chain_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when chain errors."""
+
+    def on_agent_action(
+        self,
+        action: AgentAction,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on agent action."""
+
+    def on_agent_finish(
+        self,
+        finish: AgentFinish,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on agent end."""
+
+
+class ToolManagerMixin:
+    """Mixin for tool callbacks."""
+
+    def on_tool_end(
+        self,
+        output_str: str,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when tool ends running."""
+
+    def on_tool_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when tool errors."""
+
+
+class CallbackManagerMixin:
+    """Mixin for callback manager."""
+
+    def on_llm_start(
+        self,
+        serialized: Dict[str, Any],
+        prompts: List[str],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when LLM starts running."""
+
+    def on_chain_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when chain starts running."""
+
+    def on_tool_start(
+        self,
+        serialized: Dict[str, Any],
+        input_str: str,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run when tool starts running."""
+
+
+class RunManagerMixin:
+    """Mixin for run manager."""
+
+    def on_text(
+        self,
+        text: str,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on arbitrary text."""
+
+
+class BaseCallbackHandler(
+    LLMManagerMixin,
+    ChainManagerMixin,
+    ToolManagerMixin,
+    CallbackManagerMixin,
+    RunManagerMixin,
+):
     """Base callback handler that can be used to handle callbacks from langchain."""
 
     @property
@@ -23,126 +171,6 @@ class BaseCallbackHandler:
         """Whether to ignore agent callbacks."""
         return False
 
-    def on_llm_start(
-        self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when LLM starts running."""
-
-    def on_llm_new_token(
-        self,
-        token: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled."""
-
-    def on_llm_end(
-        self,
-        response: LLMResult,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when LLM ends running."""
-
-    def on_llm_error(
-        self,
-        error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when LLM errors."""
-
-    def on_chain_start(
-        self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when chain starts running."""
-
-    def on_chain_end(
-        self,
-        outputs: Dict[str, Any],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when chain ends running."""
-
-    def on_chain_error(
-        self,
-        error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when chain errors."""
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when tool starts running."""
-
-    def on_tool_end(
-        self,
-        output: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when tool ends running."""
-
-    def on_tool_error(
-        self,
-        error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run when tool errors."""
-
-    def on_text(
-        self,
-        text: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run on arbitrary text."""
-
-    def on_agent_action(
-        self,
-        action: AgentAction,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run on agent action."""
-
-    def on_agent_finish(
-        self,
-        finish: AgentFinish,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
-        **kwargs: Any
-    ) -> Any:
-        """Run on agent end."""
-
 
 class AsyncCallbackHandler(BaseCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
@@ -153,7 +181,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         prompts: List[str],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
 
@@ -162,7 +190,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         token: str,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
 
@@ -171,7 +199,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         response: LLMResult,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when LLM ends running."""
 
@@ -180,7 +208,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: Union[Exception, KeyboardInterrupt],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when LLM errors."""
 
@@ -190,7 +218,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         inputs: Dict[str, Any],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when chain starts running."""
 
@@ -199,7 +227,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         outputs: Dict[str, Any],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when chain ends running."""
 
@@ -208,7 +236,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: Union[Exception, KeyboardInterrupt],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when chain errors."""
 
@@ -218,7 +246,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         input_str: str,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""
 
@@ -227,7 +255,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         output: str,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when tool ends running."""
 
@@ -236,7 +264,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: Union[Exception, KeyboardInterrupt],
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
 
@@ -245,7 +273,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         text: str,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run on arbitrary text."""
 
@@ -254,7 +282,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         action: AgentAction,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run on agent action."""
 
@@ -263,12 +291,12 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         finish: AgentFinish,
         run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Run on agent end."""
 
 
-class BaseCallbackManager(BaseCallbackHandler):
+class BaseCallbackManager(CallbackManagerMixin):
     """Base callback manager that can be used to handle callbacks from LangChain."""
 
     def __init__(
@@ -289,18 +317,36 @@ class BaseCallbackManager(BaseCallbackHandler):
         """Whether the callback manager is async."""
         return False
 
-    def add_handler(self, handler: BaseCallbackHandler) -> None:
+    def add_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
         """Add a handler to the callback manager."""
         self.handlers.append(handler)
+        if inherit:
+            self.inheritable_handlers.append(handler)
 
     def remove_handler(self, handler: BaseCallbackHandler) -> None:
         """Remove a handler from the callback manager."""
         self.handlers.remove(handler)
+        self.inheritable_handlers.remove(handler)
 
-    def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
+    def set_handlers(self, handlers: List[BaseCallbackHandler], inherit=True) -> None:
         """Set handlers as the only handlers on the callback manager."""
-        self.handlers = handlers
+        self.handlers = []
+        self.inheritable_handlers = []
+        for handler in handlers:
+            self.add_handler(handler, inherit=inherit)
 
-    def set_handler(self, handler: BaseCallbackHandler) -> None:
+    def set_handler(self, handler: BaseCallbackHandler, inherit=True) -> None:
         """Set handler as the only handler on the callback manager."""
-        self.set_handlers([handler])
+        self.set_handlers([handler], inherit=inherit)
+
+    def __copy__(self):
+        return self.__class__(
+            self.handlers.copy(), self.inheritable_handlers.copy(), self.parent_run_id
+        )
+
+    def __deepcopy__(self, memo):
+        return self.__class__(
+            [copy.deepcopy(handler, memo) for handler in self.handlers],
+            [copy.deepcopy(handler, memo) for handler in self.inheritable_handlers],
+            self.parent_run_id,
+        )
