@@ -14,9 +14,9 @@ from langchain.schema import BaseMemory
 
 
 def _get_verbosity() -> bool:
-    if hasattr(langchain, 'verbose'):
+    try:
         return langchain.verbose
-    else:
+    except AttributeError:
         return None
 
 
