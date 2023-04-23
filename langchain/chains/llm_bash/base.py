@@ -61,7 +61,7 @@ class LLMBashChain(Chain):
         t = t.strip()
         if "```bash" in t:
             # Split the string into a list of substrings
-            command_list = self.get_code(t)
+            command_list = self.get_code_lines(t)
             command_list = [s for s in command_list if s]
 
             if self.verbose:
@@ -78,7 +78,7 @@ class LLMBashChain(Chain):
         return {self.output_key: output}
 
     def get_code_and_remainder(self, t: str) -> str:
-        """Get a python code block from the LLM result.
+        """Get a code block from the LLM result.
 
         :meta private:
         """
@@ -91,7 +91,7 @@ class LLMBashChain(Chain):
             return split[0], "```".join(split[1:]) + "```bash" + "```bash".join(splits[2:])
 
     def get_code_blocks(self, t: str) -> List[str]:
-        """Get multiple python code blocks from the LLM result.
+        """Get multiple code blocks from the LLM result.
 
         :meta private:
         """
@@ -101,8 +101,8 @@ class LLMBashChain(Chain):
             code_blocks.append(code)
         return code_blocks
 
-    def get_code(self, t: str) -> str:
-        """Get a python code block from the LLM result.
+    def get_code_lines(self, t: str) -> str:
+        """Get a code block from the LLM result.
 
         :meta private:
         """
