@@ -240,7 +240,7 @@ _EXTRA_OPTIONAL_TOOLS = {
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
-    "wikipedia": (_get_wikipedia, ["top_k_results"]),
+    "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
 }
 
