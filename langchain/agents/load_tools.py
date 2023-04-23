@@ -14,6 +14,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -31,6 +32,7 @@ from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
+from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
@@ -214,6 +216,8 @@ def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
 def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
+def _get_ddg_search(**kwargs: Any) -> BaseTool:
+    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
@@ -237,6 +241,7 @@ _EXTRA_OPTIONAL_TOOLS = {
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
+    "ddg-search": (_get_ddg_search, []),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
