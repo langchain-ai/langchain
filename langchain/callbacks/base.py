@@ -314,19 +314,6 @@ class BaseCallbackManager(BaseCallbackHandler):
         """Set handler as the only handler on the callback manager."""
         self.set_handlers([handler], inherit=inherit)
 
-    @classmethod
-    def configure(
-        cls,
-        inheritable_handlers: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
-        local_handlers: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
-        verbose: bool = False,
-    ) -> Optional[BaseCallbackManager]:
-        """Configure the callback manager."""
-
     def __copy__(self):
         return self.__class__(
             self.handlers.copy(), self.inheritable_handlers.copy(), self.parent_run_id
