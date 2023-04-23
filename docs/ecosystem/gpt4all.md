@@ -28,13 +28,15 @@ To stream the model's predictions, add in a CallbackManager.
 
 ```python
 from langchain.llms import GPT4All
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 # There are many CallbackHandlers supported, such as
 # from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8, callback_handler=callback_handler, verbose=True)
+model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8, callback_handler=callback_handler,
+                verbose=True)
 
 # Generate text. Tokens are streamed through the callback manager.
 model("Once upon a time, ")
