@@ -87,15 +87,16 @@ class SQLDatabaseChain(Chain):
     def normalize_sql_cmd(sql_cmd: str) -> str:
         """Normalize the SQL command.
 
-        This is done by removing whitespaces and quotation marks.
+        This is done by removing whitespaces and quotation marks from the beginning and end of the SQL command.
         """
-        sql_cmd = sql_cmd.strip()
-        if (
-            (sql_cmd.startswith('"') and sql_cmd.endswith('"'))
-            or (sql_cmd.startswith("'") and sql_cmd.endswith("'"))
-            and (len(sql_cmd) > 2)
-        ):
-            sql_cmd = sql_cmd[1:-1]
+        if sql_cmd is not None:
+            sql_cmd = sql_cmd.strip()
+            if (
+                (sql_cmd.startswith('"') and sql_cmd.endswith('"'))
+                or (sql_cmd.startswith("'") and sql_cmd.endswith("'"))
+            ) and (len(sql_cmd) >= 2):
+                sql_cmd = sql_cmd[1:-1]  # remove first and last char
+                sql_cmd = sql_cmd.strip()  # strip again
         return sql_cmd
 
     def _call(
