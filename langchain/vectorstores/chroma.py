@@ -9,6 +9,7 @@ import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
+from langchain.utils import xor_args
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.utils import maximal_marginal_relevance
 
@@ -96,6 +97,32 @@ class Chroma(VectorStore):
             metadata=collection_metadata,
         )
 
+    @xor_args(("query_texts", "query"))
+    def __query_collection(
+        self,
+        query_texts: Optional[List[str]] = None,
+        query_embeddings: Optional[List[List[float]]] = None,
+        n_results: int = 4,
+        where: Optional[Dict[str, str]] = None,
+    ) -> List[Document]:
+        """Query the chroma collection."""
+        for i in range(n_results, 0, -1):
+            try:
+                return self._collection.query(
+                    query_texts=query_texts,
+                    query_embeddings=query_embeddings,
+                    n_results=n_results,
+                    where=where,
+                )
+            except chromadb.errors.NotEnoughElementsException:
+                logger.error(
+                    f"Chroma collection {self._collection.name} "
+                    f"contains fewer than {i} elements."
+                )
+        raise chromadb.errors.NotEnoughElementsException(
+            f"No documents found for Chroma collection {self._collection.name}"
+        )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -158,7 +185,7 @@ class Chroma(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        results = self._collection.query(
+        results = self.__query_collection(
             query_embeddings=embedding, n_results=k, where=filter
         )
         return _results_to_docs(results)
@@ -182,12 +209,12 @@ class Chroma(VectorStore):
                 text with distance in float.
         """
         if self._embedding_function is None:
-            results = self._collection.query(
+            results = self.__query_collection(
                 query_texts=[query], n_results=k, where=filter
             )
         else:
             query_embedding = self._embedding_function.embed_query(query)
-            results = self._collection.query(
+            results = self.__query_collection(
                 query_embeddings=[query_embedding], n_results=k, where=filter
             )
 
@@ -213,7 +240,7 @@ class Chroma(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
 
-        results = self._collection.query(
+        results = self.__query_collection(
             query_embeddings=embedding,
             n_results=fetch_k,
             where=filter,
