@@ -171,4 +171,3 @@ def test_delete_by_path(deeplake_datastore: DeepLake) -> None:
     path = deeplake_datastore.dataset_path
     DeepLake.force_delete_by_path(path)
     assert not deeplake.exists(path)
-    
