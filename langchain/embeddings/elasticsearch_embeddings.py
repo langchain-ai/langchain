@@ -13,17 +13,20 @@ class ElasticsearchEmbeddings:
     and the model_id of the model deployed in the cluster.
     """
 
-    def __init__(self, es_connection: Elasticsearch, model_id: str):
+    def __init__(self, es_connection: Elasticsearch, model_id: str, input_field: str = 'text_field'):
         """
         Initialize the ElasticsearchEmbeddings instance.
 
         Args:
             es_connection (Elasticsearch): An Elasticsearch connection object.
             model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
+            input_field (str): The name of the key for the input text field in the document.
+                Defaults to 'text_field'.
         """
         self.es_connection = es_connection
         self.ml_client = MlClient(es_connection)
         self.model_id = model_id
+        self.input_field = input_field
 
     def _embedding_func(self, texts: List[str]) -> List[List[float]]:
         """
@@ -36,10 +39,9 @@ class ElasticsearchEmbeddings:
             List[List[float]]: A list of embeddings, one for each text in the input list.
         """
         response = self.ml_client.infer_trained_model(
-            model_id=self.model_id, docs=[{"text_field": text} for text in texts]
+            model_id=self.model_id, docs=[{self.input_field: text} for text in texts]
         )
 
-        # {inference_results': [{'predicted_value': [....]},
         embeddings = [doc["predicted_value"] for doc in response["inference_results"]]
         return embeddings
 
