@@ -2,5 +2,4 @@
 
 from langchain.callbacks.tracers.langchain import LangChainTracer
 
-
 __all__ = ["LangChainTracer"]

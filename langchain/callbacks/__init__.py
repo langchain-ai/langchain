@@ -8,9 +8,9 @@ from langchain.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
 )
-from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.clearml_callback import ClearMLCallbackHandler
 from langchain.callbacks.comet_ml_callback import CometCallbackHandler
+from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler

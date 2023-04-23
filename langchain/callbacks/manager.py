@@ -8,8 +8,14 @@ import os
 import uuid
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager, RunManagerMixin, LLMManagerMixin, \
-    ChainManagerMixin, ToolManagerMixin
+from langchain.callbacks.base import (
+    BaseCallbackHandler,
+    BaseCallbackManager,
+    ChainManagerMixin,
+    LLMManagerMixin,
+    RunManagerMixin,
+    ToolManagerMixin,
+)
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -106,9 +112,7 @@ class AsyncRunManager(BaseRunManager):
 
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        await _ahandle_event(
-            self.handlers, "on_text", None, False, text, **kwargs
-        )
+        await _ahandle_event(self.handlers, "on_text", None, False, text, **kwargs)
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
@@ -266,9 +270,7 @@ class AsyncCallbackManagerForChainRun(AsyncRunManager, ChainManagerMixin):
 
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
-        manager = AsyncCallbackManager(
-            [], parent_run_id=self.run_id
-        )
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
@@ -368,9 +370,7 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
 
     def get_child(self) -> AsyncCallbackManager:
         """Get a child callback manager."""
-        manager = AsyncCallbackManager(
-            [], parent_run_id=self.run_id
-        )
+        manager = AsyncCallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
         return manager
 

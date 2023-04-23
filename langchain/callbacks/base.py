@@ -9,6 +9,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 class LLMManagerMixin:
     """Mixin for LLM callbacks."""
+
     def on_llm_new_token(
         self,
         token: str,
@@ -39,6 +40,7 @@ class LLMManagerMixin:
 
 class ChainManagerMixin:
     """Mixin for chain callbacks."""
+
     def on_chain_end(
         self,
         outputs: Dict[str, Any],
@@ -78,6 +80,7 @@ class ChainManagerMixin:
 
 class ToolManagerMixin:
     """Mixin for tool callbacks."""
+
     def on_tool_end(
         self,
         output_str: str,
@@ -99,6 +102,7 @@ class ToolManagerMixin:
 
 class CallbackManagerMixin:
     """Mixin for callback manager."""
+
     def on_llm_start(
         self,
         serialized: Dict[str, Any],
@@ -132,6 +136,7 @@ class CallbackManagerMixin:
 
 class RunManagerMixin:
     """Mixin for run manager."""
+
     def on_text(
         self,
         text: str,
@@ -142,7 +147,13 @@ class RunManagerMixin:
         """Run on arbitrary text."""
 
 
-class BaseCallbackHandler(LLMManagerMixin, ChainManagerMixin, ToolManagerMixin, CallbackManagerMixin, RunManagerMixin):
+class BaseCallbackHandler(
+    LLMManagerMixin,
+    ChainManagerMixin,
+    ToolManagerMixin,
+    CallbackManagerMixin,
+    RunManagerMixin,
+):
     """Base callback handler that can be used to handle callbacks from langchain."""
 
     @property

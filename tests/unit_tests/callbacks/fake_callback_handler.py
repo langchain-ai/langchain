@@ -82,6 +82,7 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
 
 class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake callback handler for testing."""
+
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""

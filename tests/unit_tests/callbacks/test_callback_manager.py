@@ -1,6 +1,6 @@
 """Test CallbackManager."""
-from typing import Tuple
 import copy
+from typing import Tuple
 
 import pytest
 
