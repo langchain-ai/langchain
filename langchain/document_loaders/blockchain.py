@@ -10,6 +10,20 @@ from langchain.document_loaders.base import BaseLoader
 ALCHEMY_API_KEY = os.environ.get("ALCHEMY_API_KEY", "docs-demo")
 
 class BlockchainDocumentLoader(BaseLoader):
+    """Loads elements from a blockchain smart contract into Langchain documents.
+
+    For now, the only supported blockchain is Ethereum Mainnet.
+    Currently Loader returns all NFTs from a given contract address.
+    
+    The Loader uses the Alchemy API to interact with the blockchain.
+    
+    ALCHEMY_API_KEY environment variable must be set to use this loader.
+    
+    Future versions of this loader can:
+        - Support other blockchains (Ethereum testnets, Polygon, etc.)
+        - Support additional Alchemy APIs (e.g. getTransactions, etc.)
+    """
+    
     def __init__(self, contract_address: str, api_key: str = ALCHEMY_API_KEY):
         self.contract_address = contract_address
         self.api_key = api_key
@@ -25,14 +39,14 @@ class BlockchainDocumentLoader(BaseLoader):
             if response.status_code != 200:
                 raise ValueError(f"Request failed with status code {response.status_code}")
 
-            nfts = response.json()["nfts"]
+            items = response.json()["nfts"]
                       
             result = []
       
-            for nft in nfts:
-                nftContent = str(nft)
-                tokenId = nft["id"]["tokenId"]
+            for item in items:
+                content = str(item)
+                tokenId = item["id"]["tokenId"]
                 metadata = {"tokenId": tokenId}
-                result.append(Document(page_content=nftContent, metadata=metadata))
+                result.append(Document(page_content=content, metadata=metadata))
             return result
     
