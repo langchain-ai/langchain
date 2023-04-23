@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import logging
 import os
-from abc import ABC
 from typing import Any, Dict, Optional, Union
 
 import requests
 
-from langchain.callbacks.tracers.base import BaseTracer, Tracer
+from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
@@ -18,7 +17,7 @@ from langchain.callbacks.tracers.schemas import (
 )
 
 
-class BaseLangChainTracer(BaseTracer, ABC):
+class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     always_verbose: bool = True
@@ -67,14 +66,14 @@ class BaseLangChainTracer(BaseTracer, ABC):
                 headers=self._headers,
             )
             tracer_session = TracerSession(**r.json()[0])
-            self._session = tracer_session
+            self.session = tracer_session
             return tracer_session
         except Exception as e:
             logging.warning(
                 f"Failed to load session {session_name}, using empty session: {e}"
             )
             tracer_session = TracerSession(id=1)
-            self._session = tracer_session
+            self.session = tracer_session
             return tracer_session
 
     def load_default_session(self) -> TracerSession:
@@ -86,31 +85,24 @@ class BaseLangChainTracer(BaseTracer, ABC):
             )
             # Use the first session result
             tracer_session = TracerSession(**r.json()[0])
-            self._session = tracer_session
+            self.session = tracer_session
             return tracer_session
         except Exception as e:
             logging.warning(f"Failed to default session, using empty session: {e}")
             tracer_session = TracerSession(id=1)
-            self._session = tracer_session
+            self.session = tracer_session
             return tracer_session
 
-    def _add_child_run(
-        self,
-        parent_run: Union[ChainRun, ToolRun],
-        child_run: Union[LLMRun, ChainRun, ToolRun],
-    ) -> None:
-        """Add child run to a chain run or tool run."""
-        if isinstance(child_run, LLMRun):
-            parent_run.child_llm_runs.append(child_run)
-        elif isinstance(child_run, ChainRun):
-            parent_run.child_chain_runs.append(child_run)
+    def __deepcopy__(self, memo):
+        """Deepcopy the tracer."""
+
+        # TODO: this is a hack to get tracing to work with the current backend
+        # we need to not use execution order, then remove this check
+        if self.execution_order == 1:
+            copy = LangChainTracer()
+            copy.session = self.session
+            copy.run_map = dict(self.run_map)
+            copy.execution_order = self.execution_order
+            return copy
         else:
-            parent_run.child_tool_runs.append(child_run)
-
-    def _generate_id(self) -> Optional[Union[int, str]]:
-        """Generate an id for a run."""
-        return None
-
-
-class LangChainTracer(Tracer, BaseLangChainTracer):
-    """Tracer that records LangChain execution to LangChain endpoint."""
+            return self

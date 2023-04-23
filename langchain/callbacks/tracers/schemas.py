@@ -32,7 +32,8 @@ class TracerSession(TracerSessionBase):
 class BaseRun(BaseModel):
     """Base class for Run."""
 
-    id: Optional[Union[int, str]] = None
+    uuid: str
+    parent_uuid: Optional[str] = None
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     extra: Optional[Dict[str, Any]] = None
