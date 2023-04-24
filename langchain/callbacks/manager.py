@@ -26,6 +26,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+
 
 def _handle_event(
     handlers: List[BaseCallbackHandler],
@@ -610,7 +612,7 @@ def _configure(
     inheritable_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
     local_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
     verbose: bool = False,
-) -> Optional[T]:
+) -> T:
     """Configure the callback manager."""
     callback_manager: Optional[T] = None
     if inheritable_callbacks or local_callbacks:
@@ -629,11 +631,10 @@ def _configure(
         )
         [callback_manager.add_handler(handler, False) for handler in local_handlers_]
 
+    if not callback_manager:
+        callback_manager = callback_manager_cls([])
     tracing_enabled = os.environ.get("LANGCHAIN_TRACING") is not None
     if verbose or tracing_enabled:
-        if not callback_manager:
-            callback_manager = callback_manager_cls([])
-
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
