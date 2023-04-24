@@ -27,6 +27,7 @@ class DuckDuckGoSearchRun(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("DuckDuckGoSearch does not support async")
 
+
 class DuckDuckGoSearchResults(BaseTool):
     """Tool that has capability to query the Google Search API and get back json."""
 

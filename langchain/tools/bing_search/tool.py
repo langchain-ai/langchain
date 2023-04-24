@@ -23,6 +23,7 @@ class BingSearchRun(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("BingSearchRun does not support async")
 
+
 class BingSearchResults(BaseTool):
     """Tool that has capability to query the Bing Search API and get back json."""
 
