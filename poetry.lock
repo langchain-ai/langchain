@@ -3605,6 +3605,23 @@ files = [
 ]
 
 [[package]]
+name = "marqo"
+version = "0.9.1"
+description = "Tensor search for humans"
+category = "main"
+optional = true
+python-versions = ">=3"
+files = [
+    {file = "marqo-0.9.1-py3-none-any.whl", hash = "sha256:5e84c68d20b65723daaada65f9a4780d4ce20f3c679522258f826fde12333bbf"},
+    {file = "marqo-0.9.1.tar.gz", hash = "sha256:11af3ef7b4612aca3f4e65ba8379a8685f852d6960ff2eefe6788a0734d00975"},
+]
+
+[package.dependencies]
+pydantic = "*"
+requests = "*"
+urllib3 = "*"
+
+[[package]]
 name = "marshmallow"
 version = "3.19.0"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
@@ -9118,9 +9135,9 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm"]
+all = ["aleph-alpha-client", "anthropic", "beautifulsoup4", "cohere", "deeplake", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "huggingface_hub", "jina", "jinja2", "manifest-ml", "marqo", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 cohere = ["cohere"]
-llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
+llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
 openai = ["openai"]
 qdrant = ["qdrant-client"]
 
