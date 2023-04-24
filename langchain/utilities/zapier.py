@@ -210,6 +210,7 @@ class ZapierNLAWrapper(BaseModel):
         return response.json()["input_params"]
 
     def run_as_str(self, *args, **kwargs) -> str:   # type: ignore[no-untyped-def]
+    def run_as_str(self, *args, **kwargs) -> str:   # type: ignore[no-untyped-def]
         """Same as run, but returns a stringified version of the JSON for
         insertting back into an LLM."""
         data = self.run(*args, **kwargs)
@@ -233,3 +234,4 @@ class ZapierNLAWrapper(BaseModel):
         insertting back into an LLM."""
         actions = self.list()
         return json.dumps(actions)
+
