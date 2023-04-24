@@ -1,8 +1,11 @@
 """Chain that does self ask with search."""
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence, Union
 
-from langchain.agents.agent import Agent, AgentExecutor
+from pydantic import Field
+
+from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
+from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputParser
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
@@ -14,6 +17,12 @@ from langchain.utilities.serpapi import SerpAPIWrapper
 
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
+
+    output_parser: AgentOutputParser = Field(default_factory=SelfAskOutputParser)
+
+    @classmethod
+    def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
+        return SelfAskOutputParser()
 
     @property
     def _agent_type(self) -> str:
@@ -35,26 +44,6 @@ class SelfAskWithSearchAgent(Agent):
                 f"Tool name should be Intermediate Answer, got {tool_names}"
             )
 
-    def _extract_tool_and_input(self, text: str) -> Optional[Tuple[str, str]]:
-        followup = "Follow up:"
-        last_line = text.split("\n")[-1]
-
-        if followup not in last_line:
-            finish_string = "So the final answer is: "
-            if finish_string not in last_line:
-                return None
-            return "Final Answer", last_line[len(finish_string) :]
-
-        after_colon = text.split(":")[-1]
-
-        if " " == after_colon[0]:
-            after_colon = after_colon[1:]
-
-        return "Intermediate Answer", after_colon
-
-    def _fix_text(self, text: str) -> str:
-        return f"{text}\nSo the final answer is:"
-
     @property
     def observation_prefix(self) -> str:
         """Prefix to append the observation with."""
@@ -64,11 +53,6 @@ class SelfAskWithSearchAgent(Agent):
     def llm_prefix(self) -> str:
         """Prefix to append the LLM call with."""
         return ""
-
-    @property
-    def starter_string(self) -> str:
-        """Put this string after user input but before first LLM call."""
-        return "Are follow up questions needed here:"
 
 
 class SelfAskWithSearchChain(AgentExecutor):

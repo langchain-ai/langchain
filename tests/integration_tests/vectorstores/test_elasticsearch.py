@@ -21,6 +21,11 @@ docker-compose -f elasticsearch.yml up
 
 
 class TestElasticsearch:
+    @classmethod
+    def setup_class(cls) -> None:
+        if not os.getenv("OPENAI_API_KEY"):
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+
     @pytest.fixture(scope="class", autouse=True)
     def elasticsearch_url(self) -> Union[str, Generator[str, None, None]]:
         """Return the elasticsearch url."""
@@ -33,15 +38,6 @@ class TestElasticsearch:
         for index_name in index_names:
             # print(index_name)
             es.indices.delete(index=index_name)
-
-    @pytest.fixture(scope="class", autouse=True)
-    def openai_api_key(self) -> Union[str, Generator[str, None, None]]:
-        """Return the OpenAI API key."""
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-        yield openai_api_key
 
     def test_similarity_search_without_metadata(self, elasticsearch_url: str) -> None:
         """Test end to end construction and search without metadata."""
@@ -67,15 +63,17 @@ class TestElasticsearch:
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_default_index_from_documents(
-        self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
+        self,
+        documents: List[Document],
+        embedding_openai: OpenAIEmbeddings,
+        elasticsearch_url: str,
     ) -> None:
         """This test checks the construction of a default
         ElasticSearch index using the 'from_documents'."""
-        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
         elastic_vector_search = ElasticVectorSearch.from_documents(
             documents=documents,
-            embedding=embedding,
+            embedding=embedding_openai,
             elasticsearch_url=elasticsearch_url,
         )
 
@@ -86,16 +84,18 @@ class TestElasticsearch:
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_from_documents(
-        self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
+        self,
+        documents: List[Document],
+        embedding_openai: OpenAIEmbeddings,
+        elasticsearch_url: str,
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'from_documents'."""
 
         index_name = f"custom_index_{uuid.uuid4().hex}"
-        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         elastic_vector_search = ElasticVectorSearch.from_documents(
             documents=documents,
-            embedding=embedding,
+            embedding=embedding_openai,
             elasticsearch_url=elasticsearch_url,
             index_name=index_name,
         )
@@ -110,15 +110,17 @@ class TestElasticsearch:
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_custom_index_add_documents(
-        self, documents: List[Document], openai_api_key: str, elasticsearch_url: str
+        self,
+        documents: List[Document],
+        embedding_openai: OpenAIEmbeddings,
+        elasticsearch_url: str,
     ) -> None:
         """This test checks the construction of a custom
         ElasticSearch index using the 'add_documents'."""
 
         index_name = f"custom_index_{uuid.uuid4().hex}"
-        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key)
         elastic_vector_search = ElasticVectorSearch(
-            embedding=embedding,
+            embedding=embedding_openai,
             elasticsearch_url=elasticsearch_url,
             index_name=index_name,
         )

@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from string import Formatter
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Set, Union
 
+from jinja2 import Environment, meta
 from pydantic import Extra, root_validator
 
 from langchain.prompts.base import (
@@ -12,6 +13,13 @@ from langchain.prompts.base import (
     StringPromptTemplate,
     check_valid_template,
 )
+
+
+def _get_jinja2_variables_from_template(template: str) -> Set[str]:
+    env = Environment()
+    ast = env.parse(template)
+    variables = meta.find_undeclared_variables(ast)
+    return variables
 
 
 class PromptTemplate(StringPromptTemplate):
@@ -125,9 +133,15 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> PromptTemplate:
         """Load a prompt template from a template."""
-        input_variables = {
-            v for _, v, _, _ in Formatter().parse(template) if v is not None
-        }
+        if "template_format" in kwargs and kwargs["template_format"] == "jinja2":
+            # Get the variables for the template
+            input_variables = _get_jinja2_variables_from_template(template)
+
+        else:
+            input_variables = {
+                v for _, v, _, _ in Formatter().parse(template) if v is not None
+            }
+
         return cls(
             input_variables=list(sorted(input_variables)), template=template, **kwargs
         )

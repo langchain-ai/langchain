@@ -1,9 +1,30 @@
 import os
+from pathlib import Path
 
 import pytest
 
 # Getting the absolute path of the current file's directory
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Getting the absolute path of the project's root directory
+PROJECT_DIR = os.path.abspath(os.path.join(ABS_PATH, os.pardir, os.pardir))
+
+
+# Loading the .env file if it exists
+def _load_env() -> None:
+    dotenv_path = os.path.join(PROJECT_DIR, "tests", "integration_tests", ".env")
+    if os.path.exists(dotenv_path):
+        from dotenv import load_dotenv
+
+        load_dotenv(dotenv_path)
+
+
+_load_env()
+
+
+@pytest.fixture(scope="module")
+def test_dir() -> Path:
+    return Path(os.path.join(PROJECT_DIR, "tests", "integration_tests"))
 
 
 # This fixture returns a string containing the path to the cassette directory for the
@@ -15,18 +36,3 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
         "cassettes",
         os.path.basename(request.module.__file__).replace(".py", ""),
     )
-
-
-# This fixture returns a dictionary containing filter_headers options
-# for replacing certain headers with dummy values during cassette playback
-# Specifically, it replaces the authorization header with a dummy value to
-# prevent sensitive data from being recorded in the cassette.
-@pytest.fixture(scope="module")
-def vcr_config() -> dict:
-    return {
-        "filter_headers": [
-            ("authorization", "authorization-DUMMY"),
-            ("X-OpenAI-Client-User-Agent", "X-OpenAI-Client-User-Agent-DUMMY"),
-            ("User-Agent", "User-Agent-DUMMY"),
-        ],
-    }
