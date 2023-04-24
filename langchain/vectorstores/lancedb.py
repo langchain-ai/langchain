@@ -17,14 +17,17 @@ class LanceDB(VectorStore):
     Example:
         .. code-block:: python
 
-            # TODO: add example here
+            db = lancedb.connect('./lancedb')
+            table = db.open_table('my_table')
+            vectorstore = LanceDB(table, embedding_function)
+            vectorstore.add_texts(['text1', 'text2'])
+            result = vectorstore.similarity_search('text1')
     """
 
     def __init__(
         self,
         connection: Any,
         embedding_function: Callable,
-        table: str,
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
