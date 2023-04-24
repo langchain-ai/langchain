@@ -33,13 +33,13 @@ class PowerBIDataset(BaseModel):
     If the model is not RLS enabled, this will be ignored.
     """
 
-    group_id: Optional[str]
     dataset_id: str
     table_names: List[str]
+    group_id: Optional[str] = None
     credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
-    sample_rows_in_table_info: int = Field(1, gt=0, le=10)
+    sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
     aiosession: Optional[aiohttp.ClientSession] = None
     schemas: Dict[str, str] = Field(default_factory=dict, init=False)
 
