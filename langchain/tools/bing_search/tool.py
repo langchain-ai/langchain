@@ -22,3 +22,23 @@ class BingSearchRun(BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("BingSearchRun does not support async")
+
+class BingSearchResults(BaseTool):
+    """Tool that has capability to query the Bing Search API and get back json."""
+
+    name = "DuckDuckGo Results JSON"
+    description = (
+        "A wrapper around Duck Duck Go Search. "
+        "Useful for when you need to answer questions about current events. "
+        "Input should be a search query. Output is a JSON array of the query results"
+    )
+    num_results: int = 4
+    api_wrapper: BingSearchAPIWrapper
+
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return str(self.api_wrapper.results(query, self.num_results))
+
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("BingSearchResults does not support async")
