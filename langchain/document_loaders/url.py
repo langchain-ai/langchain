@@ -2,19 +2,19 @@
 import logging
 from typing import Any, List
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain.document_loaders.unstructured import UnstructuredBaseLoader
 
 logger = logging.getLogger(__name__)
 
 
-class UnstructuredURLLoader(BaseLoader):
+class UnstructuredURLLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load HTML files."""
 
     def __init__(
         self,
         urls: List[str],
         continue_on_failure: bool = True,
+        mode: str = "single",
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -28,6 +28,13 @@ class UnstructuredURLLoader(BaseLoader):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
+
+        _valid_modes = {"single", "elements"}
+        if mode not in _valid_modes:
+            raise ValueError(
+                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
+            )
+        self.mode = mode
 
         headers = unstructured_kwargs.pop("headers", {})
         if len(headers.keys()) != 0:
@@ -66,12 +73,14 @@ class UnstructuredURLLoader(BaseLoader):
 
         return unstructured_version >= (0, 5, 12)
 
-    def load(self) -> List[Document]:
-        """Load file."""
+    def _get_metadata(self) -> dict:
+        return {}
+
+    def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
         from unstructured.partition.html import partition_html
 
-        docs: List[Document] = list()
+        all_elements = list()
         for url in self.urls:
             try:
                 if self.__is_non_html_available():
@@ -88,13 +97,12 @@ class UnstructuredURLLoader(BaseLoader):
                         )
                     else:
                         elements = partition_html(url=url, **self.unstructured_kwargs)
+                all_elements.extend(elements)
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
                     continue
                 else:
                     raise e
-            text = "\n\n".join([str(el) for el in elements])
-            metadata = {"source": url}
-            docs.append(Document(page_content=text, metadata=metadata))
-        return docs
+
+        return all_elements
