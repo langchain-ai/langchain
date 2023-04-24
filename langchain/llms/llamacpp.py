@@ -88,7 +88,7 @@ class LlamaCpp(LLM):
     """The number of tokens to look back when applying the repeat_penalty."""
 
     streaming: bool = True
-    """Whether to stream the results, token by token when calling the model to generate output."""
+    """Whether to stream the results, token by token."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -142,7 +142,7 @@ class LlamaCpp(LLM):
             "top_p": self.top_p,
             "logprobs": self.logprobs,
             "echo": self.echo,
-            "stop_sequences": self.stop,  # Note, key here is convention used among LLM classes
+            "stop_sequences": self.stop,  # key here is convention among LLM classes
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
         }
@@ -242,7 +242,8 @@ class LlamaCpp(LLM):
                     model_path="/path/to/local/model.bin",
                     temperature = 0.5
                 )
-                for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'", stop=["'","\n"]):
+                for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
+                        stop=["'","\n"]):
                     result = chunk["choices"][0]
                     print(result["text"], end='', flush=True)
 
