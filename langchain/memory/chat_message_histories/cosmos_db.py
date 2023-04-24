@@ -1,11 +1,12 @@
 """Azure CosmosDB Memory History."""
 import logging
 from types import TracebackType
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
-from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
-from azure.cosmos.exceptions import CosmosHttpResponseError
-from azure.identity import DefaultAzureCredential
+if TYPE_CHECKING:
+    from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
+    from azure.cosmos.exceptions import CosmosHttpResponseError
+    from azure.identity import DefaultAzureCredential
 
 from langchain.schema import (
     AIMessage,
