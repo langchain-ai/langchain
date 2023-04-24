@@ -29,7 +29,7 @@ class DuckDuckGoSearchRun(BaseTool):
 
 
 class DuckDuckGoSearchResults(BaseTool):
-    """Tool that has capability to query the Google Search API and get back json."""
+    """Tool that has capability to query the Duck Duck Go Search API and get back json."""
 
     name = "DuckDuckGo Results JSON"
     description = (
@@ -48,4 +48,4 @@ class DuckDuckGoSearchResults(BaseTool):
 
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("BingSearchResults does not support async")
+        raise NotImplementedError("DuckDuckGoSearchResults does not support async")

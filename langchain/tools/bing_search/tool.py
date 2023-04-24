@@ -27,9 +27,9 @@ class BingSearchRun(BaseTool):
 class BingSearchResults(BaseTool):
     """Tool that has capability to query the Bing Search API and get back json."""
 
-    name = "DuckDuckGo Results JSON"
+    name = "Bing Search Results JSON"
     description = (
-        "A wrapper around Duck Duck Go Search. "
+        "A wrapper around Bing Search. "
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query. Output is a JSON array of the query results"
     )
