@@ -6,6 +6,17 @@ import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Optional, Type
 
+try:
+    from azure.cosmos import PartitionKey
+    from azure.cosmos.aio import ContainerProxy, CosmosClient
+    from azure.cosmos.exceptions import CosmosHttpResponseError
+    from azure.identity import DefaultAzureCredential
+except ImportError as exc:
+    if not TYPE_CHECKING:
+        raise ImportError(
+            "You must install the azure-cosmos and azure-identity package to use the CosmosDBChatMessageHistory."  # noqa: E501
+        ) from exc
+
 from langchain.schema import (
     AIMessage,
     BaseChatMessageHistory,
