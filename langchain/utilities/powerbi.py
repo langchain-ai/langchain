@@ -62,7 +62,7 @@ class PowerBIDataset(BaseModel):
     def headers(self) -> Dict[str, str]:
         """Get the token."""
         try:
-            from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
+            from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel # noqa: E501
                 ClientAuthenticationError,
             )
             from azure.identity import (  # pylint: disable=import-outside-toplevel
