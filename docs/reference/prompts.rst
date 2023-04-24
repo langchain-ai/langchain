@@ -7,5 +7,6 @@ The reference guides here all relate to objects for working with Prompts.
    :maxdepth: 1
    :glob:
 
-   modules/prompt
+   modules/prompts
    modules/example_selector
+   modules/output_parsers

@@ -168,6 +168,21 @@ def _approximate_search_query_with_boolean_filter(
     }
 
 
+def _approximate_search_query_with_lucene_filter(
+    query_vector: List[float],
+    lucene_filter: Dict,
+    size: int = 4,
+    k: int = 4,
+    vector_field: str = "vector_field",
+) -> Dict:
+    """For Approximate k-NN Search, with Lucene Filter."""
+    search_query = _default_approximate_search_query(
+        query_vector, size, k, vector_field
+    )
+    search_query["query"]["knn"][vector_field]["filter"] = lucene_filter
+    return search_query
+
+
 def _default_script_query(
     query_vector: List[float],
     space_type: str = "l2",
@@ -340,9 +355,13 @@ class OpenSearchVectorSearch(VectorStore):
             size: number of results the query actually returns; default: 4
 
             boolean_filter: A Boolean filter consists of a Boolean query that
-            contains a k-NN query and a filter
+            contains a k-NN query and a filter.
 
             subquery_clause: Query clause on the knn vector field; default: "must"
+
+            lucene_filter: the Lucene algorithm decides whether to perform an exact
+            k-NN search with pre-filtering or an approximate search with modified
+            post-filtering.
 
         Optional Args for Script Scoring Search:
             search_type: "script_scoring"; default: "approximate_search"
@@ -371,9 +390,19 @@ class OpenSearchVectorSearch(VectorStore):
             size = _get_kwargs_value(kwargs, "size", 4)
             boolean_filter = _get_kwargs_value(kwargs, "boolean_filter", {})
             subquery_clause = _get_kwargs_value(kwargs, "subquery_clause", "must")
+            lucene_filter = _get_kwargs_value(kwargs, "lucene_filter", {})
+            if boolean_filter != {} and lucene_filter != {}:
+                raise ValueError(
+                    "Both `boolean_filter` and `lucene_filter` are provided which "
+                    "is invalid"
+                )
             if boolean_filter != {}:
                 search_query = _approximate_search_query_with_boolean_filter(
                     embedding, boolean_filter, size, k, vector_field, subquery_clause
+                )
+            elif lucene_filter != {}:
+                search_query = _approximate_search_query_with_lucene_filter(
+                    embedding, lucene_filter, size, k, vector_field
                 )
             else:
                 search_query = _default_approximate_search_query(
@@ -442,7 +471,7 @@ class OpenSearchVectorSearch(VectorStore):
             to "text".
 
         Optional Keyword Args for Approximate Search:
-            engine: "nmslib", "faiss", "hnsw"; default: "nmslib"
+            engine: "nmslib", "faiss", "lucene"; default: "nmslib"
 
             space_type: "l2", "l1", "cosinesimil", "linf", "innerproduct"; default: "l2"
 
@@ -507,4 +536,4 @@ class OpenSearchVectorSearch(VectorStore):
         _bulk_ingest_embeddings(
             client, index_name, embeddings, texts, metadatas, vector_field, text_field
         )
-        return cls(opensearch_url, index_name, embedding)
+        return cls(opensearch_url, index_name, embedding, **kwargs)
