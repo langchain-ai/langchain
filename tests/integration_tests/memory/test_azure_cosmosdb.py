@@ -2,7 +2,7 @@ import os
 import json
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import AzureCosmosChatMessageHistory
+from langchain.memory.chat_message_histories import AzureCosmosDBChatMessageHistory
 from langchain.schema import _message_to_dict
 
 # Replace these with your Azure Cosmos DB endpoint and key
@@ -13,7 +13,7 @@ credential = os.environ.get("COSMOS_DB_KEY")
 def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup Azure Cosmos DB as a message store
-    message_history = AzureCosmosChatMessageHistory(
+    message_history = AzureCosmosDBChatMessageHistory(
         session_id="my-test-session",
         endpoint=endpoint,
         credential=credential,
