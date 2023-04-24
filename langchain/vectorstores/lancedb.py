@@ -37,16 +37,13 @@ class LanceDB(VectorStore):
                 "Could not import lancedb python package. "
                 "Please install it with `pip install lancedb`."
             )
-        if not isinstance(connection, lancedb.LanceDBConnection):
+        if not isinstance(connection, lancedb.db.LanceTable):
             raise ValueError(
-                f"connection should be an instance of lancedb.LanceDBConnection, ",
+                f"connection should be an instance of lancedb.db.LanceTable, ",
                 f"got {type(connection)}",
             )
-        if not table in connection.table_names:
-            raise ValueError(f"table {table} does not exist in the database connection")
         self._connection = connection
         self._embedding_function = embedding_function
-        self._table = table
         self._vector_key = vector_key
         self._id_key = id_key
         self._text_key = text_key
@@ -83,7 +80,7 @@ class LanceDB(VectorStore):
                 }
             )
 
-        self.client.add(docs)
+        self._connection.add(docs)
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -98,7 +95,7 @@ class LanceDB(VectorStore):
             List of documents most similar to the query.
         """
         embedding = self._embedding_function(query)
-        docs = self.client.search(embedding).limit(k).to_df()
+        docs = self._connection.search(embedding).limit(k).to_df()
         return [
             Document(
                 page_content=doc[self._text_key],
@@ -107,15 +104,10 @@ class LanceDB(VectorStore):
             for doc in docs
         ]
 
-    @property
-    def client(self):
-        return self._connection.open_table(self._table)
-
     @classmethod
     def from_texts(
         cls: Type[LanceDB],
         connection: Any,
-        table: str,
         embedding_function: Callable,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -124,9 +116,7 @@ class LanceDB(VectorStore):
         text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> LanceDB:
-        instance = LanceDB(
-            connection, embedding_function, table, vector_key, id_key, text_key
-        )
+        instance = LanceDB(connection, embedding_function, vector_key, id_key, text_key)
         instance.add_texts(texts, metadatas=metadatas, **kwargs)
 
         return instance
