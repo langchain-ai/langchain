@@ -180,7 +180,6 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         doc_chain = load_qa_chain(
             llm,
             chain_type=chain_type,
-            prompt=qa_prompt,
         )
         condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
         return cls(
