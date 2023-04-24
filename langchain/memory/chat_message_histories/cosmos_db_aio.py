@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
-    """ "Chat history backed by Azure CosmosDB."""
+    """Chat history backed by Azure CosmosDB, using async."""
 
     def __init__(
         self,
@@ -103,7 +103,8 @@ class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
     def add_user_message(self, message: str) -> None:
         """Add a user message to the memory.
 
-        Be careful this method does not store the message externally, use upsert_messages (async) after this to store in Cosmos.
+        Be careful this method does not store the message externally,
+        use upsert_messages (async) after this to store in Cosmos.
         Alternatively use the a_ version of this method with async.
         """
         self.messages.append(HumanMessage(content=message))
@@ -111,7 +112,8 @@ class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
     def add_ai_message(self, message: str) -> None:
         """Add a AI message to the memory.
 
-        Be careful this method does not store the message externally, use upsert_messages (async) after this to store in Cosmos.
+        Be careful this method does not store the message externally,
+        use upsert_messages (async) after this to store in Cosmos.
         Alternatively use the a_ version of this method with async.
         """
         self.messages.append(AIMessage(content=message))

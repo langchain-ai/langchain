@@ -59,7 +59,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
     def prepare_cosmos(self) -> None:
         """Prepare the CosmosDB client.
 
-        Use this function directly or the context manager to make sure your database is ready.
+        Use this function or the context manager to make sure your database is ready.
         """
         database = self._client.create_database_if_not_exists(self.cosmos_database)
         self._container = database.create_container_if_not_exists(
