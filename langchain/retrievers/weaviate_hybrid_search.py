@@ -54,13 +54,8 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         with self._client.batch as batch:
             ids = []
             for i, doc in enumerate(docs):
-                data_properties = {
-                    self._text_key: doc.page_content,
-                }
-                if doc.metadata is not None:
-                    for key in doc.metadata.keys():
-                        data_properties[key] = doc.metadata[key]
-
+                metadata = doc.metadata or {}
+                data_properties = {self._text_key: doc.page_content, **metadata}
                 _id = get_valid_uuid(uuid4())
                 batch.add_data_object(data_properties, self._index_name, _id)
                 ids.append(_id)
