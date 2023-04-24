@@ -1,4 +1,4 @@
-"""Wrapper around (chromadb) sentence transformer embedding models."""
+"""Wrapper around sentence transformer embedding models."""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, root_validator
@@ -56,8 +56,7 @@ class SentenceTransformerEmbeddings(BaseModel, Embeddings):
             text: The text to embed.
 
         Returns:
-            Embeddings for the text.
+            Embedding for the text.
         """
-        embeddings = self.embedding_function.encode([text], convert_to_numpy=True).tolist()
-        return [list(map(float, e)) for e in embeddings][0]
+        return self.embed_documents([text])[0]
 
