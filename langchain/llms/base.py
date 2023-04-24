@@ -344,10 +344,20 @@ class LLM(BaseLLM):
     """
 
     @abstractmethod
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Run the LLM on the given prompt and input."""
 
-    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
         """Run the LLM on the given prompt and input."""
         raise NotImplementedError("Async generation not implemented for this LLM.")
 
@@ -360,8 +370,13 @@ class LLM(BaseLLM):
         """Run the LLM on the given prompt and input."""
         # TODO: add caching here.
         generations = []
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
         for prompt in prompts:
-            text = self._call(prompt, stop=stop)
+            text = (
+                self._call(prompt, stop=stop, run_manager=run_manager)
+                if new_arg_supported
+                else self._call(prompt, stop=stop)
+            )
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
 
@@ -373,7 +388,12 @@ class LLM(BaseLLM):
     ) -> LLMResult:
         """Run the LLM on the given prompt and input."""
         generations = []
+        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:
-            text = await self._acall(prompt, stop=stop)
+            text = (
+                await self._acall(prompt, stop=stop, run_manager=run_manager)
+                if new_arg_supported
+                else await self._acall(prompt, stop=stop)
+            )
             generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
