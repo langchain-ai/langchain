@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
@@ -16,9 +16,6 @@ from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RE
 
 _LOGGER = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from azure.identity import ChainedTokenCredential
-    from azure.identity._internal import InteractiveCredential
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
 
@@ -35,7 +32,7 @@ class PowerBIDataset(BaseModel):
     dataset_id: str
     table_names: List[str]
     group_id: Optional[str] = None
-    credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
+    credential: Any = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
@@ -68,6 +65,10 @@ class PowerBIDataset(BaseModel):
             from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
                 ClientAuthenticationError,
             )
+            from azure.identity import (  # pylint: disable=import-outside-toplevel
+                DefaultAzureCredential,
+                InteractiveBrowserCredential,
+            )
         except ImportError as exc:
             _LOGGER.warning(
                 "You must install the azure-identity package to use the PowerBIDataset."
@@ -77,7 +78,9 @@ class PowerBIDataset(BaseModel):
         token = None
         if self.token:
             token = self.token
-        if self.credential:
+        if self.credential and isinstance(
+            self.credential, (InteractiveBrowserCredential, DefaultAzureCredential)
+        ):
             try:
                 token = self.credential.get_token(
                     "https://analysis.windows.net/powerbi/api/.default"
