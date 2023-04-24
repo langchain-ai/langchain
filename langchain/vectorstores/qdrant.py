@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from hashlib import md5
 from operator import itemgetter
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
@@ -78,7 +79,7 @@ class Qdrant(VectorStore):
         """
         from qdrant_client.http import models as rest
 
-        ids = [uuid.uuid4().hex for _ in texts]
+        ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
         self.client.upsert(
             collection_name=self.collection_name,
             points=rest.Batch.construct(
@@ -319,7 +320,7 @@ class Qdrant(VectorStore):
         client.upsert(
             collection_name=collection_name,
             points=rest.Batch.construct(
-                ids=[uuid.uuid4().hex for _ in texts],
+                ids=[md5(text.encode("utf-8")).hexdigest() for text in texts],
                 vectors=embeddings,
                 payloads=cls._build_payloads(
                     texts, metadatas, content_payload_key, metadata_payload_key
