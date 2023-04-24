@@ -1,14 +1,10 @@
 """Azure CosmosDB Memory History."""
+from __future__ import annotations
+
 import json
 import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Optional, Type
-
-if TYPE_CHECKING:
-    from azure.cosmos import PartitionKey
-    from azure.cosmos.aio import ContainerProxy, CosmosClient
-    from azure.cosmos.exceptions import CosmosHttpResponseError
-    from azure.identity import DefaultAzureCredential
 
 from langchain.schema import (
     AIMessage,
@@ -20,6 +16,12 @@ from langchain.schema import (
 )
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from azure.cosmos import PartitionKey
+    from azure.cosmos.aio import ContainerProxy, CosmosClient
+    from azure.cosmos.exceptions import CosmosHttpResponseError
+    from azure.identity import DefaultAzureCredential
 
 
 class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
