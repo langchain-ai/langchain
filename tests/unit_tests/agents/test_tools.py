@@ -79,7 +79,7 @@ def test_misannotated_base_tool_raises_error() -> None:
         class _MisAnnotatedTool(BaseTool):
             name = "structured_api"
             # This would silently be ignored without the custom metaclass
-            args_schema: BaseModel = _MockSchema
+            args_schema: BaseModel = _MockSchema  # type: ignore
             description = "A Structured Tool"
 
             def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
@@ -109,7 +109,7 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
 
 
 def test_subclass_annotated_base_tool_accepted() -> None:
-    """Test that a BaseTool with the incorrrect typehint raises an exception.""" ""
+    """Test BaseTool child w/ custom schema isn't overwritten."""
 
     class _ForwardRefAnnotatedTool(BaseTool):
         name = "structured_api"
@@ -123,6 +123,10 @@ def test_subclass_annotated_base_tool_accepted() -> None:
             self, arg1: int, arg2: bool, arg3: Optional[dict] = None
         ) -> str:
             raise NotImplementedError
+
+    assert issubclass(_ForwardRefAnnotatedTool, BaseTool)
+    tool = _ForwardRefAnnotatedTool()
+    assert tool.args_schema == _MockSchema
 
 
 def test_decorator_with_specified_schema() -> None:
@@ -185,7 +189,7 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
 
 
 def test_base_tool_inheritance_base_schema() -> None:
-    """Test functionality with structured arguments parsed as a decorator."""
+    """Test schema is correctly inferred when inheriting from BaseTool."""
 
     class _MockSimpleTool(BaseTool):
         name = "simple_tool"
@@ -248,7 +252,7 @@ def test_tool_partial_function_args_schema() -> None:
 
 
 def test_empty_args_decorator() -> None:
-    """Test functionality with no args parsed as a decorator."""
+    """Test inferred schema of decorated fn with no args."""
 
     @tool
     def empty_tool_input() -> str:
@@ -257,6 +261,7 @@ def test_empty_args_decorator() -> None:
 
     assert isinstance(empty_tool_input, Tool)
     assert empty_tool_input.name == "empty_tool_input"
+    assert empty_tool_input.args == {}
     assert empty_tool_input.run({}) == "the empty result"
 
 
