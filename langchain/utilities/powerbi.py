@@ -33,9 +33,9 @@ class PowerBIDataset(BaseModel):
     If the model is not RLS enabled, this will be ignored.
     """
 
-    group_id: Optional[str] = None
     dataset_id: str
     table_names: List[str]
+    group_id: Optional[str] = None
     credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
