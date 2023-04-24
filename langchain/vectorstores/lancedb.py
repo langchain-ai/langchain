@@ -124,21 +124,6 @@ class LanceDB(VectorStore):
         text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> LanceDB:
-        try:
-            import lancedb
-        except ImportError:
-            raise ValueError(
-                "Could not import lancedb python package. "
-                "Please install it with `pip install lancedb`."
-            )
-        if not isinstance(connection, lancedb.LanceDBConnection):
-            raise ValueError(
-                f"connection should be an instance of lancedb.LanceDBConnection, ",
-                f"got {type(connection)}",
-            )
-        if not table in connection.table_names:
-            raise ValueError(f"table {table} does not exist in the database connection")
-
         instance = LanceDB(
             connection, embedding_function, table, vector_key, id_key, text_key
         )
