@@ -20,11 +20,9 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     send_token_limit: int = 4196
 
     def construct_full_prompt(self, goals: List[str]) -> str:
-        prompt_start = """Your decisions must always be made independently 
-            without seeking user assistance. Play to your strengths 
-            as an LLM and pursue simple strategies with no legal complications. 
-            If you have completed all your tasks, 
-            make sure to use the "finish" command."""
+        prompt_start = """Your decisions must always be made independently without seeking user assistance.
+Play to your strengthsas an LLM and pursue simple strategies with no legal complications.
+If you have completed all your tasks, make sure to use the "finish" command."""
 
         # Construct full prompt
         full_prompt = (
@@ -72,4 +70,5 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         messages: List[BaseMessage] = [base_prompt, time_prompt, memory_message]
         messages += historical_messages
         messages.append(input_message)
+        print(messages)
         return messages
