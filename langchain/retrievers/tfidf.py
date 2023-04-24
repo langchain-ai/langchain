@@ -28,6 +28,7 @@ class TFIDFRetriever(BaseRetriever, BaseModel):
         **kwargs: Any
     ) -> "TFIDFRetriever":
         from sklearn.feature_extraction.text import TfidfVectorizer
+
         tfidf_params = tfidf_params or {}
         vectorizer = TfidfVectorizer(**tfidf_params)
         tfidf_array = vectorizer.fit_transform(texts)
