@@ -52,9 +52,12 @@ def test_get_action_and_input_newline() -> None:
 
 def test_get_action_and_input_newline_after_keyword() -> None:
     """Test getting an action and action input from the text
-    when there is a new line before the action (after the keywords "Action:" and "Action Input:") """
+    when there is a new line before the action
+    (after the keywords "Action:" and "Action Input:")
+    """
     llm_output = """
-    I can use the `ls` command to list the contents of the directory and `grep` to search for the specific file.
+    I can use the `ls` command to list the contents of the directory \
+    and `grep` to search for the specific file.
 
     Action:
     Terminal
