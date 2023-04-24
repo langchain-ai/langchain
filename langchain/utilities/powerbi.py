@@ -16,17 +16,7 @@ from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RE
 
 _LOGGER = logging.getLogger(__name__)
 
-try:
-    from azure.core.exceptions import ClientAuthenticationError
-    from azure.identity import ChainedTokenCredential
-    from azure.identity._internal import InteractiveCredential
-except ImportError:
-    _LOGGER.warning(
-        "You must install the azure-identity package to use the PowerBIDataset."
-    )
-
 if TYPE_CHECKING:
-    from azure.core.exceptions import ClientAuthenticationError
     from azure.identity import ChainedTokenCredential
     from azure.identity._internal import InteractiveCredential
 
@@ -74,6 +64,16 @@ class PowerBIDataset(BaseModel):
     @property
     def headers(self) -> Dict[str, str]:
         """Get the token."""
+        try:
+            from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel
+                ClientAuthenticationError,
+            )
+        except ImportError as exc:
+            _LOGGER.warning(
+                "You must install the azure-identity package to use the PowerBIDataset."
+            )
+            raise exc
+
         token = None
         if self.token:
             token = self.token
