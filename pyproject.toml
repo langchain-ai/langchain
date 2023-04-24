@@ -56,7 +56,7 @@ arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.2.21", optional = true}
+deeplake = {version = "^3.3.0", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 #boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
