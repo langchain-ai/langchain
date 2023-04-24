@@ -1,6 +1,6 @@
 """Wrapper around llama.cpp."""
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
@@ -87,6 +87,9 @@ class LlamaCpp(LLM):
     last_n_tokens_size: Optional[int] = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
+    streaming: bool = True
+    """Whether to stream the results, token by token."""
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
@@ -139,7 +142,7 @@ class LlamaCpp(LLM):
             "top_p": self.top_p,
             "logprobs": self.logprobs,
             "echo": self.echo,
-            "stop_sequences": self.stop,
+            "stop_sequences": self.stop,  # key here is convention among LLM classes
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
         }
@@ -154,6 +157,31 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
+    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Performs sanity check, preparing paramaters in format needed by llama_cpp.
+
+        Args:
+            stop (Optional[List[str]]): List of stop sequences for llama_cpp.
+
+        Returns:
+            Dictionary containing the combined parameters.
+        """
+
+        # Raise error if stop sequences are in both input and default params
+        if self.stop and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+
+        params = self._default_params
+
+        # llama_cpp expects the "stop" key not this, so we remove it:
+        params.pop("stop_sequences")
+
+        # then sets it as configured, or default to an empty list:
+        params["stop"] = self.stop or stop or []
+
+        return params
+
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         """Call the Llama model and return the output.
 
@@ -167,31 +195,65 @@ class LlamaCpp(LLM):
         Example:
             .. code-block:: python
 
-                from langchain.llms import LlamaCppEmbeddings
-                llm = LlamaCppEmbeddings(model_path="/path/to/local/llama/model.bin")
+                from langchain.llms import LlamaCpp
+                llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
                 llm("This is a prompt.")
         """
-
-        params = self._default_params
-        if self.stop and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop:
-            params["stop_sequences"] = self.stop
-        elif stop:
-            params["stop_sequences"] = stop
+        if self.streaming:
+            # If streaming is enabled, we use the stream
+            # method that yields as they are generated
+            # and return the combined strings from the first choices's text:
+            combined_text_output = ""
+            for token in self.stream(prompt=prompt, stop=stop):
+                combined_text_output += token["choices"][0]["text"]
+            return combined_text_output
         else:
-            params["stop_sequences"] = []
+            params = self._get_parameters(stop)
+            result = self.client(prompt=prompt, **params)
+            return result["choices"][0]["text"]
 
-        """Call the Llama model and return the output."""
-        text = self.client(
-            prompt=prompt,
-            max_tokens=params["max_tokens"],
-            temperature=params["temperature"],
-            top_p=params["top_p"],
-            logprobs=params["logprobs"],
-            echo=params["echo"],
-            stop=params["stop_sequences"],
-            repeat_penalty=params["repeat_penalty"],
-            top_k=params["top_k"],
-        )
-        return text["choices"][0]["text"]
+    def stream(
+        self, prompt: str, stop: Optional[List[str]] = None
+    ) -> Generator[Dict, None, None]:
+        """Yields results objects as they are generated in real time.
+
+        BETA: this is a beta feature while we figure out the right abstraction:
+        Once that happens, this interface could change.
+
+        It also calls the callback manager's on_llm_new_token event with
+        similar parameters to the OpenAI LLM class method of the same name.
+
+        Args:
+            prompt: The prompts to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            A generator representing the stream of tokens being generated.
+
+        Yields:
+            A dictionary like objects containing a string token and metadata.
+            See llama-cpp-python docs and below for more.
+
+        Example:
+            .. code-block:: python
+
+                from langchain.llms import LlamaCpp
+                llm = LlamaCpp(
+                    model_path="/path/to/local/model.bin",
+                    temperature = 0.5
+                )
+                for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
+                        stop=["'","\n"]):
+                    result = chunk["choices"][0]
+                    print(result["text"], end='', flush=True)
+
+        """
+        params = self._get_parameters(stop)
+        result = self.client(prompt=prompt, stream=True, **params)
+        for chunk in result:
+            token = chunk["choices"][0]["text"]
+            log_probs = chunk["choices"][0].get("logprobs", None)
+            self.callback_manager.on_llm_new_token(
+                token=token, verbose=self.verbose, log_probs=log_probs
+            )
+            yield chunk
