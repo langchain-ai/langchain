@@ -13,6 +13,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Union,
 )
 
@@ -22,7 +23,7 @@ from langchain.schema import BaseDocumentTransformer
 logger = logging.getLogger(__name__)
 
 
-class TextSplitter(BaseDocumentTransformer[Document], ABC):
+class TextSplitter(BaseDocumentTransformer, ABC):
     """Interface for splitting text into chunks."""
 
     def __init__(
@@ -63,7 +64,7 @@ class TextSplitter(BaseDocumentTransformer[Document], ABC):
         """Split documents."""
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        return self.create_documents(texts, metadatas)
+        return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
@@ -173,15 +174,15 @@ class TextSplitter(BaseDocumentTransformer[Document], ABC):
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
     def transform_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[Document]:
-        """Transform list of documents by splitting them."""
-        return self.split_documents(documents)
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform sequence of documents by splitting them."""
+        return self.split_documents(list(documents))
 
     async def atransform_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[Document]:
-        """Asynchronously transform a list of documents by splitting them."""
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a sequence of documents by splitting them."""
         raise NotImplementedError
 
 

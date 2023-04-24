@@ -164,3 +164,13 @@ def test_appx_search_with_boolean_filter() -> None:
         "foo", k=3, boolean_filter=boolean_filter_val, subquery_clause="should"
     )
     assert output == [Document(page_content="bar")]
+
+
+def test_appx_search_with_lucene_filter() -> None:
+    """Test Approximate Search with Lucene Filter."""
+    lucene_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    output = docsearch.similarity_search("foo", k=3, lucene_filter=lucene_filter_val)
+    assert output == [Document(page_content="bar")]
