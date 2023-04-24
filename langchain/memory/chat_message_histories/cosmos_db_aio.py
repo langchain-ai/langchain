@@ -1,7 +1,8 @@
 """Azure CosmosDB Memory History."""
 import json
 import logging
-from typing import Optional
+from types import TracebackType
+from typing import Optional, Type
 
 from azure.cosmos import PartitionKey
 from azure.cosmos.aio import ContainerProxy, CosmosClient
@@ -57,7 +58,7 @@ class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
         )
         self._container: Optional["ContainerProxy"] = None
 
-    async def __aenter__(self) -> "CosmosDBChatMessageHistory":
+    async def __aenter__(self) -> "CosmosDBChatMessageHistoryAsync":
         """Async context manager entry point."""
         await self._client.__aenter__()
         database = await self._client.create_database_if_not_exists(
@@ -71,10 +72,15 @@ class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
         await self.load_messages()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         """Async context manager exit"""
         await self.upsert_messages()
-        await self._client.__aexit__(exc_type, exc_val, exc_tb)
+        await self._client.__aexit__(exc_type, exc_val, traceback)
 
     async def load_messages(self) -> None:
         """Retrieve the messages from Cosmos"""

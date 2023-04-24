@@ -1,6 +1,7 @@
 """Azure CosmosDB Memory History."""
 import logging
-from typing import Optional
+from types import TracebackType
+from typing import Optional, Type
 
 from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
 from azure.cosmos.exceptions import CosmosHttpResponseError
@@ -55,9 +56,11 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         )
         self._container: Optional["ContainerProxy"] = None
 
-    def __enter__(self) -> "CosmosDBChatMessageHistory":
-        """Async context manager entry point."""
-        self._client.__enter__()
+    def prepare_cosmos(self) -> None:
+        """Prepare the CosmosDB client.
+
+        Use this function directly or the context manager to make sure your database is ready.
+        """
         database = self._client.create_database_if_not_exists(self.cosmos_database)
         self._container = database.create_container_if_not_exists(
             self.cosmos_container,
@@ -65,12 +68,22 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             default_ttl=self.ttl,
         )
         self.load_messages()
+
+    def __enter__(self) -> "CosmosDBChatMessageHistory":
+        """Context manager entry point."""
+        self._client.__enter__()
+        self.prepare_cosmos()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Async context manager exit"""
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        """Context manager exit"""
         self.upsert_messages()
-        self._client.__exit__(exc_type, exc_val, exc_tb)
+        self._client.__exit__(exc_type, exc_val, traceback)
 
     def load_messages(self) -> None:
         """Retrieve the messages from Cosmos"""
