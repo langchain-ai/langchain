@@ -1,6 +1,7 @@
 """Wrapper around LanceDB vector database"""
 from __future__ import annotations
 
+import uuid
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 from langchain.embeddings.base import Embeddings
@@ -41,6 +42,7 @@ class LanceDB(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
+        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -49,6 +51,7 @@ class LanceDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of ids to associate with the texts.
 
         Returns:
             List of ids of the added texts.
@@ -56,9 +59,10 @@ class LanceDB(VectorStore):
         client = self._connection.open_table(self._table)
         # Embed texts and create documents
         docs = []
+        ids = ids or [str(uuid.uuid4()) for _ in texts]
         for idx, text in enumerate(texts):
             embedding = self._embedding_function(text)
             metadata = metadatas[idx] if metadatas else {}
-            docs.append({"vector": embedding, **metadata})
+            docs.append({"vector": embedding, "id": ids[idx], **metadata})
 
         client.add(docs)
