@@ -167,7 +167,7 @@ class Weaviate(VectorStore):
             )
 
         return self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult, **kwargs
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
         )
 
     def max_marginal_relevance_search_by_vector(

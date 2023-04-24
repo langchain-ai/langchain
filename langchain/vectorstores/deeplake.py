@@ -315,8 +315,12 @@ class DeepLake(VectorStore):
 
             view = view[indices]
             if use_maximal_marginal_relevance:
+                lambda_mult = kwargs.get("lambda_mult", 0.5)
                 indices = maximal_marginal_relevance(
-                    query_emb, embeddings[indices], k=min(k, len(indices))
+                    query_emb,
+                    embeddings[indices],
+                    k=min(k, len(indices)),
+                    lambda_mult=lambda_mult,
                 )
                 view = view[indices]
                 scores = [scores[i] for i in indices]
@@ -432,6 +436,7 @@ class DeepLake(VectorStore):
             k=k,
             fetch_k=fetch_k,
             use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
         )
 
     def max_marginal_relevance_search(
@@ -461,7 +466,11 @@ class DeepLake(VectorStore):
                 "For MMR search, you must specify an embedding function on" "creation."
             )
         return self.search(
-            query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True
+            query=query,
+            k=k,
+            fetch_k=fetch_k,
+            use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
         )
 
     @classmethod
