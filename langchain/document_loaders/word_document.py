@@ -55,13 +55,14 @@ class BaseDOCXLoader(BaseLoader, ABC):
         parsed = urlparse(url)
         return bool(parsed.netloc) and bool(parsed.scheme)
 
+
 class Docx2txtLoader(BaseDOCXLoader):
     """Loads a DOCX with docx2txt and chunks at character level."""
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
         try:
-            import docx2txt # noqa:F401
+            import docx2txt  # noqa:F401
         except ImportError:
             raise ValueError(
                 "docx2txt package not found, please install it with " "`pip install docx2txt`"
