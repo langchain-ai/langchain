@@ -147,7 +147,12 @@ class Qdrant(VectorStore):
         ]
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -159,7 +164,10 @@ class Qdrant(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -172,7 +180,9 @@ class Qdrant(VectorStore):
             limit=fetch_k,
         )
         embeddings = [result.vector for result in results]
-        mmr_selected = maximal_marginal_relevance(embedding, embeddings, k=k)
+        mmr_selected = maximal_marginal_relevance(
+            embedding, embeddings, k=k, lambda_mult=lambda_mult
+        )
         return [
             self._document_from_scored_point(
                 results[i], self.content_payload_key, self.metadata_payload_key

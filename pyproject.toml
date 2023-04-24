@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.139"
+version = "0.0.148"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -17,6 +17,7 @@ SQLAlchemy = "^1"
 requests = "^2"
 PyYAML = ">=5.4.1"
 numpy = "^1"
+tqdm = {version = ">=4.48.0", optional = true}
 openapi-schema-pydantic = "^1.2"
 faiss-cpu = {version = "^1", optional = true}
 wikipedia = {version = "^1", optional = true}
@@ -33,10 +34,11 @@ jinja2 = {version = "^3", optional = true}
 tiktoken = {version = "^0.3.2", optional = true, python="^3.9"}
 pinecone-client = {version = "^2", optional = true}
 pinecone-text = {version = "^0.4.2", optional = true}
+clickhouse-connect = {version="^0.5.14", optional=true}
 weaviate-client = {version = "^3", optional = true}
 google-api-python-client = {version = "2.70.0", optional = true}
 wolframalpha = {version = "5.0.0", optional = true}
-anthropic = {version = "^0.2.4", optional = true}
+anthropic = {version = "^0.2.6", optional = true}
 qdrant-client = {version = "^1.1.2", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = "^0.5.7"
 tensorflow-text = {version = "^2.11.0", optional = true, python = "^3.10, <3.12"}
@@ -50,16 +52,24 @@ jina = {version = "^3.14", optional = true}
 google-search-results = {version = "^2", optional = true}
 sentence-transformers = {version = "^2", optional = true}
 aiohttp = "^3.8.3"
+arxiv = {version = "^1.4", optional = true}
 pypdf = {version = "^3.4.0", optional = true}
 networkx = {version="^2.6.3", optional = true}
 aleph-alpha-client = {version="^2.15.0", optional = true}
-deeplake = {version = "^3.2.21", optional = true}
+deeplake = {version = "^3.3.0", optional = true}
 pgvector = {version = "^0.1.6", optional = true}
 psycopg2-binary = {version = "^2.9.5", optional = true}
 #boto3 = {version = "^1.26.96", optional = true} # TODO: fix it, commented because the version failed with deeplake
 pyowm = {version = "^3.3.0", optional = true}
 async-timeout = {version = "^4.0.0", python = "<3.11"}
+azure-identity = {version = "^1.12.0", optional=true}
 gptcache = {version = ">=0.1.7", optional = true}
+atlassian-python-api = {version = "^3.36.0", optional=true}
+pytesseract = {version = "^0.3.10", optional=true}
+html2text = {version="^2020.1.16", optional=true}
+numexpr = "^2.8.4"
+duckduckgo-search = {version="^2.8.6", optional=true}
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -97,6 +107,7 @@ elasticsearch = {extras = ["async"], version = "^8.6.2"}
 redis = "^4.5.4"
 pinecone-client = "^2.2.1"
 pinecone-text = "^0.4.2"
+clickhouse-connect = "^0.5.14"
 pgvector = "^0.1.6"
 transformers = "^4.27.4"
 pandas = "^2.0.0"
@@ -106,6 +117,7 @@ torch = "^1.0.0"
 chromadb = "^0.3.21"
 tiktoken = "^0.3.3"
 python-dotenv = "^1.0.0"
+sentence-transformers = "^2"
 gptcache = "^0.1.9"
 promptlayer = "^0.1.80"
 
@@ -133,13 +145,17 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 qdrant = ["qdrant-client"]
 openai = ["openai"]
 cohere = ["cohere"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence_transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm"]
+embeddings = ["sentence-transformers"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect"]
 
 [tool.ruff]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
+]
+exclude = [
+  "tests/integration_tests/examples/non-utf8-encoding.py",
 ]
 
 [tool.mypy]

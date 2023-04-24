@@ -1,6 +1,7 @@
 """Web base loader class."""
 import asyncio
 import logging
+import warnings
 from typing import Any, List, Optional, Union
 
 import aiohttp
@@ -9,7 +10,7 @@ import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 default_header_template = {
     "User-Agent": "",
@@ -21,6 +22,18 @@ default_header_template = {
     "Connection": "keep-alive",
     "Upgrade-Insecure-Requests": "1",
 }
+
+
+def _build_metadata(soup: Any, url: str) -> dict:
+    """Build metadata from BeautifulSoup output."""
+    metadata = {"source": url}
+    if title := soup.find("title"):
+        metadata["title"] = title.get_text()
+    if description := soup.find("meta", attrs={"name": "description"}):
+        metadata["description"] = description.get("content", None)
+    if html := soup.find("html"):
+        metadata["language"] = html.get("lang", None)
+    return metadata
 
 
 class WebBaseLoader(BaseLoader):
@@ -73,10 +86,26 @@ class WebBaseLoader(BaseLoader):
             raise ValueError("Multiple webpaths found.")
         return self.web_paths[0]
 
-    async def _fetch(self, url: str) -> str:
+    async def _fetch(
+        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+    ) -> str:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=self.session.headers) as response:
-                return await response.text()
+            for i in range(retries):
+                try:
+                    async with session.get(
+                        url, headers=self.session.headers
+                    ) as response:
+                        return await response.text()
+                except aiohttp.ClientConnectionError as e:
+                    if i == retries - 1:
+                        raise
+                    else:
+                        logger.warning(
+                            f"Error fetching {url} with attempt "
+                            f"{i + 1}/{retries}: {e}. Retrying..."
+                        )
+                        await asyncio.sleep(cooldown * backoff**i)
+        raise ValueError("retry count exceeded")
 
     async def _fetch_with_rate_limit(
         self, url: str, semaphore: asyncio.Semaphore
@@ -91,7 +120,15 @@ class WebBaseLoader(BaseLoader):
         for url in urls:
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
-        return await asyncio.gather(*tasks)
+        try:
+            from tqdm.asyncio import tqdm_asyncio
+
+            return await tqdm_asyncio.gather(
+                *tasks, desc="Fetching pages", ascii=True, mininterval=1
+            )
+        except ImportError:
+            warnings.warn("For better logging of progress, `pip install tqdm`")
+            return await asyncio.gather(*tasks)
 
     @staticmethod
     def _check_parser(parser: str) -> None:
@@ -148,7 +185,7 @@ class WebBaseLoader(BaseLoader):
         for path in self.web_paths:
             soup = self._scrape(path)
             text = soup.get_text()
-            metadata = {"source": path}
+            metadata = _build_metadata(soup, path)
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
@@ -159,8 +196,9 @@ class WebBaseLoader(BaseLoader):
         results = self.scrape_all(self.web_paths)
         docs = []
         for i in range(len(results)):
-            text = results[i].get_text()
-            metadata = {"source": self.web_paths[i]}
+            soup = results[i]
+            text = soup.get_text()
+            metadata = _build_metadata(soup, self.web_paths[i])
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
