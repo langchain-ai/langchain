@@ -2,12 +2,13 @@
 import logging
 from typing import Any, List
 
-from langchain.document_loaders.unstructured import UnstructuredBaseLoader
+from langchain.docstore.document import Document
+from langchain.document_loaders.unstructured import BaseLoader
 
 logger = logging.getLogger(__name__)
 
 
-class UnstructuredURLLoader(UnstructuredBaseLoader):
+class UnstructuredURLLoader(BaseLoader):
     """Loader that uses unstructured to load HTML files."""
 
     def __init__(
@@ -51,6 +52,13 @@ class UnstructuredURLLoader(UnstructuredBaseLoader):
         self.headers = headers
         self.unstructured_kwargs = unstructured_kwargs
 
+    def _validate_mode(self, mode: str) -> None:
+        _valid_modes = {"single", "elements"}
+        if mode not in _valid_modes:
+            raise ValueError(
+                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
+            )
+
     def __is_headers_available_for_html(self) -> bool:
         _unstructured_version = self.__version.split("-")[0]
         unstructured_version = tuple([int(x) for x in _unstructured_version.split(".")])
@@ -72,11 +80,12 @@ class UnstructuredURLLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict:
         return {}
 
-    def _get_elements(self) -> List:
+    def load(self) -> List[Document]:
+        """Load file."""
         from unstructured.partition.auto import partition
         from unstructured.partition.html import partition_html
 
-        all_elements = list()
+        docs: List[Document] = list()
         for url in self.urls:
             try:
                 if self.__is_non_html_available():
@@ -93,7 +102,19 @@ class UnstructuredURLLoader(UnstructuredBaseLoader):
                         )
                     else:
                         elements = partition_html(url=url, **self.unstructured_kwargs)
-                all_elements.extend(elements)
+
+                if self.mode == "single":
+                    text = "\n\n".join([str(el) for el in elements])
+                    metadata = {"source": url}
+                    docs.append(Document(page_content=text, metadata=metadata))
+                elif self.mode == "elements":
+                    for element in elements:
+                        metadata = element.metadata.to_dict()
+                        metadata["category"] = element.category
+                        docs.append(
+                            Document(page_content=str(element), metadata=metadata)
+                        )
+
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
@@ -101,4 +122,4 @@ class UnstructuredURLLoader(UnstructuredBaseLoader):
                 else:
                     raise e
 
-        return all_elements
+        return docs
