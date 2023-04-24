@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional
+from typing import Any, Callable, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
+from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
 
@@ -109,3 +110,38 @@ class LanceDB(VectorStore):
     @property
     def client(self):
         return self._connection.open_table(self._table)
+
+    @classmethod
+    def from_texts(
+        cls: Type[LanceDB],
+        connection: Any,
+        table: str,
+        embedding_function: Callable,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        vector_key: Optional[str] = "vector",
+        id_key: Optional[str] = "id",
+        text_key: Optional[str] = "text",
+        **kwargs: Any,
+    ) -> LanceDB:
+        try:
+            import lancedb
+        except ImportError:
+            raise ValueError(
+                "Could not import lancedb python package. "
+                "Please install it with `pip install lancedb`."
+            )
+        if not isinstance(connection, lancedb.LanceDBConnection):
+            raise ValueError(
+                f"connection should be an instance of lancedb.LanceDBConnection, ",
+                f"got {type(connection)}",
+            )
+        if not table in connection.table_names:
+            raise ValueError(f"table {table} does not exist in the database connection")
+
+        instance = LanceDB(
+            connection, embedding_function, table, vector_key, id_key, text_key
+        )
+        instance.add_texts(texts, metadatas=metadatas, **kwargs)
+
+        return instance
