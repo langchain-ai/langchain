@@ -35,11 +35,8 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        _valid_modes = {"single", "elements"}
-        if mode not in _valid_modes:
-            raise ValueError(
-                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
-            )
+
+        self._validate_mode(mode)
         self.mode = mode
 
         if not satisfies_min_unstructured_version("0.5.4"):
@@ -47,6 +44,13 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 unstructured_kwargs.pop("strategy")
 
         self.unstructured_kwargs = unstructured_kwargs
+
+    def _validate_mode(self, mode: str) -> None:
+        _valid_modes = {"single", "elements"}
+        if mode not in _valid_modes:
+            raise ValueError(
+                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
+            )
 
     @abstractmethod
     def _get_elements(self) -> List:

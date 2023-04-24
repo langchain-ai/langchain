@@ -29,11 +29,7 @@ class UnstructuredURLLoader(UnstructuredBaseLoader):
                 "`pip install unstructured`"
             )
 
-        _valid_modes = {"single", "elements"}
-        if mode not in _valid_modes:
-            raise ValueError(
-                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
-            )
+        self._validate_mode(mode)
         self.mode = mode
 
         headers = unstructured_kwargs.pop("headers", {})
