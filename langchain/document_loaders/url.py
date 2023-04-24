@@ -118,5 +118,4 @@ class UnstructuredURLLoader(BaseLoader):
                     continue
                 else:
                     raise e
-
         return docs
