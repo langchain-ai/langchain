@@ -1,5 +1,6 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
+import json
 
 from typing import Any, List, Optional, Sequence, Tuple
 
@@ -65,7 +66,11 @@ class ConversationalChatAgent(Agent):
         output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [
+                f"> {tool.name}: {tool.description},"
+                f" args schema: {json.dumps(tool.args)}"
+                for tool in tools
+            ]
         )
         tool_names = ", ".join([tool.name for tool in tools])
         _output_parser = output_parser or cls._get_default_output_parser()
