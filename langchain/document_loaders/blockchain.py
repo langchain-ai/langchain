@@ -1,37 +1,51 @@
 import os
 import requests
-import json
+import re
+from enum import Enum
 
 from typing import List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
+class BlockchainType(Enum):
+    ETH_MAINNET = "eth-mainnet"
+    ETH_GOERLI = "eth-goerli"
+    POLYGON_MAINNET = "polygon-mainnet"
+    POLYGON_MUMBAI = "polygon-mumbai"
 
 class BlockchainDocumentLoader(BaseLoader):
     """Loads elements from a blockchain smart contract into Langchain documents.
 
-    For now, the only supported blockchain is Ethereum Mainnet.
-    Currently Loader returns all NFTs from a given contract address.
+    The supported blockchains are: Ethereum mainnet, Ethereum Goerli testnet, Polygon mainnet, and Polygon Mumbai testnet.  If no BlockchainType is specified, the default is Ethereum mainnet.
     
     The Loader uses the Alchemy API to interact with the blockchain.
     
     ALCHEMY_API_KEY environment variable must be set to use this loader.
     
     Future versions of this loader can:
-        - Support other blockchains (Ethereum testnets, Polygon, etc.)
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
     """
-    
-    def __init__(self, contract_address: str, api_key: str = "docs-demo"):
+        
+    def __init__(self, contract_address: str, 
+                 blockchainType: BlockchainType = BlockchainType.ETH_MAINNET,
+                 api_key: str = "docs-demo",
+                 startToken: int = 0,
+                 ):
         self.contract_address = contract_address
+        self.blockchainType = blockchainType.value
         self.api_key = os.environ.get("ALCHEMY_API_KEY") or api_key
-    
-    def load(self) -> List[Document]:
-            if not self.api_key:
+        self.startToken = startToken
+        
+        if not self.api_key:
                 raise ValueError("Alchemy API key not provided.")
+                    
+        if not re.match(r"^0x[a-fA-F0-9]{40}$", self.contract_address):
+            raise ValueError(f"Invalid contract address {self.contract_address}")
+    
+    def load(self) -> List[Document]:    
             
-            url = f"https://eth-mainnet.g.alchemy.com/nft/v2/{self.api_key}/getNFTsForCollection?withMetadata=True&contractAddress={self.contract_address}"
+            url = f"https://{self.blockchainType}.g.alchemy.com/nft/v2/{self.api_key}/getNFTsForCollection?withMetadata=True&contractAddress={self.contract_address}&startToken={self.startToken}"
 
             response = requests.get(url)
 
@@ -39,6 +53,9 @@ class BlockchainDocumentLoader(BaseLoader):
                 raise ValueError(f"Request failed with status code {response.status_code}")
 
             items = response.json()["nfts"]
+            
+            if not(items):
+                raise ValueError(f"No NFTs found for contract address {self.contract_address}")
                       
             result = []
       
