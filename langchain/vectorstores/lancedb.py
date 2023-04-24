@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional
 
-from langchain.embeddings.base import Embeddings
+from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -19,7 +19,15 @@ class LanceDB(VectorStore):
             # TODO: add example here
     """
 
-    def __init__(self, connection: Any, embedding_function: Callable, table: str):
+    def __init__(
+        self,
+        connection: Any,
+        embedding_function: Callable,
+        table: str,
+        vector_key: Optional[str] = "vector",
+        id_key: Optional[str] = "id",
+        text_key: Optional[str] = "text",
+    ):
         """Initialize with Lance DB connection"""
         try:
             import lancedb
@@ -38,6 +46,9 @@ class LanceDB(VectorStore):
         self._connection = connection
         self._embedding_function = embedding_function
         self._table = table
+        self._vector_key = vector_key
+        self._id_key = id_key
+        self._text_key = text_key
 
     def add_texts(
         self,
@@ -56,13 +67,45 @@ class LanceDB(VectorStore):
         Returns:
             List of ids of the added texts.
         """
-        client = self._connection.open_table(self._table)
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         for idx, text in enumerate(texts):
             embedding = self._embedding_function(text)
             metadata = metadatas[idx] if metadatas else {}
-            docs.append({"vector": embedding, "id": ids[idx], **metadata})
+            docs.append(
+                {
+                    [self._vector_key]: embedding,
+                    [self._id_key]: ids[idx],
+                    [self._text_key]: text,
+                    **metadata,
+                }
+            )
 
-        client.add(docs)
+        self.client.add(docs)
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return documents most similar to the query
+
+        Args:
+            query: String to query the vectorstore with.
+            k: Number of documents to return.
+
+        Returns:
+            List of documents most similar to the query.
+        """
+        embedding = self._embedding_function(query)
+        docs = self.client.search(embedding).limit(k).to_df()
+        return [
+            Document(
+                page_content=doc[self._text_key],
+                metadata=doc[docs.columns != self._text_key],
+            )
+            for doc in docs
+        ]
+
+    @property
+    def client(self):
+        return self._connection.open_table(self._table)
