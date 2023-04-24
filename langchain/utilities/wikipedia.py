@@ -17,6 +17,7 @@ class WikipediaAPIWrapper(BaseModel):
 
     wiki_client: Any  #: :meta private:
     top_k_results: int = 3
+    lang: str = "en"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -29,6 +30,7 @@ class WikipediaAPIWrapper(BaseModel):
         try:
             import wikipedia
 
+            wikipedia.set_lang(values["lang"])
             values["wiki_client"] = wikipedia
         except ImportError:
             raise ValueError(
