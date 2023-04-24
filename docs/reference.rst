@@ -12,3 +12,4 @@ Full documentation on all methods, classes, and APIs in LangChain.
    ./reference/utils.rst
    Chains<./reference/modules/chains>
    Agents<./reference/modules/agents>
+   Experimental<./reference/modules/experimental>
