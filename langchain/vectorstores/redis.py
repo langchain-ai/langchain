@@ -99,6 +99,44 @@ class Redis(VectorStore):
         self.metadata_key = metadata_key
         self.vector_key = vector_key
 
+    def _create_index(self, dim: int = 1536):
+        try:
+            import redis
+            from redis.commands.search.field import TextField, VectorField
+            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+
+        # Check if index exists
+        if not _check_index_exists(self.client, self.index_name):
+            # Constants
+            distance_metric = (
+                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
+            )
+            schema = (
+                TextField(name=self.content_key),
+                TextField(name=self.metadata_key),
+                VectorField(
+                    self.vector_key,
+                    "FLAT",
+                    {
+                        "TYPE": "FLOAT32",
+                        "DIM": dim,
+                        "DISTANCE_METRIC": distance_metric,
+                    },
+                ),
+            )
+            prefix = _redis_prefix(self.index_name)
+
+            # Create Redis Index
+            self.client.ft(self.index_name).create_index(
+                fields=schema,
+                definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
+            )
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -130,7 +168,7 @@ class Redis(VectorStore):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -146,7 +184,7 @@ class Redis(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text within the
@@ -173,8 +211,45 @@ class Redis(VectorStore):
 
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
+    def _prepare_query(self, k: int, filter: Optional[dict] = None):
+        try:
+            from redis.commands.search.query import Query
+        except ImportError:
+            raise ValueError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis`."
+            )
+      # Prepare the Query
+        hybrid_fields = ""
+
+        if filter:
+            metadata = filter.get(self.metadata_key)
+
+            if self.content_key in filter:
+                content = filter[self.content_key]
+                hybrid_fields += f"{self.content_key}:{{{content}}} "
+
+            if self.metadata_key in filter:
+                metadata = filter[self.metadata_key]
+                hybrid_fields += f"{self.metadata_key}:{{{metadata}}}"
+
+        if not hybrid_fields:
+            hybrid_fields = "*"
+
+        base_query = (
+            f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
+        )
+        return_fields = [self.metadata_key, self.content_key, "vector_score"]
+        redis_query = (
+            Query(base_query)
+            .return_fields(*return_fields)
+            .sort_by("vector_score")
+            .paging(0, k)
+            .dialect(2)
+        )
+
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -185,31 +260,12 @@ class Redis(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        try:
-            from redis.commands.search.query import Query
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-
         # Creates embedding vector from user query
         embedding = self.embedding_function(query)
 
-        # Prepare the Query
-        return_fields = [self.metadata_key, self.content_key, "vector_score"]
-        vector_field = self.vector_key
-        hybrid_fields = "*"
-        base_query = (
-            f"{hybrid_fields}=>[KNN {k} @{vector_field} $vector AS vector_score]"
-        )
-        redis_query = (
-            Query(base_query)
-            .return_fields(*return_fields)
-            .sort_by("vector_score")
-            .paging(0, k)
-            .dialect(2)
-        )
+        # Creates Redis query
+        redis_query = self._prepare_query(k, filter)
+
         params_dict: Mapping[str, str] = {
             "vector": np.array(embedding)  # type: ignore
             .astype(dtype=np.float32)
@@ -261,62 +317,33 @@ class Redis(VectorStore):
                 )
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-        try:
-            import redis
-            from redis.commands.search.field import TextField, VectorField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
-        except ImportError:
-            raise ValueError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-        try:
-            # We need to first remove redis_url from kwargs,
-            # otherwise passing it to Redis will result in an error.
-            if "redis_url" in kwargs:
-                kwargs.pop("redis_url")
-            client = redis.from_url(url=redis_url, **kwargs)
-            # check if redis has redisearch module installed
-            _check_redis_module_exist(client, REDIS_REQUIRED_MODULES)
-        except ValueError as e:
-            raise ValueError(f"Redis failed to connect: {e}")
-
-        # Create embeddings over documents
-        embeddings = embedding.embed_documents(texts)
 
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
-        prefix = _redis_prefix(index_name)  # prefix for the document keys
 
-        # Check if index exists
-        if not _check_index_exists(client, index_name):
-            # Constants
-            dim = len(embeddings[0])
-            distance_metric = (
-                "COSINE"  # distance metric for the vectors (ex. COSINE, IP, L2)
-            )
-            schema = (
-                TextField(name=content_key),
-                TextField(name=metadata_key),
-                VectorField(
-                    vector_key,
-                    "FLAT",
-                    {
-                        "TYPE": "FLOAT32",
-                        "DIM": dim,
-                        "DISTANCE_METRIC": distance_metric,
-                    },
-                ),
-            )
-            # Create Redis Index
-            client.ft(index_name).create_index(
-                fields=schema,
-                definition=IndexDefinition(prefix=[prefix], index_type=IndexType.HASH),
-            )
+        # Create instance
+        instance = cls(
+            redis_url,
+            index_name,
+            embedding.embed_query,
+            content_key=content_key,
+            metadata_key=metadata_key,
+            vector_key=vector_key,
+            **kwargs,
+        )
+
+        # Create embeddings over documents
+        embeddings = embedding.embed_documents(texts)
+
+        # Create prefix for the document keys
+        prefix = _redis_prefix(index_name)
+
+        # Create the search index
+        instance._create_index(dim=len(embeddings[0]))
 
         # Write data to Redis
-        pipeline = client.pipeline(transaction=False)
+        pipeline = instance.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
             key = _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
@@ -329,15 +356,7 @@ class Redis(VectorStore):
                 },
             )
         pipeline.execute()
-        return cls(
-            redis_url,
-            index_name,
-            embedding.embed_query,
-            content_key=content_key,
-            metadata_key=metadata_key,
-            vector_key=vector_key,
-            **kwargs,
-        )
+        return instance
 
     @staticmethod
     def drop_index(
