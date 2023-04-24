@@ -164,3 +164,10 @@ def test_delete_dataset_by_filter(deeplake_datastore: DeepLake) -> None:
     assert len(deeplake_datastore.ds) == 2
 
     deeplake_datastore.delete_dataset()
+
+
+def test_delete_by_path(deeplake_datastore: DeepLake) -> None:
+    """Test delete dataset."""
+    path = deeplake_datastore.dataset_path
+    DeepLake.force_delete_by_path(path)
+    assert not deeplake.exists(path)
