@@ -536,4 +536,4 @@ class OpenSearchVectorSearch(VectorStore):
         _bulk_ingest_embeddings(
             client, index_name, embeddings, texts, metadatas, vector_field, text_field
         )
-        return cls(opensearch_url, index_name, embedding)
+        return cls(opensearch_url, index_name, embedding, **kwargs)
