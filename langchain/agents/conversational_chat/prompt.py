@@ -10,7 +10,7 @@ Overall, Assistant is a powerful system that can help with a wide range of tasks
 FORMAT_INSTRUCTIONS = """RESPONSE FORMAT INSTRUCTIONS
 ----------------------------
 
-When responding to me please, please output a response in one of two formats:
+When responding to me, please output a response in one of two formats:
 
 **Option 1:**
 Use this if you want the human to use a tool.
@@ -54,4 +54,4 @@ TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 USER'S INPUT
 --------------------
 
-Okay, so what is the response to my original question? If using information from tools, you must say it explicitly - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""
+Okay, so what is the response to my last comment? If using information obtained from the tools you must mention it explicitly without mentioning the tool names - I have forgotten all TOOL RESPONSES! Remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else."""

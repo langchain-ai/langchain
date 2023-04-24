@@ -34,7 +34,7 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
 
-class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
+class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     """Conversation summarizer to memory."""
 
     buffer: str = ""

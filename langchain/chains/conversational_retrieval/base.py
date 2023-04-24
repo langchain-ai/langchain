@@ -1,39 +1,57 @@
 """Chain for chatting with a vector database."""
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseLanguageModel, BaseMessage, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
+# Depending on the memory type and configuration, the chat history format may differ.
+# This needs to be consolidated.
+CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
-def _get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
+
+_ROLE_MAP = {"human": "Human: ", "ai": "Assistant: "}
+
+
+def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
     buffer = ""
-    for human_s, ai_s in chat_history:
-        human = "Human: " + human_s
-        ai = "Assistant: " + ai_s
-        buffer += "\n" + "\n".join([human, ai])
+    for dialogue_turn in chat_history:
+        if isinstance(dialogue_turn, BaseMessage):
+            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+        elif isinstance(dialogue_turn, tuple):
+            human = "Human: " + dialogue_turn[0]
+            ai = "Assistant: " + dialogue_turn[1]
+            buffer += "\n" + "\n".join([human, ai])
+        else:
+            raise ValueError(
+                f"Unsupported chat history format: {type(dialogue_turn)}."
+                f" Full chat history: {chat_history} "
+            )
     return buffer
 
 
-class BaseConversationalRetrievalChain(Chain, BaseModel):
+class BaseConversationalRetrievalChain(Chain):
     """Chain for chatting with an index."""
 
     combine_docs_chain: BaseCombineDocumentsChain
     question_generator: LLMChain
     output_key: str = "answer"
     return_source_documents: bool = False
-    get_chat_history: Optional[Callable[[Tuple[str, str]], str]] = None
+    get_chat_history: Optional[Callable[[CHAT_TURN_TYPE], str]] = None
     """Return the source documents."""
 
     class Config:
@@ -78,11 +96,15 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = self.combine_docs_chain.combine_docs(docs, **new_inputs)
+        answer = self.combine_docs_chain.run(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
+
+    @abstractmethod
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs."""
 
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         question = inputs["question"]
@@ -94,12 +116,11 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
             )
         else:
             new_question = question
-        # TODO: This blocks the event loop, but it's not clear how to avoid it.
-        docs = self._get_docs(new_question, inputs)
+        docs = await self._aget_docs(new_question, inputs)
         new_inputs = inputs.copy()
         new_inputs["question"] = new_question
         new_inputs["chat_history"] = chat_history_str
-        answer, _ = await self.combine_docs_chain.acombine_docs(docs, **new_inputs)
+        answer = await self.combine_docs_chain.arun(input_documents=docs, **new_inputs)
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
         else:
@@ -111,13 +132,39 @@ class BaseConversationalRetrievalChain(Chain, BaseModel):
         super().save(file_path)
 
 
-class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
+class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for chatting with an index."""
 
     retriever: BaseRetriever
+    """Index to connect to."""
+    max_tokens_limit: Optional[int] = None
+    """If set, restricts the docs to return from store based on tokens, enforced only
+    for StuffDocumentChain"""
+
+    def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
+        num_docs = len(docs)
+
+        if self.max_tokens_limit and isinstance(
+            self.combine_docs_chain, StuffDocumentsChain
+        ):
+            tokens = [
+                self.combine_docs_chain.llm_chain.llm.get_num_tokens(doc.page_content)
+                for doc in docs
+            ]
+            token_count = sum(tokens[:num_docs])
+            while token_count > self.max_tokens_limit:
+                num_docs -= 1
+                token_count -= tokens[num_docs]
+
+        return docs[:num_docs]
 
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
-        return self.retriever.get_relevant_texts(question)
+        docs = self.retriever.get_relevant_documents(question)
+        return self._reduce_tokens_below_limit(docs)
+
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        docs = await self.retriever.aget_relevant_documents(question)
+        return self._reduce_tokens_below_limit(docs)
 
     @classmethod
     def from_llm(
@@ -144,7 +191,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain, BaseModel):
         )
 
 
-class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
+class ChatVectorDBChain(BaseConversationalRetrievalChain):
     """Chain for chatting with a vector database."""
 
     vectorstore: VectorStore = Field(alias="vectorstore")
@@ -155,12 +202,23 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain, BaseModel):
     def _chain_type(self) -> str:
         return "chat-vector-db"
 
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "`ChatVectorDBChain` is deprecated - "
+            "please use `from langchain.chains import ConversationalRetrievalChain`"
+        )
+        return values
+
     def _get_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
         vectordbkwargs = inputs.get("vectordbkwargs", {})
         full_kwargs = {**self.search_kwargs, **vectordbkwargs}
         return self.vectorstore.similarity_search(
             question, k=self.top_k_docs_for_context, **full_kwargs
         )
+
+    async def _aget_docs(self, question: str, inputs: Dict[str, Any]) -> List[Document]:
+        raise NotImplementedError("ChatVectorDBChain does not support async")
 
     @classmethod
     def from_llm(

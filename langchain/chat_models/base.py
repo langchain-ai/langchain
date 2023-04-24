@@ -1,7 +1,8 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Extra, Field, validator
 
 import langchain
 from langchain.callbacks import get_callback_manager
@@ -22,7 +23,7 @@ def _get_verbosity() -> bool:
     return langchain.verbose
 
 
-class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
+class BaseChatModel(BaseLanguageModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
@@ -59,7 +60,9 @@ class BaseChatModel(BaseLanguageModel, BaseModel, ABC):
         self, messages: List[List[BaseMessage]], stop: Optional[List[str]] = None
     ) -> LLMResult:
         """Top Level call"""
-        results = [await self._agenerate(m, stop=stop) for m in messages]
+        results = await asyncio.gather(
+            *[self._agenerate(m, stop=stop) for m in messages]
+        )
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
         return LLMResult(generations=generations, llm_output=llm_output)

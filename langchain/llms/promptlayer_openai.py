@@ -2,13 +2,11 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
-
 from langchain.llms import OpenAI, OpenAIChat
 from langchain.schema import LLMResult
 
 
-class PromptLayerOpenAI(OpenAI, BaseModel):
+class PromptLayerOpenAI(OpenAI):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -73,7 +71,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(prompts, stop)
@@ -85,7 +83,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
                 "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            pl_request_id = promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerOpenAI.async",
                 "langchain",
                 [prompt],
@@ -106,7 +104,7 @@ class PromptLayerOpenAI(OpenAI, BaseModel):
         return generated_responses
 
 
-class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
+class PromptLayerOpenAIChat(OpenAIChat):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
@@ -171,7 +169,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
-        from promptlayer.utils import get_api_key, promptlayer_api_request
+        from promptlayer.utils import get_api_key, promptlayer_api_request_async
 
         request_start_time = datetime.datetime.now().timestamp()
         generated_responses = await super()._agenerate(prompts, stop)
@@ -183,7 +181,7 @@ class PromptLayerOpenAIChat(OpenAIChat, BaseModel):
                 "text": generation.text,
                 "llm_output": generated_responses.llm_output,
             }
-            pl_request_id = promptlayer_api_request(
+            pl_request_id = await promptlayer_api_request_async(
                 "langchain.PromptLayerOpenAIChat.async",
                 "langchain",
                 [prompt],

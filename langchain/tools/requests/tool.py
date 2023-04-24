@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel
 
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from langchain.tools.base import BaseTool
 
 
@@ -17,7 +17,7 @@ def _parse_input(text: str) -> Dict[str, Any]:
 class BaseRequestsTool(BaseModel):
     """Base class for requests tools."""
 
-    requests_wrapper: RequestsWrapper
+    requests_wrapper: TextRequestsWrapper
 
 
 class RequestsGetTool(BaseRequestsTool, BaseTool):

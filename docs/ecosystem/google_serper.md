@@ -23,6 +23,7 @@ You can use it as part of a Self Ask chain:
 from langchain.utilities import GoogleSerperAPIWrapper
 from langchain.llms.openai import OpenAI
 from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType
 
 import os
 
@@ -39,7 +40,7 @@ tools = [
     )
 ]
 
-self_ask_with_search = initialize_agent(tools, llm, agent="self-ask-with-search", verbose=True)
+self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True)
 self_ask_with_search.run("What is the hometown of the reigning men's U.S. Open champion?")
 ```
 
@@ -58,7 +59,7 @@ So the final answer is: El Palmar, Spain
 'El Palmar, Spain'
 ```
 
-For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/google_serper.ipynb).
+For a more detailed walkthrough of this wrapper, see [this notebook](../modules/agents/tools/examples/google_serper.ipynb).
 
 ### Tool
 
@@ -69,4 +70,4 @@ from langchain.agents import load_tools
 tools = load_tools(["google-serper"])
 ```
 
-For more information on this, see [this page](../modules/agents/tools.md)
+For more information on this, see [this page](../modules/agents/tools/getting_started.md)

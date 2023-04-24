@@ -3,17 +3,20 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+
+import numpy as np
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     import chromadb
     import chromadb.config
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -56,6 +59,8 @@ class Chroma(VectorStore):
         embedding_function: Optional[Embeddings] = None,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
+        collection_metadata: Optional[Dict] = None,
+        client: Optional[chromadb.Client] = None,
     ) -> None:
         """Initialize with Chroma client."""
         try:
@@ -67,15 +72,20 @@ class Chroma(VectorStore):
                 "Please install it with `pip install chromadb`."
             )
 
-        if client_settings:
-            self._client_settings = client_settings
+        if client is not None:
+            self._client = client
         else:
-            self._client_settings = chromadb.config.Settings()
-            if persist_directory is not None:
-                self._client_settings = chromadb.config.Settings(
-                    chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
-                )
-        self._client = chromadb.Client(self._client_settings)
+            if client_settings:
+                self._client_settings = client_settings
+            else:
+                self._client_settings = chromadb.config.Settings()
+                if persist_directory is not None:
+                    self._client_settings = chromadb.config.Settings(
+                        chroma_db_impl="duckdb+parquet",
+                        persist_directory=persist_directory,
+                    )
+            self._client = chromadb.Client(self._client_settings)
+
         self._embedding_function = embedding_function
         self._persist_directory = persist_directory
         self._collection = self._client.get_or_create_collection(
@@ -83,6 +93,7 @@ class Chroma(VectorStore):
             embedding_function=self._embedding_function.embed_documents
             if self._embedding_function is not None
             else None,
+            metadata=collection_metadata,
         )
 
     def add_texts(
@@ -128,9 +139,9 @@ class Chroma(VectorStore):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Document]: List of documents most simmilar to the query text.
+            List[Document]: List of documents most similar to the query text.
         """
-        docs_and_scores = self.similarity_search_with_score(query, k, where=filter)
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
@@ -182,6 +193,71 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        results = self._collection.query(
+            query_embeddings=embedding,
+            n_results=fetch_k,
+            where=filter,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32), results["embeddings"][0], k=k
+        )
+
+        candidates = _results_to_docs(results)
+
+        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
+        return selected_results
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if self._embedding_function is None:
+            raise ValueError(
+                "For MMR search, you must specify an embedding function on" "creation."
+            )
+
+        embedding = self._embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, filter
+        )
+        return docs
+
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
@@ -201,7 +277,7 @@ class Chroma(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[Chroma],
         texts: List[str],
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
@@ -209,6 +285,7 @@ class Chroma(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
+        client: Optional[chromadb.Client] = None,
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a raw documents.
@@ -233,19 +310,21 @@ class Chroma(VectorStore):
             embedding_function=embedding,
             persist_directory=persist_directory,
             client_settings=client_settings,
+            client=client,
         )
         chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return chroma_collection
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[Chroma],
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         persist_directory: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
+        client: Optional[chromadb.Client] = None,  # Add this line
         **kwargs: Any,
     ) -> Chroma:
         """Create a Chroma vectorstore from a list of documents.
@@ -273,4 +352,5 @@ class Chroma(VectorStore):
             collection_name=collection_name,
             persist_directory=persist_directory,
             client_settings=client_settings,
+            client=client,
         )

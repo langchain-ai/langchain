@@ -1,11 +1,12 @@
 """Functionality for loading agents."""
 import json
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 
-from langchain.agents.agent import Agent
+from langchain.agents.agent import BaseSingleActionAgent
+from langchain.agents.agent_types import AgentType
 from langchain.agents.chat.base import ChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
@@ -17,13 +18,13 @@ from langchain.chains.loading import load_chain, load_chain_from_config
 from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
 
-AGENT_TO_CLASS = {
-    "zero-shot-react-description": ZeroShotAgent,
-    "react-docstore": ReActDocstoreAgent,
-    "self-ask-with-search": SelfAskWithSearchAgent,
-    "conversational-react-description": ConversationalAgent,
-    "chat-zero-shot-react-description": ChatAgent,
-    "chat-conversational-react-description": ConversationalChatAgent,
+AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
+    AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
+    AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
+    AgentType.SELF_ASK_WITH_SEARCH: SelfAskWithSearchAgent,
+    AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
+    AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
+    AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
 }
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
@@ -31,13 +32,11 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/age
 
 def _load_agent_from_tools(
     config: dict, llm: BaseLLM, tools: List[Tool], **kwargs: Any
-) -> Agent:
+) -> BaseSingleActionAgent:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
         raise ValueError(f"Loading {config_type} agent not supported")
 
-    if config_type not in AGENT_TO_CLASS:
-        raise ValueError(f"Loading {config_type} agent not supported")
     agent_cls = AGENT_TO_CLASS[config_type]
     combined_config = {**config, **kwargs}
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
@@ -48,7 +47,7 @@ def load_agent_from_config(
     llm: Optional[BaseLLM] = None,
     tools: Optional[List[Tool]] = None,
     **kwargs: Any,
-) -> Agent:
+) -> BaseSingleActionAgent:
     """Load agent from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
@@ -81,7 +80,7 @@ def load_agent_from_config(
     return agent_cls(**combined_config)  # type: ignore
 
 
-def load_agent(path: Union[str, Path], **kwargs: Any) -> Agent:
+def load_agent(path: Union[str, Path], **kwargs: Any) -> BaseSingleActionAgent:
     """Unified method for loading a agent from LangChainHub or local fs."""
     if hub_result := try_load_from_hub(
         path, _load_agent_from_file, "agents", {"json", "yaml"}
@@ -91,7 +90,9 @@ def load_agent(path: Union[str, Path], **kwargs: Any) -> Agent:
         return _load_agent_from_file(path, **kwargs)
 
 
-def _load_agent_from_file(file: Union[str, Path], **kwargs: Any) -> Agent:
+def _load_agent_from_file(
+    file: Union[str, Path], **kwargs: Any
+) -> BaseSingleActionAgent:
     """Load agent from file."""
     # Convert file to Path object.
     if isinstance(file, str):

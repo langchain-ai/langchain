@@ -40,10 +40,10 @@ for res in llm_results.generations:
 ```
 You can use the PromptLayer request ID to add a prompt, score, or other metadata to your request. [Read more about it here](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
 
-This LLM is identical to the [OpenAI LLM](./openai), except that
+This LLM is identical to the [OpenAI LLM](./openai.md), except that
 - all your requests will be logged to your PromptLayer account
 - you can add `pl_tags` when instantializing to tag your requests on PromptLayer
 - you can add `return_pl_id` when instantializing to return a PromptLayer request id to use [while tracking requests](https://magniv.notion.site/Track-4deee1b1f7a34c1680d085f82567dab9).
 
 
-PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/chat/examples/promptlayer_chat_openai.ipynb) and `PromptLayerOpenAIChat`
+PromptLayer also provides native wrappers for [`PromptLayerChatOpenAI`](../modules/models/chat/integrations/promptlayer_chatopenai.ipynb) and `PromptLayerOpenAIChat`

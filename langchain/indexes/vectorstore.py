@@ -33,7 +33,7 @@ class VectorStoreIndexWrapper(BaseModel):
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
-            llm, retriver=self.vectorstore.as_retriever(), **kwargs
+            llm, retriever=self.vectorstore.as_retriever(), **kwargs
         )
         return chain.run(question)
 

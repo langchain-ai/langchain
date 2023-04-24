@@ -26,4 +26,4 @@ from langchain.vectorstores.pgvector import PGVector
 
 ### Usage
 
-For a more detailed walkthrough of the PGVector Wrapper, see [this notebook](../modules/indexes/vectorstore_examples/pgvector.ipynb)
+For a more detailed walkthrough of the PGVector Wrapper, see [this notebook](../modules/indexes/vectorstores/examples/pgvector.ipynb)

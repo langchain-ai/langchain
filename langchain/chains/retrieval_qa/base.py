@@ -1,10 +1,11 @@
 """Chain for question-answering against a vector database."""
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -17,7 +18,7 @@ from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
-class BaseRetrievalQA(Chain, BaseModel):
+class BaseRetrievalQA(Chain):
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
     input_key: str = "query"  #: :meta private:
@@ -106,7 +107,37 @@ class BaseRetrievalQA(Chain, BaseModel):
         question = inputs[self.input_key]
 
         docs = self._get_docs(question)
-        answer, _ = self.combine_documents_chain.combine_docs(docs, question=question)
+        answer = self.combine_documents_chain.run(
+            input_documents=docs, question=question
+        )
+
+        if self.return_source_documents:
+            return {self.output_key: answer, "source_documents": docs}
+        else:
+            return {self.output_key: answer}
+
+    @abstractmethod
+    async def _aget_docs(self, question: str) -> List[Document]:
+        """Get documents to do question answering over."""
+
+    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+        """Run get_relevant_text and llm on input query.
+
+        If chain has 'return_source_documents' as 'True', returns
+        the retrieved documents as well under the key 'source_documents'.
+
+        Example:
+        .. code-block:: python
+
+        res = indexqa({'query': 'This is my query'})
+        answer, docs = res['result'], res['source_documents']
+        """
+        question = inputs[self.input_key]
+
+        docs = await self._aget_docs(question)
+        answer = await self.combine_documents_chain.arun(
+            input_documents=docs, question=question
+        )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
@@ -114,7 +145,7 @@ class BaseRetrievalQA(Chain, BaseModel):
             return {self.output_key: answer}
 
 
-class RetrievalQA(BaseRetrievalQA, BaseModel):
+class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
     Example:
@@ -123,18 +154,22 @@ class RetrievalQA(BaseRetrievalQA, BaseModel):
             from langchain.llms import OpenAI
             from langchain.chains import RetrievalQA
             from langchain.faiss import FAISS
-            vectordb = FAISS(...)
-            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=vectordb)
+            from langchain.vectorstores.base import VectorStoreRetriever
+            retriever = VectorStoreRetriever(vectorstore=FAISS(...))
+            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 
     """
 
     retriever: BaseRetriever = Field(exclude=True)
 
     def _get_docs(self, question: str) -> List[Document]:
-        return self.retriever.get_relevant_texts(question)
+        return self.retriever.get_relevant_documents(question)
+
+    async def _aget_docs(self, question: str) -> List[Document]:
+        return await self.retriever.aget_relevant_documents(question)
 
 
-class VectorDBQA(BaseRetrievalQA, BaseModel):
+class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
     vectorstore: VectorStore = Field(exclude=True, alias="vectorstore")
@@ -145,6 +180,14 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
     """Search type to use over vectorstore. `similarity` or `mmr`."""
     search_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
+
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "`VectorDBQA` is deprecated - "
+            "please use `from langchain.chains import RetrievalQA`"
+        )
+        return values
 
     @root_validator()
     def validate_search_type(cls, values: Dict) -> Dict:
@@ -167,6 +210,9 @@ class VectorDBQA(BaseRetrievalQA, BaseModel):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
+
+    async def _aget_docs(self, question: str) -> List[Document]:
+        raise NotImplementedError("VectorDBQA does not support async")
 
     @property
     def _chain_type(self) -> str:
