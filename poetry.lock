@@ -571,7 +571,7 @@ name = "azure-core"
 version = "1.26.4"
 description = "Microsoft Azure Core Library for Python"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "azure-core-1.26.4.zip", hash = "sha256:075fe06b74c3007950dd93d49440c2f3430fd9b4a5a2756ec8c79454afc989c6"},
@@ -591,7 +591,7 @@ name = "azure-cosmos"
 version = "4.4.0b1"
 description = "Microsoft Azure Cosmos Client Library for Python"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "azure-cosmos-4.4.0b1.zip", hash = "sha256:42e7c9c749784f664d9468b10ea4031f86552df99f4e12b77d9f75da048efa5d"},
@@ -9297,4 +9297,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a29e5ec4bd3e07e2e2ce23321c2d3ffd837c9ecad735eafe2072965174fd3155"
+content-hash = "6061591f0131d2495ed33f4386704a953de1c5b2c5f4d5e9887c71b1625f03c1"
