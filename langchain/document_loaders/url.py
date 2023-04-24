@@ -100,22 +100,21 @@ class UnstructuredURLLoader(BaseLoader):
                     else:
                         elements = partition_html(url=url, **self.unstructured_kwargs)
 
-                if self.mode == "single":
-                    text = "\n\n".join([str(el) for el in elements])
-                    metadata = {"source": url}
-                    docs.append(Document(page_content=text, metadata=metadata))
-                elif self.mode == "elements":
-                    for element in elements:
-                        metadata = element.metadata.to_dict()
-                        metadata["category"] = element.category
-                        docs.append(
-                            Document(page_content=str(element), metadata=metadata)
-                        )
-
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
                     continue
                 else:
                     raise e
+
+            if self.mode == "single":
+                text = "\n\n".join([str(el) for el in elements])
+                metadata = {"source": url}
+                docs.append(Document(page_content=text, metadata=metadata))
+            elif self.mode == "elements":
+                for element in elements:
+                    metadata = element.metadata.to_dict()
+                    metadata["category"] = element.category
+                    docs.append(Document(page_content=str(element), metadata=metadata))
+
         return docs
