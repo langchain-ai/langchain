@@ -156,11 +156,11 @@ class InputToQueryTool(BaseTool):
         arbitrary_types_allowed = True
 
     @validator("template")
-    def set_default_template(cls, v: str):
+    def set_default_template(cls, v: str) -> str:
         return v or QUESTION_TO_QUERY
 
     @validator("examples")
-    def set_default_examples(cls, v: str):
+    def set_default_examples(cls, v: str) -> str:
         return v or DEFAULT_FEWSHOT_EXAMPLES
 
     @validator("llm_chain")
