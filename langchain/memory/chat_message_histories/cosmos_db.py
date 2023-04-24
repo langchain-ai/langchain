@@ -3,17 +3,7 @@ from __future__ import annotations
 
 import logging
 from types import TracebackType
-from typing import TYPE_CHECKING, List, Optional, Type
-
-try:
-    from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
-    from azure.cosmos.exceptions import CosmosHttpResponseError
-    from azure.identity import DefaultAzureCredential
-except ImportError as exc:
-    if not TYPE_CHECKING:
-        raise ImportError(
-            "You must install the azure-cosmos and azure-identity package to use the CosmosDBChatMessageHistory."  # noqa: E501
-        ) from exc
+from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from langchain.schema import (
     AIMessage,
@@ -27,9 +17,7 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from azure.cosmos import ContainerProxy, PartitionKey
-    from azure.cosmos.exceptions import CosmosHttpResponseError
-    from azure.identity import DefaultAzureCredential
+    from azure.cosmos import ContainerProxy, CosmosClient
 
 
 class CosmosDBChatMessageHistory(BaseChatMessageHistory):
@@ -40,7 +28,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         cosmos_endpoint: str,
         cosmos_database: str,
         cosmos_container: str,
-        credential: DefaultAzureCredential,
+        credential: Any,
         session_id: str,
         user_id: str,
         ttl: Optional[int] = None,
@@ -64,10 +52,8 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         self.user_id = user_id
         self.ttl = ttl
 
-        self._client = CosmosClient(
-            url=self.cosmos_endpoint, credential=self.credential
-        )
-        self._container: Optional["ContainerProxy"] = None
+        self._client: Optional[CosmosClient] = None
+        self._container: Optional[ContainerProxy] = None
         self.messages: List[BaseMessage] = []
 
     def prepare_cosmos(self) -> None:
@@ -75,6 +61,18 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
 
         Use this function or the context manager to make sure your database is ready.
         """
+        try:
+            from azure.cosmos import (  # pylint: disable=import-outside-toplevel # noqa: E501
+                CosmosClient,
+                PartitionKey,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "You must install the azure-cosmos package to use the CosmosDBChatMessageHistory."  # noqa: E501
+            ) from exc
+        self._client = CosmosClient(
+            url=self.cosmos_endpoint, credential=self.credential
+        )
         database = self._client.create_database_if_not_exists(self.cosmos_database)
         self._container = database.create_container_if_not_exists(
             self.cosmos_container,
@@ -85,9 +83,11 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
 
     def __enter__(self) -> "CosmosDBChatMessageHistory":
         """Context manager entry point."""
-        self._client.__enter__()
-        self.prepare_cosmos()
-        return self
+        if self._client:
+            self._client.__enter__()
+            self.prepare_cosmos()
+            return self
+        raise ValueError("Client not initialized")
 
     def __exit__(
         self,
@@ -97,12 +97,21 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Context manager exit"""
         self.upsert_messages()
-        self._client.__exit__(exc_type, exc_val, traceback)
+        if self._client:
+            self._client.__exit__(exc_type, exc_val, traceback)
 
     def load_messages(self) -> None:
         """Retrieve the messages from Cosmos"""
         if not self._container:
             raise ValueError("Container not initialized")
+        try:
+            from azure.cosmos.exceptions import (  # pylint: disable=import-outside-toplevel # noqa: E501
+                CosmosHttpResponseError,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "You must install the azure-cosmos package to use the CosmosDBChatMessageHistory."  # noqa: E501
+            ) from exc
         try:
             item = self._container.read_item(
                 item=self.session_id, partition_key=self.user_id
