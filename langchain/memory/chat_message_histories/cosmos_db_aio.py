@@ -1,8 +1,10 @@
 """Azure CosmosDB Memory History."""
+import json
 import logging
 from typing import Optional
 
-from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
+from azure.cosmos import PartitionKey
+from azure.cosmos.aio import ContainerProxy, CosmosClient
 from azure.cosmos.exceptions import CosmosHttpResponseError
 from azure.identity import DefaultAzureCredential
 
@@ -18,8 +20,8 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 
-class CosmosDBChatMessageHistory(BaseChatMessageHistory):
-    """Chat history backed by Azure CosmosDB."""
+class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
+    """ "Chat history backed by Azure CosmosDB."""
 
     def __init__(
         self,
@@ -55,34 +57,36 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         )
         self._container: Optional["ContainerProxy"] = None
 
-    def __enter__(self) -> "CosmosDBChatMessageHistory":
+    async def __aenter__(self) -> "CosmosDBChatMessageHistory":
         """Async context manager entry point."""
-        self._client.__enter__()
-        database = self._client.create_database_if_not_exists(self.cosmos_database)
-        self._container = database.create_container_if_not_exists(
+        await self._client.__aenter__()
+        database = await self._client.create_database_if_not_exists(
+            self.cosmos_database
+        )
+        self._container = await database.create_container_if_not_exists(
             self.cosmos_container,
             partition_key=PartitionKey("/user_id"),
             default_ttl=self.ttl,
         )
-        self.load_messages()
+        await self.load_messages()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Async context manager exit"""
-        self.upsert_messages()
-        self._client.__exit__(exc_type, exc_val, exc_tb)
+        await self.upsert_messages()
+        await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
-    def load_messages(self) -> None:
+    async def load_messages(self) -> None:
         """Retrieve the messages from Cosmos"""
         if not self._container:
             raise ValueError("Container not initialized")
         try:
-            item = self._container.read_item(
+            item = await self._container.read_item(
                 item=self.session_id, partition_key=self.user_id
             )
         except CosmosHttpResponseError:
             logger.info("no session found")
-            return
+            return None
         if (
             "messages" in item
             and len(item["messages"]) > 0
@@ -91,31 +95,54 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             self.messages = messages_from_dict(item["messages"])
 
     def add_user_message(self, message: str) -> None:
-        """Add a user message to the memory."""
-        self.upsert_messages(HumanMessage(content=message))
+        """Add a user message to the memory.
+
+        Be careful this method does not store the message externally, use upsert_messages (async) after this to store in Cosmos.
+        Alternatively use the a_ version of this method with async.
+        """
+        self.messages.append(HumanMessage(content=message))
 
     def add_ai_message(self, message: str) -> None:
-        """Add a AI message to the memory."""
-        self.upsert_messages(AIMessage(content=message))
+        """Add a AI message to the memory.
 
-    def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
+        Be careful this method does not store the message externally, use upsert_messages (async) after this to store in Cosmos.
+        Alternatively use the a_ version of this method with async.
+        """
+        self.messages.append(AIMessage(content=message))
+
+    async def a_add_user_message(self, message: str) -> None:
+        """Add a user message to the memory."""
+        await self.upsert_messages(HumanMessage(content=message))
+
+    async def a_add_ai_message(self, message: str) -> None:
+        """Add a AI message to the memory."""
+        await self.upsert_messages(AIMessage(content=message))
+
+    async def upsert_messages(self, new_message: Optional[BaseMessage] = None) -> None:
         """Update the cosmosdb item."""
         if new_message:
             self.messages.append(new_message)
         if not self._container:
             raise ValueError("Container not initialized")
-        self._container.upsert_item(
+        await self._container.upsert_item(
             body={
                 "id": self.session_id,
                 "user_id": self.user_id,
-                "messages": messages_to_dict(self.messages),
+                "messages": json.dumps(messages_to_dict(self.messages)),
             }
         )
 
     def clear(self) -> None:
-        """Clear session memory from this memory and cosmos."""
+        """Clear session memory from this memory.
+
+        Does not delete from Cosmos, use a_clear for that."""
         self.messages = []
-        if self._container:
-            self._container.delete_item(
-                item=self.session_id, partition_key=self.user_id
-            )
+
+    async def a_clear(self) -> None:
+        """Clear session memory from Redis"""
+        if not self._container:
+            raise ValueError("Container not initialized")
+        self.messages = []
+        await self._container.delete_item(
+            item=self.session_id, partition_key=self.user_id
+        )
