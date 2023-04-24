@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import yaml
 
+from pydantic import Field
+
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_CONTROLLER_PROMPT,
@@ -44,14 +46,20 @@ from langchain.tools.requests.tool import BaseRequestsTool
 MAX_RESPONSE_LENGTH = 5000
 
 
+def _get_default_llm_chain_factory(prompt):
+    def factory():
+        return LLMChain(
+            llm=OpenAI(),
+            prompt=prompt,
+        )
+    return factory
+
+
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     name = "requests_get"
     description = REQUESTS_GET_TOOL_DESCRIPTION
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_GET_PROMPT,
-    )
+    llm_chain: LLMChain = Field(default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT))
 
     def _run(self, text: str) -> str:
         try:
@@ -74,10 +82,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_POST_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_POST_PROMPT,
-    )
+    llm_chain: LLMChain = Field(default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT))
 
     def _run(self, text: str) -> str:
         try:
@@ -173,9 +178,11 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
+    get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
+    post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper),
-        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper),
+        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper, llm_chain=get_llm_chain),
+        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper, llm_chain=post_llm_chain),
     ]
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
