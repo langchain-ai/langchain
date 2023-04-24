@@ -106,8 +106,8 @@ class LLMMathChain(Chain):
                     output, color="yellow", verbose=self.verbose
                 )
             else:
-                await self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
-                await self.callback_manager.on_text(
+                self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
+                self.callback_manager.on_text(
                     output, color="yellow", verbose=self.verbose
                 )
             answer = "Answer: " + output
