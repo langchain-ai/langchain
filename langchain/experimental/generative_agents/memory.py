@@ -37,7 +37,7 @@ class GenerativeAgentMemory(BaseMemory):
     max_tokens_limit: int = 1200  # : :meta private:
     # input keys
     queries_key: str = "queries"
-    most_recent_memories_token_key: str = "recent_memories_key"
+    most_recent_memories_token_key: str = "recent_memories_token"
     add_memory_key: str = "add_memory"
     # output keys
     relevant_memories_key: str = "relevant_memories"
