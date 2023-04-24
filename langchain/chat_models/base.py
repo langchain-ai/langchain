@@ -131,16 +131,22 @@ class BaseChatModel(BaseLanguageModel, ABC):
         return output
 
     def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return self.generate(prompt_messages, stop=stop)
+        return self.generate(prompt_messages, stop=stop, callbacks=callbacks)
 
     async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return await self.agenerate(prompt_messages, stop=stop)
+        return await self.agenerate(prompt_messages, stop=stop, callbacks=callbacks)
 
     @abstractmethod
     def _generate(

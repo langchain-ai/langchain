@@ -6,6 +6,8 @@ from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Unio
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+from langchain.callbacks.manager import Callbacks
+
 
 def get_buffer_string(
     messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
@@ -174,13 +176,19 @@ class PromptValue(BaseModel, ABC):
 class BaseLanguageModel(BaseModel, ABC):
     @abstractmethod
     def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
 
     @abstractmethod
     async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         """Take in a list of prompt values and return an LLMResult."""
 
