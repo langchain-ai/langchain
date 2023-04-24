@@ -99,7 +99,6 @@ class UnstructuredURLLoader(BaseLoader):
                         )
                     else:
                         elements = partition_html(url=url, **self.unstructured_kwargs)
-
             except Exception as e:
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
