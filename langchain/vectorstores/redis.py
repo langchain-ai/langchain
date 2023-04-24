@@ -461,3 +461,13 @@ class RedisVectorStoreRetriever(BaseRetriever, BaseModel):
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
         raise NotImplementedError("RedisVectorStoreRetriever does not support async")
+    
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add documents to vectorstore."""
+        return self.vectorstore.add_documents(documents, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Add documents to vectorstore."""
+        return await self.vectorstore.aadd_documents(documents, **kwargs)
