@@ -1,7 +1,8 @@
 # flake8: noqa
 """Load tools."""
 import warnings
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Callable
+from mypy_extensions import KwArg
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -229,7 +230,7 @@ _EXTRA_LLM_TOOLS = {
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
 
-_EXTRA_OPTIONAL_TOOLS = {
+_EXTRA_OPTIONAL_TOOLS: dict[str, tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "google-search-results-json": (
