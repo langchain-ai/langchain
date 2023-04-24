@@ -3,7 +3,7 @@ import logging
 from typing import Any, List
 
 from langchain.docstore.document import Document
-from langchain.document_loaders.unstructured import BaseLoader
+from langchain.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
