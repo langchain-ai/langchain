@@ -76,9 +76,9 @@ class LanceDB(VectorStore):
             metadata = metadatas[idx] if metadatas else {}
             docs.append(
                 {
-                    [self._vector_key]: embedding,
-                    [self._id_key]: ids[idx],
-                    [self._text_key]: text,
+                    self._vector_key: embedding,
+                    self._id_key: ids[idx],
+                    self._text_key: text,
                     **metadata,
                 }
             )
