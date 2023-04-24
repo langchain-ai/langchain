@@ -161,9 +161,14 @@ class BaseChatModel(BaseLanguageModel, ABC):
         """Top Level call"""
 
     def __call__(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> BaseMessage:
-        return self._generate(messages, stop=stop).generations[0].message
+        return ChatGeneration(
+            self.generate([messages], stop=stop, callbacks=callbacks).generations[0][0]
+        ).message
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)
