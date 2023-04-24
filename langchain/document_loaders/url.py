@@ -77,9 +77,6 @@ class UnstructuredURLLoader(BaseLoader):
 
         return unstructured_version >= (0, 5, 12)
 
-    def _get_metadata(self) -> dict:
-        return {}
-
     def load(self) -> List[Document]:
         """Load file."""
         from unstructured.partition.auto import partition
