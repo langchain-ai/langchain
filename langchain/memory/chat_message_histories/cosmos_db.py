@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Type
 
 try:
     from azure.cosmos import ContainerProxy, CosmosClient, PartitionKey
@@ -68,6 +68,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             url=self.cosmos_endpoint, credential=self.credential
         )
         self._container: Optional["ContainerProxy"] = None
+        self.messages: List[BaseMessage] = []
 
     def prepare_cosmos(self) -> None:
         """Prepare the CosmosDB client.

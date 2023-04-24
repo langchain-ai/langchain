@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Type
 
 try:
     from azure.cosmos import PartitionKey
@@ -71,6 +71,7 @@ class CosmosDBChatMessageHistoryAsync(BaseChatMessageHistory):
             url=self.cosmos_endpoint, credential=self.credential
         )
         self._container: Optional["ContainerProxy"] = None
+        self.messages: List[BaseMessage] = []
 
     async def __aenter__(self) -> "CosmosDBChatMessageHistoryAsync":
         """Async context manager entry point."""
