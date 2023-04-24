@@ -147,13 +147,21 @@ class InputToQueryTool(BaseTool):
     """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
-    template: str = QUESTION_TO_QUERY
-    examples: str = DEFAULT_FEWSHOT_EXAMPLES
+    template: Optional[str]
+    examples: Optional[str]
 
     class Config:
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
+
+    @validator("template")
+    def set_default_template(cls, v: str):
+        return v or QUESTION_TO_QUERY
+
+    @validator("examples")
+    def set_default_examples(cls, v: str):
+        return v or DEFAULT_FEWSHOT_EXAMPLES
 
     @validator("llm_chain")
     def validate_llm_chain_input_variables(  # pylint: disable=E0213

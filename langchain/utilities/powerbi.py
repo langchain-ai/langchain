@@ -6,6 +6,16 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
+try:
+    from azure.core.exceptions import ClientAuthenticationError
+    from azure.identity import ChainedTokenCredential
+    from azure.identity._internal import InteractiveCredential
+except ImportError as exc:
+    if not TYPE_CHECKING:
+        raise ImportError(
+            "You must install the azure-identity package to use the Power BI Dataset."  # noqa: E501
+        ) from exc
+
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
