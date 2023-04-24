@@ -5,6 +5,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from langchain.embeddings.base import Embeddings
 
+
 class SentenceTransformerEmbeddings(BaseModel, Embeddings):
     embedding_function: Any  #: :meta private:
 
@@ -45,9 +46,10 @@ class SentenceTransformerEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.embedding_function.encode(texts, convert_to_numpy=True).tolist()
+        embeddings = self.embedding_function.encode(
+            texts, convert_to_numpy=True
+        ).tolist()
         return [list(map(float, e)) for e in embeddings]
-
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the SentenceTransformer model.
@@ -59,4 +61,3 @@ class SentenceTransformerEmbeddings(BaseModel, Embeddings):
             Embedding for the text.
         """
         return self.embed_documents([text])[0]
-

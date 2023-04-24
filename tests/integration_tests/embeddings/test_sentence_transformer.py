@@ -26,8 +26,8 @@ def test_sentence_transformer_db_query() -> None:
     """Test sentence_transformer similarity search."""
     embedding = SentenceTransformerEmbeddings()
     texts = [
-            "we will foo your bar until you can't foo any more",
-            "the quick brown fox jumped over the lazy dog",
+        "we will foo your bar until you can't foo any more",
+        "the quick brown fox jumped over the lazy dog",
     ]
     query = "what the foo is a bar?"
     query_vector = embedding.embed_query(query)
