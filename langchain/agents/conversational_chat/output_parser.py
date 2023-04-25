@@ -13,21 +13,31 @@ class ConvoOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        cleaned_output = text.strip()
-        if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
-        if "```" in cleaned_output:
-            cleaned_output, _ = cleaned_output.split("```")
-        if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
-        if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
-        if cleaned_output.endswith("```"):
-            cleaned_output = cleaned_output[: -len("```")]
-        cleaned_output = cleaned_output.strip()
-        response = json.loads(cleaned_output)
-        action, action_input = response["action"], response["action_input"]
-        if action == "Final Answer":
-            return AgentFinish({"output": action_input}, text)
-        else:
-            return AgentAction(action, action_input, text)
+        class MessageJSONExtractor(json.JSONDecoder):
+            """
+            A custom JSON extractor that will extract the first JSON object in a string.
+            This is to handle the LLM returning more than just the JSON object.
+            """
+            def decode(self, s, _w=None):
+                for idx, char in enumerate(s):
+                    if char == '{':
+                        end_pos = self.raw_decode(s, idx)
+                        break
+                else:
+                    raise json.JSONDecodeError("No JSON object found", s, 0)
+
+                return end_pos[0]
+
+        try:
+            response = json.loads(text, cls=MessageJSONExtractor)
+            # only accept this result if it has the required fields
+            if all(field in response for field in ["action", "action_input"]):
+                if response["action"] == "Final Answer":
+                    return AgentFinish({"output": response["action_input"]}, text)
+                else:
+                    return AgentAction(response["action"], response["action_input"], text)
+        except json.JSONDecodeError:
+            pass
+
+        # if the LLM did not provide a valid response object, we will return the text as is
+        return AgentFinish({"output": text}, text)
