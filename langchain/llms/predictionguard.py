@@ -43,9 +43,7 @@ class PredictionGuard(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the access token and python package exists in environment."""
-        token = get_from_dict_or_env(
-            values, "token", "PREDICTIONGUARD_TOKEN"
-        )
+        token = get_from_dict_or_env(values, "token", "PREDICTIONGUARD_TOKEN")
         try:
             import predictionguard as pg
 
@@ -93,11 +91,14 @@ class PredictionGuard(LLM):
         else:
             params["stop_sequences"] = stop
 
-        response = self.client.predict(name=self.name, data={
-            "prompt": prompt,
-            "max_tokens": params["max_tokens"],
-            "temperature": params["temperature"]
-        })
+        response = self.client.predict(
+            name=self.name,
+            data={
+                "prompt": prompt,
+                "max_tokens": params["max_tokens"],
+                "temperature": params["temperature"],
+            },
+        )
         text = response["text"]
 
         # If stop tokens are provided, Prediction Guard's endpoint returns them.

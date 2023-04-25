@@ -2,6 +2,7 @@
 
 from langchain.llms.predictionguard import PredictionGuard
 
+
 def test_predictionguard_call() -> None:
     """Test valid call to prediction guard."""
     llm = PredictionGuard(name="default-text-gen")
