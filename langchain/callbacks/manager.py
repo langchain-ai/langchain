@@ -675,7 +675,7 @@ def _configure(
     tracing_enabled = (
         os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
     )
-    if verbose or tracing_enabled:
+    if verbose or tracing_enabled or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
