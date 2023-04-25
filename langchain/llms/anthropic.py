@@ -1,5 +1,6 @@
 """Wrapper around Anthropic APIs."""
 import re
+import warnings
 from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
 from pydantic import BaseModel, Extra, root_validator
@@ -116,6 +117,15 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model(prompt)
     """
+
+    @root_validator()
+    def raise_warning(cls, values: Dict) -> Dict:
+        """Raise warning that this class is deprecated."""
+        warnings.warn(
+            "This Anthropic LLM is deprecated. "
+            "Please use `from langchain.chat_models import ChatAnthropic` instead"
+        )
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
