@@ -30,4 +30,4 @@ To import this vectorstore:
 from langchain.vectorstores import Weaviate
 ```
 
-For a more detailed walkthrough of the Weaviate wrapper, see [this notebook](../modules/indexes/vectorstores/getting_started.ipynb)
+For a more detailed walkthrough of the Weaviate wrapper, see [this notebook](../modules/indexes/vectorstores/examples/weaviate.ipynb)
