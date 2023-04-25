@@ -21,9 +21,12 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
 
     def construct_full_prompt(self, goals: List[str]) -> str:
         prompt_start = (
-            "Your decisions must always be made independently without seeking user assistance.\n"
-            "Play to your strengths as an LLM and pursue simple strategies with no legal complications.\n"
-            'If you have completed all your tasks, make sure to use the "finish" command.'
+            "Your decisions must always be made independently "
+            "without seeking user assistance.\n"
+            "Play to your strengths as an LLM and pursue simple "
+            "strategies with no legal complications.\n"
+            "If you have completed all your tasks, make sure to "
+            'use the "finish" command.'
         )
         # Construct full prompt
         full_prompt = (
