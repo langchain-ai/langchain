@@ -1,14 +1,12 @@
 """Interface for tools."""
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
-from pydantic import BaseModel, validate_arguments, validator
+from pydantic import validator
 
 from langchain.tools.base import (
     BaseTool,
-    create_schema_from_function,
-    get_filtered_args,
 )
 
 
@@ -27,14 +25,6 @@ class Tool(BaseTool):
         if isinstance(func, partial):
             raise ValueError("Partial functions not yet supported in tools.")
         return func
-
-    @property
-    def args(self) -> dict:
-        if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
-        else:
-            inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
@@ -74,8 +64,6 @@ class InvalidTool(BaseTool):
 def tool(
     *args: Union[str, Callable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
-    infer_schema: bool = True,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -83,10 +71,6 @@ def tool(
         *args: The arguments to the tool.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop.
-        args_schema: optional argument schema for user to specify
-        infer_schema: Whether to infer the schema of the arguments from
-            the function's signature. This also makes the resultant tool
-            accept a dictionary input to its `run()` function.
 
     Requires:
         - Function must be of type (str) -> str
@@ -112,13 +96,9 @@ def tool(
             # Description example:
             # search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            _args_schema = args_schema
-            if _args_schema is None and infer_schema:
-                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
             tool_ = Tool(
                 name=tool_name,
                 func=func,
-                args_schema=_args_schema,
                 description=description,
                 return_direct=return_direct,
             )

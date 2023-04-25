@@ -2,23 +2,27 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import (
-    BaseModel,
     Extra,
     Field,
     validator,
 )
 
+from pydantic.generics import GenericModel
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.utilities.async_utils import async_or_sync_call
 
 
-T = TypeVar("T")
+IN_T = TypeVar("IN_T")
+OUT_T = TypeVar("OUT_T")
 
 
-class ToolMixin(BaseModel):
+class ToolMixin(GenericModel, Generic[IN_T, OUT_T]):
+    """Interface LangChain tools must implement."""
+
     name: str
     description: str
     return_direct: bool = False
@@ -51,11 +55,34 @@ class ToolMixin(BaseModel):
             verbose_ = self.verbose
         return verbose_
 
-    def _get_input(self, tool_input: T) -> T:
-        return tool_input
+    @abstractmethod
+    def run(
+        self,
+        tool_input: IN_T,
+        verbose: Optional[bool] = None,
+        start_color: Optional[str] = "green",
+        color: Optional[str] = "green",
+        **kwargs: Any,
+    ) -> OUT_T:
+        """Use the tool."""
+
+    @abstractmethod
+    async def arun(
+        self,
+        tool_input: IN_T,
+        verbose: Optional[bool] = None,
+        start_color: Optional[str] = "green",
+        color: Optional[str] = "green",
+        **kwargs: Any,
+    ) -> OUT_T:
+        """Use the tool asynchronously."""
+
+    def __call__(self, tool_input: IN_T) -> OUT_T:
+        """Make tool callable."""
+        return self.run(tool_input)
 
 
-class BaseTool(ABC, ToolMixin):
+class BaseTool(ABC, ToolMixin[str, str]):
     """Interface LangChain tools must implement."""
 
     @abstractmethod
@@ -103,41 +130,32 @@ class BaseTool(ABC, ToolMixin):
     ) -> str:
         """Run the tool asynchronously."""
         verbose_ = self._get_verbosity(verbose)
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input,
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
-        else:
-            self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input if isinstance(tool_input, str) else str(tool_input),
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
+        await async_or_sync_call(
+            self.callback_manager.on_tool_start,
+            {"name": self.name, "description": self.description},
+            tool_input,
+            verbose=verbose_,
+            color=start_color,
+            is_async=self.callback_manager.is_async,
+            **kwargs,
+        )
         try:
             # We then call the tool on the tool input to get an observation
             observation = await self._arun(tool_input)
         except (Exception, KeyboardInterrupt) as e:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_error(e, verbose=verbose_)
-            else:
-                self.callback_manager.on_tool_error(e, verbose=verbose_)
+            await async_or_sync_call(
+                self.callback_manager.on_tool_error,
+                e,
+                verbose=verbose_,
+                is_async=self.callback_manager.is_async,
+            )
             raise e
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
-            )
-        else:
-            self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
-            )
+        await async_or_sync_call(
+            self.callback_manager.on_tool_end,
+            observation,
+            verbose=verbose_,
+            color=color,
+            is_async=self.callback_manager.is_async,
+            **kwargs,
+        )
         return observation
-
-    def __call__(self, tool_input: str) -> str:
-        """Make tool callable."""
-        return self.run(tool_input)
