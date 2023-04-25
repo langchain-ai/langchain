@@ -7,11 +7,10 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
-from pydantic.generics import GenericModel
 
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
@@ -28,8 +27,7 @@ from langchain.schema import (
     BaseMessage,
     BaseOutputParser,
 )
-from langchain.tools.base import ToolMixin
-from langchain.tools.structured import ToolMixin
+from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
@@ -105,7 +103,7 @@ class BaseSingleActionAgent(BaseModel):
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[ToolMixin],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
@@ -450,12 +448,13 @@ class Agent(BaseSingleActionAgent):
 
     @classmethod
     @abstractmethod
-    def create_prompt(cls, tools: Sequence[ToolMixin]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[ToolMixin]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         """Validate that appropriate tools are passed in."""
+        pass
 
     @classmethod
     @abstractmethod
@@ -466,7 +465,7 @@ class Agent(BaseSingleActionAgent):
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[ToolMixin],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
@@ -540,7 +539,7 @@ class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
-    tools: Sequence[ToolMixin]
+    tools: Sequence[BaseTool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
@@ -550,7 +549,7 @@ class AgentExecutor(Chain):
     def from_agent_and_tools(
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
-        tools: Sequence[ToolMixin],
+        tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:
@@ -562,8 +561,8 @@ class AgentExecutor(Chain):
     @root_validator()
     def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
-        agent: Agent = values["agent"]
-        tools: ToolMixin = values["tools"]
+        agent = values["agent"]
+        tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
         if allowed_tools is not None:
             if set(allowed_tools) != set([tool.name for tool in tools]):
@@ -618,7 +617,7 @@ class AgentExecutor(Chain):
         else:
             return self.agent.return_values
 
-    def lookup_tool(self, name: str) -> ToolMixin:
+    def lookup_tool(self, name: str) -> BaseTool:
         """Lookup tool by name."""
         return {tool.name: tool for tool in self.tools}[name]
 
@@ -660,7 +659,7 @@ class AgentExecutor(Chain):
 
     def _take_next_step(
         self,
-        name_to_tool_map: Dict[str, ToolMixin],
+        name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -712,7 +711,7 @@ class AgentExecutor(Chain):
 
     async def _atake_next_step(
         self,
-        name_to_tool_map: Dict[str, ToolMixin],
+        name_to_tool_map: Dict[str, BaseTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],

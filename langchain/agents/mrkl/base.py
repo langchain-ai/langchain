@@ -31,7 +31,7 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
-class ZeroShotAgent(Agent[BaseTool]):
+class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
     output_parser: AgentOutputParser = Field(default_factory=MRKLOutputParser)
@@ -121,17 +121,12 @@ class ZeroShotAgent(Agent[BaseTool]):
         )
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[ToolMixin]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         for tool in tools:
             if tool.description is None:
                 raise ValueError(
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
-                )
-            if len(tool.args) > 1:
-                raise ValueError(
-                    f"Got a tool '{tool.name}' with more than one argument. For this agent, "
-                    f"only one argument is allowed."
                 )
 
 

@@ -16,7 +16,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.tools.base import BaseTool
 
 
-class ReActDocstoreAgent(Agent[BaseTool]):
+class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
 
     output_parser: AgentOutputParser = Field(default_factory=ReActOutputParser)
@@ -36,7 +36,7 @@ class ReActDocstoreAgent(Agent[BaseTool]):
         return WIKI_PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[ToolMixin]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -118,7 +118,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
         return TEXTWORLD_PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[ToolMixin]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
