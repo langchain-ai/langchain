@@ -13,6 +13,7 @@ import yaml
 from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import InvalidTool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -28,7 +29,6 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseLanguageModel,
     BaseMessage,
     BaseOutputParser,
 )

@@ -6,11 +6,11 @@ from typing import Dict, List
 import numexpr
 from pydantic import Extra
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class LLMMathChain(Chain):

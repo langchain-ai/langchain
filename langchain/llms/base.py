@@ -10,6 +10,7 @@ import yaml
 from pydantic import Extra, Field, root_validator, validator
 
 import langchain
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -18,7 +19,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
+from langchain.schema import Generation, LLMResult, PromptValue
 
 
 def _get_verbosity() -> bool:

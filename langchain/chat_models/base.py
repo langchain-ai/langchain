@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from pydantic import Extra, Field, root_validator
 
 import langchain
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -17,7 +18,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.schema import (
     AIMessage,
-    BaseLanguageModel,
     BaseMessage,
     ChatGeneration,
     ChatResult,
