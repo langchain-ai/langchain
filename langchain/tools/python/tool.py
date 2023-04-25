@@ -31,6 +31,7 @@ class PythonREPLTool(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         if self.sanitize_input:
+            query = query.strip().removeprefix("```python")
             query = query.strip().strip("```")
         return self.python_repl.run(query)
 
