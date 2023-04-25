@@ -41,19 +41,6 @@ class HuggingFaceDatasetLoader(BaseLoader):
         streaming: bool = False,
         batch_size: int = 10,
     ):
-        self.path = path
-        self.page_content_column = page_content_column
-        self.name = name
-        self.data_dir = data_dir
-        self.data_files = data_files
-        self.cache_dir = cache_dir
-        self.keep_in_memory = keep_in_memory
-        self.save_infos = save_infos
-        self.use_auth_token = use_auth_token
-        self.num_proc = num_proc
-        self.streaming = streaming
-        self.batch_size = batch_size
-        self._iterator: Optional[Any] = None
         """
         Initialize the HuggingFaceDatasetLoader.
         Args:
@@ -70,6 +57,19 @@ class HuggingFaceDatasetLoader(BaseLoader):
             streaming:streams the data progressively while iterating on the dataset
             batch_size: batch_size for streaming dataset
         """
+        self.path = path
+        self.page_content_column = page_content_column
+        self.name = name
+        self.data_dir = data_dir
+        self.data_files = data_files
+        self.cache_dir = cache_dir
+        self.keep_in_memory = keep_in_memory
+        self.save_infos = save_infos
+        self.use_auth_token = use_auth_token
+        self.num_proc = num_proc
+        self.streaming = streaming
+        self.batch_size = batch_size
+        self._iterator: Optional[Any] = None
 
     def load(self) -> List[Document]:
         if self._iterator is not None:
