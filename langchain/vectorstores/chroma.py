@@ -288,6 +288,21 @@ class Chroma(VectorStore):
             )
         self._client.persist()
 
+    def update_document(
+        self,
+        document_id: str,
+        document: Document
+    ) -> None:
+        """Update a document in the collection.
+
+        Args:
+            document_id (str): ID of the document to update.
+            document (Document): Document to update.
+        """
+        text = document.page_content
+        metadata = document.metadata
+        self._collection.update_document(document_id, text, metadata)
+
     @classmethod
     def from_texts(
         cls: Type[Chroma],
