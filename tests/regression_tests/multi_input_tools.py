@@ -4,7 +4,7 @@ from collections import defaultdict
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 from pydantic import ValidationError
 
 import pytest
@@ -14,7 +14,6 @@ from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
 from langchain.agents.agent_toolkits.openapi.toolkit import RequestsToolkit
 from langchain.agents.agent_types import AgentType
-from langchain.chat_models import ChatOpenAI
 from langchain.llms.openai import OpenAI
 from langchain.memory.buffer import ConversationBufferMemory
 from langchain.requests import TextRequestsWrapper
@@ -104,34 +103,23 @@ def generate_tuples() -> (
             for generator in generators:
                 tools_and_queries = generator(llm=llm)
                 for tool, queries in tools_and_queries:
-                    for append_args_to_description in [True, False]:
-                        results.append(
-                            (tool, queries, llm, agent_type, append_args_to_description)
-                        )
+                    results.append((tool, queries, llm, agent_type))
     return results
 
 
-_AGGREGATE_AXES = ["tool", "llm", "agent_type", "append_args_to_description"]
+_AGGREGATE_AXES = ["tool", "llm", "agent_type"]
 _FAILURE_COUNT = {k: defaultdict(int) for k in _AGGREGATE_AXES}
 
 
-@pytest.mark.parametrize(
-    "tool, queries, llm, agent_type, append_args_to_description", generate_tuples()
-)
+@pytest.mark.parametrize("tool, queries, llm, agent_type", generate_tuples())
 def test_run_tool(
     tool: BaseTool,
     queries: List[str],
     llm: BaseLanguageModel,
     agent_type: AgentType,
-    append_args_to_description: bool,
 ) -> None:
     global _FAILURE_COUNT
     tool = deepcopy(tool)
-    if append_args_to_description:
-        # Double up brackets to permit injection into the prompt template
-        args = json.dumps(tool.args).replace("{", "{{").replace("}", "}}")
-        tool.description += args
-
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     agent = initialize_agent(
         llm=llm,
@@ -154,13 +142,7 @@ def test_run_tool(
         _FAILURE_COUNT["tool"][tool.name] += 1
         _FAILURE_COUNT["llm"][str(llm)] += 1
         _FAILURE_COUNT["agent_type"][str(agent_type)] += 1
-        _FAILURE_COUNT["append_args_to_description"][
-            str(append_args_to_description)
-        ] += 1
 
     assert not type_errors, type_errors
     validation_errors = [r for r in results if isinstance(r, ValidationError)]
     assert not validation_errors, validation_errors
-    import pdb
-
-    pdb.set_trace()

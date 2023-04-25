@@ -41,8 +41,19 @@ class AgentAction(NamedTuple):
     """Agent's action to take."""
 
     tool: str
-    tool_input: Union[str, dict]
+    tool_input: str
     log: str
+
+
+class StructuredAgentAction(NamedTuple):
+    """Agent's action to take."""
+
+    tool: str
+    tool_input: dict
+    log: str
+
+    def to_agent_action(self) -> AgentAction:
+        return AgentAction(self.tool, str(self.tool_input), self.log)
 
 
 class AgentFinish(NamedTuple):

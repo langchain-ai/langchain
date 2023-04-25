@@ -34,14 +34,13 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
-INPUT_T = TypeVar("INPUT_T", dict, str, Union[dict, str])
 SCHEMA_T = TypeVar("SCHEMA_T", bound=Union[str, BaseModel])
 OUTPUT_T = TypeVar("OUTPUT_T")
 
 
-class AbstractBaseTool(
+class BaseStructuredTool(
     GenericModel,
-    Generic[INPUT_T, SCHEMA_T, OUTPUT_T],
+    Generic[SCHEMA_T, OUTPUT_T],
     BaseModel,
 ):
     """Parent class for all structured tools."""
@@ -60,13 +59,13 @@ class AbstractBaseTool(
         arbitrary_types_allowed = True
 
     @property
-    def args(self) -> dict:
+    def args(self) -> Dict:
         if isinstance(self.args_schema, BaseModel):
             return self.args_schema.schema()["properties"]
         else:
             return {"tool_input": "str"}
 
-    def _parse_input(self, tool_input: Union[INPUT_T, Any]) -> SCHEMA_T:
+    def _parse_input(self, tool_input: Dict) -> SCHEMA_T:
         """Load the tool's input into a pydantic model."""
         if not issubclass(self.args_schema, BaseModel):
             raise ValueError(
@@ -95,7 +94,7 @@ class AbstractBaseTool(
 
     def run(
         self,
-        tool_input: INPUT_T,
+        tool_input: dict,
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -123,7 +122,7 @@ class AbstractBaseTool(
 
     async def arun(
         self,
-        tool_input: INPUT_T,
+        tool_input: dict,
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -162,7 +161,7 @@ class AbstractBaseTool(
         )
         return observation
 
-    def __call__(self, tool_input: INPUT_T) -> OUTPUT_T:
+    def __call__(self, tool_input: dict) -> OUTPUT_T:
         """Make tool callable."""
         return self.run(tool_input)
 
@@ -197,12 +196,6 @@ def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseMod
     return _create_subset_model(
         f"{model_name}Schema", inferred_model, list(filtered_args)
     )
-
-
-class BaseStructuredTool(
-    AbstractBaseTool[Dict, SCHEMA_T, OUTPUT_T], Generic[SCHEMA_T, OUTPUT_T]
-):
-    """Tool that takes a dict input."""
 
 
 class StructuredTool(BaseStructuredTool[BaseModel, Any]):
