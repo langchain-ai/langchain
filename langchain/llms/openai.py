@@ -242,10 +242,15 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "best_of": self.best_of,
             "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
         }
+
+        # Azure gpt-35-turbo doesn't support best_of
+        # don't specify best_of if it is 1
+        if self.best_of > 1:
+            normal_params["best_of"] = self.best_of
+
         return {**normal_params, **self.model_kwargs}
 
     def _generate(
