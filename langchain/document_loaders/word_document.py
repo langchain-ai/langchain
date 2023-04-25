@@ -2,7 +2,6 @@
 import os
 import tempfile
 from abc import ABC
-
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -14,7 +13,7 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 
 
 class BaseDOCXLoader(BaseLoader, ABC):
-    """Base loader class for PDF files.
+    """Base loader class for .docx files.
     Defaults to check for local file, but if the file is a web path, it will download it
     to a temporary file, and use that, then clean up the temporary file after completion
     """
