@@ -1,6 +1,14 @@
-from typing import List, Mapping, Optional, Sequence, Union, TypeVar, Iterator, Any
-
 import itertools
+from typing import (
+    Any,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
