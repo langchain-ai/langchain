@@ -1,27 +1,38 @@
 """Loader that loads HuggingFace datasets."""
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import List, Mapping, Optional, Sequence, Union, TypeVar, Iterator
+import itertools
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+
+
+T = TypeVar("T")
+
+def get_n_elements(iterator: Iterator[T], n: int) -> List[T]:
+    return list(itertools.islice(iterator, n))
+
 
 
 class HuggingFaceDatasetLoader(BaseLoader):
     """Loading logic for loading documents from the Hugging Face Hub."""
 
     def __init__(
-        self,
-        path: str,
-        page_content_column: str = "text",
-        name: Optional[str] = None,
-        data_dir: Optional[str] = None,
-        data_files: Optional[
-            Union[str, Sequence[str], Mapping[str, Union[str, Sequence[str]]]]
-        ] = None,
-        cache_dir: Optional[str] = None,
-        keep_in_memory: Optional[bool] = None,
-        save_infos: bool = False,
-        use_auth_token: Optional[Union[bool, str]] = None,
-        num_proc: Optional[int] = None,
+            self,
+            path: str,
+            page_content_column: str = "text",
+            name: Optional[str] = None,
+            data_dir: Optional[str] = None,
+            data_files: Optional[
+                Union[str, Sequence[str], Mapping[str, Union[str, Sequence[str]]]]
+            ] = None,
+            cache_dir: Optional[str] = None,
+            keep_in_memory: Optional[bool] = None,
+            save_infos: bool = False,
+            use_auth_token: Optional[Union[bool, str]] = None,
+            num_proc: Optional[int] = None,
+            streaming: bool = False,
+            batch_size: int = 10
     ):
         """
         Initialize the HuggingFaceDatasetLoader.
@@ -37,6 +48,9 @@ class HuggingFaceDatasetLoader(BaseLoader):
             save_infos: Save the dataset information (checksums/size/splits/...).
             use_auth_token: Bearer token for remote files on the Datasets Hub.
             num_proc: Number of processes.
+            streaming: If set to True, streams the data progressively while iterating on the dataset
+            batch_size: batch_size for streaming dataset
+
         """
 
         self.path = path
@@ -49,6 +63,9 @@ class HuggingFaceDatasetLoader(BaseLoader):
         self.save_infos = save_infos
         self.use_auth_token = use_auth_token
         self.num_proc = num_proc
+        self.streaming = streaming
+        self.batch_size = batch_size
+        self._iterator = None
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -60,6 +77,16 @@ class HuggingFaceDatasetLoader(BaseLoader):
                 "Please install it with `pip install datasets`."
             )
 
+        if self._iterator:
+            docs = [
+                Document(
+                    page_content=row.pop(self.page_content_column),
+                    metadata=row,
+                )
+                for row in get_n_elements(self._iterator, self.batch_size)
+            ]
+            return docs
+
         dataset = load_dataset(
             path=self.path,
             name=self.name,
@@ -70,7 +97,22 @@ class HuggingFaceDatasetLoader(BaseLoader):
             save_infos=self.save_infos,
             use_auth_token=self.use_auth_token,
             num_proc=self.num_proc,
+            streaming=self.streaming
         )
+
+        if self.streaming:
+            iterators = [iter(dataset[split]) for split in dataset.keys()]
+            self._iterator = itertools.chain(*iterators)
+
+            docs = [
+                Document(
+                    page_content=row.pop(self.page_content_column),
+                    metadata=row,
+                )
+                for row in get_n_elements(self._iterator, self.batch_size)
+
+            ]
+            return docs
 
         docs = [
             Document(
