@@ -9,13 +9,14 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
+from azure.core.credentials import TokenCredential
+from azure.core.exceptions import ClientAuthenticationError
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
-from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RESPONSE
+from langchain.tools.powerbi.prompt import SCHEMA_ERROR_RESPONSE, UNAUTHORIZED_RESPONSE
 
 _LOGGER = logging.getLogger(__name__)
-
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
 
@@ -32,7 +33,7 @@ class PowerBIDataset(BaseModel):
     dataset_id: str
     table_names: List[str]
     group_id: Optional[str] = None
-    credential: Any = None
+    credential: Optional[TokenCredential] = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
@@ -61,26 +62,10 @@ class PowerBIDataset(BaseModel):
     @property
     def headers(self) -> Dict[str, str]:
         """Get the token."""
-        try:
-            from azure.core.exceptions import (  # pylint: disable=import-outside-toplevel # noqa: E501
-                ClientAuthenticationError,
-            )
-            from azure.identity import (  # pylint: disable=import-outside-toplevel
-                DefaultAzureCredential,
-                InteractiveBrowserCredential,
-            )
-        except ImportError as exc:
-            _LOGGER.warning(
-                "You must install the azure-identity package to use the PowerBIDataset."
-            )
-            raise exc
-
         token = None
         if self.token:
             token = self.token
-        if self.credential and isinstance(
-            self.credential, (InteractiveBrowserCredential, DefaultAzureCredential)
-        ):
+        if self.credential:
             try:
                 token = self.credential.get_token(
                     "https://analysis.windows.net/powerbi/api/.default"
@@ -156,7 +141,7 @@ class PowerBIDataset(BaseModel):
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
+                    return SCHEMA_ERROR_RESPONSE
                 if "unauthorized" in str(exc).lower():
                     return UNAUTHORIZED_RESPONSE
                 return str(exc)
@@ -179,7 +164,7 @@ class PowerBIDataset(BaseModel):
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
+                    return SCHEMA_ERROR_RESPONSE
                 if "unauthorized" in str(exc).lower():
                     return UNAUTHORIZED_RESPONSE
                 return str(exc)

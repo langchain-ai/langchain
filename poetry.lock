@@ -571,7 +571,7 @@ name = "azure-core"
 version = "1.26.4"
 description = "Microsoft Azure Core Library for Python"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "azure-core-1.26.4.zip", hash = "sha256:075fe06b74c3007950dd93d49440c2f3430fd9b4a5a2756ec8c79454afc989c6"},
@@ -9298,4 +9298,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1dd0c2f259c674c2f3f2e2212459bf7a056f72f25e0a271194ad7ac8f70a3ac1"
+content-hash = "b629046308d7f32d4f456972ff669a383c6d349fcf1c89e6e167a74b28cbb458"
