@@ -63,6 +63,23 @@ class TestWeaviate:
         assert output == [Document(page_content="foo", metadata={"page": 0})]
 
     @pytest.mark.vcr(ignore_localhost=True)
+    def test_similarity_search_with_metadata_and_filter(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and search with metadata."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = Weaviate.from_texts(
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        output = docsearch.similarity_search(
+            "foo",
+            k=2,
+            where_filter={"path": ["page"], "operator": "Equal", "valueNumber": 0},
+        )
+        assert output == [Document(page_content="foo", metadata={"page": 0})]
+
+    @pytest.mark.vcr(ignore_localhost=True)
     def test_max_marginal_relevance_search(
         self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
     ) -> None:
@@ -116,4 +133,33 @@ class TestWeaviate:
         assert output == [
             Document(page_content="foo", metadata={"page": 0}),
             Document(page_content="bar", metadata={"page": 1}),
+        ]
+
+    @pytest.mark.vcr(ignore_localhost=True)
+    def test_max_marginal_relevance_search_with_filter(
+        self, weaviate_url: str, embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        """Test end to end construction and MRR search."""
+        texts = ["foo", "bar", "baz"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+
+        docsearch = Weaviate.from_texts(
+            texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
+        )
+        where_filter = {"path": ["page"], "operator": "Equal", "valueNumber": 0}
+        # if lambda=1 the algorithm should be equivalent to standard ranking
+        standard_ranking = docsearch.similarity_search(
+            "foo", k=2, where_filter=where_filter
+        )
+        output = docsearch.max_marginal_relevance_search(
+            "foo", k=2, fetch_k=3, lambda_mult=1.0, where_filter=where_filter
+        )
+        assert output == standard_ranking
+
+        # if lambda=0 the algorithm should favour maximal diversity
+        output = docsearch.max_marginal_relevance_search(
+            "foo", k=2, fetch_k=3, lambda_mult=0.0, where_filter=where_filter
+        )
+        assert output == [
+            Document(page_content="foo", metadata={"page": 0}),
         ]

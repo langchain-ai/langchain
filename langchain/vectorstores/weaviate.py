@@ -139,6 +139,8 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_text(content).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -154,6 +156,8 @@ class Weaviate(VectorStore):
         """Look up similar documents by embedding vector in Weaviate."""
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_vector(vector).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -226,6 +230,8 @@ class Weaviate(VectorStore):
         """
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         results = (
             query_obj.with_additional("vector")
             .with_near_vector(vector)
