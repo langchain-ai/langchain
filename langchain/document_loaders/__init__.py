@@ -84,6 +84,7 @@ from langchain.document_loaders.youtube import (
     GoogleApiYoutubeLoader,
     YoutubeLoader,
 )
+from langchain.document_loaders.yuqueloader import YUQUELoader
 
 # Legacy: only for backwards compat. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
@@ -162,4 +163,5 @@ __all__ = [
     "PythonLoader",
     "ChatGPTLoader",
     "HuggingFaceDatasetLoader",
+    "YUQUELoader",
 ]
