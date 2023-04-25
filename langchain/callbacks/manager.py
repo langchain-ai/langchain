@@ -618,8 +618,10 @@ def _configure(
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or not inheritable_callbacks:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks,
-                inheritable_handlers=inheritable_callbacks,
+                handlers=inheritable_callbacks if inheritable_callbacks else [],
+                inheritable_handlers=inheritable_callbacks
+                if inheritable_callbacks
+                else [],
             )
         else:
             callback_manager = inheritable_callbacks
@@ -629,7 +631,10 @@ def _configure(
             if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
-        [callback_manager.add_handler(handler, False) for handler in local_handlers_]
+        [
+            callback_manager.add_handler(copy.deepcopy(handler), False)
+            for handler in local_handlers_
+        ]
 
     if not callback_manager:
         callback_manager = callback_manager_cls([])

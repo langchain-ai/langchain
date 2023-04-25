@@ -172,9 +172,13 @@ class BaseChatModel(BaseLanguageModel, ABC):
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
     ) -> BaseMessage:
-        return ChatGeneration(
-            self.generate([messages], stop=stop, callbacks=callbacks).generations[0][0]
-        ).message
+        generation = self.generate(
+            [messages], stop=stop, callbacks=callbacks
+        ).generations[0][0]
+        if isinstance(generation, ChatGeneration):
+            return generation.message
+        else:
+            raise ValueError("Unexpected generation type")
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)
