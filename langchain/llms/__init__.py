@@ -20,6 +20,7 @@ from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
 from langchain.llms.petals import Petals
+from langchain.llms.pipelineai import PipelineAI
 from langchain.llms.predictionguard import PredictionGuard
 from langchain.llms.promptlayer_openai import PromptLayerOpenAI, PromptLayerOpenAIChat
 from langchain.llms.replicate import Replicate
@@ -46,6 +47,7 @@ __all__ = [
     "OpenAI",
     "OpenAIChat",
     "Petals",
+    "PipelineAI",
     "HuggingFaceEndpoint",
     "HuggingFaceHub",
     "SagemakerEndpoint",
@@ -82,6 +84,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "nlpcloud": NLPCloud,
     "openai": OpenAI,
     "petals": Petals,
+    "pipelineai": PipelineAI,
     "huggingface_pipeline": HuggingFacePipeline,
     "azure": AzureOpenAI,
     "replicate": Replicate,
