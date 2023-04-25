@@ -10,7 +10,6 @@ from typing import (
     Dict,
     Generic,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -25,11 +24,9 @@ from pydantic import (
     validator,
 )
 from pydantic.generics import GenericModel
-from pydantic.main import ModelMetaclass
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 
-from langchain.tools.base import BaseTool
 from langchain.utilities.async_utils import async_or_sync_call
 
 
@@ -37,12 +34,12 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
-INPUT_T = TypeVar("INPUT_T")
+INPUT_T = TypeVar("INPUT_T", dict, str, Union[dict, str])
 SCHEMA_T = TypeVar("SCHEMA_T", bound=Union[str, BaseModel])
 OUTPUT_T = TypeVar("OUTPUT_T")
 
 
-class BaseStructuredTool(
+class AbstractBaseTool(
     GenericModel,
     Generic[INPUT_T, SCHEMA_T, OUTPUT_T],
     BaseModel,
@@ -202,7 +199,13 @@ def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseMod
     )
 
 
-class StructuredTool(BaseStructuredTool[Dict, BaseModel, Any]):
+class BaseStructuredTool(
+    AbstractBaseTool[Dict, SCHEMA_T, OUTPUT_T], Generic[SCHEMA_T, OUTPUT_T]
+):
+    """Tool that takes a dict input."""
+
+
+class StructuredTool(BaseStructuredTool[BaseModel, Any]):
     """StructuredTool that takes in function or coroutine directly."""
 
     func: Callable[..., Any]
@@ -340,7 +343,7 @@ def structured_tool(
     elif len(args) == 0:
         # if there are no arguments, then we use the function name as the tool name
         # Example usage: @tool(return_direct=True)
-        def _partial(func: Callable[[str], str]) -> BaseTool:
+        def _partial(func: Callable[[str], str]) -> BaseStructuredTool:
             return _make_with_name(func.__name__)(func)
 
         return _partial

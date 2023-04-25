@@ -26,14 +26,14 @@ class Tool(BaseTool):
             raise ValueError("Partial functions not yet supported in tools.")
         return func
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, tool_input: str) -> str:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        return self.func(tool_input)
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            return await self.coroutine(tool_input)
         raise NotImplementedError("Tool does not support async")
 
     # TODO: this is for backwards compatibility, remove in future

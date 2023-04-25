@@ -127,11 +127,11 @@ class ListPowerBITool(BaseTool):
 
         arbitrary_types_allowed = True
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, tool_input: str = "") -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, tool_input: str = "") -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
