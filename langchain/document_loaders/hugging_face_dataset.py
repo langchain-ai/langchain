@@ -1,17 +1,14 @@
-"""Loader that loads HuggingFace datasets."""
-from typing import List, Mapping, Optional, Sequence, Union, TypeVar, Iterator
+from typing import List, Mapping, Optional, Sequence, Union, TypeVar, Iterator, Any
+
 import itertools
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-
-
 T = TypeVar("T")
 
 def get_n_elements(iterator: Iterator[T], n: int) -> List[T]:
     return list(itertools.islice(iterator, n))
-
 
 
 class HuggingFaceDatasetLoader(BaseLoader):
@@ -34,25 +31,6 @@ class HuggingFaceDatasetLoader(BaseLoader):
             streaming: bool = False,
             batch_size: int = 10
     ):
-        """
-        Initialize the HuggingFaceDatasetLoader.
-
-        Args:
-            path: Path or name of the dataset.
-            page_content_column: Page content column name.
-            name: Name of the dataset configuration.
-            data_dir: Data directory of the dataset configuration.
-            data_files: Path(s) to source data file(s).
-            cache_dir: Directory to read/write data.
-            keep_in_memory: Whether to copy the dataset in-memory.
-            save_infos: Save the dataset information (checksums/size/splits/...).
-            use_auth_token: Bearer token for remote files on the Datasets Hub.
-            num_proc: Number of processes.
-            streaming: If set to True, streams the data progressively while iterating on the dataset
-            batch_size: batch_size for streaming dataset
-
-        """
-
         self.path = path
         self.page_content_column = page_content_column
         self.name = name
@@ -65,10 +43,19 @@ class HuggingFaceDatasetLoader(BaseLoader):
         self.num_proc = num_proc
         self.streaming = streaming
         self.batch_size = batch_size
-        self._iterator = None
+        self._iterator: Optional[Any] = None
 
     def load(self) -> List[Document]:
-        """Load documents."""
+        if self._iterator is not None:
+            docs = [
+                Document(
+                    page_content=row.pop(self.page_content_column),
+                    metadata=row,
+                )
+                for row in get_n_elements(self._iterator, self.batch_size) 
+            ]
+            return docs
+
         try:
             from datasets import load_dataset
         except ImportError:
@@ -76,16 +63,6 @@ class HuggingFaceDatasetLoader(BaseLoader):
                 "Could not import datasets python package. "
                 "Please install it with `pip install datasets`."
             )
-
-        if self._iterator:
-            docs = [
-                Document(
-                    page_content=row.pop(self.page_content_column),
-                    metadata=row,
-                )
-                for row in get_n_elements(self._iterator, self.batch_size)
-            ]
-            return docs
 
         dataset = load_dataset(
             path=self.path,
@@ -109,8 +86,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
                     page_content=row.pop(self.page_content_column),
                     metadata=row,
                 )
-                for row in get_n_elements(self._iterator, self.batch_size)
-
+                for row in get_n_elements(self._iterator, self.batch_size)  
             ]
             return docs
 
