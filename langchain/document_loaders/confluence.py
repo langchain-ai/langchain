@@ -189,13 +189,6 @@ class ConfluenceLoader(BaseLoader):
                 "`label`, `cql` parameters."
             )
 
-        try:
-            from bs4 import BeautifulSoup # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`beautifulsoup4` package not found, please run `pip install beautifulsoup4`"
-            )
-
         docs = []
 
         if space_key:
@@ -310,6 +303,14 @@ class ConfluenceLoader(BaseLoader):
         include_attachments: bool,
         include_comments: bool,
     ) -> Document:
+        
+        try:
+            from bs4 import BeautifulSoup # type: ignore
+        except ImportError:
+            raise ImportError(
+                "`beautifulsoup4` package not found, please run `pip install beautifulsoup4`"
+            )
+            
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
