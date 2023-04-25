@@ -167,7 +167,7 @@ class LLMChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        return (await self.aapply([inputs]))[0]
+        return (await self.aapply([inputs], run_manager=run_manager))[0]
 
     def predict(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.

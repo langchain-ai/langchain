@@ -13,9 +13,9 @@ import langchain
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
-    AsyncCallbackManagerForLLMRun,
+    AsyncCallbackManagerForChainRun,
     CallbackManager,
-    CallbackManagerForLLMRun,
+    CallbackManagerForChainRun,
     Callbacks,
 )
 from langchain.schema import BaseMemory
@@ -93,14 +93,14 @@ class Chain(BaseModel, ABC):
     def _call(
         self,
         inputs: Dict[str, str],
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
 
     async def _acall(
         self,
         inputs: Dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
         raise NotImplementedError("Async call not supported for this chain type.")

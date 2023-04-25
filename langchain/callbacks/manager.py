@@ -417,7 +417,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -443,7 +443,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -470,7 +470,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -479,7 +479,7 @@ class CallbackManager(BaseCallbackManager):
             serialized,
             input_str,
             run_id=run_id,
-            parent_run_id=parent_run_id,
+            parent_run_id=self.parent_run_id,
             **kwargs,
         )
 
@@ -519,7 +519,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -545,7 +545,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -572,7 +572,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -581,7 +581,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             serialized,
             input_str,
             run_id=run_id,
-            parent_run_id=parent_run_id,
+            parent_run_id=self.parent_run_id,
             **kwargs,
         )
 
