@@ -168,7 +168,7 @@ class Redis(VectorStore):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text.
@@ -184,7 +184,7 @@ class Redis(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_limit_score(
-        self, query: str, k: int = 4, score_threshold: float = 0.2, filter: Optional[dict] = None, **kwargs: Any
+        self, query: str, k: int = 4, score_threshold: float = 0.2, **kwargs: Any
     ) -> List[Document]:
         """
         Returns the most similar indexed documents to the query text within the
@@ -211,7 +211,7 @@ class Redis(VectorStore):
 
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
-    def _prepare_query(self, k: int, filter: Optional[dict] = None):
+    def _prepare_query(self, k: int):
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -220,27 +220,12 @@ class Redis(VectorStore):
                 "Please install it with `pip install redis`."
             )
       # Prepare the Query
-        hybrid_fields = ""
-
-        if filter:
-            metadata = filter.get(self.metadata_key)
-
-            if self.content_key in filter:
-                content = filter[self.content_key]
-                hybrid_fields += f"{self.content_key}:{{{content}}} "
-
-            if self.metadata_key in filter:
-                metadata = filter[self.metadata_key]
-                hybrid_fields += f"{self.metadata_key}:{{{metadata}}}"
-
-        if not hybrid_fields:
-            hybrid_fields = "*"
-
+        hybrid_fields = "*"
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
         )
         return_fields = [self.metadata_key, self.content_key, "vector_score"]
-        redis_query = (
+        return (
             Query(base_query)
             .return_fields(*return_fields)
             .sort_by("vector_score")
@@ -249,7 +234,7 @@ class Redis(VectorStore):
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filter: Optional[dict] = None
+        self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -264,7 +249,7 @@ class Redis(VectorStore):
         embedding = self.embedding_function(query)
 
         # Creates Redis query
-        redis_query = self._prepare_query(k, filter)
+        redis_query = self._prepare_query(k)
 
         params_dict: Mapping[str, str] = {
             "vector": np.array(embedding)  # type: ignore
@@ -318,15 +303,18 @@ class Redis(VectorStore):
         """
         redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
 
+        if "redis_url" in kwargs:
+            kwargs.pop("redis_url")
+
         # Name of the search index if not given
         if not index_name:
             index_name = uuid.uuid4().hex
 
         # Create instance
         instance = cls(
-            redis_url,
-            index_name,
-            embedding.embed_query,
+            redis_url=redis_url,
+            index_name=index_name,
+            embedding_function=embedding.embed_query,
             content_key=content_key,
             metadata_key=metadata_key,
             vector_key=vector_key,
