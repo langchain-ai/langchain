@@ -22,11 +22,15 @@ class GCSDirectoryLoader(BaseLoader):
         except ImportError:
             raise ValueError(
                 "Could not import google-cloud-storage python package. "
-                "Please it install it with `pip install google-cloud-storage`."
+                "Please install it with `pip install google-cloud-storage`."
             )
         client = storage.Client(project=self.project_name)
         docs = []
         for blob in client.list_blobs(self.bucket, prefix=self.prefix):
+            # we shall just skip directories since GCSFileLoader creates
+            # intermediate directories on the fly
+            if blob.name.endswith("/"):
+                continue
             loader = GCSFileLoader(self.project_name, self.bucket, blob.name)
             docs.extend(loader.load())
         return docs

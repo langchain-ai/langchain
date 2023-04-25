@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel
 
@@ -37,9 +37,18 @@ class StructuredOutputParser(BaseOutputParser):
         )
         return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
-    def parse(self, text: str) -> BaseModel:
+    def parse(self, text: str) -> Any:
+        if "```json" not in text:
+            raise OutputParserException(
+                f"Got invalid return object. Expected markdown code snippet with JSON "
+                f"object, but got:\n{text}"
+            )
+
         json_string = text.split("```json")[1].strip().strip("```").strip()
-        json_obj = json.loads(json_string)
+        try:
+            json_obj = json.loads(json_string)
+        except json.JSONDecodeError as e:
+            raise OutputParserException(f"Got invalid JSON object. Error: {e}")
         for schema in self.response_schemas:
             if schema.name not in json_obj:
                 raise OutputParserException(
@@ -47,3 +56,7 @@ class StructuredOutputParser(BaseOutputParser):
                     f"to be present, but got {json_obj}"
                 )
         return json_obj
+
+    @property
+    def _type(self) -> str:
+        return "structured"

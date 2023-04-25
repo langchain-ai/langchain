@@ -33,10 +33,27 @@ It implements a Question Answering app and contains instructions for deploying t
 
 A minimal example on how to run LangChain on Vercel using Flask.
 
+## [Digitalocean App Platform](https://github.com/homanp/digitalocean-langchain)
+
+A minimal example on how to deploy LangChain to DigitalOcean App Platform.
+
+## [Google Cloud Run](https://github.com/homanp/gcp-langchain)
+
+A minimal example on how to deploy LangChain to Google Cloud Run.
 
 ## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
+
 This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
 This includes: production ready endpoints, horizontal scaling across dependencies, persistant storage of app state, multi-tenancy support, etc.
 
 ## [Langchain-serve](https://github.com/jina-ai/langchain-serve)
+
 This repository allows users to serve local chains and agents as RESTful, gRPC, or Websocket APIs thanks to [Jina](https://docs.jina.ai/). Deploy your chains & agents with ease and enjoy independent scaling, serverless and autoscaling APIs, as well as a Streamlit playground on Jina AI Cloud.
+
+## [BentoML](https://github.com/ssheng/BentoChain)
+
+This repository provides an example of how to deploy a LangChain application with [BentoML](https://github.com/bentoml/BentoML). BentoML is a framework that enables the containerization of machine learning applications as standard OCI images. BentoML also allows for the automatic generation of OpenAPI and gRPC endpoints. With BentoML, you can integrate models from all popular ML frameworks and deploy them as microservices running on the most optimal hardware and scaling independently.
+
+## [Databutton](https://databutton.com/home?new-data-app=true)
+
+These templates serve as examples of how to build, deploy, and share LangChain applications using Databutton. You can create user interfaces with Streamlit, automate tasks by scheduling Python code, and store files and data in the built-in store. Examples include Chatbot interface with conversational memory, Personal search engine, and a starter template for LangChain apps. Deploying and sharing is one click. 

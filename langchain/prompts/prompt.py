@@ -10,6 +10,7 @@ from pydantic import Extra, root_validator
 from langchain.prompts.base import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
+    _get_jinja2_variables_from_template,
     check_valid_template,
 )
 
@@ -86,7 +87,7 @@ class PromptTemplate(StringPromptTemplate):
     ) -> PromptTemplate:
         """Take examples in list format with prefix and suffix to create a prompt.
 
-        Intended be used as a way to dynamically create a prompt from examples.
+        Intended to be used as a way to dynamically create a prompt from examples.
 
         Args:
             examples: List of examples to use in the prompt.
@@ -125,9 +126,15 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> PromptTemplate:
         """Load a prompt template from a template."""
-        input_variables = {
-            v for _, v, _, _ in Formatter().parse(template) if v is not None
-        }
+        if "template_format" in kwargs and kwargs["template_format"] == "jinja2":
+            # Get the variables for the template
+            input_variables = _get_jinja2_variables_from_template(template)
+
+        else:
+            input_variables = {
+                v for _, v, _, _ in Formatter().parse(template) if v is not None
+            }
+
         return cls(
             input_variables=list(sorted(input_variables)), template=template, **kwargs
         )

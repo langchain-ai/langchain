@@ -23,6 +23,30 @@ def test_opensearch() -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_opensearch_with_custom_field_name() -> None:
+    """Test indexing and search using custom vector field and text field name."""
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts,
+        FakeEmbeddings(),
+        opensearch_url=DEFAULT_OPENSEARCH_URL,
+        vector_field="my_vector",
+        text_field="custom_text",
+    )
+    output = docsearch.similarity_search(
+        "foo", k=1, vector_field="my_vector", text_field="custom_text"
+    )
+    assert output == [Document(page_content="foo")]
+
+    text_input = ["test", "add", "text", "method"]
+    OpenSearchVectorSearch.add_texts(
+        docsearch, text_input, vector_field="my_vector", text_field="custom_text"
+    )
+    output = docsearch.similarity_search(
+        "add", k=1, vector_field="my_vector", text_field="custom_text"
+    )
+    assert output == [Document(page_content="foo")]
+
+
 def test_opensearch_with_metadatas() -> None:
     """Test end to end indexing and search with metadata."""
     metadatas = [{"page": i} for i in range(len(texts))]
@@ -126,3 +150,27 @@ def test_opensearch_embedding_size_zero() -> None:
         OpenSearchVectorSearch.from_texts(
             [], FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
         )
+
+
+def test_appx_search_with_boolean_filter() -> None:
+    """Test Approximate Search with Boolean Filter."""
+    boolean_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts,
+        FakeEmbeddings(),
+        opensearch_url=DEFAULT_OPENSEARCH_URL,
+    )
+    output = docsearch.similarity_search(
+        "foo", k=3, boolean_filter=boolean_filter_val, subquery_clause="should"
+    )
+    assert output == [Document(page_content="bar")]
+
+
+def test_appx_search_with_lucene_filter() -> None:
+    """Test Approximate Search with Lucene Filter."""
+    lucene_filter_val = {"bool": {"must": [{"term": {"text": "bar"}}]}}
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL, engine="lucene"
+    )
+    output = docsearch.similarity_search("foo", k=3, lucene_filter=lucene_filter_val)
+    assert output == [Document(page_content="bar")]

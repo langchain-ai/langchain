@@ -4,6 +4,7 @@ from typing import List
 from pydantic import Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
+from langchain.llms.base import BaseLLM
 from langchain.sql_database import SQLDatabase
 from langchain.tools import BaseTool
 from langchain.tools.sql_database.tool import (
@@ -18,6 +19,7 @@ class SQLDatabaseToolkit(BaseToolkit):
     """Toolkit for interacting with SQL databases."""
 
     db: SQLDatabase = Field(exclude=True)
+    llm: BaseLLM = Field(exclude=True)
 
     @property
     def dialect(self) -> str:
@@ -35,5 +37,5 @@ class SQLDatabaseToolkit(BaseToolkit):
             QuerySQLDataBaseTool(db=self.db),
             InfoSQLDatabaseTool(db=self.db),
             ListSQLDatabaseTool(db=self.db),
-            QueryCheckerTool(db=self.db),
+            QueryCheckerTool(db=self.db, llm=self.llm),
         ]

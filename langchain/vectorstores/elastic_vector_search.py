@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -20,10 +20,15 @@ def _default_text_mapping(dim: int) -> Dict:
     }
 
 
-def _default_script_query(query_vector: List[float]) -> Dict:
+def _default_script_query(query_vector: List[float], filter: Optional[dict]) -> Dict:
+    if filter:
+        ((key, value),) = filter.items()
+        filter = {"match": {f"metadata.{key}.keyword": f"{value}"}}
+    else:
+        filter = {"match_all": {}}
     return {
         "script_score": {
-            "query": {"match_all": {}},
+            "query": filter,
             "script": {
                 "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
                 "params": {"query_vector": query_vector},
@@ -146,6 +151,7 @@ class ElasticVectorSearch(VectorStore, ABC):
             List of ids from adding the texts into the vectorstore.
         """
         try:
+            from elasticsearch.exceptions import NotFoundError
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
@@ -155,6 +161,17 @@ class ElasticVectorSearch(VectorStore, ABC):
         requests = []
         ids = []
         embeddings = self.embedding.embed_documents(list(texts))
+        dim = len(embeddings[0])
+        mapping = _default_text_mapping(dim)
+
+        # check to see if the index already exists
+        try:
+            self.client.indices.get(index=self.index_name)
+        except NotFoundError:
+            # TODO would be nice to create index before embedding,
+            # just to save expensive steps for last
+            self.client.indices.create(index=self.index_name, mappings=mapping)
+
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
             _id = str(uuid.uuid4())
@@ -175,7 +192,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         return ids
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -186,14 +203,35 @@ class ElasticVectorSearch(VectorStore, ABC):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding.embed_query(query)
-        script_query = _default_script_query(embedding)
-        response = self.client.search(index=self.index_name, query=script_query)
-        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
-        documents = [
-            Document(page_content=hit["text"], metadata=hit["metadata"]) for hit in hits
-        ]
+        docs_and_scores = self.similarity_search_with_score(query, k, filter=filter)
+        documents = [d[0] for d in docs_and_scores]
         return documents
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+        Returns:
+            List of Documents most similar to the query.
+        """
+        embedding = self.embedding.embed_query(query)
+        script_query = _default_script_query(embedding, filter)
+        response = self.client.search(index=self.index_name, query=script_query, size=k)
+        hits = [hit for hit in response["hits"]["hits"]]
+        docs_and_scores = [
+            (
+                Document(
+                    page_content=hit["_source"]["text"],
+                    metadata=hit["_source"]["metadata"],
+                ),
+                hit["_score"],
+            )
+            for hit in hits
+        ]
+        return docs_and_scores
 
     @classmethod
     def from_texts(
@@ -229,6 +267,7 @@ class ElasticVectorSearch(VectorStore, ABC):
         )
         try:
             import elasticsearch
+            from elasticsearch.exceptions import NotFoundError
             from elasticsearch.helpers import bulk
         except ImportError:
             raise ValueError(
@@ -245,9 +284,15 @@ class ElasticVectorSearch(VectorStore, ABC):
         embeddings = embedding.embed_documents(texts)
         dim = len(embeddings[0])
         mapping = _default_text_mapping(dim)
-        # TODO would be nice to create index before embedding,
-        # just to save expensive steps for last
-        client.indices.create(index=index_name, mappings=mapping)
+
+        # check to see if the index already exists
+        try:
+            client.indices.get(index=index_name)
+        except NotFoundError:
+            # TODO would be nice to create index before embedding,
+            # just to save expensive steps for last
+            client.indices.create(index=index_name, mappings=mapping)
+
         requests = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}

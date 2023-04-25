@@ -1,9 +1,11 @@
 """Agent that interacts with OpenAPI APIs via a hierarchical planning approach."""
 import json
 import re
-from typing import List, Optional
+from functools import partial
+from typing import Callable, List, Optional
 
 import yaml
+from pydantic import Field
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.openapi.planner_prompt import (
@@ -14,9 +16,13 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
     API_PLANNER_PROMPT,
     API_PLANNER_TOOL_DESCRIPTION,
     API_PLANNER_TOOL_NAME,
+    PARSING_DELETE_PROMPT,
     PARSING_GET_PROMPT,
+    PARSING_PATCH_PROMPT,
     PARSING_POST_PROMPT,
+    REQUESTS_DELETE_TOOL_DESCRIPTION,
     REQUESTS_GET_TOOL_DESCRIPTION,
+    REQUESTS_PATCH_TOOL_DESCRIPTION,
     REQUESTS_POST_TOOL_DESCRIPTION,
 )
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
@@ -24,7 +30,9 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
+from langchain.memory import ReadOnlySharedMemory
 from langchain.prompts import PromptTemplate
+from langchain.prompts.base import BasePromptTemplate
 from langchain.requests import RequestsWrapper
 from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
@@ -39,13 +47,26 @@ from langchain.tools.requests.tool import BaseRequestsTool
 MAX_RESPONSE_LENGTH = 5000
 
 
+def _get_default_llm_chain(prompt: BasePromptTemplate) -> LLMChain:
+    return LLMChain(
+        llm=OpenAI(),
+        prompt=prompt,
+    )
+
+
+def _get_default_llm_chain_factory(
+    prompt: BasePromptTemplate,
+) -> Callable[[], LLMChain]:
+    """Returns a default LLMChain factory."""
+    return partial(_get_default_llm_chain, prompt)
+
+
 class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     name = "requests_get"
     description = REQUESTS_GET_TOOL_DESCRIPTION
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_GET_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
     )
 
     def _run(self, text: str) -> str:
@@ -53,7 +74,8 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
             data = json.loads(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.get(data["url"])
+        data_params = data.get("params")
+        response = self.requests_wrapper.get(data["url"], params=data_params)
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -68,9 +90,8 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     description = REQUESTS_POST_TOOL_DESCRIPTION
 
     response_length: Optional[int] = MAX_RESPONSE_LENGTH
-    llm_chain = LLMChain(
-        llm=OpenAI(),
-        prompt=PARSING_POST_PROMPT,
+    llm_chain: LLMChain = Field(
+        default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
     )
 
     def _run(self, text: str) -> str:
@@ -79,6 +100,56 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         response = self.requests_wrapper.post(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_patch"
+    description = REQUESTS_PATCH_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_PATCH_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.patch(data["url"], data["data"])
+        response = response[: self.response_length]
+        return self.llm_chain.predict(
+            response=response, instructions=data["output_instructions"]
+        ).strip()
+
+    async def _arun(self, text: str) -> str:
+        raise NotImplementedError()
+
+
+class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
+    name = "requests_delete"
+    description = REQUESTS_DELETE_TOOL_DESCRIPTION
+
+    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    llm_chain = LLMChain(
+        llm=OpenAI(),
+        prompt=PARSING_DELETE_PROMPT,
+    )
+
+    def _run(self, text: str) -> str:
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise e
+        response = self.requests_wrapper.delete(data["url"])
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -117,9 +188,15 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
 ) -> AgentExecutor:
+    get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
+    post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(requests_wrapper=requests_wrapper),
-        RequestsPostToolWithParsing(requests_wrapper=requests_wrapper),
+        RequestsGetToolWithParsing(
+            requests_wrapper=requests_wrapper, llm_chain=get_llm_chain
+        ),
+        RequestsPostToolWithParsing(
+            requests_wrapper=requests_wrapper, llm_chain=post_llm_chain
+        ),
     ]
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
@@ -155,7 +232,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST)\s+(/\S+)*"
+        pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
@@ -183,6 +260,8 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    shared_memory: Optional[ReadOnlySharedMemory] = None,
+    verbose: bool = True,
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -207,7 +286,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt),
+        llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)

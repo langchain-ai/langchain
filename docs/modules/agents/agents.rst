@@ -26,6 +26,8 @@ For documentation on how to create a custom agent, see the below.
    ./agents/custom_llm_agent.ipynb
    ./agents/custom_llm_chat_agent.ipynb
    ./agents/custom_mrkl_agent.ipynb
+   ./agents/custom_multi_action_agent.ipynb
+   ./agents/custom_agent_with_tool_retrieval.ipynb
 
 We also have documentation for an in-depth dive into each agent type.
 

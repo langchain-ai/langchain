@@ -21,6 +21,7 @@ def create_sql_agent(
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     verbose: bool = False,
     **kwargs: Any,
@@ -44,8 +45,9 @@ def create_sql_agent(
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
-        tools=toolkit.get_tools(),
+        tools=tools,
         verbose=verbose,
         max_iterations=max_iterations,
+        max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
     )
