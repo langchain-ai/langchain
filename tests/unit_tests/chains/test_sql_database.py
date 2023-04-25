@@ -27,3 +27,10 @@ def test_normalize_sql_cmd_two_double_quotation_marks() -> None:
     sql_cmd = '""'
     result = SQLDatabaseChain.normalize_sql_cmd(sql_cmd)
     assert result == ""  # empty string
+
+
+# test for https://github.com/hwchase17/langchain/pull/3385#issuecomment-1521114906
+def test_normalize_sql_cmd_incorrect_sql() -> None:
+    sql_cmd = "\"SELECT * FROM blah_table where x='F'"
+    result = SQLDatabaseChain.normalize_sql_cmd(sql_cmd)
+    assert result == sql_cmd  # no change
