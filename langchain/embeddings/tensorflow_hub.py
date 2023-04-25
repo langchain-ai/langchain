@@ -66,5 +66,5 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.embed(text).numpy()[0]
+        embedding = self.embed([text]).numpy()[0]
         return embedding.tolist()
