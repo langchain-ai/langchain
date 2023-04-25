@@ -235,4 +235,5 @@ class ConversationEntityMemory(BaseChatMemory):
     def clear(self) -> None:
         """Clear memory contents."""
         self.chat_memory.clear()
+        self.entity_cache.clear()
         self.entity_store.clear()
