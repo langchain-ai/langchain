@@ -27,6 +27,9 @@ class _AnthropicCommon(BaseModel):
 
     streaming: bool = False
     """Whether to stream the results."""
+    
+    default_request_timeout: int = 60
+    """default request timeout"""
 
     anthropic_api_key: Optional[str] = None
 
@@ -43,7 +46,8 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            values["client"] = anthropic.Client(anthropic_api_key)
+            values["client"] = anthropic.Client(
+                api_key=anthropic_api_key, default_request_timeout=values["default_request_timeout"])
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = anthropic.count_tokens
