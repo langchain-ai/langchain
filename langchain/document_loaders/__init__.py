@@ -13,6 +13,7 @@ from langchain.document_loaders.bigquery import BigQueryLoader
 from langchain.document_loaders.bilibili import BiliBiliLoader
 from langchain.document_loaders.blackboard import BlackboardLoader
 from langchain.document_loaders.chatgpt import ChatGPTLoader
+from langchain.document_loaders.blockchain import BlockchainDocumentLoader
 from langchain.document_loaders.college_confidential import CollegeConfidentialLoader
 from langchain.document_loaders.confluence import ConfluenceLoader
 from langchain.document_loaders.conllu import CoNLLULoader
@@ -162,4 +163,5 @@ __all__ = [
     "PythonLoader",
     "ChatGPTLoader",
     "HuggingFaceDatasetLoader",
+    "BlockchainDocumentLoader",
 ]
