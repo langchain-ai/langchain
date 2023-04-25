@@ -173,6 +173,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         retriever: BaseRetriever,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
+        verbose: bool = False,
         combine_docs_chain_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
@@ -181,9 +182,12 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         doc_chain = load_qa_chain(
             llm,
             chain_type=chain_type,
+            verbose=verbose,
             **combine_docs_chain_kwargs,
         )
-        condense_question_chain = LLMChain(llm=llm, prompt=condense_question_prompt)
+        condense_question_chain = LLMChain(
+            llm=llm, prompt=condense_question_prompt, verbose=verbose
+        )
         return cls(
             retriever=retriever,
             combine_docs_chain=doc_chain,

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.148"
+version = "0.0.149"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -13,7 +13,7 @@ langchain-server = "langchain.server:main"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = "^1"
-SQLAlchemy = "^1"
+SQLAlchemy = ">1.3,<3"
 requests = "^2"
 PyYAML = ">=5.4.1"
 numpy = "^1"
@@ -69,7 +69,7 @@ pytesseract = {version = "^0.3.10", optional=true}
 html2text = {version="^2020.1.16", optional=true}
 numexpr = "^2.8.4"
 duckduckgo-search = {version="^2.8.6", optional=true}
-
+azure-cosmos = {version="^4.4.0b1", optional=true}
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -146,7 +146,8 @@ qdrant = ["qdrant-client"]
 openai = ["openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect"]
+azure = ["azure-identity", "azure-cosmos", "openai"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos"]
 
 [tool.ruff]
 select = [
@@ -169,5 +170,5 @@ omit = [
 ]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
