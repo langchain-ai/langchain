@@ -63,7 +63,7 @@ multiple_input_prompt.format(adjective="funny", content="chickens")
 # -> "Tell me a funny joke about chickens."
 ```
 
-If you do not wish to specify `input_variables` manually, you can also create a `PromptTemplate` using `from_templates` class method. `langchain` will automatically infer the `input_variables` based on the `template` passed.
+If you do not wish to specify `input_variables` manually, you can also create a `PromptTemplate` using `from_template` class method. `langchain` will automatically infer the `input_variables` based on the `template` passed.
 
 ```python
 template = "Tell me a {adjective} joke about {content}."
