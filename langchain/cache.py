@@ -1,7 +1,7 @@
 """Beta Feature: base interface for cache."""
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -30,7 +30,7 @@ class BaseCache(ABC):
 
     @abstractmethod
     def clear(self, **kwargs: Any) -> None:
-        """Clear cache."""
+        """Clear cache that can take additional keyword arguments."""
 
 
 class InMemoryCache(BaseCache):
@@ -69,7 +69,7 @@ class FullLLMCache(Base):  # type: ignore
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, engine: Engine, cache_schema: Any = FullLLMCache):
+    def __init__(self, engine: Engine, cache_schema: Type[FullLLMCache] = FullLLMCache):
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
@@ -84,24 +84,25 @@ class SQLAlchemyCache(BaseCache):
             .order_by(self.cache_schema.idx)
         )
         with Session(self.engine) as session:
-            generations = [Generation(text=row[0]) for row in session.execute(stmt)]
-            if len(generations) > 0:
-                return generations
+            rows = session.execute(stmt).fetchall()
+            if rows:
+                return [Generation(text=row[0]) for row in rows]
         return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Look up based on prompt and llm_string."""
-        for i, generation in enumerate(return_val):
-            item = self.cache_schema(
-                prompt=prompt, llm=llm_string, response=generation.text, idx=i
-            )
-            with Session(self.engine) as session, session.begin():
+        """Update based on prompt and llm_string."""
+        items = [
+            self.cache_schema(prompt=prompt, llm=llm_string, response=gen.text, idx=i)
+            for i, gen in enumerate(return_val)
+        ]
+        with Session(self.engine) as session, session.begin():
+            for item in items:
                 session.merge(item)
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
-        self.cache_schema.metadata.drop_all(self.engine)
-        self.cache_schema.metadata.create_all(self.engine)
+        with Session(self.engine) as session:
+            session.execute(self.cache_schema.delete())
 
 
 class SQLiteCache(SQLAlchemyCache):
@@ -152,9 +153,10 @@ class RedisCache(BaseCache):
         for i, generation in enumerate(return_val):
             self.redis.set(self._key(prompt, llm_string, i), generation.text)
 
-    def clear(self, asynchronous: bool = False, **kwargs: Any) -> None:
+    def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        self.redis.flushall(asynchronous=asynchronous, **kwargs)
+        asynchronous = kwargs.get("asynchronous", False)
+        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
 class GPTCache(BaseCache):
