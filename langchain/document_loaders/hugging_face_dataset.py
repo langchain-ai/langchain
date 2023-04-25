@@ -1,3 +1,4 @@
+"""Loader that loads HuggingFace datasets."""
 import itertools
 from typing import (
     Any,
@@ -53,6 +54,22 @@ class HuggingFaceDatasetLoader(BaseLoader):
         self.streaming = streaming
         self.batch_size = batch_size
         self._iterator: Optional[Any] = None
+        """
+        Initialize the HuggingFaceDatasetLoader.
+        Args:
+            path: Path or name of the dataset.
+            page_content_column: Page content column name.
+            name: Name of the dataset configuration.
+            data_dir: Data directory of the dataset configuration.
+            data_files: Path(s) to source data file(s).
+            cache_dir: Directory to read/write data.
+            keep_in_memory: Whether to copy the dataset in-memory.
+            save_infos: Save the dataset information (checksums/size/splits/...).
+            use_auth_token: Bearer token for remote files on the Datasets Hub.
+            num_proc: Number of processes.
+            streaming:streams the data progressively while iterating on the dataset
+            batch_size: batch_size for streaming dataset
+        """
 
     def load(self) -> List[Document]:
         if self._iterator is not None:
