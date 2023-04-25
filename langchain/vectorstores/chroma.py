@@ -288,11 +288,7 @@ class Chroma(VectorStore):
             )
         self._client.persist()
 
-    def update_document(
-        self,
-        document_id: str,
-        document: Document
-    ) -> None:
+    def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
 
         Args:
