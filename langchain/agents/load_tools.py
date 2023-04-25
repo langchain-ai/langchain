@@ -15,7 +15,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -219,7 +219,7 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
-    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+    return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:

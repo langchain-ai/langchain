@@ -6,7 +6,7 @@ from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 
-class DuckDuckGoSearchTool(BaseTool):
+class DuckDuckGoSearchRun(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
 
     name = "DuckDuckGo Search"

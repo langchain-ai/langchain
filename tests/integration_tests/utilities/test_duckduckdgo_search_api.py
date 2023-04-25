@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 
 
 def ddg_installed() -> bool:
@@ -16,7 +16,7 @@ def ddg_installed() -> bool:
 @pytest.mark.skipif(not ddg_installed(), reason="requires duckduckgo-search package")
 def test_ddg_search_tool() -> None:
     keywords = "Bella Ciao"
-    tool = DuckDuckGoSearchTool()
+    tool = DuckDuckGoSearchRun()
     result = tool(keywords)
     print(result)
     assert len(result.split()) > 20
