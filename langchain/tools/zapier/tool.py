@@ -86,9 +86,6 @@ from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
 
 
-
-
-
 class ZapierNLARunAction(BaseTool):
     """
     Args:
@@ -129,7 +126,9 @@ class ZapierNLARunAction(BaseTool):
     async def _arun(self, instructions: str) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
 
-        result = await self.api_wrapper.arun_as_str(self.action_id, instructions, self.params)
+        result = await self.api_wrapper.arun_as_str(
+            self.action_id, instructions, self.params
+        )
         return result
 
 
