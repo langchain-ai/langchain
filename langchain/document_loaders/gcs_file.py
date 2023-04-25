@@ -1,4 +1,5 @@
 """Loading logic for loading documents from a GCS file."""
+import os
 import tempfile
 from typing import List
 
@@ -34,6 +35,7 @@ class GCSFileLoader(BaseLoader):
         blob = bucket.blob(self.blob)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{self.blob}"
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             # Download the file to a destination
             blob.download_to_filename(file_path)
             loader = UnstructuredFileLoader(file_path)
