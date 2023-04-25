@@ -65,13 +65,15 @@ class Docx2txtLoader(BaseDOCXLoader):
             import docx2txt  # noqa:F401
         except ImportError:
             raise ValueError(
-                "docx2txt package not found, please install it with " "`pip install docx2txt`"
+                "docx2txt package not found, please install it with "
+                "`pip install docx2txt`"
             )
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
         """Load given path as single page."""
         import docx2txt
+
         return [
             Document(
                 page_content=docx2txt.process(self.file_path),
