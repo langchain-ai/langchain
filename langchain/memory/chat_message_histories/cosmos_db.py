@@ -148,6 +148,15 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             }
         )
 
+    def pop(self, index: int) -> BaseMessage:
+        """
+        Raises NotImplementedError as pop is not supported
+        in CosmosDBChatMessageHistory.
+        """
+        raise NotImplementedError(
+            "pop method is not implemented for CosmosDBChatMessageHistory"
+        )
+
     def clear(self) -> None:
         """Clear session memory from this memory and cosmos."""
         self.messages = []

@@ -19,5 +19,8 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
     def add_ai_message(self, message: str) -> None:
         self.messages.append(AIMessage(content=message))
 
+    def pop(self, index: int) -> BaseMessage:
+        return self.messages.pop(index)
+
     def clear(self) -> None:
         self.messages = []

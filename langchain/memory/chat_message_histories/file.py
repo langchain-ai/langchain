@@ -28,6 +28,13 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         if not self.file_path.exists():
             self.file_path.touch()
             self.file_path.write_text(json.dumps([]))
+        else:
+            try:
+                # Try to load the content and parse it with json
+                json.loads(self.file_path.read_text())
+            except json.JSONDecodeError:
+                # If it fails, initialize the file with an empty list
+                self.file_path.write_text(json.dumps([]))
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
@@ -47,6 +54,12 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         messages = messages_to_dict(self.messages)
         messages.append(messages_to_dict([message])[0])
         self.file_path.write_text(json.dumps(messages))
+
+    def pop(self, index: int) -> BaseMessage:
+        messages = self.messages
+        removed_message = messages.pop(index)
+        self.file_path.write_text(json.dumps(messages_to_dict(messages)))
+        return removed_message
 
     def clear(self) -> None:
         """Clear session memory from the local file"""

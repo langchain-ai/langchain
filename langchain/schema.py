@@ -297,6 +297,10 @@ class BaseChatMessageHistory(ABC):
         """Add an AI message to the store"""
 
     @abstractmethod
+    def pop(self, index: int) -> BaseMessage:
+        """Remove a message from the store at the given index and return it"""
+
+    @abstractmethod
     def clear(self) -> None:
         """Remove all messages from the store"""
 

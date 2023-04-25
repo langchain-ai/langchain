@@ -74,6 +74,15 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         except ClientError as err:
             logger.error(err)
 
+    def pop(self, index: int) -> BaseMessage:
+        """
+        Raises NotImplementedError as pop is not supported
+        in DynamoDBChatMessageHistory.
+        """
+        raise NotImplementedError(
+            "pop method is not implemented for DynamoDBChatMessageHistory"
+        )
+
     def clear(self) -> None:
         """Clear session memory from DynamoDB"""
         from botocore.exceptions import ClientError

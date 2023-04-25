@@ -73,6 +73,15 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         )
         self.connection.commit()
 
+    def pop(self, index: int) -> BaseMessage:
+        """
+        Raises NotImplementedError as pop is not supported
+        in PostgresChatMessageHistory.
+        """
+        raise NotImplementedError(
+            "pop method is not implemented for PostgresChatMessageHistory"
+        )
+
     def clear(self) -> None:
         """Clear session memory from PostgreSQL"""
         query = f"DELETE FROM {self.table_name} WHERE session_id = %s;"

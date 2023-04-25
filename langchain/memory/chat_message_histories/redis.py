@@ -64,6 +64,15 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         if self.ttl:
             self.redis_client.expire(self.key, self.ttl)
 
+    def pop(self, index: int) -> BaseMessage:
+        """
+        Raises NotImplementedError as pop is not supported
+        in RedisChatMessageHistory.
+        """
+        raise NotImplementedError(
+            "pop method is not implemented for RedisChatMessageHistory"
+        )
+
     def clear(self) -> None:
         """Clear session memory from Redis"""
         self.redis_client.delete(self.key)
