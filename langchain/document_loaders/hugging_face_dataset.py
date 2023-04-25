@@ -7,6 +7,7 @@ from langchain.document_loaders.base import BaseLoader
 
 T = TypeVar("T")
 
+
 def get_n_elements(iterator: Iterator[T], n: int) -> List[T]:
     return list(itertools.islice(iterator, n))
 
@@ -15,21 +16,21 @@ class HuggingFaceDatasetLoader(BaseLoader):
     """Loading logic for loading documents from the Hugging Face Hub."""
 
     def __init__(
-            self,
-            path: str,
-            page_content_column: str = "text",
-            name: Optional[str] = None,
-            data_dir: Optional[str] = None,
-            data_files: Optional[
-                Union[str, Sequence[str], Mapping[str, Union[str, Sequence[str]]]]
-            ] = None,
-            cache_dir: Optional[str] = None,
-            keep_in_memory: Optional[bool] = None,
-            save_infos: bool = False,
-            use_auth_token: Optional[Union[bool, str]] = None,
-            num_proc: Optional[int] = None,
-            streaming: bool = False,
-            batch_size: int = 10
+        self,
+        path: str,
+        page_content_column: str = "text",
+        name: Optional[str] = None,
+        data_dir: Optional[str] = None,
+        data_files: Optional[
+            Union[str, Sequence[str], Mapping[str, Union[str, Sequence[str]]]]
+        ] = None,
+        cache_dir: Optional[str] = None,
+        keep_in_memory: Optional[bool] = None,
+        save_infos: bool = False,
+        use_auth_token: Optional[Union[bool, str]] = None,
+        num_proc: Optional[int] = None,
+        streaming: bool = False,
+        batch_size: int = 10,
     ):
         self.path = path
         self.page_content_column = page_content_column
@@ -52,7 +53,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
                     page_content=row.pop(self.page_content_column),
                     metadata=row,
                 )
-                for row in get_n_elements(self._iterator, self.batch_size) 
+                for row in get_n_elements(self._iterator, self.batch_size)
             ]
             return docs
 
@@ -74,7 +75,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
             save_infos=self.save_infos,
             use_auth_token=self.use_auth_token,
             num_proc=self.num_proc,
-            streaming=self.streaming
+            streaming=self.streaming,
         )
 
         if self.streaming:
@@ -86,7 +87,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
                     page_content=row.pop(self.page_content_column),
                     metadata=row,
                 )
-                for row in get_n_elements(self._iterator, self.batch_size)  
+                for row in get_n_elements(self._iterator, self.batch_size)
             ]
             return docs
 
