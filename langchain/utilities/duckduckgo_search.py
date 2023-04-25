@@ -23,6 +23,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     @root_validator()
