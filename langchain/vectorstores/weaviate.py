@@ -25,6 +25,35 @@ def _default_schema(index_name: str) -> Dict:
     }
 
 
+def _create_weaviate_client(**kwargs: Any) -> Any:
+    client = kwargs.get("client")
+
+    if client is not None:
+        return client
+
+    weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
+    weaviate_api_key = get_from_dict_or_env(
+        kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
+    )
+
+    try:
+        import weaviate
+    except ImportError:
+        raise ValueError(
+            "Could not import weaviate python  package. "
+            "Please install it with `pip instal weaviate-client`"
+        )
+
+    auth = (
+        weaviate.auth.AuthApiKey(api_key=weaviate_api_key)
+        if weaviate_api_key is not None
+        else None
+    )
+    client = weaviate.Client(weaviate_url, auth_client_secret=auth)
+
+    return client
+
+
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
 
@@ -135,7 +164,12 @@ class Weaviate(VectorStore):
         return docs
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -146,12 +180,14 @@ class Weaviate(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        lambda_mult = kwargs.get("lambda_mult", 0.5)
-
         if self._embedding is not None:
             embedding = self._embedding.embed_query(query)
         else:
@@ -159,6 +195,35 @@ class Weaviate(VectorStore):
                 "max_marginal_relevance_search requires a suitable Embeddings object"
             )
 
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
+        )
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
         results = (
@@ -180,6 +245,7 @@ class Weaviate(VectorStore):
             payload[idx].pop("_additional")
             meta = payload[idx]
             docs.append(Document(page_content=text, metadata=meta))
+
         return docs
 
     @classmethod
@@ -211,18 +277,11 @@ class Weaviate(VectorStore):
                     weaviate_url="http://localhost:8080"
                 )
         """
-        weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
 
-        try:
-            from weaviate import Client
-            from weaviate.util import get_valid_uuid
-        except ImportError:
-            raise ValueError(
-                "Could not import weaviate python  package. "
-                "Please install it with `pip instal weaviate-client`"
-            )
+        client = _create_weaviate_client(**kwargs)
 
-        client = Client(weaviate_url)
+        from weaviate.util import get_valid_uuid
+
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
         embeddings = embedding.embed_documents(texts) if embedding else None
         text_key = "text"
