@@ -219,6 +219,21 @@ class BaseLanguageModel(BaseModel, ABC):
         """Get the number of tokens in the message."""
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
+    @classmethod
+    def cheapest(cls, *args: Any, **kwargs: Any) -> BaseLanguageModel:
+        """Instantiate the cheapest version of this model."""
+        raise NotImplementedError
+
+    @classmethod
+    def fastest(cls, *args: Any, **kwargs: Any) -> BaseLanguageModel:
+        """Instantiate the fastest version of this model."""
+        raise NotImplementedError
+
+    @classmethod
+    def test_model(cls, *args: Any, **kwargs: Any) -> BaseLanguageModel:
+        """Instantiate a version of this model for unit and integration tests."""
+        raise NotImplementedError
+
 
 class BaseMemory(BaseModel, ABC):
     """Base interface for memory in chains."""
