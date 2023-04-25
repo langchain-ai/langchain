@@ -1,6 +1,6 @@
 """Wrapper around Anthropic APIs."""
 import re
-from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
+from typing import Any, Callable, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -27,9 +27,9 @@ class _AnthropicCommon(BaseModel):
 
     streaming: bool = False
     """Whether to stream the results."""
-    
-    default_request_timeout: int = 60
-    """default request timeout"""
+
+    default_request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
     anthropic_api_key: Optional[str] = None
 
@@ -47,7 +47,9 @@ class _AnthropicCommon(BaseModel):
             import anthropic
 
             values["client"] = anthropic.Client(
-                api_key=anthropic_api_key, default_request_timeout=values["default_request_timeout"])
+                api_key=anthropic_api_key,
+                default_request_timeout=values["default_request_timeout"],
+            )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = anthropic.count_tokens
