@@ -15,7 +15,7 @@ from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 
 
-class SelfAskWithSearchAgent(Agent):
+class SelfAskWithSearchAgent(Agent[BaseTool]):
     """Agent for the self-ask-with-search paper."""
 
     output_parser: AgentOutputParser = Field(default_factory=SelfAskOutputParser)
@@ -35,7 +35,7 @@ class SelfAskWithSearchAgent(Agent):
         return PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+    def _validate_tools(cls, tools: Sequence[ToolMixin]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}

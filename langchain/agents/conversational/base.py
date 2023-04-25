@@ -13,10 +13,10 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseLanguageModel
-from langchain.tools.base import BaseTool
+from langchain.tools.structured import StructuredTool
 
 
-class ConversationalAgent(Agent):
+class ConversationalAgent(Agent[StructuredTool]):
     """An agent designed to hold a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
@@ -46,7 +46,7 @@ class ConversationalAgent(Agent):
     @classmethod
     def create_prompt(
         cls,
-        tools: Sequence[BaseTool],
+        tools: Sequence[StructuredTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -84,7 +84,7 @@ class ConversationalAgent(Agent):
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
+        tools: Sequence[StructuredTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
