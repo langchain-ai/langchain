@@ -1,7 +1,7 @@
 """Beta Feature: base interface for cache."""
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast, no_type_check
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from sqlalchemy import Column, Integer, String, create_engine, select
 from sqlalchemy.engine.base import Engine
@@ -29,8 +29,7 @@ class BaseCache(ABC):
         """Update cache based on prompt and llm_string."""
 
     @abstractmethod
-    @no_type_check
-    def clear(self, **kwargs) -> None:
+    def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
 
 
@@ -49,8 +48,7 @@ class InMemoryCache(BaseCache):
         """Update cache based on prompt and llm_string."""
         self._cache[(prompt, llm_string)] = return_val
 
-    @no_type_check
-    def clear(self, **kwargs) -> None:
+    def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
 
@@ -100,8 +98,7 @@ class SQLAlchemyCache(BaseCache):
             with Session(self.engine) as session, session.begin():
                 session.merge(item)
 
-    @no_type_check
-    def clear(self, **kwargs) -> None:
+    def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self.cache_schema.metadata.drop_all(self.engine)
         self.cache_schema.metadata.create_all(self.engine)
@@ -155,8 +152,7 @@ class RedisCache(BaseCache):
         for i, generation in enumerate(return_val):
             self.redis.set(self._key(prompt, llm_string, i), generation.text)
 
-    @no_type_check
-    def clear(self, asynchronous: bool = False, **kwargs) -> None:
+    def clear(self, asynchronous: bool = False, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
         self.redis.flushall(asynchronous=asynchronous, **kwargs)
 
@@ -265,12 +261,11 @@ class GPTCache(BaseCache):
         return res
 
     @staticmethod
-    @no_type_check
     def _update_cache_callback(
         llm_data: RETURN_VAL_TYPE,
         update_cache_func: Callable[[Any], None],
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Save the `llm_data` to cache storage"""
         handled_data = json.dumps([generation.dict() for generation in llm_data])
@@ -297,8 +292,7 @@ class GPTCache(BaseCache):
             prompt=prompt,
         )
 
-    @no_type_check
-    def clear(self, **kwargs) -> None:
+    def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         from gptcache import Cache
 
