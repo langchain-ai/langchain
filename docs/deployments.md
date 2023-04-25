@@ -53,3 +53,7 @@ This repository allows users to serve local chains and agents as RESTful, gRPC, 
 ## [BentoML](https://github.com/ssheng/BentoChain)
 
 This repository provides an example of how to deploy a LangChain application with [BentoML](https://github.com/bentoml/BentoML). BentoML is a framework that enables the containerization of machine learning applications as standard OCI images. BentoML also allows for the automatic generation of OpenAPI and gRPC endpoints. With BentoML, you can integrate models from all popular ML frameworks and deploy them as microservices running on the most optimal hardware and scaling independently.
+
+## [Databutton](https://databutton.com/home?new-data-app=true)
+
+These templates serve as examples of how to build, deploy, and share LangChain applications using Databutton. You can create user interfaces with Streamlit, automate tasks by scheduling Python code, and store files and data in the built-in store. Examples include Chatbot interface with conversational memory, Personal search engine, and a starter template for LangChain apps. Deploying and sharing is one click. 
