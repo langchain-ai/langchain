@@ -69,6 +69,7 @@ class PythonAstREPLTool(BaseTool):
         try:
             if self.sanitize_input:
                 # Remove the triple backticks from the query.
+                query = query.strip().removeprefix("```python")
                 query = query.strip().strip("```")
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
