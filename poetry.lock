@@ -9269,6 +9269,7 @@ cffi = ["cffi (>=1.11)"]
 [extras]
 all = ["aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "manifest-ml", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "pytesseract", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 cohere = ["cohere"]
+embeddings = ["sentence-transformers"]
 llms = ["anthropic", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "torch", "transformers"]
 openai = ["openai"]
 qdrant = ["qdrant-client"]
@@ -9276,4 +9277,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ab6ea1c53c7a6e792d5bdcf8865b87e5dcfe4c89080c18b356dc4ed8a17cc3a3"
+content-hash = "fa25661abae0d26c6e2b79e8157d62c3ac79a19e12a1e0241e469e78cf321095"

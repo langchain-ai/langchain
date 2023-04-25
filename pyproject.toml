@@ -69,6 +69,7 @@ pytesseract = {version = "^0.3.10", optional=true}
 html2text = {version="^2020.1.16", optional=true}
 numexpr = "^2.8.4"
 duckduckgo-search = {version="^2.8.6", optional=true}
+scikit-learn = "^1.2.2"
 
 
 [tool.poetry.group.docs.dependencies]
