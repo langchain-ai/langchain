@@ -26,9 +26,11 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
 class ActionBasedChatMessageHistory(ChatMessageHistory):
     """
-    Chat message history that stores AI messages in the format the AI is expected to respond with.
-    This reduces the frequency of the AI responding outside the response format (i.e. not in JSON).
+    Chat message history that stores AI messages in the format the AI is expected to
+    respond with. This reduces the frequency of the AI responding outside the response
+    format (i.e. not in JSON).
     """
+
     def add_ai_message(self, message: str) -> None:
         message_obj = {"action": "Final Answer", "action_input": message}
         self.messages.append(AIMessage(content=json.dumps(message_obj)))

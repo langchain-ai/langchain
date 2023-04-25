@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Union
+from typing import Any, Union
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS
@@ -15,12 +15,13 @@ class ConvoOutputParser(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         class MessageJSONExtractor(json.JSONDecoder):
             """
-            A custom JSON extractor that will extract the first JSON object in a string.
+            Custom JSON extractor that will extract the first JSON object in a string.
             This is to handle the LLM returning more than just the JSON object.
             """
-            def decode(self, s, _w=None):
+
+            def decode(self, s: str, _w: Any = None) -> Any:
                 for idx, char in enumerate(s):
-                    if char == '{':
+                    if char == "{":
                         end_pos = self.raw_decode(s, idx)
                         break
                 else:
@@ -35,9 +36,12 @@ class ConvoOutputParser(AgentOutputParser):
                 if response["action"] == "Final Answer":
                     return AgentFinish({"output": response["action_input"]}, text)
                 else:
-                    return AgentAction(response["action"], response["action_input"], text)
+                    return AgentAction(
+                        response["action"], response["action_input"], text
+                    )
         except json.JSONDecodeError:
             pass
 
-        # if the LLM did not provide a valid response object, we will return the text as is
+        # if the LLM did not provide a valid response object,
+        # we will return the text as is
         return AgentFinish({"output": text}, text)
