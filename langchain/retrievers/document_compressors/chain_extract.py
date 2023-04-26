@@ -52,9 +52,11 @@ class LLMChainExtractor(BaseDocumentCompressor):
         outputs = self.llm_chain.apply_and_parse(
             [self.get_input(query, doc) for doc in documents]
         )
-        compressed_docs =[Document(page_content=output, metadata=doc.metadata) 
-                          for output,doc in zip(outputs,documents) 
-                          if len(output)>0]
+        compressed_docs = [
+            Document(page_content=output, metadata=doc.metadata)
+            for output, doc in zip(outputs, documents)
+            if len(output) > 0
+        ]
         return compressed_docs
 
     async def acompress_documents(
@@ -64,9 +66,11 @@ class LLMChainExtractor(BaseDocumentCompressor):
         outputs = await self.llm_chain.aapply_and_parse(
             [self.get_input(query, doc) for doc in documents]
         )
-        compressed_docs =[Document(page_content=output, metadata=doc.metadata) 
-                          for output,doc in zip(outputs,documents) 
-                          if len(output)>0]
+        compressed_docs = [
+            Document(page_content=output, metadata=doc.metadata)
+            for output, doc in zip(outputs, documents)
+            if len(output) > 0
+        ]
         return compressed_docs
 
     @classmethod
