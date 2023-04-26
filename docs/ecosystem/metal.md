@@ -6,6 +6,8 @@ This page covers how to use the [Metal](https://getmetal.io) within LangChain.
 
 Metal is a  managed retrieval & memory platform built for production. Easily index your data into `Metal` and run semantic search and retrieval on it.
 
+![Metal](../_static/MetalDash.png)
+
 ## Quick start
 
 Get started by [creating a Metal account](https://app.getmetal.io/signup).
