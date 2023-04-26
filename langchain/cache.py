@@ -16,7 +16,6 @@ except ImportError:
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation
-from langchain.vectorstores.redis import Redis
 
 
 RETURN_VAL_TYPE = List[Generation]
@@ -194,6 +193,8 @@ class RedisSemanticCache(BaseCache):
         # return vectorstore client for the specific llm string
         if index_name in self._cache_dict:
             return self._cache_dict[index_name]
+
+        from langchain.vectorstores.redis import Redis
 
         # create new vectorstore client for the specific llm string
         try:
