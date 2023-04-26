@@ -6,7 +6,7 @@ from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 
 
-class DuckDuckGoSearchTool(BaseTool):
+class DuckDuckGoSearchRun(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
 
     name = "DuckDuckGo Search"
@@ -26,3 +26,7 @@ class DuckDuckGoSearchTool(BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("DuckDuckGoSearch does not support async")
+
+
+# Kept for backwards compatibility
+DuckDuckGoSearchTool = DuckDuckGoSearchRun
