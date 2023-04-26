@@ -299,7 +299,8 @@ class ConfluenceLoader(BaseLoader):
             from bs4 import BeautifulSoup  # type: ignore
         except ImportError:
             raise ImportError(
-                "`beautifulsoup4` package not found, please run `pip install beautifulsoup4`"
+                "`beautifulsoup4` package not found, please run"
+                " `pip install beautifulsoup4`"
             )
 
         if include_attachments:
