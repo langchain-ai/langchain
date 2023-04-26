@@ -9,7 +9,7 @@ import mimetypes
 from abc import ABC, abstractmethod
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import ContextManager, Generator, Iterable, Optional, Union
+from typing import Generator, Iterable, Optional, Union
 
 from pydantic import BaseModel
 
