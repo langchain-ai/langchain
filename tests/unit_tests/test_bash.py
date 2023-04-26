@@ -9,6 +9,7 @@ import pytest
 from langchain.utilities.bash import BashProcess
 
 
+
 @pytest.mark.skipif(
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
@@ -19,6 +20,18 @@ def test_pwd_command() -> None:
     output = session.run(commands)
 
     assert output == subprocess.check_output("pwd", shell=True).decode()
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
+def test_pwd_command_persistent() -> None:
+    """Test correct functionality."""
+    session = BashProcess(persistent=True)
+    commands = ["pwd"]
+    output = session.run(commands)
+
+    assert subprocess.check_output("pwd", shell=True).decode().strip() in output
 
 
 @pytest.mark.skipif(
@@ -66,3 +79,16 @@ def test_create_directory_and_files(tmp_path: Path) -> None:
     # check that the files were created in the temporary directory
     output = session.run([f"ls {temp_dir}"])
     assert output == "file1.txt\nfile2.txt"
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="Test not supported on Windows"
+)
+def test_create_bash_persistent() -> None:
+    """Test the pexpect persistent bash terminal"""
+    session = BashProcess(persistent=True)
+    response = session.run("echo hello")
+    response += session.run("echo world")
+
+    assert "hello" in response
+    assert "world" in response
