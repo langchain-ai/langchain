@@ -198,6 +198,17 @@ class RedisSemanticCache(BaseCache):
 
         return self._cache_dict[index_name]
 
+    def clear(self, llm_string: str):
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(llm_string)
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].drop_index(
+                index_name=index_name,
+                delete_documents=True,
+                redis_url=self.redis_url
+            )
+            del self._cache_dict[index_name]
+
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         llm_cache = self._get_llm_cache(llm_string)

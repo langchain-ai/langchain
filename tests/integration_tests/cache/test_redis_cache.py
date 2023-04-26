@@ -26,6 +26,7 @@ def test_redis_cache():
     )
     print(expected_output)
     assert output == expected_output
+    langchain.llm_cache.redis.flushall()
 
 def test_redis_semantic_cache():
     langchain.llm_cache = RedisSemanticCache(
@@ -44,3 +45,8 @@ def test_redis_semantic_cache():
         llm_output={},
     )
     assert output == expected_output
+    # clear the cache
+    langchain.llm_cache.clear(llm_string)
+    output = llm.generate(["bar"]) # foo and bar will have the same embedding produced by FakeEmbeddings
+    # expect different output now without cached result
+    assert output != expected_output
