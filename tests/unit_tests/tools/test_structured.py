@@ -1,6 +1,7 @@
 import inspect
+import logging
 from functools import partial
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 import pydantic
 import pytest
@@ -165,30 +166,12 @@ def test_empty_args_decorator() -> None:
     assert empty_tool_input.run({}) == "the empty result"
 
 
-def generate_inspect_signature(pydantic_model: Type[BaseModel]) -> inspect.Signature:
-    # Get the fields from the Pydantic model
-    fields = pydantic_model.__fields__
-
-    # Generate the signature based on the fields
-    params = [
-        inspect.Parameter(
-            field_name,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            default=field_info.default
-            if field_info.default is not None
-            else inspect.Parameter.empty,
-            annotation=field_info.outer_type_
-            if field_info.outer_type_ is not None
-            else inspect.Parameter.empty,
-        )
-        for field_name, field_info in fields.items()
-    ]
-
-    return inspect.Signature(params)
-
-
-def test_nested_args() -> None:
+def test_nested_pydantic_args() -> None:
     """Test inferred schema when args are nested pydantic models."""
+    # This is a pattern that is common with FastAPI methods.
+    # If we only parse a dict input but pass the dict
+    # to the function, we are limited only to primitive types
+    # in general.
 
     class SomeNestedInput(BaseModel):
         arg2: str
@@ -206,3 +189,22 @@ def test_nested_args() -> None:
     assert nested_tool.name == "nested_tool"
     input_ = {"some_input": {"arg1": 1, "arg2": {"arg2": "foo"}}}
     assert nested_tool.run(input_) == input_["some_input"]
+
+
+def test_warning_on_args_kwargs(caplog: pytest.LogCaptureFixture) -> None:
+    """Test inferred schema when args are nested pydantic models."""
+
+    with caplog.at_level(logging.WARNING):
+
+        @structured_tool
+        def anything_goes(*foo: Any, **bar: Any) -> str:
+            """Return a constant."""
+            return str(foo) + "|" + str(bar)
+
+    # Check if the expected warning message was logged
+    assert any(
+        "anything_goes uses *args" in record.message for record in caplog.records
+    )
+    assert any(
+        "anything_goes uses **kwargs" in record.message for record in caplog.records
+    )

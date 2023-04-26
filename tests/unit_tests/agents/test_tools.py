@@ -1,5 +1,6 @@
 """Test tool utils."""
 
+from typing import Optional
 import pytest
 
 from langchain.agents.tools import Tool, tool
@@ -90,6 +91,19 @@ def test_unnamed_tool_decorator_return_direct() -> None:
     assert isinstance(search_api, Tool)
     assert search_api.name == "search_api"
     assert search_api.return_direct
+
+
+def test_base_tool_decorator_multiple_args() -> None:
+    """Test the schema that's generated is still a simple string."""
+
+    @tool(return_direct=True)
+    def some_tool(query: str, foo: int = 3, bar: Optional[dict] = None) -> str:
+        """Search the API for the query."""
+        return f"{query} {foo} {bar}"
+
+    assert isinstance(some_tool, Tool)
+    assert some_tool.name == "some_tool"
+    assert some_tool.run("foo") == "foo 3 None"
 
 
 def test_missing_docstring() -> None:

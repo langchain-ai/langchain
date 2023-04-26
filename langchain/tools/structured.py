@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
-from inspect import signature
+from inspect import Parameter, signature
 from typing import (
     Any,
     Awaitable,
@@ -22,6 +23,8 @@ from pydantic.generics import GenericModel
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.utilities.async_utils import async_or_sync_call
+
+logger = logging.getLogger(__name__)
 
 OUTPUT_T = TypeVar("OUTPUT_T")
 
@@ -174,8 +177,21 @@ def get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
     return {k: schema[k] for k in valid_keys}
 
 
+def _warn_args_kwargs(func: Callable) -> None:
+    # Check if the function has *args or **kwargs
+    sig = signature(func)
+    for param in sig.parameters.values():
+        if param.kind == Parameter.VAR_POSITIONAL:
+            logger.warning(f"{func.__name__} uses *args, which are not well supported.")
+        elif param.kind == Parameter.VAR_KEYWORD:
+            logger.warning(
+                f"{func.__name__} uses **kwargs, which are not well supported."
+            )
+
+
 def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature."""
+    _warn_args_kwargs(func)
     inferred_model = validate_arguments(func).model  # type: ignore
     # Pydantic adds placeholder virtual fields we need to strip
     filtered_args = get_filtered_args(inferred_model, func)
