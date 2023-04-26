@@ -6,8 +6,6 @@ from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeVar, Unio
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from langchain.callbacks.manager import Callbacks
-
 
 def get_buffer_string(
     messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
@@ -171,51 +169,6 @@ class PromptValue(BaseModel, ABC):
     @abstractmethod
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
-
-
-class BaseLanguageModel(BaseModel, ABC):
-    @abstractmethod
-    def generate_prompt(
-        self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    @abstractmethod
-    async def agenerate_prompt(
-        self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
-    ) -> LLMResult:
-        """Take in a list of prompt values and return an LLMResult."""
-
-    def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Get the number of tokens in the message."""
-        return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
 
 class BaseMemory(BaseModel, ABC):

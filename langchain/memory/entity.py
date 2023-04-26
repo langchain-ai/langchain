@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import (
@@ -13,7 +14,7 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, get_buffer_string
+from langchain.schema import BaseMessage, get_buffer_string
 
 logger = logging.getLogger(__name__)
 

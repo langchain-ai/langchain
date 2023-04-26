@@ -13,6 +13,7 @@ import yaml
 from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import InvalidTool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -28,7 +29,6 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseLanguageModel,
     BaseMessage,
     BaseOutputParser,
 )
@@ -746,6 +746,7 @@ class AgentExecutor(Chain):
                     agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             else:
@@ -754,6 +755,7 @@ class AgentExecutor(Chain):
                     agent_action.tool,
                     verbose=self.verbose,
                     color=None,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             result.append((agent_action, observation))
@@ -772,7 +774,11 @@ class AgentExecutor(Chain):
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = await self.agent.aplan(intermediate_steps, **inputs)
+        output = await self.agent.aplan(
+            intermediate_steps,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **inputs,
+        )
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -802,6 +808,7 @@ class AgentExecutor(Chain):
                     agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             else:
@@ -810,6 +817,7 @@ class AgentExecutor(Chain):
                     agent_action.tool,
                     verbose=self.verbose,
                     color=None,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             return agent_action, observation

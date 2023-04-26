@@ -72,12 +72,12 @@ class BaseTool(ABC, BaseModel):
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
-        if "callback_manager" in values:
+        if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
-        values["callbacks"] = values.pop("callback_manager", None)
+            values["callbacks"] = values.pop("callback_manager", None)
         return values
 
     @abstractmethod
