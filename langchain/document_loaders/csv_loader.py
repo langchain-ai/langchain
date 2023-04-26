@@ -46,17 +46,12 @@ class CSVLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         docs = []
-
         with open(self.file_path, newline="", encoding=self.encoding) as csvfile:
-            csv = DictReader(csvfile, **self.csv_args)  # type: ignore
-            for i, row in enumerate(csv):
+            csv_reader = DictReader(csvfile, **self.csv_args)
+            for i, row in enumerate(csv_reader):
                 content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
-                if self.source_column is not None:
-                    source = row[self.source_column]
-                else:
-                    source = self.file_path
+                source = row[self.source_column] if self.source_column is not None else self.file_path
                 metadata = {"source": source, "row": i}
                 doc = Document(page_content=content, metadata=metadata)
                 docs.append(doc)
-
         return docs
