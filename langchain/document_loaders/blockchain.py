@@ -75,6 +75,8 @@ class BlockchainDocumentLoader(BaseLoader):
         for item in items:
             content = str(item)
             tokenId = item["id"]["tokenId"]
-            metadata = {"tokenId": tokenId}
+            metadata = {"source": self.contract_address, 
+                        "blockchain": self.blockchainType,
+                        "tokenId": tokenId}
             result.append(Document(page_content=content, metadata=metadata))
         return result
