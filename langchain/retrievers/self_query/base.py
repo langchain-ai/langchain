@@ -5,12 +5,10 @@ from pydantic import BaseModel, Field, root_validator
 from langchain import LLMChain
 from langchain.chains.query_constructor.base import (
     AttributeInfo,
-    Comparison,
-    Operation,
     load_query_constructor_chain,
 )
-from langchain.llms import BaseLLM
-from langchain.schema import BaseRetriever, Document
+from langchain.chains.query_constructor.query_language import StructuredQuery
+from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores import VectorStore
 
 
@@ -26,7 +24,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     """The search type to perform on the vector store."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
-    structured_query_to_filter: Callable[[Optional[Union[Comparison, Operation]]], dict]
+    structured_query_to_filter: Callable[[StructuredQuery], dict]
     """"""
 
     class Config:
@@ -56,10 +54,12 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             List of relevant documents
         """
         inputs = self.llm_chain.prep_inputs(query)
-        structured_query = cast(dict, self.llm_chain.predict_and_parse(**inputs))
+        structured_query = cast(
+            StructuredQuery, self.llm_chain.predict_and_parse(**inputs)
+        )
         print(structured_query)
-        new_query = structured_query["query"]
-        new_filter = self.structured_query_to_filter(structured_query["filter"])
+        new_query = structured_query.query
+        new_filter = self.structured_query_to_filter(structured_query.filter)
         print(new_filter)
         search_kwargs = {k: v for k, v in self.search_kwargs.items() if k != "filter"}
         docs = self.vectorstore.search(
@@ -73,7 +73,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         vectorstore: VectorStore,
         document_contents: str,
         metadata_field_info: List[AttributeInfo],

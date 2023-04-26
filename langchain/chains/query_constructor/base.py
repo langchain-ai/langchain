@@ -5,6 +5,7 @@ from typing import Callable, Dict, List, Optional
 from pydantic import BaseModel
 
 from langchain import BasePromptTemplate, FewShotPromptTemplate, LLMChain
+from langchain.chains.query_constructor.parser import get_parser
 from langchain.chains.query_constructor.prompt import (
     default_examples,
     default_prefix,
@@ -15,27 +16,27 @@ from langchain.chains.query_constructor.prompt import (
 from langchain.chains.query_constructor.query_language import (
     Comparator,
     Operator,
-    get_parser,
+    StructuredQuery,
 )
 from langchain.output_parsers.structured import parse_json_markdown
 from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
 
 
-class QueryConstructorOutputParser(BaseOutputParser[Dict]):
+class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
     """"""
 
-    def parse(self, text: str) -> Dict:
+    def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
             parsed = parse_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
-                parsed["filter"] = " "
+                parsed["query"] = " "
             if parsed["filter"] == "NO_FILTER":
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
-            return parsed
+            return StructuredQuery(query=parsed["query"], filter=parsed["filter"])
         except Exception as e:
             raise OutputParserException(
                 f"Parsing text\n{text}\n raised following error:\n{e}"
@@ -46,7 +47,7 @@ class QueryConstructorOutputParser(BaseOutputParser[Dict]):
         cls,
         allowed_comparators: Optional[List[Comparator]] = None,
         allowed_operators: Optional[List[Operator]] = None,
-    ) -> "QueryConstructorOutputParser":
+    ) -> "StructuredQueryOutputParser":
         ast_parser = get_parser(
             allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
         )
@@ -93,7 +94,7 @@ def _get_prompt(
     suffix = default_suffix.format(
         i=len(examples) + 1, content=document_contents, attributes=attribute_str
     )
-    output_parser = QueryConstructorOutputParser.from_components(
+    output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
     )
     return FewShotPromptTemplate(

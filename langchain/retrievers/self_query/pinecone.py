@@ -1,32 +1,28 @@
 """"""
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Tuple
 
-from langchain.chains.query_constructor.base import Comparison, Operation
+from langchain.chains.query_constructor.query_language import (
+    Comparison,
+    Operation,
+    Visitor,
+)
 
 
-def comparison_to_pinecone(comparison: Comparison) -> dict:
-    return {comparison.attribute: {f"${comparison.comparator}": comparison.value}}
+class PineconeTranslator(Visitor):
+    def visit_operation(self, operation: Operation) -> Dict:
+        root: Dict = {f"${operation.operator}": []}
+        stack: List[Tuple[Dict, List]] = [(root, operation.arguments)]
+        while stack:
+            op_dict, op_args = stack.pop()
+            new_args: List = list(op_dict.values())[0]
+            for arg in op_args:
+                if isinstance(arg, Comparison):
+                    new_args.append(self.visit_comparison(arg))
+                else:
+                    next_op: Dict = {f"${arg.operator}": []}
+                    new_args.append(next_op)
+                    stack.append((next_op, arg.arguments))
+        return root
 
-
-def translate_filter_to_pinecone(
-    _filter: Optional[Union[Comparison, Operation]]
-) -> dict:
-    if _filter is None:
-        return {}
-    if isinstance(_filter, Comparison):
-        return comparison_to_pinecone(_filter)
-    root: Dict[str, List[Any]] = {f"${_filter.operator}": _filter.arguments}
-    to_translate = [root]
-    while to_translate:
-        curr = to_translate.pop()
-        curr_op, curr_args = list(*curr.items())
-        new_args = []
-        for arg in curr_args:
-            if isinstance(arg, Comparison):
-                new_args.append(comparison_to_pinecone(arg))
-            else:
-                new_arg = {f"${arg.operator}": arg.arguments}
-                new_args.append(new_arg)
-                to_translate.append(new_arg)
-        curr[curr_op] = new_args
-    return root
+    def visit_comparison(self, comparison: Comparison) -> Dict:
+        return {comparison.attribute: {f"${comparison.comparator}": comparison.value}}
