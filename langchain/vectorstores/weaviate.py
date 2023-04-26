@@ -25,6 +25,35 @@ def _default_schema(index_name: str) -> Dict:
     }
 
 
+def _create_weaviate_client(**kwargs: Any) -> Any:
+    client = kwargs.get("client")
+
+    if client is not None:
+        return client
+
+    weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
+    weaviate_api_key = get_from_dict_or_env(
+        kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
+    )
+
+    try:
+        import weaviate
+    except ImportError:
+        raise ValueError(
+            "Could not import weaviate python  package. "
+            "Please install it with `pip instal weaviate-client`"
+        )
+
+    auth = (
+        weaviate.auth.AuthApiKey(api_key=weaviate_api_key)
+        if weaviate_api_key is not None
+        else None
+    )
+    client = weaviate.Client(weaviate_url, auth_client_secret=auth)
+
+    return client
+
+
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
 
@@ -110,6 +139,8 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_text(content).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -125,6 +156,8 @@ class Weaviate(VectorStore):
         """Look up similar documents by embedding vector in Weaviate."""
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_vector(vector).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -197,6 +230,8 @@ class Weaviate(VectorStore):
         """
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         results = (
             query_obj.with_additional("vector")
             .with_near_vector(vector)
@@ -248,18 +283,11 @@ class Weaviate(VectorStore):
                     weaviate_url="http://localhost:8080"
                 )
         """
-        weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
 
-        try:
-            from weaviate import Client
-            from weaviate.util import get_valid_uuid
-        except ImportError:
-            raise ValueError(
-                "Could not import weaviate python  package. "
-                "Please install it with `pip instal weaviate-client`"
-            )
+        client = _create_weaviate_client(**kwargs)
 
-        client = Client(weaviate_url)
+        from weaviate.util import get_valid_uuid
+
         index_name = kwargs.get("index_name", f"LangChain_{uuid4().hex}")
         embeddings = embedding.embed_documents(texts) if embedding else None
         text_key = "text"

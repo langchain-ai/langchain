@@ -1,3 +1,4 @@
+import asyncio
 import platform
 import warnings
 from typing import List, Type
@@ -65,4 +66,6 @@ class ShellTool(BaseTool):
 
     async def _arun(self, commands: List[str]) -> str:
         """Run commands asynchronously and return final output."""
-        return await self.process.arun(commands)
+        return await asyncio.get_event_loop().run_in_executor(
+            None, self.process.run, commands
+        )
