@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
+from langchain.agents.loading import save_agent
 
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
@@ -28,6 +29,7 @@ from langchain.schema import (
     BaseOutputParser,
 )
 from langchain.tools.base import BaseTool
+from langchain.tools.structured import BaseStructuredTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
@@ -121,37 +123,7 @@ class BaseSingleActionAgent(BaseModel):
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Save the agent.
-
-        Args:
-            file_path: Path to file to save the agent to.
-
-        Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
-        """
-        # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
-
-        directory_path = save_path.parent
-        directory_path.mkdir(parents=True, exist_ok=True)
-
-        # Fetch dictionary to save
-        agent_dict = self.dict()
-
-        if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
-                json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
-            with open(file_path, "w") as f:
-                yaml.dump(agent_dict, f, default_flow_style=False)
-        else:
-            raise ValueError(f"{save_path} must be json or yaml")
+        return save_agent(file_path, self.dict())
 
     def tool_run_logging_kwargs(self) -> Dict:
         return {}
@@ -454,7 +426,6 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         """Validate that appropriate tools are passed in."""
-        pass
 
     @classmethod
     @abstractmethod
@@ -539,7 +510,7 @@ class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
-    tools: Sequence[BaseTool]
+    tools: Sequence[BaseStructuredTool]
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
@@ -549,7 +520,7 @@ class AgentExecutor(Chain):
     def from_agent_and_tools(
         cls,
         agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
-        tools: Sequence[BaseTool],
+        tools: Sequence[BaseStructuredTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> AgentExecutor:
@@ -617,7 +588,7 @@ class AgentExecutor(Chain):
         else:
             return self.agent.return_values
 
-    def lookup_tool(self, name: str) -> BaseTool:
+    def lookup_tool(self, name: str) -> BaseStructuredTool:
         """Lookup tool by name."""
         return {tool.name: tool for tool in self.tools}[name]
 
@@ -659,7 +630,7 @@ class AgentExecutor(Chain):
 
     def _take_next_step(
         self,
-        name_to_tool_map: Dict[str, BaseTool],
+        name_to_tool_map: Dict[str, BaseStructuredTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
@@ -711,7 +682,7 @@ class AgentExecutor(Chain):
 
     async def _atake_next_step(
         self,
-        name_to_tool_map: Dict[str, BaseTool],
+        name_to_tool_map: Dict[str, BaseStructuredTool],
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
