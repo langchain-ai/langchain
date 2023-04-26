@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -13,12 +13,19 @@ except ImportError:
 class Visitor(ABC):
     """Abstract visitor interface."""
 
+    allowed_comparators: Optional[List["Comparator"]] = None
+    allowed_operators: Optional[List["Operator"]] = None
+
     @abstractmethod
     def visit_operation(self, operation: "Operation") -> Any:
         """"""
 
     @abstractmethod
     def visit_comparison(self, comparison: "Comparison") -> Any:
+        """"""
+
+    @abstractmethod
+    def visit_structured_query(self, structured_query: "StructuredQuery") -> Any:
         """"""
 
 
@@ -33,7 +40,7 @@ def _to_snake_case(name: str) -> str:
     return snake_case
 
 
-class Expr(BaseModel, ABC):
+class Expr(BaseModel):
     def accept(self, visitor: Visitor) -> Any:
         return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}")(
             self
@@ -52,6 +59,8 @@ class Comparator(str, Enum):
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
+    IN = "in"
+    NIN = "nin"
 
 
 class Comparison(Expr):
@@ -62,9 +71,9 @@ class Comparison(Expr):
 
 class Operation(Expr):
     operator: Operator
-    arguments: List[Union["Operation", Comparison]]
+    arguments: List[Union[Comparison, "Operation"]]
 
 
-class StructuredQuery(BaseModel):
+class StructuredQuery(Expr):
     query: str
     filter: Union[Comparison, Operation]

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -7,9 +7,23 @@ from langchain.chains.query_constructor.base import (
     AttributeInfo,
     load_query_constructor_chain,
 )
-from langchain.chains.query_constructor.query_language import StructuredQuery
+from langchain.chains.query_constructor.query_language import StructuredQuery, Visitor
+from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.schema import BaseLanguageModel, BaseRetriever, Document
-from langchain.vectorstores import VectorStore
+from langchain.vectorstores import Pinecone, VectorStore
+
+
+def get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
+    """"""
+    BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
+        Pinecone: PineconeTranslator
+    }
+    if vectorstore_cls not in BUILTIN_TRANSLATORS:
+        raise ValueError(
+            f"Self query retriever with Vector Store type {vectorstore_cls}"
+            f" not supported."
+        )
+    return BUILTIN_TRANSLATORS[vectorstore_cls]()
 
 
 class SelfQueryRetriever(BaseRetriever, BaseModel):
@@ -17,14 +31,14 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     the vector store queries."""
 
     vectorstore: VectorStore
-    """The Pinecone vector store from which documents will be retrieved."""
+    """The underlying vector store from which documents will be retrieved."""
     llm_chain: LLMChain
     """The LLMChain for generating the vector store queries."""
     search_type: str = "similarity"
     """The search type to perform on the vector store."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
-    structured_query_to_filter: Callable[[StructuredQuery], dict]
+    structured_query_translator: Visitor
     """"""
 
     class Config:
@@ -33,15 +47,13 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         arbitrary_types_allowed = True
 
     @root_validator()
-    def validate_search_type(cls, values: Dict) -> Dict:
+    def validate_translator(cls, values: Dict) -> Dict:
         """Validate search type."""
-        if "search_type" in values:
-            search_type = values["search_type"]
-            if search_type not in ("similarity", "mmr"):
-                raise ValueError(
-                    f"search_type of {search_type} not allowed. Expected "
-                    "search_type to be 'similarity' or 'mmr'."
-                )
+        if "structured_query_translator" not in values:
+            vectorstore_cls = values["vectorstore"].__class__
+            values["structured_query_translator"] = get_builtin_translator(
+                vectorstore_cls
+            )
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
@@ -58,13 +70,12 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
             StructuredQuery, self.llm_chain.predict_and_parse(**inputs)
         )
         print(structured_query)
-        new_query = structured_query.query
-        new_filter = self.structured_query_to_filter(structured_query.filter)
-        print(new_filter)
-        search_kwargs = {k: v for k, v in self.search_kwargs.items() if k != "filter"}
-        docs = self.vectorstore.search(
-            new_query, self.search_type, filter=new_filter, **search_kwargs
+        new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
+            structured_query
         )
+        print(new_kwargs)
+        search_kwargs = {**self.search_kwargs, **new_kwargs}
+        docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
         return docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
@@ -77,10 +88,21 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         vectorstore: VectorStore,
         document_contents: str,
         metadata_field_info: List[AttributeInfo],
+        structured_query_translator: Optional[Visitor],
         chain_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
+        if structured_query_translator is None:
+            structured_query_translator = get_builtin_translator(vectorstore.__class__)
         chain_kwargs = chain_kwargs or {}
+        if "allowed_comparators" not in chain_kwargs:
+            chain_kwargs[
+                "allowed_comparators"
+            ] = structured_query_translator.allowed_comparators
+        if "allowed_operators" not in chain_kwargs:
+            chain_kwargs[
+                "allowed_operators"
+            ] = structured_query_translator.allowed_operators
         llm_chain = load_query_constructor_chain(
             llm, document_contents, metadata_field_info, **chain_kwargs
         )
