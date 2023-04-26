@@ -25,10 +25,15 @@ class TrajectoryOutputParser(BaseOutputParser):
 
         reasoning, score_str = reasoning.strip(), score_str.strip()
 
-        if not score_str.isdigit() and 1 <= int(score_str) <= 5:
+        score_str = next(
+            (char for char in score_str if char.isdigit()), "0"
+        )  # Scan for first digit
+
+        if not 1 <= int(score_str) <= 5:
             raise OutputParserException(
                 f"Score is not a digit in the range 1-5: {text}"
             )
+
         return TrajectoryEval(score=int(score_str), reasoning=reasoning)
 
 
