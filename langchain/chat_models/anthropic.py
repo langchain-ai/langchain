@@ -2,6 +2,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.anthropic import _AnthropicCommon
 from langchain.schema import (
@@ -85,7 +89,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         )  # trim off the trailing ' ' that might come from the "Assistant: "
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
@@ -98,10 +105,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             for data in stream_resp:
                 delta = data["completion"][len(completion) :]
                 completion = data["completion"]
-                self.callback_manager.on_llm_new_token(
-                    delta,
-                    verbose=self.verbose,
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        delta,
+                    )
         else:
             response = self.client.completion(**params)
             completion = response["completion"]
@@ -109,7 +116,10 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         prompt = self._convert_messages_to_prompt(messages)
         params: Dict[str, Any] = {"prompt": prompt, **self._default_params}
@@ -122,15 +132,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             async for data in stream_resp:
                 delta = data["completion"][len(completion) :]
                 completion = data["completion"]
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
+                if run_manager:
+                    await run_manager.on_llm_new_token(
                         delta,
-                        verbose=self.verbose,
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        delta,
-                        verbose=self.verbose,
                     )
         else:
             response = await self.client.acompletion(**params)

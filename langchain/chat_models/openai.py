@@ -14,6 +14,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -242,7 +246,10 @@ class ChatOpenAI(BaseChatModel):
         return {"token_usage": overall_token_usage, "model_name": self.model_name}
 
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -255,10 +262,8 @@ class ChatOpenAI(BaseChatModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                self.callback_manager.on_llm_new_token(
-                    token,
-                    verbose=self.verbose,
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
@@ -287,7 +292,10 @@ class ChatOpenAI(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -300,16 +308,8 @@ class ChatOpenAI(BaseChatModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
+                if run_manager:
+                    await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )

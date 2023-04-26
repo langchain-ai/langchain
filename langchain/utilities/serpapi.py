@@ -76,7 +76,7 @@ class SerpAPIWrapper(BaseModel):
             )
         return values
 
-    async def arun(self, query: str) -> str:
+    async def arun(self, query: str, **kwargs: Any) -> str:
         """Use aiohttp to run query through SerpAPI and parse result."""
 
         def construct_url_and_params() -> Tuple[str, Dict[str, str]]:
@@ -99,7 +99,7 @@ class SerpAPIWrapper(BaseModel):
 
         return self._process_response(res)
 
-    def run(self, query: str) -> str:
+    def run(self, query: str, **kwargs: Any) -> str:
         """Run query through SerpAPI and parse result."""
         return self._process_response(self.results(query))
 
