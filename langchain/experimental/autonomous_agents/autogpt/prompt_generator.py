@@ -47,7 +47,9 @@ class PromptGenerator:
 
     def _generate_command_string(self, tool: BaseTool) -> str:
         output = f"{tool.name}: {tool.description}"
-        output += f", args json schema: {json.dumps(tool.args)}"
+        output += (
+            f", args json schema: {json.dumps(tool.args_schema.schema()['properties'])}"
+        )
         return output
 
     def add_resource(self, resource: str) -> None:
