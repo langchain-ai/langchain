@@ -49,19 +49,25 @@ class LLMChainExtractor(BaseDocumentCompressor):
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
         """Compress page content of raw documents."""
-        compressed_docs = []
-        for doc in documents:
-            _input = self.get_input(query, doc)
-            output = self.llm_chain.predict_and_parse(**_input)
-            if len(output) == 0:
-                continue
-            compressed_docs.append(Document(page_content=output, metadata=doc.metadata))
+        outputs = self.llm_chain.apply_and_parse(
+            [self.get_input(query, doc) for doc in documents]
+        )
+        compressed_docs =[Document(page_content=output, metadata=doc.metadata) 
+                          for output,doc in zip(outputs,documents) 
+                          if len(output)>0]
         return compressed_docs
 
     async def acompress_documents(
         self, documents: Sequence[Document], query: str
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        """Compress page content of raw documents."""
+        outputs = await self.llm_chain.aapply_and_parse(
+            [self.get_input(query, doc) for doc in documents]
+        )
+        compressed_docs =[Document(page_content=output, metadata=doc.metadata) 
+                          for output,doc in zip(outputs,documents) 
+                          if len(output)>0]
+        return compressed_docs
 
     @classmethod
     def from_llm(
