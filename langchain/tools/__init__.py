@@ -9,6 +9,7 @@ from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.scenexplain.tool import SceneXplainTool
 
 __all__ = [
     "AIPluginTool",
@@ -24,4 +25,5 @@ __all__ = [
     "IFTTTWebhook",
     "OpenAPISpec",
     "BaseTool",
+    "SceneXplainTool",
 ]
