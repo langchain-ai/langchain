@@ -159,9 +159,25 @@ class RedisSemanticCache(BaseCache):
         embedding: Embeddings,
         score_threshold: float = 0.2
     ):
-        """
-        Initialize by passing in Redis url, embedding generator,
-        and semantic score threshold.
+        """Initialize by passing in the `init` GPTCache func
+
+        Args:
+            redis_url (str): URL to connect to Redis.
+            embedding (Embedding): Embedding provider for semantic encoding and search.
+            score_threshold (float, 0.2):
+
+        Example:
+        .. code-block:: python
+            import langchain
+
+            from langchain.cache import RedisSemanticCache
+            from langchain.embeddings import OpenAIEmbeddings
+
+            langchain.llm_cache = RedisSemanticCache(
+                redis_url="redis://localhost:6379",
+                embedding=OpenAIEmbeddings()
+            )
+
         """
         self._cache_dict = {}
         self.redis_url = redis_url
