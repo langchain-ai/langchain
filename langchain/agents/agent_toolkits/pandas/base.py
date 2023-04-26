@@ -20,6 +20,7 @@ def create_pandas_dataframe_agent(
     verbose: bool = False,
     return_intermediate_steps: bool = False,
     max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     **kwargs: Any,
 ) -> AgentExecutor:
@@ -41,12 +42,19 @@ def create_pandas_dataframe_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    agent = ZeroShotAgent(
+        llm_chain=llm_chain,
+        allowed_tools=tool_names,
+        callback_manager=callback_manager,
+        **kwargs,
+    )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         verbose=verbose,
         return_intermediate_steps=return_intermediate_steps,
         max_iterations=max_iterations,
+        max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        callback_manager=callback_manager,
     )

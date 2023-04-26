@@ -55,7 +55,7 @@ examples = [
 CRITIQUE_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conservation between a human and an AI model.",
+    prefix="Below is conversation between a human and an AI model.",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 
@@ -69,7 +69,7 @@ Critique:""",
 REVISION_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conservation between a human and an AI model.",
+    prefix="Below is conversation between a human and an AI model.",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 

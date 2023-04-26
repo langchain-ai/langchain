@@ -1,7 +1,8 @@
 # flake8: noqa
 """Load tools."""
 import warnings
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Callable, Tuple
+from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -11,8 +12,10 @@ from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
 from langchain.llms.base import BaseLLM
 from langchain.requests import TextRequestsWrapper
+from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -26,9 +29,11 @@ from langchain.tools.requests.tool import (
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.utilities import ArxivAPIWrapper
 from langchain.utilities.apify import ApifyWrapper
 from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
+from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
@@ -69,7 +74,7 @@ def _get_terminal() -> BaseTool:
     )
 
 
-_BASE_TOOLS = {
+_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "python_repl": _get_python_repl,
     "requests": _get_tools_requests_get,  # preserved for backwards compatability
     "requests_get": _get_tools_requests_get,
@@ -115,7 +120,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS = {
+_LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
@@ -175,6 +180,10 @@ def _get_wikipedia(**kwargs: Any) -> BaseTool:
     return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
 
 
+def _get_arxiv(**kwargs: Any) -> BaseTool:
+    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
+
+
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return Tool(
         name="Serper Search",
@@ -209,17 +218,23 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
     return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
 
 
+def _get_ddg_search(**kwargs: Any) -> BaseTool:
+    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+
+
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
 
-_EXTRA_LLM_TOOLS = {
+_EXTRA_LLM_TOOLS: Dict[
+    str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
+] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
 }
 
-_EXTRA_OPTIONAL_TOOLS = {
+_EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[str]]] = {
     "wolfram-alpha": (_get_wolfram_alpha, ["wolfram_alpha_appid"]),
     "google-search": (_get_google_search, ["google_api_key", "google_cse_id"]),
     "google-search-results-json": (
@@ -231,10 +246,11 @@ _EXTRA_OPTIONAL_TOOLS = {
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
+    "ddg-search": (_get_ddg_search, []),
     "google-serper": (_get_google_serper, ["serper_api_key"]),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
-    "wikipedia": (_get_wikipedia, ["top_k_results"]),
+    "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
 }
 

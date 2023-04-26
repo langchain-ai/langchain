@@ -8,7 +8,7 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.blob_loaders.schema import Blob
 from langchain.document_loaders.parsers.html_bs import BSHTMLParser
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class BSHTMLLoader(BaseLoader):
@@ -26,7 +26,8 @@ class BSHTMLLoader(BaseLoader):
             import bs4  # noqa:F401
         except ImportError:
             raise ValueError(
-                "bs4 package not found, please install it with " "`pip install bs4`"
+                "beautifulsoup4 package not found, please install it with "
+                "`pip install beautifulsoup4`"
             )
 
         self.parser = BSHTMLParser(bs_kwargs=bs_kwargs)

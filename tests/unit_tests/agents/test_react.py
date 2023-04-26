@@ -65,20 +65,6 @@ def test_predict_until_observation_normal() -> None:
     assert output == expected_output
 
 
-def test_predict_until_observation_repeat() -> None:
-    """Test when no action is generated initially."""
-    outputs = ["foo", " Search[foo]"]
-    fake_llm = FakeListLLM(responses=outputs)
-    tools = [
-        Tool(name="Search", func=lambda x: x, description="foo"),
-        Tool(name="Lookup", func=lambda x: x, description="bar"),
-    ]
-    agent = ReActDocstoreAgent.from_llm_and_tools(fake_llm, tools)
-    output = agent.plan([], input="")
-    expected_output = AgentAction("Search", "foo", "foo\nAction: Search[foo]")
-    assert output == expected_output
-
-
 def test_react_chain() -> None:
     """Test react chain."""
     responses = [

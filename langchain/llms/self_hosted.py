@@ -9,7 +9,7 @@ from pydantic import Extra
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _generate_text(

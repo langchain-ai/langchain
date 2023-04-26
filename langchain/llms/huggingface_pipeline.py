@@ -12,7 +12,7 @@ DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class HuggingFacePipeline(LLM):

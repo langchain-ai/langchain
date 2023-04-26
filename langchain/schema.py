@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -31,7 +41,7 @@ class AgentAction(NamedTuple):
     """Agent's action to take."""
 
     tool: str
-    tool_input: str
+    tool_input: Union[str, dict]
     log: str
 
 
@@ -327,15 +337,17 @@ class BaseRetriever(ABC):
 
 Memory = BaseMemory
 
+T = TypeVar("T")
 
-class BaseOutputParser(BaseModel, ABC):
+
+class BaseOutputParser(BaseModel, ABC, Generic[T]):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
 
     @abstractmethod
-    def parse(self, text: str) -> Any:
+    def parse(self, text: str) -> T:
         """Parse the output of an LLM call.
 
         A method which takes in a string (assumed output of language model )
@@ -392,3 +404,20 @@ class OutputParserException(Exception):
     pass
 
 
+<<<<<<< HEAD
+=======
+class BaseDocumentTransformer(ABC):
+    """Base interface for transforming documents."""
+
+    @abstractmethod
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Transform a list of documents."""
+
+    @abstractmethod
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously transform a list of documents."""
+>>>>>>> master

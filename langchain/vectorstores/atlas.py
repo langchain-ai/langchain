@@ -11,7 +11,7 @@ from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.base import VectorStore
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class AtlasDB(VectorStore):

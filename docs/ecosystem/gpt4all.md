@@ -36,7 +36,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8, callback_handler=callback_handler, verbose=True)
 
-# Generate text. Tokens are streamed throught the callback manager.
+# Generate text. Tokens are streamed through the callback manager.
 model("Once upon a time, ")
 ```
 

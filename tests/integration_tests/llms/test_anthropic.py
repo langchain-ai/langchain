@@ -11,14 +11,14 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    llm = Anthropic(model="bare-nano-0")
+    llm = Anthropic(model="test")
     output = llm("Say foo:")
     assert isinstance(output, str)
 
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    llm = Anthropic(model="bare-nano-0")
+    llm = Anthropic(model="test")
     generator = llm.stream("I'm Pickle Rick")
 
     assert isinstance(generator, Generator)
@@ -32,7 +32,6 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
-        model="claude-v1",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -55,7 +54,6 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
-        model="claude-v1",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,

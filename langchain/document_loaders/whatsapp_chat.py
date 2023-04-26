@@ -26,9 +26,14 @@ class WhatsAppChatLoader(BaseLoader):
         with open(p, encoding="utf8") as f:
             lines = f.readlines()
 
+        message_line_regex = (
+            r"(\d{1,2}/\d{1,2}/\d{2,4}, "
+            r"\d{1,2}:\d{1,2}[ _]?(?:AM|PM)?) - "
+            r"(.*?): (.*)"
+        )
         for line in lines:
             result = re.match(
-                r"(\d{1,2}/\d{1,2}/\d{2,4}, \d{1,2}:\d{1,2}(?: AM| PM)?) - (.*?): (.*)",
+                message_line_regex,
                 line.strip(),
             )
             if result:

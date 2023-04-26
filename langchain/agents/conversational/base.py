@@ -1,11 +1,13 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
-import re
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence
 
-from langchain.agents.agent import Agent
+from pydantic import Field
+
+from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
+from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
@@ -18,6 +20,13 @@ class ConversationalAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     ai_prefix: str = "AI"
+    output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+
+    @classmethod
+    def _get_default_output_parser(
+        cls, ai_prefix: str = "AI", **kwargs: Any
+    ) -> AgentOutputParser:
+        return ConvoOutputParser(ai_prefix=ai_prefix)
 
     @property
     def _agent_type(self) -> str:
@@ -71,28 +80,13 @@ class ConversationalAgent(Agent):
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
 
-    @property
-    def finish_tool_name(self) -> str:
-        """Name of the tool to use to finish the chain."""
-        return self.ai_prefix
-
-    def _extract_tool_and_input(self, llm_output: str) -> Optional[Tuple[str, str]]:
-        if f"{self.ai_prefix}:" in llm_output:
-            return self.ai_prefix, llm_output.split(f"{self.ai_prefix}:")[-1].strip()
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
-        match = re.search(regex, llm_output)
-        if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
-        action = match.group(1)
-        action_input = match.group(2)
-        return action.strip(), action_input.strip(" ").strip('"')
-
     @classmethod
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
+        output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -118,6 +112,13 @@ class ConversationalAgent(Agent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
+        _output_parser = output_parser or cls._get_default_output_parser(
+            ai_prefix=ai_prefix
+        )
         return cls(
-            llm_chain=llm_chain, allowed_tools=tool_names, ai_prefix=ai_prefix, **kwargs
+            llm_chain=llm_chain,
+            allowed_tools=tool_names,
+            ai_prefix=ai_prefix,
+            output_parser=_output_parser,
+            **kwargs,
         )

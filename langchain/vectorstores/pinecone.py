@@ -218,7 +218,7 @@ class Pinecone(VectorStore):
         else:
             raise ValueError(
                 f"Index '{index_name}' not found in your Pinecone project. "
-                "Did you mean one of the following indexes: {', '.join(indexes)}"
+                f"Did you mean one of the following indexes: {', '.join(indexes)}"
             )
 
         for i in range(0, len(texts), batch_size):

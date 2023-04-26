@@ -1,13 +1,13 @@
 """Chain for interacting with SQL Database."""
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT
+from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
@@ -28,7 +28,7 @@ class SQLDatabaseChain(Chain):
     """LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
-    prompt: BasePromptTemplate = PROMPT
+    prompt: Optional[BasePromptTemplate] = None
     """Prompt to use to translate natural language to SQL."""
     top_k: int = 5
     """Number of results to return from the query"""
@@ -65,8 +65,9 @@ class SQLDatabaseChain(Chain):
             return [self.output_key, "intermediate_steps"]
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        llm_chain = LLMChain(llm=self.llm, prompt=self.prompt)
-        input_text = f"{inputs[self.input_key]} \nSQLQuery:"
+        prompt = self.prompt or SQL_PROMPTS.get(self.database.dialect, PROMPT)
+        llm_chain = LLMChain(llm=self.llm, prompt=prompt)
+        input_text = f"{inputs[self.input_key]}\nSQLQuery:"
         self.callback_manager.on_text(input_text, verbose=self.verbose)
         # If not present, then defaults to None which is all tables.
         table_names_to_use = inputs.get("table_names_to_use")
