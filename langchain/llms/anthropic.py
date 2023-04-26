@@ -1,6 +1,7 @@
 """Wrapper around Anthropic APIs."""
 import re
-from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
+import warnings
+from typing import Any, Callable, Dict, Generator, List, Mapping, Optional, Tuple, Union
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -28,6 +29,9 @@ class _AnthropicCommon(BaseModel):
     streaming: bool = False
     """Whether to stream the results."""
 
+    default_request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
+
     anthropic_api_key: Optional[str] = None
 
     HUMAN_PROMPT: Optional[str] = None
@@ -43,7 +47,10 @@ class _AnthropicCommon(BaseModel):
         try:
             import anthropic
 
-            values["client"] = anthropic.Client(anthropic_api_key)
+            values["client"] = anthropic.Client(
+                api_key=anthropic_api_key,
+                default_request_timeout=values["default_request_timeout"],
+            )
             values["HUMAN_PROMPT"] = anthropic.HUMAN_PROMPT
             values["AI_PROMPT"] = anthropic.AI_PROMPT
             values["count_tokens"] = anthropic.count_tokens
@@ -116,6 +123,15 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model(prompt)
     """
+
+    @root_validator()
+    def raise_warning(cls, values: Dict) -> Dict:
+        """Raise warning that this class is deprecated."""
+        warnings.warn(
+            "This Anthropic LLM is deprecated. "
+            "Please use `from langchain.chat_models import ChatAnthropic` instead"
+        )
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
