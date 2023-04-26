@@ -111,6 +111,7 @@ class SQLiteCache(SQLAlchemyCache):
 
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
+    # TODO - implement a TTL policy in Redis
 
     def __init__(self, redis_: Any):
         """Initialize by passing in Redis instance."""
@@ -150,6 +151,7 @@ class RedisCache(BaseCache):
 
 class RedisSemanticCache(BaseCache):
     """Cache that uses Redis as a vector-store backend."""
+    # TODO - implement a TTL policy in Redis
 
     def __init__(
         self,
@@ -161,7 +163,7 @@ class RedisSemanticCache(BaseCache):
         Initialize by passing in Redis url, embedding generator,
         and semantic score threshold.
         """
-        self.llm_cache_dict: dict = {}
+        self._cache_dict = {}
         self.redis_url = redis_url
         self.embedding = embedding
         self.score_threshold = score_threshold
@@ -173,13 +175,13 @@ class RedisSemanticCache(BaseCache):
     def _get_llm_cache(self, llm_string: str):
         index_name = self._index_name(llm_string)
 
-        # return vectorstore client for the specific llm
-        if index_name in self.llm_cache_dict:
-            return self.llm_cache_dict[index_name]
+        # return vectorstore client for the specific llm string
+        if index_name in self._cache_dict:
+            return self._cache_dict[index_name]
 
-        # create new vectorstore client for the specific llm
+        # create new vectorstore client for the specific llm string
         try:
-            self.llm_cache_dict[index_name] = Redis.from_existing_index(
+            self._cache_dict[index_name] = Redis.from_existing_index(
                 embedding=self.embedding,
                 index_name=index_name,
                 redis_url=self.redis_url
@@ -190,11 +192,11 @@ class RedisSemanticCache(BaseCache):
                 index_name=index_name,
                 redis_url=self.redis_url,
             )
-            test = self.embedding.embed_query(text="test")
-            redis._create_index(dim=len(test))
-            self.llm_cache_dict[index_name] = redis
+            _embedding = self.embedding.embed_query(text="test")
+            redis._create_index(dim=len(_embedding))
+            self._cache_dict[index_name] = redis
 
-        return self.llm_cache_dict[index_name]
+        return self._cache_dict[index_name]
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""

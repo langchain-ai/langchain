@@ -1,6 +1,6 @@
 # Redis
 
-This page covers how to use the Redis ecosystem within LangChain.
+This page covers how to use the [Redis](https://redis.com) ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Redis wrappers.
 
 ## Installation and Setup
@@ -30,7 +30,7 @@ langchain.llm_cache = RedisCache(redis_client)
 ```
 
 #### Semantic Cache
-Semantic caching allows users to retrieve cached prompts based on semantic similarity between the input and previously cached results. Under the hood it blends Redis as both a cache and a vectorstore.
+Semantic caching allows users to retrieve cached prompts based on semantic similarity between the user input and previously cached results. Under the hood it blends Redis as both a cache and a vectorstore.
 
 To import this cache:
 ```python
@@ -69,7 +69,7 @@ For a more detailed walkthrough of the Redis vectorstore wrapper, see [this note
 The Redis vector store retriever wrapper generalizes the vectorstore class to perform low-latency document retrieval. To create the retriever, simply call `.as_retriever()` on the base vectorstore class.
 
 ### Memory
-Redis can be used to cache LLM conversations.
+Redis can be used to persist LLM conversations.
 
 #### Vector Store Retriever Memory
 
