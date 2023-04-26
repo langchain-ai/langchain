@@ -27,6 +27,7 @@ def __clean() -> None:
         loop.run_until_complete(__clean_task())
     else:
         loop.create_task(__clean_task())
+    return
 
 
 async def request(method: str, url: str, headers: dict) -> Response:
