@@ -14,11 +14,11 @@ HEADERS: Dict[str, str] = {}
 
 
 @atexit.register
-def __clean() -> None:
+def __clean() -> bool:
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
-        return
+        return True
 
     async def __clean_task():
         await __session_pool[loop].aclose()
@@ -27,7 +27,7 @@ def __clean() -> None:
         loop.run_until_complete(__clean_task())
     else:
         loop.create_task(__clean_task())
-    return
+    return True
 
 
 async def request(method: str, url: str, headers: dict) -> Response:
