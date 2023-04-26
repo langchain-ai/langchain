@@ -1,6 +1,6 @@
 # Metal
 
-This page covers how to use the [Metal](https://getmetal.io) within LangChain.
+This page covers how to use [Metal](https://getmetal.io) within LangChain.
 
 ## What is Metal?
 
