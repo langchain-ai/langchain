@@ -9,6 +9,7 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to streamlit."""
+
     def __init__(self) -> None:
         self.tokens_area = st.empty()
         self.tokens_stream = ""
