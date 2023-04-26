@@ -58,10 +58,11 @@ class YUQUELoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load from yuque docs api."""
         try:
-            from langchain.utilities.yuque_api import sync, YuQueDocs
+            from yuque_docs_api import sync, YuQueDocs
         except ImportError:
             raise ValueError(
-                "requests package not found, please install it."
+                "unstructured package not found, please install it with "
+                "`pip install yuque_docs_api`"
             )
 
         yq = YuQueDocs(custom_space=self.custom_space,
