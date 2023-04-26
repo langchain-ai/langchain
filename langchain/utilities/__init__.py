@@ -14,6 +14,7 @@ from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+from langchain.utilities.github import GitHubAPIWrapper
 
 __all__ = [
     "ApifyWrapper",
@@ -31,4 +32,5 @@ __all__ = [
     "OpenWeatherMapAPIWrapper",
     "PythonREPL",
     "PowerBIDataset",
+    "GitHubAPIWrapper",
 ]
