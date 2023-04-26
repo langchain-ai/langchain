@@ -20,4 +20,6 @@ Highlighting specific parts:
 Specific examples of this include:
 
 - [AI Plugins](agents/custom_agent_with_plugin_retrieval.ipynb): an implementation of an agent that is designed to be able to use all AI Plugins.
+- [Plug-and-PlAI (Plugins Database)](agents/custom_agent_with_plugin_retrieval_using_plugnplai.ipynb): an implementation of an agent that is designed to be able to use all AI Plugins retrieved from PlugNPlAI.
 - [Wikibase Agent](agents/wikibase_agent.ipynb): an implementation of an agent that is designed to interact with Wikibase.
+- [Sales GPT](agents/sales_agent_with_context.ipynb): This notebook demonstrates an implementation of a Context-Aware AI Sales agent.
