@@ -3,12 +3,11 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type, Union
 
-from pydantic import BaseModel, validate_arguments, validator
+from pydantic import validator
 
 from langchain.tools.base import (
     BaseTool,
-    create_schema_from_function,
-    get_filtered_args,
+    StringSchema,
 )
 
 
@@ -28,22 +27,14 @@ class Tool(BaseTool):
             raise ValueError("Partial functions not yet supported in tools.")
         return func
 
-    @property
-    def args(self) -> dict:
-        if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
-        else:
-            inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
-
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, tool_input: str) -> str:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        return self.func(tool_input)
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, tool_input: str) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            return await self.coroutine(tool_input)
         raise NotImplementedError("Tool does not support async")
 
     # TODO: this is for backwards compatibility, remove in future
@@ -74,8 +65,7 @@ class InvalidTool(BaseTool):
 def tool(
     *args: Union[str, Callable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
-    infer_schema: bool = True,
+    args_schema: Optional[Type[StringSchema]] = None,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -83,10 +73,7 @@ def tool(
         *args: The arguments to the tool.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop.
-        args_schema: optional argument schema for user to specify
-        infer_schema: Whether to infer the schema of the arguments from
-            the function's signature. This also makes the resultant tool
-            accept a dictionary input to its `run()` function.
+        args_schema: The schema for the arguments used to validate input.
 
     Requires:
         - Function must be of type (str) -> str
@@ -112,15 +99,13 @@ def tool(
             # Description example:
             # search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            _args_schema = args_schema
-            if _args_schema is None and infer_schema:
-                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
+            tool_kwargs = {} if args_schema is None else {"args_schema": args_schema}
             tool_ = Tool(
                 name=tool_name,
                 func=func,
-                args_schema=_args_schema,
                 description=description,
                 return_direct=return_direct,
+                **tool_kwargs,
             )
             return tool_
 

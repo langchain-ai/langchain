@@ -3,8 +3,8 @@ from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import get_validated_relative_path
+from langchain.tools.structured import BaseStructuredTool
 
 
 class WriteFileInput(BaseModel):
@@ -14,7 +14,7 @@ class WriteFileInput(BaseModel):
     text: str = Field(..., description="text to write to file")
 
 
-class WriteFileTool(BaseTool):
+class WriteFileTool(BaseStructuredTool[str]):
     name: str = "write_file"
     args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"

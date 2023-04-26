@@ -1,21 +1,21 @@
 from pathlib import Path
 from typing import Optional, Type
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseTool, StringSchema
 from langchain.tools.file_management.utils import get_validated_relative_path
 
 
-class ReadFileInput(BaseModel):
+class ReadFileInput(StringSchema):
     """Input for ReadFileTool."""
 
-    file_path: str = Field(..., description="name of file")
+    tool_input: str = Field(..., description="name of file")
 
 
 class ReadFileTool(BaseTool):
     name: str = "read_file"
-    args_schema: Type[BaseModel] = ReadFileInput
+    args_schema: Type[ReadFileInput] = ReadFileInput
     description: str = "Read file from disk"
     root_dir: Optional[str] = None
     """Directory to read file from.
@@ -35,6 +35,6 @@ class ReadFileTool(BaseTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(self, file_path: str) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError
