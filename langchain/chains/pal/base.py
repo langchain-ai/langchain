@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.pal.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain.chains.pal.math_prompt import MATH_PROMPT
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 from langchain.utilities import PythonREPL
 
 
