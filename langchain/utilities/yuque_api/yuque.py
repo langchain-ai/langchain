@@ -1,7 +1,7 @@
 import logging
 import re
 from functools import partial
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 
 from tqdm import tqdm
 
@@ -20,7 +20,7 @@ class YuQueDocs:
 
     def __init__(self, custom_space: str = 'www',
                  user_agent: str = '',
-                 user_token: str = '', **kwargs: Dict[str, str]):
+                 user_token: str = '', **kwargs: Dict[str, Union[str, List[str]]]):
         user_agent = user_agent if user_agent != '' else USER_AGENT
         logging.warning(f"`user_agent` is default, then `user_agent={USER_AGENT}` instead!")
         if not len(user_token):

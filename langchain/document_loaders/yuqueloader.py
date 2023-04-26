@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -11,7 +11,7 @@ class YUQUELoader(BaseLoader):
                  custom_space: str = 'www',
                  user_agent: str = '',
                  user_token: str = '',
-                 **kwargs: Dict[str, str]):
+                 **kwargs: Dict[str, Union[str, List[str]]]):
         """
         Initialize with yuque information.
         :param
