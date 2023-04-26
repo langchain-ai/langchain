@@ -24,12 +24,6 @@ from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
@@ -75,7 +69,8 @@ def _handle_event(
             ):
                 getattr(handler, event_name)(*args, **kwargs)
         except Exception as e:
-            logging.error(f"Error in {event_name} callback: {e}")
+            # TODO: switch this to use logging
+            print(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event_for_handler(
@@ -95,7 +90,8 @@ async def _ahandle_event_for_handler(
                     None, functools.partial(event, *args, **kwargs)
                 )
     except Exception as e:
-        logging.error(f"Error in {event_name} callback: {e}")
+        # TODO: switch this to use logging
+        print(f"Error in {event_name} callback: {e}")
 
 
 async def _ahandle_event(

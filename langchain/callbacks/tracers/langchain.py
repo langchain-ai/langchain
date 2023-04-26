@@ -20,14 +20,14 @@ from langchain.callbacks.tracers.schemas import (
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, session_name="default", **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
-        self.session = self.load_default_session()
         self._endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
         self._headers: Dict[str, Any] = {"Content-Type": "application/json"}
         if os.getenv("LANGCHAIN_API_KEY"):
             self._headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
+        self.session = self.load_session(session_name)
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
