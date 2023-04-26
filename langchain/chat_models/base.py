@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from pydantic import Extra, Field, root_validator
 
 import langchain
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -17,7 +18,6 @@ from langchain.callbacks.manager import (
 )
 from langchain.schema import (
     AIMessage,
-    BaseLanguageModel,
     BaseMessage,
     ChatGeneration,
     ChatResult,
@@ -41,12 +41,12 @@ class BaseChatModel(BaseLanguageModel, ABC):
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
-        if "callback_manager" in values:
+        if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
-        values["callbacks"] = values.pop("callback_manager", None)
+            values["callbacks"] = values.pop("callback_manager", None)
         return values
 
     class Config:
@@ -131,16 +131,22 @@ class BaseChatModel(BaseLanguageModel, ABC):
         return output
 
     def generate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return self.generate(prompt_messages, stop=stop)
+        return self.generate(prompt_messages, stop=stop, callbacks=callbacks)
 
     async def agenerate_prompt(
-        self, prompts: List[PromptValue], stop: Optional[List[str]] = None
+        self,
+        prompts: List[PromptValue],
+        stop: Optional[List[str]] = None,
+        callbacks: Callbacks = None,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
-        return await self.agenerate(prompt_messages, stop=stop)
+        return await self.agenerate(prompt_messages, stop=stop, callbacks=callbacks)
 
     @abstractmethod
     def _generate(
@@ -166,9 +172,13 @@ class BaseChatModel(BaseLanguageModel, ABC):
         stop: Optional[List[str]] = None,
         callbacks: Callbacks = None,
     ) -> BaseMessage:
-        return ChatGeneration(
-            self.generate([messages], stop=stop, callbacks=callbacks).generations[0][0]
-        ).message
+        generation = self.generate(
+            [messages], stop=stop, callbacks=callbacks
+        ).generations[0][0]
+        if isinstance(generation, ChatGeneration):
+            return generation.message
+        else:
+            raise ValueError("Unexpected generation type")
 
     def call_as_llm(self, message: str, stop: Optional[List[str]] = None) -> str:
         result = self([HumanMessage(content=message)], stop=stop)

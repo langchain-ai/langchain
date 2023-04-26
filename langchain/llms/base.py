@@ -10,6 +10,7 @@ import yaml
 from pydantic import Extra, Field, root_validator, validator
 
 import langchain
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
@@ -18,7 +19,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
     Callbacks,
 )
-from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
+from langchain.schema import Generation, LLMResult, PromptValue
 
 
 def _get_verbosity() -> bool:
@@ -79,12 +80,12 @@ class BaseLLM(BaseLanguageModel, ABC):
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
-        if "callback_manager" in values:
+        if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
-        values["callbacks"] = values.pop("callback_manager", None)
+            values["callbacks"] = values.pop("callback_manager", None)
         return values
 
     @validator("verbose", pre=True, always=True)

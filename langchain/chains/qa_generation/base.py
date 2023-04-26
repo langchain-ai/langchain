@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
