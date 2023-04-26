@@ -10,8 +10,6 @@ from typing import (
     Dict,
     Generic,
     Optional,
-    Sequence,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -26,11 +24,12 @@ from langchain.callbacks.base import BaseCallbackManager
 logger = logging.getLogger(__name__)
 
 OUTPUT_T = TypeVar("OUTPUT_T")
+RUN_T = TypeVar("RUN_T", bound=Union[str, BaseModel])
 
 
-class BaseStructuredTool(
+class AbstractStructuredTool(
     GenericModel,
-    Generic[OUTPUT_T],
+    Generic[OUTPUT_T, RUN_T],
     BaseModel,
 ):
     """Parent class for all structured tools."""
@@ -40,7 +39,7 @@ class BaseStructuredTool(
     return_direct: bool = False
     verbose: bool = False
     callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
-    args_schema: Type[BaseModel]  # :meta private:
+    args_schema: Type[RUN_T]  # :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -49,24 +48,16 @@ class BaseStructuredTool(
         arbitrary_types_allowed = True
 
     @property
+    @abstractmethod
     def args(self) -> Dict:
         """Return the JSON schema for the tool's args."""
-        schema = self.args_schema.schema()
-        result = {"properties": schema["properties"]}
-        if "definitions" in schema:
-            result["definitions"] = schema["definitions"]
-        return result
 
     def _get_verbosity(
         self,
         verbose: Optional[bool] = None,
     ) -> bool:
         """Return the verbosity of the tool run."""
-        return verbose if (self.verbose and verbose is not None) else self.verbose
-
-    def _prepare_input(self, input_: dict) -> Tuple[Sequence, Dict]:
-        """Prepare the args and kwargs for the tool."""
-        return (), input_
+        return verbose if (not self.verbose and verbose is not None) else self.verbose
 
     @staticmethod
     async def _async_or_sync_call(
@@ -79,17 +70,16 @@ class BaseStructuredTool(
             return method(*args, **kwargs)
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> OUTPUT_T:
+    def _parse_input(self, tool_input: dict) -> RUN_T:
+        """Parse the tool input into the object for _run."""
+
+    @abstractmethod
+    def _run(self, tool_input: RUN_T) -> OUTPUT_T:
         """Use the tool."""
 
     @abstractmethod
-    async def _arun(self, *args: Any, **kwargs: Any) -> OUTPUT_T:
+    async def _arun(self, tool_input: RUN_T) -> OUTPUT_T:
         """Use the tool asynchronously."""
-
-    def _parse_input(self, tool_input: dict) -> dict:
-        parsed_input = self.args_schema.parse_obj(tool_input)
-        parsed_dict = parsed_input.dict()
-        return {k: getattr(parsed_input, k) for k in parsed_dict.keys()}
 
     def run(
         self,
@@ -100,7 +90,7 @@ class BaseStructuredTool(
         **kwargs: Any,
     ) -> OUTPUT_T:
         """Run the tool."""
-        tool_input = self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         verbose_ = self._get_verbosity(verbose)
         self.callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
@@ -110,8 +100,7 @@ class BaseStructuredTool(
             **kwargs,
         )
         try:
-            args, kwargs = self._prepare_input(tool_input)
-            observation = self._run(*args, **kwargs)
+            observation = self._run(parsed_input)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
             raise e
@@ -129,7 +118,7 @@ class BaseStructuredTool(
         **kwargs: Any,
     ) -> OUTPUT_T:
         """Run the tool asynchronously."""
-        tool_input = self._parse_input(tool_input)
+        parsed_input = self._parse_input(tool_input)
         verbose_ = self._get_verbosity(verbose)
         await self._async_or_sync_call(
             self.callback_manager.on_tool_start,
@@ -141,8 +130,7 @@ class BaseStructuredTool(
             **kwargs,
         )
         try:
-            args, kwargs = self._prepare_input(tool_input)
-            observation = await self._arun(*args, **kwargs)
+            observation = await self._arun(parsed_input)
         except (Exception, KeyboardInterrupt) as e:
             await self._async_or_sync_call(
                 self.callback_manager.on_tool_error,
@@ -212,7 +200,31 @@ def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseMod
     )
 
 
-class StructuredTool(BaseStructuredTool[Any]):
+STRUCTURED_RUN_T = TypeVar("STRUCTURED_RUN_T", bound=BaseModel)
+
+
+class BaseStructuredTool(
+    AbstractStructuredTool[OUTPUT_T, STRUCTURED_RUN_T],
+    Generic[OUTPUT_T, STRUCTURED_RUN_T],
+):
+    """The structured tool that requires _run classes to take in a base model."""
+
+    args_schema: Type[STRUCTURED_RUN_T]  # :meta private:
+
+    def _parse_input(self, tool_input: dict) -> STRUCTURED_RUN_T:
+        return self.args_schema.parse_obj(tool_input)
+
+    @property
+    def args(self) -> Dict:
+        """Return the JSON schema for the tool's args."""
+        schema = self.args_schema.schema()
+        result = {"properties": schema["properties"]}
+        if "definitions" in schema:
+            result["definitions"] = schema["definitions"]
+        return result
+
+
+class StructuredTool(BaseStructuredTool[Any, BaseModel]):
     """StructuredTool that takes in function or coroutine directly."""
 
     func: Callable[..., Any]
@@ -226,14 +238,18 @@ class StructuredTool(BaseStructuredTool[Any]):
         """The JSON Schema arguments for the tool."""
         return self.args_schema.schema()["properties"]
 
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(self, tool_input: BaseModel) -> Any:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        parsed_dict = tool_input.dict()
+        parsed_dict = {k: getattr(tool_input, k) for k in parsed_dict.keys()}
+        return self.func(**parsed_dict)
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(self, tool_input: BaseModel) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            parsed_dict = tool_input.dict()
+            parsed_dict = {k: getattr(tool_input, k) for k in parsed_dict.keys()}
+            return await self.coroutine(**parsed_dict)
         raise NotImplementedError(f"StructuredTool {self.name} does not support async")
 
     @classmethod

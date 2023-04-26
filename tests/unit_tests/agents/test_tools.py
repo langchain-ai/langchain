@@ -5,7 +5,7 @@ from typing import Optional
 import pytest
 
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import BaseTool, StringSchema
+from langchain.tools.base import BaseTool
 
 
 def test_unnamed_decorator() -> None:
@@ -20,7 +20,7 @@ def test_unnamed_decorator() -> None:
     assert search_api.name == "search_api"
     assert not search_api.return_direct
     assert search_api("test") == "API result"
-    assert search_api.args_schema == StringSchema
+    assert search_api.args_schema == str
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -37,8 +37,8 @@ def test_base_tool_inheritance_base_schema() -> None:
             raise NotImplementedError
 
     simple_tool = _MockSimpleTool()
-    assert simple_tool.args_schema == StringSchema
-    expected_args = {"tool_input": {"title": "Tool Input", "type": "string"}}
+    assert simple_tool.args_schema == str
+    expected_args = {"properties": {"tool_input": {"type": "string"}}}
     assert simple_tool.args == expected_args
 
 
@@ -50,8 +50,8 @@ def test_tool_lambda_args_schema() -> None:
         description="A tool",
         func=lambda tool_input: tool_input,
     )
-    assert tool.args_schema == StringSchema
-    expected_args = {"tool_input": {"title": "Tool Input", "type": "string"}}
+    assert tool.args_schema == str
+    expected_args = {"properties": {"tool_input": {"type": "string"}}}
     assert tool.args == expected_args
 
 

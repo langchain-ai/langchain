@@ -2,25 +2,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
-from pydantic import BaseModel
-
-from langchain.tools.structured import BaseStructuredTool
+from langchain.tools.structured import AbstractStructuredTool
 
 
-class StringSchema(BaseModel):
-    """Schema for a tool with string input."""
-
-    # Child tools can add additional validation by
-    # subclassing this schema.
-    tool_input: str
-
-
-class BaseTool(ABC, BaseStructuredTool[str]):
+class BaseTool(ABC, AbstractStructuredTool[str, str]):
     """Interface LangChain tools must implement."""
 
-    args_schema: Type[StringSchema] = StringSchema  # :meta private:
+    args_schema: Type[str] = str  # :meta private:
 
     def _wrap_input(self, tool_input: Union[str, Dict]) -> Dict:
         """Wrap the tool's input into a pydantic model."""
@@ -28,10 +18,14 @@ class BaseTool(ABC, BaseStructuredTool[str]):
             return tool_input
         return {"tool_input": tool_input}
 
-    def _prepare_input(self, input_: Dict) -> Tuple[Sequence, Dict]:
+    def _parse_input(self, input_: Dict) -> str:
         """Prepare the args and kwargs for the tool."""
-        # We expect a single string input
-        return tuple(input_.values()), {}
+        return next(iter(input_.values()))
+
+    @property
+    def args(self) -> Dict:
+        """Return the JSON schema for the tool's args."""
+        return {"properties": {"tool_input": {"type": "string"}}}
 
     @abstractmethod
     def _run(self, tool_input: str) -> str:

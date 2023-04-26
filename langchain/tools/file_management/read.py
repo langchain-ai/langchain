@@ -1,21 +1,12 @@
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional
 
-from pydantic import Field
-
-from langchain.tools.base import BaseTool, StringSchema
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import get_validated_relative_path
-
-
-class ReadFileInput(StringSchema):
-    """Input for ReadFileTool."""
-
-    tool_input: str = Field(..., description="name of file")
 
 
 class ReadFileTool(BaseTool):
     name: str = "read_file"
-    args_schema: Type[ReadFileInput] = ReadFileInput
     description: str = "Read file from disk"
     root_dir: Optional[str] = None
     """Directory to read file from.

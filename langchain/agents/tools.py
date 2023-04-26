@@ -1,13 +1,12 @@
 """Interface for tools."""
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
 from pydantic import validator
 
 from langchain.tools.base import (
     BaseTool,
-    StringSchema,
 )
 
 
@@ -65,7 +64,6 @@ class InvalidTool(BaseTool):
 def tool(
     *args: Union[str, Callable],
     return_direct: bool = False,
-    args_schema: Optional[Type[StringSchema]] = None,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -73,7 +71,6 @@ def tool(
         *args: The arguments to the tool.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop.
-        args_schema: The schema for the arguments used to validate input.
 
     Requires:
         - Function must be of type (str) -> str
@@ -99,13 +96,11 @@ def tool(
             # Description example:
             # search_api(query: str) - Searches the API for the query.
             description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            tool_kwargs = {} if args_schema is None else {"args_schema": args_schema}
             tool_ = Tool(
                 name=tool_name,
                 func=func,
                 description=description,
                 return_direct=return_direct,
-                **tool_kwargs,
             )
             return tool_
 

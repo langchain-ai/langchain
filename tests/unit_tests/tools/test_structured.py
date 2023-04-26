@@ -24,10 +24,10 @@ class _MockStructuredTool(BaseStructuredTool):
     args_schema: Type[BaseModel] = _MockSchema
     description = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        return f"{arg1} {arg2} {arg3}"
+    def _run(self, tool_input: _MockSchema) -> str:
+        return f"{tool_input.arg1} {tool_input.arg2} {tool_input.arg3}"
 
-    async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    async def _arun(self, tool_input: _MockSchema) -> str:
         raise NotImplementedError
 
 
@@ -39,27 +39,6 @@ def test_structured_args() -> None:
     expected_result = "1 True {'foo': 'bar'}"
     args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
-
-
-def test_subclass_annotated_base_tool_accepted() -> None:
-    """Test BaseTool child w/ custom schema isn't overwritten."""
-
-    class _ForwardRefAnnotatedTool(BaseStructuredTool):
-        name = "structured_api"
-        args_schema: Type[_MockSchema] = _MockSchema
-        description = "A Structured Tool"
-
-        def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-            return f"{arg1} {arg2} {arg3}"
-
-        async def _arun(
-            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
-        ) -> str:
-            raise NotImplementedError
-
-    assert issubclass(_ForwardRefAnnotatedTool, BaseStructuredTool)
-    tool = _ForwardRefAnnotatedTool()
-    assert tool.args_schema == _MockSchema
 
 
 def test_decorator_with_specified_schema() -> None:
