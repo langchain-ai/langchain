@@ -138,7 +138,7 @@ class RunManager(BaseRunManager):
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        _handle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class AsyncRunManager(BaseRunManager):
@@ -146,7 +146,7 @@ class AsyncRunManager(BaseRunManager):
 
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        await _ahandle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        await _ahandle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
