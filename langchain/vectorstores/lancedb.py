@@ -27,7 +27,7 @@ class LanceDB(VectorStore):
     def __init__(
         self,
         connection: Any,
-        embedding_function: Callable,
+        embedding_function: Callable[[List[str]], List[List[float]]],
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
@@ -71,8 +71,9 @@ class LanceDB(VectorStore):
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
+        embeddings = self._embedding_function(texts)
         for idx, text in enumerate(texts):
-            embedding = self._embedding_function(text)
+            embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {}
             docs.append(
                 {
@@ -97,14 +98,14 @@ class LanceDB(VectorStore):
         Returns:
             List of documents most similar to the query.
         """
-        embedding = self._embedding_function(query)
+        embedding = self._embedding_function([query])[0]
         docs = self._connection.search(embedding).limit(k).to_df()
         return [
             Document(
-                page_content=doc[self._text_key],
-                metadata=doc[docs.columns != self._text_key],
+                page_content=row[self._text_key],
+                metadata=row[docs.columns != self._text_key],
             )
-            for doc in docs
+            for _, row in docs.iterrows()
         ]
 
     @classmethod
