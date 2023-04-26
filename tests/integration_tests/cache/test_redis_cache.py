@@ -50,3 +50,4 @@ def test_redis_semantic_cache():
     output = llm.generate(["bar"]) # foo and bar will have the same embedding produced by FakeEmbeddings
     # expect different output now without cached result
     assert output != expected_output
+    langchain.llm_cache.clear(llm_string)
