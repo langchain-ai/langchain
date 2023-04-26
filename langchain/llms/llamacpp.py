@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
@@ -154,7 +155,12 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call the Llama model and return the output.
 
         Args:

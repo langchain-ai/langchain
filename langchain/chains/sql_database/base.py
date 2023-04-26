@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
 
 

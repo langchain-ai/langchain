@@ -5,11 +5,6 @@ from typing import Optional
 
 from langchain.agents import MRKLChain, ReActChain, SelfAskWithSearchChain
 from langchain.cache import BaseCache
-from langchain.callbacks import (
-    set_default_callback_manager,
-    set_handler,
-    set_tracing_callback_manager,
-)
 from langchain.chains import (
     ConversationChain,
     LLMBashChain,
@@ -65,7 +60,6 @@ del metadata  # optional, avoids polluting the results of dir(__package__)
 
 verbose: bool = False
 llm_cache: Optional[BaseCache] = None
-set_default_callback_manager()
 
 # For backwards compatibility
 SerpAPIChain = SerpAPIWrapper
@@ -115,7 +109,5 @@ __all__ = [
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
     "PALChain",
-    "set_handler",
-    "set_tracing_callback_manager",
     "LlamaCpp",
 ]

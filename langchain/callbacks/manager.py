@@ -6,7 +6,9 @@ import functools
 import logging
 import os
 import uuid
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -16,7 +18,9 @@ from langchain.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -25,6 +29,36 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] - %(message)s",
     handlers=[logging.StreamHandler()],
 )
+
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+
+openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
+    "openai_callback", default=None
+)
+tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
+    "tracing_callback", default=None
+)
+
+
+@contextmanager
+def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
+    """Get OpenAI callback handler in a context manager."""
+    cb = OpenAICallbackHandler()
+    openai_callback_var.set(cb)
+    yield cb
+    openai_callback_var.set(None)
+
+
+@contextmanager
+def tracing_enabled(
+    session_name: str = "default",
+) -> Generator[TracerSession, None, None]:
+    """Get OpenAI callback handler in a context manager."""
+    cb = LangChainTracer()
+    session = cb.load_session(session_name)
+    tracing_callback_var.set(cb)
+    yield session
+    tracing_callback_var.set(None)
 
 
 def _handle_event(
@@ -104,7 +138,7 @@ class RunManager(BaseRunManager):
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        _handle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class AsyncRunManager(BaseRunManager):
@@ -112,7 +146,7 @@ class AsyncRunManager(BaseRunManager):
 
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        await _ahandle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        await _ahandle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
@@ -415,7 +449,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -441,7 +475,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -468,7 +502,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         _handle_event(
             self.handlers,
@@ -477,7 +511,7 @@ class CallbackManager(BaseCallbackManager):
             serialized,
             input_str,
             run_id=run_id,
-            parent_run_id=parent_run_id,
+            parent_run_id=self.parent_run_id,
             **kwargs,
         )
 
@@ -517,7 +551,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -543,7 +577,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -570,7 +604,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = str(uuid.uuid4())
 
         await _ahandle_event(
             self.handlers,
@@ -579,7 +613,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             serialized,
             input_str,
             run_id=run_id,
-            parent_run_id=parent_run_id,
+            parent_run_id=self.parent_run_id,
             **kwargs,
         )
 
@@ -610,14 +644,16 @@ def _configure(
     inheritable_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
     local_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
     verbose: bool = False,
-) -> Optional[T]:
+) -> T:
     """Configure the callback manager."""
     callback_manager: Optional[T] = None
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or not inheritable_callbacks:
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks,
-                inheritable_handlers=inheritable_callbacks,
+                handlers=inheritable_callbacks if inheritable_callbacks else [],
+                inheritable_handlers=inheritable_callbacks
+                if inheritable_callbacks
+                else [],
             )
         else:
             callback_manager = inheritable_callbacks
@@ -627,13 +663,19 @@ def _configure(
             if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
-        [callback_manager.add_handler(handler, False) for handler in local_handlers_]
+        [
+            callback_manager.add_handler(copy.deepcopy(handler), False)
+            for handler in local_handlers_
+        ]
 
-    tracing_enabled = os.environ.get("LANGCHAIN_TRACING") is not None
-    if verbose or tracing_enabled:
-        if not callback_manager:
-            callback_manager = callback_manager_cls([])
-
+    if not callback_manager:
+        callback_manager = callback_manager_cls([])
+    tracer = tracing_callback_var.get()
+    open_ai = openai_callback_var.get()
+    tracing_enabled = (
+        os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
+    )
+    if verbose or tracing_enabled or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -644,8 +686,16 @@ def _configure(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
-            handler = LangChainTracer()
-            handler.load_default_session()
-            callback_manager.add_handler(handler, True)
+            if tracer:
+                callback_manager.add_handler(copy.deepcopy(tracer), True)
+            else:
+                handler = LangChainTracer()
+                handler.load_default_session()
+                callback_manager.add_handler(handler, True)
+        if open_ai is not None and not any(
+            isinstance(handler, OpenAICallbackHandler)
+            for handler in callback_manager.handlers
+        ):
+            callback_manager.add_handler(open_ai, True)
 
     return callback_manager

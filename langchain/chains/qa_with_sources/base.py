@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -21,7 +22,6 @@ from langchain.chains.qa_with_sources.map_reduce_prompt import (
 )
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class BaseQAWithSourcesChain(Chain, ABC):

@@ -13,7 +13,13 @@ import yaml
 from pydantic import BaseModel, root_validator
 
 from langchain.agents.tools import InvalidTool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.input import get_color_mapping
@@ -23,7 +29,6 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseLanguageModel,
     BaseMessage,
     BaseOutputParser,
 )
@@ -46,13 +51,17 @@ class BaseSingleActionAgent(BaseModel):
 
     @abstractmethod
     def plan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
@@ -61,13 +70,17 @@ class BaseSingleActionAgent(BaseModel):
 
     @abstractmethod
     async def aplan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
@@ -170,13 +183,17 @@ class BaseMultiActionAgent(BaseModel):
 
     @abstractmethod
     def plan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
@@ -185,13 +202,17 @@ class BaseMultiActionAgent(BaseModel):
 
     @abstractmethod
     async def aplan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
@@ -285,38 +306,52 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
     def plan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
         """
         output = self.llm_chain.run(
-            intermediate_steps=intermediate_steps, stop=self.stop, **kwargs
+            intermediate_steps=intermediate_steps,
+            stop=self.stop,
+            callbacks=callbacks,
+            **kwargs,
         )
         return self.output_parser.parse(output)
 
     async def aplan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
         """
         output = await self.llm_chain.arun(
-            intermediate_steps=intermediate_steps, stop=self.stop, **kwargs
+            intermediate_steps=intermediate_steps,
+            stop=self.stop,
+            callbacks=callbacks,
+            **kwargs,
         )
         return self.output_parser.parse(output)
 
@@ -368,37 +403,45 @@ class Agent(BaseSingleActionAgent):
         return thoughts
 
     def plan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        full_output = self.llm_chain.predict(**full_inputs)
+        full_output = self.llm_chain.predict(callbacks=callbacks, **full_inputs)
         return self.output_parser.parse(full_output)
 
     async def aplan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
         """
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
-        full_output = await self.llm_chain.apredict(**full_inputs)
+        full_output = await self.llm_chain.apredict(callbacks=callbacks, **full_inputs)
         return self.output_parser.parse(full_output)
 
     def get_full_inputs(
@@ -632,24 +675,27 @@ class AgentExecutor(Chain):
 
         return True
 
-    def _return(self, output: AgentFinish, intermediate_steps: list) -> Dict[str, Any]:
-        self.callback_manager.on_agent_finish(
-            output, color="green", verbose=self.verbose
-        )
+    def _return(
+        self,
+        output: AgentFinish,
+        intermediate_steps: list,
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        if run_manager:
+            run_manager.on_agent_finish(output, color="green", verbose=self.verbose)
         final_output = output.return_values
         if self.return_intermediate_steps:
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
 
     async def _areturn(
-        self, output: AgentFinish, intermediate_steps: list
+        self,
+        output: AgentFinish,
+        intermediate_steps: list,
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_agent_finish(
-                output, color="green", verbose=self.verbose
-            )
-        else:
-            self.callback_manager.on_agent_finish(
+        if run_manager:
+            await run_manager.on_agent_finish(
                 output, color="green", verbose=self.verbose
             )
         final_output = output.return_values
@@ -663,13 +709,18 @@ class AgentExecutor(Chain):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = self.agent.plan(intermediate_steps, **inputs)
+        output = self.agent.plan(
+            intermediate_steps,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **inputs,
+        )
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -680,9 +731,8 @@ class AgentExecutor(Chain):
             actions = output
         result = []
         for agent_action in actions:
-            self.callback_manager.on_agent_action(
-                agent_action, verbose=self.verbose, color="green"
-            )
+            if run_manager:
+                run_manager.on_agent_action(agent_action, color="green")
             # Otherwise we lookup the tool
             if agent_action.tool in name_to_tool_map:
                 tool = name_to_tool_map[agent_action.tool]
@@ -696,6 +746,7 @@ class AgentExecutor(Chain):
                     agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             else:
@@ -704,6 +755,7 @@ class AgentExecutor(Chain):
                     agent_action.tool,
                     verbose=self.verbose,
                     color=None,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             result.append((agent_action, observation))
@@ -715,13 +767,18 @@ class AgentExecutor(Chain):
         color_mapping: Dict[str, str],
         inputs: Dict[str, str],
         intermediate_steps: List[Tuple[AgentAction, str]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
         """
         # Call the LLM to see what to do.
-        output = await self.agent.aplan(intermediate_steps, **inputs)
+        output = await self.agent.aplan(
+            intermediate_steps,
+            callbacks=run_manager.get_child() if run_manager else None,
+            **inputs,
+        )
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -734,12 +791,8 @@ class AgentExecutor(Chain):
         async def _aperform_agent_action(
             agent_action: AgentAction,
         ) -> Tuple[AgentAction, str]:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_agent_action(
-                    agent_action, verbose=self.verbose, color="green"
-                )
-            else:
-                self.callback_manager.on_agent_action(
+            if run_manager:
+                await run_manager.on_agent_action(
                     agent_action, verbose=self.verbose, color="green"
                 )
             # Otherwise we lookup the tool
@@ -755,6 +808,7 @@ class AgentExecutor(Chain):
                     agent_action.tool_input,
                     verbose=self.verbose,
                     color=color,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             else:
@@ -763,6 +817,7 @@ class AgentExecutor(Chain):
                     agent_action.tool,
                     verbose=self.verbose,
                     color=None,
+                    callbacks=run_manager.get_child() if run_manager else None,
                     **tool_run_kwargs,
                 )
             return agent_action, observation
@@ -774,7 +829,11 @@ class AgentExecutor(Chain):
 
         return list(result)
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -790,10 +849,16 @@ class AgentExecutor(Chain):
         # We now enter the agent loop (until it returns something).
         while self._should_continue(iterations, time_elapsed):
             next_step_output = self._take_next_step(
-                name_to_tool_map, color_mapping, inputs, intermediate_steps
+                name_to_tool_map,
+                color_mapping,
+                inputs,
+                intermediate_steps,
+                run_manager=run_manager,
             )
             if isinstance(next_step_output, AgentFinish):
-                return self._return(next_step_output, intermediate_steps)
+                return self._return(
+                    next_step_output, intermediate_steps, run_manager=run_manager
+                )
 
             intermediate_steps.extend(next_step_output)
             if len(next_step_output) == 1:
@@ -809,7 +874,11 @@ class AgentExecutor(Chain):
         )
         return self._return(output, intermediate_steps)
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         """Run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -827,7 +896,11 @@ class AgentExecutor(Chain):
             try:
                 while self._should_continue(iterations, time_elapsed):
                     next_step_output = await self._atake_next_step(
-                        name_to_tool_map, color_mapping, inputs, intermediate_steps
+                        name_to_tool_map,
+                        color_mapping,
+                        inputs,
+                        intermediate_steps,
+                        run_manager=run_manager,
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(next_step_output, intermediate_steps)
@@ -845,7 +918,9 @@ class AgentExecutor(Chain):
                 output = self.agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
-                return await self._areturn(output, intermediate_steps)
+                return await self._areturn(
+                    output, intermediate_steps, run_manager=run_manager
+                )
             except TimeoutError:
                 # stop early when interrupted by the async timeout
                 output = self.agent.return_stopped_response(

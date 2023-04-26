@@ -4,6 +4,11 @@ from typing import Any, Awaitable, Callable, Optional, Type, Union
 
 from pydantic import BaseModel, validate_arguments
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+    Callbacks,
+)
 from langchain.tools.base import BaseTool
 
 
@@ -26,14 +31,42 @@ class Tool(BaseTool):
             valid_keys = signature(self.func).parameters
             return {k: schema[k] for k in valid_keys}
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Use the tool asynchronously."""
+        new_argument_supported = signature(self.coroutine).parameters.get("callbacks")
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
         raise NotImplementedError("Tool does not support async")
 
     # TODO: this is for backwards compatibility, remove in future

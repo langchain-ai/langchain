@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -194,7 +195,12 @@ class SagemakerEndpoint(LLM):
         """Return type of llm."""
         return "sagemaker_endpoint"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to Sagemaker inference endpoint.
 
         Args:
