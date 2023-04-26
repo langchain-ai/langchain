@@ -136,8 +136,9 @@ class BaseRetrievalQA(Chain):
             docs = self._get_docs(question, run_manager=_run_manager)
         else:
             docs = self._get_docs(question)  # type: ignore[call-arg]
+        inputs["question"] = question
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
 
         if self.return_source_documents:
@@ -179,8 +180,9 @@ class BaseRetrievalQA(Chain):
             docs = await self._aget_docs(question, run_manager=_run_manager)
         else:
             docs = await self._aget_docs(question)  # type: ignore[call-arg]
+        inputs["question"] = question
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
         )
 
         if self.return_source_documents:
