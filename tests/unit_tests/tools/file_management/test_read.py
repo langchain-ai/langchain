@@ -12,10 +12,10 @@ def test_read_file_with_root_dir() -> None:
         with (Path(temp_dir) / "file.txt").open("w") as f:
             f.write("Hello, world!")
         tool = ReadFileTool(root_dir=temp_dir)
-        result = tool.run("file.txt")
+        result = tool.run({"file_path": "file.txt"})
         assert result == "Hello, world!"
         # Check absolute files can still be passed if they lie within the root dir.
-        result = tool.run(str(Path(temp_dir) / "file.txt"))
+        result = tool.run({"file_path": str(Path(temp_dir) / "file.txt")})
         assert result == "Hello, world!"
 
 
@@ -25,5 +25,5 @@ def test_read_file() -> None:
         with (Path(temp_dir) / "file.txt").open("w") as f:
             f.write("Hello, world!")
         tool = ReadFileTool()
-        result = tool.run(str(Path(temp_dir) / "file.txt"))
+        result = tool.run({"file_path": str(Path(temp_dir) / "file.txt")})
         assert result == "Hello, world!"

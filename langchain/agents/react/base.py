@@ -3,7 +3,12 @@ from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
 
-from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
+from langchain.agents.agent import (
+    Agent,
+    AgentExecutor,
+    AgentOutputParser,
+    validate_all_instance_of_base_tool,
+)
 from langchain.agents.agent_types import AgentType
 from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
@@ -13,7 +18,7 @@ from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
-from langchain.tools.base import BaseTool
+from langchain.tools.structured import BaseStructuredTool
 
 
 class ReActDocstoreAgent(Agent):
@@ -31,12 +36,12 @@ class ReActDocstoreAgent(Agent):
         return AgentType.REACT_DOCSTORE
 
     @classmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseStructuredTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return WIKI_PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseStructuredTool]) -> None:
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
@@ -44,6 +49,7 @@ class ReActDocstoreAgent(Agent):
             raise ValueError(
                 f"Tool names should be Lookup and Search, got {tool_names}"
             )
+        validate_all_instance_of_base_tool(cls.__name__, tools)
 
     @property
     def observation_prefix(self) -> str:
@@ -113,17 +119,18 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
 
     @classmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseStructuredTool]) -> BasePromptTemplate:
         """Return default prompt."""
         return TEXTWORLD_PROMPT
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseStructuredTool]) -> None:
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
         tool_names = {tool.name for tool in tools}
         if tool_names != {"Play"}:
             raise ValueError(f"Tool name should be Play, got {tool_names}")
+        validate_all_instance_of_base_tool(cls.__name__, tools)
 
 
 class ReActChain(AgentExecutor):

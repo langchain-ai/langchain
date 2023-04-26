@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from typing import Union
 
 
 def is_relative_to(path: Path, root: Path) -> bool:
@@ -15,7 +14,7 @@ def is_relative_to(path: Path, root: Path) -> bool:
         return False
 
 
-def get_validated_relative_path(root: Path, user_path: Union[str, Path]) -> Path:
+def get_validated_relative_path(root: Path, user_path: str) -> Path:
     """Resolve a relative path, raising an error if not within the root directory."""
     # Note, this still permits symlinks from outside that point within the root.
     # Further validation would be needed if those are to be disallowed.

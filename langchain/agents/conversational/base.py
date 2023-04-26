@@ -5,7 +5,11 @@ from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
 
-from langchain.agents.agent import Agent, AgentOutputParser
+from langchain.agents.agent import (
+    Agent,
+    AgentOutputParser,
+    validate_all_instance_of_base_tool,
+)
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
@@ -13,7 +17,7 @@ from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import BaseLanguageModel
-from langchain.tools.base import BaseTool
+from langchain.tools.structured import BaseStructuredTool
 
 
 class ConversationalAgent(Agent):
@@ -46,7 +50,7 @@ class ConversationalAgent(Agent):
     @classmethod
     def create_prompt(
         cls,
-        tools: Sequence[BaseTool],
+        tools: Sequence[BaseStructuredTool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
@@ -81,10 +85,15 @@ class ConversationalAgent(Agent):
         return PromptTemplate(template=template, input_variables=input_variables)
 
     @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseStructuredTool]) -> None:
+        super()._validate_tools(tools)
+        validate_all_instance_of_base_tool(cls.__name__, tools)
+
+    @classmethod
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
+        tools: Sequence[BaseStructuredTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,

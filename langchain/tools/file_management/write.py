@@ -10,33 +10,33 @@ from langchain.tools.structured import BaseStructuredTool
 class WriteFileInput(BaseModel):
     """Input for WriteFileTool."""
 
-    file_path: Path = Field(..., description="name of file")
+    file_path: str = Field(..., description="name of file")
     text: str = Field(..., description="text to write to file")
 
 
-class WriteFileTool(BaseStructuredTool[WriteFileInput, str]):
+class WriteFileTool(BaseStructuredTool[str]):
     name: str = "write_file"
-    args_schema: Type[WriteFileInput] = WriteFileInput
+    args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"
     root_dir: Optional[str] = None
     """Directory to write file to.
 
     If specified, raises an error for file_paths oustide root_dir."""
 
-    def _run(self, tool_input: WriteFileInput) -> str:
+    def _run(self, file_path: str, text: str) -> str:
         write_path = (
-            get_validated_relative_path(Path(self.root_dir), tool_input.file_path)
+            get_validated_relative_path(Path(self.root_dir), file_path)
             if self.root_dir
-            else tool_input.file_path
+            else Path(file_path)
         )
         try:
             write_path.parent.mkdir(exist_ok=True, parents=False)
             with write_path.open("w", encoding="utf-8") as f:
-                f.write(tool_input.text)
-            return f"File written successfully to {tool_input.file_path}."
+                f.write(text)
+            return f"File written successfully to {file_path}."
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, tool_input: WriteFileInput) -> str:
+    async def _arun(self, file_path: str, text: str) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

@@ -110,34 +110,3 @@ def _load_agent_from_file(
         raise ValueError("File type must be json or yaml")
     # Load the agent from the config now.
     return load_agent_from_config(config, **kwargs)
-
-
-def save_agent(file_path: Union[Path, str], agent_dict: dict) -> None:
-    """Save the agent.
-
-    Args:
-        file_path: Path to file to save the agent to.
-
-    Example:
-    .. code-block:: python
-
-        # If working with agent executor
-        agent.agent.save(file_path="path/agent.yaml")
-    """
-    # Convert file to Path object.
-    if isinstance(file_path, str):
-        save_path = Path(file_path)
-    else:
-        save_path = file_path
-
-    directory_path = save_path.parent
-    directory_path.mkdir(parents=True, exist_ok=True)
-
-    if save_path.suffix == ".json":
-        with open(file_path, "w") as f:
-            json.dump(agent_dict, f, indent=4)
-    elif save_path.suffix == ".yaml":
-        with open(file_path, "w") as f:
-            yaml.dump(agent_dict, f, default_flow_style=False)
-    else:
-        raise ValueError(f"{save_path} must be json or yaml")

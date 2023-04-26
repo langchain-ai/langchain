@@ -2,17 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, Sequence, TypeVar
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -43,17 +33,6 @@ class AgentAction(NamedTuple):
     tool: str
     tool_input: str
     log: str
-
-
-class StructuredAgentAction(NamedTuple):
-    """Agent's action to take."""
-
-    tool: str
-    tool_input: dict
-    log: str
-
-    def to_agent_action(self) -> AgentAction:
-        return AgentAction(self.tool, str(self.tool_input), self.log)
 
 
 class AgentFinish(NamedTuple):
@@ -411,8 +390,6 @@ class OutputParserException(Exception):
     available to catch and handle in ways to fix the parsing error, while other
     errors will be raised.
     """
-
-    pass
 
 
 class BaseDocumentTransformer(ABC):

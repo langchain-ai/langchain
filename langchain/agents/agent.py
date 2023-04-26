@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
-from langchain.agents.loading import save_agent
 
 from langchain.agents.tools import InvalidTool
 from langchain.callbacks.base import BaseCallbackManager
@@ -33,6 +32,18 @@ from langchain.tools.structured import BaseStructuredTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
+
+
+def validate_all_instance_of_base_tool(
+    class_name: str, tools: Sequence[BaseStructuredTool]
+) -> None:
+    """Validate that all tools are of type BaseStructuredTool."""
+    for tool in tools:
+        if not isinstance(tool, BaseTool):
+            raise TypeError(
+                f"Agent {class_name} only supporte tools of type {BaseTool}."
+                f" {tool.name} is of type {type(tool).__name__}"
+            )
 
 
 class BaseSingleActionAgent(BaseModel):
@@ -105,7 +116,7 @@ class BaseSingleActionAgent(BaseModel):
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
+        tools: Sequence[BaseStructuredTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
@@ -123,7 +134,37 @@ class BaseSingleActionAgent(BaseModel):
         return _dict
 
     def save(self, file_path: Union[Path, str]) -> None:
-        return save_agent(file_path, self.dict())
+        """Save the agent.
+
+        Args:
+            file_path: Path to file to save the agent to.
+
+        Example:
+        .. code-block:: python
+
+            # If working with agent executor
+            agent.agent.save(file_path="path/agent.yaml")
+        """
+        # Convert file to Path object.
+        if isinstance(file_path, str):
+            save_path = Path(file_path)
+        else:
+            save_path = file_path
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Fetch dictionary to save
+        agent_dict = self.dict()
+
+        if save_path.suffix == ".json":
+            with open(file_path, "w") as f:
+                json.dump(agent_dict, f, indent=4)
+        elif save_path.suffix == ".yaml":
+            with open(file_path, "w") as f:
+                yaml.dump(agent_dict, f, default_flow_style=False)
+        else:
+            raise ValueError(f"{save_path} must be json or yaml")
 
     def tool_run_logging_kwargs(self) -> Dict:
         return {}
@@ -420,11 +461,11 @@ class Agent(BaseSingleActionAgent):
 
     @classmethod
     @abstractmethod
-    def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
+    def create_prompt(cls, tools: Sequence[BaseStructuredTool]) -> BasePromptTemplate:
         """Create a prompt for this class."""
 
     @classmethod
-    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+    def _validate_tools(cls, tools: Sequence[BaseStructuredTool]) -> None:
         """Validate that appropriate tools are passed in."""
 
     @classmethod
@@ -436,7 +477,7 @@ class Agent(BaseSingleActionAgent):
     def from_llm_and_tools(
         cls,
         llm: BaseLanguageModel,
-        tools: Sequence[BaseTool],
+        tools: Sequence[BaseStructuredTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
@@ -628,6 +669,48 @@ class AgentExecutor(Chain):
             final_output["intermediate_steps"] = intermediate_steps
         return final_output
 
+    def _run_tool(
+        self,
+        tool: BaseStructuredTool,
+        agent_action: AgentAction,
+        color: str,
+        **tool_run_kwargs: Any,
+    ) -> Any:
+        tool_input = agent_action.tool_input
+        if isinstance(tool_input, str):
+            if not isinstance(tool, BaseTool):
+                return (
+                    f"Error: tool {tool.name} could not be "
+                    f"run with input {agent_action.tool_input}"
+                )
+        return tool.run(
+            tool_input,
+            verbose=self.verbose,
+            color=color,
+            **tool_run_kwargs,
+        )
+
+    async def _aruntool(
+        self,
+        tool: BaseStructuredTool,
+        agent_action: AgentAction,
+        color: str,
+        **tool_run_kwargs: Any,
+    ) -> Any:
+        tool_input = agent_action.tool_input
+        if isinstance(tool_input, str):
+            if not isinstance(tool, BaseTool):
+                return (
+                    f"Error: tool {tool.name} could not be "
+                    f"run with input {agent_action.tool_input}"
+                )
+        return await tool.arun(
+            agent_action.tool_input,
+            verbose=self.verbose,
+            color=color,
+            **tool_run_kwargs,
+        )
+
     def _take_next_step(
         self,
         name_to_tool_map: Dict[str, BaseStructuredTool],
@@ -663,11 +746,8 @@ class AgentExecutor(Chain):
                 if return_direct:
                     tool_run_kwargs["llm_prefix"] = ""
                 # We then call the tool on the tool input to get an observation
-                observation = tool.run(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    **tool_run_kwargs,
+                observation = self._run_tool(
+                    tool, agent_action, color, run_async=True, **tool_run_kwargs
                 )
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
@@ -722,11 +802,8 @@ class AgentExecutor(Chain):
                 if return_direct:
                     tool_run_kwargs["llm_prefix"] = ""
                 # We then call the tool on the tool input to get an observation
-                observation = await tool.arun(
-                    agent_action.tool_input,
-                    verbose=self.verbose,
-                    color=color,
-                    **tool_run_kwargs,
+                observation = await self._aruntool(
+                    tool, agent_action, color, run_async=True, **tool_run_kwargs
                 )
             else:
                 tool_run_kwargs = self.agent.tool_run_logging_kwargs()
