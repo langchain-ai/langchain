@@ -4,7 +4,7 @@ from pydantic import Field
 
 from langchain.tools.base import BaseTool
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-
+import warnings
 
 class DuckDuckGoSearchRun(BaseTool):
     """Tool that adds the capability to query the DuckDuckGo search API."""
@@ -49,3 +49,11 @@ class DuckDuckGoSearchResults(BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("DuckDuckGoSearchResults does not support async")
+
+def DuckDuckGoSearchTool(*args, **kwargs):
+    warnings.warn(
+        "DuckDuckGoSearchTool will be deprecated in the future. "
+        "Please use DuckDuckGoSearchRun instead.",
+        DeprecationWarning,
+    )
+    return DuckDuckGoSearchRun(*args, **kwargs)
