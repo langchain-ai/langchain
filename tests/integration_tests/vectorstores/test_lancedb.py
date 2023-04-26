@@ -3,11 +3,11 @@ from langchain.vectorstores import LanceDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
-def test_lancedb():
-    embed = FakeEmbeddings()
+def test_lancedb() -> None:
+    embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1", "text 2", "item 3"]
-    vectors = embed.embed_documents(texts)
+    vectors = embeddings.embed_documents(texts)
     table = db.create_table(
         "my_table",
         data=[
@@ -16,17 +16,17 @@ def test_lancedb():
         ],
         mode="overwrite",
     )
-    store = LanceDB(table, embedding_function=embed.embed_documents)
+    store = LanceDB(table, embeddings)
     result = store.similarity_search("text 1")
     result_texts = [doc.page_content for doc in result]
     assert "text 1" in result_texts
 
 
-def test_lancedb_add_texts():
-    embed = FakeEmbeddings()
+def test_lancedb_add_texts() -> None:
+    embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb")
     texts = ["text 1"]
-    vectors = embed.embed_documents(texts)
+    vectors = embeddings.embed_documents(texts)
     table = db.create_table(
         "my_table",
         data=[
@@ -35,7 +35,7 @@ def test_lancedb_add_texts():
         ],
         mode="overwrite",
     )
-    store = LanceDB(table, embedding_function=embed.embed_documents)
+    store = LanceDB(table, embeddings)
     store.add_texts(["text 2"])
     result = store.similarity_search("text 2")
     result_texts = [doc.page_content for doc in result]

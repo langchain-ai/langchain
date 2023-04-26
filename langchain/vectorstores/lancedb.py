@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable, Iterable, List, Optional, Type
+from typing import Any, Iterable, List, Optional
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -27,7 +27,7 @@ class LanceDB(VectorStore):
     def __init__(
         self,
         connection: Any,
-        embedding_function: Callable[[List[str]], List[List[float]]],
+        embedding: Embeddings,
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
@@ -46,7 +46,7 @@ class LanceDB(VectorStore):
                 f"got {type(connection)}",
             )
         self._connection = connection
-        self._embedding_function = embedding_function
+        self._embedding = embedding
         self._vector_key = vector_key
         self._id_key = id_key
         self._text_key = text_key
@@ -54,11 +54,11 @@ class LanceDB(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Turn texts into embeddings and add it to the database
+        """Turn texts into embedding and add it to the database
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
@@ -71,9 +71,9 @@ class LanceDB(VectorStore):
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embeddings = self._embedding_function(texts)
+        embedding = self._embedding.embed_documents(list(texts))
         for idx, text in enumerate(texts):
-            embedding = embeddings[idx]
+            embedding = embedding[idx]
             metadata = metadatas[idx] if metadatas else {}
             docs.append(
                 {
@@ -85,6 +85,7 @@ class LanceDB(VectorStore):
             )
 
         self._connection.add(docs)
+        return ids
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -98,7 +99,7 @@ class LanceDB(VectorStore):
         Returns:
             List of documents most similar to the query.
         """
-        embedding = self._embedding_function([query])[0]
+        embedding = self._embedding.embed_query(query)
         docs = self._connection.search(embedding).limit(k).to_df()
         return [
             Document(
@@ -110,17 +111,23 @@ class LanceDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[LanceDB],
-        connection: Any,
-        embedding_function: Callable,
+        cls,
         texts: List[str],
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        connection: Any = None,
         vector_key: Optional[str] = "vector",
         id_key: Optional[str] = "id",
         text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> LanceDB:
-        instance = LanceDB(connection, embedding_function, vector_key, id_key, text_key)
+        instance = LanceDB(
+            connection,
+            embedding,
+            vector_key,
+            id_key,
+            text_key,
+        )
         instance.add_texts(texts, metadatas=metadatas, **kwargs)
 
         return instance
