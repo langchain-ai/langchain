@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 
@@ -42,7 +43,12 @@ class ManifestWrapper(LLM):
         """Return type of llm."""
         return "manifest"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to LLM through Manifest."""
         if stop is not None and len(stop) != 1:
             raise NotImplementedError(

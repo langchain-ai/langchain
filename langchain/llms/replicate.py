@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
@@ -78,7 +79,12 @@ class Replicate(LLM):
         """Return type of model."""
         return "replicate"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call to replicate endpoint."""
         try:
             import replicate as replicate_python
