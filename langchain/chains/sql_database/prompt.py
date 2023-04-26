@@ -59,42 +59,60 @@ Question: {{input}}"""
 
 DUCKDB_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="DuckDB", limit_clause="LIMIT", quote='double quotes (")'),
+    template=_meta_prompt.format(
+        dialect="DuckDB", limit_clause="LIMIT", quote='double quotes (")'
+    ),
 )
 
 GOOGLESQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="GoogleSQL", limit_clause="LIMIT", quote="backticks (`)"),
+    template=_meta_prompt.format(
+        dialect="GoogleSQL", limit_clause="LIMIT", quote="backticks (`)"
+    ),
 )
 
 MSSQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="MS SQL", limit_clause="TOP", quote="square brackets ([])"),
+    template=_meta_prompt.format(
+        dialect="MS SQL", limit_clause="TOP", quote="square brackets ([])"
+    ),
 )
 
 MYSQL_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="MySQL", limit_clause="LIMIT", quote="backticks (`)"),
+    template=_meta_prompt.format(
+        dialect="MySQL", limit_clause="LIMIT", quote="backticks (`)"
+    ),
 )
 
 MARIADB_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="MariaDB", limit_clause="LIMIT", quote="backticks (`)"),
+    template=_meta_prompt.format(
+        dialect="MariaDB", limit_clause="LIMIT", quote="backticks (`)"
+    ),
 )
 
 ORACLE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="Oracle SQL", limit_clause="FETCH FIRST n ROWS ONLY", quote='double quotes (")'),
+    template=_meta_prompt.format(
+        dialect="Oracle SQL",
+        limit_clause="FETCH FIRST n ROWS ONLY",
+        quote='double quotes (")',
+    ),
 )
 
 POSTGRES_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="PostgreSQL", limit_clause="LIMIT", quote="backticks (`)"),
+    template=_meta_prompt.format(
+        dialect="PostgreSQL", limit_clause="LIMIT", quote="backticks (`)"
+    ),
 )
 
 SQLITE_PROMPT = PromptTemplate(
     input_variables=["input", "table_info", "top_k"],
-    template=_meta_prompt.format(dialect="SQLite", limit_clause="LIMIT", quote="double quotes (\")"),
+    template=_meta_prompt.format(
+        dialect="SQLite", limit_clause="LIMIT", quote='double quotes (")'
+    ),
 )
 
 
