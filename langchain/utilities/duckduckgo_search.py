@@ -49,7 +49,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             time=self.time,
             max_results=self.max_results,
         )
-        if len(results) == 0:
+        if results is None or len(results) == 0:
             return "No good DuckDuckGo Search Result was found"
         snippets = [result["body"] for result in results]
         return " ".join(snippets)
@@ -77,7 +77,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             max_results=num_results,
         )
 
-        if len(results) == 0:
+        if results is None or len(results) == 0:
             return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
         def to_metadata(result: Dict) -> Dict:
