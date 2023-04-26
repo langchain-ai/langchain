@@ -3,6 +3,7 @@ import re
 import subprocess
 from typing import List, Union
 from uuid import uuid4
+
 import pexpect
 
 
@@ -85,9 +86,7 @@ class BashProcess:
         try:
             self.process.expect([self.prompt, pexpect.EOF], timeout=10)
         except pexpect.TIMEOUT:
-            if "sudo" in command:
-                return "Timed out while waiting for password, sudo not supported yet. Be careful!"
-            return "Timeout error"
+            return f"Timeout error while executing command {command}"
         if self.process.after == pexpect.EOF:
             return f"Exited with error status: {self.process.exitstatus}"
         output = self.process.before

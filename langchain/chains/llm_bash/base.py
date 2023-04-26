@@ -1,14 +1,43 @@
 """Chain that interprets a prompt and executes bash code to perform bash operations."""
+import logging
+import re
 from typing import Dict, List
 
-from pydantic import Extra
+from pydantic import Extra, Field
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
+from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
 from langchain.utilities.bash import BashProcess
+
+logger = logging.getLogger(__name__)
+
+
+class BashOutputParser(BaseOutputParser):
+    """Parser for bash output."""
+
+    def parse(self, text: str) -> List[str]:
+        if "```bash" in text:
+            return self.get_code_blocks(text)
+        else:
+            raise OutputParserException(
+                f"Failed to parse bash output. Got: {text}",
+            )
+
+    @staticmethod
+    def get_code_blocks(t: str) -> List[str]:
+        """Get multiple code blocks from the LLM result."""
+        code_blocks: List[str] = []
+        # Bash markdown code blocks
+        pattern = re.compile(r"```bash(.*?)(?:\n\s*)```", re.DOTALL)
+        for match in pattern.finditer(t):
+            matched = match.group(1).strip()
+            if matched:
+                code_blocks.extend([l for l in matched.split("\n") if l.strip()])
+
+        return code_blocks
 
 
 class LLMBashChain(Chain):
@@ -27,6 +56,7 @@ class LLMBashChain(Chain):
     output_key: str = "answer"  #: :meta private:
     prompt: BasePromptTemplate = PROMPT
     persistent: bool = False
+    output_parser: BaseOutputParser = Field(default_factory=BashOutputParser)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -57,60 +87,25 @@ class LLMBashChain(Chain):
 
         t = llm_executor.predict(question=inputs[self.input_key])
         self.callback_manager.on_text(t, color="green", verbose=self.verbose)
-
         t = t.strip()
-        if "```bash" in t:
-            # Split the string into a list of substrings
-            command_list = self.get_code_lines(t)
-            command_list = [s for s in command_list if s]
+        try:
+            command_list = self.output_parser.parse(t)
+        except OutputParserException as e:
+            logger.error(e)
+            self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            return {self.output_key: t}
 
-            if self.verbose:
-                self.callback_manager.on_text("\nCode: ", verbose=self.verbose)
-                self.callback_manager.on_text(
-                    command_list, color="yellow", verbose=self.verbose
-                )
-
-            output = bash_executor.run(command_list)
-
-            self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
-            self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
-        else:
-            output = t
-            # raise ValueError(f"unknown format from LLM: {t}")
-        return {self.output_key: output}
-
-    def get_code_and_remainder(self, t: str) -> str:
-        """Get a code block from the LLM result.
-
-        :meta private:
-        """
-        splits = t.split("```bash")
-        split = splits[1].split("```")
-
-        if len(splits) == 2:
-            return split[0], "```".join(split[1:])
-        else:
-            return split[0], "```".join(split[1:]) + "```bash" + "```bash".join(
-                splits[2:]
+        if self.verbose:
+            self.callback_manager.on_text("\nCode: ", verbose=self.verbose)
+            self.callback_manager.on_text(
+                str(command_list), color="yellow", verbose=self.verbose
             )
 
-    def get_code_blocks(self, t: str) -> List[str]:
-        """Get multiple code blocks from the LLM result.
+        output = bash_executor.run(command_list)
 
-        :meta private:
-        """
-        code_blocks = []
-        while "```bash" in t:
-            code, t = self.get_code_and_remainder(t)
-            code_blocks.append(code)
-        return code_blocks
-
-    def get_code_lines(self, t: str) -> str:
-        """Get a code block from the LLM result.
-
-        :meta private:
-        """
-        return ("\n".join(self.get_code_blocks(t))).split("\n")
+        self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
+        self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+        return {self.output_key: output}
 
     @property
     def _chain_type(self) -> str:

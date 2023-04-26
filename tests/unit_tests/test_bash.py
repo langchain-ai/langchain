@@ -9,7 +9,6 @@ import pytest
 from langchain.utilities.bash import BashProcess
 
 
-
 @pytest.mark.skipif(
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
