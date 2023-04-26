@@ -1,10 +1,3 @@
-"""
-    -- @Time    : 2023/4/25 9:27
-    -- @Author  : yazhui Yu
-    -- @email   : yuyazhui@bangdao-tech.com
-    -- @File    : sync
-    -- @Software: Pycharm
-"""
 from typing import Coroutine
 import asyncio
 from typing import Any

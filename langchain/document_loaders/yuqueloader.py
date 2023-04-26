@@ -1,11 +1,4 @@
-"""
-    -- @Time    : 2023/4/25 12:39
-    -- @Author  : yazhui Yu
-    -- @email   : yuyazhui@bangdao-tech.com
-    -- @File    : yuqueloader
-    -- @Software: Pycharm
-"""
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -14,7 +7,11 @@ from langchain.document_loaders.base import BaseLoader
 class YUQUELoader(BaseLoader):
     """Loader that loads yuque transcripts."""
 
-    def __init__(self, custom_space: str = 'www', user_agent: str = '', user_token: str = '', **kwargs):
+    def __init__(self,
+                 custom_space: str = 'www',
+                 user_agent: str = '',
+                 user_token: str = '',
+                 **kwargs: Dict[str, str]):
         """
         Initialize with yuque information.
         :param
@@ -52,10 +49,11 @@ class YUQUELoader(BaseLoader):
 
                     4.若四个参数均没有传入, 则默认加载 token 权限下的所有知识库的文档。
         """
-        self.custom_space = custom_space
-        self.user_agent = user_agent
-        self.user_token = user_token
-        self.kwargs = kwargs
+
+        self.custom_space: str = custom_space
+        self.user_agent: str = user_agent
+        self.user_token: str = user_token
+        self.kwargs: dict = kwargs
 
     def load(self) -> List[Document]:
         """Load from yuque docs api."""

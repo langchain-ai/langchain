@@ -1,19 +1,12 @@
-"""
-    -- @Time    : 2023/4/25 9:31
-    -- @Author  : yazhui Yu
-    -- @email   : yuyazhui@bangdao-tech.com
-    -- @File    : yuque
-    -- @Software: Pycharm
-"""
 import logging
 import re
 from functools import partial
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from tqdm import tqdm
 
-from .network import request
-from .setting import API, USER_AGENT
+from langchain.utilities.yuque_api.network import request
+from langchain.utilities.yuque_api.setting import API, USER_AGENT
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s]: %(levelname)s %(message)s',
@@ -25,19 +18,21 @@ requests = partial(request, method="GET")
 
 class YuQueDocs:
 
-    def __init__(self, custom_space: str = 'www', user_agent: str = '', user_token: str = '', **kwargs):
+    def __init__(self, custom_space: str = 'www',
+                 user_agent: str = '',
+                 user_token: str = '', **kwargs: Dict[str, str]):
         user_agent = user_agent if user_agent != '' else USER_AGENT
         logging.warning(f"`user_agent` is default, then `user_agent={USER_AGENT}` instead!")
         if not len(user_token):
             raise ValueError(
                 "`user_token` must be required"
             )
-        self.custom_space = custom_space
-        self.user_token = user_token
-        self.kwargs = kwargs
+        self.custom_space: str = custom_space
+        self.user_token: str = user_token
+        self.kwargs: dict = kwargs
 
-        self.api = API.format(custom_space)
-        self.headers = {
+        self.api: str = API.format(custom_space)
+        self.headers: dict = {
             "User-Agent": user_agent,
             "X-Auth-Token": user_token
         }
@@ -273,8 +268,3 @@ class YuQueDocs:
                 f"No knowledge_base matching knowledge_base_id and "
                 f"knowledge_base_name in `{self.username}` "
             )
-
-
-if __name__ == "__main__":
-    yq = YuQueDocs()
-    yq.load_docs()

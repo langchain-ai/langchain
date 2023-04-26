@@ -1,21 +1,16 @@
-"""
-    -- @Time    : 2023/4/25 11:35
-    -- @Author  : yazhui Yu
-    -- @email   : yuyazhui@bangdao-tech.com
-    -- @File    : network
-    -- @Software: Pycharm
-"""
 import asyncio
 import atexit
-from typing import Any
+from asyncio import AbstractEventLoop
+from typing import Dict
 
 import httpx
+from httpx import Response
 
-from .setting import HTTP_TIMEOUT
+from langchain.utilities.yuque_api.setting import HTTP_TIMEOUT
 
-__session_pool = {}
+__session_pool: Dict[AbstractEventLoop, httpx.AsyncClient] = {}
 
-HEADERS = {}
+HEADERS: Dict[str, str] = {}
 
 
 @atexit.register
@@ -26,7 +21,7 @@ def __clean() -> None:
         return
 
     async def __clean_task():
-        await __session_pool[loop].close()
+        await __session_pool[loop].aclose()
 
     if loop.is_closed():
         loop.run_until_complete(__clean_task())
@@ -34,7 +29,7 @@ def __clean() -> None:
         loop.create_task(__clean_task())
 
 
-async def request(method: str, url: str, headers: dict) -> Any:
+async def request(method: str, url: str, headers: dict) -> Response:
     config = {
         "method": method,
         "url": url,
