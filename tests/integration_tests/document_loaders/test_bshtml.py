@@ -15,10 +15,11 @@ def test_bs_html_loader() -> None:
     assert len(docs) == 1
 
     metadata = docs[0].metadata
+    content = docs[0].page_content
 
     assert metadata["title"] == "Chew dad's slippers"
     assert metadata["source"] == str(file_path)
-    assert docs[0].page_content[:2] == "\n|"
+    assert content[:2] == "\n|"
 
 
 @pytest.mark.skipif(
