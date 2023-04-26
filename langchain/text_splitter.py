@@ -263,7 +263,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
-        self._separators = separators or ["\n\n", "\n", " ", ""]
+        self._separators = separators or ["\n\n", ".", "\n", " ", ""]
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
@@ -370,6 +370,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
             # Note that this splitter doesn't handle horizontal lines defined
             # by *three or more* of ***, ---, or ___, but this is not handled
             "\n\n",
+            ".",
             "\n",
             " ",
             "",
