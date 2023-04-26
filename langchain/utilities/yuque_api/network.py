@@ -20,7 +20,7 @@ def __clean() -> bool:
     except RuntimeError:
         return True
 
-    async def __clean_task():
+    async def __clean_task() -> None:
         await __session_pool[loop].aclose()
 
     if loop.is_closed():
