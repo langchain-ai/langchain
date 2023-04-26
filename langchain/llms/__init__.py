@@ -16,6 +16,7 @@ from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain.llms.huggingface_hub import HuggingFaceHub
 from langchain.llms.huggingface_pipeline import HuggingFacePipeline
 from langchain.llms.llamacpp import LlamaCpp
+from langchain.llms.lmql import LMQL
 from langchain.llms.modal import Modal
 from langchain.llms.nlpcloud import NLPCloud
 from langchain.llms.openai import AzureOpenAI, OpenAI, OpenAIChat
@@ -61,6 +62,7 @@ __all__ = [
     "Writer",
     "RWKV",
     "PredictionGuard",
+    "LMQL"
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -90,4 +92,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "stochasticai": StochasticAI,
     "writer": Writer,
     "rwkv": RWKV,
+    "lmql": LMQL
 }
