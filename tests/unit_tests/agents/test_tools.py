@@ -1,6 +1,7 @@
 """Test tool utils."""
 
 from typing import Optional
+
 import pytest
 
 from langchain.agents.tools import Tool, tool
