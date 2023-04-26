@@ -6,7 +6,9 @@ import functools
 import logging
 import os
 import uuid
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -16,7 +18,9 @@ from langchain.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
+from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -27,6 +31,34 @@ logging.basicConfig(
 )
 
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+
+openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
+    "openai_callback", default=None
+)
+tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
+    "tracing_callback", default=None
+)
+
+
+@contextmanager
+def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
+    """Get OpenAI callback handler in a context manager."""
+    cb = OpenAICallbackHandler()
+    openai_callback_var.set(cb)
+    yield cb
+    openai_callback_var.set(None)
+
+
+@contextmanager
+def tracing_enabled(
+    session_name: str = "default",
+) -> Generator[TracerSession, None, None]:
+    """Get OpenAI callback handler in a context manager."""
+    cb = LangChainTracer()
+    session = cb.load_session(session_name)
+    tracing_callback_var.set(cb)
+    yield session
+    tracing_callback_var.set(None)
 
 
 def _handle_event(
@@ -106,7 +138,7 @@ class RunManager(BaseRunManager):
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        _handle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class AsyncRunManager(BaseRunManager):
@@ -114,7 +146,7 @@ class AsyncRunManager(BaseRunManager):
 
     async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received."""
-        await _ahandle_event(self.handlers, "on_text", None, False, text, **kwargs)
+        await _ahandle_event(self.handlers, "on_text", None, text, **kwargs)
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
@@ -638,8 +670,12 @@ def _configure(
 
     if not callback_manager:
         callback_manager = callback_manager_cls([])
-    tracing_enabled = os.environ.get("LANGCHAIN_TRACING") is not None
-    if verbose or tracing_enabled:
+    tracer = tracing_callback_var.get()
+    open_ai = openai_callback_var.get()
+    tracing_enabled = (
+        os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
+    )
+    if verbose or tracing_enabled or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -650,8 +686,16 @@ def _configure(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
-            handler = LangChainTracer()
-            handler.load_default_session()
-            callback_manager.add_handler(handler, True)
+            if tracer:
+                callback_manager.add_handler(copy.deepcopy(tracer), True)
+            else:
+                handler = LangChainTracer()
+                handler.load_default_session()
+                callback_manager.add_handler(handler, True)
+        if open_ai is not None and not any(
+            isinstance(handler, OpenAICallbackHandler)
+            for handler in callback_manager.handlers
+        ):
+            callback_manager.add_handler(open_ai, True)
 
     return callback_manager
