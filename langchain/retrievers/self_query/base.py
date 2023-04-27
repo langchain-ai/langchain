@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -46,7 +46,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_translator(cls, values: Dict) -> Dict:
         """Validate search type."""
         if "structured_query_translator" not in values:
@@ -88,7 +88,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         vectorstore: VectorStore,
         document_contents: str,
         metadata_field_info: List[AttributeInfo],
-        structured_query_translator: Optional[Visitor],
+        structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
@@ -109,5 +109,6 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         return cls(
             llm_chain=llm_chain,
             vectorstore=vectorstore,
+            structured_query_translator=structured_query_translator,
             **kwargs,
         )

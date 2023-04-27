@@ -1,3 +1,4 @@
+# flake8: noqa
 from langchain import PromptTemplate
 
 song_data_source = """\
@@ -15,7 +16,7 @@ song_data_source = """\
         },
         "genre": {
             "type": "string",
-            "description": "The song genre, one of 'pop', 'rock' or 'rap'"
+            "description": "The song genre, one of \"pop\", \"rock\" or \"rap\""
         }
     }
 }
@@ -30,8 +31,8 @@ full_answer = """\
 ```json
 {{
     "query": "teenager love",
-    "filter": "and(or(eq('artist', 'Taylor Swift'), eq('artist', 'Katy Perry')), \
-lt('length', 180), eq('genre', 'pop'))"
+    "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), \
+lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
 }}"""
 
 no_filter_answer = """\
@@ -94,14 +95,14 @@ documents. Any conditions in the filter should not be mentioned in the query as 
 A logical condition statement is composed of one or more comparison and logical \
 operation statements.
 
-A comparison statement takes the form: 'comp(attr, val)':
-- 'comp' ({allowed_comparators}): comparator
-- 'attr' (string):  name of attribute to apply the comparison to
-- 'val' (string): is the comparison value
+A comparison statement takes the form: `comp(attr, val)`:
+- `comp` ({allowed_comparators}): comparator
+- `attr` (string):  name of attribute to apply the comparison to
+- `val` (string): is the comparison value
 
-A logical operation statement takes the form 'op(statement1, statement2, ...)':
-- 'op' ({allowed_operators}): logical operator
-- 'statement1', 'statement2', ... (comparison statements or logical operation \
+A logical operation statement takes the form `op(statement1, statement2, ...)`:
+- `op` ({allowed_operators}): logical operator
+- `statement1`, `statement2`, ... (comparison statements or logical operation \
 statements): one or more statements to appy the operation to
 
 Make sure that you only use the comparators and logical operators listed above and \

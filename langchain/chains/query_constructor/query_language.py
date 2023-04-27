@@ -4,11 +4,6 @@ from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel
 
-try:
-    from lark import Lark, Transformer, v_args
-except ImportError:
-    pass
-
 
 class Visitor(ABC):
     """Abstract visitor interface."""
@@ -76,4 +71,4 @@ class Operation(Expr):
 
 class StructuredQuery(Expr):
     query: str
-    filter: Union[Comparison, Operation]
+    filter: Optional[Union[Comparison, Operation]]
