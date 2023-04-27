@@ -32,9 +32,11 @@ class Tool(BaseTool):
     def args(self) -> dict:
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
-        else:
-            inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
+        inferred_model = validate_arguments(self.func).model  # type: ignore
+        filtered_args = get_filtered_args(inferred_model, self.func, {"args", "kwargs"})
+        if filtered_args:
+            return filtered_args
+        return {"tool_input": {"type": "string"}}
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
@@ -46,9 +48,41 @@ class Tool(BaseTool):
             return await self.coroutine(*args, **kwargs)
         raise NotImplementedError("Tool does not support async")
 
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        return_direct: bool = False,
+        args_schema: Optional[Type[BaseModel]] = None,
+        infer_schema: bool = True,
+        **kwargs: Any,
+    ) -> "Tool":
+        name = name or func.__name__
+        description = description or func.__doc__
+        assert (
+            description is not None
+        ), "Function must have a docstring if description not provided."
+
+        # Description example:
+        # search_api(query: str) - Searches the API for the query.
+        description = f"{name}{signature(func)} - {description.strip()}"
+        _args_schema = args_schema
+        if _args_schema is None and infer_schema:
+            _args_schema = create_schema_from_function(f"{name}Schema", func)
+        return cls(
+            name=name,
+            func=func,
+            args_schema=_args_schema,
+            description=description,
+            return_direct=return_direct,
+            **kwargs,
+        )
+
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Callable[[str], str], description: str, **kwargs: Any
+        self, name: str, func: Callable, description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super(Tool, self).__init__(
@@ -108,21 +142,13 @@ def tool(
 
     def _make_with_name(tool_name: str) -> Callable:
         def _make_tool(func: Callable) -> Tool:
-            assert func.__doc__, "Function must have a docstring"
-            # Description example:
-            # search_api(query: str) - Searches the API for the query.
-            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            _args_schema = args_schema
-            if _args_schema is None and infer_schema:
-                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
-            tool_ = Tool(
+            return Tool.from_function(
+                func,
                 name=tool_name,
-                func=func,
-                args_schema=_args_schema,
-                description=description,
                 return_direct=return_direct,
+                args_schema=args_schema,
+                infer_schema=infer_schema,
             )
-            return tool_
 
         return _make_tool
 

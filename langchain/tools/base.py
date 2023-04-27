@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
@@ -81,11 +81,16 @@ def _create_subset_model(
     return create_model(name, **fields)  # type: ignore
 
 
-def get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
+def get_filtered_args(
+    inferred_model: Type[BaseModel],
+    func: Callable,
+    invalid_keys: Optional[Set[str]] = None,
+) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys}
+    invalid_keys = invalid_keys or set()
+    return {k: schema[k] for k in valid_keys if k not in invalid_keys}
 
 
 def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
