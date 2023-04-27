@@ -54,8 +54,6 @@ class Comparator(str, Enum):
     GTE = "gte"
     LT = "lt"
     LTE = "lte"
-    IN = "in"
-    NIN = "nin"
 
 
 class Comparison(Expr):

@@ -69,11 +69,9 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         structured_query = cast(
             StructuredQuery, self.llm_chain.predict_and_parse(**inputs)
         )
-        print(structured_query)
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
             structured_query
         )
-        print(new_kwargs)
         search_kwargs = {**self.search_kwargs, **new_kwargs}
         docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
         return docs
