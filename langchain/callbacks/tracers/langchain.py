@@ -87,17 +87,3 @@ class LangChainTracer(BaseTracer):
     def load_default_session(self) -> TracerSession:
         """Load the default tracing session and set it as the Tracer's session."""
         return self._load_session("default")
-
-    def __deepcopy__(self, memo):
-        """Deepcopy the tracer."""
-
-        # TODO: this is a hack to get tracing to work with the current backend
-        # we need to not use execution order, then remove this check
-        if self.execution_order == 1:
-            copy = LangChainTracer()
-            copy.session = self.session
-            copy.run_map = dict(self.run_map)
-            copy.execution_order = self.execution_order
-            return copy
-        else:
-            return self

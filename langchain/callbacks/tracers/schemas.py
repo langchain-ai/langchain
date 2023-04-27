@@ -38,6 +38,7 @@ class BaseRun(BaseModel):
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     extra: Optional[Dict[str, Any]] = None
     execution_order: int
+    child_execution_order: int
     serialized: Dict[str, Any]
     session_id: int
     error: Optional[str] = None

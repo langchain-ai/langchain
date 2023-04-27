@@ -27,7 +27,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.run_map: Dict[str, Union[LLMRun, ChainRun, ToolRun]] = {}
-        self.execution_order: int = 1
         self.session: Optional[TracerSession] = None
 
     @staticmethod
@@ -70,8 +69,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _start_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Start a trace for a run."""
-        self.execution_order += 1
-
         if run.parent_uuid:
             parent_run = self.run_map[run.parent_uuid]
             if parent_run:
@@ -92,8 +89,31 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """End a trace for a run."""
         if not run.parent_uuid:
             self._persist_run(run)
-            self.execution_order = 1
+        else:
+            parent_run = self.run_map.get(run.parent_uuid)
+            if parent_run is None:
+                raise TracerException(
+                    f"Parent run with UUID {run.parent_uuid} not found."
+                )
+            if isinstance(parent_run, LLMRun):
+                raise TracerException("LLM Runs are not allowed to have children. ")
+            if run.child_execution_order > parent_run.child_execution_order:
+                parent_run.child_execution_order = run.child_execution_order
         self.run_map.pop(run.uuid)
+
+    def _get_execution_order(self, parent_run_id: Optional[str] = None) -> int:
+        """Get the execution order for a run."""
+        if parent_run_id is None:
+            return 1
+
+        parent_run = self.run_map.get(parent_run_id)
+        if parent_run is None:
+            raise TracerException(f"Parent run with UUID {parent_run_id} not found.")
+
+        if isinstance(parent_run, LLMRun):
+            raise TracerException("LLM Runs are not allowed to have children. ")
+
+        return parent_run.child_execution_order + 1
 
     def on_llm_start(
         self,
@@ -110,6 +130,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if run_id is None:
             run_id = str(uuid4())
 
+        execution_order = self._get_execution_order(parent_run_id)
         llm_run = LLMRun(
             uuid=run_id,
             parent_uuid=parent_run_id,
@@ -117,7 +138,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
             prompts=prompts,
             extra=kwargs,
             start_time=datetime.utcnow(),
-            execution_order=self.execution_order,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
             session_id=self.session.id,
         )
         self._start_trace(llm_run)
@@ -170,6 +192,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if run_id is None:
             run_id = str(uuid4())
 
+        execution_order = self._get_execution_order(parent_run_id)
         chain_run = ChainRun(
             uuid=run_id,
             parent_uuid=parent_run_id,
@@ -177,7 +200,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
             inputs=inputs,
             extra=kwargs,
             start_time=datetime.utcnow(),
-            execution_order=self.execution_order,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
             child_runs=[],
             session_id=self.session.id,
         )
@@ -231,6 +255,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if run_id is None:
             run_id = str(uuid4())
 
+        execution_order = self._get_execution_order(parent_run_id)
         tool_run = ToolRun(
             uuid=run_id,
             parent_uuid=parent_run_id,
@@ -240,7 +265,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
             tool_input=input_str,
             extra=kwargs,
             start_time=datetime.utcnow(),
-            execution_order=self.execution_order,
+            execution_order=execution_order,
+            child_execution_order=execution_order,
             child_runs=[],
             session_id=self.session.id,
         )
@@ -276,3 +302,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         tool_run.error = repr(error)
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)
+
+    def __deepcopy__(self, memo: dict) -> BaseTracer:
+        """Deepcopy the tracer."""
+        return self
+
+    def __copy__(self) -> BaseTracer:
+        """Copy the tracer."""
+        return self
