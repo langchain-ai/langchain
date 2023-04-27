@@ -32,7 +32,7 @@ FULL_ANSWER = """\
 {{
     "query": "teenager love",
     "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), \
-lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\gg\"))"
+lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
 }}"""
 
 NO_FILTER_ANSWER = """\

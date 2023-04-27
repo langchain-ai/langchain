@@ -33,7 +33,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             parsed = parse_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
-            if parsed["filter"] == "NO_FILTER":
+            if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
