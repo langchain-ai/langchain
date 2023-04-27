@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def _lazy_import_pexpect() -> pexpect:
     """Import pexpect only when needed."""
     if platform.system() == "Windows":
-        raise ValueError("Persistent bash processes are not yet supported on Windows")
+        raise ValueError("Persistent bash processes are not yet supported on Windows.")
     try:
         import pexpect
 
