@@ -33,7 +33,7 @@ def test_run_returns_no_result(api_client: ArxivAPIWrapper) -> None:
     assert "No good Arxiv Result was found" == output
 
 
-def assert_docs(docs: List[Document]):
+def assert_docs(docs: List[Document]) -> None:
     for doc in docs:
         assert doc.page_content
         assert doc.metadata
