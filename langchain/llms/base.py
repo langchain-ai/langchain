@@ -332,11 +332,6 @@ class LLM(BaseLLM):
                 raise ValidationError('text must be str.')
         return LLMResult(generations=generations)
 
-    @property
-    def _identifying_params(self):
-        """Get the identifying parameters."""
-        return {"maxToken": self.maxToken}
-
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
     ) -> LLMResult:
