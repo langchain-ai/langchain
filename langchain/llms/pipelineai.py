@@ -91,7 +91,6 @@ class PipelineAI(LLM, BaseModel):
             )
         client = PipelineCloud(token=self.pipeline_api_key)
         params = self.pipeline_kwargs or {}
-        print(prompt)
 
         run = client.run_pipeline(self.pipeline_key, [prompt, params])
         try:
