@@ -18,7 +18,8 @@ class ConstitutionalChain(Chain):
 
             from langchain.llms import OpenAI
             from langchain.chains import LLMChain, ConstitutionalChain
-            from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
+            from langchain.chains.constitutional_ai.models \
+                import ConstitutionalPrinciple
 
             llm = OpenAI()
 
