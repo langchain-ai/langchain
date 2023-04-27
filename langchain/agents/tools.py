@@ -1,7 +1,7 @@
 """Interface for tools."""
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, validate_arguments, validator
 
@@ -30,55 +30,43 @@ class Tool(BaseTool):
 
     @property
     def args(self) -> dict:
+        """The tool's input arguments."""
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         inferred_model = validate_arguments(self.func).model  # type: ignore
-        filtered_args = get_filtered_args(inferred_model, self.func, {"args", "kwargs"})
+        filtered_args = get_filtered_args(
+            inferred_model, self.func, invalid_args={"args", "kwargs"}
+        )
         if filtered_args:
             return filtered_args
+        # For backwards compatability, if the function signature is ambiguous,
+        # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _to_args_and_kwargs(self, tool_input: str | Dict) -> Tuple[Tuple, Dict]:
+        """Convert tool input to pydantic model."""
+        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        if self.is_single_input:
+            # For backwards compatability. If no schema is inferred,
+            # the tool must assume it should be run with a single input
+            all_args = list(args) + list(kwargs.values())
+            if len(all_args) != 1:
+                raise ValueError(
+                    f"Too many arguments to single-input tool {self.name}."
+                    f" Args: {all_args}"
+                )
+            return tuple(all_args), {}
+        return args, kwargs
+
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool."""
         return self.func(*args, **kwargs)
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
             return await self.coroutine(*args, **kwargs)
         raise NotImplementedError("Tool does not support async")
-
-    @classmethod
-    def from_function(
-        cls,
-        func: Callable,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        return_direct: bool = False,
-        args_schema: Optional[Type[BaseModel]] = None,
-        infer_schema: bool = True,
-        **kwargs: Any,
-    ) -> "Tool":
-        name = name or func.__name__
-        description = description or func.__doc__
-        assert (
-            description is not None
-        ), "Function must have a docstring if description not provided."
-
-        # Description example:
-        # search_api(query: str) - Searches the API for the query.
-        description = f"{name}{signature(func)} - {description.strip()}"
-        _args_schema = args_schema
-        if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", func)
-        return cls(
-            name=name,
-            func=func,
-            args_schema=_args_schema,
-            description=description,
-            return_direct=return_direct,
-            **kwargs,
-        )
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
@@ -142,13 +130,21 @@ def tool(
 
     def _make_with_name(tool_name: str) -> Callable:
         def _make_tool(func: Callable) -> Tool:
-            return Tool.from_function(
-                func,
+            assert func.__doc__, "Function must have a docstring"
+            # Description example:
+            # search_api(query: str) - Searches the API for the query.
+            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
+            _args_schema = args_schema
+            if _args_schema is None and infer_schema:
+                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
+            tool_ = Tool(
                 name=tool_name,
+                func=func,
+                args_schema=_args_schema,
+                description=description,
                 return_direct=return_direct,
-                args_schema=args_schema,
-                infer_schema=infer_schema,
             )
+            return tool_
 
         return _make_tool
 

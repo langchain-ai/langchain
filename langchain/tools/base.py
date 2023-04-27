@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
@@ -17,15 +17,6 @@ from pydantic.main import ModelMetaclass
 
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
-
-
-def _to_args_and_kwargs(run_input: Union[str, Dict]) -> Tuple[Sequence, dict]:
-    # For backwards compatability, if run_input is a string,
-    # pass as a positional argument.
-    if isinstance(run_input, str):
-        return (run_input,), {}
-    else:
-        return [], run_input
 
 
 class SchemaAnnotationError(TypeError):
@@ -84,13 +75,13 @@ def _create_subset_model(
 def get_filtered_args(
     inferred_model: Type[BaseModel],
     func: Callable,
-    invalid_keys: Optional[Set[str]] = None,
+    invalid_args: Optional[Set[str]] = None,
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    invalid_keys = invalid_keys or set()
-    return {k: schema[k] for k in valid_keys if k not in invalid_keys}
+    invalid_args = invalid_args or set()
+    return {k: schema[k] for k in valid_keys if k not in invalid_args}
 
 
 def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
@@ -165,6 +156,14 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously."""
 
+    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+        # For backwards compatability, if run_input is a string,
+        # pass as a positional argument.
+        if isinstance(tool_input, str):
+            return (tool_input,), {}
+        else:
+            return (), tool_input
+
     def run(
         self,
         tool_input: Union[str, Dict],
@@ -187,7 +186,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             **kwargs,
         )
         try:
-            tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
             observation = self._run(*tool_args, **tool_kwargs)
         except (Exception, KeyboardInterrupt) as e:
             self.callback_manager.on_tool_error(e, verbose=verbose_)
@@ -229,8 +228,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             )
         try:
             # We then call the tool on the tool input to get an observation
-            args, kwargs = _to_args_and_kwargs(tool_input)
-            observation = await self._arun(*args, **kwargs)
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            observation = await self._arun(*tool_args, **tool_kwargs)
         except (Exception, KeyboardInterrupt) as e:
             if self.callback_manager.is_async:
                 await self.callback_manager.on_tool_error(e, verbose=verbose_)
