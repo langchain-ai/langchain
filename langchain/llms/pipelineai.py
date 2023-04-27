@@ -91,10 +91,11 @@ class PipelineAI(LLM, BaseModel):
             )
         client = PipelineCloud(token=self.pipeline_api_key)
         params = self.pipeline_kwargs or {}
+        print(prompt)
 
-        run = client.pipeline_run(self.pipeline_key, [prompt, params])
+        run = client.run_pipeline(self.pipeline_key, [prompt, params])
         try:
-            text = run.result_preview
+            text = run.result_preview[0][0]
         except AttributeError:
             raise AttributeError(
                 f"A pipeline run should have a `result_preview` attribute."
