@@ -217,7 +217,9 @@ class SQLDatabaseSequentialChain(Chain):
             "query": inputs[self.input_key],
             "table_names": table_names,
         }
-        table_names_to_use = self.decider_chain.predict_and_parse(**llm_inputs)
+        _lowercased_table_names = [name.lower() for name in _table_names]
+        table_names_from_chain = self.decider_chain.predict_and_parse(**llm_inputs)
+        table_names_to_use = [name for name in table_names_from_chain if name.lower() in _lowercased_table_names]
         self.callback_manager.on_text(
             "Table names to use:", end="\n", verbose=self.verbose
         )
