@@ -35,6 +35,7 @@ from langchain.llms import (
     Modal,
     OpenAI,
     Petals,
+    PipelineAI,
     SagemakerEndpoint,
     StochasticAI,
     Writer,
@@ -47,9 +48,10 @@ from langchain.prompts import (
     PromptTemplate,
 )
 from langchain.sql_database import SQLDatabase
-from langchain.utilities import ArxivAPIWrapper
+from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -93,6 +95,7 @@ __all__ = [
     "Modal",
     "OpenAI",
     "Petals",
+    "PipelineAI",
     "StochasticAI",
     "Writer",
     "BasePromptTemplate",
@@ -106,6 +109,7 @@ __all__ = [
     "HuggingFacePipeline",
     "SQLDatabase",
     "SQLDatabaseChain",
+    "PowerBIDataset",
     "FAISS",
     "MRKLChain",
     "VectorDBQA",

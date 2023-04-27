@@ -177,4 +177,5 @@ Additional collection of resources we think may be useful as you develop your ap
    ./tracing.md
    ./use_cases/model_laboratory.ipynb
    Discord <https://discord.gg/6adMQxSpJS>
+   ./youtube.md
    Production Support <https://forms.gle/57d8AmXBYp8PP8tZA>

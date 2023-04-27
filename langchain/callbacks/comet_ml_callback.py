@@ -130,7 +130,7 @@ class CometCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         warning = (
             "The comet_ml callback is currently in beta and is subject to change "
             "based on updates to `langchain`. Please report any issues to "
-            "https://github.com/comet-ml/issue_tracking/issues with the tag "
+            "https://github.com/comet-ml/issue-tracking/issues with the tag "
             "`langchain`."
         )
         self.comet_ml.LOGGER.warning(warning)
