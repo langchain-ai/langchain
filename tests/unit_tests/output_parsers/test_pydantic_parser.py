@@ -24,7 +24,7 @@ class TestModel(BaseModel):
 
 
 # Prevent pytest from trying to run tests on TestModel
-TestModel.__test__ = False
+TestModel.__test__ = False  # type: ignore[attr-defined]
 
 
 DEF_RESULT = """{
