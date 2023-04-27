@@ -21,7 +21,7 @@ def _lazy_import_pexpect() -> pexpect:
     except ImportError:
         raise ImportError(
             "pexpect required for persistent bash processes."
-            " to install, run `pip install pexpect`"
+            " To install, run `pip install pexpect`."
         )
     return pexpect
 
