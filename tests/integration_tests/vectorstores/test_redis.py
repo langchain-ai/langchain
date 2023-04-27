@@ -64,7 +64,4 @@ def test_redis_add_texts_to_existing() -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
-
-
-def test_redis_drop_index() -> None:
     assert drop(TEST_INDEX_NAME)

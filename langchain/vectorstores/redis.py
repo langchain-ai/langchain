@@ -22,25 +22,28 @@ logger = logging.getLogger(__name__)
 # required modules
 REDIS_REQUIRED_MODULES = [
     {"name": "search", "ver": 20400},
+    {"name": "searchlight", "ver": 20400}
 ]
 
 
-def _check_redis_module_exist(client: RedisType, modules: List[dict]) -> None:
+def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -> None:
     """Check if the correct Redis modules are installed."""
     installed_modules = client.module_list()
     installed_modules = {
         module[b"name"].decode("utf-8"): module for module in installed_modules
     }
-    for module in modules:
-        if module["name"] not in installed_modules or int(
+    for module in required_modules:
+        if module["name"] in installed_modules and int(
             installed_modules[module["name"]][b"ver"]
-        ) < int(module["ver"]):
-            error_message = (
-                "You must add the RediSearch (>= 2.4) module from Redis Stack. "
-                "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
-            )
-            logging.error(error_message)
-            raise ValueError(error_message)
+        ) >= int(module["ver"]):
+            return True
+    # otherwise raise error
+    error_message = (
+        "You must add the RediSearch (>= 2.4) module from Redis Stack. "
+        "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
+    )
+    logging.error(error_message)
+    raise ValueError(error_message)
 
 
 def _check_index_exists(client: RedisType, index_name: str) -> bool:
@@ -65,6 +68,23 @@ def _redis_prefix(index_name: str) -> str:
 
 
 class Redis(VectorStore):
+    """Wrapper around Redis vector database.
+
+    To use, you should have the ``redis`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.vectorstores import Redis
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Redis(
+                redis_url="redis://username:password@localhost:6379"
+                index_name="my-index",
+                embedding_function=embeddings.embed_query,
+            )
+    """
     def __init__(
         self,
         redis_url: str,
@@ -101,7 +121,6 @@ class Redis(VectorStore):
 
     def _create_index(self, dim: int = 1536):
         try:
-            import redis
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         except ImportError:
@@ -141,29 +160,48 @@ class Redis(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        embeddings: Optional[List[List[float]]] = None,
+        keys: Optional[List[str]] = None,
+        batch_size: int = 1000,
         **kwargs: Any,
     ) -> List[str]:
-        """Add texts data to an existing index."""
-        prefix = _redis_prefix(self.index_name)
-        keys = kwargs.get("keys")
+        """Add more texts to the vectorstore.
+
+        Args:
+            texts (Iterable[str]): Iterable of strings/text to add to the vectorstore.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas. Defaults to None.
+            embeddings (Optional[List[List[float]]], optional): Optional pre-generated embeddings. Defaults to None.
+            keys (Optional[List[str]], optional): Optional key values to use as ids. Defaults to None.
+            batch_size (int, optional): Batch size to use for writes. Defaults to 1000.
+
+        Returns:
+            List[str]: List of ids added to the vectorstore
+        """
         ids = []
+        prefix = _redis_prefix(self.index_name)
+
         # Write data to redis
         pipeline = self.client.pipeline(transaction=False)
         for i, text in enumerate(texts):
-            # Use provided key otherwise use default key
+            # Use provided values by default or fallback
             key = keys[i] if keys else _redis_key(prefix)
             metadata = metadatas[i] if metadatas else {}
+            embedding = embeddings[i] if embeddings else self.embedding_function(text)
             pipeline.hset(
                 key,
                 mapping={
                     self.content_key: text,
-                    self.vector_key: np.array(
-                        self.embedding_function(text), dtype=np.float32
-                    ).tobytes(),
+                    self.vector_key: np.array(embedding, dtype=np.float32).tobytes(),
                     self.metadata_key: json.dumps(metadata),
                 },
             )
             ids.append(key)
+
+            # Write batch
+            if i % batch_size == 0:
+                pipeline.execute()
+
+        # Cleanup final batch
         pipeline.execute()
         return ids
 
@@ -208,7 +246,6 @@ class Redis(VectorStore):
 
         """
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
     def _prepare_query(self, k: int):
@@ -257,9 +294,14 @@ class Redis(VectorStore):
             .tobytes()
         }
 
-        # perform vector search
-        results = self.client.ft(self.index_name).search(redis_query, params_dict)
+        # Perform vector search
+        results = (
+            self.client
+              .ft(self.index_name)
+              .search(redis_query, params_dict)
+        )
 
+        # Prepare document results
         docs = [
             (
                 Document(
@@ -284,15 +326,15 @@ class Redis(VectorStore):
         vector_key: str = "content_vector",
         **kwargs: Any,
     ) -> Redis:
-        """Construct RediSearch wrapper from raw documents.
+        """Create a Redis vectorstore from raw documents.
         This is a user-friendly interface that:
             1. Embeds documents.
-            2. Creates a new index for the embeddings in the RediSearch instance.
-            3. Adds the documents to the newly created RediSearch index.
+            2. Creates a new index for the embeddings in Redis.
+            3. Adds the documents to the newly created Redis index.
         This is intended to be a quick way to get started.
         Example:
             .. code-block:: python
-                from langchain import RediSearch
+                from langchain.vectorstores import Redis
                 from langchain.embeddings import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 redisearch = RediSearch.from_texts(
@@ -324,26 +366,11 @@ class Redis(VectorStore):
         # Create embeddings over documents
         embeddings = embedding.embed_documents(texts)
 
-        # Create prefix for the document keys
-        prefix = _redis_prefix(index_name)
-
         # Create the search index
         instance._create_index(dim=len(embeddings[0]))
 
-        # Write data to Redis
-        pipeline = instance.client.pipeline(transaction=False)
-        for i, text in enumerate(texts):
-            key = _redis_key(prefix)
-            metadata = metadatas[i] if metadatas else {}
-            pipeline.hset(
-                key,
-                mapping={
-                    content_key: text,
-                    vector_key: np.array(embeddings[i], dtype=np.float32).tobytes(),
-                    metadata_key: json.dumps(metadata),
-                },
-            )
-        pipeline.execute()
+        # Add data to Redis
+        instance.add_texts(texts, metadatas, embeddings)
         return instance
 
     @staticmethod
