@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import copy
 import functools
-import logging
 import os
 import uuid
 from contextlib import contextmanager
@@ -120,7 +119,7 @@ class BaseRunManager(RunManagerMixin):
         run_id: str,
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: List[BaseCallbackHandler],
-        parent_run_id: str,
+        parent_run_id: Optional[str] = None,
     ) -> None:
         """Initialize run manager."""
         self.run_id = run_id
@@ -132,29 +131,60 @@ class BaseRunManager(RunManagerMixin):
 class RunManager(BaseRunManager):
     """Sync Run Manager."""
 
-    def on_text(self, text: str, **kwargs: Any) -> Any:
+    def on_text(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> Any:
         """Run when text is received."""
-        _handle_event(self.handlers, "on_text", None, text, **kwargs)
+        _handle_event(
+            self.handlers,
+            "on_text",
+            None,
+            text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
 
 
 class AsyncRunManager(BaseRunManager):
     """Async Run Manager."""
 
-    async def on_text(self, text: str, **kwargs: Any) -> Any:
+    async def on_text(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> Any:
         """Run when text is received."""
-        await _ahandle_event(self.handlers, "on_text", None, text, **kwargs)
+        await _ahandle_event(
+            self.handlers,
+            "on_text",
+            None,
+            text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     """Callback manager for LLM run."""
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+    def on_llm_new_token(
+        self,
+        token: str,
+        *,
+        run_id: str,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         """Run when LLM generates a new token."""
         _handle_event(
             self.handlers,
             "on_llm_new_token",
             "ignore_llm",
-            token,
+            token=token,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -192,7 +222,14 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
-    async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+    async def on_llm_new_token(
+        self,
+        token: str,
+        *,
+        run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         """Run when LLM generates a new token."""
         await _ahandle_event(
             self.handlers,
@@ -366,13 +403,17 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(
+        self,
+        output_str: str,
+        **kwargs: Any,
+    ) -> None:
         """Run when tool ends running."""
         _handle_event(
             self.handlers,
             "on_tool_end",
             "ignore_agent",
-            output,
+            output_str,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -404,13 +445,13 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
-    async def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    async def on_tool_end(self, output_str: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         await _ahandle_event(
             self.handlers,
             "on_tool_end",
             "ignore_agent",
-            output,
+            output_str,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -637,48 +678,47 @@ T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 def _configure(
     callback_manager_cls: Type[T],
-    inheritable_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
-    local_callbacks: Optional[Union[T, List[BaseCallbackHandler]]] = None,
+    inheritable_callbacks: Callbacks = None,
+    local_callbacks: Callbacks = None,
     verbose: bool = False,
 ) -> T:
     """Configure the callback manager."""
-    callback_manager: Optional[T] = None
+    callback_manager = callback_manager_cls([])
     if inheritable_callbacks or local_callbacks:
-        if isinstance(inheritable_callbacks, list) or not inheritable_callbacks:
+        if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
+            inheritable_callbacks_: List[BaseCallbackHandler] = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks if inheritable_callbacks else [],
-                inheritable_handlers=inheritable_callbacks
-                if inheritable_callbacks
-                else [],
+                handlers=inheritable_callbacks_,
+                inheritable_handlers=inheritable_callbacks_,
             )
         else:
-            callback_manager = inheritable_callbacks
+            callback_manager = callback_manager_cls(
+                handlers=inheritable_callbacks.handlers,
+                inheritable_handlers=inheritable_callbacks.inheritable_handlers,
+                parent_run_id=inheritable_callbacks.parent_run_id,
+            )
         callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
             if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
-        [
+        for handler in local_handlers_:
             callback_manager.add_handler(copy.deepcopy(handler), False)
-            for handler in local_handlers_
-        ]
 
-    if not callback_manager:
-        callback_manager = callback_manager_cls([])
     tracer = tracing_callback_var.get()
     open_ai = openai_callback_var.get()
-    tracing_enabled = (
+    tracing_enabled_ = (
         os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
     )
-    if verbose or tracing_enabled or open_ai is not None:
+    if verbose or tracing_enabled_ or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(StdOutCallbackHandler(), False)
 
-        if tracing_enabled and not any(
+        if tracing_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
