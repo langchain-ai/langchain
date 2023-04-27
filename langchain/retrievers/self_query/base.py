@@ -6,7 +6,7 @@ from langchain import LLMChain
 from langchain.chains.query_constructor.base import (
     load_query_constructor_chain,
 )
-from langchain.chains.query_constructor.query_language import StructuredQuery, Visitor
+from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.schema import BaseLanguageModel, BaseRetriever, Document

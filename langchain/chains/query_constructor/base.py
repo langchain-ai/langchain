@@ -3,6 +3,11 @@ import json
 from typing import Any, Callable, List, Optional, Sequence
 
 from langchain import BasePromptTemplate, FewShotPromptTemplate, LLMChain
+from langchain.chains.query_constructor.ir import (
+    Comparator,
+    Operator,
+    StructuredQuery,
+)
 from langchain.chains.query_constructor.parser import get_parser
 from langchain.chains.query_constructor.prompt import (
     DEFAULT_EXAMPLES,
@@ -10,11 +15,6 @@ from langchain.chains.query_constructor.prompt import (
     DEFAULT_SCHEMA,
     DEFAULT_SUFFIX,
     EXAMPLE_PROMPT,
-)
-from langchain.chains.query_constructor.query_language import (
-    Comparator,
-    Operator,
-    StructuredQuery,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.output_parsers.structured import parse_json_markdown

@@ -1,7 +1,7 @@
 """"""
 from typing import Dict, List, Tuple, Union
 
-from langchain.chains.query_constructor.query_language import (
+from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
     Operation,
