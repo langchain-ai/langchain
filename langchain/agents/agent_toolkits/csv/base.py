@@ -17,4 +17,6 @@ def create_csv_agent(
     import pandas as pd
 
     df = pd.read_csv(path, **(pandas_kwargs or {}))
-    return create_pandas_dataframe_agent(llm, df, agent_kwargs=agent_kwargs, **kwargs)
+    return create_pandas_dataframe_agent(
+        llm=llm, df=df, agent_kwargs=agent_kwargs, **kwargs
+    )
