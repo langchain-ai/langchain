@@ -33,6 +33,10 @@ It implements a Question Answering app and contains instructions for deploying t
 
 A minimal example on how to run LangChain on Vercel using Flask.
 
+## [Fly.io](https://github.com/fly-apps/hello-fly-langchain)
+
+A minimal example of how to deploy LangChain to [Fly.io](https://fly.io/) using Flask.
+
 ## [Digitalocean App Platform](https://github.com/homanp/digitalocean-langchain)
 
 A minimal example on how to deploy LangChain to DigitalOcean App Platform.
