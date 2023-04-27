@@ -1,6 +1,7 @@
 """Interface for vector stores."""
 from __future__ import annotations
 
+import warnings
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
@@ -124,10 +125,14 @@ class VectorStore(ABC):
             similarity < 0.0 or similarity > 1.0
             for _, similarity in docs_and_similarities
         ):
-            raise ValueError(
+            warnings.warn(
                 "Relevance scores must be between"
                 f" 0 and 1, got {docs_and_similarities}"
             )
+        score_threshold = kwargs.get('score_threshold', None)
+        if score_threshold is not None:
+            docs_and_similarities = [(doc, similarity) for doc, similarity in docs_and_similarities 
+                                     if similarity > score_threshold]
         return docs_and_similarities
 
     def _similarity_search_with_relevance_scores(
@@ -324,13 +329,26 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "mmr"):
+            if search_type not in ("similarity", "similarity_score_threshold", "mmr"):
                 raise ValueError(f"search_type of {search_type} not allowed.")
+            if search_type == "similarity_score_threshold":
+                score_threshold = values["search_kwargs"].get("score_threshold", None)
+                if score_threshold is None and not isinstance(score_threshold, float):
+                    raise ValueError(
+                        "`score_threshold` is not specified with a float value in `search_kwargs`."
+                    )
         return values
 
     def get_relevant_documents(self, query: str) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
+        elif self.search_type == "similarity_score_threshold":
+            docs_and_similarities = (
+                self.vectorstore.similarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
