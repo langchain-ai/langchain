@@ -1,6 +1,6 @@
 """Python agent."""
 
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.python.prompt import PREFIX
@@ -17,7 +17,8 @@ def create_python_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
     prefix: str = PREFIX,
-    **kwargs: Any,
+    agent_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
     tools = [tool]
@@ -28,5 +29,9 @@ def create_python_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
+    agent = ZeroShotAgent(
+        llm_chain=llm_chain, allowed_tools=tool_names, *(agent_kwargs or {})
+    )
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent, tools=tools, verbose=verbose, **kwargs
+    )

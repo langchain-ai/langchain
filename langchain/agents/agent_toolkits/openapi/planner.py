@@ -2,7 +2,7 @@
 import json
 import re
 from functools import partial
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 from pydantic import Field
@@ -262,6 +262,8 @@ def create_openapi_agent(
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
     verbose: bool = True,
+    agent_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Instantiate API planner and controller for a given spec.
 
@@ -288,5 +290,8 @@ def create_openapi_agent(
     agent = ZeroShotAgent(
         llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
         allowed_tools=[tool.name for tool in tools],
+        **(agent_kwargs or {}),
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=verbose)
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent, tools=tools, verbose=verbose, **kwargs
+    )

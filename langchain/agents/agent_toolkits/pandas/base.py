@@ -1,5 +1,5 @@
 """Agent for working with pandas objects."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.pandas.prompt import PREFIX, SUFFIX
@@ -22,7 +22,8 @@ def create_pandas_dataframe_agent(
     max_iterations: Optional[int] = 15,
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
-    **kwargs: Any,
+    agent_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
     import pandas as pd
@@ -46,7 +47,7 @@ def create_pandas_dataframe_agent(
         llm_chain=llm_chain,
         allowed_tools=tool_names,
         callback_manager=callback_manager,
-        **kwargs,
+        **(agent_kwargs or {}),
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
@@ -57,4 +58,5 @@ def create_pandas_dataframe_agent(
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
         callback_manager=callback_manager,
+        **kwargs,
     )

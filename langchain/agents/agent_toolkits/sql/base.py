@@ -1,5 +1,5 @@
 """SQL agent."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_SUFFIX
@@ -24,7 +24,8 @@ def create_sql_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     verbose: bool = False,
-    **kwargs: Any,
+    agent_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
     tools = toolkit.get_tools()
@@ -42,7 +43,9 @@ def create_sql_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    agent = ZeroShotAgent(
+        llm_chain=llm_chain, allowed_tools=tool_names, **(agent_kwargs or {})
+    )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
@@ -50,4 +53,5 @@ def create_sql_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        **kwargs,
     )
