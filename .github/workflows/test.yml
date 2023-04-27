@@ -27,8 +27,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
+      - name: Build wheel
+        run: poetry build
+      - name: Create virtual environment and install wheel
+        run: |
+          python -m venv .ci_venv
+          . .ci_venv/bin/activate
+          whl_file=$(find dist -name "*.whl" | head -n 1)
+          pip install "${whl_file}[ci-testing]"
       - name: Run unit tests
         run: |
-          make test
+          . .ci_venv/bin/activate
+          pytest tests/unit_tests

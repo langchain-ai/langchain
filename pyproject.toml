@@ -74,6 +74,17 @@ azure-cosmos = {version="^4.4.0b1", optional=true}
 lark = {version="^1.1.5", optional=true}
 lancedb = {version = "^0.1", optional = true}
 pexpect = {version = "^4.8.0", optional = true}
+# Used for CI testing
+pytest = {version = "^7.3.0", optional = true}
+pytest-cov = {version = "^4.0.0", optional = true}
+pytest-dotenv = {version = "^0.5.2", optional = true}
+duckdb-engine = {version = "^0.7.0", optional = true}
+pytest-watcher = {version = "^0.2.6", optional = true}
+freezegun = {version = "^1.2.2", optional = true}
+responses = {version = "^0.22.0", optional = true}
+pytest-asyncio = {version = "^0.20.3", optional = true}
+
+
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -152,6 +163,7 @@ cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
 azure = ["azure-identity", "azure-cosmos", "openai", "azure-core"]
 all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "azure-cosmos", "lancedb", "lark", "pexpect"]
+ci-testing = ["pytest", "pytest-cov", "pytest-dotenv", "duckdb-engine", "pytest-watcher", "freezegun", "responses", "pytest-asyncio", "pandas"]
 
 [tool.ruff]
 select = [
