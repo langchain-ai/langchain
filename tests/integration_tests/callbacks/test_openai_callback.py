@@ -1,3 +1,4 @@
+"""Integration tests for the langchain tracer module."""
 import asyncio
 
 import pytest
@@ -7,7 +8,7 @@ from langchain.callbacks import get_openai_callback
 
 
 @pytest.mark.asyncio
-async def test_openai_callback():
+async def test_openai_callback() -> None:
     llm = OpenAI(temperature=0)
     with get_openai_callback() as cb:
         llm("What is the square root of 4?")

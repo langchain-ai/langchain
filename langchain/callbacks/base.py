@@ -90,7 +90,7 @@ class ToolManagerMixin:
 
     def on_tool_end(
         self,
-        output_str: str,
+        output: str,
         *,
         run_id: str,
         parent_run_id: Optional[str] = None,
@@ -273,7 +273,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_tool_end(
         self,
-        output_str: str,
+        output: str,
         *,
         run_id: str,
         parent_run_id: Optional[str] = None,

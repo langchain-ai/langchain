@@ -1,3 +1,4 @@
+"""Integration tests for the langchain tracer module."""
 import asyncio
 import os
 import time
@@ -18,26 +19,20 @@ questions = [
 ]
 
 
-def test_tracing_sequential():
+def test_tracing_sequential() -> None:
     os.environ["LANGCHAIN_TRACING"] = "true"
 
-    def generate_serially():
-        for q in questions[:3]:
-            llm = OpenAI(temperature=0)
-            tools = load_tools(["llm-math", "serpapi"], llm=llm)
-            agent = initialize_agent(
-                tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-            )
-            agent.run(q)
-
-    s = time.perf_counter()
-    generate_serially()
-    elapsed = time.perf_counter() - s
-    print(f"Serial executed in {elapsed:0.2f} seconds.")
+    for q in questions[:3]:
+        llm = OpenAI(temperature=0)
+        tools = load_tools(["llm-math", "serpapi"], llm=llm)
+        agent = initialize_agent(
+            tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        )
+        agent.run(q)
 
 
 @pytest.mark.asyncio
-async def test_tracing_concurrent():
+async def test_tracing_concurrent() -> None:
     os.environ["LANGCHAIN_TRACING"] = "true"
     aiosession = ClientSession()
     llm = OpenAI(temperature=0)
@@ -50,7 +45,7 @@ async def test_tracing_concurrent():
     await aiosession.close()
 
 
-def test_tracing_context_manager():
+def test_tracing_context_manager() -> None:
     llm = OpenAI(temperature=0)
     tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
@@ -66,7 +61,7 @@ def test_tracing_context_manager():
 
 
 @pytest.mark.asyncio
-async def test_tracing_context_manager_async():
+async def test_tracing_context_manager_async() -> None:
     llm = OpenAI(temperature=0)
     async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(

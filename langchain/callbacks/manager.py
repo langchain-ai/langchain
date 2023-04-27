@@ -405,7 +405,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
 
     def on_tool_end(
         self,
-        output_str: str,
+        output: str,
         **kwargs: Any,
     ) -> None:
         """Run when tool ends running."""
@@ -413,7 +413,7 @@ class CallbackManagerForToolRun(RunManager, ToolManagerMixin):
             self.handlers,
             "on_tool_end",
             "ignore_agent",
-            output_str,
+            output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -445,13 +445,13 @@ class AsyncCallbackManagerForToolRun(AsyncRunManager, ToolManagerMixin):
         manager.set_handlers(self.inheritable_handlers)
         return manager
 
-    async def on_tool_end(self, output_str: str, **kwargs: Any) -> None:
+    async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""
         await _ahandle_event(
             self.handlers,
             "on_tool_end",
             "ignore_agent",
-            output_str,
+            output,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             **kwargs,
@@ -686,7 +686,9 @@ def _configure(
     callback_manager = callback_manager_cls([])
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
-            inheritable_callbacks_: List[BaseCallbackHandler] = inheritable_callbacks or []
+            inheritable_callbacks_: List[BaseCallbackHandler] = (
+                inheritable_callbacks or []
+            )
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks_,
                 inheritable_handlers=inheritable_callbacks_,

@@ -85,7 +85,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
         self.run_map[run.uuid] = run
 
-    def _end_trace(self, run) -> None:
+    def _end_trace(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """End a trace for a run."""
         if not run.parent_uuid:
             self._persist_run(run)
@@ -119,8 +119,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: str = None,
-        parent_run_id: str = None,
+        *,
+        run_id: str,
+        parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
@@ -144,17 +145,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
 
-    def on_llm_end(
-        self, response: LLMResult, run_id: str = None, **kwargs: Any
-    ) -> None:
+    def on_llm_end(self, response: LLMResult, *, run_id: str, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_end callback.")
 
-        if not self.run_map or not isinstance(self.run_map[run_id], LLMRun):
+        llm_run = self.run_map.get(run_id)
+        if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
-        llm_run = self.run_map[run_id]
         llm_run.response = response
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
@@ -162,17 +161,18 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_llm_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: str = None,
+        *,
+        run_id: str,
         **kwargs: Any,
     ) -> None:
         """Handle an error for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_error callback.")
 
-        if not self.run_map or not isinstance(self.run_map[run_id], LLMRun):
+        llm_run = self.run_map.get(run_id)
+        if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
-        llm_run = self.run_map[run_id]
         llm_run.error = repr(error)
         llm_run.end_time = datetime.utcnow()
         self._end_trace(llm_run)
@@ -181,16 +181,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
-        run_id: str = None,
-        parent_run_id: str = None,
+        *,
+        run_id: str,
+        parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
         if self.session is None:
             self.session = self.load_default_session()
-
-        if run_id is None:
-            run_id = str(uuid4())
 
         execution_order = self._get_execution_order(parent_run_id)
         chain_run = ChainRun(
@@ -208,16 +206,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._start_trace(chain_run)
 
     def on_chain_end(
-        self, outputs: Dict[str, Any], run_id: str = None, **kwargs: Any
+        self, outputs: Dict[str, Any], *, run_id: str, **kwargs: Any
     ) -> None:
         """End a trace for a chain run."""
-        if not run_id:
-            raise TracerException("No run_id provided for on_chain_end callback.")
-
-        if not self.run_map or not isinstance(self.run_map[run_id], ChainRun):
+        chain_run = self.run_map.get(run_id)
+        if chain_run is None or not isinstance(chain_run, ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
-        chain_run = self.run_map[run_id]
         chain_run.outputs = outputs
         chain_run.end_time = datetime.utcnow()
         self._end_trace(chain_run)
@@ -225,17 +220,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_chain_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: str = None,
+        *,
+        run_id: str,
         **kwargs: Any,
     ) -> None:
         """Handle an error for a chain run."""
-        if not run_id:
-            raise TracerException("No run_id provided for on_chain_error callback.")
-
-        if not self.run_map or not isinstance(self.run_map[run_id], ChainRun):
+        chain_run = self.run_map.get(run_id)
+        if chain_run is None or not isinstance(chain_run, ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
-        chain_run = self.run_map[run_id]
         chain_run.error = repr(error)
         chain_run.end_time = datetime.utcnow()
         self._end_trace(chain_run)
@@ -244,16 +237,14 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         serialized: Dict[str, Any],
         input_str: str,
-        run_id: str = None,
-        parent_run_id: str = None,
+        *,
+        run_id: str,
+        parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
         if self.session is None:
             self.session = self.load_default_session()
-
-        if run_id is None:
-            run_id = str(uuid4())
 
         execution_order = self._get_execution_order(parent_run_id)
         tool_run = ToolRun(
@@ -272,15 +263,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(tool_run)
 
-    def on_tool_end(self, output: str, run_id: str = None, **kwargs: Any) -> None:
+    def on_tool_end(self, output: str, *, run_id: str, **kwargs: Any) -> None:
         """End a trace for a tool run."""
-        if not run_id:
-            raise TracerException("No run_id provided for on_tool_end callback.")
-
-        if not self.run_map or not isinstance(self.run_map[run_id], ToolRun):
+        tool_run = self.run_map.get(run_id)
+        if tool_run is None or not isinstance(tool_run, ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
-        tool_run = self.run_map[run_id]
         tool_run.output = output
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)
@@ -288,17 +276,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def on_tool_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: str = None,
+        *,
+        run_id: str,
         **kwargs: Any,
     ) -> None:
         """Handle an error for a tool run."""
-        if not run_id:
-            raise TracerException("No run_id provided for on_tool_error callback.")
-
-        if not self.run_map or not isinstance(self.run_map[run_id], ToolRun):
+        tool_run = self.run_map.get(run_id)
+        if tool_run is None or not isinstance(tool_run, ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
-        tool_run = self.run_map[run_id]
         tool_run.error = repr(error)
         tool_run.end_time = datetime.utcnow()
         self._end_trace(tool_run)

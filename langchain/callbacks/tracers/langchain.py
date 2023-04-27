@@ -20,7 +20,7 @@ from langchain.callbacks.tracers.schemas import (
 class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    def __init__(self, session_name="default", **kwargs: Any) -> None:
+    def __init__(self, session_name: str = "default", **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""
         super().__init__(**kwargs)
         self._endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
