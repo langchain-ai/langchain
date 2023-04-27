@@ -8,6 +8,7 @@ except ImportError:
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
+    FilterDirective,
     Operation,
     Operator,
 )
@@ -53,7 +54,7 @@ class QueryTransformer(Transformer):
     def program(self, *items: Any) -> tuple:
         return items
 
-    def func_call(self, func_name: Any, *args: Any) -> Union[Comparison, Operation]:
+    def func_call(self, func_name: Any, *args: Any) -> FilterDirective:
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
             return Comparison(comparator=func, attribute=args[0][0], value=args[0][1])

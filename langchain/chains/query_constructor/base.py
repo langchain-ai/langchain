@@ -1,4 +1,6 @@
 """"""
+from __future__ import annotations
+
 import json
 from typing import Any, Callable, List, Optional, Sequence
 
@@ -46,7 +48,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         cls,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
         allowed_operators: Optional[Sequence[Operator]] = None,
-    ) -> "StructuredQueryOutputParser":
+    ) -> StructuredQueryOutputParser:
         ast_parser = get_parser(
             allowed_comparators=allowed_comparators, allowed_operators=allowed_operators
         )

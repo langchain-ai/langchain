@@ -1,5 +1,5 @@
 """"""
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
     Comparator,
@@ -15,29 +15,23 @@ class PineconeTranslator(Visitor):
     allowed_operators = [Operator.AND, Operator.OR]
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
-        """"""
         if isinstance(func, Operator) and self.allowed_operators is not None:
             if func not in self.allowed_operators:
-                raise ValueError
+                raise ValueError(
+                    f"Received disallowed operator {func}. Allowed "
+                    f"comparators are {self.allowed_operators}"
+                )
         if isinstance(func, Comparator) and self.allowed_comparators is not None:
             if func not in self.allowed_comparators:
-                raise ValueError
+                raise ValueError(
+                    f"Received disallowed comparator {func}. Allowed "
+                    f"comparators are {self.allowed_comparators}"
+                )
         return f"${func}"
 
     def visit_operation(self, operation: Operation) -> Dict:
-        root: Dict = {self._format_func(operation.operator): []}
-        stack: List[Tuple[Dict, List]] = [(root, operation.arguments)]
-        while stack:
-            op_dict, op_args = stack.pop()
-            new_args: List = list(op_dict.values())[0]
-            for arg in op_args:
-                if isinstance(arg, Comparison):
-                    new_args.append(self.visit_comparison(arg))
-                else:
-                    next_op: Dict = {self._format_func(arg.operator): []}
-                    new_args.append(next_op)
-                    stack.append((next_op, arg.arguments))
-        return root
+        args = [arg.accept(self) for arg in operation.arguments]
+        return {self._format_func(operation.operator): args}
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         return {

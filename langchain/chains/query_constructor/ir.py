@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -58,17 +58,25 @@ class Comparator(str, Enum):
     LTE = "lte"
 
 
-class Comparison(Expr):
+class FilterDirective(Expr, ABC):
+    """A filtering experssion."""
+
+
+class Comparison(FilterDirective):
+    """A comparison to a value."""
+
     comparator: Comparator
     attribute: str
     value: Any
 
 
-class Operation(Expr):
+class Operation(FilterDirective):
+    """A logical operation over other directives."""
+
     operator: Operator
-    arguments: List[Union[Comparison, Operation]]
+    arguments: List[FilterDirective]
 
 
 class StructuredQuery(Expr):
     query: str
-    filter: Optional[Union[Comparison, Operation]]
+    filter: Optional[FilterDirective]
