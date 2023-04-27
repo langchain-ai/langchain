@@ -1,17 +1,20 @@
 """Base interface for large language models to expose."""
 import json
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
-from pydantic import Extra, Field, validator
-
-import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
+from pydantic import Extra, Field, validator
+from pydantic.error_wrappers import ValidationError
 
+import langchain
+
+logger = logging.getLogger(__name__)
 
 def _get_verbosity() -> bool:
     return langchain.verbose
@@ -321,9 +324,18 @@ class LLM(BaseLLM):
         # TODO: add caching here.
         generations = []
         for prompt in prompts:
-            text = self._call(prompt, stop=stop)
-            generations.append([Generation(text=text)])
+            try:
+                text = self._call(prompt, stop=stop)
+                generations.append([Generation(text=text)])
+            except ValidationError:
+                logger.error(f'Error text type: {text}')
+                raise ValidationError('text must be str.')
         return LLMResult(generations=generations)
+
+    @property
+    def _identifying_params(self):
+        """Get the identifying parameters."""
+        return {"maxToken": self.maxToken}
 
     async def _agenerate(
         self, prompts: List[str], stop: Optional[List[str]] = None
