@@ -7,14 +7,12 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
 from pydantic import Extra, Field, validator
-from pydantic.error_wrappers import ValidationError
 
 import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
 from pydantic import Extra, Field, validator
-from pydantic.error_wrappers import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -326,12 +324,8 @@ class LLM(BaseLLM):
         # TODO: add caching here.
         generations = []
         for prompt in prompts:
-            try:
                 text = self._call(prompt, stop=stop)
                 generations.append([Generation(text=text)])
-            except ValidationError:
-                logger.error(f'Error text type: {text}')
-                raise ValidationError('text must be str.')
         return LLMResult(generations=generations)
 
     async def _agenerate(

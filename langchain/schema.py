@@ -1,6 +1,6 @@
 """Common schema objects."""
 from __future__ import annotations
-
+import logging
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -16,6 +16,7 @@ from typing import (
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+logger = logging.getLogger(__name__)
 
 def get_buffer_string(
     messages: List[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
@@ -61,7 +62,24 @@ class Generation(BaseModel):
     generation_info: Optional[Dict[str, Any]] = None
     """Raw generation info response from the provider"""
     """May include things like reason for finishing (e.g. in OpenAI)"""
-    # TODO: add log probs
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """
+        Create a new model by parsing and validating input data from keyword arguments.
+
+        Raises ValidationError if the input data cannot be parsed to form a valid model.
+        """
+        values, fields_set, validation_error = validate_model(__pydantic_self__.__class__, data)
+        if validation_error:
+            logger.error(f"Raw response: {data}")
+            raise validation_error
+        try:
+            object_setattr(__pydantic_self__, '__dict__', values)
+        except TypeError as e:
+            raise TypeError(
+                'Model values must be a dict; you may not have returned a dictionary from a root validator'
+            ) from e
+        object_setattr(__pydantic_self__, '__fields_set__', fields_set)
+        __pydantic_self__._init_private_attributes()
 
 
 class BaseMessage(BaseModel):
