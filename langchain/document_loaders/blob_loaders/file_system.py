@@ -5,15 +5,6 @@ from typing import Iterable, Union
 from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 
-def _is_visible(p: Path) -> bool:
-    """Is the given path visible."""
-    parts = p.parts
-    for _p in parts:
-        if _p.startswith("."):
-            return False
-    return True
-
-
 # PUBLIC API
 
 
