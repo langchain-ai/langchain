@@ -1,0 +1,10 @@
+{
+    "name": "Remote GPU Devcontainer",
+    "dockerFile": "./Dockerfile",
+    "context": "..",
+    "runArgs": [
+        "--gpus=all"
+    ],
+    "workspaceFolder": "/workspace",
+    "remoteUser": "root"
+}
