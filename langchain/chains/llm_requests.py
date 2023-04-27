@@ -1,10 +1,11 @@
 """Chain that hits a URL and then uses an LLM to parse results."""
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain.requests import TextRequestsWrapper
@@ -61,16 +62,22 @@ class LLMRequestsChain(Chain):
             )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         from bs4 import BeautifulSoup
 
         # Other keys are assumed to be needed for LLM prediction
-        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+        other_keys: Dict = {k: v for k, v in inputs.items() if k != self.input_key}
         url = inputs[self.input_key]
         res = self.requests_wrapper.get(url)
         # extract the text from the html
         soup = BeautifulSoup(res, "html.parser")
         other_keys[self.requests_key] = soup.get_text()[: self.text_length]
+        if run_manager is not None:
+            other_keys["callbacks"] = run_manager.get_child()
         result = self.llm_chain.predict(**other_keys)
         return {self.output_key: result}
 
