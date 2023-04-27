@@ -273,7 +273,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(RunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def get_child(self) -> CallbackManager:
+    def get_child(self) -> Callbacks:
         """Get a child callback manager."""
         manager = CallbackManager([], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -737,3 +737,34 @@ def _configure(
             callback_manager.add_handler(open_ai, True)
 
     return callback_manager
+
+
+class NullCallbackManagerForChainRun(CallbackManagerForChainRun):
+    def __init__(self) -> None:
+        super().__init__("", [], [])
+
+    def on_text(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> Any:
+        pass
+
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
+        pass
+
+    def on_chain_error(
+        self,
+        error: Union[Exception, KeyboardInterrupt],
+        **kwargs: Any,
+    ) -> None:
+        pass
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        pass
+
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+        pass
+
+    def get_child(self) -> Callbacks:
+        return None

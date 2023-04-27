@@ -17,6 +17,7 @@ from langchain.callbacks.manager import (
     CallbackManager,
     CallbackManagerForChainRun,
     Callbacks,
+    NullCallbackManagerForChainRun,
 )
 from langchain.schema import BaseMemory
 
@@ -93,7 +94,7 @@ class Chain(BaseModel, ABC):
     def _call(
         self,
         inputs: Dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun = NullCallbackManagerForChainRun(),
     ) -> Dict[str, str]:
         """Run the logic of this chain and return the output."""
 
