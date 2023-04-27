@@ -4,14 +4,16 @@ The goal is to facilitate decoupling of content loading from content parsing cod
 
 In addition, content loading code should provide a lazy loading interface by default.
 """
+from __future__ import annotations
+
 import contextlib
 import mimetypes
 from abc import ABC, abstractmethod
 from io import BufferedReader, BytesIO
 from pathlib import PurePath
-from typing import Generator, Iterable, Optional, Union
+from typing import Any, Generator, Iterable, Mapping, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 PathLike = Union[str, PurePath]
 
@@ -43,6 +45,13 @@ class Blob(BaseModel):
     def source(self) -> Optional[str]:
         """The source location of the blob as string if known otherwise none."""
         return str(self.path) if self.path else None
+
+    @root_validator(pre=True)
+    def check_blob_is_valid(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Verify that either data or path is provided."""
+        if "data" not in values and "path" not in values:
+            raise ValueError("Either data or path must be provided")
+        return values
 
     def as_string(self) -> str:
         """Read data as a string."""
@@ -87,7 +96,7 @@ class Blob(BaseModel):
         encoding: str = "utf-8",
         mime_type: Optional[str] = None,
         guess_type: bool = True,
-    ) -> "Blob":
+    ) -> Blob:
         """Load the blob from a path like object.
 
         Args:
@@ -116,7 +125,7 @@ class Blob(BaseModel):
         encoding: str = "utf-8",
         mime_type: Optional[str] = None,
         path: Optional[str] = None,
-    ) -> "Blob":
+    ) -> Blob:
         """Initialize the blob from in-memory data.
 
         Args:

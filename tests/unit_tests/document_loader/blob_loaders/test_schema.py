@@ -90,6 +90,15 @@ def test_mime_type_inference(
     assert blob.mimetype == expected_mime_type
 
 
+def test_blob_initialization_validator() -> None:
+    """Test that blob initialization validates the arguments."""
+    with pytest.raises(ValueError, match="Either data or path must be provided"):
+        Blob()
+
+    assert Blob(data=b"Hello, World!") is not None
+    assert Blob(path="some_path") is not None
+
+
 def test_blob_loader() -> None:
     """Simple test that verifies that we can implement a blob loader."""
 
