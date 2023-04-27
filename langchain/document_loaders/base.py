@@ -17,7 +17,7 @@ class BaseLoader(ABC):
     implementation should be just `list(self.lazy_load())`.
     """
 
-    # Going-forward subb-classes should implement this method
+# Sub-classes should implement this method
     # as return list(self.lazy_load()).
     # This method returns a List which is materialized in memory.
     @abstractmethod
