@@ -9,7 +9,11 @@ PYPROJECT_TOML = HERE / "../../pyproject.toml"
 
 
 def test_required_dependencies() -> None:
-    """A test that checks if a new non-optional dependency is being introduced."""
+    """A test that checks if a new non-optional dependency is being introduced.
+
+    If this test is triggered, it means that a contributor is trying to introduce a new
+    required dependency. This should be avoided in most situations.
+    """
     with open(PYPROJECT_TOML) as f:
         pyproject = toml.load(f)
 
