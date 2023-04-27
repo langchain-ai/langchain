@@ -5,9 +5,6 @@ on:
     branches: [master]
   pull_request:
 
-env:
-  POETRY_VERSION: "1.4.2"
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,15 +17,19 @@ jobs:
           - "3.11"
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==$POETRY_VERSION
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-      - name: Install dependencies
-        run: poetry install
+          cache: "pip"
+      - name: Install testing dependencies
+        run: |
+          pip install toml==0.10.2
+      - name: Install package dependencies
+        # We use this roundabout dependency installation to avoid inadvertently
+        # adding poetry sub-dependencies
+        run: |
+          python scripts/get_required_deps.py | pip install -r /dev/stdin
       - name: Run unit tests
         run: |
-          make test
+          make ci_unit_tests

@@ -32,6 +32,10 @@ lint lint_diff:
 	poetry run black $(PYTHON_FILES) --check
 	poetry run ruff .
 
+# Run unit tests without poetry.
+ci_unit_tests:
+	pytest tests/unit_tests
+
 test:
 	poetry run pytest tests/unit_tests
 
