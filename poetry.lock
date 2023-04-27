@@ -1515,14 +1515,14 @@ wmi = ["wmi (>=1.5.1,<2.0.0)"]
 
 [[package]]
 name = "docarray"
-version = "0.30.0"
+version = "0.31.0.dev35"
 description = "The data structure for multimodal data"
 category = "main"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "docarray-0.30.0-py3-none-any.whl", hash = "sha256:739dbe06bfee6f1cbc030156036764ca1c75832dcc01a07c724640c6d464651b"},
-    {file = "docarray-0.30.0.tar.gz", hash = "sha256:dd73e9ff20485a1d819ac906a59ee0cbc4382e78a5061286e77eb7d7f8b28a8e"},
+    {file = "docarray-0.31.0.dev35-py3-none-any.whl", hash = "sha256:a5c578cbf69853dddd17e845cc3fb2250cb1a0800ef48082d2a40a38bc9a7165"},
+    {file = "docarray-0.31.0.dev35.tar.gz", hash = "sha256:f918cc5c35ed2df9b9ad7ef0abcc0bf5f3fe38a8f9e33526a33293d26a956f2e"},
 ]
 
 [package.dependencies]
@@ -1748,7 +1748,7 @@ files = [
 name = "exceptiongroup"
 version = "1.1.1"
 description = "Backport of PEP 654 (exception groups)"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -2769,7 +2769,7 @@ testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-chec
 name = "iniconfig"
 version = "2.0.0"
 description = "brain-dead simple config-ini parsing"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -5445,7 +5445,7 @@ typing-extensions = {version = "*", markers = "python_version <= \"3.8\""}
 name = "pluggy"
 version = "1.0.0"
 description = "plugin and hook calling mechanisms for python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -6176,7 +6176,7 @@ Pillow = ">=8.0.0"
 name = "pytest"
 version = "7.3.1"
 description = "pytest: simple powerful testing with Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -8203,7 +8203,7 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -9338,10 +9338,11 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "docarray", "protobuf"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "docarray", "protobuf", "hnswlib"]
 cohere = ["cohere"]
-docarray = ["docarray", "protobuf"]
 embeddings = ["sentence-transformers"]
+hnswlib = ["docarray", "protobuf", "hnswlib"]
+in-memory-store = ["docarray"]
 llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
 openai = ["openai"]
 qdrant = ["qdrant-client"]
@@ -9349,4 +9350,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "81e7b09595d12739f056c5f5d34021ad7e3f855a8da711d3ccc23aab72cfbd83"
+content-hash = "5223e3c6bdf37a28e1ee1cfb26e7f8d84fd6bc94893c96ecaca428fb9e8278eb"

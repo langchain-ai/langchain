@@ -20,7 +20,6 @@ def test_in_memory_vec_store_from_texts() -> None:
 def test_in_memory_vec_store_add_texts(tmp_path) -> None:
     """Test end to end construction and simple similarity search."""
     docsearch = InMemory(
-        texts=[],
         embedding=FakeEmbeddings(),
     )
     assert isinstance(docsearch, InMemory)
@@ -65,7 +64,7 @@ def test_sim_search_with_score(metric) -> None:
 
 
 @pytest.mark.parametrize('metric', ['cosine_sim', 'euclidean_dist', 'sqeuclidean_dist'])
-def test_sim_search_by_vector(metric):
+def test_sim_search_by_vector(metric) -> None:
     """Test end to end construction and similarity search by vector."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = InMemory.from_texts(
@@ -79,3 +78,20 @@ def test_sim_search_by_vector(metric):
 
     assert output == [Document(page_content="bar")]
 
+
+@pytest.mark.parametrize('metric', ['cosine_sim', 'euclidean_dist', 'sqeuclidean_dist'])
+def test_max_marginal_relevance_search(metric) -> None:
+    """Test MRR search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = InMemory.from_texts(
+        texts,
+        FakeEmbeddings(),
+        metadatas=metadatas,
+        metric=metric
+    )
+    output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
+    assert output == [
+        Document(page_content="foo", metadata={"page": 0}),
+        Document(page_content="bar", metadata={"page": 1}),
+    ]

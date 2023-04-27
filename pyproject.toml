@@ -69,11 +69,9 @@ pytesseract = {version = "^0.3.10", optional=true}
 html2text = {version="^2020.1.16", optional=true}
 numexpr = "^2.8.4"
 duckduckgo-search = {version="^2.8.6", optional=true}
-docarray = {version="^0.30.0", optional=true}
+docarray = {version="^0.31.0.dev35", optional=true}
 protobuf = {version="3.19", optional=true}
 hnswlib = {version="^0.7.0", optional=true}
-pytest = "^7.3.1"
-
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
@@ -149,9 +147,10 @@ llms = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "manifes
 qdrant = ["qdrant-client"]
 openai = ["openai"]
 cohere = ["cohere"]
-docarray = ["docarray", "protobuf"]
+in_memory_store = ["docarray"]
+hnswlib = ["docarray", "protobuf", "hnswlib"]
 embeddings = ["sentence-transformers"]
-all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "docarray", "protobuf"]
+all = ["anthropic", "cohere", "openai", "nlpcloud", "huggingface_hub", "jina", "manifest-ml", "elasticsearch", "opensearch-py", "google-search-results", "faiss-cpu", "sentence-transformers", "transformers", "spacy", "nltk", "wikipedia", "beautifulsoup4", "tiktoken", "torch", "jinja2", "pinecone-client", "pinecone-text", "weaviate-client", "redis", "google-api-python-client", "wolframalpha", "qdrant-client", "tensorflow-text", "pypdf", "networkx", "nomic", "aleph-alpha-client", "deeplake", "pgvector", "psycopg2-binary", "boto3", "pyowm", "pytesseract", "html2text", "atlassian-python-api", "gptcache", "duckduckgo-search", "arxiv", "azure-identity", "clickhouse-connect", "docarray", "protobuf", "hnswlib"]
 
 [tool.ruff]
 select = [

@@ -1,72 +1,72 @@
-from typing import TYPE_CHECKING, TypeVar, List, Optional, Type, Iterable, Any, Tuple
-
-from docarray import DocList, BaseDoc
 from operator import itemgetter
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+
+try:
+    from docarray import BaseDoc
+    from docarray.index.abstract import BaseDocIndex
+    from docarray.typing import NdArray
+except ImportError:
+    BaseDoc = None
+    BaseDocIndex = None
+    NdArray = None
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Document
 from langchain.vectorstores import VectorStore
-
-from docarray.index.abstract import BaseDocIndex
-
-
-T_Doc = TypeVar('T_Doc', bound=BaseDocIndex)
+from langchain.vectorstores.utils import maximal_marginal_relevance
 
 
-def _check_docarray_import():
+def _check_docarray_import() -> None:
     try:
         import docarray
-        da_version = docarray.__version__.split('.')
-        if int(da_version[0]) == 0 and int(da_version[1]) <= 21:
+
+        da_version = docarray.__version__.split(".")
+        if int(da_version[0]) == 0 and int(da_version[1]) <= 30:
             raise ValueError(
-                f'To use the HnswLib VectorStore the docarray version >=0.31.0 is expected, '
-                f'received: {docarray.__version__}.'
-                f'To upgrade, please run: `pip install -U docarray`.'
+                f"To use the HnswLib VectorStore the docarray version >=0.31.0 is expected, "
+                f"received: {docarray.__version__}."
+                f"To upgrade, please run: `pip install -U docarray`."
             )
     except ImportError:
         raise ImportError(
             "Could not import docarray python package. "
-            "Please install it with `pip install -U docarray`."
+            "Please install it with `pip install \"langchain[docarray]\"`."
         )
 
 
 class VecStoreFromDocIndex(VectorStore):
-    doc_index: BaseDocIndex = None
-    doc_cls: Type[BaseDoc] = None
-    embedding: Embeddings = None
+    doc_index: BaseDocIndex
+    doc_cls: Type[BaseDoc]
+    embedding: Embeddings
 
     def __init__(
         self,
-        doc_index: T_Doc,
-        texts: List[str],
+        doc_index: BaseDocIndex,
         embedding: Embeddings,
-        metadatas: Optional[List[dict]],
     ):
+        """Initialize a vector store from DocArray's DocIndex."""
         self.doc_index = doc_index
         self.doc_cls = doc_index._schema
         self.embedding = embedding
 
-        embeddings = self.embedding.embed_documents(texts)
-        if metadatas is None:
-            metadatas = [{} for _ in range(len(texts))]
+    @staticmethod
+    def _get_doc_cls(embeddings_params: Dict[str, Any]) -> Type[BaseDoc]:
+        """Get docarray Document class describing the schema of DocIndex."""
+        from docarray import BaseDoc
+        from pydantic import Field
 
-        docs = DocList[self.doc_cls](
-            [
-                self.doc_cls(
-                    text=t,
-                    embedding=e,
-                    metadata=m,
-                ) for t, m, e in zip(texts, metadatas, embeddings)
-            ]
-        )
-        if len(docs) > 0:
-            self.doc_index.index(docs)
+        class DocArrayDoc(BaseDoc):
+            text: Optional[str]
+            embedding: Optional[NdArray] = Field(**embeddings_params)
+            metadata: Optional[dict]
+
+        return DocArrayDoc
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -80,16 +80,12 @@ class VecStoreFromDocIndex(VectorStore):
         if metadatas is None:
             metadatas = [{} for _ in range(len(list(texts)))]
 
-        ids = []
+        ids: List[str] = []
         embeddings = self.embedding.embed_documents(texts)
         for t, m, e in zip(texts, metadatas, embeddings):
-            doc = self.doc_cls(
-                text=t,
-                embedding=e,
-                metadata=m
-            )
+            doc = self.doc_cls(text=t, embedding=e, metadata=m)
             self.doc_index.index([doc])
-            ids.append(doc.id)  # TODO return index of self.docs ?
+            ids.append(str(doc.id))
 
         return ids
 
@@ -107,9 +103,11 @@ class VecStoreFromDocIndex(VectorStore):
         """
         query_embedding = self.embedding.embed_query(query)
         query_doc = self.doc_cls(embedding=query_embedding)
-        docs, scores = self.doc_index.find(query_doc, search_field='embedding', limit=k)
+        docs, scores = self.doc_index.find(query_doc, search_field="embedding", limit=k)
 
-        result = [(Document(page_content=doc.text), score) for doc, score in zip(docs, scores)]
+        result = [
+            (Document(page_content=doc.text), score) for doc, score in zip(docs, scores)
+        ]
         return result
 
     def similarity_search(
@@ -127,7 +125,6 @@ class VecStoreFromDocIndex(VectorStore):
         results = self.similarity_search_with_score(query, k)
         return list(map(itemgetter(0), results))
 
-
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -140,7 +137,9 @@ class VecStoreFromDocIndex(VectorStore):
         """
         raise NotImplementedError
 
-    def similarity_search_by_vector(self, embedding: List[float], k: int = 4, **kwargs: Any) -> List[Document]:
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -152,7 +151,9 @@ class VecStoreFromDocIndex(VectorStore):
         """
 
         query_doc = self.doc_cls(embedding=embedding)
-        docs = self.doc_index.find(query_doc, search_field='embedding', limit=k).documents
+        docs = self.doc_index.find(
+            query_doc, search_field="embedding", limit=k
+        ).documents
 
         result = [Document(page_content=doc.text) for doc in docs]
         return result
@@ -176,11 +177,13 @@ class VecStoreFromDocIndex(VectorStore):
         query_embedding = self.embedding.embed_query(query)
         query_doc = self.doc_cls(embedding=query_embedding)
 
-        docs, scores = self.doc_index.find(query_doc, search_field='embedding', limit=fetch_k)
+        docs = self.doc_index.find(
+            query_doc, search_field="embedding", limit=fetch_k
+        ).documents
 
-        embeddings = [emb for emb in docs.emb]
-
-        mmr_selected = maximal_marginal_relevance(query_embedding, embeddings, k=k)
-        results = [Document(page_content=self.doc_index[idx].text) for idx in mmr_selected]
+        mmr_selected = maximal_marginal_relevance(query_embedding, docs.embedding, k=k)
+        results = [
+            Document(page_content=docs[idx].text, metadata=docs[idx].metadata)
+            for idx in mmr_selected
+        ]
         return results
-
