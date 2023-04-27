@@ -9,8 +9,11 @@ class ArxivQueryRun(BaseTool):
 
     name = "Arxiv"
     description = (
-        "A wrapper around Arxiv. "
-        "Useful for getting summary of articles from arxiv.org. "
+        "A wrapper around Arxiv.org "
+        "Useful for when you need to answer questions about Physics, Mathematics, "
+        "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
+        "Electrical Engineering, and Economics "
+        "from scientific articles on arxiv.org. "
         "Input should be a search query."
     )
     api_wrapper: ArxivAPIWrapper

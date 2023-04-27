@@ -27,14 +27,18 @@ def _default_schema(index_name: str) -> Dict:
 
 def _create_weaviate_client(**kwargs: Any) -> Any:
     client = kwargs.get("client")
-
     if client is not None:
         return client
 
     weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
-    weaviate_api_key = get_from_dict_or_env(
-        kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
-    )
+
+    try:
+        # the weaviate api key param should not be mandatory
+        weaviate_api_key = get_from_dict_or_env(
+            kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
+        )
+    except ValueError:
+        weaviate_api_key = None
 
     try:
         import weaviate
@@ -117,9 +121,21 @@ class Weaviate(VectorStore):
                         data_properties[key] = metadatas[i][key]
 
                 _id = get_valid_uuid(uuid4())
-                batch.add_data_object(
-                    data_object=data_properties, class_name=self._index_name, uuid=_id
-                )
+
+                if self._embedding is not None:
+                    embeddings = self._embedding.embed_documents(list(doc))
+                    batch.add_data_object(
+                        data_object=data_properties,
+                        class_name=self._index_name,
+                        uuid=_id,
+                        vector=embeddings[0],
+                    )
+                else:
+                    batch.add_data_object(
+                        data_object=data_properties,
+                        class_name=self._index_name,
+                        uuid=_id,
+                    )
                 ids.append(_id)
         return ids
 
@@ -139,6 +155,8 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_text(content).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -154,6 +172,8 @@ class Weaviate(VectorStore):
         """Look up similar documents by embedding vector in Weaviate."""
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         result = query_obj.with_near_vector(vector).with_limit(k).do()
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
@@ -226,6 +246,8 @@ class Weaviate(VectorStore):
         """
         vector = {"vector": embedding}
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        if kwargs.get("where_filter"):
+            query_obj = query_obj.with_where(kwargs.get("where_filter"))
         results = (
             query_obj.with_additional("vector")
             .with_near_vector(vector)

@@ -15,6 +15,7 @@ class UnstructuredURLLoader(BaseLoader):
         self,
         urls: List[str],
         continue_on_failure: bool = True,
+        mode: str = "single",
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -28,6 +29,9 @@ class UnstructuredURLLoader(BaseLoader):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
+
+        self._validate_mode(mode)
+        self.mode = mode
 
         headers = unstructured_kwargs.pop("headers", {})
         if len(headers.keys()) != 0:
@@ -47,6 +51,13 @@ class UnstructuredURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headers = headers
         self.unstructured_kwargs = unstructured_kwargs
+
+    def _validate_mode(self, mode: str) -> None:
+        _valid_modes = {"single", "elements"}
+        if mode not in _valid_modes:
+            raise ValueError(
+                f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
+            )
 
     def __is_headers_available_for_html(self) -> bool:
         _unstructured_version = self.__version.split("-")[0]
@@ -94,7 +105,15 @@ class UnstructuredURLLoader(BaseLoader):
                     continue
                 else:
                     raise e
-            text = "\n\n".join([str(el) for el in elements])
-            metadata = {"source": url}
-            docs.append(Document(page_content=text, metadata=metadata))
+
+            if self.mode == "single":
+                text = "\n\n".join([str(el) for el in elements])
+                metadata = {"source": url}
+                docs.append(Document(page_content=text, metadata=metadata))
+            elif self.mode == "elements":
+                for element in elements:
+                    metadata = element.metadata.to_dict()
+                    metadata["category"] = element.category
+                    docs.append(Document(page_content=str(element), metadata=metadata))
+
         return docs

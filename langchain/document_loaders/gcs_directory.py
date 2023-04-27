@@ -27,6 +27,10 @@ class GCSDirectoryLoader(BaseLoader):
         client = storage.Client(project=self.project_name)
         docs = []
         for blob in client.list_blobs(self.bucket, prefix=self.prefix):
+            # we shall just skip directories since GCSFileLoader creates
+            # intermediate directories on the fly
+            if blob.name.endswith("/"):
+                continue
             loader = GCSFileLoader(self.project_name, self.bucket, blob.name)
             docs.extend(loader.load())
         return docs
