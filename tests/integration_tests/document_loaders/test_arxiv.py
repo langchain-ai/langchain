@@ -17,6 +17,8 @@ def test_load_success() -> None:
 
     docs = loader.load()
     assert len(docs) == 1
+    print(docs[0].metadata)
+    print(docs[0].page_content)
     assert_docs(docs)
 
 
