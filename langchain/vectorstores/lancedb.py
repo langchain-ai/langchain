@@ -42,7 +42,7 @@ class LanceDB(VectorStore):
             )
         if not isinstance(connection, lancedb.db.LanceTable):
             raise ValueError(
-                f"connection should be an instance of lancedb.db.LanceTable, ",
+                "connection should be an instance of lancedb.db.LanceTable, ",
                 f"got {type(connection)}",
             )
         self._connection = connection
@@ -71,9 +71,9 @@ class LanceDB(VectorStore):
         # Embed texts and create documents
         docs = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        embedding = self._embedding.embed_documents(list(texts))
+        embeddings = self._embedding.embed_documents(list(texts))
         for idx, text in enumerate(texts):
-            embedding = embedding[idx]
+            embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {}
             docs.append(
                 {
