@@ -1,4 +1,5 @@
 """Beta Feature: base interface for cache."""
+import hashlib
 import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
@@ -132,7 +133,8 @@ class RedisCache(BaseCache):
 
     def _key(self, prompt: str, llm_string: str, idx: int) -> str:
         """Compute key from prompt, llm_string, and idx."""
-        return str(hash(prompt + llm_string)) + "_" + str(idx)
+        hashed_value = hashlib.sha1((prompt + llm_string).encode("utf-8")).hexdigest()
+        return f"{hashed_value}_{idx}"
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""

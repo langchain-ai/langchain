@@ -30,19 +30,23 @@ def init_gptcache_map(cache_obj: Cache) -> None:
     init_gptcache_map._i = i + 1  # type: ignore
 
 
+def basic_llm_caching_behavior() -> None:
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    assert langchain.llm_cache is not None
+    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
+    _ = llm.generate(["foo", "bar", "foo"])
+    cache_output = langchain.llm_cache.lookup("foo", llm_string)
+    assert cache_output == [Generation(text="fizz")]
+    langchain.llm_cache.clear()
+    assert langchain.llm_cache.lookup("bar", llm_string) is None
+
+
 @pytest.mark.skipif(not gptcache_installed, reason="gptcache not installed")
 @pytest.mark.parametrize("init_func", [None, init_gptcache_map])
 def test_gptcache_caching(init_func: Optional[Callable[[Any], None]]) -> None:
     """Test gptcache default caching behavior."""
     langchain.llm_cache = GPTCache(init_func)
-    llm = FakeLLM()
-    params = llm.dict()
-    params["stop"] = None
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
-    _ = llm.generate(["foo", "bar", "foo"])
-    cache_output = langchain.llm_cache.lookup("foo", llm_string)
-    assert cache_output == [Generation(text="fizz")]
-
-    langchain.llm_cache.clear()
-    assert langchain.llm_cache.lookup("bar", llm_string) is None
+    basic_llm_caching_behavior()
