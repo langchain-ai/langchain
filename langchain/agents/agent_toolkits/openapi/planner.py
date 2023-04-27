@@ -28,6 +28,7 @@ from langchain.agents.agent_toolkits.openapi.planner_prompt import (
 from langchain.agents.agent_toolkits.openapi.spec import ReducedOpenAPISpec
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.tools import Tool
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 from langchain.llms.openai import OpenAI
 from langchain.memory import ReadOnlySharedMemory
@@ -261,6 +262,7 @@ def create_openapi_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     shared_memory: Optional[ReadOnlySharedMemory] = None,
+    callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
@@ -293,5 +295,9 @@ def create_openapi_agent(
         **(agent_kwargs or {}),
     )
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=tools, verbose=verbose, **kwargs
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **kwargs,
     )

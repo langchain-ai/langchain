@@ -42,5 +42,9 @@ def create_json_agent(
         llm_chain=llm_chain, allowed_tools=tool_names, **(agent_kwargs or {})
     )
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=toolkit.get_tools(), verbose=verbose, **kwargs
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **kwargs,
     )

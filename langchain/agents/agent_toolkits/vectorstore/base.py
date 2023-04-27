@@ -35,7 +35,11 @@ def create_vectorstore_agent(
         llm_chain=llm_chain, allowed_tools=tool_names, **(agent_kwargs or {})
     )
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=tools, verbose=verbose, **kwargs
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **kwargs,
     )
 
 
@@ -61,5 +65,9 @@ def create_vectorstore_router_agent(
         llm_chain=llm_chain, allowed_tools=tool_names, **(agent_kwargs or {})
     )
     return AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=tools, verbose=verbose, **kwargs
+        agent=agent,
+        tools=tools,
+        callback_manager=callback_manager,
+        verbose=verbose,
+        **kwargs,
     )

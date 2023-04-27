@@ -52,7 +52,8 @@ def create_openapi_agent(
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
-        tools=toolkit.get_tools(),
+        tools=tools,
+        callback_manager=callback_manager,
         verbose=verbose,
         return_intermediate_steps=return_intermediate_steps,
         max_iterations=max_iterations,

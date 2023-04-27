@@ -52,11 +52,11 @@ def create_pandas_dataframe_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
+        callback_manager=callback_manager,
         verbose=verbose,
         return_intermediate_steps=return_intermediate_steps,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
-        callback_manager=callback_manager,
         **kwargs,
     )

@@ -49,6 +49,7 @@ def create_sql_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
+        callback_manager=callback_manager,
         verbose=verbose,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
