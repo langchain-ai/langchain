@@ -43,6 +43,9 @@ def vector_search(
     returns:
         nearest_indices: List, indices of nearest neighbors
     """
+    if data_vectors.shape[0] == 0:
+        return [], []
+
     # Calculate the distance between the query_vector and all data_vectors
     distances = distance_metric_map[distance_metric](query_embedding, data_vectors)
     nearest_indices = np.argsort(distances)
@@ -87,7 +90,7 @@ class DeepLake(VectorStore):
                 vectorstore = DeepLake("langchain_store", embeddings.embed_query)
     """
 
-    _LANGCHAIN_DEFAULT_DEEPLAKE_PATH = "mem://langchain"
+    _LANGCHAIN_DEFAULT_DEEPLAKE_PATH = "./deeplake/"
 
     def __init__(
         self,
@@ -96,7 +99,7 @@ class DeepLake(VectorStore):
         embedding_function: Optional[Embeddings] = None,
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
-        num_workers: int = 4,
+        num_workers: int = 0,
         **kwargs: Any,
     ) -> None:
         """Initialize with Deep Lake client."""
@@ -112,8 +115,13 @@ class DeepLake(VectorStore):
                 "Please install it with `pip install deeplake`."
             )
         self._deeplake = deeplake
+        self.dataset_path = dataset_path
+        creds_args = {"creds": kwargs["creds"]} if "creds" in kwargs else {}
 
-        if deeplake.exists(dataset_path, token=token):
+        if (
+            deeplake.exists(dataset_path, token=token, **creds_args)
+            and "overwrite" not in kwargs
+        ):
             self.ds = deeplake.load(
                 dataset_path, token=token, read_only=read_only, **kwargs
             )
@@ -123,6 +131,9 @@ class DeepLake(VectorStore):
             )
             self.ds.summary()
         else:
+            if "overwrite" in kwargs:
+                del kwargs["overwrite"]
+
             self.ds = deeplake.empty(
                 dataset_path, token=token, overwrite=True, **kwargs
             )
@@ -215,6 +226,9 @@ class DeepLake(VectorStore):
                 )
 
         batch_size = min(self.ingestion_batch_size, len(elements))
+        if batch_size == 0:
+            return []
+
         batched = [
             elements[i : i + batch_size] for i in range(0, len(elements), batch_size)
         ]
@@ -222,7 +236,8 @@ class DeepLake(VectorStore):
         ingest().eval(
             batched,
             self.ds,
-            num_workers=min(self.num_workers, len(batched) // self.num_workers),
+            num_workers=min(self.num_workers, len(batched) // max(self.num_workers, 1)),
+            **kwargs,
         )
         self.ds.commit(allow_empty=True)
         self.ds.summary()
@@ -300,8 +315,12 @@ class DeepLake(VectorStore):
 
             view = view[indices]
             if use_maximal_marginal_relevance:
+                lambda_mult = kwargs.get("lambda_mult", 0.5)
                 indices = maximal_marginal_relevance(
-                    query_emb, embeddings[indices], k=min(k, len(indices))
+                    query_emb,
+                    embeddings[indices],
+                    k=min(k, len(indices)),
+                    lambda_mult=lambda_mult,
                 )
                 view = view[indices]
                 scores = [scores[i] for i in indices]
@@ -391,7 +410,12 @@ class DeepLake(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -400,6 +424,10 @@ class DeepLake(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -408,10 +436,16 @@ class DeepLake(VectorStore):
             k=k,
             fetch_k=fetch_k,
             use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
         )
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -420,6 +454,10 @@ class DeepLake(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -428,7 +466,11 @@ class DeepLake(VectorStore):
                 "For MMR search, you must specify an embedding function on" "creation."
             )
         return self.search(
-            query=query, k=k, fetch_k=fetch_k, use_maximal_marginal_relevance=True
+            query=query,
+            k=k,
+            fetch_k=fetch_k,
+            use_maximal_marginal_relevance=True,
+            lambda_mult=lambda_mult,
         )
 
     @classmethod
@@ -443,8 +485,8 @@ class DeepLake(VectorStore):
     ) -> DeepLake:
         """Create a Deep Lake dataset from a raw documents.
 
-        If a dataset_path is specified, the dataset will be persisted there.
-        Otherwise, the data will be ephemeral in-memory.
+        If a dataset_path is specified, the dataset will be persisted in that location,
+        otherwise by default at `./deeplake`
 
         Args:
             path (str, pathlib.Path): - The full path to the dataset. Can be:
@@ -493,7 +535,7 @@ class DeepLake(VectorStore):
                 Defaults to None.
         """
         if delete_all:
-            self.ds.delete()
+            self.ds.delete(large_ok=True)
             return True
 
         view = None
@@ -514,6 +556,18 @@ class DeepLake(VectorStore):
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
 
         return True
+
+    @classmethod
+    def force_delete_by_path(cls, path: str) -> None:
+        """Force delete dataset by path"""
+        try:
+            import deeplake
+        except ImportError:
+            raise ValueError(
+                "Could not import deeplake python package. "
+                "Please install it with `pip install deeplake`."
+            )
+        deeplake.delete(path, large_ok=True, force=True)
 
     def delete_dataset(self) -> None:
         """Delete the collection."""

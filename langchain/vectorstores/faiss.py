@@ -227,7 +227,12 @@ class FAISS(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -238,7 +243,10 @@ class FAISS(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -246,7 +254,10 @@ class FAISS(VectorStore):
         # -1 happens when not enough docs are returned.
         embeddings = [self.index.reconstruct(int(i)) for i in indices[0] if i != -1]
         mmr_selected = maximal_marginal_relevance(
-            np.array([embedding], dtype=np.float32), embeddings, k=k
+            np.array([embedding], dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
         )
         selected_indices = [indices[0][i] for i in mmr_selected]
         docs = []
@@ -266,6 +277,7 @@ class FAISS(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -277,12 +289,17 @@ class FAISS(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self.embedding_function(query)
-        docs = self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k)
+        docs = self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult=lambda_mult
+        )
         return docs
 
     def merge_from(self, target: FAISS) -> None:

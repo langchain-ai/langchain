@@ -61,6 +61,13 @@ class SitemapLoader(WebBaseLoader):
                 }
             )
 
+        for sitemap in soup.find_all("sitemap"):
+            loc = sitemap.find("loc")
+            if not loc:
+                continue
+            soup_child = self.scrape_all([loc.text], "xml")[0]
+
+            els.extend(self.parse_sitemap(soup_child))
         return els
 
     def load(self) -> List[Document]:
