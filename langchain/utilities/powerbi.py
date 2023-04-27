@@ -4,19 +4,21 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from azure.core.credentials import TokenCredential
-from azure.core.exceptions import ClientAuthenticationError
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
 from langchain.tools.powerbi.prompt import SCHEMA_ERROR_RESPONSE, UNAUTHORIZED_RESPONSE
 
 _LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
+    from azure.core.exceptions import ClientAuthenticationError
 
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
 
