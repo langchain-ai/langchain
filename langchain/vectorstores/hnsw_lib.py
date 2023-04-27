@@ -24,6 +24,13 @@ class HnswLib(VecStoreFromDocIndex):
         work_dir: str,
         n_dim: int,
         dist_metric: str = "cosine",
+        max_elements: int = 1024,
+        index: bool = True,
+        ef_construction: int = 200,
+        ef: int = 10,
+        M: int = 16,
+        allow_replace_deleted: bool = True,
+        num_threads: int = 1,
     ) -> None:
         """Initialize HnswLib store.
 
@@ -33,6 +40,19 @@ class HnswLib(VecStoreFromDocIndex):
             n_dim (int): dimension of an embedding.
             dist_metric (str): Distance metric for HnswLib can be one of: "cosine",
                 "ip", and "l2". Defaults to "cosine".
+            max_elements (int): Maximum number of vectors that can be stored.
+                Defaults to 1024.
+            index (bool): Whether an index should be built for this field.
+                Defaults to True.
+            ef_construction (int): defines a construction time/accuracy trade-off.
+                Defaults to 200.
+            ef (int): parameter controlling query time/accuracy trade-off.
+                Defaults to 10.
+            M (int): parameter that defines the maximum number of outgoing
+                connections in the graph. Defaults to 16.
+            allow_replace_deleted (bool): Enables replacing of deleted elements
+                with new added ones. Defaults to True.
+            num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
         """
         _check_docarray_import()
         from docarray.index import HnswDocumentIndex
@@ -45,7 +65,19 @@ class HnswLib(VecStoreFromDocIndex):
                 "Please install it with `pip install \"langchain[hnswlib]\"`."
             )
 
-        doc_cls = self._get_doc_cls({"dim": n_dim, "space": dist_metric})
+        doc_cls = self._get_doc_cls(
+            {
+                "dim": n_dim,
+                "space": dist_metric,
+                "max_elements": max_elements,
+                "index": index,
+                "ef_construction": ef_construction,
+                "ef": ef,
+                "M": M,
+                "allow_replace_deleted": allow_replace_deleted,
+                "num_threads": num_threads,
+            }
+        )
         doc_index = HnswDocumentIndex[doc_cls](work_dir=work_dir)
         super().__init__(doc_index, embedding)
 
@@ -58,6 +90,13 @@ class HnswLib(VecStoreFromDocIndex):
         work_dir: str = None,
         n_dim: int = None,
         dist_metric: str = "cosine",
+        max_elements: int = 1024,
+        index: bool = True,
+        ef_construction: int = 200,
+        ef: int = 10,
+        M: int = 16,
+        allow_replace_deleted: bool = True,
+        num_threads: int = 1,
     ) -> HnswLib:
         """Create an HnswLib store and insert data.
 
@@ -70,6 +109,19 @@ class HnswLib(VecStoreFromDocIndex):
             n_dim (int): dimension of an embedding.
             dist_metric (str): Distance metric for HnswLib can be one of: "cosine",
                 "ip", and "l2". Defaults to "cosine".
+            max_elements (int): Maximum number of vectors that can be stored.
+                Defaults to 1024.
+            index (bool): Whether an index should be built for this field.
+                Defaults to True.
+            ef_construction (int): defines a construction time/accuracy trade-off.
+                Defaults to 200.
+            ef (int): parameter controlling query time/accuracy trade-off.
+                Defaults to 10.
+            M (int): parameter that defines the maximum number of outgoing
+                connections in the graph. Defaults to 16.
+            allow_replace_deleted (bool): Enables replacing of deleted elements
+                with new added ones. Defaults to True.
+            num_threads (int): Sets the number of cpu threads to use. Defaults to 1.
 
         Returns:
             HnswLib Vector Store
