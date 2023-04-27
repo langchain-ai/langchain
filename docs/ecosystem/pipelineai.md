@@ -1,7 +1,7 @@
 # PipelineAI
 
 This page covers how to use the PipelineAI ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific CerebriumAI wrappers.
+It is broken into two parts: installation and setup, and then references to specific PipelineAI wrappers.
 
 ## Installation and Setup
 
