@@ -27,14 +27,18 @@ def _default_schema(index_name: str) -> Dict:
 
 def _create_weaviate_client(**kwargs: Any) -> Any:
     client = kwargs.get("client")
-
     if client is not None:
         return client
 
     weaviate_url = get_from_dict_or_env(kwargs, "weaviate_url", "WEAVIATE_URL")
-    weaviate_api_key = get_from_dict_or_env(
-        kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
-    )
+
+    try:
+        # the weaviate api key param should not be mandatory
+        weaviate_api_key = get_from_dict_or_env(
+            kwargs, "weaviate_api_key", "WEAVIATE_API_KEY", None
+        )
+    except ValueError:
+        weaviate_api_key = None
 
     try:
         import weaviate
@@ -117,9 +121,21 @@ class Weaviate(VectorStore):
                         data_properties[key] = metadatas[i][key]
 
                 _id = get_valid_uuid(uuid4())
-                batch.add_data_object(
-                    data_object=data_properties, class_name=self._index_name, uuid=_id
-                )
+
+                if self._embedding is not None:
+                    embeddings = self._embedding.embed_documents(list(doc))
+                    batch.add_data_object(
+                        data_object=data_properties,
+                        class_name=self._index_name,
+                        uuid=_id,
+                        vector=embeddings[0],
+                    )
+                else:
+                    batch.add_data_object(
+                        data_object=data_properties,
+                        class_name=self._index_name,
+                        uuid=_id,
+                    )
                 ids.append(_id)
         return ids
 
