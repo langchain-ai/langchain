@@ -47,7 +47,7 @@ from langchain.prompts import (
     PromptTemplate,
 )
 from langchain.sql_database import SQLDatabase
-from langchain.utilities import ArxivAPIWrapper
+from langchain.utilities.arxiv import ArxivAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.powerbi import PowerBIDataset

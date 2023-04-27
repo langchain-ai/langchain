@@ -2,7 +2,7 @@
 """Load tools."""
 import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
-from mypy_extensions import KwArg
+from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -15,7 +15,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -74,7 +74,7 @@ def _get_terminal() -> BaseTool:
     )
 
 
-_BASE_TOOLS = {
+_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "python_repl": _get_python_repl,
     "requests": _get_tools_requests_get,  # preserved for backwards compatability
     "requests_get": _get_tools_requests_get,
@@ -120,7 +120,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS = {
+_LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
@@ -219,14 +219,16 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
-    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+    return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
 
-_EXTRA_LLM_TOOLS = {
+_EXTRA_LLM_TOOLS: Dict[
+    str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
+] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),

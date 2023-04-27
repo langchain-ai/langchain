@@ -35,7 +35,7 @@ def create_pandas_dataframe_agent(
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix, input_variables=input_variables
     )
-    partial_prompt = prompt.partial(df=str(df.head()))
+    partial_prompt = prompt.partial(df=str(df.head().to_markdown()))
     llm_chain = LLMChain(
         llm=llm,
         prompt=partial_prompt,
