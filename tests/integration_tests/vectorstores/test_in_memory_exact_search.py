@@ -2,27 +2,27 @@ import numpy as np
 import pytest
 
 from langchain.schema import Document
-from langchain.vectorstores.in_memory import InMemory
+from langchain.vectorstores.in_memory_exact_search import InMemoryExactSearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_in_memory_vec_store_from_texts() -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = InMemory.from_texts(
+    docsearch = InMemoryExactSearch.from_texts(
         texts,
         FakeEmbeddings(),
     )
-    assert isinstance(docsearch, InMemory)
+    assert isinstance(docsearch, InMemoryExactSearch)
     assert docsearch.doc_index.num_docs() == 3
 
 
 def test_in_memory_vec_store_add_texts(tmp_path) -> None:
     """Test end to end construction and simple similarity search."""
-    docsearch = InMemory(
+    docsearch = InMemoryExactSearch(
         embedding=FakeEmbeddings(),
     )
-    assert isinstance(docsearch, InMemory)
+    assert isinstance(docsearch, InMemoryExactSearch)
     assert docsearch.doc_index.num_docs() == 0
 
     texts = ["foo", "bar", "baz"]
@@ -34,7 +34,7 @@ def test_in_memory_vec_store_add_texts(tmp_path) -> None:
 def test_sim_search(metric) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
-    in_memory_vec_store = InMemory.from_texts(
+    in_memory_vec_store = InMemoryExactSearch.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metric=metric,
@@ -48,7 +48,7 @@ def test_sim_search(metric) -> None:
 def test_sim_search_with_score(metric) -> None:
     """Test end to end construction and similarity search with score."""
     texts = ["foo", "bar", "baz"]
-    in_memory_vec_store = InMemory.from_texts(
+    in_memory_vec_store = InMemoryExactSearch.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metric=metric,
@@ -67,7 +67,7 @@ def test_sim_search_with_score(metric) -> None:
 def test_sim_search_by_vector(metric) -> None:
     """Test end to end construction and similarity search by vector."""
     texts = ["foo", "bar", "baz"]
-    in_memory_vec_store = InMemory.from_texts(
+    in_memory_vec_store = InMemoryExactSearch.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metric=metric,
@@ -84,7 +84,7 @@ def test_max_marginal_relevance_search(metric) -> None:
     """Test MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = InMemory.from_texts(
+    docsearch = InMemoryExactSearch.from_texts(
         texts,
         FakeEmbeddings(),
         metadatas=metadatas,

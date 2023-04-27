@@ -11,8 +11,8 @@ from langchain.vectorstores.vector_store_from_doc_index import (
 )
 
 
-class InMemory(VecStoreFromDocIndex):
-    """Wrapper around in-memory storage.
+class InMemoryExactSearch(VecStoreFromDocIndex):
+    """Wrapper around in-memory storage for exact search.
 
     To use it, you should have the ``docarray`` package with version >=0.31.0 installed.
     You can install it with `pip install "langchain[in_memory_store]"`.
@@ -23,7 +23,7 @@ class InMemory(VecStoreFromDocIndex):
         embedding: Embeddings,
         metric: str = "cosine_sim",
     ) -> None:
-        """Initialize in-memory store.
+        """Initialize InMemoryExactSearch store.
 
         Args:
             embedding (Embeddings): Embedding function.
@@ -45,8 +45,8 @@ class InMemory(VecStoreFromDocIndex):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         metric: str = "cosine_sim",
-    ) -> InMemory:
-        """Create an in-memory store and insert data.
+    ) -> InMemoryExactSearch:
+        """Create an InMemoryExactSearch store and insert data.
 
         Args:
             texts (List[str]): Text data.
@@ -58,7 +58,7 @@ class InMemory(VecStoreFromDocIndex):
                 Defaults to "cosine_sim".
 
         Returns:
-            InMemory Vector Store
+            InMemoryExactSearch Vector Store
         """
         store = cls(
             embedding=embedding,
