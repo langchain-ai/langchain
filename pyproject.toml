@@ -99,6 +99,7 @@ pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
 pytest-asyncio = "^0.20.3"
+lark = "^1.1.5"
 
 [tool.poetry.group.test_integration]
 optional = true

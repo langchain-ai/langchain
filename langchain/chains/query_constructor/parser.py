@@ -20,19 +20,21 @@ GRAMMAR = """
 
     func_call: CNAME "(" [args] ")"
 
-    ?value: SIGNED_NUMBER -> number
+    ?value: SIGNED_INT -> int
+        | SIGNED_FLOAT -> float
         | list
         | string
-        | "false" -> false
-        | "true" -> true
+        | ("false" | "False" | "FALSE") -> false
+        | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
-    string: ESCAPED_STRING
+    string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
     %import common.CNAME
-    %import common.SIGNED_NUMBER
     %import common.ESCAPED_STRING
+    %import common.SIGNED_FLOAT
+    %import common.SIGNED_INT
     %import common.WS
     %ignore WS
 """
@@ -44,7 +46,7 @@ class QueryTransformer(Transformer):
         self,
         *args: Any,
         allowed_comparators: Optional[Sequence[Comparator]] = None,
-        allowed_operators: Optional[Sequence[Operator]],
+        allowed_operators: Optional[Sequence[Operator]] = None,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
@@ -93,9 +95,14 @@ class QueryTransformer(Transformer):
         return True
 
     def list(self, item: Any) -> list:
+        if item is None:
+            return []
         return list(item)
 
-    def number(self, item: Any) -> float:
+    def int(self, item: Any) -> int:
+        return int(item)
+
+    def float(self, item: Any) -> float:
         return float(item)
 
     def string(self, item: Any) -> str:
