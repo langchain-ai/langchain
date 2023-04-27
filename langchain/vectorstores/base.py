@@ -129,10 +129,17 @@ class VectorStore(ABC):
                 "Relevance scores must be between"
                 f" 0 and 1, got {docs_and_similarities}"
             )
-        score_threshold = kwargs.get('score_threshold', None)
+        score_threshold = kwargs.get("score_threshold", None)
         if score_threshold is not None:
-            docs_and_similarities = [(doc, similarity) for doc, similarity in docs_and_similarities 
-                                     if similarity > score_threshold]
+            docs_and_similarities = [
+                (doc, similarity)
+                for doc, similarity in docs_and_similarities
+                if similarity > score_threshold
+            ]
+            if len(docs_and_similarities) == 0:
+                warnings.warn(
+                    f"No relevant docs were retrieved using the relevance score threshold {score_threshold}"
+                )
         return docs_and_similarities
 
     def _similarity_search_with_relevance_scores(
