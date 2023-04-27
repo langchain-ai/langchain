@@ -1,11 +1,9 @@
 """Util that calls Lambda."""
+import json
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
-from langchain.utils import get_from_dict_or_env
-
-import json
 
 class LambdaWrapper(BaseModel):
     """Wrapper for AWS Lambda SDK.
@@ -18,6 +16,7 @@ class LambdaWrapper(BaseModel):
 
     """
 
+    lambda_client: Any  #: :meta private:
     function_name: Optional[str] = None
     awslambda_tool_name: Optional[str] = None
     awslambda_tool_description: Optional[str] = None
@@ -36,11 +35,10 @@ class LambdaWrapper(BaseModel):
 
         except ImportError:
             raise ImportError(
-                "boto3 is not installed."
-                "Please install it with `pip install boto3`"
+                "boto3 is not installed." "Please install it with `pip install boto3`"
             )
 
-        values["lambda_client"] = boto3.client('lambda')
+        values["lambda_client"] = boto3.client("lambda")
         values["function_name"] = values["function_name"]
 
         return values
@@ -49,15 +47,15 @@ class LambdaWrapper(BaseModel):
         """Invoke Lambda function and parse result."""
         res = self.lambda_client.invoke(
             FunctionName=self.function_name,
-            InvocationType='RequestResponse',
-            Payload=json.dumps({"body": query})
+            InvocationType="RequestResponse",
+            Payload=json.dumps({"body": query}),
         )
 
         try:
-          payload_stream = res['Payload']
-          payload_string = payload_stream.read().decode('utf-8')
-          answer = json.loads(payload_string)['body']
-          
+            payload_stream = res["Payload"]
+            payload_string = payload_stream.read().decode("utf-8")
+            answer = json.loads(payload_string)["body"]
+
         except StopIteration:
             return "Failed to parse response from Lambda"
 
