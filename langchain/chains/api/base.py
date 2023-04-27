@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field, root_validator
 
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -61,7 +62,10 @@ class APIChain(Chain):
             )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+    ) -> Dict[str, str]:
         question = inputs[self.question_key]
         api_url = self.api_request_chain.predict(
             question=question, api_docs=self.api_docs

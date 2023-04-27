@@ -1,8 +1,9 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.input import get_color_mapping
 
@@ -86,10 +87,15 @@ class SequentialChain(Chain):
 
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         known_values = inputs.copy()
         for i, chain in enumerate(self.chains):
-            outputs = chain(known_values, return_only_outputs=True)
+            callbacks = None if run_manager is None else run_manager.get_child()
+            outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
 
@@ -140,14 +146,20 @@ class SimpleSequentialChain(Chain):
                 )
         return values
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            _input = chain.run(_input)
+            callbacks = None if run_manager is None else run_manager.get_child()
+            _input = chain.run(_input, callbacks=callbacks)
             if self.strip_outputs:
                 _input = _input.strip()
-            self.callback_manager.on_text(
-                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
-            )
+            if run_manager is not None:
+                run_manager.on_text(
+                    _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+                )
         return {self.output_key: _input}
