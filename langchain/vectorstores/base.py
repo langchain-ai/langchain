@@ -118,6 +118,14 @@ class VectorStore(ABC):
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            score_threshold: Optional, a floating point value between 0 to 1 to filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
         """
         docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
@@ -339,7 +347,7 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
             if search_type not in ("similarity", "similarity_score_threshold", "mmr"):
                 raise ValueError(f"search_type of {search_type} not allowed.")
             if search_type == "similarity_score_threshold":
-                score_threshold = values["search_kwargs"].get("score_threshold", None)
+                score_threshold = values["search_kwargs"].get("score_threshold")
                 if (score_threshold is None) or (not isinstance(score_threshold, float)):
                     raise ValueError(
                         "`score_threshold` is not specified with a float value(0~1) in `search_kwargs`."
