@@ -31,7 +31,6 @@ def test_required_dependencies() -> None:
         "SQLAlchemy",
         "aiohttp",
         "async-timeout",
-        "azure-core",
         "dataclasses-json",
         "numexpr",
         "numpy",
