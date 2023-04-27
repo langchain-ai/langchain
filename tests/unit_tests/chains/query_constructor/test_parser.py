@@ -1,6 +1,7 @@
 """Test LLM-generated structured query parsing."""
-from typing import Any, Tuple, cast
+from typing import Any, cast
 
+import lark
 import pytest
 
 from langchain.chains.query_constructor.ir import (
@@ -16,7 +17,7 @@ DEFAULT_PARSER = get_parser()
 
 @pytest.mark.parametrize("x", ("", "foo", 'foo("bar", "baz")'))
 def test_parse_invalid_grammar(x: str) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, lark.exceptions.UnexpectedToken)):
         DEFAULT_PARSER.parse(x)
 
 
@@ -100,17 +101,16 @@ def test_parse_list_value(x: list) -> None:
     _test_parse_value(x)
 
 
-def test_parse_string_value() -> None:
-    for x in ('""', '" "', '"foo"', "'foo'"):
-        parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
-        actual = parsed.value
-        assert actual == x[1:-1]
+@pytest.mark.parametrize("x", ('""', '" "', '"foo"', "'foo'"))
+def test_parse_string_value(x: str) -> None:
+    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    actual = parsed.value
+    assert actual == x[1:-1]
 
 
-def test_parse_bool_value() -> None:
-    for y in ("true", "false"):
-        for x in (y, y.upper(), y.title()):
-            parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
-            actual = parsed.value
-            expected = y == "true"
-            assert actual == expected
+@pytest.mark.parametrize("x", ("true", "True", "TRUE", "false", "False", "FALSE"))
+def test_parse_bool_value(x: str) -> None:
+    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    actual = parsed.value
+    expected = x.lower() == "true"
+    assert actual == expected
