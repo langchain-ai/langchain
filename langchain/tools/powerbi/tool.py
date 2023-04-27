@@ -147,8 +147,8 @@ class InputToQueryTool(BaseTool):
     """  # noqa: E501
     llm_chain: LLMChain
     powerbi: PowerBIDataset = Field(exclude=True)
-    template: str = QUESTION_TO_QUERY
-    examples: str = DEFAULT_FEWSHOT_EXAMPLES
+    template: Optional[str] = QUESTION_TO_QUERY
+    examples: Optional[str] = DEFAULT_FEWSHOT_EXAMPLES
 
     class Config:
         """Configuration for this pydantic object."""
