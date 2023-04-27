@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from langchain.prompts.prompt import PromptTemplate
-from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 from pydantic import Extra, Field
 
@@ -11,8 +9,10 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
 from langchain.prompts.base import BasePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel
 from langchain.sql_database import SQLDatabase
+from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -88,29 +88,26 @@ class SQLDatabaseChain(Chain):
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
         }
-        intermediate_steps = []
+        intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)
             sql_cmd = llm_chain.predict(**llm_inputs)
             intermediate_steps.append(sql_cmd)
             if not self.use_query_checker:
                 self.callback_manager.on_text(
-                    sql_cmd, color="green",
-                    verbose=self.verbose
+                    sql_cmd, color="green", verbose=self.verbose
                 )
                 result = self.database.run(sql_cmd)
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
-                    template=QUERY_CHECKER,
-                    input_variables=["query", "dialect"]
+                    template=QUERY_CHECKER, input_variables=["query", "dialect"]
                 )
                 query_checker_chain = LLMChain(
-                    llm=self.llm,
-                    prompt=query_checker_prompt
+                    llm=self.llm, prompt=query_checker_prompt
                 )
                 query_checker_inputs = {
                     "query": sql_cmd,
-                    "dialect": self.database.dialect
+                    "dialect": self.database.dialect,
                 }
                 intermediate_steps.append(query_checker_inputs)
                 checked_sql_command: str = query_checker_chain.predict(
@@ -118,9 +115,7 @@ class SQLDatabaseChain(Chain):
                 )
                 intermediate_steps.append(checked_sql_command)
                 self.callback_manager.on_text(
-                    checked_sql_command,
-                    color="green",
-                    verbose=self.verbose
+                    checked_sql_command, color="green", verbose=self.verbose
                 )
                 result = self.database.run(checked_sql_command)
                 sql_cmd = checked_sql_command
@@ -141,14 +136,14 @@ class SQLDatabaseChain(Chain):
                 self.callback_manager.on_text(
                     final_result, color="green", verbose=self.verbose
                 )
-            chain_result: Dict[str, Any] = {self.output_key: final_result}        
+            chain_result: Dict[str, Any] = {self.output_key: final_result}
             if self.return_intermediate_steps:
                 chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
             return chain_result
         except Exception as exc:
             # Append intermediate steps to exception, to aid in logging and later
             # improvement of few shot prompt seeds
-            exc.intermediate_steps = intermediate_steps
+            exc.intermediate_steps = intermediate_steps  # type: ignore
             raise exc
 
     @property
@@ -219,7 +214,11 @@ class SQLDatabaseSequentialChain(Chain):
         }
         _lowercased_table_names = [name.lower() for name in _table_names]
         table_names_from_chain = self.decider_chain.predict_and_parse(**llm_inputs)
-        table_names_to_use = [name for name in table_names_from_chain if name.lower() in _lowercased_table_names]
+        table_names_to_use = [
+            name
+            for name in table_names_from_chain
+            if name.lower() in _lowercased_table_names
+        ]
         self.callback_manager.on_text(
             "Table names to use:", end="\n", verbose=self.verbose
         )
