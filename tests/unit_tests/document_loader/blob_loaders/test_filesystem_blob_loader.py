@@ -50,21 +50,23 @@ def toy_dir() -> Generator[Path, None, None]:
     ],
 )
 def test_file_names_exist(
-    toy_dir: Path,
+    toy_dir: str,
     glob: str,
     relative_filenames: Sequence[str],
 ) -> None:
     """Verify that the file names exist."""
+
     loader = FileSystemBlobLoader(
         path=toy_dir,
         glob=glob,
     )
     blobs = list(loader.yield_blobs())
 
-    file_names = sorted(blob.path for blob in blobs)
+    file_names = sorted(str(blob.path) for blob in blobs)
 
     expected_filenames = sorted(
-        str(toy_dir / relative_filename) for relative_filename in relative_filenames
+        str(Path(toy_dir) / relative_filename)
+        for relative_filename in relative_filenames
     )
 
     assert file_names == expected_filenames
