@@ -1,7 +1,7 @@
 # flake8: noqa
 from langchain import PromptTemplate
 
-song_data_source = """\
+SONG_DATA_SOURCE = """\
 ```json
 {
     content: "Lyrics of a song",
@@ -27,15 +27,15 @@ song_data_source = """\
     "}", "}}"
 )
 
-full_answer = """\
+FULL_ANSWER = """\
 ```json
 {{
     "query": "teenager love",
     "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), \
-lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
+lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\gg\"))"
 }}"""
 
-no_filter_answer = """\
+NO_FILTER_ANSWER = """\
 ```json
 {{
     "query": "",
@@ -44,22 +44,22 @@ no_filter_answer = """\
 ```\
 """
 
-default_examples = [
+DEFAULT_EXAMPLES = [
     {
         "i": 1,
-        "data_source": song_data_source,
+        "data_source": SONG_DATA_SOURCE,
         "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",
-        "structured_request": full_answer,
+        "structured_request": FULL_ANSWER,
     },
     {
         "i": 2,
-        "data_source": song_data_source,
+        "data_source": SONG_DATA_SOURCE,
         "user_query": "What are songs that were not published on Spotify",
-        "structured_request": no_filter_answer,
+        "structured_request": NO_FILTER_ANSWER,
     },
 ]
 
-example_prompt_template = """\
+EXAMPLE_PROMPT_TEMPLATE = """\
 << Example {i}. >>
 Data Source:
 {data_source}
@@ -71,13 +71,13 @@ Structured Request:
 {structured_request}
 """
 
-example_prompt = PromptTemplate(
+EXAMPLE_PROMPT = PromptTemplate(
     input_variables=["i", "data_source", "user_query", "structured_request"],
-    template=example_prompt_template,
+    template=EXAMPLE_PROMPT_TEMPLATE,
 )
 
 
-default_schema = """\
+DEFAULT_SCHEMA = """\
 << Structured Request Schema >>
 When responding use a markdown code snippet with a JSON object formatted in the \
 following schema:
@@ -114,13 +114,13 @@ Make sure that filters are only used as needed. If there are no filters that sho
 applied return "NO_FILTER" for the filter value.\
 """
 
-default_prefix = """\
+DEFAULT_PREFIX = """\
 Your goal is to structure the user's query to match the request schema provided below.
 
 {schema}\
 """
 
-default_suffix = """\
+DEFAULT_SUFFIX = """\
 << Example {i}. >>
 Data Source:
 ```json

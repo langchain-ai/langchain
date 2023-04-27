@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
 from langchain.chains.query_constructor.base import (
-    AttributeInfo,
     load_query_constructor_chain,
 )
 from langchain.chains.query_constructor.query_language import StructuredQuery, Visitor
+from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores import Pinecone, VectorStore

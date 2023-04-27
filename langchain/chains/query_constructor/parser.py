@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Sequence, Union
 
 try:
     from lark import Lark, Transformer, v_args
@@ -42,8 +42,8 @@ class QueryTransformer(Transformer):
     def __init__(
         self,
         *args: Any,
-        allowed_comparators: Optional[List[Comparator]] = None,
-        allowed_operators: Optional[List[Operator]],
+        allowed_comparators: Optional[Sequence[Comparator]] = None,
+        allowed_operators: Optional[Sequence[Operator]],
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
@@ -103,8 +103,8 @@ class QueryTransformer(Transformer):
 
 
 def get_parser(
-    allowed_comparators: Optional[List[Comparator]] = None,
-    allowed_operators: Optional[List[Operator]] = None,
+    allowed_comparators: Optional[Sequence[Comparator]] = None,
+    allowed_operators: Optional[Sequence[Operator]] = None,
 ) -> Lark:
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators, allowed_operators=allowed_operators

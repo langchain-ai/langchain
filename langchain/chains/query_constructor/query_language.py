@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Sequence, Union
 
 from pydantic import BaseModel
 
@@ -8,19 +10,19 @@ from pydantic import BaseModel
 class Visitor(ABC):
     """Abstract visitor interface."""
 
-    allowed_comparators: Optional[List["Comparator"]] = None
-    allowed_operators: Optional[List["Operator"]] = None
+    allowed_comparators: Optional[Sequence[Comparator]] = None
+    allowed_operators: Optional[Sequence[Operator]] = None
 
     @abstractmethod
-    def visit_operation(self, operation: "Operation") -> Any:
+    def visit_operation(self, operation: Operation) -> Any:
         """"""
 
     @abstractmethod
-    def visit_comparison(self, comparison: "Comparison") -> Any:
+    def visit_comparison(self, comparison: Comparison) -> Any:
         """"""
 
     @abstractmethod
-    def visit_structured_query(self, structured_query: "StructuredQuery") -> Any:
+    def visit_structured_query(self, structured_query: StructuredQuery) -> Any:
         """"""
 
 
@@ -64,7 +66,7 @@ class Comparison(Expr):
 
 class Operation(Expr):
     operator: Operator
-    arguments: List[Union[Comparison, "Operation"]]
+    arguments: List[Union[Comparison, Operation]]
 
 
 class StructuredQuery(Expr):
