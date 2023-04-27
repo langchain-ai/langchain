@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
+import re
 
 from pydantic import Field
 
@@ -64,9 +65,10 @@ class ConversationalChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
-        tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
-        )
+        tool_strings = []
+        for tool in tools:
+            args_schema = re.sub("}", "}}}}", re.sub("{", "{{{{", str(tool.args)))
+            tool_strings.append(f"> {tool.name}: {tool.description}\nArgs: {args_schema}")
         tool_names = ", ".join([tool.name for tool in tools])
         _output_parser = output_parser or cls._get_default_output_parser()
         format_instructions = human_message.format(

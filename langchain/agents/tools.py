@@ -33,12 +33,14 @@ class Tool(BaseTool):
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         else:
-            inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
+            return {'tool_input': {'type': 'string'}}
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        foo = list(args) + list(kwargs.values())
+        if len(foo) != 1:
+            raise ValueError
+        return self.func(*foo)
 
     async def _arun(self, *args: Any, **kwargs: Any) -> str:
         """Use the tool asynchronously."""
@@ -75,7 +77,7 @@ def tool(
     *args: Union[str, Callable],
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
-    infer_schema: bool = True,
+    infer_schema: bool = False,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 

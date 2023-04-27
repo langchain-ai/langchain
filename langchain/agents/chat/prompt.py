@@ -10,7 +10,9 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
 ```
 {{{{
   "action": $TOOL_NAME,
-  "action_input": $INPUT
+  "action_input": {{{{
+      ...
+  }}}}
 }}}}
 ```
 
