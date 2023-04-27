@@ -1,6 +1,6 @@
 """"""
 import json
-from typing import Callable, List, Optional, Any
+from typing import Any, Callable, List, Optional
 
 from pydantic import BaseModel
 
@@ -114,7 +114,7 @@ def load_query_constructor_chain(
     examples: Optional[List] = None,
     allowed_comparators: Optional[List[Comparator]] = None,
     allowed_operators: Optional[List[Operator]] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> LLMChain:
     prompt = _get_prompt(
         document_contents,
