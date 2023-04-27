@@ -15,6 +15,7 @@ from langchain.vectorstores.qdrant import Qdrant
 from langchain.vectorstores.supabase import SupabaseVectorStore
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
+from langchain.vectorstores.lancedb import LanceDB
 
 __all__ = [
     "ElasticVectorSearch",
@@ -34,4 +35,5 @@ __all__ = [
     "MyScaleSettings",
     "SupabaseVectorStore",
     "AnalyticDB",
+    "LanceDB",
 ]
