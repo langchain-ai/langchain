@@ -23,6 +23,10 @@ class TestModel(BaseModel):
     )
 
 
+# Prevent pytest from trying to run tests on TestModel
+TestModel.__test__ = False
+
+
 DEF_RESULT = """{
     "action": "Update",
     "action_input": "The PydanticOutputParser class is powerful",
