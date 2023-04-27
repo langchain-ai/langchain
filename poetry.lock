@@ -3465,7 +3465,7 @@ name = "lark"
 version = "1.1.5"
 description = "a modern parsing library"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "lark-1.1.5-py3-none-any.whl", hash = "sha256:8476f9903e93fbde4f6c327f74d79e9b4bd0ed9294c5dfa3164ab8c581b5de2a"},
@@ -9315,4 +9315,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a7a70f72bd1a4041e72ed8cfb512743b3dcde947e5c05dfe6c65dcf7babe01db"
+content-hash = "cfda8bb28b7ec9d3d62a19d34d246b9cf056824f78eb69affaafa33b37e0f087"
