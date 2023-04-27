@@ -189,18 +189,7 @@ class ConfluenceLoader(BaseLoader):
                 "`label`, `cql` parameters."
             )
 
-        try:
-            import html2text  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`html2text` package not found, please run `pip install html2text`"
-            )
-
         docs = []
-
-        text_maker = html2text.HTML2Text()
-        text_maker.ignore_links = True
-        text_maker.ignore_images = True
 
         if space_key:
             pages = self.paginate_request(
@@ -211,9 +200,7 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         if label:
@@ -225,9 +212,7 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         if cql:
@@ -239,9 +224,7 @@ class ConfluenceLoader(BaseLoader):
                 expand="body.storage.value",
             )
             for page in pages:
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         if page_ids:
@@ -259,9 +242,7 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(page_id=page_id, expand="body.storage.value")
-                doc = self.process_page(
-                    page, include_attachments, include_comments, text_maker
-                )
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         return docs
@@ -313,21 +294,28 @@ class ConfluenceLoader(BaseLoader):
         page: dict,
         include_attachments: bool,
         include_comments: bool,
-        text_maker: Any,
     ) -> Document:
+        try:
+            from bs4 import BeautifulSoup  # type: ignore
+        except ImportError:
+            raise ImportError(
+                "`beautifulsoup4` package not found, please run"
+                " `pip install beautifulsoup4`"
+            )
+
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        text = text_maker.handle(page["body"]["storage"]["value"]) + "".join(
-            attachment_texts
-        )
+        text = BeautifulSoup(
+            page["body"]["storage"]["value"], "lxml"
+        ).get_text() + "".join(attachment_texts)
         if include_comments:
             comments = self.confluence.get_page_comments(
                 page["id"], expand="body.view.value", depth="all"
             )["results"]
             comment_texts = [
-                text_maker.handle(comment["body"]["view"]["value"])
+                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text()
                 for comment in comments
             ]
             text = text + "".join(comment_texts)
