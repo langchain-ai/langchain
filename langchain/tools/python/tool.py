@@ -1,10 +1,10 @@
 """A tool for running python code in a REPL."""
 
 import ast
-import sys
 import re
-from io import StringIO
+import sys
 from contextlib import redirect_stdout
+from io import StringIO
 from typing import Dict, Optional
 
 from pydantic import Field, root_validator
@@ -70,7 +70,8 @@ class PythonAstREPLTool(BaseTool):
         """Use the tool."""
         try:
             if self.sanitize_input:
-                # Remove backticks & python (if llm mistakes python console as terminal) from query
+                # Remove backticks & python from query
+                # Removes python if llm mistakes python console as terminals
                 query = re.sub(r"(?i:python)|`", "", query).strip()
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
