@@ -112,6 +112,7 @@ class VectorStore(ABC):
         self,
         query: str,
         k: int = 4,
+        score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
@@ -129,12 +130,11 @@ class VectorStore(ABC):
                 "Relevance scores must be between"
                 f" 0 and 1, got {docs_and_similarities}"
             )
-        score_threshold = kwargs.get("score_threshold", None)
         if score_threshold is not None:
             docs_and_similarities = [
                 (doc, similarity)
                 for doc, similarity in docs_and_similarities
-                if similarity > score_threshold
+                if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
                 warnings.warn(
@@ -340,9 +340,9 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                 raise ValueError(f"search_type of {search_type} not allowed.")
             if search_type == "similarity_score_threshold":
                 score_threshold = values["search_kwargs"].get("score_threshold", None)
-                if score_threshold is None and not isinstance(score_threshold, float):
+                if (score_threshold is None) or (not isinstance(score_threshold, float)):
                     raise ValueError(
-                        "`score_threshold` is not specified with a float value in `search_kwargs`."
+                        "`score_threshold` is not specified with a float value(0~1) in `search_kwargs`."
                     )
         return values
 
