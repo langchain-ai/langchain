@@ -83,7 +83,7 @@ class SQLDatabaseChain(Chain):
         table_info = self.database.get_table_info(table_names=table_names_to_use)
         llm_inputs = {
             "input": input_text,
-            "top_k": self.top_k,
+            "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
             "stop": ["\nSQLResult:"],
