@@ -1,3 +1,4 @@
+"""Retriever that generates and executes structured queries over its own data source."""
 from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import BaseModel, Field, root_validator
@@ -13,8 +14,8 @@ from langchain.schema import BaseLanguageModel, BaseRetriever, Document
 from langchain.vectorstores import Pinecone, VectorStore
 
 
-def get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
-    """"""
+def _get_builtin_translator(vectorstore_cls: Type[VectorStore]) -> Visitor:
+    """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         Pinecone: PineconeTranslator
     }
@@ -39,7 +40,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
     structured_query_translator: Visitor
-    """"""
+    """Translator for turning internal query language into vectorstore search params."""
     verbose: bool = False
 
     class Config:
@@ -49,10 +50,10 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
 
     @root_validator(pre=True)
     def validate_translator(cls, values: Dict) -> Dict:
-        """Validate search type."""
+        """Validate translator."""
         if "structured_query_translator" not in values:
             vectorstore_cls = values["vectorstore"].__class__
-            values["structured_query_translator"] = get_builtin_translator(
+            values["structured_query_translator"] = _get_builtin_translator(
                 vectorstore_cls
             )
         return values
@@ -94,7 +95,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
         if structured_query_translator is None:
-            structured_query_translator = get_builtin_translator(vectorstore.__class__)
+            structured_query_translator = _get_builtin_translator(vectorstore.__class__)
         chain_kwargs = chain_kwargs or {}
         if "allowed_comparators" not in chain_kwargs:
             chain_kwargs[

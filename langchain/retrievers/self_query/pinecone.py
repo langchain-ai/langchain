@@ -1,4 +1,4 @@
-""""""
+"""Logic for converting internal query language to a valid Pinecone query."""
 from typing import Dict, Tuple, Union
 
 from langchain.chains.query_constructor.ir import (
@@ -12,7 +12,10 @@ from langchain.chains.query_constructor.ir import (
 
 
 class PineconeTranslator(Visitor):
+    """Logic for converting internal query language elements to valid filters."""
+
     allowed_operators = [Operator.AND, Operator.OR]
+    """Subset of allowed logical operators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         if isinstance(func, Operator) and self.allowed_operators is not None:

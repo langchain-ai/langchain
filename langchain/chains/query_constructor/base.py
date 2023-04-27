@@ -1,4 +1,4 @@
-""""""
+"""LLM Chain for turning a user text query into a structured query."""
 from __future__ import annotations
 
 import json
@@ -25,7 +25,7 @@ from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserEx
 
 class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
-    """"""
+    """Callable that parses dict into internal representation of query language."""
 
     def parse(self, text: str) -> StructuredQuery:
         try:

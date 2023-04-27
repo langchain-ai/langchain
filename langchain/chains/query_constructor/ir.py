@@ -1,3 +1,4 @@
+"""Internal representation of a structured query language."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -8,22 +9,22 @@ from pydantic import BaseModel
 
 
 class Visitor(ABC):
-    """Abstract visitor interface."""
+    """Defines interface for IR translation using visitor pattern."""
 
     allowed_comparators: Optional[Sequence[Comparator]] = None
     allowed_operators: Optional[Sequence[Operator]] = None
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:
-        """"""
+        """Translate an Operation."""
 
     @abstractmethod
     def visit_comparison(self, comparison: Comparison) -> Any:
-        """"""
+        """Translate a Comparison."""
 
     @abstractmethod
     def visit_structured_query(self, structured_query: StructuredQuery) -> Any:
-        """"""
+        """Translate a StructuredQuery."""
 
 
 def _to_snake_case(name: str) -> str:
@@ -59,7 +60,7 @@ class Comparator(str, Enum):
 
 
 class FilterDirective(Expr, ABC):
-    """A filtering experssion."""
+    """A filtering expression."""
 
 
 class Comparison(FilterDirective):
