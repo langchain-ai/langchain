@@ -1,4 +1,6 @@
-"""Wrapper around oobabooga/text-generation-webui blocking API."""
+"""Wrapper around oobabooga/text-generation-webui blocking API.
+
+See https://github.com/oobabooga/text-generation-webui/blob/main/api-example.py for example usage."""
 
 # TODO: streaming API
 
