@@ -161,10 +161,10 @@ class GPT4All(LLM):
         return "gpt4all"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         r"""Call out to GPT4All's generate method.
 
@@ -182,9 +182,7 @@ class GPT4All(LLM):
                 response = model(prompt, n_predict=55)
         """
         if run_manager:
-            text_callback = partial(
-                run_manager.on_llm_new_token, verbose=self.verbose
-            )
+            text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
             text = self.client.generate(
                 prompt,
                 new_text_callback=text_callback,
