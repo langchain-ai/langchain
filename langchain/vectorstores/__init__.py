@@ -7,6 +7,7 @@ from langchain.vectorstores.chroma import Chroma
 from langchain.vectorstores.deeplake import DeepLake
 from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
 from langchain.vectorstores.faiss import FAISS
+from langchain.vectorstores.lancedb import LanceDB
 from langchain.vectorstores.milvus import Milvus
 from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
@@ -36,4 +37,5 @@ __all__ = [
     "SupabaseVectorStore",
     "AnalyticDB",
     "Tair",
+    "LanceDB",
 ]
