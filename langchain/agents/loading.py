@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 import yaml
 
 from langchain.agents.agent import BaseSingleActionAgent
+from langchain.agents.agent_type_config import AGENT_TO_CLASS
 from langchain.agents.agent_types import AgentType
 from langchain.agents.chat.base import ChatAgent
 from langchain.agents.conversational.base import ConversationalAgent
@@ -17,7 +18,6 @@ from langchain.agents.tools import Tool
 from langchain.chains.loading import load_chain, load_chain_from_config
 from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
-from langchain.agents.agent_type_config import AGENT_TO_CLASS
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
