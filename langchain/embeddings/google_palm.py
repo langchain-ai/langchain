@@ -20,13 +20,12 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
         )
         try:
             import google.generativeai as genai
-            from google.generativeai import text
 
             genai.configure(api_key=google_api_key)
         except ImportError:
             raise ImportError("Could not import google.generativeai python package.")
 
-        values["client"] = text
+        values["client"] = genai
 
         return values
 

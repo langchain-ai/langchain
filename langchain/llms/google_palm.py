@@ -52,18 +52,12 @@ class GooglePalm(BaseLLM, BaseModel):
         )
         try:
             import google.generativeai as genai
-            from google.generativeai import text
 
-            genai.configure(
-                api_key=google_api_key,
-                client_options={
-                    "api_endpoint": "autopush-generativelanguage.sandbox.googleapis.com"
-                },
-            )
+            genai.configure(api_key=google_api_key)
         except ImportError:
             raise ImportError("Could not import google.generativeai python package.")
 
-        values["client"] = text
+        values["client"] = genai
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")

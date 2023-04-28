@@ -1,5 +1,7 @@
 """Wrapper around Google's PaLM Chat API."""
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
@@ -15,11 +17,8 @@ from langchain.schema import (
 )
 from langchain.utils import get_from_dict_or_env
 
-try:
-    # Import only for type checking.
+if TYPE_CHECKING:
     import google.generativeai as genai
-except ImportError:
-    pass
 
 
 class ChatGooglePalmError(Exception):
@@ -42,7 +41,7 @@ def _truncate_at_stop_tokens(
 
 
 def _response_to_result(
-    response: "genai.types.ChatResponse",
+    response: genai.types.ChatResponse,
     stop: Optional[List[str]],
 ) -> ChatResult:
     """Converts a PaLM API response into a LangChain ChatResult."""
@@ -83,7 +82,7 @@ def _response_to_result(
 
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
-) -> "genai.types.MessagePromptDict":
+) -> genai.types.MessagePromptDict:
     """Converts a list of LangChain messages into a PaLM API MessagePrompt structure."""
     import google.generativeai as genai
 
@@ -219,8 +218,6 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     def _generate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
-        import google.generativeai as genai
-
         prompt = _messages_to_prompt_dict(messages)
 
         response: genai.types.ChatResponse = self.client.chat(
@@ -237,8 +234,6 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     async def _agenerate(
         self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
-        import google.generativeai as genai
-
         prompt = _messages_to_prompt_dict(messages)
 
         response: genai.types.ChatResponse = await self.client.chat_async(
