@@ -147,25 +147,10 @@ def test_run_with_callback() -> None:
     """Test run method works when callback manager is passed."""
     handler = FakeCallbackHandler()
     chain = FakeChain(
-        callback_manager=CallbackManager(handlers=[handler]), verbose=True
+        callbacks=[handler],
     )
     output = chain.run("bar")
     assert output == "baz"
     assert handler.starts == 1
     assert handler.ends == 1
-    assert handler.errors == 0
-
-
-def test_run_with_callback_not_verbose() -> None:
-    """Test run method works when callback manager is passed and not verbose."""
-    import langchain
-
-    langchain.verbose = False
-
-    handler = FakeCallbackHandler()
-    chain = FakeChain(callback_manager=CallbackManager(handlers=[handler]))
-    output = chain.run("bar")
-    assert output == "baz"
-    assert handler.starts == 0
-    assert handler.ends == 0
     assert handler.errors == 0
