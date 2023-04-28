@@ -5213,7 +5213,7 @@ test = ["mock", "pytest", "pytest-coverage", "typer-cli"]
 name = "pexpect"
 version = "4.8.0"
 description = "Pexpect allows easy control of interactive console applications."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -5739,7 +5739,7 @@ files = [
 name = "ptyprocess"
 version = "0.7.0"
 description = "Run a subprocess in a pseudo terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -6391,6 +6391,31 @@ files = [
     {file = "pytz-2023.3-py2.py3-none-any.whl", hash = "sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb"},
     {file = "pytz-2023.3.tar.gz", hash = "sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588"},
 ]
+
+[[package]]
+name = "pyvespa"
+version = "0.33.0"
+description = "Python API for vespa.ai"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "pyvespa-0.33.0-py3-none-any.whl", hash = "sha256:2681910b3ac5f0259a9e41e6e2649caba2801e836b4c295cc2e48ab25b09672c"},
+    {file = "pyvespa-0.33.0.tar.gz", hash = "sha256:be3da9022276555b6b25c40b6e846db6e9dbf617486001ba92235ccfab6c9353"},
+]
+
+[package.dependencies]
+aiohttp = "*"
+cryptography = "*"
+docker = "*"
+jinja2 = "*"
+pandas = "*"
+requests = "*"
+tenacity = "*"
+
+[package.extras]
+full = ["keras-tuner", "onnxruntime", "tensorflow", "tensorflow-ranking", "torch (<1.13)", "transformers"]
+ml = ["keras-tuner", "tensorflow", "tensorflow-ranking", "torch (<1.13)", "transformers"]
 
 [[package]]
 name = "pywin32"
@@ -9393,7 +9418,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "lancedb", "lark", "manifest-ml", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "pytesseract", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
+all = ["aleph-alpha-client", "anthropic", "arxiv", "atlassian-python-api", "azure-cosmos", "azure-identity", "beautifulsoup4", "clickhouse-connect", "cohere", "deeplake", "duckduckgo-search", "elasticsearch", "faiss-cpu", "google-api-python-client", "google-search-results", "gptcache", "html2text", "huggingface_hub", "jina", "jinja2", "lancedb", "lark", "manifest-ml", "networkx", "nlpcloud", "nltk", "nomic", "openai", "opensearch-py", "pexpect", "pgvector", "pinecone-client", "pinecone-text", "psycopg2-binary", "pyowm", "pypdf", "pytesseract", "qdrant-client", "redis", "sentence-transformers", "spacy", "tensorflow-text", "tiktoken", "torch", "transformers", "weaviate-client", "wikipedia", "wolframalpha"]
 azure = ["azure-core", "azure-cosmos", "azure-identity", "openai"]
 cohere = ["cohere"]
 embeddings = ["sentence-transformers"]
@@ -9404,4 +9429,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "f7ff48dfce65630ea5c67287e91d923be83b9d0d9dd68639afcbc29f5f6f9c5f"
+content-hash = "2ef913e267f1a10beee9f97924dc38df89fbe8a1ddc0de0f6e6f04e272763823"
