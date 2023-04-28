@@ -221,12 +221,8 @@ class BaseOpenAI(BaseLLM):
 
             openai.api_key = openai_api_key
             if openai_api_base:
-                print("USING API_BASE: ")
-                print(openai_api_base)
                 openai.api_base = openai_api_base
             if openai_organization:
-                print("USING ORGANIZATION: ")
-                print(openai_organization)
                 openai.organization = openai_organization
             values["client"] = openai.Completion
         except ImportError:
@@ -250,10 +246,15 @@ class BaseOpenAI(BaseLLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "best_of": self.best_of,
             "request_timeout": self.request_timeout,
             "logit_bias": self.logit_bias,
         }
+
+        # Azure gpt-35-turbo doesn't support best_of
+        # don't specify best_of if it is 1
+        if self.best_of > 1:
+            normal_params["best_of"] = self.best_of
+
         return {**normal_params, **self.model_kwargs}
 
     def _generate(
