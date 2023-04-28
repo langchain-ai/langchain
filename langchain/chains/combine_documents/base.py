@@ -77,10 +77,13 @@ class BaseCombineDocumentsChain(Chain, ABC):
         inputs: Dict[str, List[Document]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         docs = inputs[self.input_key]
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
-        output, extra_return_dict = self.combine_docs(docs, **other_keys)
+        output, extra_return_dict = self.combine_docs(
+            docs, callbacks=_run_manager.get_child(), **other_keys
+        )
         extra_return_dict[self.output_key] = output
         return extra_return_dict
 
@@ -89,10 +92,13 @@ class BaseCombineDocumentsChain(Chain, ABC):
         inputs: Dict[str, List[Document]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         docs = inputs[self.input_key]
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
-        output, extra_return_dict = await self.acombine_docs(docs, **other_keys)
+        output, extra_return_dict = await self.acombine_docs(
+            docs, callbacks=_run_manager.get_child(), **other_keys
+        )
         extra_return_dict[self.output_key] = output
         return extra_return_dict
 
