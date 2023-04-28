@@ -92,16 +92,16 @@ class Chain(BaseModel, ABC):
     @abstractmethod
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Run the logic of this chain and return the output."""
         raise NotImplementedError("Async call not supported for this chain type.")
 
