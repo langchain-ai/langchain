@@ -1,14 +1,10 @@
 # Deployments
 
-So you've made a really cool chain - now what? How do you deploy it and make it easily sharable with the world?
+So, you've created a really cool chain - now what? How do you deploy it and make it easily shareable with the world?
 
-This section covers several options for that.
-Note that these are meant as quick deployment options for prototypes and demos, and not for production systems.
-If you are looking for help with deployment of a production system, please contact us directly.
+This section covers several options for that. Note that these options are meant for quick deployment of prototypes and demos, not for production systems. If you need help with the deployment of a production system, please contact us directly.
 
-What follows is a list of template GitHub repositories aimed that are intended to be
-very easy to fork and modify to use your chain.
-This is far from an exhaustive list of options, and we are EXTREMELY open to contributions here.
+What follows is a list of template GitHub repositories designed to be easily forked and modified to use your chain. This list is far from exhaustive, and we are EXTREMELY open to contributions here.
 
 ## [Streamlit](https://github.com/hwchase17/langchain-streamlit-template)
 
@@ -47,12 +43,11 @@ A minimal example on how to deploy LangChain to Google Cloud Run.
 
 ## [SteamShip](https://github.com/steamship-core/steamship-langchain/)
 
-This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship.
-This includes: production ready endpoints, horizontal scaling across dependencies, persistant storage of app state, multi-tenancy support, etc.
+This repository contains LangChain adapters for Steamship, enabling LangChain developers to rapidly deploy their apps on Steamship. This includes: production-ready endpoints, horizontal scaling across dependencies, persistent storage of app state, multi-tenancy support, etc.
 
 ## [Langchain-serve](https://github.com/jina-ai/langchain-serve)
 
-This repository allows users to serve local chains and agents as RESTful, gRPC, or Websocket APIs thanks to [Jina](https://docs.jina.ai/). Deploy your chains & agents with ease and enjoy independent scaling, serverless and autoscaling APIs, as well as a Streamlit playground on Jina AI Cloud.
+This repository allows users to serve local chains and agents as RESTful, gRPC, or WebSocket APIs, thanks to [Jina](https://docs.jina.ai/). Deploy your chains & agents with ease and enjoy independent scaling, serverless and autoscaling APIs, as well as a Streamlit playground on Jina AI Cloud.
 
 ## [BentoML](https://github.com/ssheng/BentoChain)
 
@@ -60,4 +55,4 @@ This repository provides an example of how to deploy a LangChain application wit
 
 ## [Databutton](https://databutton.com/home?new-data-app=true)
 
-These templates serve as examples of how to build, deploy, and share LangChain applications using Databutton. You can create user interfaces with Streamlit, automate tasks by scheduling Python code, and store files and data in the built-in store. Examples include Chatbot interface with conversational memory, Personal search engine, and a starter template for LangChain apps. Deploying and sharing is one click. 
+These templates serve as examples of how to build, deploy, and share LangChain applications using Databutton. You can create user interfaces with Streamlit, automate tasks by scheduling Python code, and store files and data in the built-in store. Examples include a Chatbot interface with conversational memory, a Personal search engine, and a starter template for LangChain apps. Deploying and sharing is just one click away.

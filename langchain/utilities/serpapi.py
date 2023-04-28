@@ -77,7 +77,23 @@ class SerpAPIWrapper(BaseModel):
         return values
 
     async def arun(self, query: str) -> str:
-        """Use aiohttp to run query through SerpAPI and parse result."""
+        """Run query through SerpAPI and parse result async."""
+        return self._process_response(await self.aresults(query))
+
+    def run(self, query: str) -> str:
+        """Run query through SerpAPI and parse result."""
+        return self._process_response(self.results(query))
+
+    def results(self, query: str) -> dict:
+        """Run query through SerpAPI and return the raw result."""
+        params = self.get_params(query)
+        with HiddenPrints():
+            search = self.search_engine(params)
+            res = search.get_dict()
+        return res
+
+    async def aresults(self, query: str) -> dict:
+        """Use aiohttp to run query through SerpAPI and return the results async."""
 
         def construct_url_and_params() -> Tuple[str, Dict[str, str]]:
             params = self.get_params(query)
@@ -97,18 +113,6 @@ class SerpAPIWrapper(BaseModel):
             async with self.aiosession.get(url, params=params) as response:
                 res = await response.json()
 
-        return self._process_response(res)
-
-    def run(self, query: str) -> str:
-        """Run query through SerpAPI and parse result."""
-        return self._process_response(self.results(query))
-
-    def results(self, query: str) -> dict:
-        """Run query through SerpAPI and return the raw result."""
-        params = self.get_params(query)
-        with HiddenPrints():
-            search = self.search_engine(params)
-            res = search.get_dict()
         return res
 
     def get_params(self, query: str) -> Dict[str, str]:
