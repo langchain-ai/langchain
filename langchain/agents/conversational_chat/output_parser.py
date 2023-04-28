@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Union
 
 from langchain.agents import AgentOutputParser
@@ -14,18 +15,29 @@ class ConvoOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         cleaned_output = text.strip()
-        if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
-        if "```" in cleaned_output:
-            cleaned_output, _ = cleaned_output.split("```")
-        if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
-        if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
-        if cleaned_output.endswith("```"):
-            cleaned_output = cleaned_output[: -len("```")]
-        cleaned_output = cleaned_output.strip()
-        response = json.loads(cleaned_output)
+
+        action_pattern = r'"action":\s*"([^"]*)"'
+        action_input_pattern = r'"action_input":\s*"([^"]*)"'
+
+        action_match = re.search(action_pattern, cleaned_output)
+        action_input_match = re.search(action_input_pattern, cleaned_output)
+
+        try:
+            if action_match is None or action_input_match is None:
+                raise ValueError(
+                    "Failed to parse values from the LLM output: ", cleaned_output
+                )
+
+            action = action_match.group(1)
+            action_input = action_input_match.group(1)
+
+            parsed = {"action": action, "action_input": action_input}
+            parsed_output = json.dumps(parsed)
+
+        except AttributeError:
+            print("Failed to parse LLM output: ", cleaned_output)
+
+        response = json.loads(parsed_output)
         action, action_input = response["action"], response["action_input"]
         if action == "Final Answer":
             return AgentFinish({"output": action_input}, text)
