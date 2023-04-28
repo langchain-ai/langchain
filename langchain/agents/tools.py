@@ -87,11 +87,17 @@ class InvalidTool(BaseTool):
     name = "invalid_tool"
     description = "Called when tool name is invalid."
 
-    def _run(self, tool_name: str) -> str:
+    def _run(
+        self, tool_name: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Use the tool."""
         return f"{tool_name} is not a valid tool, try another one."
 
-    async def _arun(self, tool_name: str) -> str:
+    async def _arun(
+        self,
+        tool_name: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         return f"{tool_name} is not a valid tool, try another one."
 

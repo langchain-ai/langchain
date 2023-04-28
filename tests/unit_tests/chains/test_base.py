@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema import BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -49,7 +49,11 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:
