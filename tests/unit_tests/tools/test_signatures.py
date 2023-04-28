@@ -1,0 +1,37 @@
+"""Test base tool child implementations."""
+
+
+import inspect
+import re
+from typing import List, Type
+
+import pytest
+
+from langchain.tools.base import BaseTool
+
+
+def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
+    subclasses = []
+    for subclass in cls.__subclasses__():
+        if not getattr(subclass, "__abstract__", None):
+            subclasses.append(subclass)
+        subclasses.extend(get_non_abstract_subclasses(subclass))
+    return subclasses
+
+
+@pytest.mark.parametrize("cls", get_non_abstract_subclasses(BaseTool))
+def test_all_subclasses_accept_run_manager(cls: Type[BaseTool]) -> None:
+    if cls._run is not BaseTool._arun:
+        run_func = cls._run
+        params = inspect.signature(run_func).parameters
+        assert "run_manager" in params
+        pattern = re.compile(r"(?!Async)CallbackManagerForToolRun")
+        assert bool(re.search(pattern, str(params["run_manager"].annotation)))
+        assert params["run_manager"].default is None
+
+    if cls._arun is not BaseTool._arun:
+        run_func = cls._arun
+        params = inspect.signature(run_func).parameters
+        assert "run_manager" in params
+        assert "AsyncCallbackManagerForToolRun" in str(params["run_manager"].annotation)
+        assert params["run_manager"].default is None
