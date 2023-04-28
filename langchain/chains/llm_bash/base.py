@@ -56,6 +56,14 @@ class LLMBashChain(Chain):
                 values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
         return values
 
+    @root_validator
+    def validate_prompt(cls, values: Dict) -> Dict:
+        if values["llm_chain"].prompt.output_parser is None:
+            raise ValueError(
+                "The prompt used by llm_chain is expected to have an output_parser."
+            )
+        return values
+
     @property
     def input_keys(self) -> List[str]:
         """Expect input key.
@@ -86,7 +94,7 @@ class LLMBashChain(Chain):
         _run_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         try:
-            command_list = self.llm_chain.prompt.output_parser.parse(t)
+            command_list = self.llm_chain.prompt.output_parser.parse(t)  # type: ignore[union-attr]
         except OutputParserException as e:
             _run_manager.on_chain_error(e, verbose=self.verbose)
             raise e
