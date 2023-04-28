@@ -110,7 +110,7 @@ class BabyAGI(Chain, BaseModel):
         """Execute a task."""
         context = self._get_top_tasks(query=objective, k=k)
         filtered_inputs = {key: value for key, value in inputs.items() if key != "task"}
-        return self.execution_chain.run(context="\n".join(context), task=task, **filtered_inputs)
+        return self.execution_chain([{"context": "\n".join(context), "task": task}, {**filtered_inputs}])
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent."""
