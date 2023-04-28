@@ -6,7 +6,7 @@ from typing import Any, Dict
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
