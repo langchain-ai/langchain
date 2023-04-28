@@ -8,7 +8,6 @@ from pydantic import BaseModel, validator
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
-    Callbacks,
 )
 from langchain.tools.base import BaseTool, StructuredTool
 

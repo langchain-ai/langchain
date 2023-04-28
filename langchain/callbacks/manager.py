@@ -7,7 +7,7 @@ import os
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,

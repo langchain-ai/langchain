@@ -1,7 +1,6 @@
 """Integration tests for the langchain tracer module."""
 import asyncio
 import os
-import time
 
 import pytest
 from aiohttp import ClientSession
@@ -11,11 +10,23 @@ from langchain.callbacks import tracing_enabled
 from langchain.llms import OpenAI
 
 questions = [
-    "Who won the US Open men's final in 2019? What is his age raised to the 0.334 power?",
-    "Who is Olivia Wilde's boyfriend? What is his current age raised to the 0.23 power?",
-    "Who won the most recent formula 1 grand prix? What is their age raised to the 0.23 power?",
-    "Who won the US Open women's final in 2019? What is her age raised to the 0.34 power?",
-    "Who is Beyonce's husband? What is his age raised to the 0.19 power?",
+    (
+        "Who won the US Open men's final in 2019? "
+        "What is his age raised to the 0.334 power?"
+    ),
+    (
+        "Who is Olivia Wilde's boyfriend? "
+        "What is his current age raised to the 0.23 power?"
+    ),
+    (
+        "Who won the most recent formula 1 grand prix? "
+        "What is their age raised to the 0.23 power?"
+    ),
+    (
+        "Who won the US Open women's final in 2019? "
+        "What is her age raised to the 0.34 power?"
+    ),
+    ("Who is Beyonce's husband? " "What is his age raised to the 0.19 power?"),
 ]
 
 
