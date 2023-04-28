@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
     get_current_page,
@@ -21,7 +22,11 @@ class NavigateTool(BaseBrowserTool):
     description: str = "Navigate a browser to the specified URL"
     args_schema: Type[BaseModel] = NavigateToolInput
 
-    async def _arun(self, url: str) -> str:
+    async def _arun(
+        self,
+        url: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         page = await get_current_page(self.browser)
         response = await page.goto(url)

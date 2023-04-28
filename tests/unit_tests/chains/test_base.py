@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain.callbacks.manager import CallbackManager, CallbackManagerForChainRun
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema import BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -25,11 +25,9 @@ class FakeMemory(BaseMemory):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Pass."""
-        pass
 
     def clear(self) -> None:
         """Pass."""
-        pass
 
 
 class FakeChain(Chain):

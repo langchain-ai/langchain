@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from pydantic import BaseModel, Field, root_validator
 
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import get_current_page
 
@@ -40,7 +41,11 @@ class ExtractHyperlinksTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(self, absolute_urls: bool = False) -> str:
+    async def _arun(
+        self,
+        absolute_urls: bool = False,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         from urllib.parse import urljoin
 
