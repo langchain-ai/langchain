@@ -1,8 +1,8 @@
 from langchain.document_loaders.stripe import StripeLoader
 
-
 access_token = ""
 resource = "charges"
+
 
 def test_stripe_loader() -> None:
     """Test Figma file loader."""
