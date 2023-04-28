@@ -122,6 +122,7 @@ class ZeroShotAgent(Agent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
         for tool in tools:
             if tool.description is None:
                 raise ValueError(

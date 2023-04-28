@@ -1,4 +1,4 @@
-VectorStores
+Vector Stores
 =============================
 
 .. automodule:: langchain.vectorstores
