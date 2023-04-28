@@ -82,11 +82,11 @@ class MapReduceChain(Chain):
         inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         # Split the larger text into smaller chunks.
         texts = self.text_splitter.split_text(inputs[self.input_key])
         docs = [Document(page_content=text) for text in texts]
-        callbacks = None if run_manager is None else run_manager.get_child()
         outputs = self.combine_documents_chain.run(
-            input_documents=docs, callbacks=callbacks
+            input_documents=docs, callbacks=_run_manager.get_child()
         )
         return {self.output_key: outputs}

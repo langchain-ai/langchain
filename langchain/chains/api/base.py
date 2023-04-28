@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field, root_validator
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -64,17 +67,19 @@ class APIChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
         api_url = self.api_request_chain.predict(
-            question=question, api_docs=self.api_docs
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
         )
-        self.callback_manager.on_text(
-            api_url, color="green", end="\n", verbose=self.verbose
-        )
+        _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
         api_response = self.requests_wrapper.get(api_url)
-        self.callback_manager.on_text(
+        _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = self.api_answer_chain.predict(
@@ -82,19 +87,27 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             api_url=api_url,
             api_response=api_response,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: answer}
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.question_key]
         api_url = await self.api_request_chain.apredict(
-            question=question, api_docs=self.api_docs
+            question=question,
+            api_docs=self.api_docs,
+            callbacks=_run_manager.get_child(),
         )
-        self.callback_manager.on_text(
+        await _run_manager.on_text(
             api_url, color="green", end="\n", verbose=self.verbose
         )
         api_response = await self.requests_wrapper.aget(api_url)
-        self.callback_manager.on_text(
+        await _run_manager.on_text(
             api_response, color="yellow", end="\n", verbose=self.verbose
         )
         answer = await self.api_answer_chain.apredict(
@@ -102,6 +115,7 @@ class APIChain(Chain):
             api_docs=self.api_docs,
             api_url=api_url,
             api_response=api_response,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: answer}
 
@@ -113,17 +127,23 @@ class APIChain(Chain):
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
         api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
-        get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
+        get_request_chain = LLMChain(
+            llm=llm, prompt=api_url_prompt, callbacks=callbacks
+        )
         requests_wrapper = TextRequestsWrapper(headers=headers)
-        get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
+        get_answer_chain = LLMChain(
+            llm=llm, prompt=api_response_prompt, callbacks=callbacks
+        )
         return cls(
             api_request_chain=get_request_chain,
             api_answer_chain=get_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
+            callbacks=callbacks,
             **kwargs,
         )
 

@@ -93,8 +93,9 @@ class SequentialChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         known_values = inputs.copy()
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         for i, chain in enumerate(self.chains):
-            callbacks = None if run_manager is None else run_manager.get_child()
+            callbacks = _run_manager.get_child()
             outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
             known_values.update(outputs)
         return {k: known_values[k] for k in self.output_variables}
@@ -151,15 +152,14 @@ class SimpleSequentialChain(Chain):
         inputs: Dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]
         color_mapping = get_color_mapping([str(i) for i in range(len(self.chains))])
         for i, chain in enumerate(self.chains):
-            callbacks = None if run_manager is None else run_manager.get_child()
-            _input = chain.run(_input, callbacks=callbacks)
+            _input = chain.run(_input, callbacks=_run_manager.get_child())
             if self.strip_outputs:
                 _input = _input.strip()
-            if run_manager is not None:
-                run_manager.on_text(
-                    _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
-                )
+            _run_manager.on_text(
+                _input, color=color_mapping[str(i)], end="\n", verbose=self.verbose
+            )
         return {self.output_key: _input}

@@ -1,10 +1,14 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from pydantic import Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
@@ -68,7 +72,11 @@ class BaseCombineDocumentsChain(Chain, ABC):
     ) -> Tuple[str, dict]:
         """Combine documents into a single string asynchronously."""
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, List[Document]],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         docs = inputs[self.input_key]
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
@@ -76,7 +84,11 @@ class BaseCombineDocumentsChain(Chain, ABC):
         extra_return_dict[self.output_key] = output
         return extra_return_dict
 
-    async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    async def _acall(
+        self,
+        inputs: Dict[str, List[Document]],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         docs = inputs[self.input_key]
         # Other keys are assumed to be needed for LLM prediction
         other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
@@ -108,10 +120,17 @@ class AnalyzeDocumentChain(Chain):
         """
         return self.combine_docs_chain.output_keys
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         document = inputs[self.input_key]
         docs = self.text_splitter.create_documents([document])
         # Other keys are assumed to be needed for LLM prediction
-        other_keys = {k: v for k, v in inputs.items() if k != self.input_key}
+        other_keys: Dict = {k: v for k, v in inputs.items() if k != self.input_key}
         other_keys[self.combine_docs_chain.input_key] = docs
-        return self.combine_docs_chain(other_keys, return_only_outputs=True)
+        return self.combine_docs_chain(
+            other_keys, return_only_outputs=True, callbacks=_run_manager.get_child()
+        )
