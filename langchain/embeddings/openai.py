@@ -179,14 +179,20 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
-            results: List[List[List[float]]] = [[] for i in range(len(texts))]
-            lens: List[List[int]] = [[] for i in range(len(texts))]
+            results: List[List[List[float]]] = [[] for _ in range(len(texts))]
+            lens: List[List[int]] = [[] for _ in range(len(texts))]
             for i in range(len(indices)):
                 results[indices[i]].append(batched_embeddings[i])
                 lens[indices[i]].append(len(batched_embeddings[i]))
 
             for i in range(len(texts)):
-                average = np.average(results[i], axis=0, weights=lens[i])
+                _result = results[i]
+                if len(_result) == 0:
+                    average = embed_with_retry(self, input="", engine=self.deployment)[
+                        "data"
+                    ][0]["embedding"]
+                else:
+                    average = np.average(_result, axis=0, weights=lens[i])
                 embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
             return embeddings

@@ -22,6 +22,7 @@ from langchain.embeddings.self_hosted_hugging_face import (
     SelfHostedHuggingFaceEmbeddings,
     SelfHostedHuggingFaceInstructEmbeddings,
 )
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.embeddings.tensorflow_hub import TensorflowHubEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ __all__ = [
     "FakeEmbeddings",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
+    "SentenceTransformerEmbeddings",
 ]
 
 
