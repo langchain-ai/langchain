@@ -1,6 +1,6 @@
 """Browser tools and toolkit."""
 
-from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.playwright.base import BaseBrowserToolMixin
 from langchain.tools.playwright.click import ClickTool
 from langchain.tools.playwright.current_page import CurrentWebPageTool
 from langchain.tools.playwright.extract_hyperlinks import ExtractHyperlinksTool
@@ -15,7 +15,7 @@ __all__ = [
     "ExtractTextTool",
     "ExtractHyperlinksTool",
     "GetElementsTool",
-    "BaseBrowserTool",
+    "BaseBrowserToolMixin",
     "ClickTool",
     "CurrentWebPageTool",
 ]
