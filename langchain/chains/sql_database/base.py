@@ -86,18 +86,22 @@ class SQLDatabaseChain(Chain):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_info,
-            "stop": ["\nSQLResult:"],
+            "stop": ["\n", "SQLResult:"],
         }
         intermediate_steps: List = []
         try:
-            intermediate_steps.append(llm_inputs)
-            sql_cmd = llm_chain.predict(**llm_inputs)
-            intermediate_steps.append(sql_cmd)
+            intermediate_steps.append(llm_inputs)  # input: sql generation
+            sql_cmd = llm_chain.predict(**llm_inputs).strip()
             if not self.use_query_checker:
                 self.callback_manager.on_text(
                     sql_cmd, color="green", verbose=self.verbose
                 )
+                intermediate_steps.append(
+                    sql_cmd
+                )  # output: sql generation (no checker)
+                intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 result = self.database.run(sql_cmd)
+                intermediate_steps.append(str(result))  # output: sql exec
             else:
                 query_checker_prompt = self.query_checker_prompt or PromptTemplate(
                     template=QUERY_CHECKER, input_variables=["query", "dialect"]
@@ -109,18 +113,22 @@ class SQLDatabaseChain(Chain):
                     "query": sql_cmd,
                     "dialect": self.database.dialect,
                 }
-                intermediate_steps.append(query_checker_inputs)
                 checked_sql_command: str = query_checker_chain.predict(
                     **query_checker_inputs
-                )
-                intermediate_steps.append(checked_sql_command)
+                ).strip()
+                intermediate_steps.append(
+                    checked_sql_command
+                )  # output: sql generation (checker)
                 self.callback_manager.on_text(
                     checked_sql_command, color="green", verbose=self.verbose
                 )
+                intermediate_steps.append(
+                    {"sql_cmd": checked_sql_command}
+                )  # input: sql exec
                 result = self.database.run(checked_sql_command)
+                intermediate_steps.append(str(result))  # output: sql exec
                 sql_cmd = checked_sql_command
 
-            intermediate_steps.append(result)
             self.callback_manager.on_text("\nSQLResult: ", verbose=self.verbose)
             self.callback_manager.on_text(result, color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
@@ -132,7 +140,9 @@ class SQLDatabaseChain(Chain):
                 self.callback_manager.on_text("\nAnswer:", verbose=self.verbose)
                 input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
-                final_result = llm_chain.predict(**llm_inputs)
+                intermediate_steps.append(llm_inputs)  # input: final answer
+                final_result = llm_chain.predict(**llm_inputs).strip()
+                intermediate_steps.append(final_result)  # output: final answer
                 self.callback_manager.on_text(
                     final_result, color="green", verbose=self.verbose
                 )
