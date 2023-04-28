@@ -25,7 +25,7 @@ class BlockchainDocumentLoader(BaseLoader):
     If no BlockchainType is specified, the default is Ethereum mainnet.
 
     The Loader uses the Alchemy API to interact with the blockchain.
-    
+
     The API returns 100 NFTs per request and can be paginated using the
     startToken parameter.
 
@@ -79,8 +79,10 @@ class BlockchainDocumentLoader(BaseLoader):
         for item in items:
             content = str(item)
             tokenId = item["id"]["tokenId"]
-            metadata = {"source": self.contract_address, 
-                        "blockchain": self.blockchainType,
-                        "tokenId": tokenId}
+            metadata = {
+                "source": self.contract_address,
+                "blockchain": self.blockchainType,
+                "tokenId": tokenId,
+            }
             result.append(Document(page_content=content, metadata=metadata))
         return result
