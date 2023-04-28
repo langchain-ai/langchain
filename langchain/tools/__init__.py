@@ -26,9 +26,11 @@ from langchain.tools.playwright import (
     NavigateTool,
 )
 from langchain.tools.plugin import AIPluginTool
+from langchain.tools.shell.tool import ShellTool
 
 __all__ = [
     "AIPluginTool",
+    "APIOperation",
     "BaseBrowserTool",
     "BaseTool",
     "BaseTool",
@@ -55,6 +57,6 @@ __all__ = [
     "NavigateTool",
     "OpenAPISpec",
     "ReadFileTool",
+    "ShellTool",
     "WriteFileTool",
-    "APIOperation",
 ]

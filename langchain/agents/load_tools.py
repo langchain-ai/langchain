@@ -27,6 +27,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
 )
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import ArxivAPIWrapper
@@ -67,11 +68,7 @@ def _get_tools_requests_delete() -> BaseTool:
 
 
 def _get_terminal() -> BaseTool:
-    return Tool(
-        name="Terminal",
-        description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
-        func=BashProcess().run,
-    )
+    return ShellTool()
 
 
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
