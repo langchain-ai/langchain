@@ -539,6 +539,17 @@ class Agent(BaseSingleActionAgent):
         }
 
 
+class ExceptionTool(BaseTool):
+    name = "_Exception"
+    description = "Exception tool"
+
+    def _run(self, query: str) -> str:
+        return query
+
+    async def _arun(self, query: str) -> str:
+        return query
+
+
 class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
@@ -672,8 +683,21 @@ class AgentExecutor(Chain):
 
         Override this to take control of how the agent makes and acts on choices.
         """
-        # Call the LLM to see what to do.
-        output = self.agent.plan(intermediate_steps, **inputs)
+        try:
+            # Call the LLM to see what to do.
+            output = self.agent.plan(intermediate_steps, **inputs)
+        except Exception as e:
+            text = str(e).split("`")[1]
+            observation = "Invalid or incomplete response"
+            output = AgentAction("_Exception", observation, text)
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = InvalidTool().run(
+                output.tool,
+                verbose=self.verbose,
+                color=None,
+                **tool_run_kwargs,
+            )
+            return [(output, observation)]
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
