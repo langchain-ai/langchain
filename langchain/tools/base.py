@@ -31,6 +31,7 @@ from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
     CallbackManager,
+    CallbackManagerForToolRun,
     Callbacks,
 )
 
@@ -312,7 +313,7 @@ class StructuredTool(BaseTool):
     def _run(
         self,
         *args: Any,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""

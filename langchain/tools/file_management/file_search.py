@@ -3,7 +3,11 @@ import os
 from typing import Optional, Type
 
 from pydantic import BaseModel, Field
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManager
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManager,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 from langchain.tools.file_management.utils import (
@@ -37,7 +41,7 @@ class FileSearchTool(BaseFileToolMixin, BaseTool):
         self,
         pattern: str,
         dir_path: str = ".",
-        run_manager: Optional[CallbackManager] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         try:
             dir_path_ = self.get_relative_path(dir_path)

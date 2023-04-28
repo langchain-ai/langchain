@@ -2,7 +2,10 @@ import os
 from typing import Optional, Type
 
 from pydantic import BaseModel, Field
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 from langchain.tools.file_management.utils import (
@@ -44,7 +47,7 @@ class ListDirectoryTool(BaseFileToolMixin, BaseTool):
     async def _arun(
         self,
         dir_path: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

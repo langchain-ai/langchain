@@ -2,7 +2,11 @@ import shutil
 from typing import Optional, Type
 
 from pydantic import BaseModel, Field
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManager
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManager,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 from langchain.tools.file_management.utils import (
@@ -28,7 +32,7 @@ class CopyFileTool(BaseFileToolMixin, BaseTool):
         self,
         source_path: str,
         destination_path: str,
-        run_manager: Optional[CallbackManager] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         try:
             source_path_ = self.get_relative_path(source_path)
