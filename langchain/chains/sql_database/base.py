@@ -91,7 +91,7 @@ class SQLDatabaseChain(Chain):
         intermediate_steps: List = []
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
-            sql_cmd = llm_chain.predict(**llm_inputs).strip()
+            sql_cmd = llm_chain.predict(**llm_inputs).strip(' \'"')
             if not self.use_query_checker:
                 self.callback_manager.on_text(
                     sql_cmd, color="green", verbose=self.verbose
@@ -115,7 +115,7 @@ class SQLDatabaseChain(Chain):
                 }
                 checked_sql_command: str = query_checker_chain.predict(
                     **query_checker_inputs
-                ).strip()
+                ).strip(' \'"')
                 intermediate_steps.append(
                     checked_sql_command
                 )  # output: sql generation (checker)
@@ -141,7 +141,7 @@ class SQLDatabaseChain(Chain):
                 input_text += f"{sql_cmd}\nSQLResult: {result}\nAnswer:"
                 llm_inputs["input"] = input_text
                 intermediate_steps.append(llm_inputs)  # input: final answer
-                final_result = llm_chain.predict(**llm_inputs).strip()
+                final_result = llm_chain.predict(**llm_inputs).strip(' \'"')
                 intermediate_steps.append(final_result)  # output: final answer
                 self.callback_manager.on_text(
                     final_result, color="green", verbose=self.verbose
