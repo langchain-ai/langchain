@@ -24,7 +24,7 @@ def test_shell_input_validation() -> None:
 
 def test_shell_tool_init() -> None:
     shell_tool = ShellTool()
-    assert shell_tool.name == "shell"
+    assert shell_tool.name == "terminal"
     assert isinstance(shell_tool.description, str)
     assert shell_tool.args_schema == ShellInput
     assert shell_tool.process is not None

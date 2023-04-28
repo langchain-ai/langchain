@@ -10,7 +10,6 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
-from langchain.tools.shell.tool import ShellTool
 from langchain.utilities.bash import BashProcess
 
 logger = logging.getLogger(__name__)
@@ -58,8 +57,8 @@ class LLMBashChain(Chain):
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
     prompt: BasePromptTemplate = PROMPT
-    tool: ShellTool = Field(default_factory=ShellTool)
     output_parser: BaseOutputParser = Field(default_factory=BashOutputParser)
+    bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -85,20 +84,25 @@ class LLMBashChain(Chain):
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
+
         self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
         t = llm_executor.predict(question=inputs[self.input_key])
         self.callback_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
-        if t.startswith("```bash"):
-            # Split the string into a list of substrings
-            command_list = t.split("\n")
+        try:
+            command_list = self.output_parser.parse(t)
+        except OutputParserException as e:
+            self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            raise e
 
-            # Remove the first and last substrings
-            command_list = [s for s in command_list[1:-1]]
-            output = self.tool.run({"commands": command_list})
+        if self.verbose:
+            self.callback_manager.on_text("\nCode: ", verbose=self.verbose)
+            self.callback_manager.on_text(
+                str(command_list), color="yellow", verbose=self.verbose
+            )
 
-        output = self.tool.run({"commands": command_list})
+        output = self.bash_process.run(command_list)
 
         self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
         self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)

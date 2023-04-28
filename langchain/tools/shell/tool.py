@@ -51,7 +51,7 @@ class ShellTool(BaseTool):
     process: BashProcess = Field(default_factory=_get_default_bash_processs)
     """Bash process to run commands."""
 
-    name: str = "shell"
+    name: str = "terminal"
     """Name of tool."""
 
     description: str = f"Run shell commands on this {_get_platform()} machine."
