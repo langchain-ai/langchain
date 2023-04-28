@@ -5,7 +5,7 @@ You can obtain a key by following the steps below.
 - Sign up for a free account at https://scenex.jina.ai/.
 - Navigate to the API Access page (https://scenex.jina.ai/api) and create a new API key.
 """
-from typing import Dict, List
+from typing import Dict
 
 import requests
 from pydantic import BaseModel, root_validator
@@ -19,7 +19,8 @@ class SceneXplainAPIWrapper(BaseModel):
     In order to set this up, you need API key for the SceneXplain API.
     You can obtain a key by following the steps below.
     - Sign up for a free account at https://scenex.jina.ai/.
-    - Navigate to the API Access page (https://scenex.jina.ai/api) and create a new API key.
+    - Navigate to the API Access page (https://scenex.jina.ai/api)
+      and create a new API key.
     """
 
     scenex_api_key: str
