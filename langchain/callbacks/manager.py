@@ -7,7 +7,7 @@ import os
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, Sequence
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -23,7 +23,7 @@ from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
+Callbacks = Optional[Union[Sequence[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
@@ -174,9 +174,6 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
     def on_llm_new_token(
         self,
         token: str,
-        *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token."""
@@ -225,9 +222,6 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     async def on_llm_new_token(
         self,
         token: str,
-        *,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token."""
@@ -559,14 +553,10 @@ class CallbackManager(BaseCallbackManager):
     @classmethod
     def configure(
         cls,
-        inheritable_callbacks: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
-        local_callbacks: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
+        inheritable_callbacks: Callbacks = None,
+        local_callbacks: Callbacks = None,
         verbose: bool = False,
-    ) -> Optional[BaseCallbackManager]:
+    ) -> CallbackManager:
         """Configure the callback manager."""
         return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
 
@@ -661,14 +651,10 @@ class AsyncCallbackManager(BaseCallbackManager):
     @classmethod
     def configure(
         cls,
-        inheritable_callbacks: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
-        local_callbacks: Optional[
-            Union[BaseCallbackManager, List[BaseCallbackHandler]]
-        ] = None,
+        inheritable_callbacks: Callbacks = None,
+        local_callbacks: Callbacks = None,
         verbose: bool = False,
-    ) -> Optional[BaseCallbackManager]:
+    ) -> AsyncCallbackManager:
         """Configure the callback manager."""
         return _configure(cls, inheritable_callbacks, local_callbacks, verbose)
 
@@ -685,8 +671,8 @@ def _configure(
     """Configure the callback manager."""
     callback_manager = callback_manager_cls([])
     if inheritable_callbacks or local_callbacks:
-        if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
-            inheritable_callbacks_: List[BaseCallbackHandler] = (
+        if isinstance(inheritable_callbacks, Sequence) or inheritable_callbacks is None:
+            inheritable_callbacks_ = (
                 inheritable_callbacks or []
             )
             callback_manager = callback_manager_cls(
@@ -702,7 +688,7 @@ def _configure(
         callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
-            if isinstance(local_callbacks, list)
+            if isinstance(local_callbacks, Sequence)
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
