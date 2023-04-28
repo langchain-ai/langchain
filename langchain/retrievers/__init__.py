@@ -11,6 +11,7 @@ from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
+from langchain.retrievers.vespa_retriever import VespaRetriever
 
 __all__ = [
     "ChatGPTPluginRetriever",
@@ -24,4 +25,5 @@ __all__ = [
     "DataberryRetriever",
     "TimeWeightedVectorStoreRetriever",
     "SVMRetriever",
+    "VespaRetriever"
 ]
