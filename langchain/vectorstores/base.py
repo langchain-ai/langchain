@@ -75,6 +75,32 @@ class VectorStore(ABC):
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas, **kwargs)
 
+    def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
+        """Return docs most similar to query using specified search type."""
+        if search_type == "similarity":
+            return self.similarity_search(query, **kwargs)
+        elif search_type == "mmr":
+            return self.max_marginal_relevance_search(query, **kwargs)
+        else:
+            raise ValueError(
+                f"search_type of {search_type} not allowed. Expected "
+                "search_type to be 'similarity' or 'mmr'."
+            )
+
+    async def asearch(
+        self, query: str, search_type: str, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to query using specified search type."""
+        if search_type == "similarity":
+            return await self.asimilarity_search(query, **kwargs)
+        elif search_type == "mmr":
+            return await self.amax_marginal_relevance_search(query, **kwargs)
+        else:
+            raise ValueError(
+                f"search_type of {search_type} not allowed. Expected "
+                "search_type to be 'similarity' or 'mmr'."
+            )
+
     @abstractmethod
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
