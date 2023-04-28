@@ -12,7 +12,6 @@ import langchain
 from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
-from pydantic import Extra, Field, validator
 
 logger = logging.getLogger(__name__)
 
@@ -324,8 +323,8 @@ class LLM(BaseLLM):
         # TODO: add caching here.
         generations = []
         for prompt in prompts:
-                text = self._call(prompt, stop=stop)
-                generations.append([Generation(text=text)])
+            text = self._call(prompt, stop=stop)
+            generations.append([Generation(text=text)])
         return LLMResult(generations=generations)
 
     async def _agenerate(
