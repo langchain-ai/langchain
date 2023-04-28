@@ -13,7 +13,7 @@ from langchain.tools.browser.utils import (
 class NavigateBackTool(BaseBrowserTool):
     """Navigate back to the previous page in the browser history."""
 
-    name: str = "previous_page"
+    name: str = "previous_webpage"
     description: str = "Navigate back to the previous page in the browser history"
     args_schema: Type[BaseModel] = BaseModel
 

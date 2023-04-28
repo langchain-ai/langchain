@@ -46,8 +46,10 @@ async def _get_elements(
 
 
 class GetElementsTool(BaseBrowserTool):
-    name: str = "get_elements_tool"
-    description: str = "Retrieve elements matching the given CSS selector"
+    name: str = "get_elements"
+    description: str = (
+        "Retrieve elements in the current web page matching the given CSS selector"
+    )
     args_schema: Type[BaseModel] = GetElementsToolInput
 
     async def _arun(

@@ -9,7 +9,7 @@ from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools.base import BaseTool
 from langchain.tools.browser.base import BaseBrowserTool
 from langchain.tools.browser.click import ClickTool
-from langchain.tools.browser.current_page import CurrentPageTool
+from langchain.tools.browser.current_page import CurrentWebPageTool
 from langchain.tools.browser.extract_hyperlinks import ExtractHyperlinksTool
 from langchain.tools.browser.extract_text import ExtractTextTool
 from langchain.tools.browser.get_elements import GetElementsTool
@@ -53,7 +53,7 @@ class BrowserToolkit(BaseToolkit):
             ExtractTextTool,
             ExtractHyperlinksTool,
             GetElementsTool,
-            CurrentPageTool,
+            CurrentWebPageTool,
         ]
 
         return [tool_cls.from_browser(self.browser) for tool_cls in tool_classes]

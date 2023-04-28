@@ -439,7 +439,7 @@ def test_multi_input_agents_permit_structured_tool(agent_cls: Type[Agent]) -> No
         """Return the concat of foo and bar."""
         return foo + bar
 
-    agent_cls._validate_tools([the_tool])
+    agent_cls._validate_tools([the_tool])  # type: ignore
 
 
 def test_tool_no_args_specified_assumes_str() -> None:

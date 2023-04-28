@@ -10,8 +10,8 @@ from langchain.tools.browser.utils import (
 )
 
 
-class CurrentPageTool(BaseBrowserTool):
-    name: str = "current_page"
+class CurrentWebPageTool(BaseBrowserTool):
+    name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
     args_schema: Type[BaseModel] = BaseModel
 

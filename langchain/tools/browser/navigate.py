@@ -11,7 +11,7 @@ from langchain.tools.browser.utils import (
 
 
 class NavigateToolInput(BaseModel):
-    """Input for ReadFileTool."""
+    """Input for NavigateToolInput."""
 
     url: str = Field(..., description="url to navigate to")
 

@@ -25,7 +25,7 @@ class ExtractHyperlinksTool(BaseBrowserTool):
     """Extract all hyperlinks on the page."""
 
     name: str = "extract_hyperlinks"
-    description: str = "Extract all hyperlinks on the page"
+    description: str = "Extract all hyperlinks on the current webpage"
     args_schema: Type[BaseModel] = ExtractHyperlinksToolInput
 
     @root_validator

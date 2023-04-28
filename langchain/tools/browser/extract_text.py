@@ -10,7 +10,7 @@ from langchain.tools.browser.utils import get_current_page
 
 class ExtractTextTool(BaseBrowserTool):
     name: str = "extract_text"
-    description: str = "Extract all the text on the page"
+    description: str = "Extract all the text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
 
     @root_validator
@@ -25,7 +25,7 @@ class ExtractTextTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self) -> str:
         """Use the tool."""
         # Use Beautiful Soup since it's faster than looping through the elements
         from bs4 import BeautifulSoup
