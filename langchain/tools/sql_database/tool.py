@@ -1,12 +1,13 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Extra, Field, validator, root_validator
 from typing import Any, Dict
 
+from pydantic import BaseModel, Extra, Field, root_validator, validator
+
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
-from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 

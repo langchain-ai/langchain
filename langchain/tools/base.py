@@ -13,7 +13,6 @@ from pydantic import (
     Field,
     create_model,
     validate_arguments,
-    validator,
 )
 from pydantic.main import ModelMetaclass
 from pydantic import BaseModel, Extra, Field, root_validator, validate_arguments
@@ -23,7 +22,6 @@ from langchain.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
     CallbackManager,
-    CallbackManagerForToolRun,
     Callbacks,
 )
 
@@ -278,9 +276,9 @@ class StructuredTool(BaseTool):
     description: str = ""
     args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
-    func: Callable[..., str]
+    func: Callable[..., Any]
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
 
     @property
@@ -295,7 +293,7 @@ class StructuredTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Use the tool."""
-        new_argument_supported = signature(self.coroutine).parameters.get("callbacks")
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
         return (
             self.func(
                 *args,
