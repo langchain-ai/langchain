@@ -56,8 +56,10 @@ class Tool(BaseTool):
         **kwargs: Any,
     ) -> str:
         """Use the tool asynchronously."""
-        new_argument_supported = signature(self.coroutine).parameters.get("callbacks")
         if self.coroutine:
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
             return (
                 await self.coroutine(
                     *args,

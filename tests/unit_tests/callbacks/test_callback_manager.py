@@ -1,8 +1,9 @@
 """Test CallbackManager."""
-from typing import Tuple
+from typing import List, Tuple
 
 import pytest
 
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -23,17 +24,17 @@ def _test_callback_manager(
     run_manager.on_llm_new_token("foo")
     run_manager.on_text("foo")
 
-    run_manager = manager.on_chain_start({"name": "foo"}, {})
-    run_manager.on_chain_end({})
-    run_manager.on_chain_error(Exception())
-    run_manager.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
-    run_manager.on_agent_finish(AgentFinish(log="", return_values={}))
-    run_manager.on_text("foo")
+    run_manager_chain = manager.on_chain_start({"name": "foo"}, {})
+    run_manager_chain.on_chain_end({})
+    run_manager_chain.on_chain_error(Exception())
+    run_manager_chain.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
+    run_manager_chain.on_agent_finish(AgentFinish(log="", return_values={}))
+    run_manager_chain.on_text("foo")
 
-    run_manager = manager.on_tool_start({}, "")
-    run_manager.on_tool_end("")
-    run_manager.on_tool_error(Exception())
-    run_manager.on_text("foo")
+    run_manager_tool = manager.on_tool_start({}, "")
+    run_manager_tool.on_tool_end("")
+    run_manager_tool.on_tool_error(Exception())
+    run_manager_tool.on_text("foo")
     _check_num_calls(handlers)
 
 
@@ -47,17 +48,19 @@ async def _test_callback_manager_async(
     await run_manager.on_llm_new_token("foo")
     await run_manager.on_text("foo")
 
-    run_manager = await manager.on_chain_start({"name": "foo"}, {})
-    await run_manager.on_chain_end({})
-    await run_manager.on_chain_error(Exception())
-    await run_manager.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
-    await run_manager.on_agent_finish(AgentFinish(log="", return_values={}))
-    await run_manager.on_text("foo")
+    run_manager_chain = await manager.on_chain_start({"name": "foo"}, {})
+    await run_manager_chain.on_chain_end({})
+    await run_manager_chain.on_chain_error(Exception())
+    await run_manager_chain.on_agent_action(
+        AgentAction(tool_input="foo", log="", tool="")
+    )
+    await run_manager_chain.on_agent_finish(AgentFinish(log="", return_values={}))
+    await run_manager_chain.on_text("foo")
 
-    run_manager = await manager.on_tool_start({}, "")
-    await run_manager.on_tool_end("")
-    await run_manager.on_tool_error(Exception())
-    await run_manager.on_text("foo")
+    run_manager_tool = await manager.on_tool_start({}, "")
+    await run_manager_tool.on_tool_end("")
+    await run_manager_tool.on_tool_error(Exception())
+    await run_manager_tool.on_text("foo")
     _check_num_calls(handlers)
 
 
@@ -191,13 +194,13 @@ def test_callback_manager_inheritance() -> None:
     assert child_manager.handlers == [handler1]
     assert child_manager.inheritable_handlers == [handler1]
 
-    child_manager = child_manager.on_tool_start({}, "")
-    assert child_manager.handlers == [handler1]
-    assert child_manager.inheritable_handlers == [handler1]
+    run_manager_tool = child_manager.on_tool_start({}, "")
+    assert run_manager_tool.handlers == [handler1]
+    assert run_manager_tool.inheritable_handlers == [handler1]
 
-    child_manager = child_manager.get_child()
-    assert child_manager.handlers == [handler1]
-    assert child_manager.inheritable_handlers == [handler1]
+    child_manager2 = run_manager_tool.get_child()
+    assert child_manager2.handlers == [handler1]
+    assert child_manager2.inheritable_handlers == [handler1]
 
 
 def test_callback_manager_configure() -> None:
@@ -209,8 +212,8 @@ def test_callback_manager_configure() -> None:
         FakeCallbackHandler(),
     )
 
-    inheritable_callbacks = [handler1, handler2]
-    local_callbacks = [handler3, handler4]
+    inheritable_callbacks: List[BaseCallbackHandler] = [handler1, handler2]
+    local_callbacks: List[BaseCallbackHandler] = [handler3, handler4]
     configured_manager = CallbackManager.configure(
         inheritable_callbacks=inheritable_callbacks,
         local_callbacks=local_callbacks,

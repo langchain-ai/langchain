@@ -7,7 +7,9 @@ from pydantic import Extra
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
+    AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
+    CallbackManager,
     CallbackManagerForChainRun,
     Callbacks,
 )
@@ -64,7 +66,8 @@ class LLMChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        return self.apply([inputs], run_manager=run_manager)[0]
+        response = self.generate([inputs], run_manager=run_manager)
+        return self.create_outputs(response)[0]
 
     def generate(
         self,
@@ -137,22 +140,44 @@ class LLMChain(Chain):
         return prompts, stop
 
     def apply(
-        self,
-        input_list: List[Dict[str, Any]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = self.generate(input_list, run_manager=run_manager)
-        return self.create_outputs(response)
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        run_manager = callback_manager.on_chain_start(
+            {"name": self.__class__.__name__},
+            {"input_list": input_list},
+        )
+        try:
+            response = self.generate(input_list, run_manager=run_manager)
+        except (KeyboardInterrupt, Exception) as e:
+            run_manager.on_chain_error(e)
+            raise e
+        outputs = self.create_outputs(response)
+        run_manager.on_chain_end({"outputs": outputs})
+        return outputs
 
     async def aapply(
-        self,
-        input_list: List[Dict[str, Any]],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
-        response = await self.agenerate(input_list, run_manager=run_manager)
-        return self.create_outputs(response)
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, self.verbose
+        )
+        run_manager = await callback_manager.on_chain_start(
+            {"name": self.__class__.__name__},
+            {"input_list": input_list},
+        )
+        try:
+            response = await self.agenerate(input_list, run_manager=run_manager)
+        except (KeyboardInterrupt, Exception) as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        outputs = self.create_outputs(response)
+        await run_manager.on_chain_end({"outputs": outputs})
+        return outputs
 
     def create_outputs(self, response: LLMResult) -> List[Dict[str, str]]:
         """Create outputs from response."""
@@ -167,7 +192,8 @@ class LLMChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        return (await self.aapply([inputs], run_manager=run_manager))[0]
+        response = await self.agenerate([inputs], run_manager=run_manager)
+        return self.create_outputs(response)[0]
 
     def predict(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
         """Format prompt with kwargs and pass to LLM.
@@ -224,12 +250,10 @@ class LLMChain(Chain):
             return result
 
     def apply_and_parse(
-        self,
-        input_list: List[Dict[str, Any]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = self.apply(input_list, run_manager=run_manager)
+        result = self.apply(input_list, callbacks=callbacks)
         return self._parse_result(result)
 
     def _parse_result(
@@ -243,12 +267,10 @@ class LLMChain(Chain):
             return result
 
     async def aapply_and_parse(
-        self,
-        input_list: List[Dict[str, Any]],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
         """Call apply and then parse the results."""
-        result = await self.aapply(input_list, run_manager=run_manager)
+        result = await self.aapply(input_list, callbacks=callbacks)
         return self._parse_result(result)
 
     @property

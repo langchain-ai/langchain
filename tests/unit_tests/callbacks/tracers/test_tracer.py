@@ -277,7 +277,8 @@ def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
     tracer = FakeTracer()
     tracer.new_session()
-    [_perform_nested_run(tracer) for _ in range(10)]
+    for _ in range(10):
+        _perform_nested_run(tracer)
     assert tracer.runs == [_get_compare_run()] * 10
 
 
