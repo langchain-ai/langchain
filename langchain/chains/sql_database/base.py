@@ -27,7 +27,7 @@ class SQLDatabaseChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: BaseLanguageModel
+    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     database: SQLDatabase = Field(exclude=True)
     """SQL Database to connect to."""
