@@ -106,6 +106,8 @@ class BaseTool(ABC, BaseModel):
         callback_manager = CallbackManager.configure(
             callbacks, self.callbacks, verbose=verbose_
         )
+        # TODO: maybe also pass through run_manager is _run supports kwargs
+        new_arg_supported = inspect.signature(self._run).parameters.get("run_manager")
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -114,7 +116,11 @@ class BaseTool(ABC, BaseModel):
         )
         try:
             tool_args, tool_kwargs = _to_args_and_kwargs(tool_input)
-            observation = self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+            observation = (
+                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+                if new_arg_supported
+                else self._run(*tool_args, **tool_kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
@@ -139,6 +145,7 @@ class BaseTool(ABC, BaseModel):
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, verbose=verbose_
         )
+        new_arg_supported = inspect.signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -148,7 +155,11 @@ class BaseTool(ABC, BaseModel):
         try:
             # We then call the tool on the tool input to get an observation
             args, kwargs = _to_args_and_kwargs(tool_input)
-            observation = await self._arun(*args, run_manager=run_manager, **kwargs)
+            observation = (
+                await self._arun(*args, run_manager=run_manager, **kwargs)
+                if new_arg_supported
+                else await self._arun(*args, **kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
             await run_manager.on_tool_error(e)
             raise e
