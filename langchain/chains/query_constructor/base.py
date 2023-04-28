@@ -33,7 +33,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             parsed = parse_json_markdown(text, expected_keys)
             if len(parsed["query"]) == 0:
                 parsed["query"] = " "
-            if parsed["filter"] == "NO_FILTER":
+            if parsed["filter"] == "NO_FILTER" or not parsed["filter"]:
                 parsed["filter"] = None
             else:
                 parsed["filter"] = self.ast_parse(parsed["filter"])
@@ -55,7 +55,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         return cls(ast_parse=ast_parser.parse)
 
 
-def _format_attribute_info(info: List[AttributeInfo]) -> str:
+def _format_attribute_info(info: Sequence[AttributeInfo]) -> str:
     info_dicts = {}
     for i in info:
         i_dict = dict(i)
@@ -65,7 +65,7 @@ def _format_attribute_info(info: List[AttributeInfo]) -> str:
 
 def _get_prompt(
     document_contents: str,
-    attribute_info: List[AttributeInfo],
+    attribute_info: Sequence[AttributeInfo],
     examples: Optional[List] = None,
     allowed_comparators: Optional[Sequence[Comparator]] = None,
     allowed_operators: Optional[Sequence[Operator]] = None,
