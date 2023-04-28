@@ -50,7 +50,7 @@ class QAGenerationChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, List]:
         docs = self.text_splitter.create_documents([inputs[self.input_key]])
         results = self.llm_chain.generate(
             [{"text": d.page_content} for d in docs], run_manager=run_manager

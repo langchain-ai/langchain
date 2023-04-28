@@ -127,23 +127,17 @@ class APIChain(Chain):
         headers: Optional[dict] = None,
         api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
         api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
-        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> APIChain:
         """Load chain from just an LLM and the api docs."""
-        get_request_chain = LLMChain(
-            llm=llm, prompt=api_url_prompt, callbacks=callbacks
-        )
+        get_request_chain = LLMChain(llm=llm, prompt=api_url_prompt)
         requests_wrapper = TextRequestsWrapper(headers=headers)
-        get_answer_chain = LLMChain(
-            llm=llm, prompt=api_response_prompt, callbacks=callbacks
-        )
+        get_answer_chain = LLMChain(llm=llm, prompt=api_response_prompt)
         return cls(
             api_request_chain=get_request_chain,
             api_answer_chain=get_answer_chain,
             requests_wrapper=requests_wrapper,
             api_docs=api_docs,
-            callbacks=callbacks,
             **kwargs,
         )
 

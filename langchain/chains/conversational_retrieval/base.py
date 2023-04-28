@@ -90,7 +90,7 @@ class BaseConversationalRetrievalChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
@@ -123,7 +123,7 @@ class BaseConversationalRetrievalChain(Chain):
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
         get_chat_history = self.get_chat_history or _get_chat_history
