@@ -171,7 +171,8 @@ class ConfluenceLoader(BaseLoader):
         :type label: Optional[str], optional
         :param cql: CQL Expression, defaults to None
         :type cql: Optional[str], optional
-        :param include_archived_content: Whether to include archived content, defaults to False
+        :param include_archived_content: Whether to include archived content,
+                                         defaults to False
         :type include_archived_content: bool, optional
         :param include_attachments: defaults to False
         :type include_attachments: bool, optional
