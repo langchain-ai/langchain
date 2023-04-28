@@ -8,20 +8,38 @@ from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearch
 from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
+from langchain.tools.playwright import (
+    BaseBrowserTool,
+    ClickTool,
+    CurrentWebPageTool,
+    ExtractHyperlinksTool,
+    ExtractTextTool,
+    GetElementsTool,
+    NavigateBackTool,
+    NavigateTool,
+)
 from langchain.tools.plugin import AIPluginTool
 
 __all__ = [
-    "AIPluginTool",
     "APIOperation",
+    "BaseBrowserTool",
+    "BaseTool",
     "BingSearchResults",
     "BingSearchRun",
+    "ClickTool",
+    "CurrentWebPageTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
     "DuckDuckGoSearchRun",
+    "ExtractHyperlinksTool",
+    "ExtractTextTool",
+    "GetElementsTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
     "IFTTTWebhook",
+    "NavigateBackTool",
+    "NavigateTool",
     "OpenAPISpec",
-    "BaseTool",
+    "AIPluginTool",
 ]
