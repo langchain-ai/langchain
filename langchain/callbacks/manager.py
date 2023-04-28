@@ -7,7 +7,7 @@ import os
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union, Sequence
+from typing import Any, Dict, Generator, List, Optional, Sequence, Type, TypeVar, Union
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -23,7 +23,7 @@ from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-Callbacks = Optional[Union[Sequence[BaseCallbackHandler], BaseCallbackManager]]
+Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
@@ -671,10 +671,8 @@ def _configure(
     """Configure the callback manager."""
     callback_manager = callback_manager_cls([])
     if inheritable_callbacks or local_callbacks:
-        if isinstance(inheritable_callbacks, Sequence) or inheritable_callbacks is None:
-            inheritable_callbacks_ = (
-                inheritable_callbacks or []
-            )
+        if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
+            inheritable_callbacks_ = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks_,
                 inheritable_handlers=inheritable_callbacks_,
@@ -688,7 +686,7 @@ def _configure(
         callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
-            if isinstance(local_callbacks, Sequence)
+            if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:

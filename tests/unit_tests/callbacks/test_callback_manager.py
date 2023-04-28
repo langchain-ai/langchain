@@ -1,8 +1,9 @@
 """Test CallbackManager."""
-from typing import Tuple
+from typing import Tuple, List
 
 import pytest
 
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -50,7 +51,9 @@ async def _test_callback_manager_async(
     run_manager_chain = await manager.on_chain_start({"name": "foo"}, {})
     await run_manager_chain.on_chain_end({})
     await run_manager_chain.on_chain_error(Exception())
-    await run_manager_chain.on_agent_action(AgentAction(tool_input="foo", log="", tool=""))
+    await run_manager_chain.on_agent_action(
+        AgentAction(tool_input="foo", log="", tool="")
+    )
     await run_manager_chain.on_agent_finish(AgentFinish(log="", return_values={}))
     await run_manager_chain.on_text("foo")
 
@@ -209,8 +212,8 @@ def test_callback_manager_configure() -> None:
         FakeCallbackHandler(),
     )
 
-    inheritable_callbacks = [handler1, handler2]
-    local_callbacks = [handler3, handler4]
+    inheritable_callbacks: List[BaseCallbackHandler] = [handler1, handler2]
+    local_callbacks: List[BaseCallbackHandler] = [handler3, handler4]
     configured_manager = CallbackManager.configure(
         inheritable_callbacks=inheritable_callbacks,
         local_callbacks=local_callbacks,

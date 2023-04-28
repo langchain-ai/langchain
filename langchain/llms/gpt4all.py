@@ -161,10 +161,10 @@ class GPT4All(LLM):
         return "gpt4all"
 
     def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         r"""Call out to GPT4All's generate method.
 
@@ -181,14 +181,17 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
-        text_callback = partial(
-            self.callback_manager.on_llm_new_token, verbose=self.verbose
-        )
-        text = self.client.generate(
-            prompt,
-            new_text_callback=text_callback,
-            **self._default_params,
-        )
+        if run_manager:
+            text_callback = partial(
+                run_manager.on_llm_new_token, verbose=self.verbose
+            )
+            text = self.client.generate(
+                prompt,
+                new_text_callback=text_callback,
+                **self._default_params,
+            )
+        else:
+            text = self.client.generate(prompt, **self._default_params)
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text

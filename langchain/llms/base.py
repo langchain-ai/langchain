@@ -185,7 +185,7 @@ class BaseLLM(BaseLanguageModel, ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         if len(missing_prompts) > 0:
-            run_manager = self.callback_manager.on_llm_start(
+            run_manager = callback_manager.on_llm_start(
                 {"name": self.__class__.__name__}, missing_prompts
             )
             try:
