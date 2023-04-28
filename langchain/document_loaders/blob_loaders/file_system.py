@@ -1,6 +1,6 @@
 """Use to load blobs from the local file system."""
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Optional, Sequence, Union
 
 from langchain.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
@@ -25,12 +25,17 @@ class FileSystemBlobLoader(BlobLoader):
         path: Union[str, Path],
         *,
         glob: str = "**/[!.]*",
+        suffixes: Optional[Sequence[str]] = None,
     ) -> None:
         """Initialize with path to directory and how to glob over it.
 
         Args:
-            path: Path to directory to load from.
-            glob: Glob pattern to use to find files.
+            path: Path to directory to load from
+            glob: Glob pattern relative to the specified path
+                  by default set to pick up all non-hidden files
+            suffixes: Provide to keep only files with these suffixes
+                      Useful when wanting to keep files with different suffixes
+                      Suffixes must include the dot, e.g. ".txt"
 
         Examples:
 
@@ -54,12 +59,15 @@ class FileSystemBlobLoader(BlobLoader):
 
         self.path = _path
         self.glob = glob
+        self.suffixes = set(suffixes or [])
 
     def yield_blobs(
         self,
     ) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
-        paths = Path(self.path).glob(self.glob)
+        paths = self.path.glob(self.glob)
         for path in paths:
             if path.is_file():
+                if self.suffixes and path.suffix not in self.suffixes:
+                    continue
                 yield Blob.from_path(str(path))

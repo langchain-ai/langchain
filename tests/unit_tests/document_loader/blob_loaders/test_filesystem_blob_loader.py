@@ -33,33 +33,62 @@ def toy_dir() -> Generator[Path, None, None]:
         with open(os.path.join(some_dir, "nested_file.txt"), "w") as nested_file:
             nested_file.write("This is a nested_file.txt file.")
 
+        # Create some_dir/other_dir/more_nested.txt
+        other_dir = os.path.join(some_dir, "other_dir")
+        os.makedirs(other_dir)
+        with open(os.path.join(other_dir, "more_nested.txt"), "w") as nested_file:
+            nested_file.write("This is a more_nested.txt file.")
+
         yield Path(temp_dir)
 
 
 @pytest.mark.parametrize(
-    "glob, relative_filenames",
+    "glob, suffixes, relative_filenames",
     [
         (
             "**/[!.]*",
-            ["test.html", "test.txt", "some_dir/nested_file.txt"],
+            None,
+            [
+                "test.html",
+                "test.txt",
+                "some_dir/nested_file.txt",
+                "some_dir/other_dir/more_nested.txt",
+            ],
         ),
-        ("*", ["test.html", "test.txt", ".hidden_file"]),
-        ("**/*.html", ["test.html"]),
-        ("*/*.txt", ["some_dir/nested_file.txt"]),
-        ("meeeeeeow", []),
+        ("*", None, ["test.html", "test.txt", ".hidden_file"]),
+        ("**/*.html", None, ["test.html"]),
+        ("*/*.txt", None, ["some_dir/nested_file.txt"]),
+        (
+            "**/*.txt",
+            None,
+            [
+                "test.txt",
+                "some_dir/nested_file.txt",
+                "some_dir/other_dir/more_nested.txt",
+            ],
+        ),
+        (
+            "**/*",
+            [".txt"],
+            [
+                "test.txt",
+                "some_dir/nested_file.txt",
+                "some_dir/other_dir/more_nested.txt",
+            ],
+        ),
+        ("meeeeeeow", None, []),
+        ("*", [".html", ".txt"], ["test.html", "test.txt"]),
     ],
 )
 def test_file_names_exist(
     toy_dir: str,
     glob: str,
+    suffixes: Sequence[str],
     relative_filenames: Sequence[str],
 ) -> None:
     """Verify that the file names exist."""
 
-    loader = FileSystemBlobLoader(
-        path=toy_dir,
-        glob=glob,
-    )
+    loader = FileSystemBlobLoader(toy_dir, glob=glob, suffixes=suffixes)
     blobs = list(loader.yield_blobs())
 
     file_names = sorted(str(blob.path) for blob in blobs)
