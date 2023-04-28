@@ -1,10 +1,13 @@
 """Chain that interprets a prompt and executes python code to do math."""
+from __future__ import annotations
+
 import math
 import re
-from typing import Dict, List, Optional
+import warnings
+from typing import Any, Dict, List, Optional
 
 import numexpr
-from pydantic import Extra
+from pydantic import Extra, root_validator
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
@@ -24,13 +27,14 @@ class LLMMathChain(Chain):
         .. code-block:: python
 
             from langchain import LLMMathChain, OpenAI
-            llm_math = LLMMathChain(llm=OpenAI())
+            llm_math = LLMMathChain.from_llm(OpenAI())
     """
 
-    llm: BaseLanguageModel
-    """LLM wrapper to use."""
+    llm_chain: LLMChain
+    llm: Optional[BaseLanguageModel] = None
+    """[Deprecated] LLM wrapper to use."""
     prompt: BasePromptTemplate = PROMPT
-    """Prompt to use to translate to python if neccessary."""
+    """[Deprecated] Prompt to use to translate to python if necessary."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
 
@@ -39,6 +43,19 @@ class LLMMathChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        if "llm" in values:
+            warnings.warn(
+                "Directly instantiating an LLMMathChain with an llm is deprecated. "
+                "Please instantiate with llm_chain argument or using the from_llm "
+                "class method."
+            )
+            if "llm_chain" not in values and values["llm"] is not None:
+                prompt = values.get("prompt", PROMPT)
+                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
+        return values
 
     @property
     def input_keys(self) -> List[str]:
@@ -120,9 +137,8 @@ class LLMMathChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
         _run_manager.on_text(inputs[self.input_key])
-        llm_output = llm_executor.predict(
+        llm_output = self.llm_chain.predict(
             question=inputs[self.input_key],
             stop=["```output"],
             callbacks=_run_manager.get_child(),
@@ -135,9 +151,8 @@ class LLMMathChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
-        await run_manager.on_text(inputs[self.input_key])
-        llm_output = await llm_executor.apredict(
+        await _run_manager.on_text(inputs[self.input_key])
+        llm_output = await self.llm_chain.apredict(
             question=inputs[self.input_key],
             stop=["```output"],
             callbacks=_run_manager.get_child(),
@@ -147,3 +162,13 @@ class LLMMathChain(Chain):
     @property
     def _chain_type(self) -> str:
         return "llm_math_chain"
+
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseLanguageModel,
+        prompt: BasePromptTemplate = PROMPT,
+        **kwargs: Any,
+    ) -> LLMMathChain:
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        return cls(llm_chain=llm_chain, **kwargs)

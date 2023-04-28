@@ -26,7 +26,7 @@ class LLMBashChain(Chain):
     """
 
     llm_chain: LLMChain
-    llm: BaseLanguageModel
+    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     input_key: str = "question"  #: :meta private:
     output_key: str = "answer"  #: :meta private:
@@ -39,13 +39,16 @@ class LLMBashChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMBashChain with an llm is deprecated. "
                 "Please instantiate with llm_chain or using the from_llm class method."
             )
+            if "llm_chain" not in values and values["llm"] is not None:
+                prompt = values.get("prompt", PROMPT)
+                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=prompt)
         return values
 
     @property

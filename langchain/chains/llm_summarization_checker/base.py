@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra
+from pydantic import Extra, root_validator
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
@@ -30,6 +31,48 @@ ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
 )
 
 
+def _load_sequential_chain(
+    llm: BaseLLM,
+    create_assertions_prompt: PromptTemplate,
+    check_assertions_prompt: PromptTemplate,
+    revised_summary_prompt: PromptTemplate,
+    are_all_true_prompt: PromptTemplate,
+    verbose: bool = False,
+) -> SequentialChain:
+    chain = SequentialChain(
+        chains=[
+            LLMChain(
+                llm=llm,
+                prompt=create_assertions_prompt,
+                output_key="assertions",
+                verbose=verbose,
+            ),
+            LLMChain(
+                llm=llm,
+                prompt=check_assertions_prompt,
+                output_key="checked_assertions",
+                verbose=verbose,
+            ),
+            LLMChain(
+                llm=llm,
+                prompt=revised_summary_prompt,
+                output_key="revised_summary",
+                verbose=verbose,
+            ),
+            LLMChain(
+                llm=llm,
+                output_key="all_true",
+                prompt=are_all_true_prompt,
+                verbose=verbose,
+            ),
+        ],
+        input_variables=["summary"],
+        output_variables=["all_true", "revised_summary"],
+        verbose=verbose,
+    )
+    return chain
+
+
 class LLMSummarizationCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
@@ -42,7 +85,7 @@ class LLMSummarizationCheckerChain(Chain):
     """
 
     sequential_chain: SequentialChain
-    llm: BaseLLM
+    llm: Optional[BaseLLM] = None
     """[Deprecated] LLM wrapper to use."""
 
     create_assertions_prompt: PromptTemplate = CREATE_ASSERTIONS_PROMPT
@@ -64,6 +107,25 @@ class LLMSummarizationCheckerChain(Chain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        if "llm" in values:
+            warnings.warn(
+                "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
+                "deprecated. Please instantiate with"
+                " sequential_chain argument or using the from_llm class method."
+            )
+            if "sequential_chain" not in values and values["llm"] is not None:
+                values["sequential_chain"] = _load_sequential_chain(
+                    values["llm"],
+                    values.get("create_assertions_prompt", CREATE_ASSERTIONS_PROMPT),
+                    values.get("check_assertions_prompt", CHECK_ASSERTIONS_PROMPT),
+                    values.get("revised_summary_prompt", REVISED_SUMMARY_PROMPT),
+                    values.get("are_all_true_prompt", ARE_ALL_TRUE_PROMPT),
+                    verbose=values.get("verbose", False),
+                )
+        return values
 
     @property
     def input_keys(self) -> List[str]:
@@ -126,35 +188,12 @@ class LLMSummarizationCheckerChain(Chain):
         verbose: bool = False,
         **kwargs: Any,
     ) -> LLMSummarizationCheckerChain:
-        chain = SequentialChain(
-            chains=[
-                LLMChain(
-                    llm=llm,
-                    prompt=create_assertions_prompt,
-                    output_key="assertions",
-                    verbose=verbose,
-                ),
-                LLMChain(
-                    llm=llm,
-                    prompt=check_assertions_prompt,
-                    output_key="checked_assertions",
-                    verbose=verbose,
-                ),
-                LLMChain(
-                    llm=llm,
-                    prompt=revised_summary_prompt,
-                    output_key="revised_summary",
-                    verbose=verbose,
-                ),
-                LLMChain(
-                    llm=llm,
-                    output_key="all_true",
-                    prompt=are_all_true_prompt,
-                    verbose=verbose,
-                ),
-            ],
-            input_variables=["summary"],
-            output_variables=["all_true", "revised_summary"],
+        chain = _load_sequential_chain(
+            llm,
+            create_assertions_prompt,
+            check_assertions_prompt,
+            revised_summary_prompt,
+            are_all_true_prompt,
             verbose=verbose,
         )
         return cls(sequential_chain=chain, verbose=verbose, **kwargs)
