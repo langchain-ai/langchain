@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 
-class BaseCallbackHandler(ABC):
+class BaseCallbackHandler:
     """Base callback handler that can be used to handle callbacks from langchain."""
 
     @property
@@ -30,67 +30,54 @@ class BaseCallbackHandler(ABC):
         """Whether to ignore agent callbacks."""
         return False
 
-    @abstractmethod
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> Any:
         """Run when LLM starts running."""
 
-    @abstractmethod
     def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
         """Run on new LLM token. Only available when streaming is enabled."""
 
-    @abstractmethod
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
         """Run when LLM ends running."""
 
-    @abstractmethod
     def on_llm_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Any:
         """Run when LLM errors."""
 
-    @abstractmethod
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> Any:
         """Run when chain starts running."""
 
-    @abstractmethod
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
         """Run when chain ends running."""
 
-    @abstractmethod
     def on_chain_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Any:
         """Run when chain errors."""
 
-    @abstractmethod
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
         """Run when tool starts running."""
 
-    @abstractmethod
     def on_tool_end(self, output: str, **kwargs: Any) -> Any:
         """Run when tool ends running."""
 
-    @abstractmethod
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Any:
         """Run when tool errors."""
 
-    @abstractmethod
     def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run on arbitrary text."""
 
-    @abstractmethod
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
 
-    @abstractmethod
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
 
