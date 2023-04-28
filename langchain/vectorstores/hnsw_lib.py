@@ -89,7 +89,7 @@ class HnswLib(VecStoreFromDocIndex):
         metadatas: Optional[List[dict]] = None,
         work_dir: str = None,
         n_dim: int = None,
-        dist_metric: str = "cosine",
+        dist_metric: str = "l2",
         max_elements: int = 1024,
         index: bool = True,
         ef_construction: int = 200,
@@ -108,7 +108,7 @@ class HnswLib(VecStoreFromDocIndex):
             work_dir (str): path to the location where all the data will be stored.
             n_dim (int): dimension of an embedding.
             dist_metric (str): Distance metric for HnswLib can be one of: "cosine",
-                "ip", and "l2". Defaults to "cosine".
+                "ip", and "l2". Defaults to "l2".
             max_elements (int): Maximum number of vectors that can be stored.
                 Defaults to 1024.
             index (bool): Whether an index should be built for this field.
