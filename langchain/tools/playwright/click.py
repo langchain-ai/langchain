@@ -4,8 +4,7 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
     aget_current_page,
     get_current_page,
@@ -18,7 +17,7 @@ class ClickToolInput(BaseModel):
     selector: str = Field(..., description="CSS selector for the element to click")
 
 
-class ClickTool(BaseTool, BaseBrowserToolMixin):
+class ClickTool(BaseBrowserTool):
     name: str = "click_element"
     description: str = "Click on an element with the given CSS selector"
     args_schema: Type[BaseModel] = ClickToolInput

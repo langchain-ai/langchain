@@ -4,15 +4,14 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
     aget_current_page,
     get_current_page,
 )
 
 
-class NavigateBackTool(BaseTool, BaseBrowserToolMixin):
+class NavigateBackTool(BaseBrowserTool):
     """Navigate back to the previous page in the browser history."""
 
     name: str = "previous_webpage"

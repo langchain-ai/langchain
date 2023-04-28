@@ -4,18 +4,17 @@ from typing import Type
 
 from pydantic import BaseModel, root_validator
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
 
-class ExtractTextTool(BaseTool, BaseBrowserToolMixin):
+class ExtractTextTool(BaseBrowserTool):
     name: str = "extract_text"
     description: str = "Extract all the text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
 
     @root_validator
-    def check_args(cls, values: dict) -> dict:
+    def check_acheck_bs_importrgs(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401

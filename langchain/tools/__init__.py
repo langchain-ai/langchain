@@ -26,6 +26,7 @@ from langchain.tools.playwright import (
 )
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.scenexplain.tool import SceneXplainTool
 
 __all__ = [
     "AIPluginTool",
@@ -57,4 +58,6 @@ __all__ = [
     "ReadFileTool",
     "ShellTool",
     "WriteFileTool",
+    "BaseTool",
+    "SceneXplainTool",
 ]

@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
 if TYPE_CHECKING:
@@ -67,7 +66,7 @@ def _get_elements(
     return results
 
 
-class GetElementsTool(BaseTool, BaseBrowserToolMixin):
+class GetElementsTool(BaseBrowserTool):
     name: str = "get_elements"
     description: str = (
         "Retrieve elements in the current web page matching the given CSS selector"

@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Type
 
 from pydantic import BaseModel, Field, root_validator
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
 if TYPE_CHECKING:
@@ -22,7 +21,7 @@ class ExtractHyperlinksToolInput(BaseModel):
     )
 
 
-class ExtractHyperlinksTool(BaseTool, BaseBrowserToolMixin):
+class ExtractHyperlinksTool(BaseBrowserTool):
     """Extract all hyperlinks on the page."""
 
     name: str = "extract_hyperlinks"
@@ -30,7 +29,7 @@ class ExtractHyperlinksTool(BaseTool, BaseBrowserToolMixin):
     args_schema: Type[BaseModel] = ExtractHyperlinksToolInput
 
     @root_validator
-    def check_args(cls, values: dict) -> dict:
+    def check_bs_import(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401

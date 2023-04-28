@@ -4,15 +4,14 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.base import BaseBrowserToolMixin
+from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
     aget_current_page,
     get_current_page,
 )
 
 
-class CurrentWebPageTool(BaseTool, BaseBrowserToolMixin):
+class CurrentWebPageTool(BaseBrowserTool):
     name: str = "current_webpage"
     description: str = "Returns the URL of the current page"
     args_schema: Type[BaseModel] = BaseModel
