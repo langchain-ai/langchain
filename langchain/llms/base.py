@@ -1,6 +1,5 @@
 """Base interface for large language models to expose."""
 import json
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
@@ -13,7 +12,6 @@ from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import BaseLanguageModel, Generation, LLMResult, PromptValue
 
-logger = logging.getLogger(__name__)
 
 def _get_verbosity() -> bool:
     return langchain.verbose
