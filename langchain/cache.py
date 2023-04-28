@@ -205,23 +205,6 @@ class GPTCache(BaseCache):
         self.init_gptcache_func: Optional[Callable[[Any], None]] = init_func
         self.gptcache_dict: Dict[str, Any] = {}
 
-    @staticmethod
-    def _update_cache_callback_none(*_: Any, **__: Any) -> None:
-        """When updating cached data, do nothing.
-
-        Because currently only cached queries are processed."""
-        return None
-
-    @staticmethod
-    def _llm_handle_none(*_: Any, **__: Any) -> None:
-        """Do nothing on a cache miss"""
-        return None
-
-    @staticmethod
-    def _cache_data_converter(data: str) -> RETURN_VAL_TYPE:
-        """Convert the `data` in the cache to the `RETURN_VAL_TYPE` data format."""
-        return [Generation(**generation_dict) for generation_dict in json.loads(data)]
-
     def _get_gptcache(self, llm_string: str) -> Any:
         """Get a cache object.
 
@@ -248,51 +231,29 @@ class GPTCache(BaseCache):
         First, retrieve the corresponding cache object using the `llm_string` parameter,
         and then retrieve the data from the cache based on the `prompt`.
         """
-        from gptcache.adapter.adapter import adapt
+        from gptcache.adapter.api import get
 
         _gptcache = self.gptcache_dict.get(llm_string, None)
         if _gptcache is None:
             return None
-        res = adapt(
-            GPTCache._llm_handle_none,
-            GPTCache._cache_data_converter,
-            GPTCache._update_cache_callback_none,
-            cache_obj=_gptcache,
-            prompt=prompt,
-        )
-        return res
-
-    @staticmethod
-    def _update_cache_callback(
-        llm_data: RETURN_VAL_TYPE,
-        update_cache_func: Callable[[Any], None],
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        """Save the `llm_data` to cache storage"""
-        handled_data = json.dumps([generation.dict() for generation in llm_data])
-        update_cache_func(handled_data)
+        res = get(prompt, cache_obj=_gptcache)
+        if res:
+            return [
+                Generation(**generation_dict) for generation_dict in json.loads(res)
+            ]
+        return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache.
         First, retrieve the corresponding cache object using the `llm_string` parameter,
         and then store the `prompt` and `return_val` in the cache object.
         """
-        from gptcache.adapter.adapter import adapt
+        from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
-
-        def llm_handle(*_: Any, **__: Any) -> RETURN_VAL_TYPE:
-            return return_val
-
-        return adapt(
-            llm_handle,
-            GPTCache._cache_data_converter,
-            GPTCache._update_cache_callback,
-            cache_obj=_gptcache,
-            cache_skip=True,
-            prompt=prompt,
-        )
+        handled_data = json.dumps([generation.dict() for generation in return_val])
+        put(prompt, handled_data, cache_obj=_gptcache)
+        return None
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
