@@ -22,6 +22,27 @@ def _get_sub_string(schema: ResponseSchema) -> str:
     )
 
 
+def parse_json_markdown(text: str, expected_keys: List[str]) -> Any:
+    if "```json" not in text:
+        raise OutputParserException(
+            f"Got invalid return object. Expected markdown code snippet with JSON "
+            f"object, but got:\n{text}"
+        )
+
+    json_string = text.split("```json")[1].strip().strip("```").strip()
+    try:
+        json_obj = json.loads(json_string)
+    except json.JSONDecodeError as e:
+        raise OutputParserException(f"Got invalid JSON object. Error: {e}")
+    for key in expected_keys:
+        if key not in json_obj:
+            raise OutputParserException(
+                f"Got invalid return object. Expected key `{key}` "
+                f"to be present, but got {json_obj}"
+            )
+    return json_obj
+
+
 class StructuredOutputParser(BaseOutputParser):
     response_schemas: List[ResponseSchema]
 
@@ -38,24 +59,8 @@ class StructuredOutputParser(BaseOutputParser):
         return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
     def parse(self, text: str) -> Any:
-        if "```json" not in text:
-            raise OutputParserException(
-                f"Got invalid return object. Expected markdown code snippet with JSON "
-                f"object, but got:\n{text}"
-            )
-
-        json_string = text.split("```json")[1].strip().strip("```").strip()
-        try:
-            json_obj = json.loads(json_string)
-        except json.JSONDecodeError as e:
-            raise OutputParserException(f"Got invalid JSON object. Error: {e}")
-        for schema in self.response_schemas:
-            if schema.name not in json_obj:
-                raise OutputParserException(
-                    f"Got invalid return object. Expected key `{schema.name}` "
-                    f"to be present, but got {json_obj}"
-                )
-        return json_obj
+        expected_keys = [rs.name for rs in self.response_schemas]
+        return parse_json_markdown(text, expected_keys)
 
     @property
     def _type(self) -> str:

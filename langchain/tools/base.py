@@ -116,6 +116,11 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         arbitrary_types_allowed = True
 
     @property
+    def is_single_input(self) -> bool:
+        """Whether the tool only accepts a single input."""
+        return len(self.args) == 1
+
+    @property
     def args(self) -> dict:
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
@@ -148,11 +153,11 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         return callback_manager or get_callback_manager()
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool."""
 
     @abstractmethod
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously."""
 
     def run(
@@ -183,7 +188,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             self.callback_manager.on_tool_error(e, verbose=verbose_)
             raise e
         self.callback_manager.on_tool_end(
-            observation, verbose=verbose_, color=color, name=self.name, **kwargs
+            str(observation), verbose=verbose_, color=color, name=self.name, **kwargs
         )
         return observation
 
@@ -194,7 +199,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
         **kwargs: Any,
-    ) -> str:
+    ) -> Any:
         """Run the tool asynchronously."""
         self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
@@ -229,7 +234,11 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             raise e
         if self.callback_manager.is_async:
             await self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
+                str(observation),
+                verbose=verbose_,
+                color=color,
+                name=self.name,
+                **kwargs,
             )
         else:
             self.callback_manager.on_tool_end(
@@ -237,6 +246,6 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             )
         return observation
 
-    def __call__(self, tool_input: str) -> str:
+    def __call__(self, tool_input: Union[str, dict]) -> Any:
         """Make tool callable."""
         return self.run(tool_input)
