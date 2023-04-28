@@ -16,7 +16,9 @@ def maximal_marginal_relevance(
     """Calculate maximal marginal relevance."""
     if min(k, len(embedding_list)) <= 0:
         return []
-    similarity_to_query = cosine_similarity([query_embedding], embedding_list)[0]
+    if query_embedding.ndim == 1:
+        query_embedding = np.expand_dims(query_embedding, axis=0)
+    similarity_to_query = cosine_similarity(query_embedding, embedding_list)[0]
     most_similar = int(np.argmax(similarity_to_query))
     idxs = [most_similar]
     selected = np.array([embedding_list[most_similar]])
