@@ -1,15 +1,10 @@
 """Interface for tools."""
 from functools import partial
-from inspect import signature
-from typing import Any, Awaitable, Callable, Optional, Type, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
-from pydantic import BaseModel, validate_arguments, validator
+from pydantic import BaseModel, validator
 
-from langchain.tools.base import (
-    BaseTool,
-    create_schema_from_function,
-    get_filtered_args,
-)
+from langchain.tools.base import BaseTool, StructuredTool
 
 
 class Tool(BaseTool):
@@ -30,17 +25,30 @@ class Tool(BaseTool):
 
     @property
     def args(self) -> dict:
+        """The tool's input arguments."""
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
-        else:
-            inferred_model = validate_arguments(self.func).model  # type: ignore
-            return get_filtered_args(inferred_model, self.func)
+        # For backwards compatibility, if the function signature is ambiguous,
+        # assume it takes a single string input.
+        return {"tool_input": {"type": "string"}}
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+        """Convert tool input to pydantic model."""
+        args, kwargs = super()._to_args_and_kwargs(tool_input)
+        # For backwards compatibility. The tool must be run with a single input
+        all_args = list(args) + list(kwargs.values())
+        if len(all_args) != 1:
+            raise ValueError(
+                f"Too many arguments to single-input tool {self.name}."
+                f" Args: {all_args}"
+            )
+        return tuple(all_args), {}
+
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool."""
         return self.func(*args, **kwargs)
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
             return await self.coroutine(*args, **kwargs)
@@ -48,7 +56,7 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Callable[[str], str], description: str, **kwargs: Any
+        self, name: str, func: Callable, description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super(Tool, self).__init__(
@@ -107,22 +115,24 @@ def tool(
     """
 
     def _make_with_name(tool_name: str) -> Callable:
-        def _make_tool(func: Callable) -> Tool:
-            assert func.__doc__, "Function must have a docstring"
-            # Description example:
-            # search_api(query: str) - Searches the API for the query.
-            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
-            _args_schema = args_schema
-            if _args_schema is None and infer_schema:
-                _args_schema = create_schema_from_function(f"{tool_name}Schema", func)
-            tool_ = Tool(
+        def _make_tool(func: Callable) -> BaseTool:
+            if infer_schema or args_schema is not None:
+                return StructuredTool.from_function(
+                    func,
+                    name=tool_name,
+                    return_direct=return_direct,
+                    args_schema=args_schema,
+                    infer_schema=infer_schema,
+                )
+            # If someone doesn't want a schema applied, we must treat it as
+            # a simple string->string function
+            assert func.__doc__ is not None, "Function must have a docstring"
+            return Tool(
                 name=tool_name,
                 func=func,
-                args_schema=_args_schema,
-                description=description,
+                description=f"{tool_name} tool",
                 return_direct=return_direct,
             )
-            return tool_
 
         return _make_tool
 
