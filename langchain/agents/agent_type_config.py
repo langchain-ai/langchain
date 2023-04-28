@@ -1,7 +1,5 @@
 from typing import Dict, List, Type
 
-from pydantic import BaseModel
-
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.agent_types import AgentType
 from langchain.agents.chat.base import ChatAgent
