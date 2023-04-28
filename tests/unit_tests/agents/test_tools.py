@@ -1,7 +1,7 @@
 """Test tool utils."""
 from datetime import datetime
 from functools import partial
-from typing import Optional, Type, Union
+from typing import Any, Optional, Type, Union
 from unittest.mock import MagicMock
 
 import pydantic
@@ -16,7 +16,7 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain.agents.tools import Tool, tool
-from langchain.tools.base import BaseTool, SchemaAnnotationError
+from langchain.tools.base import BaseTool, SchemaAnnotationError, StructuredTool
 
 
 def test_unnamed_decorator() -> None:
@@ -27,7 +27,7 @@ def test_unnamed_decorator() -> None:
         """Search the API for the query."""
         return "API result"
 
-    assert isinstance(search_api, Tool)
+    assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
     assert search_api("test") == "API result"
@@ -145,7 +145,7 @@ def test_decorator_with_specified_schema() -> None:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
 
-    assert isinstance(tool_func, Tool)
+    assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
 
@@ -159,7 +159,7 @@ def test_decorated_function_schema_equivalent() -> None:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
 
-    assert isinstance(structured_tool_input, Tool)
+    assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.args_schema is not None
     assert (
         structured_tool_input.args_schema.schema()["properties"]
@@ -171,14 +171,14 @@ def test_decorated_function_schema_equivalent() -> None:
 def test_structured_args_decorator_no_infer_schema() -> None:
     """Test functionality with structured arguments parsed as a decorator."""
 
-    @tool(infer_schema=False)
+    @tool
     def structured_tool_input(
         arg1: int, arg2: Union[float, datetime], opt_arg: Optional[dict] = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1}, {arg2}, {opt_arg}"
 
-    assert isinstance(structured_tool_input, Tool)
+    assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
     expected_result = "1, 0.001, {'foo': 'bar'}"
@@ -193,8 +193,9 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
         """Return the arguments directly."""
         return f"{tool_input}"
 
-    assert isinstance(unstructured_tool_input, Tool)
+    assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
+    assert unstructured_tool_input.run("foo") == "foo"
 
 
 def test_base_tool_inheritance_base_schema() -> None:
@@ -225,18 +226,18 @@ def test_tool_lambda_args_schema() -> None:
         func=lambda tool_input: tool_input,
     )
     assert tool.args_schema is None
-    expected_args = {"tool_input": {"title": "Tool Input"}}
+    expected_args = {"tool_input": {"type": "string"}}
     assert tool.args == expected_args
 
 
-def test_tool_lambda_multi_args_schema() -> None:
+def test_structured_tool_lambda_multi_args_schema() -> None:
     """Test args schema inference when the tool argument is a lambda function."""
-    tool = Tool(
+    tool = StructuredTool.from_function(
         name="tool",
         description="A tool",
         func=lambda tool_input, other_arg: f"{tool_input}{other_arg}",  # type: ignore
     )
-    assert tool.args_schema is None
+    assert tool.args_schema is not None
     expected_args = {
         "tool_input": {"title": "Tool Input"},
         "other_arg": {"title": "Other Arg"},
@@ -268,7 +269,7 @@ def test_empty_args_decorator() -> None:
         """Return a constant."""
         return "the empty result"
 
-    assert isinstance(empty_tool_input, Tool)
+    assert isinstance(empty_tool_input, BaseTool)
     assert empty_tool_input.name == "empty_tool_input"
     assert empty_tool_input.args == {}
     assert empty_tool_input.run({}) == "the empty result"
@@ -282,7 +283,7 @@ def test_named_tool_decorator() -> None:
         """Search the API for the query."""
         return "API result"
 
-    assert isinstance(search_api, Tool)
+    assert isinstance(search_api, BaseTool)
     assert search_api.name == "search"
     assert not search_api.return_direct
 
@@ -295,7 +296,7 @@ def test_named_tool_decorator_return_direct() -> None:
         """Search the API for the query."""
         return "API result"
 
-    assert isinstance(search_api, Tool)
+    assert isinstance(search_api, BaseTool)
     assert search_api.name == "search"
     assert search_api.return_direct
 
@@ -308,7 +309,7 @@ def test_unnamed_tool_decorator_return_direct() -> None:
         """Search the API for the query."""
         return "API result"
 
-    assert isinstance(search_api, Tool)
+    assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert search_api.return_direct
 
@@ -325,7 +326,7 @@ def test_tool_with_kwargs() -> None:
         """Search the API for the query."""
         return f"arg_0={arg_0}, arg_1={arg_1}, ping={ping}"
 
-    assert isinstance(search_api, Tool)
+    assert isinstance(search_api, BaseTool)
     result = search_api.run(
         tool_input={
             "arg_0": "foo",
@@ -423,3 +424,23 @@ def test_single_input_agent_raises_error_on_structured_tool(
         f" multi-input tool {the_tool.name}.",
     ):
         agent_cls.from_llm_and_tools(MagicMock(), [the_tool])  # type: ignore
+
+
+def test_tool_no_args_specified_assumes_str() -> None:
+    """Older tools could assume *args and **kwargs were passed in."""
+
+    def ambiguous_function(*args: Any, **kwargs: Any) -> str:
+        """An ambiguously defined function."""
+        return args[0]
+
+    some_tool = Tool(
+        name="chain_run",
+        description="Run the chain",
+        func=ambiguous_function,
+    )
+    expected_args = {"tool_input": {"type": "string"}}
+    assert some_tool.args == expected_args
+    assert some_tool.run("foobar") == "foobar"
+    assert some_tool.run({"tool_input": "foobar"}) == "foobar"
+    with pytest.raises(ValueError, match="Too many arguments to single-input tool"):
+        some_tool.run({"tool_input": "foobar", "other_input": "bar"})

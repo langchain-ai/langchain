@@ -3,8 +3,9 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pytest
-
+from langchain.tools.file_management.utils import (
+    INVALID_PATH_TEMPLATE,
+)
 from langchain.tools.file_management.write import WriteFileTool
 
 
@@ -21,8 +22,10 @@ def test_write_file_errs_outside_root_dir() -> None:
     """Test the WriteFile tool when a root dir is specified."""
     with TemporaryDirectory() as temp_dir:
         tool = WriteFileTool(root_dir=temp_dir)
-        with pytest.raises(ValueError):
-            tool.run({"file_path": "../file.txt", "text": "Hello, world!"})
+        result = tool.run({"file_path": "../file.txt", "text": "Hello, world!"})
+        assert result == INVALID_PATH_TEMPLATE.format(
+            arg_name="file_path", value="../file.txt"
+        )
 
 
 def test_write_file() -> None:
