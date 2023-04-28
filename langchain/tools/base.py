@@ -1,7 +1,6 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
-import inspect
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -14,7 +13,6 @@ from pydantic import (
     create_model,
     root_validator,
     validate_arguments,
-    validator,
 )
 from pydantic.main import ModelMetaclass
 
@@ -173,7 +171,11 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         return values
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
         """Use the tool."""
 
     @abstractmethod
@@ -207,7 +209,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             callbacks, self.callbacks, verbose=verbose_
         )
         # TODO: maybe also pass through run_manager is _run supports kwargs
-        new_arg_supported = inspect.signature(self._run).parameters.get("run_manager")
+        new_arg_supported = signature(self._run).parameters.get("run_manager")
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -245,7 +247,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         callback_manager = AsyncCallbackManager.configure(
             callbacks, self.callbacks, verbose=verbose_
         )
-        new_arg_supported = inspect.signature(self._arun).parameters.get("run_manager")
+        new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
