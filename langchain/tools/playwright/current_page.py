@@ -4,8 +4,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from langchain.tools.browser.base import BaseBrowserTool
-from langchain.tools.browser.utils import (
+from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.playwright.utils import (
     get_current_page,
 )
 

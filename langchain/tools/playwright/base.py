@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import Field, root_validator
 
 from langchain.tools.base import BaseTool
-from langchain.tools.browser.utils import create_playwright_browser, run_async
+from langchain.tools.playwright.utils import create_playwright_browser, run_async
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser

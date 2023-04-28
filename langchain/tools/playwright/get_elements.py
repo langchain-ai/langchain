@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
 from pydantic import BaseModel, Field
 
-from langchain.tools.browser.base import BaseBrowserTool
-from langchain.tools.browser.utils import get_current_page
+from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.playwright.utils import get_current_page
 
 if TYPE_CHECKING:
     from playwright.async_api import Page as AsyncPage
@@ -19,7 +19,7 @@ class GetElementsToolInput(BaseModel):
         ...,
         description="CSS selector, such as '*', 'div', 'p', 'a', #id, .classname",
     )
-    attributes: str = Field(
+    attributes: List[str] = Field(
         default_factory=lambda: ["innerText"],
         description="Set of attributes to retrieve for each element",
     )

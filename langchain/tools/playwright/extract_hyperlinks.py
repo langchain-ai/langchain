@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Type
 
 from pydantic import BaseModel, Field, root_validator
 
-from langchain.tools.browser.base import BaseBrowserTool
-from langchain.tools.browser.utils import get_current_page
+from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.playwright.utils import get_current_page
 
 if TYPE_CHECKING:
     pass

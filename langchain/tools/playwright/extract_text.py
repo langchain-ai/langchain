@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Type
 
 from pydantic import BaseModel, root_validator
 
-from langchain.tools.browser.base import BaseBrowserTool
-from langchain.tools.browser.utils import get_current_page
+from langchain.tools.playwright.base import BaseBrowserTool
+from langchain.tools.playwright.utils import get_current_page
 
 
 class ExtractTextTool(BaseBrowserTool):
