@@ -68,30 +68,28 @@ If you cannot complete them and run into issues, you should explain the issue. I
 
 Here is documentation on the API:
 Base url: {api_url}
-Endpoints:
-{api_docs}
+Endpoints: {api_docs}
 
 
 Here are tools to execute requests against the API: {tool_descriptions}
 
 
-Starting below, you should follow this format:
+Starting below, you MUST follow this format:
 
 Plan: the plan of API calls to execute
 Thought: you should always think about what to do
 Action: the action to take, should be one of the tools [{tool_names}]
 Action Input: the input to the action
 Observation: the output of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I am finished executing the plan (or, I cannot finish executing the plan without knowing some other information.)
+... (this Thought/Action/Action Input/Observation loop can repeat N times)
+Thought: One of [I am finished executing the plan, I cannot finish executing the plan without knowing some other information]
 Final Answer: the final output from executing the plan or missing information I'd need to re-plan correctly.
 
 
 Begin!
 
 Plan: {input}
-Thought:
-{agent_scratchpad}
+Thought: {agent_scratchpad}
 """
 API_CONTROLLER_TOOL_NAME = "api_controller"
 API_CONTROLLER_TOOL_DESCRIPTION = f"Can be used to execute a plan of API calls, like {API_CONTROLLER_TOOL_NAME}(plan)."
