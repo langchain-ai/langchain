@@ -3,13 +3,13 @@ from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessage
 from langchain.memory.chat_message_histories.file import FileChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
-from langchain.memory.chat_message_histories.sqlite import SQLiteChatMessageHistory
+from langchain.memory.chat_message_histories.sql import SQLChatMessageHistory
 
 __all__ = [
     "DynamoDBChatMessageHistory",
     "RedisChatMessageHistory",
     "PostgresChatMessageHistory",
-    "SQLiteChatMessageHistory",
+    "SQLChatMessageHistory",
     "FileChatMessageHistory",
     "CosmosDBChatMessageHistory",
 ]
