@@ -8,6 +8,7 @@ from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain.utilities.powerbi import PowerBIDataset
 from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
@@ -29,4 +30,5 @@ __all__ = [
     "WikipediaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "PythonREPL",
+    "PowerBIDataset",
 ]

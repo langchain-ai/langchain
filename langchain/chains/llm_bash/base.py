@@ -1,10 +1,11 @@
 """Chain that interprets a prompt and executes bash code to perform bash operations."""
 from __future__ import annotations
 
+import logging
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic import Extra, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -12,7 +13,10 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import OutputParserException
 from langchain.utilities.bash import BashProcess
+
+logger = logging.getLogger(__name__)
 
 
 class LLMBashChain(Chain):
@@ -32,6 +36,7 @@ class LLMBashChain(Chain):
     output_key: str = "answer"  #: :meta private:
     prompt: BasePromptTemplate = PROMPT
     """[Deprecated]"""
+    bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -73,29 +78,27 @@ class LLMBashChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        bash_executor = BashProcess()
         _run_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
         t = self.llm_chain.predict(
             question=inputs[self.input_key], callbacks=_run_manager.get_child()
         )
         _run_manager.on_text(t, color="green", verbose=self.verbose)
-
         t = t.strip()
-        if t.startswith("```bash"):
-            # Split the string into a list of substrings
-            command_list = t.split("\n")
-            print(command_list)
+        try:
+            command_list = self.llm_chain.prompt.output_parser.parse(t)
+        except OutputParserException as e:
+            _run_manager.on_chain_error(e, verbose=self.verbose)
+            raise e
 
-            # Remove the first and last substrings
-            command_list = [s for s in command_list[1:-1]]
-            output = bash_executor.run(command_list)
-
-            _run_manager.on_text("\nAnswer: ", verbose=self.verbose)
-            _run_manager.on_text(output, color="yellow", verbose=self.verbose)
-
-        else:
-            raise ValueError(f"unknown format from LLM: {t}")
+        if self.verbose:
+            _run_manager.on_text("\nCode: ", verbose=self.verbose)
+            _run_manager.on_text(
+                str(command_list), color="yellow", verbose=self.verbose
+            )
+        output = self.bash_process.run(command_list)
+        _run_manager.on_text("\nAnswer: ", verbose=self.verbose)
+        _run_manager.on_text(output, color="yellow", verbose=self.verbose)
         return {self.output_key: output}
 
     @property
