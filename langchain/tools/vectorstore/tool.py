@@ -44,7 +44,9 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
 
     def _run(self, query: str) -> str:
         """Use the tool."""
-        chain = RetrievalQA.from_chain_type(self.llm, vectorstore=self.vectorstore)
+        chain = RetrievalQA.from_chain_type(
+            self.llm, retriever=self.vectorstore.as_retriever()
+        )
         return chain.run(query)
 
     async def _arun(self, query: str) -> str:
@@ -71,7 +73,7 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         chain = RetrievalQAWithSourcesChain.from_chain_type(
-            self.llm, vectorstore=self.vectorstore
+            self.llm, retriever=self.vectorstore.as_retriever()
         )
         return json.dumps(chain({chain.question_key: query}, return_only_outputs=True))
 
