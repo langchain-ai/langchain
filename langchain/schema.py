@@ -206,7 +206,7 @@ class BaseLanguageModel(BaseModel, ABC):
                 "This is needed in order to calculate get_num_tokens. "
                 "Please install it with `pip install transformers`."
             )
-        # create a GPT-3 tokenizer instance
+        # create a GPT-2 tokenizer instance
         tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
         # tokenize the text using the GPT-3 tokenizer
