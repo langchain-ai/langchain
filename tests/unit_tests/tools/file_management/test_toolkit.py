@@ -4,8 +4,10 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
+from langchain.agents.agent_toolkits.file_management.toolkit import (
+    FileManagementToolkit,
+)
 from langchain.tools.base import BaseTool
-from langchain.tools.file_management.toolkit import FileManagementToolkit
 
 
 def test_file_toolkit_get_tools() -> None:
