@@ -111,6 +111,9 @@ async def _ahandle_event(
     )
 
 
+BRM = TypeVar("BRM", bound="BaseRunManager")
+
+
 class BaseRunManager(RunManagerMixin):
     """Base class for run manager (a bound callback manager)."""
 
@@ -126,6 +129,11 @@ class BaseRunManager(RunManagerMixin):
         self.handlers = handlers
         self.inheritable_handlers = inheritable_handlers
         self.parent_run_id = parent_run_id
+
+    @classmethod
+    def get_noop_manager(cls: Type[BRM]) -> BRM:
+        """Return a manager that doesn't perform any operations."""
+        return cls("", [], [])
 
 
 class RunManager(BaseRunManager):
