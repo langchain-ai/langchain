@@ -25,11 +25,15 @@ class BlockchainDocumentLoader(BaseLoader):
     If no BlockchainType is specified, the default is Ethereum mainnet.
 
     The Loader uses the Alchemy API to interact with the blockchain.
+    
+    The API returns 100 NFTs per request and can be paginated using the
+    startToken parameter.
 
     ALCHEMY_API_KEY environment variable must be set to use this loader.
 
     Future versions of this loader can:
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
+        - Support additional blockain APIs (e.g. Infura, Opensea, etc.)
     """
 
     def __init__(
@@ -37,7 +41,7 @@ class BlockchainDocumentLoader(BaseLoader):
         contract_address: str,
         blockchainType: BlockchainType = BlockchainType.ETH_MAINNET,
         api_key: str = "docs-demo",
-        startToken: int = 0,
+        startToken: str = "",
     ):
         self.contract_address = contract_address
         self.blockchainType = blockchainType.value
