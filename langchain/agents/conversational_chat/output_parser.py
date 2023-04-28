@@ -35,10 +35,7 @@ class ConvoOutputParser(AgentOutputParser):
             if all(field in response for field in ["action", "action_input"]):
                 if response["action"] == "Final Answer":
                     return AgentFinish({"output": response["action_input"]}, text)
-                else:
-                    return AgentAction(
-                        response["action"], response["action_input"], text
-                    )
+                return AgentAction(response["action"], response["action_input"], text)
         except json.JSONDecodeError:
             pass
 
