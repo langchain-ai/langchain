@@ -180,6 +180,7 @@ class PromptValue(BaseModel, ABC):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
 
+
 def _get_num_tokens_default_method(text: str) -> int:
     """Get the number of tokens present in the text."""
     # TODO: this method may not be exact.
@@ -200,6 +201,7 @@ def _get_num_tokens_default_method(text: str) -> int:
 
     # calculate the number of tokens in the tokenized text
     return len(tokenized_text)
+
 
 class BaseLanguageModel(BaseModel, ABC):
     @abstractmethod
