@@ -5,17 +5,26 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from pydantic import (
     BaseModel,
     Extra,
     Field,
     create_model,
+    root_validator,
     validate_arguments,
 )
 from pydantic.main import ModelMetaclass
-from pydantic import BaseModel, Extra, Field, root_validator, validate_arguments
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
@@ -170,12 +179,26 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         return values
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
-        """Use the tool."""
+    def _run(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool.
+
+        To enable tracing, add run_manager: Optional[CallbackManagerForToolRun] = None to child implementations.
+        """
 
     @abstractmethod
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
-        """Use the tool asynchronously."""
+    async def _arun(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool asynchronously.
+
+        To enable tracing, add run_manager: Optional[AsyncCallbackManagerForToolRun] = None to child implementations.
+        """
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,

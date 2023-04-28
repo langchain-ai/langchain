@@ -4,6 +4,7 @@ import json
 from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
 from pydantic import BaseModel, Field
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import get_current_page
@@ -53,7 +54,10 @@ class GetElementsTool(BaseBrowserTool):
     args_schema: Type[BaseModel] = GetElementsToolInput
 
     async def _arun(
-        self, selector: str, attributes: Sequence[str] = ["innerText"]
+        self,
+        selector: str,
+        attributes: Sequence[str] = ["innerText"],
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
         page = await get_current_page(self.browser)

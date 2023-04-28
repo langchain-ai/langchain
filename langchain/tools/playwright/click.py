@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
@@ -21,7 +22,11 @@ class ClickTool(BaseBrowserTool):
     description: str = "Click on an element with the given CSS selector"
     args_schema: Type[BaseModel] = ClickToolInput
 
-    async def _arun(self, selector: str) -> str:
+    async def _arun(
+        self,
+        selector: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         page = await get_current_page(self.browser)
         # Navigate to the desired webpage before using this tool
