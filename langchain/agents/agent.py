@@ -559,6 +559,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
     early_stopping_method: str = "force"
+    handle_parsing_errors: bool = False
 
     @classmethod
     def from_agent_and_tools(
@@ -687,6 +688,8 @@ class AgentExecutor(Chain):
             # Call the LLM to see what to do.
             output = self.agent.plan(intermediate_steps, **inputs)
         except Exception as e:
+            if not self.handle_parsing_errors:
+                raise e
             text = str(e).split("`")[1]
             observation = "Invalid or incomplete response"
             output = AgentAction("_Exception", observation, text)
@@ -748,8 +751,23 @@ class AgentExecutor(Chain):
 
         Override this to take control of how the agent makes and acts on choices.
         """
-        # Call the LLM to see what to do.
-        output = await self.agent.aplan(intermediate_steps, **inputs)
+        try:
+            # Call the LLM to see what to do.
+            output = await self.agent.aplan(intermediate_steps, **inputs)
+        except Exception as e:
+            if not self.handle_parsing_errors:
+                raise e
+            text = str(e).split("`")[1]
+            observation = "Invalid or incomplete response"
+            output = AgentAction("_Exception", observation, text)
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = await InvalidTool().arun(
+                output.tool,
+                verbose=self.verbose,
+                color=None,
+                **tool_run_kwargs,
+            )
+            return [(output, observation)]
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
