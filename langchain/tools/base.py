@@ -5,16 +5,7 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
@@ -133,7 +124,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     """Whether to log the tool's progress."""
 
     callbacks: Callbacks = None
+    """Callbacks to be called during tool execution."""
     callback_manager: Optional[BaseCallbackManager] = None
+    """Deprecated. Please use callbacks instead."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -217,7 +210,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         color: Optional[str] = "green",
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Any:
         """Run the tool."""
         self._parse_input(tool_input)
         if not self.verbose and verbose is not None:
@@ -279,7 +272,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             observation = (
                 await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
                 if new_arg_supported
-                else await self._arun(*tool_args, **kwargs)
+                else await self._arun(*tool_args, **tool_kwargs)
             )
         except (Exception, KeyboardInterrupt) as e:
             await run_manager.on_tool_error(e)

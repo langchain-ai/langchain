@@ -173,6 +173,31 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
+    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Performs sanity check, preparing paramaters in format needed by llama_cpp.
+
+        Args:
+            stop (Optional[List[str]]): List of stop sequences for llama_cpp.
+
+        Returns:
+            Dictionary containing the combined parameters.
+        """
+
+        # Raise error if stop sequences are in both input and default params
+        if self.stop and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+
+        params = self._default_params
+
+        # llama_cpp expects the "stop" key not this, so we remove it:
+        params.pop("stop_sequences")
+
+        # then sets it as configured, or default to an empty list:
+        params["stop"] = self.stop or stop or []
+
+        return params
+
     def _call(
         self,
         prompt: str,
@@ -200,7 +225,7 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self.stream(prompt=prompt, stop=stop):
+            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
                 combined_text_output += token["choices"][0]["text"]
             return combined_text_output
         else:
@@ -209,7 +234,10 @@ class LlamaCpp(LLM):
             return result["choices"][0]["text"]
 
     def stream(
-        self, prompt: str, stop: Optional[List[str]] = None
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> Generator[Dict, None, None]:
         """Yields results objects as they are generated in real time.
 
@@ -249,7 +277,8 @@ class LlamaCpp(LLM):
         for chunk in result:
             token = chunk["choices"][0]["text"]
             log_probs = chunk["choices"][0].get("logprobs", None)
-            self.callback_manager.on_llm_new_token(
-                token=token, verbose=self.verbose, log_probs=log_probs
-            )
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    token=token, verbose=self.verbose, log_probs=log_probs
+                )
             yield chunk

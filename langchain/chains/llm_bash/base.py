@@ -1,16 +1,17 @@
 """Chain that interprets a prompt and executes bash code to perform bash operations."""
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseOutputParser, OutputParserException
+from langchain.schema import BaseOutputParser, OutputParserException
 from langchain.utilities.bash import BashProcess
 
 logger = logging.getLogger(__name__)
@@ -83,30 +84,40 @@ class LLMBashChain(Chain):
         """
         return [self.output_key]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         llm_executor = LLMChain(prompt=self.prompt, llm=self.llm)
-
-        self.callback_manager.on_text(inputs[self.input_key], verbose=self.verbose)
+        if run_manager:
+            run_manager.on_text(inputs[self.input_key], verbose=self.verbose)
 
         t = llm_executor.predict(question=inputs[self.input_key])
-        self.callback_manager.on_text(t, color="green", verbose=self.verbose)
+        if run_manager:
+            run_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         try:
             command_list = self.output_parser.parse(t)
         except OutputParserException as e:
-            self.callback_manager.on_chain_error(e, verbose=self.verbose)
+            if run_manager:
+                run_manager.on_chain_error(e, verbose=self.verbose)
             raise e
 
         if self.verbose:
-            self.callback_manager.on_text("\nCode: ", verbose=self.verbose)
-            self.callback_manager.on_text(
-                str(command_list), color="yellow", verbose=self.verbose
-            )
+            if run_manager:
+                run_manager.on_text("\nCode: ", verbose=self.verbose)
+            if run_manager:
+                run_manager.on_text(
+                    str(command_list), color="yellow", verbose=self.verbose
+                )
 
         output = self.bash_process.run(command_list)
 
-        self.callback_manager.on_text("\nAnswer: ", verbose=self.verbose)
-        self.callback_manager.on_text(output, color="yellow", verbose=self.verbose)
+        if run_manager:
+            run_manager.on_text("\nAnswer: ", verbose=self.verbose)
+        if run_manager:
+            run_manager.on_text(output, color="yellow", verbose=self.verbose)
         return {self.output_key: output}
 
     @property

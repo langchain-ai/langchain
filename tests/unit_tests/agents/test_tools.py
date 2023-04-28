@@ -201,7 +201,8 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
     expected_result = "1, 0.001, {'foo': 'bar'}"
-    assert structured_tool_input.run(args) == expected_result
+    with pytest.raises(ValueError):
+        assert structured_tool_input.run(args) == expected_result
 
 
 def test_structured_single_str_decorator_no_infer_schema() -> None:

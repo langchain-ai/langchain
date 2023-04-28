@@ -1,15 +1,14 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from typing import Any, Dict
-from typing import Callable, Optional
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Extra, Field, root_validator
+
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-
-from pydantic import BaseModel, Extra, Field, root_validator, validator
-
-from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase

@@ -8,7 +8,6 @@ from pydantic import BaseModel, validator
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
-    Callbacks,
 )
 from langchain.tools.base import BaseTool, StructuredTool
 
@@ -73,7 +72,7 @@ class Tool(BaseTool):
         *args: Any,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
             new_argument_supported = signature(self.coroutine).parameters.get(

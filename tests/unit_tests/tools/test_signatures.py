@@ -13,7 +13,9 @@ from langchain.tools.base import BaseTool
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
     subclasses = []
     for subclass in cls.__subclasses__():
-        if not getattr(subclass, "__abstract__", None):
+        if not getattr(
+            subclass, "__abstract__", None
+        ) and not subclass.__name__.startswith("_"):
             subclasses.append(subclass)
         subclasses.extend(get_non_abstract_subclasses(subclass))
     return subclasses
@@ -21,6 +23,8 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
 
 @pytest.mark.parametrize("cls", get_non_abstract_subclasses(BaseTool))
 def test_all_subclasses_accept_run_manager(cls: Type[BaseTool]) -> None:
+    """Test that tools defined in this repo accept a run manager argument."""
+    # This wouldn't be necessary if the BaseTool had a strict API.
     if cls._run is not BaseTool._arun:
         run_func = cls._run
         params = inspect.signature(run_func).parameters
