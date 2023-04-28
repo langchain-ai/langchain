@@ -1,3 +1,4 @@
+import re
 from typing import Any, List, Optional, Sequence, Tuple
 
 from pydantic import Field
@@ -49,6 +50,11 @@ class ChatAgent(Agent):
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
 
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        """Validate that appropriate tools are passed in."""
+        pass
+
     @property
     def _stop(self) -> List[str]:
         return ["Observation:"]
@@ -62,7 +68,13 @@ class ChatAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_strings_ = []
+        for tool in tools:
+            args_schema = re.sub("}", "}}}}", re.sub("{", "{{{{", str(tool.args)))
+            tool_strings_.append(
+                f"> {tool.name}: {tool.description}\nArgs: {args_schema}"
+            )
+        tool_strings = "\n".join(tool_strings_)
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
