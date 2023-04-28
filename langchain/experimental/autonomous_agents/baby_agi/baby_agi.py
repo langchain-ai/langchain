@@ -1,9 +1,11 @@
+"""BabyAGI agent."""
 from collections import deque
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.experimental.autonomous_agents.baby_agi.task_creation import (
     TaskCreationChain,
@@ -112,7 +114,11 @@ class BabyAGI(Chain, BaseModel):
             objective=objective, context="\n".join(context), task=task
         )
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run the agent."""
         objective = inputs["objective"]
         first_task = inputs.get("first_task", "Make a todo list")
