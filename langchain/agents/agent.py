@@ -367,6 +367,17 @@ class Agent(BaseSingleActionAgent):
             thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
         return thoughts
 
+    @classmethod
+    def _append_final_thought(
+        cls, thoughts: Union[str, List[BaseMessage]]
+    ) -> Union[str, List[BaseMessage]]:
+        if isinstance(thoughts, str):
+            return thoughts + (
+                "\n\nI now need to return a final answer based on the previous steps:"
+            )
+        else:
+            raise NotImplementedError("Not implemented for list of messages")
+
     def plan(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
     ) -> Union[AgentAction, AgentFinish]:
@@ -500,16 +511,9 @@ class Agent(BaseSingleActionAgent):
             )
         elif early_stopping_method == "generate":
             # Generate does one final forward pass
-            thoughts = ""
-            for action, observation in intermediate_steps:
-                thoughts += action.log
-                thoughts += (
-                    f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
-                )
+            thoughts = self._construct_scratchpad(intermediate_steps)
             # Adding to the previous steps, we now tell the LLM to make a final pred
-            thoughts += (
-                "\n\nI now need to return a final answer based on the previous steps:"
-            )
+            thoughts = self.__class__._append_final_thought(thoughts)
             new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
             full_inputs = {**kwargs, **new_inputs}
             full_output = self.llm_chain.predict(**full_inputs)

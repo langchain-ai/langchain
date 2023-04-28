@@ -1,7 +1,7 @@
 """An agent designed to hold a conversation in addition to using tools."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from pydantic import Field
 
@@ -96,6 +96,18 @@ class ConversationalChatAgent(Agent):
                 content=TEMPLATE_TOOL_RESPONSE.format(observation=observation)
             )
             thoughts.append(human_message)
+        return thoughts
+
+    @classmethod
+    def _append_final_thought(
+        cls, thoughts: Union[str, List[BaseMessage]]
+    ) -> List[BaseMessage]:
+        if isinstance(thoughts, str):
+            raise ValueError("construct_final_thought expects a list of BaseMessages")
+        final_thought = (
+            "Now return a final answer based on the above thoughts and observations"
+        )
+        thoughts.append(HumanMessage(content=final_thought))
         return thoughts
 
     @classmethod
