@@ -2,6 +2,7 @@
 
 from langchain.schema import _get_num_tokens_default_method
 
+
 class TestTokenCountingWithGPT2Tokenizer:
     def test_empty_token(self) -> None:
         assert _get_num_tokens_default_method("") == 0
