@@ -1,6 +1,8 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
 
+import inspect
+import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
@@ -14,9 +16,16 @@ from pydantic import (
     validator,
 )
 from pydantic.main import ModelMetaclass
+from pydantic import BaseModel, Extra, Field, root_validator, validate_arguments
 
-from langchain.callbacks import get_callback_manager
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForToolRun,
+    CallbackManager,
+    CallbackManagerForToolRun,
+    Callbacks,
+)
 
 
 class SchemaAnnotationError(TypeError):
@@ -114,8 +123,9 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     """
     verbose: bool = False
     """Whether to log the tool's progress."""
-    callback_manager: BaseCallbackManager = Field(default_factory=get_callback_manager)
-    """Callback manager for this tool."""
+
+    callbacks: Callbacks = None
+    callback_manager: Optional[BaseCallbackManager] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -150,15 +160,16 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             if input_args is not None:
                 input_args.validate(tool_input)
 
-    @validator("callback_manager", pre=True, always=True)
-    def set_callback_manager(
-        cls, callback_manager: Optional[BaseCallbackManager]
-    ) -> BaseCallbackManager:
-        """If callback manager is None, set it.
-
-        This allows users to pass in None as callback manager, which is a nice UX.
-        """
-        return callback_manager or get_callback_manager()
+    @root_validator()
+    def raise_deprecation(cls, values: Dict) -> Dict:
+        """Raise deprecation warning if callback_manager is used."""
+        if values.get("callback_manager") is not None:
+            warnings.warn(
+                "callback_manager is deprecated. Please use callbacks instead.",
+                DeprecationWarning,
+            )
+            values["callbacks"] = values.pop("callback_manager", None)
+        return values
 
     @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:
@@ -182,6 +193,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> str:
         """Run the tool."""
@@ -190,22 +202,28 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             verbose_ = verbose
         else:
             verbose_ = self.verbose
-        self.callback_manager.on_tool_start(
+        callback_manager = CallbackManager.configure(
+            callbacks, self.callbacks, verbose=verbose_
+        )
+        # TODO: maybe also pass through run_manager is _run supports kwargs
+        new_arg_supported = inspect.signature(self._run).parameters.get("run_manager")
+        run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
-            verbose=verbose_,
             color=start_color,
             **kwargs,
         )
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            observation = self._run(*tool_args, **tool_kwargs)
+            observation = (
+                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+                if new_arg_supported
+                else self._run(*tool_args, **tool_kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
-            self.callback_manager.on_tool_error(e, verbose=verbose_)
+            run_manager.on_tool_error(e)
             raise e
-        self.callback_manager.on_tool_end(
-            str(observation), verbose=verbose_, color=color, name=self.name, **kwargs
-        )
+        run_manager.on_tool_end(str(observation), color=color, name=self.name, **kwargs)
         return observation
 
     async def arun(
@@ -214,6 +232,7 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -222,49 +241,35 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
             verbose_ = verbose
         else:
             verbose_ = self.verbose
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input if isinstance(tool_input, str) else str(tool_input),
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
-        else:
-            self.callback_manager.on_tool_start(
-                {"name": self.name, "description": self.description},
-                tool_input if isinstance(tool_input, str) else str(tool_input),
-                verbose=verbose_,
-                color=start_color,
-                **kwargs,
-            )
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks, self.callbacks, verbose=verbose_
+        )
+        new_arg_supported = inspect.signature(self._arun).parameters.get("run_manager")
+        run_manager = await callback_manager.on_tool_start(
+            {"name": self.name, "description": self.description},
+            tool_input if isinstance(tool_input, str) else str(tool_input),
+            color=start_color,
+            **kwargs,
+        )
         try:
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            observation = await self._arun(*tool_args, **tool_kwargs)
+            observation = (
+                await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
+                if new_arg_supported
+                else await self._arun(*tool_args, **kwargs)
+            )
         except (Exception, KeyboardInterrupt) as e:
-            if self.callback_manager.is_async:
-                await self.callback_manager.on_tool_error(e, verbose=verbose_)
-            else:
-                self.callback_manager.on_tool_error(e, verbose=verbose_)
+            await run_manager.on_tool_error(e)
             raise e
-        if self.callback_manager.is_async:
-            await self.callback_manager.on_tool_end(
-                str(observation),
-                verbose=verbose_,
-                color=color,
-                name=self.name,
-                **kwargs,
-            )
-        else:
-            self.callback_manager.on_tool_end(
-                observation, verbose=verbose_, color=color, name=self.name, **kwargs
-            )
+        await run_manager.on_tool_end(
+            str(observation), color=color, name=self.name, **kwargs
+        )
         return observation
 
-    def __call__(self, tool_input: Union[str, dict]) -> Any:
+    def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
-        return self.run(tool_input)
+        return self.run(tool_input, callbacks=callbacks)
 
 
 class StructuredTool(BaseTool):
@@ -283,14 +288,44 @@ class StructuredTool(BaseTool):
         """The tool's input arguments."""
         return self.args_schema.schema()["properties"]
 
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        new_argument_supported = signature(self.coroutine).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
         raise NotImplementedError("Tool does not support async")
 
     @classmethod

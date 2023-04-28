@@ -4,6 +4,7 @@ from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
@@ -172,32 +173,12 @@ class LlamaCpp(LLM):
         """Return type of llm."""
         return "llama.cpp"
 
-    def _get_parameters(self, stop: Optional[List[str]] = None) -> Dict[str, Any]:
-        """
-        Performs sanity check, preparing paramaters in format needed by llama_cpp.
-
-        Args:
-            stop (Optional[List[str]]): List of stop sequences for llama_cpp.
-
-        Returns:
-            Dictionary containing the combined parameters.
-        """
-
-        # Raise error if stop sequences are in both input and default params
-        if self.stop and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-
-        params = self._default_params
-
-        # llama_cpp expects the "stop" key not this, so we remove it:
-        params.pop("stop_sequences")
-
-        # then sets it as configured, or default to an empty list:
-        params["stop"] = self.stop or stop or []
-
-        return params
-
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call the Llama model and return the output.
 
         Args:

@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from pydantic import Extra, Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.prompt import PROMPT

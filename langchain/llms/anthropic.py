@@ -5,6 +5,10 @@ from typing import Any, Callable, Dict, Generator, List, Mapping, Optional, Tupl
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
@@ -158,7 +162,12 @@ class Anthropic(LLM, _AnthropicCommon):
         # As a last resort, wrap the prompt ourselves to emulate instruct-style.
         return f"{self.HUMAN_PROMPT} {prompt}{self.AI_PROMPT} Sure, here you go:\n"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         r"""Call out to Anthropic's completion endpoint.
 
         Args:
@@ -187,9 +196,8 @@ class Anthropic(LLM, _AnthropicCommon):
             for data in stream_resp:
                 delta = data["completion"][len(current_completion) :]
                 current_completion = data["completion"]
-                self.callback_manager.on_llm_new_token(
-                    delta, verbose=self.verbose, **data
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(delta, **data)
             return current_completion
         response = self.client.completion(
             prompt=self._wrap_prompt(prompt),
@@ -198,7 +206,12 @@ class Anthropic(LLM, _AnthropicCommon):
         )
         return response["completion"]
 
-    async def _acall(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to Anthropic's completion endpoint asynchronously."""
         stop = self._get_anthropic_stop(stop)
         if self.streaming:
@@ -211,14 +224,8 @@ class Anthropic(LLM, _AnthropicCommon):
             async for data in stream_resp:
                 delta = data["completion"][len(current_completion) :]
                 current_completion = data["completion"]
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
-                        delta, verbose=self.verbose, **data
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        delta, verbose=self.verbose, **data
-                    )
+                if run_manager:
+                    await run_manager.on_llm_new_token(delta, **data)
             return current_completion
         response = await self.client.acompletion(
             prompt=self._wrap_prompt(prompt),

@@ -2,6 +2,7 @@
 
 from typing import Any, List, Mapping, Optional
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.chains.natbot.base import NatBotChain
 from langchain.llms.base import LLM
 
@@ -9,7 +10,12 @@ from langchain.llms.base import LLM
 class FakeLLM(LLM):
     """Fake LLM wrapper for testing purposes."""
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Return `foo` if longer than 10000 words, else `bar`."""
         if len(prompt) > 10000:
             return "foo"

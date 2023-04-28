@@ -13,7 +13,8 @@ class LLMManagerMixin:
     def on_llm_new_token(
         self,
         token: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -22,7 +23,8 @@ class LLMManagerMixin:
     def on_llm_end(
         self,
         response: LLMResult,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -31,7 +33,8 @@ class LLMManagerMixin:
     def on_llm_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -44,7 +47,8 @@ class ChainManagerMixin:
     def on_chain_end(
         self,
         outputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -53,7 +57,8 @@ class ChainManagerMixin:
     def on_chain_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -62,7 +67,8 @@ class ChainManagerMixin:
     def on_agent_action(
         self,
         action: AgentAction,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -71,7 +77,8 @@ class ChainManagerMixin:
     def on_agent_finish(
         self,
         finish: AgentFinish,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -83,8 +90,9 @@ class ToolManagerMixin:
 
     def on_tool_end(
         self,
-        output_str: str,
-        run_id: Optional[str] = None,
+        output: str,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -93,7 +101,8 @@ class ToolManagerMixin:
     def on_tool_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -107,7 +116,8 @@ class CallbackManagerMixin:
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -117,7 +127,8 @@ class CallbackManagerMixin:
         self,
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -127,7 +138,8 @@ class CallbackManagerMixin:
         self,
         serialized: Dict[str, Any],
         input_str: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -140,7 +152,8 @@ class RunManagerMixin:
     def on_text(
         self,
         text: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
@@ -179,7 +192,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -188,7 +202,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_llm_new_token(
         self,
         token: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -197,7 +212,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_llm_end(
         self,
         response: LLMResult,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -206,7 +222,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_llm_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -216,7 +233,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -225,7 +243,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_chain_end(
         self,
         outputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -234,7 +253,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_chain_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -244,7 +264,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         input_str: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -253,7 +274,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_tool_end(
         self,
         output: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -262,7 +284,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_tool_error(
         self,
         error: Union[Exception, KeyboardInterrupt],
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -271,7 +294,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_text(
         self,
         text: str,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -280,7 +304,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_agent_action(
         self,
         action: AgentAction,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -289,7 +314,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     async def on_agent_finish(
         self,
         finish: AgentFinish,
-        run_id: Optional[str] = None,
+        *,
+        run_id: str,
         parent_run_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -302,7 +328,7 @@ class BaseCallbackManager(CallbackManagerMixin):
     def __init__(
         self,
         handlers: List[BaseCallbackHandler],
-        inheritable_handlers: List[BaseCallbackHandler] = None,
+        inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
         parent_run_id: Optional[str] = None,
     ) -> None:
         """Initialize callback manager."""
@@ -328,23 +354,25 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.handlers.remove(handler)
         self.inheritable_handlers.remove(handler)
 
-    def set_handlers(self, handlers: List[BaseCallbackHandler], inherit=True) -> None:
+    def set_handlers(
+        self, handlers: List[BaseCallbackHandler], inherit: bool = True
+    ) -> None:
         """Set handlers as the only handlers on the callback manager."""
         self.handlers = []
         self.inheritable_handlers = []
         for handler in handlers:
             self.add_handler(handler, inherit=inherit)
 
-    def set_handler(self, handler: BaseCallbackHandler, inherit=True) -> None:
+    def set_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
         """Set handler as the only handler on the callback manager."""
         self.set_handlers([handler], inherit=inherit)
 
-    def __copy__(self):
+    def __copy__(self) -> "BaseCallbackManager":
         return self.__class__(
             self.handlers.copy(), self.inheritable_handlers.copy(), self.parent_run_id
         )
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict) -> "BaseCallbackManager":
         return self.__class__(
             [copy.deepcopy(handler, memo) for handler in self.handlers],
             [copy.deepcopy(handler, memo) for handler in self.inheritable_handlers],
