@@ -1,5 +1,7 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
-from typing import Any, Callable, Dict, Optional, Sequence
+from __future__ import annotations
+
+from typing import Callable, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
 from langchain.chains.llm import TLLMChainInitKwargs
