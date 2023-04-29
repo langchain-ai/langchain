@@ -9,7 +9,6 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 
-
 AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
     AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
     AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
