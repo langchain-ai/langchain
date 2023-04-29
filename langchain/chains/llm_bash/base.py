@@ -94,7 +94,8 @@ class LLMBashChain(Chain):
         _run_manager.on_text(t, color="green", verbose=self.verbose)
         t = t.strip()
         try:
-            command_list = self.llm_chain.prompt.output_parser.parse(t)  # type: ignore[union-attr]
+            # type: ignore[union-attr]
+            command_list = self.llm_chain.prompt.output_parser.parse(t)
         except OutputParserException as e:
             _run_manager.on_chain_error(e, verbose=self.verbose)
             raise e
