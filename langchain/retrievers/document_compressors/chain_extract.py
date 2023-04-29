@@ -1,7 +1,7 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from langchain import LLMChain, PromptTemplate
+from langchain import LLMChain, PromptTemplate, TLLMChainInitKwargs
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
@@ -11,7 +11,7 @@ from langchain.retrievers.document_compressors.chain_extract_prompt import (
 from langchain.schema import BaseLanguageModel, BaseOutputParser, Document
 
 
-def default_get_input(query: str, doc: Document) -> Dict[str, Any]:
+def default_get_input(query: str, doc: Document) -> TLLMChainInitKwargs:
     """Return the compression chain input."""
     return {"question": query, "context": doc.page_content}
 
@@ -38,11 +38,14 @@ def _get_default_chain_prompt() -> PromptTemplate:
     )
 
 
+TQuery = str
+TConvQueryDocToLLMChainKwargs = Callable[[Query, Document], TLLMChainInitKwargs]
+
 class LLMChainExtractor(BaseDocumentCompressor):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""
 
-    get_input: Callable[[str, Document], dict] = default_get_input
+    get_input: TConvQueryDocToLLMChainKwargs = default_get_input
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(

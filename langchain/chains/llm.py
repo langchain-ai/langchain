@@ -11,6 +11,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
+TLLMChainInitKwargs = Any
 
 class LLMChain(Chain):
     """Chain to run queries against LLMs.
@@ -134,7 +135,7 @@ class LLMChain(Chain):
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
 
-    def predict(self, **kwargs: Any) -> str:
+T    def predict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
@@ -150,7 +151,7 @@ class LLMChain(Chain):
         """
         return self(kwargs)[self.output_key]
 
-    async def apredict(self, **kwargs: Any) -> str:
+T    async def apredict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
@@ -166,7 +167,7 @@ class LLMChain(Chain):
         """
         return (await self.acall(kwargs))[self.output_key]
 
-    def predict_and_parse(self, **kwargs: Any) -> Union[str, List[str], Dict[str, str]]:
+T    def predict_and_parse(self, **kwargs: TLLMChainInitKwargs) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)
         if self.prompt.output_parser is not None:
@@ -175,7 +176,7 @@ class LLMChain(Chain):
             return result
 
     async def apredict_and_parse(
-        self, **kwargs: Any
+T        self, **kwargs: TLLMChainInitKwargs
     ) -> Union[str, List[str], Dict[str, str]]:
         """Call apredict and then parse the results."""
         result = await self.apredict(**kwargs)
