@@ -63,6 +63,7 @@ from langchain.document_loaders.pdf import (
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -123,6 +124,7 @@ __all__ = [
     "GitLoader",
     "GitbookLoader",
     "GoogleApiClient",
+    "RedditPostsLoader",
     "GoogleApiYoutubeLoader",
     "GoogleDriveLoader",
     "GutenbergLoader",
