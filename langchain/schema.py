@@ -14,6 +14,9 @@ from typing import (
     Union,
 )
 
+from datetime import datetime
+from uuid import uuid4
+
 from pydantic import BaseModel, Extra, Field, root_validator
 
 
@@ -74,6 +77,16 @@ class BaseMessage(BaseModel):
     @abstractmethod
     def type(self) -> str:
         """Type of the message, used for serialization."""
+
+    def to_message_log(self, session_id: str, created_at: Optional[datetime] = None) -> MessageLog:
+        """Convert BaseMessage to MessageLog"""
+        return MessageLog(
+            session_id=session_id,
+            content=self.content,
+            created_at=created_at,
+            _type=self.type,
+            role=self.type if self.role is None else self.role
+        )
 
 
 class HumanMessage(BaseMessage):
@@ -253,8 +266,34 @@ class BaseMemory(BaseModel, ABC):
     def clear(self) -> None:
         """Clear memory contents."""
 
+class MessageLog(BaseModel):
+    session_id: str
+    created_at: datetime = Field(default_factory=datetime.now)
+    content: str
+    role: str
+    message_type: str
+    extra_variables: dict = Field(default_factory=dict)
 
-class BaseChatMessageHistory(ABC):
+    def to_message(self):
+        _type = self.message_type
+        if _type == "human":
+            return HumanMessage(content=self.content, additional_kwargs=self.extra_variables)
+        elif _type == "ai":
+            return AIMessage(content=self.content, additional_kwargs=self.extra_variables)
+        elif _type == "system":
+            return SystemMessage(content=self.content, additional_kwargs=self.extra_variables)
+        elif _type == "chat":
+            return ChatMessage(content=self.content, role=self.role, additional_kwargs=self.extra_variables)
+        else:
+            raise ValueError(f"Got unexpected type: {_type}")
+    
+    class Config:
+        json_encoders = {
+                datetime: lambda v: v.timestamp(),
+            }
+
+
+class BaseChatMessageHistory(BaseModel, ABC):
     """Base interface for chat message history
     See `ChatMessageHistory` for default implementation.
     """
@@ -290,19 +329,74 @@ class BaseChatMessageHistory(ABC):
                        f.write("[]")
     """
 
-    messages: List[BaseMessage]
+    messages: List[BaseMessage] = []
+    session_id: str = Field(default_factory=lambda: str(uuid4()))
 
-    @abstractmethod
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.refresh_buffer()
+
+    def _add_to_buffer(self, message: BaseMessage) -> None:
+        self.messages.append(message)
+
+    def _sort_message_logs(self, message_logs: List[MessageLog]) -> List[MessageLog]:
+        # TODO: Test correctness of this sorting logic
+        return sorted(message_logs, key=lambda message_log: message_log.created_at)
+
+    def refresh_buffer(self):
+        self.messages = []
+        message_logs = self.load_message_logs()
+        message_logs = self._sort_message_logs(message_logs)
+        self.messages = [i.to_message() for i in message_logs]
+
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
+        message_log = MessageLog(
+            session_id=self.session_id,
+            content=message,
+            role="human",
+            message_type="human"
+        )
+        self.save_message_log(message_log)
+        self._add_to_buffer(message_log.to_message())
 
-    @abstractmethod
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+        message_log = MessageLog(
+            session_id=self.session_id,
+            content=message,
+            role="ai",
+            message_type="ai"
+        )
+        self.save_message_log(message_log)
+        self._add_to_buffer(message_log.to_message())
+    
+    def add_system_message(self, message: str) -> None:
+        """Add an AI message to the store"""
+        message_log = MessageLog(
+            session_id=self.session_id,
+            content=message,
+            role="system",
+            message_type="system"
+        )
+        self.save_message_log(message_log)
+        self._add_to_buffer(message_log.to_message())
 
     @abstractmethod
+    def save_message_log(self, message_log: MessageLog) -> None:
+        """Save message log into the database"""
+
+    @abstractmethod
+    def load_message_logs(self) -> List[MessageLog]:
+        """Load all message logs from the database"""
+
+    @abstractmethod
+    def _clear(self) -> None:
+        """Remove all messages from the database"""
+
     def clear(self) -> None:
-        """Remove all messages from the store"""
+        self._clear()
+        self.messages = []
 
 
 class Document(BaseModel):

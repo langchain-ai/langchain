@@ -7,17 +7,18 @@ from langchain.schema import (
     BaseChatMessageHistory,
     BaseMessage,
     HumanMessage,
+    MessageLog
 )
 
+class ChatMessageHistory(BaseChatMessageHistory):
+    def load_message_logs(self) -> List[MessageLog]:
+        # No database to load from
+        return []
+    
+    def save_message_log(self, message_log: MessageLog) -> None:
+        # No database to save to
+        return None
 
-class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
-    messages: List[BaseMessage] = []
-
-    def add_user_message(self, message: str) -> None:
-        self.messages.append(HumanMessage(content=message))
-
-    def add_ai_message(self, message: str) -> None:
-        self.messages.append(AIMessage(content=message))
-
-    def clear(self) -> None:
-        self.messages = []
+    def _clear(self) -> None:
+        # We have no database
+        return None
