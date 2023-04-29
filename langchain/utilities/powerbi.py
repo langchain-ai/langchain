@@ -12,16 +12,14 @@ from aiohttp import ServerTimeoutError
 from pydantic import BaseModel, Field, root_validator
 from requests.exceptions import Timeout
 
-from langchain.tools.powerbi.prompt import BAD_REQUEST_RESPONSE, UNAUTHORIZED_RESPONSE
+from langchain.tools.powerbi.prompt import SCHEMA_ERROR_RESPONSE, UNAUTHORIZED_RESPONSE
 
 _LOGGER = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from azure.core.exceptions import ClientAuthenticationError
-    from azure.identity import ChainedTokenCredential
-    from azure.identity._internal import InteractiveCredential
-
 BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
+
+if TYPE_CHECKING:
+    from azure.core.credentials import TokenCredential
 
 
 class PowerBIDataset(BaseModel):
@@ -36,7 +34,7 @@ class PowerBIDataset(BaseModel):
     dataset_id: str
     table_names: List[str]
     group_id: Optional[str] = None
-    credential: Optional[Union[ChainedTokenCredential, InteractiveCredential]] = None
+    credential: Optional[TokenCredential] = None
     token: Optional[str] = None
     impersonated_user_name: Optional[str] = None
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
@@ -65,6 +63,8 @@ class PowerBIDataset(BaseModel):
     @property
     def headers(self) -> Dict[str, str]:
         """Get the token."""
+        from azure.core.exceptions import ClientAuthenticationError
+
         token = None
         if self.token:
             token = self.token
@@ -144,7 +144,7 @@ class PowerBIDataset(BaseModel):
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
+                    return SCHEMA_ERROR_RESPONSE
                 if "unauthorized" in str(exc).lower():
                     return UNAUTHORIZED_RESPONSE
                 return str(exc)
@@ -167,7 +167,7 @@ class PowerBIDataset(BaseModel):
                 continue
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 if "bad request" in str(exc).lower():
-                    return BAD_REQUEST_RESPONSE
+                    return SCHEMA_ERROR_RESPONSE
                 if "unauthorized" in str(exc).lower():
                     return UNAUTHORIZED_RESPONSE
                 return str(exc)

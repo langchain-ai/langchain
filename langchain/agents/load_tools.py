@@ -15,7 +15,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -27,6 +27,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
 )
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import ArxivAPIWrapper
@@ -67,11 +68,7 @@ def _get_tools_requests_delete() -> BaseTool:
 
 
 def _get_terminal() -> BaseTool:
-    return Tool(
-        name="Terminal",
-        description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
-        func=BashProcess().run,
-    )
+    return ShellTool()
 
 
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
@@ -219,7 +216,7 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
-    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+    return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:

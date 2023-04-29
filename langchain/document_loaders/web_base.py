@@ -169,6 +169,7 @@ class WebBaseLoader(BaseLoader):
         self._check_parser(parser)
 
         html_doc = self.session.get(url)
+        html_doc.encoding = html_doc.apparent_encoding
         return BeautifulSoup(html_doc.text, parser)
 
     def scrape(self, parser: Union[str, None] = None) -> Any:
