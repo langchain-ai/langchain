@@ -4,17 +4,12 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import Any, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
-
-if TYPE_CHECKING:
-    from tair import Tair as TairClient
-    from tair import tairvector
-
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +32,13 @@ class Tair(VectorStore):
         self.embedding_function = embedding_function
         self.index_name = index_name
         try:
+            from tair import Tair as TairClient
+        except ImportError:
+            raise ValueError(
+                "Could not import tair python package. "
+                "Please install it with `pip install tair`."
+            )
+        try:
             # connect to tair from url
             client = TairClient.from_url(url, **kwargs)
         except ValueError as e:
@@ -52,7 +54,7 @@ class Tair(VectorStore):
         dim: int,
         distance_type: str,
         index_type: str,
-        data_type: str = tairvector.DataType.Float32,
+        data_type: str,
         **kwargs: Any,
     ) -> bool:
         index = self.client.tvs_get_index(self.index_name)
@@ -145,6 +147,13 @@ class Tair(VectorStore):
         metadata_key: str = "metadata",
         **kwargs: Any,
     ) -> Tair:
+        try:
+            from tair import tairvector
+        except ImportError:
+            raise ValueError(
+                "Could not import tair python package. "
+                "Please install it with `pip install tair`."
+            )
         url = get_from_dict_or_env(kwargs, "tair_url", "TAIR_URL")
         if "tair_url" in kwargs:
             kwargs.pop("tair_url")
@@ -168,8 +177,6 @@ class Tair(VectorStore):
         keys = None
         if "keys" in kwargs:
             keys = kwargs.pop("keys")
-
-        """Construct Tair wrapper from raw documents."""
         try:
             tair_vector_store = cls(
                 embedding,
@@ -229,6 +236,13 @@ class Tair(VectorStore):
         Returns:
             bool: True if the index is dropped successfully.
         """
+        try:
+            from tair import Tair as TairClient
+        except ImportError:
+            raise ValueError(
+                "Could not import tair python package. "
+                "Please install it with `pip install tair`."
+            )
         url = get_from_dict_or_env(kwargs, "tair_url", "TAIR_URL")
 
         try:
