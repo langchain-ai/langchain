@@ -103,8 +103,8 @@ def _get_llm_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        func=LLMMathChain(llm=llm).run,
-        coroutine=LLMMathChain(llm=llm).arun,
+        func=LLMMathChain.from_llm(llm=llm).run,
+        coroutine=LLMMathChain.from_llm(llm=llm).arun,
     )
 
 

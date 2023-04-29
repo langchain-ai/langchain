@@ -705,6 +705,9 @@ def _configure(
     tracing_enabled_ = (
         os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
     )
+    tracer_session = os.environ.get("LANGCHAIN_SESSION")
+    if tracer_session is None:
+        tracer_session = "default"
     if verbose or tracing_enabled_ or open_ai is not None:
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
@@ -717,10 +720,10 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             if tracer:
-                callback_manager.add_handler(copy.deepcopy(tracer), True)
+                callback_manager.add_handler(tracer, True)
             else:
                 handler = LangChainTracer()
-                handler.load_default_session()
+                handler.load_session(tracer_session)
                 callback_manager.add_handler(handler, True)
         if open_ai is not None and not any(
             isinstance(handler, OpenAICallbackHandler)
