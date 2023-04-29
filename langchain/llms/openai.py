@@ -589,6 +589,7 @@ class AzureOpenAI(BaseOpenAI):
         """Return type of llm."""
         return "azure"
 
+
 class OpenAIChat(BaseLLM):
     """Wrapper around OpenAI Chat large language models.
 
