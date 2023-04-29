@@ -86,7 +86,14 @@ def get_filtered_args(
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys}
+    return {k: schema[k] for k in valid_keys if k != "run_manager"}
+
+
+class _SchemaConfig:
+    """Configuration for the pydantic model."""
+
+    extra = Extra.forbid
+    arbitrary_types_allowed = True
 
 
 def create_schema_from_function(
@@ -94,7 +101,10 @@ def create_schema_from_function(
     func: Callable,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature."""
-    inferred_model = validate_arguments(func).model  # type: ignore
+    validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+    inferred_model = validated.model  # type: ignore
+    if "run_manager" in inferred_model.__fields__:
+        del inferred_model.__fields__["run_manager"]
     # Pydantic adds placeholder virtual fields we need to strip
     filtered_args = get_filtered_args(inferred_model, func)
     return _create_subset_model(
@@ -143,8 +153,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         else:
-            inferred_model = validate_arguments(self._run).model  # type: ignore
-            return get_filtered_args(inferred_model, self._run)
+            schema = create_schema_from_function(self.name, self._run)
+            return schema.schema()["properties"]
 
     def _parse_input(
         self,

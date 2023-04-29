@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Optional, Type
 
 import requests
 import yaml
@@ -49,9 +49,16 @@ def marshal_spec(txt: str) -> dict:
         return yaml.safe_load(txt)
 
 
+class AIPLuginToolSchema(BaseModel):
+    """AIPLuginToolSchema."""
+
+    tool_input: Optional[str] = ""
+
+
 class AIPluginTool(BaseTool):
     plugin: AIPlugin
     api_spec: str
+    args_schema: Type[AIPLuginToolSchema] = AIPLuginToolSchema
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
@@ -78,7 +85,7 @@ class AIPluginTool(BaseTool):
 
     def _run(
         self,
-        tool_input: str,
+        tool_input: Optional[str] = "",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
@@ -86,7 +93,7 @@ class AIPluginTool(BaseTool):
 
     async def _arun(
         self,
-        tool_input: str,
+        tool_input: Optional[str] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool asynchronously."""
