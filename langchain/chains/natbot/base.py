@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
@@ -45,7 +45,7 @@ class NatBotChain(Chain):
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
-                "Please instantiate with llm_chain argument or using the from_default "
+                "Please instantiate with llm_chain argument or using the from_llm "
                 "class method."
             )
             if "llm_chain" not in values and values["llm"] is not None:
@@ -53,11 +53,16 @@ class NatBotChain(Chain):
         return values
 
     @classmethod
-    def from_default(cls, objective: str) -> NatBotChain:
+    def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
         llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
+        return cls.from_llm(llm, objective, **kwargs)
+
+    @classmethod
+    def from_llm(cls, llm: BaseLLM, objective: str, **kwargs: Any) -> NatBotChain:
+        """Load from LLM."""
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
-        return cls(llm_chain=llm_chain, objective=objective)
+        return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
     def input_keys(self) -> List[str]:
