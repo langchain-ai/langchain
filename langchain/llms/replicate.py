@@ -103,6 +103,6 @@ class Replicate(LLM):
         first_input_name = input_properties[0][0]
 
         inputs = {first_input_name: prompt, **self.input}
+        iterator = replicate_python.run(self.model, input={**inputs})
 
-        outputs = replicate_python.run(self.model, input={**inputs})
-        return outputs[0]
+        return "".join([output for output in iterator])

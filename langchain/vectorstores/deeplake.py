@@ -243,7 +243,7 @@ class DeepLake(VectorStore):
         self.ds.summary()
         return ids
 
-    def search(
+    def _search_helper(
         self,
         query: Any[str, None] = None,
         embedding: Any[float, None] = None,
@@ -366,7 +366,7 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.search(query=query, k=k, **kwargs)
+        return self._search_helper(query=query, k=k, **kwargs)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -379,7 +379,7 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        return self.search(embedding=embedding, k=k, **kwargs)
+        return self._search_helper(embedding=embedding, k=k, **kwargs)
 
     def similarity_search_with_score(
         self,
@@ -401,7 +401,7 @@ class DeepLake(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float.
         """
-        return self.search(
+        return self._search_helper(
             query=query,
             k=k,
             filter=filter,
@@ -431,7 +431,7 @@ class DeepLake(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        return self.search(
+        return self._search_helper(
             embedding=embedding,
             k=k,
             fetch_k=fetch_k,
@@ -465,7 +465,7 @@ class DeepLake(VectorStore):
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
-        return self.search(
+        return self._search_helper(
             query=query,
             k=k,
             fetch_k=fetch_k,

@@ -30,6 +30,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
+    document_separator: str = "\n\n"
+    """The string with which to join the formatted documents"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -66,7 +68,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             for k, v in kwargs.items()
             if k in self.llm_chain.prompt.input_variables
         }
-        inputs[self.document_variable_name] = "\n\n".join(doc_strings)
+        inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
 
     def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:
