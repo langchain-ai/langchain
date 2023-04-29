@@ -4,9 +4,12 @@ from typing import Optional, Type
 
 from pydantic import BaseModel, root_validator
 
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.playwright.base import BaseBrowserTool
-from langchain.tools.playwright.utils import get_current_page
+from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
 
 class ExtractTextTool(BaseBrowserTool):
@@ -15,7 +18,7 @@ class ExtractTextTool(BaseBrowserTool):
     args_schema: Type[BaseModel] = BaseModel
 
     @root_validator
-    def check_args(cls, values: dict) -> dict:
+    def check_acheck_bs_importrgs(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401
@@ -26,14 +29,32 @@ class ExtractTextTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(
-        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-    ) -> str:
+    def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """Use the tool."""
         # Use Beautiful Soup since it's faster than looping through the elements
         from bs4 import BeautifulSoup
 
-        page = await get_current_page(self.browser)
+        if self.sync_browser is None:
+            raise ValueError(f"Synchronous browser not provided to {self.name}")
+
+        page = get_current_page(self.sync_browser)
+        html_content = page.content()
+
+        # Parse the HTML content with BeautifulSoup
+        soup = BeautifulSoup(html_content, "lxml")
+
+        return " ".join(text for text in soup.stripped_strings)
+
+    async def _arun(
+        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
+    ) -> str:
+        """Use the tool."""
+        if self.async_browser is None:
+            raise ValueError(f"Asynchronous browser not provided to {self.name}")
+        # Use Beautiful Soup since it's faster than looping through the elements
+        from bs4 import BeautifulSoup
+
+        page = await aget_current_page(self.async_browser)
         html_content = await page.content()
 
         # Parse the HTML content with BeautifulSoup

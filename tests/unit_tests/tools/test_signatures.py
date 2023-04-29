@@ -8,14 +8,18 @@ from typing import List, Type
 import pytest
 
 from langchain.tools.base import BaseTool
+from langchain.tools.playwright.base import BaseBrowserTool
 
 
 def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
+    to_skip = {BaseBrowserTool}  # Abstract but not recognized
     subclasses = []
     for subclass in cls.__subclasses__():
-        if not getattr(
-            subclass, "__abstract__", None
-        ) and not subclass.__name__.startswith("_"):
+        if (
+            not getattr(subclass, "__abstract__", None)
+            and not subclass.__name__.startswith("_")
+            and subclass not in to_skip
+        ):
             subclasses.append(subclass)
         subclasses.extend(get_non_abstract_subclasses(subclass))
     return subclasses

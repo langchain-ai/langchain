@@ -16,7 +16,6 @@ from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
 from langchain.tools.playwright import (
-    BaseBrowserTool,
     ClickTool,
     CurrentWebPageTool,
     ExtractHyperlinksTool,
@@ -32,7 +31,6 @@ from langchain.tools.shell.tool import ShellTool
 __all__ = [
     "AIPluginTool",
     "APIOperation",
-    "BaseBrowserTool",
     "BaseTool",
     "BaseTool",
     "BingSearchResults",
