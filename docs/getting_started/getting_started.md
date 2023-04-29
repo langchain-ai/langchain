@@ -361,9 +361,9 @@ from langchain.prompts.chat import (
 
 chat = ChatOpenAI(temperature=0)
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
@@ -387,9 +387,9 @@ from langchain.prompts.chat import (
 
 chat = ChatOpenAI(temperature=0)
 
-template="You are a helpful assistant that translates {input_language} to {output_language}."
+template = "You are a helpful assistant that translates {input_language} to {output_language}."
 system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-human_template="{text}"
+human_template = "{text}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 

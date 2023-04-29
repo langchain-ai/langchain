@@ -80,7 +80,6 @@ class ExtractHyperlinksTool(BaseBrowserTool):
         absolute_urls: bool = False,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the tool."""
         """Use the tool asynchronously."""
         if self.async_browser is None:
             raise ValueError(f"Asynchronous browser not provided to {self.name}")
