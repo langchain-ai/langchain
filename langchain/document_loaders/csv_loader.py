@@ -53,9 +53,15 @@ class CSVLoader(BaseLoader):
             for i, row in enumerate(csv_reader):
                 content = "\n".join(f"{k.strip()}: {v.strip()}" for k, v in row.items())
                 try:
-                    source = row[self.source_column] if self.source_column is not None else self.file_path
+                    source = (
+                        row[self.source_column]
+                        if self.source_column is not None
+                        else self.file_path
+                    )
                 except KeyError:
-                    raise ValueError(f"Source column '{self.source_column}' not found in CSV file.")
+                    raise ValueError(
+                        f"Source column '{self.source_column}' not found in CSV file."
+                    )
                 metadata = {"source": source, "row": i}
                 doc = Document(page_content=content, metadata=metadata)
                 docs.append(doc)
