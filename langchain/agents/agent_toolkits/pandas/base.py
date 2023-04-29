@@ -22,7 +22,7 @@ def create_pandas_dataframe_agent(
     max_iterations: Optional[int] = 15,
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
-    agent_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
@@ -47,7 +47,7 @@ def create_pandas_dataframe_agent(
         llm_chain=llm_chain,
         allowed_tools=tool_names,
         callback_manager=callback_manager,
-        **(agent_kwargs or {}),
+        **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
@@ -58,5 +58,5 @@ def create_pandas_dataframe_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
-        **kwargs,
+        **(agent_executor_kwargs or {}),
     )

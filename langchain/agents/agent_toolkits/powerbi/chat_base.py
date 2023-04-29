@@ -27,7 +27,7 @@ def create_pbi_chat_agent(
     memory: Optional[BaseChatMemory] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an Chat LLM and tools.
@@ -47,7 +47,7 @@ def create_pbi_chat_agent(
         input_variables=input_variables,
         callback_manager=callback_manager,
         verbose=verbose,
-        **(agent_kwargs or {}),
+        **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
@@ -56,5 +56,5 @@ def create_pbi_chat_agent(
         memory=memory
         or ConversationBufferMemory(memory_key="chat_history", return_messages=True),
         verbose=verbose,
-        **kwargs,
+        **(agent_executor_kwargs or {}),
     )

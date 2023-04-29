@@ -17,7 +17,7 @@ def create_python_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
     prefix: str = PREFIX,
-    agent_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a python agent from an LLM and tool."""
@@ -29,13 +29,11 @@ def create_python_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(
-        llm_chain=llm_chain, allowed_tools=tool_names, *(agent_kwargs or {})
-    )
+    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
         verbose=verbose,
-        **kwargs,
+        **(agent_executor_kwargs or {}),
     )
