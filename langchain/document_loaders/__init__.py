@@ -2,6 +2,7 @@
 
 from langchain.document_loaders.airbyte_json import AirbyteJSONLoader
 from langchain.document_loaders.apify_dataset import ApifyDatasetLoader
+from langchain.document_loaders.arxiv import ArxivLoader
 from langchain.document_loaders.azlyrics import AZLyricsLoader
 from langchain.document_loaders.azure_blob_storage_container import (
     AzureBlobStorageContainerLoader,
@@ -50,16 +51,19 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
+    MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
+    PyPDFDirectoryLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
 from langchain.document_loaders.python import PythonLoader
 from langchain.document_loaders.readthedocs import ReadTheDocsLoader
+from langchain.document_loaders.reddit import RedditPostsLoader
 from langchain.document_loaders.roam import RoamLoader
 from langchain.document_loaders.rtf import UnstructuredRTFLoader
 from langchain.document_loaders.s3_directory import S3DirectoryLoader
@@ -67,6 +71,7 @@ from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.srt import SRTLoader
+from langchain.document_loaders.stripe import StripeLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
@@ -79,7 +84,10 @@ from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
-from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
+from langchain.document_loaders.word_document import (
+    Docx2txtLoader,
+    UnstructuredWordDocumentLoader,
+)
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -90,78 +98,86 @@ from langchain.document_loaders.youtube import (
 PagedPDFSplitter = PyPDFLoader
 
 __all__ = [
-    "UnstructuredFileLoader",
-    "UnstructuredFileIOLoader",
-    "UnstructuredURLLoader",
-    "SeleniumURLLoader",
-    "PlaywrightURLLoader",
-    "DirectoryLoader",
-    "NotionDirectoryLoader",
-    "NotionDBLoader",
-    "ReadTheDocsLoader",
-    "GoogleDriveLoader",
-    "UnstructuredHTMLLoader",
-    "BSHTMLLoader",
-    "UnstructuredPowerPointLoader",
-    "UnstructuredWordDocumentLoader",
-    "UnstructuredPDFLoader",
-    "UnstructuredImageLoader",
-    "ObsidianLoader",
-    "UnstructuredEmailLoader",
-    "OutlookMessageLoader",
-    "UnstructuredEPubLoader",
-    "UnstructuredMarkdownLoader",
-    "UnstructuredRTFLoader",
-    "RoamLoader",
-    "YoutubeLoader",
-    "S3FileLoader",
-    "TextLoader",
-    "HNLoader",
-    "GitbookLoader",
-    "S3DirectoryLoader",
-    "GCSFileLoader",
-    "GCSDirectoryLoader",
-    "WebBaseLoader",
-    "IMSDbLoader",
     "AZLyricsLoader",
-    "CollegeConfidentialLoader",
-    "IFixitLoader",
-    "GutenbergLoader",
-    "PagedPDFSplitter",
-    "PyPDFLoader",
-    "EverNoteLoader",
     "AirbyteJSONLoader",
+    "ApifyDatasetLoader",
+    "ArxivLoader",
+    "StripeLoader",
+    "AzureBlobStorageContainerLoader",
+    "AzureBlobStorageFileLoader",
+    "BSHTMLLoader",
+    "BigQueryLoader",
+    "BiliBiliLoader",
+    "BlackboardLoader",
+    "BlockchainDocumentLoader",
+    "CSVLoader",
+    "ChatGPTLoader",
+    "CoNLLULoader",
+    "CollegeConfidentialLoader",
+    "ConfluenceLoader",
+    "DataFrameLoader",
+    "DiffbotLoader",
+    "DirectoryLoader",
+    "DiscordChatLoader",
+    "DuckDBLoader",
+    "EverNoteLoader",
+    "FacebookChatLoader",
+    "GCSDirectoryLoader",
+    "GCSFileLoader",
+    "GitLoader",
+    "GitbookLoader",
+    "GoogleApiClient",
+    "RedditPostsLoader",
+    "GoogleApiYoutubeLoader",
+    "GoogleDriveLoader",
+    "GutenbergLoader",
+    "HNLoader",
+    "HuggingFaceDatasetLoader",
+    "IFixitLoader",
+    "IMSDbLoader",
+    "ImageCaptionLoader",
+    "NotebookLoader",
+    "NotionDBLoader",
+    "NotionDirectoryLoader",
+    "ObsidianLoader",
     "OnlinePDFLoader",
+    "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
+    "PagedPDFSplitter",
+    "PlaywrightURLLoader",
     "PyMuPDFLoader",
-    "TelegramChatLoader",
-    "SRTLoader",
-    "FacebookChatLoader",
-    "NotebookLoader",
-    "CoNLLULoader",
-    "GoogleApiYoutubeLoader",
-    "GoogleApiClient",
-    "CSVLoader",
-    "BlackboardLoader",
-    "ApifyDatasetLoader",
-    "WhatsAppChatLoader",
-    "DataFrameLoader",
-    "AzureBlobStorageFileLoader",
-    "AzureBlobStorageContainerLoader",
-    "SitemapLoader",
-    "DuckDBLoader",
-    "BigQueryLoader",
-    "DiffbotLoader",
-    "BiliBiliLoader",
-    "SlackDirectoryLoader",
-    "GitLoader",
-    "TwitterTweetLoader",
-    "ImageCaptionLoader",
-    "DiscordChatLoader",
-    "ConfluenceLoader",
+    "PyPDFLoader",
     "PythonLoader",
+    "ReadTheDocsLoader",
+    "RoamLoader",
+    "S3DirectoryLoader",
+    "S3FileLoader",
+    "SRTLoader",
+    "SeleniumURLLoader",
+    "SitemapLoader",
+    "SlackDirectoryLoader",
+    "TelegramChatLoader",
+    "TextLoader",
+    "TwitterTweetLoader",
+    "UnstructuredEPubLoader",
+    "UnstructuredEmailLoader",
+    "UnstructuredFileIOLoader",
+    "UnstructuredFileLoader",
+    "UnstructuredHTMLLoader",
+    "UnstructuredImageLoader",
+    "UnstructuredMarkdownLoader",
+    "UnstructuredPDFLoader",
+    "UnstructuredPowerPointLoader",
+    "UnstructuredRTFLoader",
+    "UnstructuredURLLoader",
+    "UnstructuredWordDocumentLoader",
+    "WebBaseLoader",
+    "WhatsAppChatLoader",
+    "YoutubeLoader",
+    "PyPDFDirectoryLoader",
+    "MathpixPDFLoader",
     "ChatGPTLoader",
     "HuggingFaceDatasetLoader",
-    "BlockchainDocumentLoader",
+    "Docx2txtLoader",
 ]

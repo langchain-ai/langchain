@@ -9,6 +9,7 @@ from weaviate import Client
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores.weaviate import Weaviate
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -162,4 +163,21 @@ class TestWeaviate:
         )
         assert output == [
             Document(page_content="foo", metadata={"page": 0}),
+        ]
+
+    def test_add_texts_with_given_embedding(self, weaviate_url: str) -> None:
+        texts = ["foo", "bar", "baz"]
+        embedding = FakeEmbeddings()
+
+        docsearch = Weaviate.from_texts(
+            texts, embedding=embedding, weaviate_url=weaviate_url
+        )
+
+        docsearch.add_texts(["foo"])
+        output = docsearch.similarity_search_by_vector(
+            embedding.embed_query("foo"), k=2
+        )
+        assert output == [
+            Document(page_content="foo"),
+            Document(page_content="foo"),
         ]

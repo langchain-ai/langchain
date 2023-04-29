@@ -26,10 +26,14 @@ class BlockchainDocumentLoader(BaseLoader):
 
     The Loader uses the Alchemy API to interact with the blockchain.
 
+    The API returns 100 NFTs per request and can be paginated using the
+    startToken parameter.
+
     ALCHEMY_API_KEY environment variable must be set to use this loader.
 
     Future versions of this loader can:
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
+        - Support additional blockain APIs (e.g. Infura, Opensea, etc.)
     """
 
     def __init__(
@@ -37,7 +41,7 @@ class BlockchainDocumentLoader(BaseLoader):
         contract_address: str,
         blockchainType: BlockchainType = BlockchainType.ETH_MAINNET,
         api_key: str = "docs-demo",
-        startToken: int = 0,
+        startToken: str = "",
     ):
         self.contract_address = contract_address
         self.blockchainType = blockchainType.value
@@ -75,6 +79,10 @@ class BlockchainDocumentLoader(BaseLoader):
         for item in items:
             content = str(item)
             tokenId = item["id"]["tokenId"]
-            metadata = {"tokenId": tokenId}
+            metadata = {
+                "source": self.contract_address,
+                "blockchain": self.blockchainType,
+                "tokenId": tokenId,
+            }
             result.append(Document(page_content=content, metadata=metadata))
         return result
