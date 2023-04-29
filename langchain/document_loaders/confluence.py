@@ -202,7 +202,9 @@ class ConfluenceLoader(BaseLoader):
                 max_pages=max_pages,
                 expand="body.storage.value",
             )
-            docs += self.process_pages(pages, include_restricted_content, include_attachments, include_comments)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if label:
             pages = self.paginate_request(
@@ -212,7 +214,9 @@ class ConfluenceLoader(BaseLoader):
                 max_pages=max_pages,
                 expand="body.storage.value",
             )
-            docs += self.process_pages(pages, include_restricted_content, include_attachments, include_comments)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if cql:
             pages = self.paginate_request(
@@ -222,7 +226,9 @@ class ConfluenceLoader(BaseLoader):
                 max_pages=max_pages,
                 expand="body.storage.value",
             )
-            docs += self.process_pages(pages, include_restricted_content, include_attachments, include_comments)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if page_ids:
             for page_id in page_ids:
@@ -300,11 +306,11 @@ class ConfluenceLoader(BaseLoader):
 
     def process_pages(
         self,
-        pages: list[dict],
+        pages: List[dict],
         include_restricted_content: bool,
         include_attachments: bool,
         include_comments: bool,
-    ) -> list[Document]:
+    ) -> List[Document]:
         """Process a list of pages into a list of documents."""
         docs = []
         for page in pages:
