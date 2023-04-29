@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -36,7 +36,7 @@ class SceneXplainTool(BaseTool):
         return self.api_wrapper.run(query)
 
     async def _arun(
-        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun]
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("SceneXplainTool does not support async")
