@@ -2,6 +2,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.agents import AgentExecutor
+from langchain.agents.agent import AgentOutputParser
 from langchain.agents.agent_toolkits.powerbi.prompt import (
     POWERBI_CHAT_PREFIX,
     POWERBI_CHAT_SUFFIX,
@@ -20,6 +21,7 @@ def create_pbi_chat_agent(
     toolkit: Optional[PowerBIToolkit],
     powerbi: Optional[PowerBIDataset] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    output_parser: Optional[AgentOutputParser] = None,
     prefix: str = POWERBI_CHAT_PREFIX,
     suffix: str = POWERBI_CHAT_SUFFIX,
     examples: Optional[str] = None,
@@ -43,9 +45,10 @@ def create_pbi_chat_agent(
         llm=llm,
         tools=tools,
         system_message=prefix.format(top_k=top_k),
-        user_message=suffix,
+        human_message=suffix,
         input_variables=input_variables,
         callback_manager=callback_manager,
+        output_parser=output_parser,
         verbose=verbose,
         **kwargs,
     )
