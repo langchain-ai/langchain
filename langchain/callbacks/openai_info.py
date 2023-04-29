@@ -157,3 +157,11 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on agent end."""
         pass
+
+    def __copy__(self) -> "OpenAICallbackHandler":
+        """Return a copy of the callback handler."""
+        return self
+
+    def __deepcopy__(self, memo: Any) -> "OpenAICallbackHandler":
+        """Return a deep copy of the callback handler."""
+        return self
