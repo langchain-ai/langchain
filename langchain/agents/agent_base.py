@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import yaml
-from pydantic import BaseAc, validator
+from pydantic import BaseModel, validator
 
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.schema import (
