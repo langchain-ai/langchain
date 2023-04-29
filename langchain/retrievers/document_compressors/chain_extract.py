@@ -1,4 +1,6 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
+from __future__ import annotations
+
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain import LLMChain, PromptTemplate
@@ -68,9 +70,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-    ) -> "LLMChainExtractor":
+        llm_chain_kwargs: Optional[dict] = None,
+    ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
-        llm_chain = LLMChain(llm=llm, prompt=_prompt)
+        llm_chain = LLMChain(llm=llm, prompt=_prompt, **(llm_chain_kwargs or {}))
         return cls(llm_chain=llm_chain, get_input=_get_input)
