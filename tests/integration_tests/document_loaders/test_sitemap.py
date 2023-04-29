@@ -28,7 +28,7 @@ def test_sitemap_block_only_one() -> None:
 def test_sitemap_block_does_not_exists() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader("https://langchain.readthedocs.io/sitemap.xml", blocksize=1000000, blocknum=15)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Selected sitemap does not contain enough blocks for given blocknum"):
         documents = loader.load()
 
 
