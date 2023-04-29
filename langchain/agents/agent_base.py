@@ -20,6 +20,7 @@ from langchain.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
+
 class BaseActionAgent(BaseModel):
     """Base Action Agent class."""
 
@@ -133,13 +134,12 @@ class BaseActionAgent(BaseModel):
         """Return response when agent has been stopped due to max iterations."""
         if early_stopping_method == "force":
             # `force` just returns a constant string
-            return AgentFinish(
-                {"output": self.early_stop_msg}, ""
-            )
+            return AgentFinish({"output": self.early_stop_msg}, "")
         else:
             raise ValueError(
                 f"Got unsupported early_stopping_method `{early_stopping_method}`"
             )
+
 
 class BaseSingleActionAgent(BaseActionAgent):
     """Base Single Action Agent class."""
@@ -156,13 +156,8 @@ class BaseSingleActionAgent(BaseActionAgent):
     ) -> BaseSingleActionAgent:
         raise NotImplementedError
 
+
 class BaseMultiActionAgent(BaseActionAgent):
     """Base Multi Action Agent class."""
 
     early_stop_msg: str = "Agent stopped due to max iterations."
-
-
-
-  
-
-
