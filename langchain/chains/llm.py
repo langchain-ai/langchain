@@ -135,7 +135,7 @@ class LLMChain(Chain):
     async def _acall(self, inputs: Dict[str, Any]) -> Dict[str, str]:
         return (await self.aapply([inputs]))[0]
 
-T    def predict(self, **kwargs: TLLMChainInitKwargs) -> str:
+    def predict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
@@ -151,7 +151,7 @@ T    def predict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """
         return self(kwargs)[self.output_key]
 
-T    async def apredict(self, **kwargs: TLLMChainInitKwargs) -> str:
+    async def apredict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """Format prompt with kwargs and pass to LLM.
 
         Args:
@@ -167,7 +167,7 @@ T    async def apredict(self, **kwargs: TLLMChainInitKwargs) -> str:
         """
         return (await self.acall(kwargs))[self.output_key]
 
-T    def predict_and_parse(self, **kwargs: TLLMChainInitKwargs) -> Union[str, List[str], Dict[str, str]]:
+    def predict_and_parse(self, **kwargs: TLLMChainInitKwargs) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)
         if self.prompt.output_parser is not None:
@@ -176,7 +176,7 @@ T    def predict_and_parse(self, **kwargs: TLLMChainInitKwargs) -> Union[str, Li
             return result
 
     async def apredict_and_parse(
-T        self, **kwargs: TLLMChainInitKwargs
+        self, **kwargs: TLLMChainInitKwargs
     ) -> Union[str, List[str], Dict[str, str]]:
         """Call apredict and then parse the results."""
         result = await self.apredict(**kwargs)
