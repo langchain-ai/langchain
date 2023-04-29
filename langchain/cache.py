@@ -1,4 +1,5 @@
 """Beta Feature: base interface for cache."""
+import hashlib
 import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
@@ -12,9 +13,16 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation
+from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 RETURN_VAL_TYPE = List[Generation]
+
+
+def _hash(_input: str) -> str:
+    """Use a deterministic hashing approach."""
+    return hashlib.md5(_input.encode()).hexdigest()
 
 
 class BaseCache(ABC):
@@ -117,6 +125,8 @@ class SQLiteCache(SQLAlchemyCache):
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
 
+    # TODO - implement a TTL policy in Redis
+
     def __init__(self, redis_: Any):
         """Initialize by passing in Redis instance."""
         try:
@@ -130,33 +140,135 @@ class RedisCache(BaseCache):
             raise ValueError("Please pass in Redis object.")
         self.redis = redis_
 
-    def _key(self, prompt: str, llm_string: str, idx: int) -> str:
-        """Compute key from prompt, llm_string, and idx."""
-        return str(hash(prompt + llm_string)) + "_" + str(idx)
+    def _key(self, prompt: str, llm_string: str) -> str:
+        """Compute key from prompt and llm_string"""
+        return _hash(prompt + llm_string)
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        idx = 0
         generations = []
-        while self.redis.get(self._key(prompt, llm_string, idx)):
-            result = self.redis.get(self._key(prompt, llm_string, idx))
-            if not result:
-                break
-            elif isinstance(result, bytes):
-                result = result.decode()
-            generations.append(Generation(text=result))
-            idx += 1
+        # Read from a Redis HASH
+        results = self.redis.hgetall(self._key(prompt, llm_string))
+        if results:
+            for _, text in results.items():
+                generations.append(Generation(text=text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        for i, generation in enumerate(return_val):
-            self.redis.set(self._key(prompt, llm_string, i), generation.text)
+        # Write to a Redis HASH
+        key = self._key(prompt, llm_string)
+        self.redis.hset(
+            key,
+            mapping={
+                str(idx): generation.text for idx, generation in enumerate(return_val)
+            },
+        )
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
         asynchronous = kwargs.get("asynchronous", False)
         self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+
+
+class RedisSemanticCache(BaseCache):
+    """Cache that uses Redis as a vector-store backend."""
+
+    # TODO - implement a TTL policy in Redis
+
+    def __init__(
+        self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
+    ):
+        """Initialize by passing in the `init` GPTCache func
+
+        Args:
+            redis_url (str): URL to connect to Redis.
+            embedding (Embedding): Embedding provider for semantic encoding and search.
+            score_threshold (float, 0.2):
+
+        Example:
+        .. code-block:: python
+            import langchain
+
+            from langchain.cache import RedisSemanticCache
+            from langchain.embeddings import OpenAIEmbeddings
+
+            langchain.llm_cache = RedisSemanticCache(
+                redis_url="redis://localhost:6379",
+                embedding=OpenAIEmbeddings()
+            )
+
+        """
+        self._cache_dict: Dict[str, RedisVectorstore] = {}
+        self.redis_url = redis_url
+        self.embedding = embedding
+        self.score_threshold = score_threshold
+
+    def _index_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"cache:{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str) -> RedisVectorstore:
+        index_name = self._index_name(llm_string)
+
+        # return vectorstore client for the specific llm string
+        if index_name in self._cache_dict:
+            return self._cache_dict[index_name]
+
+        # create new vectorstore client for the specific llm string
+        try:
+            self._cache_dict[index_name] = RedisVectorstore.from_existing_index(
+                embedding=self.embedding,
+                index_name=index_name,
+                redis_url=self.redis_url,
+            )
+        except ValueError:
+            redis = RedisVectorstore(
+                embedding_function=self.embedding.embed_query,
+                index_name=index_name,
+                redis_url=self.redis_url,
+            )
+            _embedding = self.embedding.embed_query(text="test")
+            redis._create_index(dim=len(_embedding))
+            self._cache_dict[index_name] = redis
+
+        return self._cache_dict[index_name]
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(kwargs["llm_string"])
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].drop_index(
+                index_name=index_name, delete_documents=True, redis_url=self.redis_url
+            )
+            del self._cache_dict[index_name]
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        generations = []
+        # Read from a Hash
+        results = llm_cache.similarity_search_limit_score(
+            query=prompt,
+            k=1,
+            score_threshold=self.score_threshold,
+        )
+        if results:
+            for document in results:
+                for text in document.metadata["return_val"]:
+                    generations.append(Generation(text=text))
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        # Write to vectorstore
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": [generation.text for generation in return_val],
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
 
 
 class GPTCache(BaseCache):
