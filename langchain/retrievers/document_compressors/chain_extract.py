@@ -42,6 +42,7 @@ def _get_default_chain_prompt() -> PromptTemplate:
 TQuery = str
 TConvQueryDocToLLMChainKwargs = Callable[[TQuery, Document], TLLMChainInitKwargs]
 
+
 class LLMChainExtractor(BaseDocumentCompressor):
     llm_chain: LLMChain
     """LLM wrapper to use for compressing documents."""

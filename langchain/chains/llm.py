@@ -13,6 +13,7 @@ from langchain.schema import BaseLanguageModel, LLMResult, PromptValue
 
 TLLMChainInitKwargs = Any
 
+
 class LLMChain(Chain):
     """Chain to run queries against LLMs.
 
@@ -167,7 +168,9 @@ class LLMChain(Chain):
         """
         return (await self.acall(kwargs))[self.output_key]
 
-    def predict_and_parse(self, **kwargs: TLLMChainInitKwargs) -> Union[str, List[str], Dict[str, str]]:
+    def predict_and_parse(
+        self, **kwargs: TLLMChainInitKwargs
+    ) -> Union[str, List[str], Dict[str, str]]:
         """Call predict and then parse the results."""
         result = self.predict(**kwargs)
         if self.prompt.output_parser is not None:
