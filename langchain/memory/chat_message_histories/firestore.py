@@ -16,7 +16,7 @@ from langchain.schema import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from google.cloud.firestore import Client, DocumentReference
+    from google.cloud.firestore import DocumentReference
 
 
 class FirestoreChatMessageHistory(BaseChatMessageHistory):
@@ -28,22 +28,13 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         user_id: str,
     ):
-        import firebase_admin
-        from firebase_admin import firestore
-
         """
         Initializes a new instance of the FirestoreChatMessageHistory class.
 
-        :param firestore_endpoint: The connection endpoint for the Google Firestore.
-        :param firestore_credential: The path to the service account key file for Firestore.
         :param collection_name: The name of the collection to use.
         :param session_id: The session ID to use, can be overwritten while loading.
         :param user_id: The user ID to use, can be overwritten while loading.
         """
-        firebase_admin.initialize_app()
-        firestore_client = firestore.Client()
-
-        self.firestore_client = firestore_client
         self.collection_name = collection_name
         self.session_id = session_id
         self.user_id = user_id
@@ -56,8 +47,27 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
     def prepare_firestore(self) -> None:
         """Prepare the Firestore client.
 
-        Use this function or the context manager to make sure your database is ready.
+        Use this function to make sure your database is ready.
         """
+        try:
+            import firebase_admin
+            from firebase_admin import firestore
+        except ImportError as e:
+            logger.error(
+                "Failed to import Firebase and Firestore: %s. "
+                "Make sure to install the 'firebase-admin' module.",
+                e,
+            )
+            raise e
+
+        # For multiple instances, only initialize the app once.
+        try:
+            firebase_admin.get_app()
+        except ValueError as e:
+            logger.debug("Initializing Firebase app: %s", e)
+            firebase_admin.initialize_app()
+
+        self.firestore_client = firestore.client()
         self._document = self.firestore_client.collection(
             self.collection_name
         ).document(self.session_id)
