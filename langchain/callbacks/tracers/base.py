@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
-from uuid import uuid4
+from uuid import UUID
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.tracers.schemas import (
@@ -120,21 +120,21 @@ class BaseTracer(BaseCallbackHandler, ABC):
         serialized: Dict[str, Any],
         prompts: List[str],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
         if self.session is None:
             self.session = self.load_default_session()
 
-        if run_id is None:
-            run_id = str(uuid4())
+        run_id_ = str(run_id)
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
 
-        execution_order = self._get_execution_order(parent_run_id)
+        execution_order = self._get_execution_order(parent_run_id_)
         llm_run = LLMRun(
-            uuid=run_id,
-            parent_uuid=parent_run_id,
+            uuid=run_id_,
+            parent_uuid=parent_run_id_,
             serialized=serialized,
             prompts=prompts,
             extra=kwargs,
@@ -145,12 +145,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(llm_run)
 
-    def on_llm_end(self, response: LLMResult, *, run_id: str, **kwargs: Any) -> None:
+    def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_end callback.")
 
-        llm_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+        llm_run = self.run_map.get(run_id_)
         if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
@@ -162,14 +163,15 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
+        run_id: UUID,
         **kwargs: Any,
     ) -> None:
         """Handle an error for an LLM run."""
         if not run_id:
             raise TracerException("No run_id provided for on_llm_error callback.")
 
-        llm_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+        llm_run = self.run_map.get(run_id_)
         if llm_run is None or not isinstance(llm_run, LLMRun):
             raise TracerException("No LLMRun found to be traced")
 
@@ -182,18 +184,21 @@ class BaseTracer(BaseCallbackHandler, ABC):
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
         if self.session is None:
             self.session = self.load_default_session()
 
-        execution_order = self._get_execution_order(parent_run_id)
+        run_id_ = str(run_id)
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+
+        execution_order = self._get_execution_order(parent_run_id_)
         chain_run = ChainRun(
-            uuid=run_id,
-            parent_uuid=parent_run_id,
+            uuid=run_id_,
+            parent_uuid=parent_run_id_,
             serialized=serialized,
             inputs=inputs,
             extra=kwargs,
@@ -206,10 +211,12 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self._start_trace(chain_run)
 
     def on_chain_end(
-        self, outputs: Dict[str, Any], *, run_id: str, **kwargs: Any
+        self, outputs: Dict[str, Any], *, run_id: UUID, **kwargs: Any
     ) -> None:
         """End a trace for a chain run."""
-        chain_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+
+        chain_run = self.run_map.get(run_id_)
         if chain_run is None or not isinstance(chain_run, ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
@@ -221,11 +228,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
+        run_id: UUID,
         **kwargs: Any,
     ) -> None:
         """Handle an error for a chain run."""
-        chain_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+
+        chain_run = self.run_map.get(run_id_)
         if chain_run is None or not isinstance(chain_run, ChainRun):
             raise TracerException("No ChainRun found to be traced")
 
@@ -238,18 +247,21 @@ class BaseTracer(BaseCallbackHandler, ABC):
         serialized: Dict[str, Any],
         input_str: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
         if self.session is None:
             self.session = self.load_default_session()
 
-        execution_order = self._get_execution_order(parent_run_id)
+        run_id_ = str(run_id)
+        parent_run_id_ = str(parent_run_id) if parent_run_id else None
+
+        execution_order = self._get_execution_order(parent_run_id_)
         tool_run = ToolRun(
-            uuid=run_id,
-            parent_uuid=parent_run_id,
+            uuid=run_id_,
+            parent_uuid=parent_run_id_,
             serialized=serialized,
             # TODO: this is duplicate info as above, not needed.
             action=str(serialized),
@@ -263,9 +275,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         )
         self._start_trace(tool_run)
 
-    def on_tool_end(self, output: str, *, run_id: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
-        tool_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+
+        tool_run = self.run_map.get(run_id_)
         if tool_run is None or not isinstance(tool_run, ToolRun):
             raise TracerException("No ToolRun found to be traced")
 
@@ -277,11 +291,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
+        run_id: UUID,
         **kwargs: Any,
     ) -> None:
         """Handle an error for a tool run."""
-        tool_run = self.run_map.get(run_id)
+        run_id_ = str(run_id)
+
+        tool_run = self.run_map.get(run_id_)
         if tool_run is None or not isinstance(tool_run, ToolRun):
             raise TracerException("No ToolRun found to be traced")
 

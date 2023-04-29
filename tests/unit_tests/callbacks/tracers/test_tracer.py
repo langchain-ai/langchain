@@ -22,98 +22,6 @@ from langchain.schema import LLMResult
 TEST_SESSION_ID = 2023
 
 
-@freeze_time("2023-01-01")
-def _get_compare_run() -> Union[LLMRun, ChainRun, ToolRun]:
-    return ChainRun(
-        uuid="chain_uuid",
-        error=None,
-        start_time=datetime.utcnow(),
-        end_time=datetime.utcnow(),
-        extra={},
-        execution_order=1,
-        child_execution_order=4,
-        serialized={},
-        inputs={},
-        outputs={},
-        session_id=TEST_SESSION_ID,
-        child_chain_runs=[],
-        child_tool_runs=[
-            ToolRun(
-                uuid="tool_uuid",
-                parent_uuid="chain_uuid",
-                start_time=datetime.utcnow(),
-                end_time=datetime.utcnow(),
-                extra={},
-                execution_order=2,
-                child_execution_order=3,
-                serialized={},
-                tool_input="test",
-                output="test",
-                action="{}",
-                session_id=TEST_SESSION_ID,
-                error=None,
-                child_chain_runs=[],
-                child_tool_runs=[],
-                child_llm_runs=[
-                    LLMRun(
-                        uuid="llm_uuid1",
-                        parent_uuid="tool_uuid",
-                        error=None,
-                        start_time=datetime.utcnow(),
-                        end_time=datetime.utcnow(),
-                        extra={},
-                        execution_order=3,
-                        child_execution_order=3,
-                        serialized={},
-                        prompts=[],
-                        response=LLMResult(generations=[[]]),
-                        session_id=TEST_SESSION_ID,
-                    )
-                ],
-            ),
-        ],
-        child_llm_runs=[
-            LLMRun(
-                uuid="llm_uuid2",
-                parent_uuid="chain_uuid",
-                error=None,
-                start_time=datetime.utcnow(),
-                end_time=datetime.utcnow(),
-                extra={},
-                execution_order=4,
-                child_execution_order=4,
-                serialized={},
-                prompts=[],
-                response=LLMResult(generations=[[]]),
-                session_id=TEST_SESSION_ID,
-            ),
-        ],
-    )
-
-
-def _perform_nested_run(tracer: BaseTracer) -> None:
-    """Perform a nested run."""
-    chain_uuid = "chain_uuid"
-    tool_uuid = "tool_uuid"
-    llm_uuid1 = "llm_uuid1"
-    llm_uuid2 = "llm_uuid2"
-
-    tracer.on_chain_start(serialized={}, inputs={}, run_id=chain_uuid)
-    tracer.on_tool_start(
-        serialized={}, input_str="test", run_id=tool_uuid, parent_run_id=chain_uuid
-    )
-    tracer.on_llm_start(
-        serialized={}, prompts=[], run_id=llm_uuid1, parent_run_id=tool_uuid
-    )
-    tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid1)
-    tracer.on_tool_end("test", run_id=tool_uuid)
-    tracer.on_llm_start(
-        serialized={}, prompts=[], run_id=llm_uuid2, parent_run_id=chain_uuid
-    )
-    tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid2)
-    tracer.on_chain_end(outputs={}, run_id=chain_uuid)
-
-
 def load_session(session_name: str) -> TracerSession:
     """Load a tracing session."""
     return TracerSession(id=1, name=session_name, start_time=datetime.utcnow())
@@ -157,9 +65,9 @@ class FakeTracer(BaseTracer):
 @freeze_time("2023-01-01")
 def test_tracer_llm_run() -> None:
     """Test tracer on an LLM run."""
-    uuid = str(uuid4())
+    uuid = uuid4()
     compare_run = LLMRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -187,15 +95,15 @@ def test_tracer_llm_run_errors_no_start() -> None:
 
     tracer.new_session()
     with pytest.raises(TracerException):
-        tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=str(uuid4()))
+        tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=uuid4())
 
 
 @freeze_time("2023-01-01")
 def test_tracer_multiple_llm_runs() -> None:
     """Test the tracer with multiple runs."""
-    uuid = str(uuid4())
+    uuid = uuid4()
     compare_run = LLMRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -222,9 +130,9 @@ def test_tracer_multiple_llm_runs() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_chain_run() -> None:
     """Test tracer on a Chain run."""
-    uuid = str(uuid4())
+    uuid = uuid4()
     compare_run = ChainRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -248,9 +156,9 @@ def test_tracer_chain_run() -> None:
 @freeze_time("2023-01-01")
 def test_tracer_tool_run() -> None:
     """Test tracer on a Tool run."""
-    uuid = str(uuid4())
+    uuid = uuid4()
     compare_run = ToolRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -277,19 +185,103 @@ def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
     tracer = FakeTracer()
     tracer.new_session()
+
+    chain_uuid = uuid4()
+    tool_uuid = uuid4()
+    llm_uuid1 = uuid4()
+    llm_uuid2 = uuid4()
     for _ in range(10):
-        _perform_nested_run(tracer)
-    assert tracer.runs == [_get_compare_run()] * 10
+        tracer.on_chain_start(serialized={}, inputs={}, run_id=chain_uuid)
+        tracer.on_tool_start(
+            serialized={}, input_str="test", run_id=tool_uuid, parent_run_id=chain_uuid
+        )
+        tracer.on_llm_start(
+            serialized={}, prompts=[], run_id=llm_uuid1, parent_run_id=tool_uuid
+        )
+        tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid1)
+        tracer.on_tool_end("test", run_id=tool_uuid)
+        tracer.on_llm_start(
+            serialized={}, prompts=[], run_id=llm_uuid2, parent_run_id=chain_uuid
+        )
+        tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid2)
+        tracer.on_chain_end(outputs={}, run_id=chain_uuid)
+
+    compare_run = ChainRun(
+        uuid=str(chain_uuid),
+        error=None,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        extra={},
+        execution_order=1,
+        child_execution_order=4,
+        serialized={},
+        inputs={},
+        outputs={},
+        session_id=TEST_SESSION_ID,
+        child_chain_runs=[],
+        child_tool_runs=[
+            ToolRun(
+                uuid=str(tool_uuid),
+                parent_uuid=str(chain_uuid),
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                extra={},
+                execution_order=2,
+                child_execution_order=3,
+                serialized={},
+                tool_input="test",
+                output="test",
+                action="{}",
+                session_id=TEST_SESSION_ID,
+                error=None,
+                child_chain_runs=[],
+                child_tool_runs=[],
+                child_llm_runs=[
+                    LLMRun(
+                        uuid=str(llm_uuid1),
+                        parent_uuid=str(tool_uuid),
+                        error=None,
+                        start_time=datetime.utcnow(),
+                        end_time=datetime.utcnow(),
+                        extra={},
+                        execution_order=3,
+                        child_execution_order=3,
+                        serialized={},
+                        prompts=[],
+                        response=LLMResult(generations=[[]]),
+                        session_id=TEST_SESSION_ID,
+                    )
+                ],
+            ),
+        ],
+        child_llm_runs=[
+            LLMRun(
+                uuid=str(llm_uuid2),
+                parent_uuid=str(chain_uuid),
+                error=None,
+                start_time=datetime.utcnow(),
+                end_time=datetime.utcnow(),
+                extra={},
+                execution_order=4,
+                child_execution_order=4,
+                serialized={},
+                prompts=[],
+                response=LLMResult(generations=[[]]),
+                session_id=TEST_SESSION_ID,
+            ),
+        ],
+    )
+    assert tracer.runs == [compare_run] * 10
 
 
 @freeze_time("2023-01-01")
 def test_tracer_llm_run_on_error() -> None:
     """Test tracer on an LLM run with an error."""
     exception = Exception("test")
-    uuid = str(uuid4())
+    uuid = uuid4()
 
     compare_run = LLMRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -314,10 +306,10 @@ def test_tracer_llm_run_on_error() -> None:
 def test_tracer_chain_run_on_error() -> None:
     """Test tracer on a Chain run with an error."""
     exception = Exception("test")
-    uuid = str(uuid4())
+    uuid = uuid4()
 
     compare_run = ChainRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -342,10 +334,10 @@ def test_tracer_chain_run_on_error() -> None:
 def test_tracer_tool_run_on_error() -> None:
     """Test tracer on a Tool run with an error."""
     exception = Exception("test")
-    uuid = str(uuid4())
+    uuid = uuid4()
 
     compare_run = ToolRun(
-        uuid=uuid,
+        uuid=str(uuid),
         parent_uuid=None,
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
@@ -374,11 +366,11 @@ def test_tracer_nested_runs_on_error() -> None:
 
     tracer = FakeTracer()
     tracer.new_session()
-    chain_uuid = "chain_uuid"
-    tool_uuid = "tool_uuid"
-    llm_uuid1 = "llm_uuid1"
-    llm_uuid2 = "llm_uuid2"
-    llm_uuid3 = "llm_uuid3"
+    chain_uuid = uuid4()
+    tool_uuid = uuid4()
+    llm_uuid1 = uuid4()
+    llm_uuid2 = uuid4()
+    llm_uuid3 = uuid4()
 
     for _ in range(3):
         tracer.on_chain_start(serialized={}, inputs={}, run_id=chain_uuid)
@@ -401,7 +393,7 @@ def test_tracer_nested_runs_on_error() -> None:
         tracer.on_chain_error(exception, run_id=chain_uuid)
 
     compare_run = ChainRun(
-        uuid=chain_uuid,
+        uuid=str(chain_uuid),
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow(),
         extra={},
@@ -414,8 +406,8 @@ def test_tracer_nested_runs_on_error() -> None:
         outputs=None,
         child_llm_runs=[
             LLMRun(
-                uuid=llm_uuid1,
-                parent_uuid=chain_uuid,
+                uuid=str(llm_uuid1),
+                parent_uuid=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
                 extra={},
@@ -428,8 +420,8 @@ def test_tracer_nested_runs_on_error() -> None:
                 response=LLMResult(generations=[[]], llm_output=None),
             ),
             LLMRun(
-                uuid=llm_uuid2,
-                parent_uuid=chain_uuid,
+                uuid=str(llm_uuid2),
+                parent_uuid=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
                 extra={},
@@ -445,8 +437,8 @@ def test_tracer_nested_runs_on_error() -> None:
         child_chain_runs=[],
         child_tool_runs=[
             ToolRun(
-                uuid=tool_uuid,
-                parent_uuid=chain_uuid,
+                uuid=str(tool_uuid),
+                parent_uuid=str(chain_uuid),
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow(),
                 extra={},
@@ -460,8 +452,8 @@ def test_tracer_nested_runs_on_error() -> None:
                 action="{}",
                 child_llm_runs=[
                     LLMRun(
-                        uuid=llm_uuid3,
-                        parent_uuid=tool_uuid,
+                        uuid=str(llm_uuid3),
+                        parent_uuid=str(tool_uuid),
                         start_time=datetime.utcnow(),
                         end_time=datetime.utcnow(),
                         extra={},

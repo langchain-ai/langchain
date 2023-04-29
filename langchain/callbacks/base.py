@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
 
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
@@ -14,8 +15,8 @@ class LLMManagerMixin:
         self,
         token: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run on new LLM token. Only available when streaming is enabled."""
@@ -24,8 +25,8 @@ class LLMManagerMixin:
         self,
         response: LLMResult,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM ends running."""
@@ -34,8 +35,8 @@ class LLMManagerMixin:
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM errors."""
@@ -48,8 +49,8 @@ class ChainManagerMixin:
         self,
         outputs: Dict[str, Any],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain ends running."""
@@ -58,8 +59,8 @@ class ChainManagerMixin:
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain errors."""
@@ -68,8 +69,8 @@ class ChainManagerMixin:
         self,
         action: AgentAction,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run on agent action."""
@@ -78,8 +79,8 @@ class ChainManagerMixin:
         self,
         finish: AgentFinish,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run on agent end."""
@@ -92,8 +93,8 @@ class ToolManagerMixin:
         self,
         output: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool ends running."""
@@ -102,8 +103,8 @@ class ToolManagerMixin:
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool errors."""
@@ -117,8 +118,8 @@ class CallbackManagerMixin:
         serialized: Dict[str, Any],
         prompts: List[str],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running."""
@@ -128,8 +129,8 @@ class CallbackManagerMixin:
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain starts running."""
@@ -139,8 +140,8 @@ class CallbackManagerMixin:
         serialized: Dict[str, Any],
         input_str: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
@@ -153,8 +154,8 @@ class RunManagerMixin:
         self,
         text: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run on arbitrary text."""
@@ -193,8 +194,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         serialized: Dict[str, Any],
         prompts: List[str],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
@@ -203,8 +204,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
@@ -213,8 +214,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         response: LLMResult,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM ends running."""
@@ -223,8 +224,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors."""
@@ -234,8 +235,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain starts running."""
@@ -244,8 +245,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         outputs: Dict[str, Any],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain ends running."""
@@ -254,8 +255,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain errors."""
@@ -265,8 +266,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         serialized: Dict[str, Any],
         input_str: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""
@@ -275,8 +276,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         output: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool ends running."""
@@ -285,8 +286,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         error: Union[Exception, KeyboardInterrupt],
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
@@ -295,8 +296,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         text: str,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run on arbitrary text."""
@@ -305,8 +306,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         action: AgentAction,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run on agent action."""
@@ -315,8 +316,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         finish: AgentFinish,
         *,
-        run_id: str,
-        parent_run_id: Optional[str] = None,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Run on agent end."""
@@ -329,14 +330,14 @@ class BaseCallbackManager(CallbackManagerMixin):
         self,
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: Optional[List[BaseCallbackHandler]] = None,
-        parent_run_id: Optional[str] = None,
+        parent_run_id: Optional[UUID] = None,
     ) -> None:
         """Initialize callback manager."""
         self.handlers: List[BaseCallbackHandler] = handlers
         self.inheritable_handlers: List[BaseCallbackHandler] = (
             inheritable_handlers or []
         )
-        self.parent_run_id: Optional[str] = parent_run_id
+        self.parent_run_id: Optional[UUID] = parent_run_id
 
     @property
     def is_async(self) -> bool:

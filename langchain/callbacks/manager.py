@@ -4,10 +4,10 @@ import asyncio
 import copy
 import functools
 import os
-import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
+from uuid import UUID, uuid4
 
 from langchain.callbacks.base import (
     BaseCallbackHandler,
@@ -119,10 +119,10 @@ class BaseRunManager(RunManagerMixin):
 
     def __init__(
         self,
-        run_id: str,
+        run_id: UUID,
         handlers: List[BaseCallbackHandler],
         inheritable_handlers: List[BaseCallbackHandler],
-        parent_run_id: Optional[str] = None,
+        parent_run_id: Optional[UUID] = None,
     ) -> None:
         """Initialize run manager."""
         self.run_id = run_id
@@ -133,7 +133,7 @@ class BaseRunManager(RunManagerMixin):
     @classmethod
     def get_noop_manager(cls: Type[BRM]) -> BRM:
         """Return a manager that doesn't perform any operations."""
-        return cls("", [], [])
+        return cls(uuid4(), [], [])
 
 
 class RunManager(BaseRunManager):
@@ -483,12 +483,12 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         _handle_event(
             self.handlers,
@@ -509,12 +509,12 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         _handle_event(
             self.handlers,
@@ -535,13 +535,13 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         input_str: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         _handle_event(
             self.handlers,
@@ -581,12 +581,12 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
-        run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForLLMRun:
         """Run when LLM starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         await _ahandle_event(
             self.handlers,
@@ -607,12 +607,12 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         inputs: Dict[str, Any],
-        run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
         """Run when chain starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         await _ahandle_event(
             self.handlers,
@@ -633,13 +633,13 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         input_str: str,
-        run_id: Optional[str] = None,
-        parent_run_id: Optional[str] = None,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForToolRun:
         """Run when tool starts running."""
         if run_id is None:
-            run_id = str(uuid.uuid4())
+            run_id = uuid4()
 
         await _ahandle_event(
             self.handlers,

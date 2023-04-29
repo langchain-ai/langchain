@@ -148,16 +148,6 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_text(
-        self,
-        text: str,
-        color: Optional[str] = None,
-        end: str = "",
-        **kwargs: Optional[str],
-    ) -> None:
-        """Run when agent ends."""
-        pass
-
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
         pass
