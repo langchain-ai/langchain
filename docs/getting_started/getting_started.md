@@ -172,9 +172,9 @@ In order to load agents, you should understand the following concepts:
 - LLM: The language model powering the agent.
 - Agent: The agent to use. This should be a string that references a support agent class. Because this notebook focuses on the simplest, highest level API, this only covers using the standard supported agents. If you want to implement a custom agent, see the documentation for custom agents (coming soon).
 
-**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/agents.md).
+**Agents**: For a list of supported agents and their specifications, see [here](../modules/agents/getting_started.ipynb).
 
-**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools.md).
+**Tools**: For a list of predefined tools and their specifications, see [here](../modules/agents/tools/getting_started.md).
 
 For this example, you will also need to install the SerpAPI Python package.
 
