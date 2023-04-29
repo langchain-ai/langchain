@@ -75,6 +75,7 @@ from langchain.document_loaders.unstructured import (
     UnstructuredFileIOLoader,
     UnstructuredFileLoader,
 )
+from langchain.document_loaders.stripe import StripeLoader
 from langchain.document_loaders.url import UnstructuredURLLoader
 from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
@@ -95,6 +96,7 @@ __all__ = [
     "AirbyteJSONLoader",
     "ApifyDatasetLoader",
     "ArxivLoader",
+    "StripeLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
