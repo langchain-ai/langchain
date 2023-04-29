@@ -1,7 +1,6 @@
 """Beta Feature: base interface for cache."""
-import json
 import hashlib
-
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
 
@@ -16,9 +15,10 @@ except ImportError:
 
 from langchain.embeddings.base import Embeddings
 from langchain.schema import Generation
-
+from langchain.vectorstores.redis import Redis as RedisVectorstore
 
 RETURN_VAL_TYPE = List[Generation]
+
 
 def _hash(_input: str) -> str:
     """Use a deterministic hashing approach."""
@@ -124,6 +124,7 @@ class SQLiteCache(SQLAlchemyCache):
 
 class RedisCache(BaseCache):
     """Cache that uses Redis as a backend."""
+
     # TODO - implement a TTL policy in Redis
 
     def __init__(self, redis_: Any):
@@ -150,27 +151,33 @@ class RedisCache(BaseCache):
         results = self.redis.hgetall(self._key(prompt, llm_string))
         if results:
             for _, text in results.items():
-                generations.append(Generation(text=text.decode()))
+                generations.append(Generation(text=text))
         return generations if generations else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         # Write to a Redis HASH
         key = self._key(prompt, llm_string)
-        self.redis.hset(key, mapping = {
-            idx: generation.text
-            for idx, generation in enumerate(return_val)
-        })
+        self.redis.hset(
+            key,
+            mapping={
+                str(idx): generation.text for idx, generation in enumerate(return_val)
+            },
+        )
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache. If `asynchronous` is True, flush asynchronously."""
+        asynchronous = kwargs.get("asynchronous", False)
+        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+
 
 class RedisSemanticCache(BaseCache):
     """Cache that uses Redis as a vector-store backend."""
+
     # TODO - implement a TTL policy in Redis
 
     def __init__(
-        self,
-        redis_url: str,
-        embedding: Embeddings,
-        score_threshold: float = 0.2
+        self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
         """Initialize by passing in the `init` GPTCache func
 
@@ -192,33 +199,31 @@ class RedisSemanticCache(BaseCache):
             )
 
         """
-        self._cache_dict = {}
+        self._cache_dict: Dict[str, RedisVectorstore] = {}
         self.redis_url = redis_url
         self.embedding = embedding
         self.score_threshold = score_threshold
 
-    def _index_name(self, llm_string: str):
+    def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
         return f"cache:{hashed_index}"
 
-    def _get_llm_cache(self, llm_string: str):
+    def _get_llm_cache(self, llm_string: str) -> RedisVectorstore:
         index_name = self._index_name(llm_string)
 
         # return vectorstore client for the specific llm string
         if index_name in self._cache_dict:
             return self._cache_dict[index_name]
 
-        from langchain.vectorstores.redis import Redis
-
         # create new vectorstore client for the specific llm string
         try:
-            self._cache_dict[index_name] = Redis.from_existing_index(
+            self._cache_dict[index_name] = RedisVectorstore.from_existing_index(
                 embedding=self.embedding,
                 index_name=index_name,
-                redis_url=self.redis_url
+                redis_url=self.redis_url,
             )
         except ValueError:
-            redis = Redis(
+            redis = RedisVectorstore(
                 embedding_function=self.embedding.embed_query,
                 index_name=index_name,
                 redis_url=self.redis_url,
@@ -229,14 +234,12 @@ class RedisSemanticCache(BaseCache):
 
         return self._cache_dict[index_name]
 
-    def clear(self, llm_string: str):
+    def clear(self, **kwargs: Any) -> None:
         """Clear semantic cache for a given llm_string."""
-        index_name = self._index_name(llm_string)
+        index_name = self._index_name(kwargs["llm_string"])
         if index_name in self._cache_dict:
             self._cache_dict[index_name].drop_index(
-                index_name=index_name,
-                delete_documents=True,
-                redis_url=self.redis_url
+                index_name=index_name, delete_documents=True, redis_url=self.redis_url
             )
             del self._cache_dict[index_name]
 
@@ -263,14 +266,9 @@ class RedisSemanticCache(BaseCache):
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
-            "return_val": [generation.text for generation in return_val]
+            "return_val": [generation.text for generation in return_val],
         }
         llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
-
-    def clear(self, **kwargs: Any) -> None:
-        """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        asynchronous = kwargs.get("asynchronous", False)
-        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
 
 
 class GPTCache(BaseCache):

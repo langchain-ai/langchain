@@ -4,11 +4,21 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 from pydantic import BaseModel, root_validator
-from redis.client import Redis as RedisType
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -18,11 +28,15 @@ from langchain.vectorstores.base import VectorStore
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from redis.client import Redis as RedisType
+    from redis.commands.search.query import Query
+
 
 # required modules
 REDIS_REQUIRED_MODULES = [
     {"name": "search", "ver": 20400},
-    {"name": "searchlight", "ver": 20400}
+    {"name": "searchlight", "ver": 20400},
 ]
 
 
@@ -36,7 +50,7 @@ def _check_redis_module_exist(client: RedisType, required_modules: List[dict]) -
         if module["name"] in installed_modules and int(
             installed_modules[module["name"]][b"ver"]
         ) >= int(module["ver"]):
-            return True
+            return
     # otherwise raise error
     error_message = (
         "You must add the RediSearch (>= 2.4) module from Redis Stack. "
@@ -85,6 +99,7 @@ class Redis(VectorStore):
                 embedding_function=embeddings.embed_query,
             )
     """
+
     def __init__(
         self,
         redis_url: str,
@@ -119,7 +134,7 @@ class Redis(VectorStore):
         self.metadata_key = metadata_key
         self.vector_key = vector_key
 
-    def _create_index(self, dim: int = 1536):
+    def _create_index(self, dim: int = 1536) -> None:
         try:
             from redis.commands.search.field import TextField, VectorField
             from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -169,9 +184,12 @@ class Redis(VectorStore):
 
         Args:
             texts (Iterable[str]): Iterable of strings/text to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas. Defaults to None.
-            embeddings (Optional[List[List[float]]], optional): Optional pre-generated embeddings. Defaults to None.
-            keys (Optional[List[str]], optional): Optional key values to use as ids. Defaults to None.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+                Defaults to None.
+            embeddings (Optional[List[List[float]]], optional): Optional pre-generated
+                embeddings. Defaults to None.
+            keys (Optional[List[str]], optional): Optional key values to use as ids.
+                Defaults to None.
             batch_size (int, optional): Batch size to use for writes. Defaults to 1000.
 
         Returns:
@@ -248,7 +266,7 @@ class Redis(VectorStore):
         docs_and_scores = self.similarity_search_with_score(query, k=k)
         return [doc for doc, score in docs_and_scores if score < score_threshold]
 
-    def _prepare_query(self, k: int):
+    def _prepare_query(self, k: int) -> Query:
         try:
             from redis.commands.search.query import Query
         except ImportError:
@@ -256,7 +274,7 @@ class Redis(VectorStore):
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-      # Prepare the Query
+        # Prepare the Query
         hybrid_fields = "*"
         base_query = (
             f"{hybrid_fields}=>[KNN {k} @{self.vector_key} $vector AS vector_score]"
@@ -295,11 +313,7 @@ class Redis(VectorStore):
         }
 
         # Perform vector search
-        results = (
-            self.client
-              .ft(self.index_name)
-              .search(redis_query, params_dict)
-        )
+        results = self.client.ft(self.index_name).search(redis_query, params_dict)
 
         # Prepare document results
         docs = [

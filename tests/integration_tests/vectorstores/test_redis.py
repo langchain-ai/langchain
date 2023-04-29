@@ -1,10 +1,7 @@
 """Test Redis functionality."""
-import pytest
-
 from langchain.docstore.document import Document
 from langchain.vectorstores.redis import Redis
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
-
 
 TEST_INDEX_NAME = "test"
 TEST_REDIS_URL = "redis://localhost:6379"
@@ -12,7 +9,7 @@ TEST_SINGLE_RESULT = [Document(page_content="foo")]
 TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 
 
-def drop(index_name) -> bool:
+def drop(index_name: str) -> bool:
     return Redis.drop_index(
         index_name=index_name, delete_documents=True, redis_url=TEST_REDIS_URL
     )
@@ -21,9 +18,7 @@ def drop(index_name) -> bool:
 def test_redis() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-    )
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
     output = docsearch.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_RESULT
     assert drop(docsearch.index_name)
@@ -32,9 +27,7 @@ def test_redis() -> None:
 def test_redis_new_vector() -> None:
     """Test adding a new document"""
     texts = ["foo", "bar", "baz"]
-    docsearch = Redis.from_texts(
-        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-    )
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
@@ -44,7 +37,7 @@ def test_redis_new_vector() -> None:
 def test_redis_from_existing() -> None:
     """Test adding a new document"""
     texts = ["foo", "bar", "baz"]
-    docsearch = Redis.from_texts(
+    Redis.from_texts(
         texts, FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
     )
     # Test creating from an existing
