@@ -112,7 +112,6 @@ class VectorStore(ABC):
         self,
         query: str,
         k: int = 4,
-        score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
@@ -123,7 +122,7 @@ class VectorStore(ABC):
             query: input text
             k: Number of Documents to return. Defaults to 4.
             score_threshold: Optional, a floating point value between 0 to 1 to filter the resulting set of retrieved docs
-
+            
         Returns:
             List of Tuples of (doc, similarity_score)
         """
@@ -138,6 +137,8 @@ class VectorStore(ABC):
                 "Relevance scores must be between"
                 f" 0 and 1, got {docs_and_similarities}"
             )
+
+        score_threshold = kwargs.get('score_threshold')
         if score_threshold is not None:
             docs_and_similarities = [
                 (doc, similarity)
