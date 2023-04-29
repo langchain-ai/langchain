@@ -1,7 +1,9 @@
 """Loader that loads PDF files."""
+import json
 import logging
 import os
 import tempfile
+import time
 from abc import ABC
 from io import StringIO
 from pathlib import Path
@@ -13,6 +15,7 @@ import requests
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__file__)
 
@@ -33,12 +36,10 @@ class BasePDFLoader(BaseLoader, ABC):
     to a temporary file, and use that, then clean up the temporary file after completion
     """
 
-    file_path: str
-    web_path: Optional[str] = None
-
     def __init__(self, file_path: str):
         """Initialize with file path."""
         self.file_path = file_path
+        self.web_path = None
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
@@ -68,6 +69,10 @@ class BasePDFLoader(BaseLoader, ABC):
         """Check if the url is valid."""
         parsed = urlparse(url)
         return bool(parsed.netloc) and bool(parsed.scheme)
+
+    @property
+    def source(self) -> str:
+        return self.web_path if self.web_path is not None else self.file_path
 
 
 class OnlinePDFLoader(BasePDFLoader):
@@ -249,8 +254,102 @@ class PyMuPDFLoader(BasePDFLoader):
                         k: doc.metadata[k]
                         for k in doc.metadata
                         if type(doc.metadata[k]) in [str, int]
-                    }
+                    },
                 ),
             )
             for page in doc
         ]
+
+
+# MathpixPDFLoader implementation taken largely from Daniel Gross's:
+# https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21
+class MathpixPDFLoader(BasePDFLoader):
+    def __init__(
+        self,
+        file_path: str,
+        processed_file_format: str = "mmd",
+        max_wait_time_seconds: int = 500,
+        should_clean_pdf: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(file_path)
+        self.mathpix_api_key = get_from_dict_or_env(
+            kwargs, "mathpix_api_key", "MATHPIX_API_KEY"
+        )
+        self.mathpix_api_id = get_from_dict_or_env(
+            kwargs, "mathpix_api_id", "MATHPIX_API_ID"
+        )
+        self.processed_file_format = processed_file_format
+        self.max_wait_time_seconds = max_wait_time_seconds
+        self.should_clean_pdf = should_clean_pdf
+
+    @property
+    def headers(self) -> dict:
+        return {"app_id": self.mathpix_api_id, "app_key": self.mathpix_api_key}
+
+    @property
+    def url(self) -> str:
+        return "https://api.mathpix.com/v3/pdf"
+
+    @property
+    def data(self) -> dict:
+        options = {"conversion_formats": {self.processed_file_format: True}}
+        return {"options_json": json.dumps(options)}
+
+    def send_pdf(self) -> str:
+        with open(self.file_path, "rb") as f:
+            files = {"file": f}
+            response = requests.post(
+                self.url, headers=self.headers, files=files, data=self.data
+            )
+        response_data = response.json()
+        if "pdf_id" in response_data:
+            pdf_id = response_data["pdf_id"]
+            return pdf_id
+        else:
+            raise ValueError("Unable to send PDF to Mathpix.")
+
+    def wait_for_processing(self, pdf_id: str) -> None:
+        url = self.url + "/" + pdf_id
+        for _ in range(0, self.max_wait_time_seconds, 5):
+            response = requests.get(url, headers=self.headers)
+            response_data = response.json()
+            status = response_data.get("status", None)
+
+            if status == "completed":
+                return
+            elif status == "error":
+                raise ValueError("Unable to retrieve PDF from Mathpix")
+            else:
+                print(f"Status: {status}, waiting for processing to complete")
+                time.sleep(5)
+        raise TimeoutError
+
+    def get_processed_pdf(self, pdf_id: str) -> str:
+        self.wait_for_processing(pdf_id)
+        url = f"{self.url}/{pdf_id}.{self.processed_file_format}"
+        response = requests.get(url, headers=self.headers)
+        return response.content.decode("utf-8")
+
+    def clean_pdf(self, contents: str) -> str:
+        contents = "\n".join(
+            [line for line in contents.split("\n") if not line.startswith("![]")]
+        )
+        # replace \section{Title} with # Title
+        contents = contents.replace("\\section{", "# ").replace("}", "")
+        # replace the "\" slash that Mathpix adds to escape $, %, (, etc.
+        contents = (
+            contents.replace("\$", "$")
+            .replace("\%", "%")
+            .replace("\(", "(")
+            .replace("\)", ")")
+        )
+        return contents
+
+    def load(self) -> List[Document]:
+        pdf_id = self.send_pdf()
+        contents = self.get_processed_pdf(pdf_id)
+        if self.should_clean_pdf:
+            contents = self.clean_pdf(contents)
+        metadata = {"source": self.source, "file_path": self.source}
+        return [Document(page_content=contents, metadata=metadata)]

@@ -51,6 +51,7 @@ from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
 from langchain.document_loaders.pdf import (
+    MathpixPDFLoader,
     OnlinePDFLoader,
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
@@ -170,4 +171,5 @@ __all__ = [
     "WhatsAppChatLoader",
     "YoutubeLoader",
     "PyPDFDirectoryLoader",
+    "MathpixPDFLoader",
 ]
