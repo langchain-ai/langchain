@@ -26,7 +26,9 @@ def test_get_nfts_with_pagination() -> None:
     contract_address = (
         "0x1a92f7381b9f03921564a437210bb9396471050c"  # CoolCats contract address
     )
-    startToken = "0x0000000000000000000000000000000000000000000000000000000000000077"
+    startToken = (
+        "0x0000000000000000000000000000000000000000000000000000000000000077"
+    )
 
     result = BlockchainDocumentLoader(
         contract_address,
