@@ -9,7 +9,7 @@ This page covers how to run models on Replicate within LangChain.
 
 Find a model on the [Replicate explore page](https://replicate.com/explore), and then paste in the model name and version in this format: `owner-name/model-name:version`
 
-For example, for this [flan-t5 model](https://replicate.com/daanelson/flan-t5), click on the API tab. The model name/version would be: `daanelson/flan-t5:04e422a9b85baed86a4f24981d7f9953e20c5fd82f6103b74ebc431588e1cec8`
+For example, for this [dolly model](https://replicate.com/replicate/dolly-v2-12b), click on the API tab. The model name/version would be: `"replicate/dolly-v2-12b:ef0e1aefc61f8e096ebe4db6b2bacc297daf2ef6899f0f7e001ec445893500e5"`
 
 Only the `model` param is required, but any other model parameters can also be passed in with the format `input={model_param: value, ...}`
 
@@ -24,7 +24,7 @@ Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6
 From here, we can initialize our model:
 
 ```python
-llm = Replicate(model="daanelson/flan-t5:04e422a9b85baed86a4f24981d7f9953e20c5fd82f6103b74ebc431588e1cec8")
+llm = Replicate(model="replicate/dolly-v2-12b:ef0e1aefc61f8e096ebe4db6b2bacc297daf2ef6899f0f7e001ec445893500e5")
 ```
 
 And run it:
@@ -40,8 +40,7 @@ llm(prompt)
 We can call any Replicate model (not just LLMs) using this syntax. For example, we can call [Stable Diffusion](https://replicate.com/stability-ai/stable-diffusion):
 
 ```python
-text2image = Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-                       input={'image_dimensions'='512x512'}
+text2image = Replicate(model="stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf", input={'image_dimensions':'512x512'})
 
 image_output = text2image("A cat riding a motorcycle by Picasso")
 ```

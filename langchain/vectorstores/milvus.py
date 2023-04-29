@@ -619,6 +619,7 @@ class Milvus(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -631,6 +632,10 @@ class Milvus(VectorStore):
             k (int, optional): How many results to give. Defaults to 4.
             fetch_k (int, optional): Total results to select k from.
                 Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
@@ -652,6 +657,7 @@ class Milvus(VectorStore):
             embedding=embedding,
             k=k,
             fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
             param=param,
             expr=expr,
             timeout=timeout,
@@ -663,6 +669,7 @@ class Milvus(VectorStore):
         embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -675,6 +682,10 @@ class Milvus(VectorStore):
             k (int, optional): How many results to give. Defaults to 4.
             fetch_k (int, optional): Total results to select k from.
                 Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
@@ -730,7 +741,7 @@ class Milvus(VectorStore):
 
         # Get the new order of results.
         new_ordering = maximal_marginal_relevance(
-            np.array(embedding), ordered_result_embeddings, k=k
+            np.array(embedding), ordered_result_embeddings, k=k, lambda_mult=lambda_mult
         )
 
         # Reorder the values and return.

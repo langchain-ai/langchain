@@ -41,7 +41,7 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     def run(self, query: str) -> str:
         from duckduckgo_search import ddg
 
-        """Run query through DuckDuckGo and return results."""
+        """Run query through DuckDuckGo and return concatenated results."""
         results = ddg(
             query,
             region=self.region,
@@ -49,12 +49,12 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             time=self.time,
             max_results=self.max_results,
         )
-        if len(results) == 0:
+        if results is None or len(results) == 0:
             return "No good DuckDuckGo Search Result was found"
         snippets = [result["body"] for result in results]
         return " ".join(snippets)
 
-    def results(self, query: str, num_results: int) -> List[Dict]:
+    def results(self, query: str, num_results: int) -> List[Dict[str, str]]:
         """Run query through DuckDuckGo and return metadata.
 
         Args:
@@ -77,10 +77,10 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
             max_results=num_results,
         )
 
-        if len(results) == 0:
+        if results is None or len(results) == 0:
             return [{"Result": "No good DuckDuckGo Search Result was found"}]
 
-        def to_metadata(result: Dict) -> Dict:
+        def to_metadata(result: Dict) -> Dict[str, str]:
             return {
                 "snippet": result["body"],
                 "title": result["title"],

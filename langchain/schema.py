@@ -181,6 +181,28 @@ class PromptValue(BaseModel, ABC):
         """Return prompt as messages."""
 
 
+def _get_num_tokens_default_method(text: str) -> int:
+    """Get the number of tokens present in the text."""
+    # TODO: this method may not be exact.
+    # TODO: this method may differ based on model (eg codex).
+    try:
+        from transformers import GPT2TokenizerFast
+    except ImportError:
+        raise ValueError(
+            "Could not import transformers python package. "
+            "This is needed in order to calculate get_num_tokens. "
+            "Please install it with `pip install transformers`."
+        )
+    # create a GPT-2 tokenizer instance
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
+    # tokenize the text using the GPT-3 tokenizer
+    tokenized_text = tokenizer.tokenize(text)
+
+    # calculate the number of tokens in the tokenized text
+    return len(tokenized_text)
+
+
 class BaseLanguageModel(BaseModel, ABC):
     @abstractmethod
     def generate_prompt(
@@ -195,25 +217,7 @@ class BaseLanguageModel(BaseModel, ABC):
         """Take in a list of prompt values and return an LLMResult."""
 
     def get_num_tokens(self, text: str) -> int:
-        """Get the number of tokens present in the text."""
-        # TODO: this method may not be exact.
-        # TODO: this method may differ based on model (eg codex).
-        try:
-            from transformers import GPT2TokenizerFast
-        except ImportError:
-            raise ValueError(
-                "Could not import transformers python package. "
-                "This is needed in order to calculate get_num_tokens. "
-                "Please install it with `pip install transformers`."
-            )
-        # create a GPT-3 tokenizer instance
-        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-        # tokenize the text using the GPT-3 tokenizer
-        tokenized_text = tokenizer.tokenize(text)
-
-        # calculate the number of tokens in the tokenized text
-        return len(tokenized_text)
+        return _get_num_tokens_default_method(text)
 
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the message."""

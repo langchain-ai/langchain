@@ -110,7 +110,13 @@ class AutoGPT:
                 try:
                     observation = tool.run(action.args)
                 except ValidationError as e:
-                    observation = f"Error in args: {str(e)}"
+                    observation = (
+                        f"Validation Error in args: {str(e)}, args: {action.args}"
+                    )
+                except Exception as e:
+                    observation = (
+                        f"Error: {str(e)}, {type(e).__name__}, args: {action.args}"
+                    )
                 result = f"Command {tool.name} returned: {observation}"
             elif action.name == "ERROR":
                 result = f"Error: {action.args}. "

@@ -60,6 +60,8 @@ class ConfluenceLoader(BaseLoader):
     :type min_retry_seconds: Optional[int], optional
     :param max_retry_seconds:  defaults to 10
     :type max_retry_seconds: Optional[int], optional
+    :param confluence_kwargs: additional kwargs to initialize confluence with
+    :type confluence_kwargs: dict, optional
     :raises ValueError: Errors while validating input
     :raises ImportError: Required dependencies not installed.
     """
@@ -74,7 +76,9 @@ class ConfluenceLoader(BaseLoader):
         number_of_retries: Optional[int] = 3,
         min_retry_seconds: Optional[int] = 2,
         max_retry_seconds: Optional[int] = 10,
+        confluence_kwargs: Optional[dict] = None,
     ):
+        confluence_kwargs = confluence_kwargs or {}
         errors = ConfluenceLoader.validate_init_args(url, api_key, username, oauth2)
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
@@ -93,10 +97,16 @@ class ConfluenceLoader(BaseLoader):
             )
 
         if oauth2:
-            self.confluence = Confluence(url=url, oauth2=oauth2, cloud=cloud)
+            self.confluence = Confluence(
+                url=url, oauth2=oauth2, cloud=cloud, **confluence_kwargs
+            )
         else:
             self.confluence = Confluence(
-                url=url, username=username, password=api_key, cloud=cloud
+                url=url,
+                username=username,
+                password=api_key,
+                cloud=cloud,
+                **confluence_kwargs,
             )
 
     @staticmethod
@@ -146,8 +156,12 @@ class ConfluenceLoader(BaseLoader):
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
         cql: Optional[str] = None,
+        include_restricted_content: bool = False,
+        include_archived_content: bool = False,
         include_attachments: bool = False,
+        include_comments: bool = False,
         limit: Optional[int] = 50,
+        max_pages: Optional[int] = 1000,
     ) -> List[Document]:
         """
         :param space_key: Space key retrieved from a confluence URL, defaults to None
@@ -158,10 +172,19 @@ class ConfluenceLoader(BaseLoader):
         :type label: Optional[str], optional
         :param cql: CQL Expression, defaults to None
         :type cql: Optional[str], optional
+        :param include_restricted_content: defaults to False
+        :type include_restricted_content: bool, optional
+        :param include_archived_content: Whether to include archived content,
+                                         defaults to False
+        :type include_archived_content: bool, optional
         :param include_attachments: defaults to False
         :type include_attachments: bool, optional
-        :param limit: Maximum number of pages to retrieve, defaults to 50
+        :param include_comments: defaults to False
+        :type include_comments: bool, optional
+        :param limit: Maximum number of pages to retrieve per request, defaults to 50
         :type limit: int, optional
+        :param max_pages: Maximum number of pages to retrieve in total, defaults 1000
+        :type max_pages: int, optional
         :raises ValueError: _description_
         :raises ImportError: _description_
         :return: _description_
@@ -173,48 +196,45 @@ class ConfluenceLoader(BaseLoader):
                 "`label`, `cql` parameters."
             )
 
-        try:
-            import html2text  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`html2text` package not found, please run `pip install html2text`"
-            )
-
         docs = []
-
-        text_maker = html2text.HTML2Text()
-        text_maker.ignore_links = True
-        text_maker.ignore_images = True
 
         if space_key:
             pages = self.paginate_request(
                 self.confluence.get_all_pages_from_space,
                 space=space_key,
                 limit=limit,
+                max_pages=max_pages,
+                status="any" if include_archived_content else "current",
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, text_maker)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if label:
             pages = self.paginate_request(
                 self.confluence.get_all_pages_by_label,
                 label=label,
                 limit=limit,
+                max_pages=max_pages,
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, text_maker)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if cql:
             pages = self.paginate_request(
-                self.confluence.cql, cql=cql, limit=limit, expand="body.storage.value"
+                self.confluence.cql,
+                cql=cql,
+                limit=limit,
+                max_pages=max_pages,
+                include_archived_spaces=include_archived_content,
+                expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, text_maker)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if page_ids:
             for page_id in page_ids:
@@ -231,7 +251,9 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(page_id=page_id, expand="body.storage.value")
-                doc = self.process_page(page, include_attachments, text_maker)
+                if not include_restricted_content and not self.is_public_page(page):
+                    continue
+                doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
         return docs
@@ -239,11 +261,13 @@ class ConfluenceLoader(BaseLoader):
     def paginate_request(self, retrieval_method: Callable, **kwargs: Any) -> List:
         """Paginate the various methods to retrieve groups of pages.
 
-        Unforunately, due to page size, sometimes the Confluence API
-        doesn't match the limit value. Also, due to the Atlassian Python
+        Unfortunately, due to page size, sometimes the Confluence API
+        doesn't match the limit value. If `limit` is  >100 confluence
+        seems to cap the response to 100. Also, due to the Atlassian Python
         package, we don't get the "next" values from the "_links" key because
         they only return the value from the results key. So here, the pagination
-        starts from 0 and goes until the limit. We have to manually check if there
+        starts from 0 and goes until the max_pages, getting the `limit` number
+        of pages with each request. We have to manually check if there
         are more docs based on the length of the returned list of pages, rather than
         just checking for the presence of a `next` key in the response like this page
         would have you do:
@@ -255,10 +279,9 @@ class ConfluenceLoader(BaseLoader):
         :rtype: List
         """
 
-        limit = kwargs["limit"]
-        page = 0
-        docs = []
-        while page < limit:
+        max_pages = kwargs.pop("max_pages")
+        docs: List[dict] = []
+        while len(docs) < max_pages:
             get_pages = retry(
                 reraise=True,
                 stop=stop_after_attempt(
@@ -271,26 +294,77 @@ class ConfluenceLoader(BaseLoader):
                 ),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
             )(retrieval_method)
-            batch = get_pages(**kwargs, start=page)
-            if len(batch) < limit:
-                page = limit
-            else:
-                page += len(batch)
+            batch = get_pages(**kwargs, start=len(docs))
+            if not batch:
+                break
             docs.extend(batch)
+        return docs[:max_pages]
+
+    def is_public_page(self, page: dict) -> bool:
+        """Check if a page is publicly accessible."""
+        restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
+
+        return (
+            page["status"] == "current"
+            and not restrictions["read"]["restrictions"]["user"]["results"]
+            and not restrictions["read"]["restrictions"]["group"]["results"]
+        )
+
+    def process_pages(
+        self,
+        pages: List[dict],
+        include_restricted_content: bool,
+        include_attachments: bool,
+        include_comments: bool,
+    ) -> List[Document]:
+        """Process a list of pages into a list of documents."""
+        docs = []
+        for page in pages:
+            if not include_restricted_content and not self.is_public_page(page):
+                continue
+            doc = self.process_page(page, include_attachments, include_comments)
+            docs.append(doc)
+
         return docs
 
     def process_page(
-        self, page: dict, include_attachments: bool, text_maker: Any
+        self,
+        page: dict,
+        include_attachments: bool,
+        include_comments: bool,
     ) -> Document:
+        try:
+            from bs4 import BeautifulSoup  # type: ignore
+        except ImportError:
+            raise ImportError(
+                "`beautifulsoup4` package not found, please run"
+                " `pip install beautifulsoup4`"
+            )
+
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        text = text_maker.handle(page["body"]["storage"]["value"]) + "".join(
-            attachment_texts
-        )
+        text = BeautifulSoup(
+            page["body"]["storage"]["value"], "lxml"
+        ).get_text() + "".join(attachment_texts)
+        if include_comments:
+            comments = self.confluence.get_page_comments(
+                page["id"], expand="body.view.value", depth="all"
+            )["results"]
+            comment_texts = [
+                BeautifulSoup(comment["body"]["view"]["value"], "lxml").get_text()
+                for comment in comments
+            ]
+            text = text + "".join(comment_texts)
+
         return Document(
-            page_content=text, metadata={"title": page["title"], "id": page["id"]}
+            page_content=text,
+            metadata={
+                "title": page["title"],
+                "id": page["id"],
+                "source": self.base_url.strip("/") + page["_links"]["webui"],
+            },
         )
 
     def process_attachment(self, page_id: str) -> List[str]:
