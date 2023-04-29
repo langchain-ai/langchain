@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from pydantic import BaseModel, Field, root_validator
 
 from langchain.tools.playwright.base import BaseBrowserTool
-from langchain.tools.playwright.utils import get_current_page
+from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
 if TYPE_CHECKING:
     pass
@@ -29,7 +29,7 @@ class ExtractHyperlinksTool(BaseBrowserTool):
     args_schema: Type[BaseModel] = ExtractHyperlinksToolInput
 
     @root_validator
-    def check_args(cls, values: dict) -> dict:
+    def check_bs_import(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401
@@ -40,14 +40,11 @@ class ExtractHyperlinksTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(self, absolute_urls: bool = False) -> str:
-        """Use the tool."""
+    @staticmethod
+    def scrape_page(page: Any, html_content: str, absolute_urls: bool) -> str:
         from urllib.parse import urljoin
 
         from bs4 import BeautifulSoup
-
-        page = await get_current_page(self.browser)
-        html_content = await page.content()
 
         # Parse the HTML content with BeautifulSoup
         soup = BeautifulSoup(html_content, "lxml")
@@ -59,6 +56,21 @@ class ExtractHyperlinksTool(BaseBrowserTool):
             links = [urljoin(base_url, anchor.get("href", "")) for anchor in anchors]
         else:
             links = [anchor.get("href", "") for anchor in anchors]
-
         # Return the list of links as a JSON string
         return json.dumps(links)
+
+    def _run(self, absolute_urls: bool = False) -> str:
+        """Use the tool."""
+        if self.sync_browser is None:
+            raise ValueError(f"Synchronous browser not provided to {self.name}")
+        page = get_current_page(self.sync_browser)
+        html_content = page.content()
+        return self.scrape_page(page, html_content, absolute_urls)
+
+    async def _arun(self, absolute_urls: bool = False) -> str:
+        """Use the tool asynchronously."""
+        if self.async_browser is None:
+            raise ValueError(f"Asynchronous browser not provided to {self.name}")
+        page = await aget_current_page(self.async_browser)
+        html_content = await page.content()
+        return self.scrape_page(page, html_content, absolute_urls)
