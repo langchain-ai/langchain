@@ -55,6 +55,7 @@ from langchain.document_loaders.pdf import (
     PDFMinerLoader,
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
+    PyPDFDirectoryLoader,
     PyPDFLoader,
     UnstructuredPDFLoader,
 )
@@ -166,4 +167,5 @@ __all__ = [
     "WebBaseLoader",
     "WhatsAppChatLoader",
     "YoutubeLoader",
+    "PyPDFDirectoryLoader",
 ]
