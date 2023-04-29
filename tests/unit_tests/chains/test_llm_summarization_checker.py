@@ -32,7 +32,9 @@ def fake_llm_summarization_checker_chain() -> LLMSummarizationCheckerChain:
         ): "True",
     }
     fake_llm = FakeLLM(queries=queries)
-    return LLMSummarizationCheckerChain(llm=fake_llm, input_key="q", output_key="a")
+    return LLMSummarizationCheckerChain.from_llm(
+        fake_llm, input_key="q", output_key="a"
+    )
 
 
 def test_simple_text(
