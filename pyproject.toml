@@ -126,6 +126,7 @@ python-dotenv = "^1.0.0"
 sentence-transformers = "^2"
 gptcache = "^0.1.9"
 promptlayer = "^0.1.80"
+tair = "^1.3.3"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.0.249"
