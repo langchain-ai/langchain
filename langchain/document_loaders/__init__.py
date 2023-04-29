@@ -56,6 +56,7 @@ from langchain.document_loaders.pdf import (
     PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     PyPDFLoader,
+    PyPDFDirectoryLoader,
     UnstructuredPDFLoader,
 )
 from langchain.document_loaders.powerpoint import UnstructuredPowerPointLoader
