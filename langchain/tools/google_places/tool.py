@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -10,6 +10,10 @@ from langchain.callbacks.manager import (
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
+
+
+class GooglePlacesSchema(BaseModel):
+    query: str = Field(..., description="Query for goole maps")
 
 
 class GooglePlacesTool(BaseTool):
