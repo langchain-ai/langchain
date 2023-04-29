@@ -86,8 +86,8 @@ class MatchingEngine(VectorStore):
     def _validate_google_libraries_installation(self) -> None:
         """Validates that Google libraries that are needed are installed."""
         try:
-            from google.cloud import aiplatform, storage
-            from google.oauth2 import service_account
+            from google.cloud import aiplatform, storage  # noqa: F401
+            from google.oauth2 import service_account  # noqa: F401
         except ImportError:
             raise ImportError(
                 "You must run `pip install --upgrade "
@@ -111,7 +111,7 @@ class MatchingEngine(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        logger.debug(f"Embedding documents.")
+        logger.debug("Embedding documents.")
         embeddings = self.embedding.embed_documents(list(texts))
         jsons = []
         ids = []
@@ -139,7 +139,7 @@ class MatchingEngine(VectorStore):
             contents_delta_uri=f"gs://{self.gcs_bucket_name}/{filename_prefix}/"
         )
 
-        logger.debug(f"Updated index with new configuration.")
+        logger.debug("Updated index with new configuration.")
 
         return ids
 
@@ -191,7 +191,7 @@ class MatchingEngine(VectorStore):
             page_content = self._download_from_gcs(f"documents/{doc.id}")
             results.append(Document(page_content=page_content))
 
-        logger.debug(f"Downloaded documents for query.")
+        logger.debug("Downloaded documents for query.")
 
         return results
 
@@ -229,53 +229,16 @@ class MatchingEngine(VectorStore):
     def from_texts(
         cls: Type["MatchingEngine"],
         texts: List[str],
-        embedding: Embeddings = None,
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        *,
-        project_id: str,
-        region: str,
-        gcs_bucket_name: str,
-        index_id: str,
-        endpoint_id: str,
-        credentials_path: Optional[str],
         **kwargs: Any,
     ) -> "MatchingEngine":
-        """Return VectorStore initialized from texts and embeddings.
-
-        Note that this function shouldn't be run more than once. Otherwise,
-        the texts will be added multiple times to the index and GCS.
-
-        Args:
-            texts: The texts that will get .
-            embedding: The :class:`Embeddings` that will be used for
-            embedding the texts.
-            metadatas: List of metadatas. Defaults to None.
-            project_id: The GCP project id.
-            region: The default location making the API calls. It must have
-            the same location as the GCS bucket and must be regional.
-            gcs_bucket_name: The location where the vectors will be stored in
-            order for the index to be created.
-            index_id: The id of the created index.
-            endpoint_id: The id of the created endpoint.
-            credentials_path: The path of the Google credentials on the
-            local file system.
-
-        Returns:
-            A configured MatchingEngine with the texts added to the index.
-        """
-
-        matching_engine = cls.from_components(
-            project_id=project_id,
-            region=region,
-            gcs_bucket_name=gcs_bucket_name,
-            index_id=index_id,
-            endpoint_id=endpoint_id,
-            credentials_path=credentials_path,
-            embedding=embedding or cls._get_default_embeddings(),
+        """Use from components instead."""
+        raise NotImplementedError(
+            "This method is not implemented. Instead, you should initialize the class"
+            " with `MatchingEngine.from_components(...)` and then call "
+            "`from_texts`"
         )
-
-        matching_engine.add_texts(texts=texts, metadatas=metadatas)
-        return matching_engine
 
     @classmethod
     def from_components(
@@ -286,7 +249,7 @@ class MatchingEngine(VectorStore):
         index_id: str,
         endpoint_id: str,
         credentials_path: Optional[str] = None,
-        embedding: Embeddings = None,
+        embedding: Optional[Embeddings] = None,
     ) -> "MatchingEngine":
         """Takes the object creation out of the constructor.
 
