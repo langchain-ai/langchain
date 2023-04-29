@@ -1,7 +1,7 @@
 """Loader that fetches a sitemap and loads those URLs."""
-import re
 import itertools
-from typing import Any, Callable, List, Optional
+import re
+from typing import Any, Callable, Generator, Iterable, List, Optional
 
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.schema import Document
@@ -10,10 +10,12 @@ from langchain.schema import Document
 def _default_parsing_function(content: Any) -> str:
     return str(content.get_text())
 
-def _batch_block(iterable, size):
+
+def _batch_block(iterable: Iterable, size: int) -> Generator[List[dict], None, None]:
     it = iter(iterable)
     while item := list(itertools.islice(it, size)):
         yield item
+
 
 class SitemapLoader(WebBaseLoader):
     """Loader that fetches a sitemap and loads those URLs."""
@@ -24,7 +26,7 @@ class SitemapLoader(WebBaseLoader):
         filter_urls: Optional[List[str]] = None,
         parsing_function: Optional[Callable] = None,
         blocksize: Optional[int] = None,
-        blocknum: Optional[int] = None,
+        blocknum: int = 0,
     ):
         """Initialize with webpage path and optional filter URLs.
 
@@ -36,6 +38,12 @@ class SitemapLoader(WebBaseLoader):
             blocksize: number of sitemap locations per block
             blocknum: the number of the block that should be loaded - zero indexed
         """
+
+        if blocksize is not None and blocksize < 1:
+            raise ValueError("Sitemap blocksize should be at least 1")
+
+        if blocknum < 0:
+            raise ValueError("Sitemap blocknum can not be lower then 0")
 
         try:
             import lxml  # noqa:F401
@@ -87,7 +95,7 @@ class SitemapLoader(WebBaseLoader):
 
         els = self.parse_sitemap(soup)
 
-        if self.blocksize is not None and self.blocknum is not None:
+        if self.blocksize is not None:
             elblocks = list(_batch_block(els, self.blocksize))
             blockcount = len(elblocks)
             if blockcount - 1 < self.blocknum:
