@@ -4,21 +4,16 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 from langchain.utils import get_from_dict_or_env
 from langchain.vectorstores.base import VectorStore
 
-try:
+if TYPE_CHECKING:
     from tair import Tair as TairClient
     from tair import tairvector
-except ImportError:
-    raise ValueError(
-        "Could not import tair python package. "
-        "Please install it with `pip install tair`."
-    )
 
 
 logger = logging.getLogger(__name__)
