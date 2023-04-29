@@ -703,7 +703,9 @@ def _configure(
     tracer = tracing_callback_var.get()
     open_ai = openai_callback_var.get()
     tracing_enabled_ = (
-        os.environ.get("LANGCHAIN_TRACING") is not None or tracer is not None
+        os.environ.get("LANGCHAIN_TRACING") is not None
+        or tracer is not None
+        or os.environ.get("LANGCHAIN_HANDLER") is not None
     )
     tracer_session = os.environ.get("LANGCHAIN_SESSION")
     if tracer_session is None:

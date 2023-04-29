@@ -42,6 +42,20 @@ def test_tracing_sequential() -> None:
         agent.run(q)
 
 
+def test_tracing_session_env_var() -> None:
+    os.environ["LANGCHAIN_TRACING"] = "true"
+    os.environ["LANGCHAIN_SESSION"] = "my_session"
+
+    llm = OpenAI(temperature=0)
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
+    agent = initialize_agent(
+        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    agent.run(questions[0])
+    if "LANGCHAIN_SESSION" in os.environ:
+        del os.environ["LANGCHAIN_SESSION"]
+
+
 @pytest.mark.asyncio
 async def test_tracing_concurrent() -> None:
     os.environ["LANGCHAIN_TRACING"] = "true"
@@ -54,6 +68,24 @@ async def test_tracing_concurrent() -> None:
     tasks = [agent.arun(q) for q in questions[:3]]
     await asyncio.gather(*tasks)
     await aiosession.close()
+
+
+@pytest.mark.asyncio
+async def test_tracing_concurrent_bw_compat_environ() -> None:
+    os.environ["LANGCHAIN_HANDLER"] = "langchain"
+    if "LANGCHAIN_TRACING" in os.environ:
+        del os.environ["LANGCHAIN_TRACING"]
+    aiosession = ClientSession()
+    llm = OpenAI(temperature=0)
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm, aiosession=aiosession)
+    agent = initialize_agent(
+        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
+    tasks = [agent.arun(q) for q in questions[:3]]
+    await asyncio.gather(*tasks)
+    await aiosession.close()
+    if "LANGCHAIN_HANDLER" in os.environ:
+        del os.environ["LANGCHAIN_HANDLER"]
 
 
 def test_tracing_context_manager() -> None:
