@@ -157,6 +157,7 @@ class ConfluenceLoader(BaseLoader):
         label: Optional[str] = None,
         cql: Optional[str] = None,
         include_restricted_content: bool = False,
+        include_archived_content: bool = False,
         include_attachments: bool = False,
         include_comments: bool = False,
         limit: Optional[int] = 50,
@@ -173,6 +174,9 @@ class ConfluenceLoader(BaseLoader):
         :type cql: Optional[str], optional
         :param include_restricted_content: defaults to False
         :type include_restricted_content: bool, optional
+        :param include_archived_content: Whether to include archived content,
+                                         defaults to False
+        :type include_archived_content: bool, optional
         :param include_attachments: defaults to False
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
@@ -200,6 +204,7 @@ class ConfluenceLoader(BaseLoader):
                 space=space_key,
                 limit=limit,
                 max_pages=max_pages,
+                status="any" if include_archived_content else "current",
                 expand="body.storage.value",
             )
             docs += self.process_pages(
@@ -224,6 +229,7 @@ class ConfluenceLoader(BaseLoader):
                 cql=cql,
                 limit=limit,
                 max_pages=max_pages,
+                include_archived_spaces=include_archived_content,
                 expand="body.storage.value",
             )
             docs += self.process_pages(
