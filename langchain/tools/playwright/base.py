@@ -49,7 +49,7 @@ class BaseBrowserTool(BaseTool):
         cls,
         sync_browser: Optional[SyncBrowser] = None,
         async_browser: Optional[AsyncBrowser] = None,
-    ) -> BaseBrowserToolMixin:
+    ) -> BaseBrowserTool:
         """Instantiate the tool."""
         lazy_import_playwright_browsers()
         return cls(sync_browser=sync_browser, async_browser=async_browser)

@@ -25,8 +25,8 @@ from langchain.tools.playwright import (
     NavigateTool,
 )
 from langchain.tools.plugin import AIPluginTool
-from langchain.tools.shell.tool import ShellTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
+from langchain.tools.shell.tool import ShellTool
 
 __all__ = [
     "AIPluginTool",
