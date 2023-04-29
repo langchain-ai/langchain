@@ -84,7 +84,10 @@ from langchain.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.document_loaders.web_base import WebBaseLoader
 from langchain.document_loaders.whatsapp_chat import WhatsAppChatLoader
-from langchain.document_loaders.word_document import UnstructuredWordDocumentLoader
+from langchain.document_loaders.word_document import (
+    Docx2txtLoader,
+    UnstructuredWordDocumentLoader,
+)
 from langchain.document_loaders.youtube import (
     GoogleApiClient,
     GoogleApiYoutubeLoader,
@@ -174,4 +177,7 @@ __all__ = [
     "YoutubeLoader",
     "PyPDFDirectoryLoader",
     "MathpixPDFLoader",
+    "ChatGPTLoader",
+    "HuggingFaceDatasetLoader",
+    "Docx2txtLoader",
 ]
