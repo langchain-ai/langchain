@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import get_current_page
 
@@ -25,7 +26,9 @@ class ExtractTextTool(BaseBrowserTool):
             )
         return values
 
-    async def _arun(self) -> str:
+    async def _arun(
+        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
+    ) -> str:
         """Use the tool."""
         # Use Beautiful Soup since it's faster than looping through the elements
         from bs4 import BeautifulSoup

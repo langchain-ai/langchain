@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import (
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.tools.playwright.utils import create_playwright_browser, run_async
 
@@ -28,7 +31,12 @@ class BaseBrowserTool(BaseTool):
             )
         return values
 
-    def _run(self, *args: Any, **kwargs: Any) -> str:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Use the tool."""
         return run_async(self._arun(*args, **kwargs))
 

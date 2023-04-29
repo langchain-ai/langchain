@@ -7,6 +7,10 @@ import requests
 import yaml
 from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 
 
@@ -72,10 +76,18 @@ class AIPluginTool(BaseTool):
             api_spec=api_spec,
         )
 
-    def _run(self, tool_input: str) -> str:
+    def _run(
+        self,
+        tool_input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         return self.api_spec
 
-    async def _arun(self, tool_input: str) -> str:
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         return self.api_spec

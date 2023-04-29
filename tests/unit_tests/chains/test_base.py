@@ -25,11 +25,9 @@ class FakeMemory(BaseMemory):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Pass."""
-        pass
 
     def clear(self) -> None:
         """Pass."""
-        pass
 
 
 class FakeChain(Chain):

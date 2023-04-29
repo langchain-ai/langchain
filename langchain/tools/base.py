@@ -19,7 +19,9 @@ from pydantic.main import ModelMetaclass
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManager,
+    AsyncCallbackManagerForToolRun,
     CallbackManager,
+    CallbackManagerForToolRun,
     Callbacks,
 )
 
@@ -118,7 +120,8 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
     that after the tool is called, the AgentExecutor will stop looping.
     """
     verbose: bool = False
-    """Whether to print the tool's output to the console."""
+    """Whether to log the tool's progress."""
+
     callbacks: Callbacks = None
     """Callbacks to be called during tool execution."""
     callback_manager: Optional[BaseCallbackManager] = None
@@ -174,11 +177,23 @@ class BaseTool(ABC, BaseModel, metaclass=ToolMetaclass):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Add run_manager: Optional[CallbackManagerForToolRun] = None
+        to child implementations to enable tracing,
+        """
 
     @abstractmethod
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
-        """Use the tool asynchronously."""
+    async def _arun(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Use the tool asynchronously.
+
+        Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
+        to child implementations to enable tracing,
+        """
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
@@ -279,9 +294,9 @@ class StructuredTool(BaseTool):
     description: str = ""
     args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
-    func: Callable[..., str]
+    func: Callable[..., Any]
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
 
     @property
@@ -289,14 +304,44 @@ class StructuredTool(BaseTool):
         """The tool's input arguments."""
         return self.args_schema.schema()["properties"]
 
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> str:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
         raise NotImplementedError("Tool does not support async")
 
     @classmethod
