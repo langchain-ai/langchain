@@ -171,7 +171,7 @@ def test_decorated_function_schema_equivalent() -> None:
 def test_structured_args_decorator_no_infer_schema() -> None:
     """Test functionality with structured arguments parsed as a decorator."""
 
-    @tool
+    @tool(infer_schema=False)
     def structured_tool_input(
         arg1: int, arg2: Union[float, datetime], opt_arg: Optional[dict] = None
     ) -> str:
@@ -182,7 +182,8 @@ def test_structured_args_decorator_no_infer_schema() -> None:
     assert structured_tool_input.name == "structured_tool_input"
     args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
     expected_result = "1, 0.001, {'foo': 'bar'}"
-    assert structured_tool_input.run(args) == expected_result
+    with pytest.raises(ValueError):
+        assert structured_tool_input.run(args) == expected_result
 
 
 def test_structured_single_str_decorator_no_infer_schema() -> None:

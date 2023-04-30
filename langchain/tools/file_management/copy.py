@@ -1,11 +1,16 @@
 import shutil
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
-    BaseFileTool,
+    BaseFileToolMixin,
     FileValidationError,
 )
 
@@ -17,12 +22,17 @@ class FileCopyInput(BaseModel):
     destination_path: str = Field(..., description="Path to save the copied file")
 
 
-class CopyFileTool(BaseFileTool):
+class CopyFileTool(BaseFileToolMixin, BaseTool):
     name: str = "copy_file"
     args_schema: Type[BaseModel] = FileCopyInput
     description: str = "Create a copy of a file in a specified location"
 
-    def _run(self, source_path: str, destination_path: str) -> str:
+    def _run(
+        self,
+        source_path: str,
+        destination_path: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         try:
             source_path_ = self.get_relative_path(source_path)
         except FileValidationError:
@@ -41,6 +51,11 @@ class CopyFileTool(BaseFileTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, source_path: str, destination_path: str) -> str:
+    async def _arun(
+        self,
+        source_path: str,
+        destination_path: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

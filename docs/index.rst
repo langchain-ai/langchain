@@ -44,6 +44,8 @@ These modules are, in increasing order of complexity:
 
 - `Agents <./modules/agents.html>`_: Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end to end agents.
 
+- `Callbacks <./modules/callbacks/getting_started.html>`_: It can be difficult to track all that occurs inside a chain or agent - callbacks help add a level of observability and introspection.
+
 
 .. toctree::
    :maxdepth: 1
@@ -57,6 +59,7 @@ These modules are, in increasing order of complexity:
    ./modules/memory.md
    ./modules/chains.md
    ./modules/agents.md
+   ./modules/callbacks/getting_started.ipynb
 
 Use Cases
 ----------

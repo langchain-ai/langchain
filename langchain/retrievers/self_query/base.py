@@ -4,13 +4,12 @@ from typing import Any, Dict, List, Optional, Type, cast
 from pydantic import BaseModel, Field, root_validator
 
 from langchain import LLMChain
-from langchain.chains.query_constructor.base import (
-    load_query_constructor_chain,
-)
+from langchain.base_language import BaseLanguageModel
+from langchain.chains.query_constructor.base import load_query_constructor_chain
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores import Pinecone, VectorStore
 
 
@@ -69,7 +68,7 @@ class SelfQueryRetriever(BaseRetriever, BaseModel):
         """
         inputs = self.llm_chain.prep_inputs(query)
         structured_query = cast(
-            StructuredQuery, self.llm_chain.predict_and_parse(**inputs)
+            StructuredQuery, self.llm_chain.predict_and_parse(callbacks=None, **inputs)
         )
         if self.verbose:
             print(structured_query)

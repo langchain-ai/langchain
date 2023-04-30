@@ -76,11 +76,11 @@ class SerpAPIWrapper(BaseModel):
             )
         return values
 
-    async def arun(self, query: str) -> str:
+    async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through SerpAPI and parse result async."""
         return self._process_response(await self.aresults(query))
 
-    def run(self, query: str) -> str:
+    def run(self, query: str, **kwargs: Any) -> str:
         """Run query through SerpAPI and parse result."""
         return self._process_response(self.results(query))
 
