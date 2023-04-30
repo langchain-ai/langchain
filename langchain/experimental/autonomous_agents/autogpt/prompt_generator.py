@@ -18,10 +18,10 @@ class PromptGenerator:
         Starts with empty lists of constraints, commands, resources,
         and performance evaluations.
         """
-        self.constraints: Set[str] = []
+        self.constraints: Set[str] = set()
         self.commands: List[BaseTool] = []
-        self.resources: Set[str] = []
-        self.performance_evaluation: Set[str] = []
+        self.resources: Set[str] = set()
+        self.performance_evaluation: Set[str] = set()
         self.response_format = {
             "thoughts": {
                 "text": "thought",
@@ -40,7 +40,7 @@ class PromptGenerator:
         Args:
             constraint (str): The constraint to be added.
         """
-        self.constraints.append(constraint)
+        self.constraints.add(constraint)
 
     def add_tool(self, tool: BaseTool) -> None:
         self.commands.append(tool)
@@ -57,7 +57,7 @@ class PromptGenerator:
         Args:
             resource (str): The resource to be added.
         """
-        self.resources.append(resource)
+        self.resources.add(resource)
 
     def add_performance_evaluation(self, evaluation: str) -> None:
         """
@@ -66,7 +66,7 @@ class PromptGenerator:
         Args:
             evaluation (str): The evaluation item to be added.
         """
-        self.performance_evaluation.append(evaluation)
+        self.performance_evaluation.add(evaluation)
 
     def _generate_numbered_list(self, items: list, item_type: str = "list") -> str:
         """
@@ -107,13 +107,18 @@ class PromptGenerator:
             str: The generated prompt string.
         """
         formatted_response_format = json.dumps(self.response_format, indent=4)
+        constraints_list = self._generate_numbered_list(list(self.constraints))
+        commands_list = self._generate_numbered_list(self.commands, item_type="command")
+        resources_list = self._generate_numbered_list(list(self.resources))
+        performance_eval_list = self._generate_numbered_list(
+            list(self.performance_evaluation)
+        )
+
         prompt_string = (
-            f"Constraints:\n{self._generate_numbered_list(self.constraints)}\n\n"
-            f"Commands:\n"
-            f"{self._generate_numbered_list(self.commands, item_type='command')}\n\n"
-            f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
-            f"Performance Evaluation:\n"
-            f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
+            f"Constraints:\n{constraints_list}\n\n"
+            f"Commands:\n{commands_list}\n\n"
+            f"Resources:\n{resources_list}\n\n"
+            f"Performance Evaluation:\n{performance_eval_list}\n\n"
             f"You should only respond in JSON format as described below "
             f"\nResponse Format: \n{formatted_response_format} "
             f"\nEnsure the response can be parsed by Python json.loads"
@@ -122,7 +127,7 @@ class PromptGenerator:
         return prompt_string
 
 
-def get_prompt(tools: Set[BaseTool]) -> str:
+def get_prompt(tools: List[BaseTool]) -> str:
     """This function generates a prompt string.
 
     It includes various constraints, commands, resources, and performance evaluations.
