@@ -51,7 +51,7 @@ class BabyAGI(Chain, BaseModel):
 
     @property
     def input_keys(self) -> List[str]:
-        return ["operating_system", "tool_names", "tools_summary", "objective", "task", "agent_name"]
+        return ["objective"]
 
     @property
     def output_keys(self) -> List[str]:
