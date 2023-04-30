@@ -3,6 +3,7 @@
 This page covers how to use the `GPT4All` wrapper within LangChain. The tutorial is divided into two parts: installation and setup, followed by usage with an example.
 
 ## Installation and Setup
+
 - Install the Python package with `pip install pyllamacpp`
 - Download a [GPT4All model](https://github.com/nomic-ai/pyllamacpp#supported-model) and place it in your desired directory
 
@@ -28,16 +29,16 @@ To stream the model's predictions, add in a CallbackManager.
 
 ```python
 from langchain.llms import GPT4All
-from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 # There are many CallbackHandlers supported, such as
 # from langchain.callbacks.streamlit import StreamlitCallbackHandler
 
-callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8, callback_handler=callback_handler, verbose=True)
+callbacks = [StreamingStdOutCallbackHandler()]
+model = GPT4All(model="./models/gpt4all-model.bin", n_ctx=512, n_threads=8)
 
 # Generate text. Tokens are streamed through the callback manager.
-model("Once upon a time, ")
+model("Once upon a time, ", callbacks=callbacks)
 ```
 
 ## Model File
