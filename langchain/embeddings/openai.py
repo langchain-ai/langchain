@@ -141,7 +141,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please install them with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         return values
 
@@ -156,7 +156,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         except ImportError:
             raise ValueError(
                 "Could not import tiktoken python package. "
-                "This is needed in order to calculate get_num_tokens. "
+                "This is needed for OpenAIEmbeddings. "
                 "Please install it with `pip install tiktoken`."
             )
 
