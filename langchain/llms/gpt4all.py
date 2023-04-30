@@ -130,7 +130,7 @@ class GPT4All(LLM):
             llama_keys = cls._llama_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
             values["client"] = GPT4AllModel(
-                ggml_model=values["model"],
+                model_path=values["model"],
                 **model_kwargs,
             )
 
