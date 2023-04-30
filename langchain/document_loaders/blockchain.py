@@ -95,9 +95,11 @@ class BlockchainDocumentLoader(BaseLoader):
                 }
                 result.append(Document(page_content=content, metadata=metadata))
 
+            # exit after the first API call if get_all_tokens is False
             if not self.get_all_tokens:
                 break
 
+            # get the start token for the next API call from the last item in array
             current_start_token = self._get_next_tokenId(result[-1].metadata["tokenId"])
 
         if not result:
@@ -107,6 +109,7 @@ class BlockchainDocumentLoader(BaseLoader):
 
         return result
 
+    # add one to the tokenId, ensuring the correct tokenId format is used
     def _get_next_tokenId(self, tokenId: str) -> str:
         value_type = self._detect_value_type(tokenId)
 
@@ -126,7 +129,9 @@ class BlockchainDocumentLoader(BaseLoader):
         else:
             return str(result)
 
-    def _detect_value_type(self, tokenId: str) -> str:
+    # A smart contract can use different formats for the tokenId
+    @staticmethod
+    def _detect_value_type(tokenId: str) -> str:
         if isinstance(tokenId, int):
             return "int"
         elif tokenId.startswith("0x"):
