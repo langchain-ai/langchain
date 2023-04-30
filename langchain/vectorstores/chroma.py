@@ -111,7 +111,7 @@ class Chroma(VectorStore):
                 return self._collection.query(
                     query_texts=query_texts,
                     query_embeddings=query_embeddings,
-                    n_results=n_results,
+                    n_results=i,
                     where=where,
                 )
             except chromadb.errors.NotEnoughElementsException:
