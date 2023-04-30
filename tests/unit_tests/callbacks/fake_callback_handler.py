@@ -94,7 +94,7 @@ class FakeCallbackHandler(BaseFakeCallbackHandler, BaseCallbackHandler):
         self.errors += 1
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         self.tool_starts += 1
@@ -119,6 +119,11 @@ class FakeCallbackHandler(BaseFakeCallbackHandler, BaseCallbackHandler):
         """Run when agent ends running."""
         self.agent_ends += 1
         self.ends += 1
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+        self.tool_starts += 1
+        self.starts += 1
 
 
 class FakeAsyncCallbackHandler(BaseFakeCallbackHandler, AsyncCallbackHandler):
@@ -165,7 +170,7 @@ class FakeAsyncCallbackHandler(BaseFakeCallbackHandler, AsyncCallbackHandler):
         self.errors += 1
 
     async def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
         self.tool_starts += 1
@@ -190,3 +195,8 @@ class FakeAsyncCallbackHandler(BaseFakeCallbackHandler, AsyncCallbackHandler):
         """Run when agent ends running."""
         self.agent_ends += 1
         self.ends += 1
+
+    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
+        """Run on agent action."""
+        self.tool_starts += 1
+        self.starts += 1

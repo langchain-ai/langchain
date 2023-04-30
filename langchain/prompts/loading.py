@@ -7,13 +7,14 @@ from typing import Union
 
 import yaml
 
-from langchain.prompts.base import BasePromptTemplate, RegexParser
+from langchain.output_parsers.regex import RegexParser
+from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
@@ -73,15 +74,15 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parser" in config:
-        if config["output_parser"] is not None:
-            _config = config["output_parser"]
+    if "output_parsers" in config:
+        if config["output_parsers"] is not None:
+            _config = config["output_parsers"]
             output_parser_type = _config["_type"]
             if output_parser_type == "regex_parser":
                 output_parser = RegexParser(**_config)
             else:
                 raise ValueError(f"Unsupported output parser {output_parser_type}")
-            config["output_parser"] = output_parser
+            config["output_parsers"] = output_parser
     return config
 
 

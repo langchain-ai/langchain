@@ -1,44 +1,41 @@
 """Load agent."""
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 from langchain.agents.agent import AgentExecutor
+from langchain.agents.agent_types import AgentType
 from langchain.agents.loading import AGENT_TO_CLASS, load_agent
-from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
-from langchain.llms.base import BaseLLM
+from langchain.schema import BaseLanguageModel
+from langchain.tools.base import BaseTool
 
 
 def initialize_agent(
-    tools: List[Tool],
-    llm: BaseLLM,
-    agent: Optional[str] = None,
+    tools: Sequence[BaseTool],
+    llm: BaseLanguageModel,
+    agent: Optional[AgentType] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
     agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Load agent given tools and LLM.
+    """Load an agent executor given tools and LLM.
 
     Args:
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
-        agent: The agent to use. Valid options are:
-            `zero-shot-react-description`
-            `react-docstore`
-            `self-ask-with-search`
-            `conversational-react-description`
-            If None and agent_path is also None, will default to
-            `zero-shot-react-description`.
+        agent: Agent type to use. If None and agent_path is also None, will default to
+            AgentType.ZERO_SHOT_REACT_DESCRIPTION.
         callback_manager: CallbackManager to use. Global callback manager is used if
             not provided. Defaults to None.
         agent_path: Path to serialized agent to use.
-        **kwargs: Additional key word arguments to pass to the agent.
+        agent_kwargs: Additional key word arguments to pass to the underlying agent
+        **kwargs: Additional key word arguments passed to the agent executor
 
     Returns:
-        An agent.
+        An agent executor
     """
     if agent is None and agent_path is None:
-        agent = "zero-shot-react-description"
+        agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:
         raise ValueError(
             "Both `agent` and `agent_path` are specified, "

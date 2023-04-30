@@ -31,7 +31,7 @@ def test_caching() -> None:
         [Generation(text="fizz")],
     ]
     expected_output = LLMResult(
-        expected_generations,
+        generations=expected_generations,
         llm_output=None,
     )
     assert output == expected_output
@@ -69,7 +69,7 @@ def test_custom_caching() -> None:
         [Generation(text="fizz")],
     ]
     expected_output = LLMResult(
-        expected_generations,
+        generations=expected_generations,
         llm_output=None,
     )
     assert output == expected_output

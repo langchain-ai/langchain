@@ -2,9 +2,12 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
-from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
+from langchain.chains.combine_documents.base import (
+    BaseCombineDocumentsChain,
+    format_document,
+)
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
 from langchain.prompts.base import BasePromptTemplate
@@ -15,7 +18,7 @@ def _get_default_document_prompt() -> PromptTemplate:
     return PromptTemplate(input_variables=["page_content"], template="{page_content}")
 
 
-class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
+class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context."""
 
     llm_chain: LLMChain
@@ -27,6 +30,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
+    document_separator: str = "\n\n"
+    """The string with which to join the formatted documents"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -37,8 +42,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
+        llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -47,7 +52,6 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
                     "multiple llm_chain_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "
@@ -56,24 +60,15 @@ class StuffDocumentsChain(BaseCombineDocumentsChain, BaseModel):
         return values
 
     def _get_inputs(self, docs: List[Document], **kwargs: Any) -> dict:
-        # Get relevant information from each document.
-        doc_dicts = []
-        for doc in docs:
-            base_info = {"page_content": doc.page_content}
-            base_info.update(doc.metadata)
-            document_info = {
-                k: base_info[k] for k in self.document_prompt.input_variables
-            }
-            doc_dicts.append(document_info)
         # Format each document according to the prompt
-        doc_strings = [self.document_prompt.format(**doc) for doc in doc_dicts]
+        doc_strings = [format_document(doc, self.document_prompt) for doc in docs]
         # Join the documents together to put them in the prompt.
         inputs = {
             k: v
             for k, v in kwargs.items()
             if k in self.llm_chain.prompt.input_variables
         }
-        inputs[self.document_variable_name] = "\n\n".join(doc_strings)
+        inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
 
     def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:

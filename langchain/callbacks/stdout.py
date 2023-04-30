@@ -53,11 +53,16 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self,
         serialized: Dict[str, Any],
-        action: AgentAction,
-        color: Optional[str] = None,
+        input_str: str,
         **kwargs: Any,
     ) -> None:
-        """Print out the log in specified color."""
+        """Do nothing."""
+        pass
+
+    def on_agent_action(
+        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+    ) -> Any:
+        """Run on agent action."""
         print_text(action.log, color=color if color else self.color)
 
     def on_tool_end(
@@ -69,9 +74,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
-        print_text(f"\n{observation_prefix}")
+        if observation_prefix is not None:
+            print_text(f"\n{observation_prefix}")
         print_text(output, color=color if color else self.color)
-        print_text(f"\n{llm_prefix}")
+        if llm_prefix is not None:
+            print_text(f"\n{llm_prefix}")
 
     def on_tool_error(
         self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
