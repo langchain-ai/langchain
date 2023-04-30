@@ -3,7 +3,7 @@ from langchain.llms.openai import OpenAI
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 
 
-class TestAgent():
+class TestAgent:
     def test_agent_generation(self) -> None:
         web_search = DuckDuckGoSearchRun()
         tools = [web_search]
@@ -14,4 +14,3 @@ class TestAgent():
             llm=OpenAI(maxTokens=10),
         )
         assert agent.allowed_tools == set([web_search.name])
-    
