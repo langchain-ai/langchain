@@ -334,16 +334,16 @@ class BaseChatMessageHistory(BaseModel, ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.refresh_buffer()
+        self.refresh_cache()
 
-    def _add_to_buffer(self, message: BaseMessage) -> None:
+    def _add_to_cache(self, message: BaseMessage) -> None:
         self.messages.append(message)
 
     def _sort_message_logs(self, message_logs: List[MessageLog]) -> List[MessageLog]:
         # TODO: Test correctness of this sorting logic
         return sorted(message_logs, key=lambda message_log: message_log.created_at)
 
-    def refresh_buffer(self):
+    def refresh_cache(self):
         self.messages = []
         message_logs = self.load_message_logs()
         message_logs = self._sort_message_logs(message_logs)
@@ -358,7 +358,7 @@ class BaseChatMessageHistory(BaseModel, ABC):
             message_type="human"
         )
         self.save_message_log(message_log)
-        self._add_to_buffer(message_log.to_message())
+        self._add_to_cache(message_log.to_message())
 
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
@@ -369,7 +369,7 @@ class BaseChatMessageHistory(BaseModel, ABC):
             message_type="ai"
         )
         self.save_message_log(message_log)
-        self._add_to_buffer(message_log.to_message())
+        self._add_to_cache(message_log.to_message())
     
     def add_system_message(self, message: str) -> None:
         """Add an AI message to the store"""
@@ -380,7 +380,7 @@ class BaseChatMessageHistory(BaseModel, ABC):
             message_type="system"
         )
         self.save_message_log(message_log)
-        self._add_to_buffer(message_log.to_message())
+        self._add_to_cache(message_log.to_message())
 
     @abstractmethod
     def save_message_log(self, message_log: MessageLog) -> None:

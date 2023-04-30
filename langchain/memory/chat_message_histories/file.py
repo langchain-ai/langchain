@@ -28,10 +28,13 @@ class FileChatMessageHistory(BaseChatMessageHistory):
 
     file_path: Path
 
-    @validator('file_path', pre=True)
+    @validator('file_path')
     def initialize_file_path(cls, value) -> Path:
         if type(value) == str:
             file_path = Path(value)
+        
+        else:
+            file_path = value
 
         if not file_path.exists():
             file_path.touch()
