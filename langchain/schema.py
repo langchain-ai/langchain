@@ -77,15 +77,24 @@ class BaseMessage(BaseModel):
     def type(self) -> str:
         """Type of the message, used for serialization."""
 
-    def to_message_log(self, session_id: str, created_at: Optional[datetime] = None) -> MessageLog:
+    def to_message_log(self, created_at: Optional[datetime] = None) -> MessageLog:
         """Convert BaseMessage to MessageLog"""
-        return MessageLog(
-            session_id=session_id,
-            content=self.content,
-            created_at=created_at,
-            _type=self.type,
-            role=self.type if self.role is None else self.role
-        )
+        if created_at is not None:
+            return MessageLog(
+                content=self.content,
+                created_at=created_at,
+                message_type=self.type,
+                role=self.role if hasattr(self, "role") else self.type,
+                extra_variables=self.additional_kwargs
+            )
+
+        else:
+            return MessageLog(
+                content=self.content,
+                message_type=self.type,
+                role=self.role if hasattr(self, "role") else self.type,
+                extra_variables=self.additional_kwargs
+            ) 
 
 
 class HumanMessage(BaseMessage):
