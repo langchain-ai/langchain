@@ -125,7 +125,7 @@ class GPT4All(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from pygpt4all.model import Model as GPT4AllModel
+            from pygpt4all.models.gpt4all import GPT4All as GPT4AllModel
 
             llama_keys = cls._llama_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
