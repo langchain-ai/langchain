@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 from pydantic import BaseModel, Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 
@@ -204,7 +205,12 @@ class RWKV(LLM, BaseModel):
 
         return decoded
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         r"""RWKV generation
 
         Args:

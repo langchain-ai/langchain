@@ -35,14 +35,19 @@ def create_pandas_dataframe_agent(
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix, input_variables=input_variables
     )
-    partial_prompt = prompt.partial(df=str(df.head()))
+    partial_prompt = prompt.partial(df=str(df.head().to_markdown()))
     llm_chain = LLMChain(
         llm=llm,
         prompt=partial_prompt,
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    agent = ZeroShotAgent(
+        llm_chain=llm_chain,
+        allowed_tools=tool_names,
+        callback_manager=callback_manager,
+        **kwargs,
+    )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
@@ -51,4 +56,5 @@ def create_pandas_dataframe_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        callback_manager=callback_manager,
     )

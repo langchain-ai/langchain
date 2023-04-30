@@ -1,12 +1,15 @@
 """Tools for interacting with vectorstores."""
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import VectorDBQA
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 from langchain.tools.base import BaseTool
@@ -43,14 +46,24 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         )
         return template.format(name=name, description=description)
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
-        chain = VectorDBQA.from_chain_type(self.llm, vectorstore=self.vectorstore)
+        chain = RetrievalQA.from_chain_type(
+            self.llm, retriever=self.vectorstore.as_retriever()
+        )
         return chain.run(query)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("VectorDBQATool does not support async")
+        raise NotImplementedError("VectorStoreQATool does not support async")
 
 
 class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
@@ -69,13 +82,21 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
         )
         return template.format(name=name, description=description)
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
-        chain = VectorDBQAWithSourcesChain.from_chain_type(
-            self.llm, vectorstore=self.vectorstore
+        chain = RetrievalQAWithSourcesChain.from_chain_type(
+            self.llm, retriever=self.vectorstore.as_retriever()
         )
         return json.dumps(chain({chain.question_key: query}, return_only_outputs=True))
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("VectorDBQATool does not support async")
+        raise NotImplementedError("VectorStoreQAWithSourcesTool does not support async")
