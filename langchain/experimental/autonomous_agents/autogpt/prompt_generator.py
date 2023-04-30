@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Set
 
 from langchain.tools.base import BaseTool
 
@@ -18,10 +18,10 @@ class PromptGenerator:
         Starts with empty lists of constraints, commands, resources,
         and performance evaluations.
         """
-        self.constraints: List[str] = []
+        self.constraints: Set[str] = []
         self.commands: List[BaseTool] = []
-        self.resources: List[str] = []
-        self.performance_evaluation: List[str] = []
+        self.resources: Set[str] = []
+        self.performance_evaluation: Set[str] = []
         self.response_format = {
             "thoughts": {
                 "text": "thought",
@@ -122,7 +122,7 @@ class PromptGenerator:
         return prompt_string
 
 
-def get_prompt(tools: List[BaseTool]) -> str:
+def get_prompt(tools: Set[BaseTool]) -> str:
     """This function generates a prompt string.
 
     It includes various constraints, commands, resources, and performance evaluations.
