@@ -27,6 +27,13 @@ from langchain.tools.playwright import (
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.vectorstore.tool import (
+    VectorStoreQATool,
+    VectorStoreQAWithSourcesTool,
+)
+from langchain.tools.wikipedia.tool import WikipediaQueryRun
+from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 
 __all__ = [
     "AIPluginTool",
@@ -60,4 +67,10 @@ __all__ = [
     "WriteFileTool",
     "BaseTool",
     "SceneXplainTool",
+    "VectorStoreQAWithSourcesTool",
+    "VectorStoreQATool",
+    "WikipediaQueryRun",
+    "WolframAlphaQueryRun",
+    "ZapierNLARunAction",
+    "ZapierNLAListActions",
 ]
