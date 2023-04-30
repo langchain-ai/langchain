@@ -67,6 +67,13 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
   - [`GPT-4` Tutorial: How to Chat With Multiple `PDF` Files (~1000 pages of Tesla's 10-K Annual Reports)](https://youtu.be/Ix9WIZpArm0)
   - [`GPT-4` & LangChain Tutorial: How to Chat With A 56-Page `PDF` Document (w/`Pinecone`)](https://youtu.be/ih9PBGVVOO4)
 
+- [Get SH\*T Done with Prompt Engineering and LangChain](https://www.youtube.com/watch?v=muXbPpG_ys4&list=PLEJK-H61Xlwzm5FYLDdKt_6yibO33zoMW) by [Venelin Valkov](https://www.youtube.com/@venelin_valkov)
+  - [Getting Started with LangChain: Load Custom Data, Run OpenAI Models, Embeddings and `ChatGPT`](https://www.youtube.com/watch?v=muXbPpG_ys4)
+  - [Loaders, Indexes & Vectorstores in LangChain: Question Answering on `PDF` files with `ChatGPT`](https://www.youtube.com/watch?v=FQnvfR8Dmr0)
+  - [LangChain Models: `ChatGPT`, `Flan Alpaca`, `OpenAI Embeddings`, Prompt Templates & Streaming](https://www.youtube.com/watch?v=zy6LiK5F5-s)
+  - [LangChain Chains: Use `ChatGPT` to Build Conversational Agents, Summaries and Q&A on Text With LLMs](https://www.youtube.com/watch?v=h1tJZQPcimM)
+  - [Analyze Custom CSV Data with `GPT-4` using Langchain](https://www.youtube.com/watch?v=Ew3sGdX8at4)
+
 ## Videos (sorted by views)
 
 - [Building AI LLM Apps with LangChain (and more?) - LIVE STREAM](https://www.youtube.com/live/M-2Cj_2fzWI?feature=share) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
@@ -84,7 +91,6 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
 - [4 Autonomous AI Agents: “Westworld” simulation `BabyAGI`, `AutoGPT`, `Camel`, `LangChain`](https://youtu.be/yWbnH6inT_U) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [AI CAN SEARCH THE INTERNET? Langchain Agents + OpenAI ChatGPT](https://youtu.be/J-GL0htqda8) by [tylerwhatsgood](https://www.youtube.com/@tylerwhatsgood)
 - [`Weaviate` + LangChain for LLM apps presented by Erika Cardenas](https://youtu.be/7AGj4Td5Lgw) by [`Weaviate` • Vector Database](https://www.youtube.com/@Weaviate)
-- [Analyze Custom `CSV` Data with `GPT-4` using Langchain](https://youtu.be/Ew3sGdX8at4) by [Venelin Valkov](https://www.youtube.com/@venelin_valkov) 
 - [Langchain Overview - How to Use Langchain & `ChatGPT`](https://youtu.be/oYVYIq0lOtI) by [Python In Office](https://www.youtube.com/@pythoninoffice6568)
 - [Custom langchain Agent & Tools with memory. Turn any `Python function` into langchain tool with Gpt 3](https://youtu.be/NIG8lXk0ULg) by [echohive](https://www.youtube.com/@echohive)
 - [`ChatGPT` with any `YouTube` video using langchain and `chromadb`](https://youtu.be/TQZfB2bzVwU) by [echohive](https://www.youtube.com/@echohive)
