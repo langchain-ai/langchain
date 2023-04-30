@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel, Field
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 from langchain.llms.openai import OpenAI
 from langchain.tools import BaseTool
 from langchain.tools.vectorstore.tool import (
