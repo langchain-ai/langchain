@@ -52,7 +52,7 @@ class RouterChain(LLMChain):
 
     @property
     def _chain_type(self) -> str:
-        return "conversational_router_chain"
+        return "router_chain"
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         _input = inputs[self.input_key]
