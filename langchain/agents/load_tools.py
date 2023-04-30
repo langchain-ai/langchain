@@ -6,6 +6,7 @@ from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
@@ -256,6 +257,7 @@ def load_tools(
     tool_names: List[str],
     llm: Optional[BaseLLM] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
+    callbacks: Optional[Callbacks] = None,
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
