@@ -1,6 +1,7 @@
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.agents.chat.base import ChatAgent
 from langchain.llms.openai import OpenAI
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
+
 
 class TestAgent():
     def test_agent_generation(self) -> None:
