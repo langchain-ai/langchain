@@ -37,6 +37,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -165,6 +166,14 @@ def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
+def _get_lambda_api(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name=kwargs["awslambda_tool_name"],
+        description=kwargs["awslambda_tool_description"],
+        func=LambdaWrapper(**kwargs).run,
+    )
+
+
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
     return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
 
@@ -249,6 +258,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
+    "awslambda": (
+        _get_lambda_api,
+        ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
+    ),
 }
 
 
