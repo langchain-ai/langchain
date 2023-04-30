@@ -15,7 +15,6 @@ from typing import (
 )
 
 from datetime import datetime
-from uuid import uuid4
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
@@ -267,7 +266,6 @@ class BaseMemory(BaseModel, ABC):
         """Clear memory contents."""
 
 class MessageLog(BaseModel):
-    session_id: str
     created_at: datetime = Field(default_factory=datetime.now)
     content: str
     role: str
@@ -330,7 +328,6 @@ class BaseChatMessageHistory(BaseModel, ABC):
     """
 
     messages: List[BaseMessage] = []
-    session_id: str = Field(default_factory=lambda: str(uuid4()))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -352,7 +349,6 @@ class BaseChatMessageHistory(BaseModel, ABC):
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
         message_log = MessageLog(
-            session_id=self.session_id,
             content=message,
             role="human",
             message_type="human"
@@ -363,7 +359,6 @@ class BaseChatMessageHistory(BaseModel, ABC):
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
         message_log = MessageLog(
-            session_id=self.session_id,
             content=message,
             role="ai",
             message_type="ai"
@@ -374,7 +369,6 @@ class BaseChatMessageHistory(BaseModel, ABC):
     def add_system_message(self, message: str) -> None:
         """Add an AI message to the store"""
         message_log = MessageLog(
-            session_id=self.session_id,
             content=message,
             role="system",
             message_type="system"

@@ -27,6 +27,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
     """
 
     file_path: Path
+    legacy: bool = False
 
     @validator('file_path')
     def initialize_file_path(cls, value) -> Path:

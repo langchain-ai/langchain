@@ -2,7 +2,9 @@ import json
 import logging
 from typing import List, Dict, Any
 
-from pydantic import root_validator
+from pydantic import root_validator, Field
+
+from uuid import uuid4
 
 from langchain.schema import (
     AIMessage,
@@ -16,14 +18,16 @@ from langchain.schema import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost:5432/"
+DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost:5432/chat_history"
 
 class PostgresChatMessageHistory(BaseChatMessageHistory):
 
+    session_id: str = Field(default_factory=lambda: str(uuid4()))
     connection_string: str = DEFAULT_CONNECTION_STRING
     table_name: str = "message_store"
     connection: Any
     cursor: Any
+    legacy: bool = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -67,7 +71,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
         # Create a tuple of values to insert into the query
         values = (
-            message_log.session_id,
+            self.session_id,
             message_log.created_at,
             message_log.content,
             message_log.role,
@@ -87,6 +91,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         records = []
         for i in self.cursor.fetchall():
             del i["id"]
+            del i["session_id"]
             records.append(i)
         message_logs = [MessageLog(**i) for i in records]
         return message_logs
