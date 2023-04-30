@@ -1,13 +1,13 @@
 """Pass input through a moderation endpoint."""
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
 from langchain.chains.base import Chain
 from langchain.utils import get_from_dict_or_env
 
 
-class OpenAIModerationChain(Chain, BaseModel):
+class OpenAIModerationChain(Chain):
     """Pass input through a moderation endpoint.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -31,6 +31,7 @@ class OpenAIModerationChain(Chain, BaseModel):
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -38,15 +39,23 @@ class OpenAIModerationChain(Chain, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
             values["client"] = openai.Moderation
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         return values
 

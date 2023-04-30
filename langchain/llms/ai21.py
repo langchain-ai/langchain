@@ -19,7 +19,7 @@ class AI21PenaltyData(BaseModel):
     applyToEmojis: bool = True
 
 
-class AI21(LLM, BaseModel):
+class AI21(LLM):
     """Wrapper around AI21 large language models.
 
     To use, you should have the environment variable ``AI21_API_KEY``
@@ -28,11 +28,11 @@ class AI21(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import AI21
-            ai21 = AI21(model="j1-jumbo")
+            from langchain.llms import AI21
+            ai21 = AI21(model="j2-jumbo-instruct")
     """
 
-    model: str = "j1-jumbo"
+    model: str = "j2-jumbo-instruct"
     """Model name to use."""
 
     temperature: float = 0.7

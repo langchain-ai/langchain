@@ -21,7 +21,7 @@ If you are using a model hosted on Azure, you should use different wrapper for t
 ```python
 from langchain.llms import AzureOpenAI
 ```
-For a more detailed walkthrough of the Azure wrapper, see [this notebook](../modules/llms/integrations/azure_openai_example.ipynb)
+For a more detailed walkthrough of the Azure wrapper, see [this notebook](../modules/models/llms/integrations/azure_openai_example.ipynb)
 
 
 
@@ -31,7 +31,7 @@ There exists an OpenAI Embeddings wrapper, which you can access with
 ```python
 from langchain.embeddings import OpenAIEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/utils/combine_docs_examples/embeddings.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/models/text_embedding/examples/openai.ipynb)
 
 
 ### Tokenizer
@@ -44,7 +44,7 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](../modules/utils/combine_docs_examples/textsplitter.ipynb)
+For a more detailed walkthrough of this, see [this notebook](../modules/indexes/text_splitters/examples/tiktoken.ipynb)
 
 ### Moderation
 You can also access the OpenAI content moderation endpoint with

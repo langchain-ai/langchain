@@ -1,7 +1,13 @@
-"""Chain that calls SearxNG meta search API.
+"""Utility for using SearxNG meta search API.
 
 SearxNG is a privacy-friendly free metasearch engine that aggregates results from
-multiple search engines and databases.
+`multiple search engines
+<https://docs.searxng.org/admin/engines/configured_engines.html>`_ and databases and
+supports the `OpenSearch 
+<https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md>`_
+specification.
+
+More detailes on the installtion instructions `here. <../../ecosystem/searx.html>`_
 
 For the search API refer to https://docs.searxng.org/dev/search_api.html
 
@@ -9,7 +15,7 @@ Quick Start
 -----------
 
 
-In order to use this chain you need to provide the searx host. This can be done
+In order to use this utility you need to provide the searx host. This can be done
 by passing the named parameter :attr:`searx_host <SearxSearchWrapper.searx_host>`
 or exporting the environment variable SEARX_HOST.
 Note: this is the only required parameter.
@@ -32,9 +38,6 @@ You can now use the ``search`` instance to query the searx API.
 Searching
 ---------
 
-ref to the run method with a custom name
-
-
 Use the :meth:`run() <SearxSearchWrapper.run>` and
 :meth:`results() <SearxSearchWrapper.results>` methods to query the searx API.
 Other methods are are available for convenience.
@@ -45,7 +48,6 @@ Example usage of the ``run`` method to make a search:
 
     .. code-block:: python
 
-        # using google and duckduckgo engines
         s.run(query="what is the best search engine?")
 
 Engine Parameters
@@ -82,6 +84,28 @@ For example the following query:
         # or even:
         s = SearxSearchWrapper("langchain library !gh")
 
+
+In some situations you might want to pass an extra string to the search query.
+For example when the `run()` method is called by an agent. The search suffix can
+also be used as a way to pass extra parameters to searx or the underlying search
+engines.
+
+    .. code-block:: python
+
+        # select the github engine and pass the search suffix
+        s = SearchWrapper("langchain library", query_suffix="!gh")
+
+
+        s = SearchWrapper("langchain library")
+        # select github the conventional google search syntax
+        s.run("large language models", query_suffix="site:github.com")
+
+
+*NOTE*: A search suffix can be defined on both the instance and the method level.
+The resulting query will be the concatenation of the two with the former taking
+precedence.
+
+
 See `SearxNG Configured Engines
 <https://docs.searxng.org/admin/engines/configured_engines.html>`_ and
 `SearxNG Search Syntax <https://docs.searxng.org/user/index.html#id1>`_
@@ -105,6 +129,7 @@ For a list of public SearxNG instances see https://searx.space/
 import json
 from typing import Any, Dict, List, Optional
 
+import aiohttp
 import requests
 from pydantic import BaseModel, Extra, Field, PrivateAttr, root_validator, validator
 
@@ -132,12 +157,15 @@ class SearxResults(dict):
 
     @property
     def results(self) -> Any:
-        """Silence mypy for accessing this field."""
+        """Silence mypy for accessing this field.
+
+        :meta private:
+        """
         return self.get("results")
 
     @property
     def answers(self) -> Any:
-        """Accessor helper on the json result."""
+        """Helper accessor on the json result."""
         return self.get("answers")
 
 
@@ -155,7 +183,7 @@ class SearxSearchWrapper(BaseModel):
         .. code-block:: python
 
             from langchain.utilities import SearxSearchWrapper
-            searx = SearxSearchWrapper(searx_host="https://searx.example.com")
+            searx = SearxSearchWrapper(searx_host="http://localhost:8888")
 
     Example with SSL disabled:
         .. code-block:: python
@@ -163,7 +191,7 @@ class SearxSearchWrapper(BaseModel):
             from langchain.utilities import SearxSearchWrapper
             # note the unsecure parameter is not needed if you pass the url scheme as
             # http
-            searx = SearxSearchWrapper(searx_host="http://searx.example.com",
+            searx = SearxSearchWrapper(searx_host="http://localhost:8888",
                                                     unsecure=True)
 
 
@@ -175,7 +203,10 @@ class SearxSearchWrapper(BaseModel):
     params: dict = Field(default_factory=_get_default_params)
     headers: Optional[dict] = None
     engines: Optional[List[str]] = []
+    categories: Optional[List[str]] = []
+    query_suffix: Optional[str] = ""
     k: int = 10
+    aiosession: Optional[Any] = None
 
     @validator("unsecure")
     def disable_ssl_warnings(cls, v: bool) -> bool:
@@ -201,6 +232,10 @@ class SearxSearchWrapper(BaseModel):
         engines = values.get("engines")
         if engines:
             values["params"]["engines"] = ",".join(engines)
+
+        categories = values.get("categories")
+        if categories:
+            values["params"]["categories"] = ",".join(categories)
 
         searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
         if not searx_host.startswith("http"):
@@ -236,15 +271,58 @@ class SearxSearchWrapper(BaseModel):
         self._result = res
         return res
 
-    def run(self, query: str, engines: List[str] = [], **kwargs: Any) -> str:
+    async def _asearx_api_query(self, params: dict) -> SearxResults:
+        if not self.aiosession:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    self.searx_host,
+                    headers=self.headers,
+                    params=params,
+                    ssl=(lambda: False if self.unsecure else None)(),
+                ) as response:
+                    if not response.ok:
+                        raise ValueError("Searx API returned an error: ", response.text)
+                    result = SearxResults(await response.text())
+                    self._result = result
+        else:
+            async with self.aiosession.get(
+                self.searx_host,
+                headers=self.headers,
+                params=params,
+                verify=not self.unsecure,
+            ) as response:
+                if not response.ok:
+                    raise ValueError("Searx API returned an error: ", response.text)
+                result = SearxResults(await response.text())
+                self._result = result
+
+        return result
+
+    def run(
+        self,
+        query: str,
+        engines: Optional[List[str]] = None,
+        categories: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
+    ) -> str:
         """Run query through Searx API and parse results.
 
         You can pass any other params to the searx query API.
 
         Args:
             query: The query to search for.
+            query_suffix: Extra suffix appended to the query.
             engines: List of engines to use for the query.
+            categories: List of categories to use for the query.
             **kwargs: extra parameters to pass to the searx API.
+
+        Returns:
+            str: The result of the query.
+
+        Raises:
+            ValueError: If an error occured with the query.
+
 
         Example:
             This will make a query to the qwant engine:
@@ -255,14 +333,26 @@ class SearxSearchWrapper(BaseModel):
                 searx = SearxSearchWrapper(searx_host="http://my.searx.host")
                 searx.run("what is the weather in France ?", engine="qwant")
 
+                # the same result can be achieved using the `!` syntax of searx
+                # to select the engine using `query_suffix`
+                searx.run("what is the weather in France ?", query_suffix="!qwant")
         """
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
 
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
+
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
+
+        if isinstance(categories, list) and len(categories) > 0:
+            params["categories"] = ",".join(categories)
 
         res = self._searx_api_query(params)
 
@@ -277,45 +367,143 @@ class SearxSearchWrapper(BaseModel):
 
         return toret
 
+    async def arun(
+        self,
+        query: str,
+        engines: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
+    ) -> str:
+        """Asynchronously version of `run`."""
+        _params = {
+            "q": query,
+        }
+        params = {**self.params, **_params, **kwargs}
+
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
+
+        if isinstance(engines, list) and len(engines) > 0:
+            params["engines"] = ",".join(engines)
+
+        res = await self._asearx_api_query(params)
+
+        if len(res.answers) > 0:
+            toret = res.answers[0]
+
+        # only return the content of the results list
+        elif len(res.results) > 0:
+            toret = "\n\n".join([r.get("content", "") for r in res.results[: self.k]])
+        else:
+            toret = "No good search result found"
+
+        return toret
+
     def results(
-        self, query: str, num_results: int, engines: List[str] = [], **kwargs: Any
+        self,
+        query: str,
+        num_results: int,
+        engines: Optional[List[str]] = None,
+        categories: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
     ) -> List[Dict]:
         """Run query through Searx API and returns the results with metadata.
 
         Args:
             query: The query to search for.
+
+            query_suffix: Extra suffix appended to the query.
+
             num_results: Limit the number of results to return.
+
             engines: List of engines to use for the query.
+
+            categories: List of categories to use for the query.
+
             **kwargs: extra parameters to pass to the searx API.
 
         Returns:
-            A list of dictionaries with the following keys:
-                snippet - The description of the result.
-                title - The title of the result.
-                link - The link to the result.
-                engines - The engines used for the result.
-                category - Searx category of the result.
+            Dict with the following keys:
+
+            {
+                snippet:  The description of the result.
+
+                title:  The title of the result.
+
+                link: The link to the result.
+
+                engines: The engines used for the result.
+
+                category: Searx category of the result.
+            }
 
 
         """
-        metadata_results = []
         _params = {
             "q": query,
         }
         params = {**self.params, **_params, **kwargs}
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
         if isinstance(engines, list) and len(engines) > 0:
             params["engines"] = ",".join(engines)
+        if isinstance(categories, list) and len(categories) > 0:
+            params["categories"] = ",".join(categories)
         results = self._searx_api_query(params).results[:num_results]
         if len(results) == 0:
             return [{"Result": "No good Search Result was found"}]
-        for result in results:
-            metadata_result = {
+
+        return [
+            {
                 "snippet": result.get("content", ""),
                 "title": result["title"],
                 "link": result["url"],
                 "engines": result["engines"],
                 "category": result["category"],
             }
-            metadata_results.append(metadata_result)
+            for result in results
+        ]
 
-        return metadata_results
+    async def aresults(
+        self,
+        query: str,
+        num_results: int,
+        engines: Optional[List[str]] = None,
+        query_suffix: Optional[str] = "",
+        **kwargs: Any,
+    ) -> List[Dict]:
+        """Asynchronously query with json results.
+
+        Uses aiohttp. See `results` for more info.
+        """
+        _params = {
+            "q": query,
+        }
+        params = {**self.params, **_params, **kwargs}
+
+        if self.query_suffix and len(self.query_suffix) > 0:
+            params["q"] += " " + self.query_suffix
+        if isinstance(query_suffix, str) and len(query_suffix) > 0:
+            params["q"] += " " + query_suffix
+        if isinstance(engines, list) and len(engines) > 0:
+            params["engines"] = ",".join(engines)
+        results = (await self._asearx_api_query(params)).results[:num_results]
+        if len(results) == 0:
+            return [{"Result": "No good Search Result was found"}]
+
+        return [
+            {
+                "snippet": result.get("content", ""),
+                "title": result["title"],
+                "link": result["url"],
+                "engines": result["engines"],
+                "category": result["category"],
+            }
+            for result in results
+        ]

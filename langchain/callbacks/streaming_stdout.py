@@ -41,9 +41,13 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run when chain errors."""
 
     def on_tool_start(
-        self, serialized: Dict[str, Any], action: AgentAction, **kwargs: Any
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Run when tool starts running."""
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+        pass
 
     def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """Run when tool ends running."""

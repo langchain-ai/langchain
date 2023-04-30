@@ -1,9 +1,9 @@
-"""Utilities for loading configurations from langchian-hub."""
+"""Utilities for loading configurations from langchain-hub."""
 
 import os
 import re
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Optional, Set, TypeVar, Union
 from urllib.parse import urljoin
 
@@ -15,7 +15,6 @@ URL_BASE = os.environ.get(
     "https://raw.githubusercontent.com/hwchase17/langchain-hub/{ref}/",
 )
 HUB_PATH_RE = re.compile(r"lc(?P<ref>@[^:]+)?://(?P<path>.*)")
-
 
 T = TypeVar("T")
 
@@ -38,7 +37,13 @@ def try_load_from_hub(
     if remote_path.suffix[1:] not in valid_suffixes:
         raise ValueError("Unsupported file type.")
 
-    full_url = urljoin(URL_BASE.format(ref=ref), str(remote_path))
+    # Using Path with URLs is not recommended, because on Windows
+    # the backslash is used as the path separator, which can cause issues
+    # when working with URLs that use forward slashes as the path separator.
+    # Instead, use PurePosixPath to ensure that forward slashes are used as the
+    # path separator, regardless of the operating system.
+    full_url = urljoin(URL_BASE.format(ref=ref), PurePosixPath(remote_path).__str__())
+
     r = requests.get(full_url, timeout=5)
     if r.status_code != 200:
         raise ValueError(f"Could not find file at {full_url}")

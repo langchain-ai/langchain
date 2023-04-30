@@ -11,3 +11,7 @@ pre {
     max-width: 2560px !important;
   }
 }
+
+#my-component-root *, #headlessui-portal-root * {
+  z-index: 1000000000000;
+}

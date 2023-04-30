@@ -49,6 +49,7 @@ class GoogleSearchAPIWrapper(BaseModel):
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
+    siterestrict: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -56,12 +57,11 @@ class GoogleSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
-        res = (
-            self.search_engine.cse()
-            .list(q=search_term, cx=self.google_cse_id, **kwargs)
-            .execute()
-        )
-        return res["items"]
+        cse = self.search_engine.cse()
+        if self.siterestrict:
+            cse = cse.siterestrict()
+        res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
+        return res.get("items", [])
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -86,7 +86,6 @@ class GoogleSearchAPIWrapper(BaseModel):
         service = build("customsearch", "v1", developerKey=google_api_key)
         values["search_engine"] = service
 
-        # TODO: Add error handling if keys are missing
         return values
 
     def run(self, query: str) -> str:
