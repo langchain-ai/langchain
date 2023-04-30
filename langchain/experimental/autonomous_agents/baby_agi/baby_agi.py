@@ -103,14 +103,14 @@ class BabyAGI(Chain, BaseModel):
         results = self.vectorstore.similarity_search(query, k=k)
         if not results:
             return []
+        return [str(item.metadata["task"]) for item in results]
 
-        return filter(lambda item: "task" in item.metadata, results)
-
-    def execute_task(self, objective: str, task: str, inputs, k: int = 5) -> str:
+    def execute_task(self, objective: str, task: str, k: int = 5) -> str:
         """Execute a task."""
         context = self._get_top_tasks(query=objective, k=k)
-        filtered_inputs = {key: value for key, value in inputs.items() if key != "task"}
-        return self.execution_chain.run(context="\n".join(context), task=task, **filtered_inputs)
+        return self.execution_chain.run(
+            objective=objective, context="\n".join(context), task=task
+        )
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent."""
@@ -127,7 +127,7 @@ class BabyAGI(Chain, BaseModel):
                 self.print_next_task(task)
 
                 # Step 2: Execute the task
-                result = self.execute_task(objective, task["task_name"], inputs)
+                result = self.execute_task(objective, task["task_name"])
                 this_task_id = int(task["task_id"])
                 self.print_task_result(result)
 
