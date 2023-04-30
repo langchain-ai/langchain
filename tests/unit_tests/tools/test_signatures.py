@@ -21,7 +21,8 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
             and subclass not in to_skip
         ):
             subclasses.append(subclass)
-        subclasses.extend(get_non_abstract_subclasses(subclass))
+        sc = get_non_abstract_subclasses(subclass)
+        subclasses.extend(sc)
     return subclasses
 
 
