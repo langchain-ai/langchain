@@ -16,7 +16,7 @@ class DeepSparse():
             
         .. code-block:: python
         
-            from langchain.transformers.neuralmagic import DeepSparse
+            from langchain.transformers.deepsparse import DeepSparse
 
             meta_agent = DeepSparse(model='zoo:nlp/<PLACEHOLDER>')
             predict = meta_agent('i'm a prompt')
