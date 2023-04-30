@@ -35,6 +35,9 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
+        primary_field: str = "pk",
+        text_field: str = "text",
+        vector_field: str = "vector"
     ):
         """Initialize wrapper around the milvus vector database.
 
@@ -90,6 +93,12 @@ class Milvus(VectorStore):
                 default of index.
             drop_old (Optional[bool]): Whether to drop the current collection. Defaults
                 to False.
+            primary_field (str): The primary key field of the collection schema. Defaults to
+                "pk".
+            text_field (str): The text field of the collection schema. Defaults to
+                "text".
+            vector_field (str): The vector field of the collection schema. Defaults to
+                "vector".
         """
         try:
             from pymilvus import Collection, utility
@@ -119,12 +128,6 @@ class Milvus(VectorStore):
         self.search_params = search_params
         self.consistency_level = consistency_level
 
-        # In order for a collection to be compatible, pk needs to be auto'id and int
-        self._primary_field = "pk"
-        # In order for compatiblility, the text field will need to be called "text"
-        self._text_field = "text"
-        # In order for compatbility, the vector field needs to be called "vector"
-        self._vector_field = "vector"
         self.fields: list[str] = []
         # Create the connection to the server
         if connection_args is None:
