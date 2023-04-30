@@ -5,7 +5,7 @@ from typing import Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
-    RunManager,
+    CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
 
@@ -20,7 +20,9 @@ class StdInInquireTool(BaseTool):
         " question (to disambiguate) or a request for more context."
     )
 
-    def _run(self, prompt: str, run_manager: Optional[RunManager] = None) -> str:
+    def _run(
+        self, prompt: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Prompt the user for more input."""
         return input(f"\n{prompt}")
 
