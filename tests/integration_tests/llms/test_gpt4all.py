@@ -12,7 +12,7 @@ def _download_model() -> str:
     convert to new ggml format and return model path."""
     model_url = "https://the-eye.eu/public/AI/models/nomic-ai/gpt4all/gpt4all-lora-quantized.bin"
     tokenizer_url = "https://huggingface.co/decapoda-research/llama-7b-hf/resolve/main/tokenizer.model"
-    conversion_script = "https://github.com/nomic-ai/pyllamacpp/blob/main/pyllamacpp/scripts/convert_gpt4all.py"
+    conversion_script = "https://raw.githubusercontent.com/nomic-ai/pygpt4all/main/pyllamacpp/pyllamacpp/scripts/convert_gpt4all.py"
     local_filename = model_url.split("/")[-1]
 
     if not os.path.exists("convert_gpt4all.py"):
