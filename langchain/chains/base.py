@@ -30,7 +30,9 @@ class Chain(BaseModel, ABC):
 
     memory: Optional[BaseMemory] = None
     callbacks: Callbacks = None
+    """Callbacks to be used during chain execution."""
     callback_manager: Optional[BaseCallbackManager] = None
+    """Deprecated. Use 'callbacks' instead."""
     verbose: bool = Field(
         default_factory=_get_verbosity
     )  # Whether to print the response text

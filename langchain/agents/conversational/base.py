@@ -10,7 +10,7 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.tools.base import BaseTool
@@ -85,7 +85,7 @@ class ConversationalAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -109,7 +109,8 @@ class ConversationalAgent(Agent):
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            callback_manager=callback_manager,
+            callbacks=callbacks,
+            callback_manager=kwargs.get("callback_manager"),
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser(

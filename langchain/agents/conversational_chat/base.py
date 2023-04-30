@@ -13,7 +13,7 @@ from langchain.agents.conversational_chat.prompt import (
     TEMPLATE_TOOL_RESPONSE,
 )
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
@@ -103,7 +103,7 @@ class ConversationalChatAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         output_parser: Optional[AgentOutputParser] = None,
         system_message: str = PREFIX,
         human_message: str = SUFFIX,
@@ -123,7 +123,8 @@ class ConversationalChatAgent(Agent):
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            callback_manager=callback_manager,
+            callbacks=callbacks,
+            callback_manager=kwargs.get("callback_manager"),
         )
         tool_names = [tool.name for tool in tools]
         return cls(

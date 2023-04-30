@@ -117,7 +117,7 @@ class BaseSingleActionAgent(BaseModel):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         raise NotImplementedError
@@ -513,7 +513,7 @@ class Agent(BaseSingleActionAgent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
     ) -> Agent:
@@ -522,7 +522,8 @@ class Agent(BaseSingleActionAgent):
         llm_chain = LLMChain(
             llm=llm,
             prompt=cls.create_prompt(tools),
-            callback_manager=callback_manager,
+            callbacks=callbacks,
+            callback_manager=kwargs.get("callback_manager"),
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()

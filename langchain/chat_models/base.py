@@ -36,7 +36,9 @@ class BaseChatModel(BaseLanguageModel, ABC):
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callbacks: Callbacks = None
+    """Callbacks to be used during chat."""
     callback_manager: Optional[BaseCallbackManager] = None
+    """Deprecated. Use 'callbacks' instead."""
 
     @root_validator()
     def raise_deprecation(cls, values: Dict) -> Dict:

@@ -6,7 +6,7 @@ from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
@@ -80,7 +80,7 @@ class ChatAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -100,7 +100,8 @@ class ChatAgent(Agent):
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            callback_manager=callback_manager,
+            callbacks=callbacks,
+            callback_manager=kwargs.get("callback_manager"),
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()

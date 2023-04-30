@@ -11,7 +11,7 @@ from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.tools.base import BaseTool
@@ -89,7 +89,7 @@ class ZeroShotAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callbacks: Callbacks = None,
         output_parser: Optional[AgentOutputParser] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
@@ -109,7 +109,8 @@ class ZeroShotAgent(Agent):
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            callback_manager=callback_manager,
+            callbacks=callbacks,
+            callback_manager=kwargs.get("callback_manager"),
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()
