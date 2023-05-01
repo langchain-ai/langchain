@@ -117,10 +117,12 @@ class ConstitutionalChain(Chain):
             ).strip()
 
             ## if the critique contains "No critique needed", then we're done
+            ## in this case, initial_output is the same as output,
+            ## but we'll keep it for consistency
             if "no critique needed" in critique.lower():
                 return {
                     "output": response,
-                    "inital_output": initial_output,  # in this case, initial output is the same response, but we'll keep it for consistency
+                    "inital_output": initial_output,
                     "critique": critique,
                 }
 
