@@ -2,7 +2,7 @@
 """Load tools."""
 import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
-from mypy_extensions import KwArg
+from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
@@ -15,7 +15,7 @@ from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchTool
+from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
@@ -27,6 +27,7 @@ from langchain.tools.requests.tool import (
     RequestsPutTool,
 )
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
+from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import ArxivAPIWrapper
@@ -36,6 +37,7 @@ from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+from langchain.utilities.awslambda import LambdaWrapper
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
@@ -67,14 +69,10 @@ def _get_tools_requests_delete() -> BaseTool:
 
 
 def _get_terminal() -> BaseTool:
-    return Tool(
-        name="Terminal",
-        description="Executes commands in a terminal. Input should be valid commands, and the output will be any output from running that command.",
-        func=BashProcess().run,
-    )
+    return ShellTool()
 
 
-_BASE_TOOLS = {
+_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "python_repl": _get_python_repl,
     "requests": _get_tools_requests_get,  # preserved for backwards compatability
     "requests_get": _get_tools_requests_get,
@@ -106,8 +104,8 @@ def _get_llm_math(llm: BaseLLM) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
-        func=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).run,
-        coroutine=LLMMathChain(llm=llm, callback_manager=llm.callback_manager).arun,
+        func=LLMMathChain.from_llm(llm=llm).run,
+        coroutine=LLMMathChain.from_llm(llm=llm).arun,
     )
 
 
@@ -120,7 +118,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS = {
+_LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
@@ -165,6 +163,14 @@ def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
         name="Podcast API",
         description="Use the Listen Notes Podcast API to search all podcasts or episodes. The input should be a question in natural language that this API can answer.",
         func=chain.run,
+    )
+
+
+def _get_lambda_api(**kwargs: Any) -> BaseTool:
+    return Tool(
+        name=kwargs["awslambda_tool_name"],
+        description=kwargs["awslambda_tool_description"],
+        func=LambdaWrapper(**kwargs).run,
     )
 
 
@@ -219,14 +225,16 @@ def _get_bing_search(**kwargs: Any) -> BaseTool:
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
-    return DuckDuckGoSearchTool(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+    return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
 
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
 
-_EXTRA_LLM_TOOLS = {
+_EXTRA_LLM_TOOLS: Dict[
+    str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
+] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
     "podcast-api": (_get_podcast_api, ["listen_api_key"]),
@@ -249,7 +257,15 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),
+    "arxiv": (
+        _get_arxiv,
+        ["top_k_results", "load_max_docs", "load_all_available_meta"],
+    ),
     "human": (_get_human_tool, ["prompt_func", "input_func"]),
+    "awslambda": (
+        _get_lambda_api,
+        ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
+    ),
 }
 
 
