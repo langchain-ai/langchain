@@ -18,6 +18,7 @@ from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
 from langchain.agents.agent_toolkits.python.base import create_python_agent
 from langchain.agents.agent_toolkits.spark.base import create_spark_dataframe_agent
 from langchain.agents.agent_toolkits.sql.base import create_sql_agent
+from langchain.agents.agent_toolkits.gmail.base import create_gmail_agent
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
@@ -29,6 +30,8 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
+from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
+
 
 __all__ = [
     "create_json_agent",
@@ -38,6 +41,7 @@ __all__ = [
     "create_pbi_chat_agent",
     "create_python_agent",
     "create_vectorstore_agent",
+    "create_gmail_agent",
     "JsonToolkit",
     "SQLDatabaseToolkit",
     "NLAToolkit",
@@ -51,6 +55,7 @@ __all__ = [
     "create_spark_dataframe_agent",
     "create_csv_agent",
     "ZapierToolkit",
+    "GmailToolkit",
     "JiraToolkit",
     "FileManagementToolkit",
     "PlayWrightBrowserToolkit",
