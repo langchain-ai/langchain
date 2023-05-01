@@ -49,15 +49,16 @@ class ModernTreasuryLoader(BaseLoader):
         self.api_key = api_key
         self.resource = resource
 
-        self.basic_auth_token = b64encode(b"{self.organization_id}:{self.api_key}")
-        self.headers = {"Authorization": "Basic {self.basic_auth_token}"}
+        credentials = f"{self.organization_id}:{self.api_key}".encode('utf-8')
+        self.basic_auth_token = b64encode(credentials).decode('utf-8')
+        self.headers = {"Authorization": f"Basic {self.basic_auth_token}"}
 
     def _make_request(self, url: str) -> List[Document]:
         request = urllib.request.Request(url, headers=self.headers)
 
         with urllib.request.urlopen(request) as response:
             json_data = json.loads(response.read().decode())
-            text = _stringify_dict(json_data)
+            text = _stringify_value(json_data)
             metadata = {"source": url}
             return [Document(page_content=text, metadata=metadata)]
 
