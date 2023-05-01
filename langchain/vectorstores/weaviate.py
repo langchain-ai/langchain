@@ -1,10 +1,9 @@
-"""Wrapper around weaviate vector database.""" 
+"""Wrapper around weaviate vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Type, Callable, Tuple
-from uuid import uuid4
-
 import datetime
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from uuid import uuid4
 
 import numpy as np
 
@@ -24,7 +23,7 @@ def _default_schema(index_name: str) -> Dict:
                 "dataType": ["text"],
             }
         ],
-    } 
+    }
 
 
 def _create_weaviate_client(**kwargs: Any) -> Any:
@@ -114,7 +113,7 @@ class Weaviate(VectorStore):
         """Upload texts with metadata (properties) to Weaviate."""
         from weaviate.util import get_valid_uuid
 
-        def json_serializable(value):
+        def json_serializable(value: Any) -> Any:
             if isinstance(value, datetime.datetime):
                 return value.isoformat()
             return value
@@ -276,7 +275,7 @@ class Weaviate(VectorStore):
             payload[idx].pop("_additional")
             meta = payload[idx]
             docs.append(Document(page_content=text, metadata=meta))
-        return docs 
+        return docs
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
@@ -285,14 +284,25 @@ class Weaviate(VectorStore):
         if kwargs.get("search_distance"):
             content["certainty"] = kwargs.get("search_distance")
         query_obj = self._client.query.get(self._index_name, self._query_attrs)
-        result = query_obj.with_near_text(content).with_limit(k).with_additional("vector").do()
+        result = (
+            query_obj.with_near_text(content)
+            .with_limit(k)
+            .with_additional("vector")
+            .do()
+        )
         if "errors" in result:
             raise ValueError(f"Error during query: {result['errors']}")
 
         docs_and_scores = []
+        if self._embedding is None:
+            raise ValueError(
+                "_embedding cannot be None for similarity_search_with_score"
+            )
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
-            score = np.dot(res["_additional"]["vector"], self._embedding.embed_query(query))
+            score = np.dot(
+                res["_additional"]["vector"], self._embedding.embed_query(query)
+            )
             docs_and_scores.append((Document(page_content=text, metadata=res), score))
         return docs_and_scores
 
@@ -312,7 +322,9 @@ class Weaviate(VectorStore):
                 " Weaviate constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(query, k=k)
-        return [(doc, self._relevance_score_fn(score)) for doc, score in docs_and_scores]
+        return [
+            (doc, self._relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
 
     @classmethod
     def from_texts(
