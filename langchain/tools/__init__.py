@@ -1,6 +1,6 @@
 """Core toolkit implementations."""
 
-from langchain.tools.base import BaseTool, StructuredTool
+from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.file_management.copy import CopyFileTool
@@ -75,4 +75,6 @@ __all__ = [
     "WolframAlphaQueryRun",
     "ZapierNLARunAction",
     "ZapierNLAListActions",
+    "Tool",
+    "tool",
 ]
