@@ -6,11 +6,11 @@ def test_boolean_output_parser_parse() -> None:
 
     # Test valid input
     result = parser.parse("YES")
-    assert result == True
+    assert result is True
 
     # Test valid input
     result = parser.parse("NO")
-    assert result == False
+    assert result is False
 
     # Test invalid input
     try:
