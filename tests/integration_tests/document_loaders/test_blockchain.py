@@ -1,4 +1,5 @@
 import os
+import time
 
 import pytest
 
@@ -14,11 +15,18 @@ else:
 
 @pytest.mark.skipif(not alchemyKeySet, reason="Alchemy API key not provided.")
 def test_get_nfts_valid_contract() -> None:
+    max_alchemy_tokens = 100
     contract_address = (
         "0x1a92f7381b9f03921564a437210bb9396471050c"  # CoolCats contract address
     )
     result = BlockchainDocumentLoader(contract_address).load()
-    assert len(result) > 0, "No NFTs returned"
+
+    print("Tokens returend for valid contract: ", len(result))
+
+    assert len(result) == max_alchemy_tokens, (
+        f"Wrong number of NFTs returned.  "
+        f"Expected {max_alchemy_tokens}, got {len(result)}"
+    )
 
 
 @pytest.mark.skipif(not alchemyKeySet, reason="Alchemy API key not provided.")
@@ -35,6 +43,8 @@ def test_get_nfts_with_pagination() -> None:
         startToken=startToken,
     ).load()
 
+    print("Tokens returend for contract with offset: ", len(result))
+
     assert len(result) > 0, "No NFTs returned"
 
 
@@ -46,6 +56,9 @@ def test_get_nfts_polygon() -> None:
     result = BlockchainDocumentLoader(
         contract_address, BlockchainType.POLYGON_MAINNET
     ).load()
+
+    print("Tokens returend for contract on Polygon: ", len(result))
+
     assert len(result) > 0, "No NFTs returned"
 
 
@@ -66,6 +79,8 @@ def test_get_nfts_invalid_contract() -> None:
 
 @pytest.mark.skipif(not alchemyKeySet, reason="Alchemy API key not provided.")
 def test_get_all() -> None:
+    start_time = time.time()
+
     contract_address = (
         "0x448676ffCd0aDf2D85C1f0565e8dde6924A9A7D9"  # Polygon contract address
     )
@@ -77,19 +92,38 @@ def test_get_all() -> None:
         get_all_tokens=True,
     ).load()
 
+    end_time = time.time()
+
+    print(
+        f"Tokens returned for ",
+        contract_address,
+        "contract: ",
+        len(result),
+        f" in ",
+        end_time - start_time,
+        " seconds",
+    )
+
     assert len(result) > 0, "No NFTs returned"
 
 
-@pytest.mark.skip(reason="This test calls the API 100 times")
-def test_get_all_10k() -> None:
+@pytest.mark.skipif(not alchemyKeySet, reason="Alchemy API key not provided.")
+def test_get_all_10sec_timeout() -> None:
+    start_time = time.time()
+
     contract_address = (
         "0x1a92f7381b9f03921564a437210bb9396471050c"  # Cool Cats contract address
     )
-    result = BlockchainDocumentLoader(
-        contract_address=contract_address,
-        blockchainType=BlockchainType.ETH_MAINNET,
-        api_key=os.environ["ALCHEMY_API_KEY"],
-        get_all_tokens=True,
-    ).load()
 
-    assert len(result) == 9964, "Incorrect number of NFTs returned"
+    with pytest.raises(RuntimeError):
+        BlockchainDocumentLoader(
+            contract_address=contract_address,
+            blockchainType=BlockchainType.ETH_MAINNET,
+            api_key=os.environ["ALCHEMY_API_KEY"],
+            get_all_tokens=True,
+            max_execution_time=10,
+        ).load()
+
+    end_time = time.time()
+
+    print("Execution took ", end_time - start_time, " seconds")

@@ -1,13 +1,15 @@
+import asyncio
 import os
 import re
-import time
+from asyncio import Queue
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
-import requests
+import aiohttp
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utilities import asyncio as langchain_asyncio
 
 
 class BlockchainType(Enum):
@@ -36,9 +38,6 @@ class BlockchainDocumentLoader(BaseLoader):
     this may take a long time (e.g. 10k tokens is 100 requests).
     Default value is false for this reason.
 
-    The max_execution_time (sec) can be set to limit the execution time
-    of the loader.
-
     Future versions of this loader can:
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
         - Support additional blockain APIs (e.g. Infura, Opensea, etc.)
@@ -51,7 +50,7 @@ class BlockchainDocumentLoader(BaseLoader):
         api_key: str = "docs-demo",
         startToken: str = "",
         get_all_tokens: bool = False,
-        max_execution_time: Optional[int] = None,
+        max_execution_time: int = 60,
     ):
         self.contract_address = contract_address
         self.blockchainType = blockchainType.value
@@ -67,54 +66,54 @@ class BlockchainDocumentLoader(BaseLoader):
             raise ValueError(f"Invalid contract address {self.contract_address}")
 
     def load(self) -> List[Document]:
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self._async_load())
+        return result
+
+    async def _async_load(self) -> List[Document]:
         result = []
 
-        current_start_token = self.startToken
+        async with aiohttp.ClientSession() as session:
+            if self.get_all_tokens:
+                queue: Queue = Queue()
+                initial_task = self._fetch_data(session, str(0))
+                queue.put_nowait(initial_task)
 
-        start_time = time.time()
+                while not queue.empty():
+                    task = queue.get_nowait()
+                    items = await task
 
-        while True:
-            url = (
-                f"https://{self.blockchainType}.g.alchemy.com/nft/v2/"
-                f"{self.api_key}/getNFTsForCollection?withMetadata="
-                f"True&contractAddress={self.contract_address}"
-                f"&startToken={current_start_token}"
-            )
+                    if not items:
+                        break
 
-            response = requests.get(url)
+                    for item in items:
+                        content = str(item)
+                        tokenId = item["id"]["tokenId"]
+                        metadata = {
+                            "source": self.contract_address,
+                            "blockchain": self.blockchainType,
+                            "tokenId": tokenId,
+                        }
+                        result.append(Document(page_content=content, metadata=metadata))
 
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Request failed with status code {response.status_code}"
-                )
+                    next_start_token = self._get_next_tokenId(
+                        result[-1].metadata["tokenId"]
+                    )
 
-            items = response.json()["nfts"]
+                    next_task = self._fetch_data(session, next_start_token)
+                    queue.put_nowait(next_task)
+            else:
+                items = await self._fetch_data(session, str(0))
 
-            if not items:
-                break
-
-            for item in items:
-                content = str(item)
-                tokenId = item["id"]["tokenId"]
-                metadata = {
-                    "source": self.contract_address,
-                    "blockchain": self.blockchainType,
-                    "tokenId": tokenId,
-                }
-                result.append(Document(page_content=content, metadata=metadata))
-
-            # exit after the first API call if get_all_tokens is False
-            if not self.get_all_tokens:
-                break
-
-            # get the start token for the next API call from the last item in array
-            current_start_token = self._get_next_tokenId(result[-1].metadata["tokenId"])
-
-            if (
-                self.max_execution_time is not None
-                and (time.time() - start_time) > self.max_execution_time
-            ):
-                raise RuntimeError("Execution time exceeded the allowed time limit.")
+                for item in items:
+                    content = str(item)
+                    tokenId = item["id"]["tokenId"]
+                    metadata = {
+                        "source": self.contract_address,
+                        "blockchain": self.blockchainType,
+                        "tokenId": tokenId,
+                    }
+                    result.append(Document(page_content=content, metadata=metadata))
 
         if not result:
             raise ValueError(
@@ -122,6 +121,23 @@ class BlockchainDocumentLoader(BaseLoader):
             )
 
         return result
+
+    async def _fetch_data(
+        self, session: aiohttp.ClientSession, start_token: str
+    ) -> List[dict]:
+        url = (
+            f"https://{self.blockchainType}.g.alchemy.com/nft/v2/"
+            f"{self.api_key}/getNFTsForCollection?withMetadata="
+            f"True&contractAddress={self.contract_address}"
+            f"&startToken={start_token}"
+        )
+
+        async with session.get(url) as response:
+            if response.status != 200:
+                raise ValueError(f"Request failed with status code {response.status}")
+
+            items = (await response.json())["nfts"]
+            return items
 
     # add one to the tokenId, ensuring the correct tokenId format is used
     def _get_next_tokenId(self, tokenId: str) -> str:
