@@ -5,6 +5,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.llms import BaseLLM
 from langchain.schema import Generation, LLMResult
 from langchain.utils import get_from_dict_or_env
@@ -74,7 +78,10 @@ class GooglePalm(BaseLLM, BaseModel):
         return values
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         generations = []
         for prompt in prompts:
@@ -99,7 +106,10 @@ class GooglePalm(BaseLLM, BaseModel):
         return LLMResult(generations=generations)
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         raise NotImplementedError()
 
