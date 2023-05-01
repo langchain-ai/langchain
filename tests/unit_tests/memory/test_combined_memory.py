@@ -15,7 +15,7 @@ def example_memory() -> List[ConversationBufferMemory]:
     return [example_1, example_2, example_3]
 
 
-def test_basic_functionality(example_memory: List[ConversationBufferMemory]):
+def test_basic_functionality(example_memory: List[ConversationBufferMemory]) -> None:
     """Test basic functionality of methods exposed by class"""
     combined_memory = CombinedMemory(memories=[example_memory[0], example_memory[1]])
     assert combined_memory.memory_variables == ["foo", "bar"]
@@ -31,7 +31,7 @@ def test_basic_functionality(example_memory: List[ConversationBufferMemory]):
     assert combined_memory.load_memory_variables({}) == {"foo": "", "bar": ""}
 
 
-def test_repeated_memory_variables(example_memory: List[ConversationBufferMemory]):
+def test_repeated_memory_variables(example_memory: List[ConversationBufferMemory]) -> None:
     """Test raising error when repeated memory variables found"""
     with pytest.raises(ValueError):
         CombinedMemory(memories=[example_memory[1], example_memory[2]])
