@@ -32,4 +32,5 @@ Action:
   "action_input": "Final response to human"
 }}}}
 ```"""
-SUFFIX = """Begin! Reminder to ALWAYS respond with a valid json blob as Action:```$JSON_BLOB```."""
+SUFFIX = """Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
+Thought:"""

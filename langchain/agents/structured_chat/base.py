@@ -4,7 +4,10 @@ from typing import Any, List, Optional, Sequence, Tuple
 from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
-from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
+from langchain.agents.structured_chat.output_parser import (
+    StructuredChatOutputParser,
+    StructuredChatOutputParserWithRetries,
+)
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
@@ -52,8 +55,10 @@ class StructuredChatAgent(Agent):
         pass
 
     @classmethod
-    def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
-        return StructuredChatOutputParser()
+    def _get_default_output_parser(
+        cls, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+    ) -> AgentOutputParser:
+        return StructuredChatOutputParserWithRetries.from_llm(llm=llm)
 
     @property
     def _stop(self) -> List[str]:
@@ -112,7 +117,7 @@ class StructuredChatAgent(Agent):
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
-        _output_parser = output_parser or cls._get_default_output_parser()
+        _output_parser = output_parser or cls._get_default_output_parser(llm=llm)
         return cls(
             llm_chain=llm_chain,
             allowed_tools=tool_names,
