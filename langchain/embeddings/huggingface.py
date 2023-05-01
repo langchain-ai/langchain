@@ -36,6 +36,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Key word arguments to pass to the model."""
+    encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Key word arguments to pass when calling the `encode` method of the model."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -58,34 +60,30 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str], **encode_kwargs) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
-            encode_kwargs: Additional kwargs to pass into the `encode` method of the
-                SentenceTransformer.
 
         Returns:
             List of embeddings, one for each text.
         """
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        embeddings = self.client.encode(texts)
+        embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 
-    def embed_query(self, text: str, **encode_kwargs) -> List[float]:
+    def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
             text: The text to embed.
-            encode_kwargs: Additional kwargs to pass into the `encode` method of the
-                SentenceTransformer.
 
         Returns:
             Embeddings for the text.
         """
         text = text.replace("\n", " ")
-        embedding = self.client.encode(text)
+        embedding = self.client.encode(text, **self.encode_kwargs)
         return embedding.tolist()
 
 
@@ -93,7 +91,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers``
-    and ``InstructorEmbedding`` python package installed.
+    and ``InstructorEmbedding`` python packages installed.
 
     Example:
         .. code-block:: python
@@ -112,7 +110,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     cache_folder: Optional[str] = None
     """Path to store models. 
-    Can be also set by SENTENCE_TRANSFORMERS_HOME enviroment variable."""
+    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Key word arguments to pass to the model."""
     embed_instruction: str = DEFAULT_EMBED_INSTRUCTION
