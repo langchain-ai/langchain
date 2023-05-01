@@ -68,11 +68,7 @@ class VectorstoreIndexCreator(BaseModel):
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
-        sub_docs = self.text_splitter.split_documents(docs)
-        vectorstore = self.vectorstore_cls.from_documents(
-            sub_docs, self.embedding, **self.vectorstore_kwargs
-        )
-        return VectorStoreIndexWrapper(vectorstore=vectorstore)
+        return self.from_documents(docs)
 
     def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from documents."""
