@@ -13,11 +13,14 @@ from langchain.vectorstores.myscale import MyScale, MyScaleSettings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.vectorstores.pinecone import Pinecone
 from langchain.vectorstores.qdrant import Qdrant
+from langchain.vectorstores.redis import Redis
 from langchain.vectorstores.supabase import SupabaseVectorStore
+from langchain.vectorstores.tair import Tair
 from langchain.vectorstores.weaviate import Weaviate
 from langchain.vectorstores.zilliz import Zilliz
 
 __all__ = [
+    "Redis",
     "ElasticVectorSearch",
     "FAISS",
     "VectorStore",
@@ -35,5 +38,6 @@ __all__ = [
     "MyScaleSettings",
     "SupabaseVectorStore",
     "AnalyticDB",
+    "Tair",
     "LanceDB",
 ]

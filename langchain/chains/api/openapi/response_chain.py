@@ -2,6 +2,7 @@
 
 import json
 import re
+from typing import Any
 
 from langchain.chains.api.openapi.prompts import RESPONSE_TEMPLATE
 from langchain.chains.llm import LLMChain
@@ -35,7 +36,7 @@ class APIResponderChain(LLMChain):
     """Get the response parser."""
 
     @classmethod
-    def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
+    def from_llm(cls, llm: BaseLLM, verbose: bool = True, **kwargs: Any) -> LLMChain:
         """Get the response parser."""
         output_parser = APIResponderOutputParser()
         prompt = PromptTemplate(
@@ -43,4 +44,4 @@ class APIResponderChain(LLMChain):
             output_parser=output_parser,
             input_variables=["response", "instructions"],
         )
-        return cls(prompt=prompt, llm=llm, verbose=verbose)
+        return cls(prompt=prompt, llm=llm, verbose=verbose, **kwargs)

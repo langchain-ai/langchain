@@ -10,6 +10,7 @@ from langchain.retrievers.tfidf import TFIDFRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
+from langchain.retrievers.vespa_retriever import VespaRetriever
 from langchain.retrievers.weaviate_hybrid_search import WeaviateHybridSearchRetriever
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "DataberryRetriever",
     "TimeWeightedVectorStoreRetriever",
     "SVMRetriever",
+    "VespaRetriever",
 ]
