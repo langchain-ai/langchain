@@ -1,5 +1,7 @@
 from typing import Any, Dict, List
 
+from pydantic import validator
+
 from langchain.schema import BaseMemory
 
 
@@ -8,6 +10,24 @@ class CombinedMemory(BaseMemory):
 
     memories: List[BaseMemory]
     """For tracking all the memories that should be accessed."""
+
+    @validator("memories")
+    def check_repeated_memory_variable(
+        cls, value: List[BaseMemory]
+    ) -> List[BaseMemory]:
+        for i, cur in enumerate(value):
+            for other in value[i + 1 :]:
+                repeated_vars = set(cur.memory_variables).intersection(
+                    set(other.memory_variables)
+                )
+                if repeated_vars:
+                    raise ValueError(
+                        f"{cur} and {other} contain "
+                        f"common memory variable {repeated_vars}, "
+                        "which is not allowed by CombinedMemory."
+                    )
+
+        return value
 
     @property
     def memory_variables(self) -> List[str]:
