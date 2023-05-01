@@ -149,18 +149,16 @@ class ListPowerBITool(BaseTool):
 
     def _run(
         self,
-        *args: Any,
+        tool_input: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
 
     async def _arun(
         self,
-        *args: Any,
+        tool_input: Optional[str] = None,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> str:
         """Get the names of the tables."""
         return ", ".join(self.powerbi.get_table_names())
