@@ -103,7 +103,7 @@ class PyPDFLoader(BasePDFLoader):
         import pypdfium2 
 
         with open(self.file_path, "rb") as pdf_file_obj:
-            pdf_reader = pypdf.PdfDocument(pdf_file_obj)
+            pdf_reader = pypdfium2.PdfDocument(pdf_file_obj)
             n_pages = len(pdf)
 
             return [
