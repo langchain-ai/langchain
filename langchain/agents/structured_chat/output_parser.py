@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
@@ -15,11 +15,6 @@ from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 logger = logging.getLogger(__name__)
-
-
-class ActionObject(BaseModel):
-    action: str
-    action_input: dict
 
 
 class StructuredChatOutputParser(AgentOutputParser):
@@ -39,7 +34,7 @@ class StructuredChatOutputParser(AgentOutputParser):
                     return AgentFinish({"output": response["action_input"]}, text)
                 else:
                     return AgentAction(
-                        response["action"], response["action_input"], text
+                        response["action"], response.get("action_input", {}), text
                     )
             else:
                 return AgentFinish({"output": text}, text)
@@ -59,7 +54,9 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: ActionObject = self.output_fixing_parser.parse(text)
+                parsed_obj: Union[
+                    AgentAction, AgentFinish
+                ] = self.output_fixing_parser.parse(text)
             else:
                 parsed_obj = self.base_parser.parse(text)
             return parsed_obj
@@ -70,8 +67,8 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def from_llm(
         cls,
         llm: Optional[BaseLanguageModel] = None,
-        base_parser: Optional[PydanticOutputParser] = None,
-    ) -> StructuredChatOutputParser:
+        base_parser: Optional[StructuredChatOutputParser] = None,
+    ) -> StructuredChatOutputParserWithRetries:
         if llm is not None:
             base_parser = base_parser or StructuredChatOutputParser()
             output_fixing_parser = OutputFixingParser.from_llm(
