@@ -1,4 +1,6 @@
-from typing import Any, Dict, Sequence
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict, Sequence
 
 from pydantic import root_validator
 
@@ -6,9 +8,12 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.schema import Document
 from langchain.utils import get_from_dict_or_env
 
+if TYPE_CHECKING:
+    from cohere import Client
+
 
 class CohereRerank(BaseDocumentCompressor):
-    client: Any
+    client: Client
     top_n: int = 3
     model: str = "rerank-english-v2.0"
 
