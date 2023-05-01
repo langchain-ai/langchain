@@ -162,7 +162,7 @@ class RunManagerMixin:
 
     def on_selected_inputs_preprocess_for_prompt(
         self,
-        text: str,
+        text: Dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -334,7 +334,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_selected_inputs_preprocess_for_prompt(
         self,
-        text: str,
+        text: Dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

@@ -155,7 +155,7 @@ class RunManager(BaseRunManager):
             **kwargs,
         )
 
-    def on_selected_inputs_preprocess_for_prompt(self, text: str, **kwargs: Any) -> Any:
+    def on_selected_inputs_preprocess_for_prompt(self, text: Dict[str, Any], **kwargs: Any) -> Any:
         """Run while passing agent scratchpad input to prompts."""
         _handle_event(
             self.handlers,
@@ -188,7 +188,7 @@ class AsyncRunManager(BaseRunManager):
         )
 
     async def on_selected_inputs_preprocess_for_prompt(
-        self, text: str, **kwargs: Any
+        self, text: Dict[str, Any], **kwargs: Any
     ) -> Any:
         """Run while passing agent scratchpad input to prompts."""
         await _ahandle_event(
