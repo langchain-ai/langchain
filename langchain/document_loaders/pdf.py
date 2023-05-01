@@ -1,4 +1,5 @@
 """Loader that loads PDF files."""
+import io
 import json
 import logging
 import os
@@ -114,6 +115,36 @@ class PyPDFLoader(BasePDFLoader):
                 for i, page in enumerate(pdf_reader.pages)
             ]
 
+class PyPDFBytesLoader(BaseLoader):
+    """Loads a PDF with pypdf given a BytesIO object and chunks at the character level.
+    
+    Loader also stores page numbers in metadatas.
+    """
+
+    def __init__(self, stream: io.BytesIO):
+        """Initialize with BytesIO object."""
+
+        try:
+            import pypdf  # noqa:F401
+        except ImportError:
+            raise ValueError(
+                "pypdf package not found, please install it with " "`pip install pypdf`"
+            )
+
+        self.stream = stream
+    
+    def load(self) -> List[Document]:
+        """Load given path as pages."""
+        import pypdf
+
+        pdf_reader = pypdf.PdfReader(self.stream)
+        return [
+            Document(
+                page_content=page.extract_text(),
+                metadata={"page": i}, 
+            )
+            for i, page in enumerate(pdf_reader.pages)
+        ]
 
 class PyPDFDirectoryLoader(BaseLoader):
     """Loads a directory with PDF files with pypdf and chunks at character level.
@@ -158,7 +189,6 @@ class PyPDFDirectoryLoader(BaseLoader):
                         else:
                             raise e
         return docs
-
 
 class PDFMinerLoader(BasePDFLoader):
     """Loader that uses PDFMiner to load PDF files."""
