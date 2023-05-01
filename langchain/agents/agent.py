@@ -497,11 +497,7 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         """Validate that appropriate tools are passed in."""
-        for tool in tools:
-            if not tool.is_single_input:
-                raise ValueError(
-                    f"{cls.__name__} does not support multi-input tool {tool.name}."
-                )
+        pass
 
     @classmethod
     @abstractmethod

@@ -8,6 +8,7 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputParser
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.tools import Tool
+from langchain.agents.utils import validate_tools_single_input
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.tools.base import BaseTool
@@ -36,6 +37,7 @@ class SelfAskWithSearchAgent(Agent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
