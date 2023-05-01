@@ -30,7 +30,7 @@ class PineconeTranslator(Visitor):
                     f"Received disallowed comparator {func}. Allowed "
                     f"comparators are {self.allowed_comparators}"
                 )
-        return f"${func}"
+        return f"${func.value}"
 
     def visit_operation(self, operation: Operation) -> Dict:
         args = [arg.accept(self) for arg in operation.arguments]
