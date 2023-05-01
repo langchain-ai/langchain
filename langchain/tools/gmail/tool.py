@@ -1,35 +1,31 @@
 from __future__ import annotations
-from typing import List, Any
-import os
+
 import base64
-import re
-import json
-from bs4 import BeautifulSoup
-
 import email
+import json
+import os
+import re
+from datetime import datetime
 from email.message import EmailMessage
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any, List
 
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
+from bs4 import BeautifulSoup
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
-from langchain.agents.tools import Tool
 from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.llms.base import BaseLLM
 from langchain.agents.agent_toolkits.gmail.prompt import (
-    QUERY_PROMPT,
     DRAFT_PROMPT,
+    QUERY_PROMPT,
     SEND_PROMPT,
 )
-from langchain.prompts import PromptTemplate
-
-from datetime import datetime
-
+from langchain.agents.tools import Tool
+from langchain.llms.base import BaseLLM
+from langchain.tools import BaseTool
 
 SCOPES = ["https://mail.google.com/"]
 
@@ -353,3 +349,11 @@ class GmailToolkit(BaseToolkit):
         )
 
         return json.dumps(thread_data)
+
+    def clean_email_body(self, body: str):
+        try:
+            soup = BeautifulSoup(str(body), "html.parser")
+            body = soup.get_text()
+            return str(body)
+        except Exception as e:
+            raise Exception("Can't parse message body" + str(e))
