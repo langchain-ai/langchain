@@ -58,11 +58,13 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str], **encode_kwargs) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
+            encode_kwargs: Additional kwargs to pass into the `encode` method of the
+                SentenceTransformer.
 
         Returns:
             List of embeddings, one for each text.
@@ -71,11 +73,13 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         embeddings = self.client.encode(texts)
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str, **encode_kwargs) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
 
         Args:
             text: The text to embed.
+            encode_kwargs: Additional kwargs to pass into the `encode` method of the
+                SentenceTransformer.
 
         Returns:
             Embeddings for the text.
