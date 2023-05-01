@@ -49,7 +49,6 @@ __all__ = [
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
-    "DuckDuckGoSearchRun",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
     "FileSearchTool",
