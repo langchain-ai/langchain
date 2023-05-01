@@ -5,7 +5,7 @@ resource = "charges"
 
 
 def test_stripe_loader() -> None:
-    """Test Figma file loader."""
+    """Test Stripe file loader."""
     stripe_loader = StripeLoader(access_token, resource)
     documents = stripe_loader.load()
 
