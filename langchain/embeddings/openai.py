@@ -150,7 +150,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _get_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for i in range(len(texts))]
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
             import tiktoken
 
@@ -180,10 +180,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
             results: List[List[List[float]]] = [[] for _ in range(len(texts))]
-            lens: List[List[int]] = [[] for _ in range(len(texts))]
+            num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
             for i in range(len(indices)):
                 results[indices[i]].append(batched_embeddings[i])
-                lens[indices[i]].append(len(batched_embeddings[i]))
+                num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
             for i in range(len(texts)):
                 _result = results[i]
@@ -192,7 +192,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "data"
                     ][0]["embedding"]
                 else:
-                    average = np.average(_result, axis=0, weights=lens[i])
+                    average = np.average(
+                        _result, axis=0, weights=num_tokens_in_batch[i]
+                    )
                 embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
             return embeddings
