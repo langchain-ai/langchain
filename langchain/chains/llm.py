@@ -103,6 +103,11 @@ class LLMChain(Chain):
         prompts = []
         for inputs in input_list:
             selected_inputs = {k: inputs[k] for k in self.prompt.input_variables}
+            # selected input preprocessing e.g., for sensitive data
+            if run_manager:
+                run_manager.on_selected_inputs_preprocess_for_prompt(
+                    selected_inputs, verbose=self.verbose
+                )
             prompt = self.prompt.format_prompt(**selected_inputs)
             _colored_text = get_colored_text(prompt.to_string(), "green")
             _text = "Prompt after formatting:\n" + _colored_text

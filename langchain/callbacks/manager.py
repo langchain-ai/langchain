@@ -155,6 +155,18 @@ class RunManager(BaseRunManager):
             **kwargs,
         )
 
+    def on_selected_inputs_preprocess_for_prompt(self, text: str, **kwargs: Any) -> Any:
+        """Run while passing agent scratchpad input to prompts."""
+        _handle_event(
+            self.handlers,
+            "on_selected_inputs_preprocess_for_prompt",
+            None,
+            text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
 
 class AsyncRunManager(BaseRunManager):
     """Async Run Manager."""
@@ -168,6 +180,20 @@ class AsyncRunManager(BaseRunManager):
         await _ahandle_event(
             self.handlers,
             "on_text",
+            None,
+            text,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            **kwargs,
+        )
+
+    async def on_selected_inputs_preprocess_for_prompt(
+        self, text: str, **kwargs: Any
+    ) -> Any:
+        """Run while passing agent scratchpad input to prompts."""
+        await _ahandle_event(
+            self.handlers,
+            "on_selected_inputs_preprocess_for_prompt",
             None,
             text,
             run_id=self.run_id,

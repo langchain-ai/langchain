@@ -160,6 +160,16 @@ class RunManagerMixin:
     ) -> Any:
         """Run on arbitrary text."""
 
+    def on_selected_inputs_preprocess_for_prompt(
+        self,
+        text: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run while passing agent scratchpad input to prompts."""
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -321,6 +331,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on agent end."""
+
+    async def on_selected_inputs_preprocess_for_prompt(
+        self,
+        text: str,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run while passing agent scratchpad input to prompts."""
 
 
 class BaseCallbackManager(CallbackManagerMixin):
