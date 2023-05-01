@@ -108,7 +108,7 @@ class PyPDFLoader(BasePDFLoader):
 
             return [
                 Document(
-                    page_content=der[i].get_textpage().get_text_range(),
+                    page_content=pdf_reader[i].get_textpage().get_text_range(),
                     metadata={"source": self.file_path, "page": i},
                 )
                 for i in range(n_pages)
