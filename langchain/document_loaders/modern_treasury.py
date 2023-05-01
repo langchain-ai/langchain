@@ -49,8 +49,8 @@ class ModernTreasuryLoader(BaseLoader):
         self.api_key = api_key
         self.resource = resource
 
-        credentials = f"{self.organization_id}:{self.api_key}".encode('utf-8')
-        self.basic_auth_token = b64encode(credentials).decode('utf-8')
+        credentials = f"{self.organization_id}:{self.api_key}".encode("utf-8")
+        self.basic_auth_token = b64encode(credentials).decode("utf-8")
         self.headers = {"Authorization": f"Basic {self.basic_auth_token}"}
 
     def _make_request(self, url: str) -> List[Document]:
