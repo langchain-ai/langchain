@@ -4,6 +4,7 @@ from typing import Any, Dict, Generator, List, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 logger = logging.getLogger(__name__)
@@ -197,7 +198,12 @@ class LlamaCpp(LLM):
 
         return params
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call the Llama model and return the output.
 
         Args:
@@ -219,7 +225,7 @@ class LlamaCpp(LLM):
             # method that yields as they are generated
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
-            for token in self.stream(prompt=prompt, stop=stop):
+            for token in self.stream(prompt=prompt, stop=stop, run_manager=run_manager):
                 combined_text_output += token["choices"][0]["text"]
             return combined_text_output
         else:
@@ -228,7 +234,10 @@ class LlamaCpp(LLM):
             return result["choices"][0]["text"]
 
     def stream(
-        self, prompt: str, stop: Optional[List[str]] = None
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> Generator[Dict, None, None]:
         """Yields results objects as they are generated in real time.
 
@@ -268,7 +277,8 @@ class LlamaCpp(LLM):
         for chunk in result:
             token = chunk["choices"][0]["text"]
             log_probs = chunk["choices"][0].get("logprobs", None)
-            self.callback_manager.on_llm_new_token(
-                token=token, verbose=self.verbose, log_probs=log_probs
-            )
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    token=token, verbose=self.verbose, log_probs=log_probs
+                )
             yield chunk

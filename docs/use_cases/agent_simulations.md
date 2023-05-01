@@ -9,7 +9,7 @@ Agent simulations generally involve two main components:
 Specific implementations of agent simulations (or parts of agent simulations) include
 
 ## Simulations with One Agent
-- [Simulated Environment: Gymnasium](agent_simulations/agent_with_simulated_environment.ipynb): an example of how to create a simple agent-environment interaction loop with [Gymnasium](https://github.com/Farama-Foundation/Gymnasium) (formerly [OpenAI Gym](https://github.com/openai/gym)).
+- [Simulated Environment: Gymnasium](agent_simulations/gymnasium.ipynb): an example of how to create a simple agent-environment interaction loop with [Gymnasium](https://github.com/Farama-Foundation/Gymnasium) (formerly [OpenAI Gym](https://github.com/openai/gym)).
 
 ## Simulations with Two Agents
 - [CAMEL](agent_simulations/camel_role_playing.ipynb): an implementation of the CAMEL (Communicative Agents for “Mind” Exploration of Large Scale Language Model Society) paper, where two agents communicate with each other.

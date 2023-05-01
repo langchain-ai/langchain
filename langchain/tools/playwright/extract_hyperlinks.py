@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from pydantic import BaseModel, Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import aget_current_page, get_current_page
 
@@ -59,7 +63,11 @@ class ExtractHyperlinksTool(BaseBrowserTool):
         # Return the list of links as a JSON string
         return json.dumps(links)
 
-    def _run(self, absolute_urls: bool = False) -> str:
+    def _run(
+        self,
+        absolute_urls: bool = False,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         if self.sync_browser is None:
             raise ValueError(f"Synchronous browser not provided to {self.name}")
@@ -67,7 +75,11 @@ class ExtractHyperlinksTool(BaseBrowserTool):
         html_content = page.content()
         return self.scrape_page(page, html_content, absolute_urls)
 
-    async def _arun(self, absolute_urls: bool = False) -> str:
+    async def _arun(
+        self,
+        absolute_urls: bool = False,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         if self.async_browser is None:
             raise ValueError(f"Asynchronous browser not provided to {self.name}")

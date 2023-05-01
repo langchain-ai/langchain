@@ -10,11 +10,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 from pydantic import BaseModel, validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
+from langchain.callbacks.manager import Callbacks
 from langchain.schema import (
     AgentAction,
     AgentFinish,
-    BaseLanguageModel,
 )
 from langchain.tools.base import BaseTool
 
@@ -42,13 +43,17 @@ class BaseActionAgent(BaseModel):
 
     @abstractmethod
     def plan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:
@@ -57,13 +62,17 @@ class BaseActionAgent(BaseModel):
 
     @abstractmethod
     async def aplan(
-        self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: List[Tuple[AgentAction, str]],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
         """Given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations
+            callbacks: Callbacks to run.
             **kwargs: User inputs.
 
         Returns:

@@ -3,8 +3,8 @@ import sys
 
 import pytest
 
-from langchain.chains.llm_bash.base import BashOutputParser, LLMBashChain
-from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE
+from langchain.chains.llm_bash.base import LLMBashChain
+from langchain.chains.llm_bash.prompt import _PROMPT_TEMPLATE, BashOutputParser
 from langchain.schema import OutputParserException
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -43,7 +43,7 @@ def test_simple_question() -> None:
     prompt = _PROMPT_TEMPLATE.format(question=question)
     queries = {prompt: "```bash\nexpr 1 + 1\n```"}
     fake_llm = FakeLLM(queries=queries)
-    fake_llm_bash_chain = LLMBashChain(llm=fake_llm, input_key="q", output_key="a")
+    fake_llm_bash_chain = LLMBashChain.from_llm(fake_llm, input_key="q", output_key="a")
     output = fake_llm_bash_chain.run(question)
     assert output == "2\n"
 
@@ -71,7 +71,7 @@ echo 'hello world'
 """
     }
     fake_llm = FakeLLM(queries=queries)
-    fake_llm_bash_chain = LLMBashChain(llm=fake_llm, input_key="q", output_key="a")
+    fake_llm_bash_chain = LLMBashChain.from_llm(fake_llm, input_key="q", output_key="a")
     with pytest.raises(OutputParserException):
         fake_llm_bash_chain.run(question)
 

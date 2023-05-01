@@ -12,6 +12,7 @@ from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -27,6 +28,13 @@ from langchain.tools.playwright import (
 from langchain.tools.plugin import AIPluginTool
 from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.shell.tool import ShellTool
+from langchain.tools.vectorstore.tool import (
+    VectorStoreQATool,
+    VectorStoreQAWithSourcesTool,
+)
+from langchain.tools.wikipedia.tool import WikipediaQueryRun
+from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
 
 __all__ = [
     "AIPluginTool",
@@ -49,6 +57,7 @@ __all__ = [
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
+    "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
     "MoveFileTool",
@@ -60,4 +69,10 @@ __all__ = [
     "WriteFileTool",
     "BaseTool",
     "SceneXplainTool",
+    "VectorStoreQAWithSourcesTool",
+    "VectorStoreQATool",
+    "WikipediaQueryRun",
+    "WolframAlphaQueryRun",
+    "ZapierNLARunAction",
+    "ZapierNLAListActions",
 ]

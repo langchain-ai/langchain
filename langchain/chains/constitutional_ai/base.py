@@ -1,13 +1,14 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 from typing import Any, Dict, List, Optional
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.constitutional_ai.principles import PRINCIPLES
 from langchain.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class ConstitutionalChain(Chain):
@@ -86,11 +87,16 @@ class ConstitutionalChain(Chain):
         """Defines the output keys."""
         return ["output"]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(**inputs)
         input_prompt = self.chain.prompt.format(**inputs)
 
-        self.callback_manager.on_text(
+        _run_manager.on_text(
             text="Initial response: " + response + "\n\n",
             verbose=self.verbose,
             color="yellow",
@@ -103,6 +109,7 @@ class ConstitutionalChain(Chain):
                 input_prompt=input_prompt,
                 output_from_model=response,
                 critique_request=constitutional_principle.critique_request,
+                callbacks=_run_manager.get_child(),
             )
             critique = self._parse_critique(
                 output_string=raw_critique,
@@ -116,22 +123,23 @@ class ConstitutionalChain(Chain):
                 critique_request=constitutional_principle.critique_request,
                 critique=critique,
                 revision_request=constitutional_principle.revision_request,
+                callbacks=_run_manager.get_child(),
             ).strip()
             response = revision
 
-            self.callback_manager.on_text(
+            _run_manager.on_text(
                 text=f"Applying {constitutional_principle.name}..." + "\n\n",
                 verbose=self.verbose,
                 color="green",
             )
 
-            self.callback_manager.on_text(
+            _run_manager.on_text(
                 text="Critique: " + critique + "\n\n",
                 verbose=self.verbose,
                 color="blue",
             )
 
-            self.callback_manager.on_text(
+            _run_manager.on_text(
                 text="Updated response: " + revision + "\n\n",
                 verbose=self.verbose,
                 color="yellow",
