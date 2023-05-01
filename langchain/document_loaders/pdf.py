@@ -85,34 +85,35 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Loads a PDF with pypdf and chunks at character level.
-
-    Loader also stores page numbers in metadatas.
+    """Loads a PDF with pypdfium2 and chunks at character level.
     """
 
     def __init__(self, file_path: str):
         """Initialize with file path."""
         try:
-            import pypdf  # noqa:F401
+            import pypdfium2  
         except ImportError:
             raise ValueError(
-                "pypdf package not found, please install it with " "`pip install pypdf`"
+                "pypdfium2 package not found, please install it with " "`pip install pypdfium2`"
             )
         super().__init__(file_path)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
-        import pypdf
+        import pypdfium2 
 
         with open(self.file_path, "rb") as pdf_file_obj:
-            pdf_reader = pypdf.PdfReader(pdf_file_obj)
+            pdf_reader = pypdf.PdfDocument(pdf_file_obj)
+            n_pages = len(pdf)
+
             return [
                 Document(
-                    page_content=page.extract_text(),
+                    page_content=der[i].get_textpage().get_text_range(),
                     metadata={"source": self.file_path, "page": i},
                 )
-                for i, page in enumerate(pdf_reader.pages)
+                for i in range(n_pages)
             ]
+
 
 
 class PyPDFDirectoryLoader(BaseLoader):
