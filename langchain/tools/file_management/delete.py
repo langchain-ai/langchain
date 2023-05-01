@@ -1,11 +1,16 @@
 import os
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
-    BaseFileTool,
+    BaseFileToolMixin,
     FileValidationError,
 )
 
@@ -16,12 +21,16 @@ class FileDeleteInput(BaseModel):
     file_path: str = Field(..., description="Path of the file to delete")
 
 
-class DeleteFileTool(BaseFileTool):
+class DeleteFileTool(BaseFileToolMixin, BaseTool):
     name: str = "file_delete"
     args_schema: Type[BaseModel] = FileDeleteInput
     description: str = "Delete a file"
 
-    def _run(self, file_path: str) -> str:
+    def _run(
+        self,
+        file_path: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         try:
             file_path_ = self.get_relative_path(file_path)
         except FileValidationError:
@@ -34,6 +43,10 @@ class DeleteFileTool(BaseFileTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, file_path: str) -> str:
+    async def _arun(
+        self,
+        file_path: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

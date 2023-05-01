@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import os
-from abc import ABC
 from typing import Any, Dict, Optional, Union
 
 import requests
@@ -18,14 +17,17 @@ from langchain.callbacks.tracers.schemas import (
 )
 
 
-class BaseLangChainTracer(BaseTracer, ABC):
+class LangChainTracer(BaseTracer):
     """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
-    always_verbose: bool = True
-    _endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
-    _headers: Dict[str, Any] = {"Content-Type": "application/json"}
-    if os.getenv("LANGCHAIN_API_KEY"):
-        _headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
+    def __init__(self, session_name: str = "default", **kwargs: Any) -> None:
+        """Initialize the LangChain tracer."""
+        super().__init__(**kwargs)
+        self._endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
+        self._headers: Dict[str, Any] = {"Content-Type": "application/json"}
+        if os.getenv("LANGCHAIN_API_KEY"):
+            self._headers["x-api-key"] = os.getenv("LANGCHAIN_API_KEY")
+        self.session = self.load_session(session_name)
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
         """Persist a run."""
@@ -59,54 +61,29 @@ class BaseLangChainTracer(BaseTracer, ABC):
             session = TracerSession(id=1, **session_create.dict())
         return session
 
-    def load_session(self, session_name: str) -> TracerSession:
+    def _load_session(self, session_name: Optional[str] = None) -> TracerSession:
         """Load a session from the tracer."""
         try:
-            r = requests.get(
-                f"{self._endpoint}/sessions?name={session_name}",
-                headers=self._headers,
-            )
+            url = f"{self._endpoint}/sessions"
+            if session_name:
+                url += f"?name={session_name}"
+            r = requests.get(url, headers=self._headers)
+
             tracer_session = TracerSession(**r.json()[0])
-            self._session = tracer_session
-            return tracer_session
         except Exception as e:
+            session_type = "default" if not session_name else session_name
             logging.warning(
-                f"Failed to load session {session_name}, using empty session: {e}"
+                f"Failed to load {session_type} session, using empty session: {e}"
             )
             tracer_session = TracerSession(id=1)
-            self._session = tracer_session
-            return tracer_session
+
+        self.session = tracer_session
+        return tracer_session
+
+    def load_session(self, session_name: str) -> TracerSession:
+        """Load a session with the given name from the tracer."""
+        return self._load_session(session_name)
 
     def load_default_session(self) -> TracerSession:
         """Load the default tracing session and set it as the Tracer's session."""
-        try:
-            r = requests.get(
-                f"{self._endpoint}/sessions",
-                headers=self._headers,
-            )
-            # Use the first session result
-            tracer_session = TracerSession(**r.json()[0])
-            self._session = tracer_session
-            return tracer_session
-        except Exception as e:
-            logging.warning(f"Failed to default session, using empty session: {e}")
-            tracer_session = TracerSession(id=1)
-            self._session = tracer_session
-            return tracer_session
-
-    def _add_child_run(
-        self,
-        parent_run: Union[ChainRun, ToolRun],
-        child_run: Union[LLMRun, ChainRun, ToolRun],
-    ) -> None:
-        """Add child run to a chain run or tool run."""
-        if isinstance(child_run, LLMRun):
-            parent_run.child_llm_runs.append(child_run)
-        elif isinstance(child_run, ChainRun):
-            parent_run.child_chain_runs.append(child_run)
-        else:
-            parent_run.child_tool_runs.append(child_run)
-
-    def _generate_id(self) -> Optional[Union[int, str]]:
-        """Generate an id for a run."""
-        return None
+        return self._load_session("default")
