@@ -29,11 +29,11 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         user_id: str,
     ):
         """
-        Initializes a new instance of the FirestoreChatMessageHistory class.
+        Initialize a new instance of the FirestoreChatMessageHistory class.
 
         :param collection_name: The name of the collection to use.
-        :param session_id: The session ID to use, can be overwritten while loading.
-        :param user_id: The user ID to use, can be overwritten while loading.
+        :param session_id: The session ID for the chat..
+        :param user_id: The user ID for the chat.
         """
         self.collection_name = collection_name
         self.session_id = session_id
