@@ -1,9 +1,9 @@
 """Base implementation for tools or skills."""
 from __future__ import annotations
-from functools import partial
 
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 

@@ -1,5 +1,4 @@
-from typing import List
-
+from typing import List, Type
 
 import langchain.tools
 from langchain.tools import __all__ as tools_all
@@ -11,12 +10,12 @@ _EXCLUDE = {
 }
 
 
-def _get_tool_classes(skip_tools_without_default_names: bool) -> List[BaseTool]:
+def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseTool]]:
     results = []
     for tool_class_name in tools_all:
         # Resolve the str to the class
         tool_class = getattr(langchain.tools, tool_class_name)
-        if issubclass(tool_class, BaseTool):
+        if isinstance(tool_class, type) and issubclass(tool_class, BaseTool):
             if tool_class in _EXCLUDE:
                 continue
             if (
