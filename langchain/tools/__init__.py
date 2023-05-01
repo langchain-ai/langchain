@@ -12,6 +12,7 @@ from langchain.tools.file_management.read import ReadFileTool
 from langchain.tools.file_management.write import WriteFileTool
 from langchain.tools.google_places.tool import GooglePlacesTool
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.ifttt import IFTTTWebhook
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -56,6 +57,7 @@ __all__ = [
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
+    "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
     "MoveFileTool",
