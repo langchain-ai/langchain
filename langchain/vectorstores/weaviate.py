@@ -59,6 +59,10 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     return client
 
 
+def _default_score_normalizer(val: float) -> float:
+    return 1 - 1 / (1 + np.exp(val))
+
+
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
 
@@ -81,7 +85,9 @@ class Weaviate(VectorStore):
         text_key: str,
         embedding: Optional[Embeddings] = None,
         attributes: Optional[List[str]] = None,
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_score_normalizer,
     ):
         """Initialize with Weaviate client."""
         try:

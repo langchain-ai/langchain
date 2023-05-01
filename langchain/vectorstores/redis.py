@@ -81,6 +81,10 @@ def _redis_prefix(index_name: str) -> str:
     return f"doc:{index_name}"
 
 
+def _default_relevance_score(val: float) -> float:
+    return 1 - val
+
+
 class Redis(VectorStore):
     """Wrapper around Redis vector database.
 
@@ -108,7 +112,9 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
-        relevance_score_fn: Optional[Callable[[float], float]] = None,
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_relevance_score,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
