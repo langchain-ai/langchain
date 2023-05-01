@@ -2,15 +2,16 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class GooseAI(LLM, BaseModel):
+class GooseAI(LLM):
     """Wrapper around OpenAI large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -130,7 +131,12 @@ class GooseAI(LLM, BaseModel):
         """Return type of llm."""
         return "gooseai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call the GooseAI API."""
         params = self._default_params
         if stop is not None:

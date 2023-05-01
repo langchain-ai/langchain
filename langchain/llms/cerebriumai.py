@@ -2,8 +2,9 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +12,7 @@ from langchain.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class CerebriumAI(LLM, BaseModel):
+class CerebriumAI(LLM):
     """Wrapper around CerebriumAI large language models.
 
     To use, you should have the ``cerebrium`` python package installed, and the
@@ -81,7 +82,12 @@ class CerebriumAI(LLM, BaseModel):
         """Return type of llm."""
         return "cerebriumai"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call to CerebriumAI endpoint."""
         try:
             from cerebrium import model_api_request

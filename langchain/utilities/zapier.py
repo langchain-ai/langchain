@@ -1,6 +1,6 @@
 """Util that can interact with Zapier NLA.
 
-Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
+Full docs here: https://nla.zapier.com/api/v1/docs
 
 Note: this wrapper currently only implemented the `api_key` auth method for testing
 and server-side production use cases (using the developer's connected accounts on
@@ -24,7 +24,7 @@ from langchain.utils import get_from_dict_or_env
 class ZapierNLAWrapper(BaseModel):
     """Wrapper for Zapier NLA.
 
-    Full docs here: https://nla.zapier.com/api/v1/dynamic/docs
+    Full docs here: https://nla.zapier.com/api/v1/docs
 
     Note: this wrapper currently only implemented the `api_key` auth method for
     testingand server-side production use cases (using the developer's connected
@@ -37,8 +37,8 @@ class ZapierNLAWrapper(BaseModel):
     """
 
     zapier_nla_api_key: str
+    zapier_nla_oauth_access_token: str
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
-    zapier_nla_api_dynamic_base: str = "https://nla.zapier.com/api/v1/dynamic/"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,7 +53,14 @@ class ZapierNLAWrapper(BaseModel):
                 "Content-Type": "application/json",
             }
         )
-        session.params = {"api_key": self.zapier_nla_api_key}
+
+        if self.zapier_nla_oauth_access_token:
+            session.headers.update(
+                {"Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"}
+            )
+        else:
+            session.params = {"api_key": self.zapier_nla_api_key}
+
         return session
 
     def _get_action_request(
@@ -74,9 +81,24 @@ class ZapierNLAWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
+
+        zapier_nla_api_key_default = None
+
+        # If there is a oauth_access_key passed in the values
+        # we don't need a nla_api_key it can be blank
+        if "zapier_nla_oauth_access_token" in values:
+            zapier_nla_api_key_default = ""
+        else:
+            values["zapier_nla_oauth_access_token"] = ""
+
+        # we require at least one API Key
         zapier_nla_api_key = get_from_dict_or_env(
-            values, "zapier_nla_api_key", "ZAPIER_NLA_API_KEY"
+            values,
+            "zapier_nla_api_key",
+            "ZAPIER_NLA_API_KEY",
+            zapier_nla_api_key_default,
         )
+
         values["zapier_nla_api_key"] = zapier_nla_api_key
 
         return values
@@ -98,10 +120,10 @@ class ZapierNLAWrapper(BaseModel):
         `params` will always contain an `instructions` key, the only required
         param. All others optional and if provided will override any AI guesses
         (see "understanding the AI guessing flow" here:
-        https://nla.zapier.com/api/v1/dynamic/docs)
+        https://nla.zapier.com/api/v1/docs)
         """
         session = self._get_session()
-        response = session.get(self.zapier_nla_api_dynamic_base + "exposed/")
+        response = session.get(self.zapier_nla_api_base + "exposed/")
         response.raise_for_status()
         return response.json()["results"]
 
@@ -148,8 +170,8 @@ class ZapierNLAWrapper(BaseModel):
         data = self.preview(*args, **kwargs)
         return json.dumps(data)
 
-    def list_as_str(self, *args, **kwargs) -> str:  # type: ignore[no-untyped-def]
+    def list_as_str(self) -> str:  # type: ignore[no-untyped-def]
         """Same as list, but returns a stringified version of the JSON for
         insertting back into an LLM."""
-        actions = self.list(*args, **kwargs)
+        actions = self.list()
         return json.dumps(actions)

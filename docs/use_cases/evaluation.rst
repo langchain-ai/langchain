@@ -1,5 +1,9 @@
 Evaluation
-==============
+==========
+
+.. note::
+   `Conceptual Guide <https://docs.langchain.com/docs/use-cases/evaluation>`_
+
 
 This section of documentation covers how we approach and think about evaluation in LangChain.
 Both evaluation of internal chains/agents, but also how we would recommend people building on top of LangChain approach evaluation.
@@ -65,25 +69,27 @@ To facilitate that, we've included a `template notebook <./evaluation/benchmarki
 
 The existing examples we have are:
 
-`Question Answering (State of Union) <./evaluation/qa_benchmarking_sota.html>`_: An notebook showing evaluation of a question-answering task over a State-of-the-Union address.
+`Question Answering (State of Union) <./evaluation/qa_benchmarking_sota.html>`_: A notebook showing evaluation of a question-answering task over a State-of-the-Union address.
 
-`Question Answering (Paul Graham Essay) <./evaluation/qa_benchmarking_pg.html>`_: An notebook showing evaluation of a question-answering task over a Paul Graham essay.
+`Question Answering (Paul Graham Essay) <./evaluation/qa_benchmarking_pg.html>`_: A notebook showing evaluation of a question-answering task over a Paul Graham essay.
 
-`SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: An notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
+`SQL Question Answering (Chinook) <./evaluation/sql_qa_benchmarking_chinook.html>`_: A notebook showing evaluation of a question-answering task over a SQL database (the Chinook database).
 
-`Agent Vectorstore <./evaluation/agent_vectordb_sota_pg.html>`_: An notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
+`Agent Vectorstore <./evaluation/agent_vectordb_sota_pg.html>`_: A notebook showing evaluation of an agent doing question answering while routing between two different vector databases.
 
-`Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: An notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
+`Agent Search + Calculator <./evaluation/agent_benchmarking.html>`_: A notebook showing evaluation of an agent doing question answering using a Search engine and a Calculator as tools.
+
+`Evaluating an OpenAPI Chain <./evaluation/openapi_eval.html>`_: A notebook showing evaluation of an OpenAPI chain, including how to generate test data if you don't have any.
 
 
 Other Examples
-------------
+--------------
 
 In addition, we also have some more generic resources for evaluation.
 
 `Question Answering <./evaluation/question_answering.html>`_: An overview of LLMs aimed at evaluating question answering systems in general.
 
-`Data Augmented Question Answering <./evaluation/data_augmented_question_answering.html>`_: An end-to-end example of evaluating a question answering system focused on a specific document (a VectorDBQAChain to be precise). This example highlights how to use LLMs to come up with question/answer examples to evaluate over, and then highlights how to use LLMs to evaluate performance on those generated examples.
+`Data Augmented Question Answering <./evaluation/data_augmented_question_answering.html>`_: An end-to-end example of evaluating a question answering system focused on a specific document (a RetrievalQAChain to be precise). This example highlights how to use LLMs to come up with question/answer examples to evaluate over, and then highlights how to use LLMs to evaluate performance on those generated examples.
 
 `Hugging Face Datasets <./evaluation/huggingface_datasets.html>`_: Covers an example of loading and using a dataset from Hugging Face for evaluation.
 

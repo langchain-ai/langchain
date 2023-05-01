@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -32,11 +32,13 @@ class TracerSession(TracerSessionBase):
 class BaseRun(BaseModel):
     """Base class for Run."""
 
-    id: Optional[Union[int, str]] = None
+    uuid: str
+    parent_uuid: Optional[str] = None
     start_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     end_time: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     extra: Optional[Dict[str, Any]] = None
     execution_order: int
+    child_execution_order: int
     serialized: Dict[str, Any]
     session_id: int
     error: Optional[str] = None
@@ -57,7 +59,6 @@ class ChainRun(BaseRun):
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
-    child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = Field(default_factory=list)
 
 
 class ToolRun(BaseRun):
@@ -69,7 +70,6 @@ class ToolRun(BaseRun):
     child_llm_runs: List[LLMRun] = Field(default_factory=list)
     child_chain_runs: List[ChainRun] = Field(default_factory=list)
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
-    child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = Field(default_factory=list)
 
 
 ChainRun.update_forward_refs()

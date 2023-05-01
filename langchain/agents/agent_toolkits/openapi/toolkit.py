@@ -10,7 +10,7 @@ from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
 from langchain.agents.agent_toolkits.openapi.prompt import DESCRIPTION
 from langchain.agents.tools import Tool
 from langchain.llms.base import BaseLLM
-from langchain.requests import RequestsWrapper
+from langchain.requests import TextRequestsWrapper
 from langchain.tools import BaseTool
 from langchain.tools.json.tool import JsonSpec
 from langchain.tools.requests.tool import (
@@ -25,7 +25,7 @@ from langchain.tools.requests.tool import (
 class RequestsToolkit(BaseToolkit):
     """Toolkit for making requests."""
 
-    requests_wrapper: RequestsWrapper
+    requests_wrapper: TextRequestsWrapper
 
     def get_tools(self) -> List[BaseTool]:
         """Return a list of tools."""
@@ -42,7 +42,7 @@ class OpenAPIToolkit(BaseToolkit):
     """Toolkit for interacting with a OpenAPI api."""
 
     json_agent: AgentExecutor
-    requests_wrapper: RequestsWrapper
+    requests_wrapper: TextRequestsWrapper
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
@@ -59,7 +59,7 @@ class OpenAPIToolkit(BaseToolkit):
         cls,
         llm: BaseLLM,
         json_spec: JsonSpec,
-        requests_wrapper: RequestsWrapper,
+        requests_wrapper: TextRequestsWrapper,
         **kwargs: Any,
     ) -> OpenAPIToolkit:
         """Create json agent from llm, then initialize."""

@@ -47,12 +47,24 @@ s.run("what is a large language model?")
 
 ### Tool
 
-You can also easily load this wrapper as a Tool (to use with an Agent).
+You can also load this wrapper as a Tool (to use with an Agent).
+
 You can do this with:
 
 ```python
 from langchain.agents import load_tools
-tools = load_tools(["searx-search"], searx_host="http://localhost:8888")
+tools = load_tools(["searx-search"],
+                    searx_host="http://localhost:8888",
+                    engines=["github"])
 ```
 
-For more information on tools, see [this page](../modules/agents/tools.md)
+Note that we could _optionally_ pass custom engines to use.
+
+If you want to obtain results with metadata as *json* you can use:
+```python
+tools = load_tools(["searx-search-results-json"],
+                    searx_host="http://localhost:8888",
+                    num_results=5)
+```
+
+For more information on tools, see [this page](../modules/agents/tools/getting_started.md)

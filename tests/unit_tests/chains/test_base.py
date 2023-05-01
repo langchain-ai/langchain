@@ -2,15 +2,14 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel
 
-from langchain.callbacks.base import CallbackManager
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema import BaseMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
-class FakeMemory(BaseMemory, BaseModel):
+class FakeMemory(BaseMemory):
     """Fake memory class for testing purposes."""
 
     @property
@@ -26,14 +25,12 @@ class FakeMemory(BaseMemory, BaseModel):
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Pass."""
-        pass
 
     def clear(self) -> None:
         """Pass."""
-        pass
 
 
-class FakeChain(Chain, BaseModel):
+class FakeChain(Chain):
     """Fake chain class for testing purposes."""
 
     be_correct: bool = True
@@ -50,7 +47,11 @@ class FakeChain(Chain, BaseModel):
         """Output key of bar."""
         return self.the_output_keys
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}
         else:
@@ -144,25 +145,10 @@ def test_run_with_callback() -> None:
     """Test run method works when callback manager is passed."""
     handler = FakeCallbackHandler()
     chain = FakeChain(
-        callback_manager=CallbackManager(handlers=[handler]), verbose=True
+        callbacks=[handler],
     )
     output = chain.run("bar")
     assert output == "baz"
     assert handler.starts == 1
     assert handler.ends == 1
-    assert handler.errors == 0
-
-
-def test_run_with_callback_not_verbose() -> None:
-    """Test run method works when callback manager is passed and not verbose."""
-    import langchain
-
-    langchain.verbose = False
-
-    handler = FakeCallbackHandler()
-    chain = FakeChain(callback_manager=CallbackManager(handlers=[handler]))
-    output = chain.run("bar")
-    assert output == "baz"
-    assert handler.starts == 0
-    assert handler.ends == 0
     assert handler.errors == 0

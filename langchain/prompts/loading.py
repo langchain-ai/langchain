@@ -14,7 +14,7 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:

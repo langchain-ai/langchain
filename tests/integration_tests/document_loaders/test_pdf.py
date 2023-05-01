@@ -2,9 +2,11 @@ from pathlib import Path
 
 from langchain.document_loaders import (
     PDFMinerLoader,
+    PDFMinerPDFasHTMLLoader,
     PyMuPDFLoader,
     UnstructuredPDFLoader,
 )
+from langchain.document_loaders.pdf import MathpixPDFLoader
 
 
 def test_unstructured_pdf_loader() -> None:
@@ -26,6 +28,21 @@ def test_pdfminer_loader() -> None:
 
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
     loader = PDFMinerLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 1
+
+
+def test_pdfminer_pdf_as_html_loader() -> None:
+    """Test PDFMinerPDFasHTMLLoader."""
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = PDFMinerPDFasHTMLLoader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PDFMinerPDFasHTMLLoader(str(file_path))
 
     docs = loader.load()
     assert len(docs) == 1
@@ -53,3 +70,19 @@ def test_pymupdf_loader() -> None:
     assert loader.web_path == web_path
     assert loader.file_path != web_path
     assert len(docs) == 1
+
+
+def test_mathpix_loader() -> None:
+    file_path = Path(__file__).parent.parent / "examples/hello.pdf"
+    loader = MathpixPDFLoader(str(file_path))
+    docs = loader.load()
+
+    assert len(docs) == 1
+    print(docs[0].page_content)
+
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = MathpixPDFLoader(str(file_path))
+
+    docs = loader.load()
+    assert len(docs) == 1
+    print(docs[0].page_content)

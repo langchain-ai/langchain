@@ -2,8 +2,11 @@
 from typing import List, Optional
 
 import numpy as np
-from pydantic import BaseModel
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.embeddings.base import Embeddings
@@ -23,18 +26,24 @@ class FakeEmbeddings(Embeddings):
         return list(np.random.uniform(0, 1, 10))
 
 
-class FakeLLM(BaseLLM, BaseModel):
+class FakeLLM(BaseLLM):
     """Fake LLM wrapper for testing purposes."""
 
     n: int = 1
 
     def _generate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
     async def _agenerate(
-        self, prompts: List[str], stop: Optional[List[str]] = None
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 

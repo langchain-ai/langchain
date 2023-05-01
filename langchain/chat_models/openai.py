@@ -5,7 +5,7 @@ import logging
 import sys
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,6 +14,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -26,14 +30,14 @@ from langchain.schema import (
 )
 from langchain.utils import get_from_dict_or_env
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(llm: ChatOpenAI) -> Callable[[Any], Any]:
     import openai
 
-    min_seconds = 4
-    max_seconds = 10
+    min_seconds = 1
+    max_seconds = 60
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     return retry(
@@ -91,16 +95,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
-    generations = []
-    for res in response["choices"]:
-        message = _convert_dict_to_message(res["message"])
-        gen = ChatGeneration(message=message)
-        generations.append(gen)
-    return ChatResult(generations=generations)
-
-
-class ChatOpenAI(BaseChatModel, BaseModel):
+class ChatOpenAI(BaseChatModel):
     """Wrapper around OpenAI Chat large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -119,16 +114,21 @@ class ChatOpenAI(BaseChatModel, BaseModel):
     client: Any  #: :meta private:
     model_name: str = "gpt-3.5-turbo"
     """Model name to use."""
+    temperature: float = 0.7
+    """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
+    request_timeout: int = 60
+    """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
 
     class Config:
@@ -156,14 +156,22 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_organization = get_from_dict_or_env(
+            values,
+            "openai_organization",
+            "OPENAI_ORGANIZATION",
+            default="",
+        )
         try:
             import openai
 
             openai.api_key = openai_api_key
+            if openai_organization:
+                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
-                "Please it install it with `pip install openai`."
+                "Please install it with `pip install openai`."
             )
         try:
             values["client"] = openai.ChatCompletion
@@ -184,17 +192,19 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         """Get the default parameters for calling OpenAI API."""
         return {
             "model": self.model_name,
+            "request_timeout": self.request_timeout,
             "max_tokens": self.max_tokens,
             "stream": self.streaming,
             "n": self.n,
+            "temperature": self.temperature,
             **self.model_kwargs,
         }
 
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
         import openai
 
-        min_seconds = 4
-        max_seconds = 10
+        min_seconds = 1
+        max_seconds = 60
         # Wait 2^x * 1 second between each retry starting with
         # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
         return retry(
@@ -221,8 +231,25 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         return _completion_with_retry(**kwargs)
 
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            for k, v in token_usage.items():
+                if k in overall_token_usage:
+                    overall_token_usage[k] += v
+                else:
+                    overall_token_usage[k] = v
+        return {"token_usage": overall_token_usage, "model_name": self.model_name}
+
     def _generate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -235,16 +262,14 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                self.callback_manager.on_llm_new_token(
-                    token,
-                    verbose=self.verbose,
-                )
+                if run_manager:
+                    run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
             return ChatResult(generations=[ChatGeneration(message=message)])
         response = self.completion_with_retry(messages=message_dicts, **params)
-        return _create_chat_result(response)
+        return self._create_chat_result(response)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -257,8 +282,20 @@ class ChatOpenAI(BaseChatModel, BaseModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            gen = ChatGeneration(message=message)
+            generations.append(gen)
+        llm_output = {"token_usage": response["usage"], "model_name": self.model_name}
+        return ChatResult(generations=generations, llm_output=llm_output)
+
     async def _agenerate(
-        self, messages: List[BaseMessage], stop: Optional[List[str]] = None
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         if self.streaming:
@@ -271,16 +308,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
                 role = stream_resp["choices"][0]["delta"].get("role", role)
                 token = stream_resp["choices"][0]["delta"].get("content", "")
                 inner_completion += token
-                if self.callback_manager.is_async:
-                    await self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
-                else:
-                    self.callback_manager.on_llm_new_token(
-                        token,
-                        verbose=self.verbose,
-                    )
+                if run_manager:
+                    await run_manager.on_llm_new_token(token)
             message = _convert_dict_to_message(
                 {"content": inner_completion, "role": role}
             )
@@ -289,7 +318,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             response = await acompletion_with_retry(
                 self, messages=message_dicts, **params
             )
-            return _create_chat_result(response)
+            return self._create_chat_result(response)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -298,8 +327,8 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate num tokens with tiktoken package."""
-        # tiktoken NOT supported for Python 3.8 or below
-        if sys.version_info[1] <= 8:
+        # tiktoken NOT supported for Python 3.7 or below
+        if sys.version_info[1] <= 7:
             return super().get_num_tokens(text)
         try:
             import tiktoken
@@ -307,7 +336,7 @@ class ChatOpenAI(BaseChatModel, BaseModel):
             raise ValueError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate get_num_tokens. "
-                "Please it install it with `pip install tiktoken`."
+                "Please install it with `pip install tiktoken`."
             )
         # create a GPT-3.5-Turbo encoder instance
         enc = tiktoken.encoding_for_model(self.model_name)
@@ -317,3 +346,61 @@ class ChatOpenAI(BaseChatModel, BaseModel):
 
         # calculate the number of tokens in the encoded text
         return len(tokenized_text)
+
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+
+        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        try:
+            import tiktoken
+        except ImportError:
+            raise ValueError(
+                "Could not import tiktoken python package. "
+                "This is needed in order to calculate get_num_tokens. "
+                "Please install it with `pip install tiktoken`."
+            )
+
+        model = self.model_name
+        if model == "gpt-3.5-turbo":
+            # gpt-3.5-turbo may change over time.
+            # Returning num tokens assuming gpt-3.5-turbo-0301.
+            model = "gpt-3.5-turbo-0301"
+        elif model == "gpt-4":
+            # gpt-4 may change over time.
+            # Returning num tokens assuming gpt-4-0314.
+            model = "gpt-4-0314"
+
+        # Returns the number of tokens used by a list of messages.
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            logger.warning("Warning: model not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if model == "gpt-3.5-turbo-0301":
+            # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            tokens_per_message = 4
+            # if there's a name, the role is omitted
+            tokens_per_name = -1
+        elif model == "gpt-4-0314":
+            tokens_per_message = 3
+            tokens_per_name = 1
+        else:
+            raise NotImplementedError(
+                f"get_num_tokens_from_messages() is not presently implemented "
+                f"for model {model}."
+                "See https://github.com/openai/openai-python/blob/main/chatml.md for "
+                "information on how messages are converted to tokens."
+            )
+        num_tokens = 0
+        messages_dict = [_convert_message_to_dict(m) for m in messages]
+        for message in messages_dict:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        # every reply is primed with <im_start>assistant
+        num_tokens += 3
+        return num_tokens

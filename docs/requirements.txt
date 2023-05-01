@@ -10,3 +10,4 @@ sphinx-panels
 toml
 myst_nb
 sphinx_copybutton
+pydata-sphinx-theme==0.13.1

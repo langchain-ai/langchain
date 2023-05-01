@@ -1,11 +1,14 @@
+"""VectorStore wrapper around a Postgres/PGVector database."""
+from __future__ import annotations
+
 import enum
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
@@ -29,7 +32,7 @@ class CollectionStore(BaseModel):
     __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
-    cmetadata = sqlalchemy.Column(sqlalchemy.JSON)
+    cmetadata = sqlalchemy.Column(JSON)
 
     embeddings = relationship(
         "EmbeddingStore",
@@ -57,7 +60,7 @@ class CollectionStore(BaseModel):
         if collection:
             return collection, created
 
-        collection = cls(name=name, metadata=cmetadata)
+        collection = cls(name=name, cmetadata=cmetadata)
         session.add(collection)
         session.commit()
         created = True
@@ -78,7 +81,7 @@ class EmbeddingStore(BaseModel):
 
     embedding: Vector = sqlalchemy.Column(Vector(ADA_TOKEN_COUNT))
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    cmetadata = sqlalchemy.Column(sqlalchemy.JSON, nullable=True)
+    cmetadata = sqlalchemy.Column(JSON, nullable=True)
 
     # custom_id : any user defined id
     custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
@@ -121,6 +124,7 @@ class PGVector(VectorStore):
         connection_string: str,
         embedding_function: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
@@ -128,6 +132,7 @@ class PGVector(VectorStore):
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self.collection_name = collection_name
+        self.collection_metadata = collection_metadata
         self.distance_strategy = distance_strategy
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
@@ -168,7 +173,9 @@ class PGVector(VectorStore):
         if self.pre_delete_collection:
             self.delete_collection()
         with Session(self._conn) as session:
-            CollectionStore.get_or_create(session, self.collection_name)
+            CollectionStore.get_or_create(
+                session, self.collection_name, cmetadata=self.collection_metadata
+            )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
@@ -229,6 +236,7 @@ class PGVector(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search with PGVector with distance.
@@ -245,64 +253,83 @@ class PGVector(VectorStore):
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
+            filter=filter,
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         embedding = self.embedding_function.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(embedding, k)
+        docs = self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, filter=filter
+        )
         return docs
 
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         with Session(self._conn) as session:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
 
-            results: List[QueryResult] = (
-                session.query(
-                    EmbeddingStore,
-                    self.distance_strategy(embedding).label("distance"),  # type: ignore
-                )
-                .filter(EmbeddingStore.collection_id == collection.uuid)
-                .order_by(sqlalchemy.asc("distance"))
-                .join(
-                    CollectionStore,
-                    EmbeddingStore.collection_id == CollectionStore.uuid,
-                )
-                .limit(k)
-                .all()
+        filter_by = EmbeddingStore.collection_id == collection.uuid
+
+        if filter is not None:
+            filter_clauses = []
+            for key, value in filter.items():
+                filter_by_metadata = EmbeddingStore.cmetadata[key].astext == str(value)
+                filter_clauses.append(filter_by_metadata)
+
+            filter_by = sqlalchemy.and_(filter_by, *filter_clauses)
+
+        results: List[QueryResult] = (
+            session.query(
+                EmbeddingStore,
+                self.distance_strategy(embedding).label("distance"),  # type: ignore
             )
-            docs = [
-                (
-                    Document(
-                        page_content=result.EmbeddingStore.document,
-                        metadata=result.EmbeddingStore.cmetadata,
-                    ),
-                    result.distance if self.embedding_function is not None else None,
-                )
-                for result in results
-            ]
-            return docs
+            .filter(filter_by)
+            .order_by(sqlalchemy.asc("distance"))
+            .join(
+                CollectionStore,
+                EmbeddingStore.collection_id == CollectionStore.uuid,
+            )
+            .limit(k)
+            .all()
+        )
+        docs = [
+            (
+                Document(
+                    page_content=result.EmbeddingStore.document,
+                    metadata=result.EmbeddingStore.cmetadata,
+                ),
+                result.distance if self.embedding_function is not None else None,
+            )
+            for result in results
+        ]
+        return docs
 
     def similarity_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -310,18 +337,19 @@ class PGVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k
+            embedding=embedding, k=k, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[PGVector],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -330,7 +358,7 @@ class PGVector(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> "PGVector":
+    ) -> PGVector:
         """
         Return VectorStore initialized from texts and embeddings.
         Postgres connection string is required
@@ -370,7 +398,7 @@ class PGVector(VectorStore):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[PGVector],
         documents: List[Document],
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
@@ -378,7 +406,7 @@ class PGVector(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> "PGVector":
+    ) -> PGVector:
         """
         Return VectorStore initialized from documents and embeddings.
         Postgres connection string is required

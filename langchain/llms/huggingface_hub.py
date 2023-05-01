@@ -1,8 +1,9 @@
 """Wrapper around HuggingFace APIs."""
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +12,7 @@ DEFAULT_REPO_ID = "gpt2"
 VALID_TASKS = ("text2text-generation", "text-generation")
 
 
-class HuggingFaceHub(LLM, BaseModel):
+class HuggingFaceHub(LLM):
     """Wrapper around HuggingFaceHub  models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -66,7 +67,7 @@ class HuggingFaceHub(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import huggingface_hub python package. "
-                "Please it install it with `pip install huggingface_hub`."
+                "Please install it with `pip install huggingface_hub`."
             )
         return values
 
@@ -84,7 +85,12 @@ class HuggingFaceHub(LLM, BaseModel):
         """Return type of llm."""
         return "huggingface_hub"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to HuggingFace Hub's inference endpoint.
 
         Args:

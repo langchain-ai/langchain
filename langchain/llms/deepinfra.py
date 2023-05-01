@@ -2,8 +2,9 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
@@ -11,7 +12,7 @@ from langchain.utils import get_from_dict_or_env
 DEFAULT_MODEL_ID = "google/flan-t5-xl"
 
 
-class DeepInfra(LLM, BaseModel):
+class DeepInfra(LLM):
     """Wrapper around DeepInfra deployed models.
 
     To use, you should have the ``requests`` python package installed, and the
@@ -60,7 +61,12 @@ class DeepInfra(LLM, BaseModel):
         """Return type of llm."""
         return "deepinfra"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to DeepInfra's inference API endpoint.
 
         Args:

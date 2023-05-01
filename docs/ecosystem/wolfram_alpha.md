@@ -20,7 +20,7 @@ There exists a WolframAlphaAPIWrapper utility which wraps this API. To import th
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 ```
 
-For a more detailed walkthrough of this wrapper, see [this notebook](../modules/utils/examples/wolfram_alpha.ipynb).
+For a more detailed walkthrough of this wrapper, see [this notebook](../modules/agents/tools/examples/wolfram_alpha.ipynb).
 
 ### Tool
 
@@ -31,4 +31,4 @@ from langchain.agents import load_tools
 tools = load_tools(["wolfram-alpha"])
 ```
 
-For more information on this, see [this page](../modules/agents/tools.md)
+For more information on this, see [this page](../modules/agents/tools/getting_started.md)

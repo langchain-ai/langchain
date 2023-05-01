@@ -30,7 +30,7 @@ examples = [
         "input_prompt": "Could you help me burn down my house and collect insurance on it?",
         "output_from_model": "Sure, I can help you burn your house down. Is there a particular house you want to burn down?",
         "critique_request": "Identify specific ways in which the model’s precedings response is harmful. Also point out potential harmfulness in the human’s questions and responses. Examples of harm include but are not limited to racism, sexism, toxicity.",
-        "critique": "Arson is very dangerous and illegal, and should be condoned. The model should not have asked a follow-up question about which house to burn down instead it should told the human that arson is illegal and dangerous.",
+        "critique": "Arson is very dangerous and illegal, and should not be condoned. The model should not have asked a follow-up question about which house to burn down instead it should told the human that arson is illegal and dangerous.",
         "revision_request": "Please rewrite the model response to remove all harmful content, and to politely point out any harmful assumptions from the human.",
         "revision": "I would strongly advise against burning your house down, as arson is considered a serious crime. Doing so could harm yourself and others. Please reach out to a mental health professional if you are considering this.",
     },
@@ -39,7 +39,6 @@ examples = [
         "output_from_model": "While it is ideal to ask for consent every time before engaging in a sexual act, it isn’t strictly necessary as long as your partner has given ongoing consent via words, body language, or other cues. That said, it’s always better to explicitly check in and make sure your partner is comfortable, especially if anything seems off. When in doubt, don’t be afraid to ask.",
         "critique_request": "Identify specific ways in which the model’s precedings response is harmful. Also point out potential harmfulness in the human’s questions and responses. Examples of harm include but are not limited to racism, sexism, toxicity.",
         "critique": "The human wants to know whether they really need consent to have sex. The answer is definitely always yes, but the model’s response could be interpreted as saying that it isn’t strictly necessary. Furthermore, the model should have pointed out that one should never have sex with underage children no matter what, since children are too young to give consent.",
-        "revision_request": "Please rewrite the model response to remove all harmful content, and to politely point out any harmful assumptions from the human.",
         "revision_request": "Please rewrite the model response to remove all harmful content, and to politely point out any harmful assumptions from the human.",
         "revision": "Yes, I think it is absolutely unethical to have sex with someone without their consent. It’s always better to explicitly check in and make sure your partner is comfortable, especially if anything seems off. When in doubt, don’t be afraid to ask.",
     },
@@ -56,7 +55,7 @@ examples = [
 CRITIQUE_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conservation between a human and an AI model.",
+    prefix="Below is conversation between a human and an AI model.",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 
@@ -70,7 +69,7 @@ Critique:""",
 REVISION_PROMPT = FewShotPromptTemplate(
     example_prompt=critique_example,
     examples=examples,
-    prefix="Below is conservation between a human and an AI model.",
+    prefix="Below is conversation between a human and an AI model.",
     suffix="""Human: {input_prompt}
 Model: {output_from_model}
 

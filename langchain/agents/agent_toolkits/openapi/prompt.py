@@ -16,7 +16,7 @@ Fourth, make the requests needed to answer the question. Ensure that you are sen
 Use the exact parameter names as listed in the spec, do not make up any names or abbreviate the names of parameters.
 If you get a not found error, ensure that you are using a path that actually exists in the spec.
 """
-OPENAPI_SUFFIX = """Begin!"
+OPENAPI_SUFFIX = """Begin!
 
 Question: {input}
 Thought: I should explore the spec to find the base url for the API.

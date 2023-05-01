@@ -1,13 +1,17 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 
 from pydantic import BaseModel, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
-from langchain.memory.utils import get_buffer_string
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage, SystemMessage
+from langchain.schema import (
+    BaseMessage,
+    SystemMessage,
+    get_buffer_string,
+)
 
 
 class SummarizerMixin(BaseModel):
@@ -15,6 +19,7 @@ class SummarizerMixin(BaseModel):
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
     prompt: BasePromptTemplate = SUMMARY_PROMPT
+    summary_message_cls: Type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
         self, messages: List[BaseMessage], existing_summary: str
@@ -29,7 +34,7 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
 
-class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
+class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     """Conversation summarizer to memory."""
 
     buffer: str = ""
@@ -46,7 +51,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin, BaseModel):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
-            buffer: Any = [SystemMessage(content=self.buffer)]
+            buffer: Any = [self.summary_message_cls(content=self.buffer)]
         else:
             buffer = self.buffer
         return {self.memory_key: buffer}
