@@ -81,6 +81,10 @@ from typing import Any, Dict, Optional
 
 from pydantic import Field, root_validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool
 from langchain.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain.utilities.zapier import ZapierNLAWrapper
@@ -119,11 +123,17 @@ class ZapierNLARunAction(BaseTool):
         )
         return values
 
-    def _run(self, instructions: str) -> str:
+    def _run(
+        self, instructions: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         return self.api_wrapper.run_as_str(self.action_id, instructions, self.params)
 
-    async def _arun(self, _: str) -> str:
+    async def _arun(
+        self,
+        _: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         raise NotImplementedError("ZapierNLAListActions does not support async")
 
@@ -148,11 +158,19 @@ class ZapierNLAListActions(BaseTool):
     )
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
 
-    def _run(self, _: str) -> str:
+    def _run(
+        self,
+        _: str = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         return self.api_wrapper.list_as_str()
 
-    async def _arun(self, _: str) -> str:
+    async def _arun(
+        self,
+        _: str = "",
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         raise NotImplementedError("ZapierNLAListActions does not support async")
 

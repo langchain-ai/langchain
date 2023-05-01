@@ -156,6 +156,8 @@ class ConfluenceLoader(BaseLoader):
         page_ids: Optional[List[str]] = None,
         label: Optional[str] = None,
         cql: Optional[str] = None,
+        include_restricted_content: bool = False,
+        include_archived_content: bool = False,
         include_attachments: bool = False,
         include_comments: bool = False,
         limit: Optional[int] = 50,
@@ -170,6 +172,11 @@ class ConfluenceLoader(BaseLoader):
         :type label: Optional[str], optional
         :param cql: CQL Expression, defaults to None
         :type cql: Optional[str], optional
+        :param include_restricted_content: defaults to False
+        :type include_restricted_content: bool, optional
+        :param include_archived_content: Whether to include archived content,
+                                         defaults to False
+        :type include_archived_content: bool, optional
         :param include_attachments: defaults to False
         :type include_attachments: bool, optional
         :param include_comments: defaults to False
@@ -197,11 +204,12 @@ class ConfluenceLoader(BaseLoader):
                 space=space_key,
                 limit=limit,
                 max_pages=max_pages,
+                status="any" if include_archived_content else "current",
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, include_comments)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if label:
             pages = self.paginate_request(
@@ -211,9 +219,9 @@ class ConfluenceLoader(BaseLoader):
                 max_pages=max_pages,
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, include_comments)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if cql:
             pages = self.paginate_request(
@@ -221,11 +229,12 @@ class ConfluenceLoader(BaseLoader):
                 cql=cql,
                 limit=limit,
                 max_pages=max_pages,
+                include_archived_spaces=include_archived_content,
                 expand="body.storage.value",
             )
-            for page in pages:
-                doc = self.process_page(page, include_attachments, include_comments)
-                docs.append(doc)
+            docs += self.process_pages(
+                pages, include_restricted_content, include_attachments, include_comments
+            )
 
         if page_ids:
             for page_id in page_ids:
@@ -242,6 +251,8 @@ class ConfluenceLoader(BaseLoader):
                     before_sleep=before_sleep_log(logger, logging.WARNING),
                 )(self.confluence.get_page_by_id)
                 page = get_page(page_id=page_id, expand="body.storage.value")
+                if not include_restricted_content and not self.is_public_page(page):
+                    continue
                 doc = self.process_page(page, include_attachments, include_comments)
                 docs.append(doc)
 
@@ -288,6 +299,33 @@ class ConfluenceLoader(BaseLoader):
                 break
             docs.extend(batch)
         return docs[:max_pages]
+
+    def is_public_page(self, page: dict) -> bool:
+        """Check if a page is publicly accessible."""
+        restrictions = self.confluence.get_all_restrictions_for_content(page["id"])
+
+        return (
+            page["status"] == "current"
+            and not restrictions["read"]["restrictions"]["user"]["results"]
+            and not restrictions["read"]["restrictions"]["group"]["results"]
+        )
+
+    def process_pages(
+        self,
+        pages: List[dict],
+        include_restricted_content: bool,
+        include_attachments: bool,
+        include_comments: bool,
+    ) -> List[Document]:
+        """Process a list of pages into a list of documents."""
+        docs = []
+        for page in pages:
+            if not include_restricted_content and not self.is_public_page(page):
+                continue
+            doc = self.process_page(page, include_attachments, include_comments)
+            docs.append(doc)
+
+        return docs
 
     def process_page(
         self,

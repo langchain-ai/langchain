@@ -63,7 +63,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
             f"from your past:\n{relevant_memory}\n\n"
         )
         memory_message = SystemMessage(content=content_format)
-        used_tokens += len(memory_message.content)
+        used_tokens += self.token_counter(memory_message.content)
         historical_messages: List[BaseMessage] = []
         for message in previous_messages[-10:][::-1]:
             message_tokens = self.token_counter(message.content)

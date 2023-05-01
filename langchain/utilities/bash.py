@@ -1,10 +1,29 @@
 """Wrapper around subprocess to run commands."""
+from __future__ import annotations
+
+import platform
 import re
 import subprocess
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 from uuid import uuid4
 
-import pexpect
+if TYPE_CHECKING:
+    import pexpect
+
+
+def _lazy_import_pexpect() -> pexpect:
+    """Import pexpect only when needed."""
+    if platform.system() == "Windows":
+        raise ValueError("Persistent bash processes are not yet supported on Windows.")
+    try:
+        import pexpect
+
+    except ImportError:
+        raise ImportError(
+            "pexpect required for persistent bash processes."
+            " To install, run `pip install pexpect`."
+        )
+    return pexpect
 
 
 class BashProcess:
@@ -28,6 +47,8 @@ class BashProcess:
     @staticmethod
     def _initialize_persistent_process(prompt: str) -> pexpect.spawn:
         # Start bash in a clean environment
+        # Doesn't work on windows
+        pexpect = _lazy_import_pexpect()
         process = pexpect.spawn(
             "env", ["-i", "bash", "--norc", "--noprofile"], encoding="utf-8"
         )
@@ -75,6 +96,7 @@ class BashProcess:
 
     def _run_persistent(self, command: str) -> str:
         """Run commands and return final output."""
+        pexpect = _lazy_import_pexpect()
         if self.process is None:
             raise ValueError("Process not initialized")
         self.process.sendline(command)

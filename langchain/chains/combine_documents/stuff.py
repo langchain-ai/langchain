@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
     format_document,
@@ -30,6 +31,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     document_variable_name: str
     """The variable name in the llm_chain to put the documents in.
     If only one variable in the llm_chain, this need not be provided."""
+    document_separator: str = "\n\n"
+    """The string with which to join the formatted documents"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -66,7 +69,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             for k, v in kwargs.items()
             if k in self.llm_chain.prompt.input_variables
         }
-        inputs[self.document_variable_name] = "\n\n".join(doc_strings)
+        inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
 
     def prompt_length(self, docs: List[Document], **kwargs: Any) -> Optional[int]:
@@ -75,19 +78,21 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         prompt = self.llm_chain.prompt.format(**inputs)
         return self.llm_chain.llm.get_num_tokens(prompt)
 
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
-        """Stuff all documents into one prompt and pass to LLM."""
-        inputs = self._get_inputs(docs, **kwargs)
-        # Call predict on the LLM.
-        return self.llm_chain.predict(**inputs), {}
-
-    async def acombine_docs(
-        self, docs: List[Document], **kwargs: Any
+    def combine_docs(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
     ) -> Tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM."""
         inputs = self._get_inputs(docs, **kwargs)
         # Call predict on the LLM.
-        return await self.llm_chain.apredict(**inputs), {}
+        return self.llm_chain.predict(callbacks=callbacks, **inputs), {}
+
+    async def acombine_docs(
+        self, docs: List[Document], callbacks: Callbacks = None, **kwargs: Any
+    ) -> Tuple[str, dict]:
+        """Stuff all documents into one prompt and pass to LLM."""
+        inputs = self._get_inputs(docs, **kwargs)
+        # Call predict on the LLM.
+        return await self.llm_chain.apredict(callbacks=callbacks, **inputs), {}
 
     @property
     def _chain_type(self) -> str:
