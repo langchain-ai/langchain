@@ -2,10 +2,11 @@
 import json
 import urllib.request
 from base64 import b64encode
-from typing import Any, List
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils import get_from_env, stringify_value
 
 MODERN_TREASURY_ENDPOINTS = {
     "payment_orders": "https://app.moderntreasury.com/api/payment_orders",
@@ -25,40 +26,28 @@ incoming_payment_details",
 }
 
 
-def _stringify_value(val: Any) -> str:
-    if isinstance(val, str):
-        return val
-    elif isinstance(val, dict):
-        return "\n" + _stringify_dict(val)
-    elif isinstance(val, list):
-        return "\n".join(_stringify_value(v) for v in val)
-    else:
-        return str(val)
-
-
-def _stringify_dict(data: dict) -> str:
-    text = ""
-    for key, value in data.items():
-        text += key + ": " + _stringify_value(value) + "\n"
-    return text
-
-
 class ModernTreasuryLoader(BaseLoader):
-    def __init__(self, organization_id: str, api_key: str, resource: str) -> None:
-        self.organization_id = organization_id
-        self.api_key = api_key
+    def __init__(
+        self,
+        resource: str,
+        organization_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ) -> None:
         self.resource = resource
-
-        credentials = f"{self.organization_id}:{self.api_key}".encode("utf-8")
-        self.basic_auth_token = b64encode(credentials).decode("utf-8")
-        self.headers = {"Authorization": f"Basic {self.basic_auth_token}"}
+        organization_id = organization_id or get_from_env(
+            "organization_id", "MODERN_TREASURY_ORGANIZATION_ID"
+        )
+        api_key = api_key or get_from_env("api_key", "MODERN_TREASURY_API_KEY")
+        credentials = f"{organization_id}:{api_key}".encode("utf-8")
+        basic_auth_token = b64encode(credentials).decode("utf-8")
+        self.headers = {"Authorization": f"Basic {basic_auth_token}"}
 
     def _make_request(self, url: str) -> List[Document]:
         request = urllib.request.Request(url, headers=self.headers)
 
         with urllib.request.urlopen(request) as response:
             json_data = json.loads(response.read().decode())
-            text = _stringify_value(json_data)
+            text = stringify_value(json_data)
             metadata = {"source": url}
             return [Document(page_content=text, metadata=metadata)]
 
