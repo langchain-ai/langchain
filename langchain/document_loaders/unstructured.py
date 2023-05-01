@@ -129,7 +129,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
         return partition_via_api(
             filename=self.file_path,
             api_key=self.api_key,
-            url=self.url,
+            api_url=self.url,
             **self.unstructured_kwargs,
         )
 
@@ -181,6 +181,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         return partition_via_api(
             file=self.file,
             api_key=self.api_key,
-            url=self.url,
+            api_url=self.url,
             **self.unstructured_kwargs,
         )

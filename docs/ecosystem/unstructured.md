@@ -34,7 +34,9 @@ simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or
 `UnstructuredAPIFileIOLoader`. That will process your document using the hosted Unstructured API.
 Note that currently (as of 1 May 2023) the Unstructured API is open, but it will soon require
 an API. The [Unstructured documentation page](https://unstructured-io.github.io/) will have
-instructions on how to generate an API key once they're available.
+instructions on how to generate an API key once they're available. Check out the instructions
+[here](https://github.com/Unstructured-IO/unstructured-api#dizzy-instructions-for-using-the-docker-image)
+if you'd like to self-host the Unstructured API or run it locally.
 
 ## Wrappers
 
