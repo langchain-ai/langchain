@@ -5,8 +5,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Type, Union
 
-from O365 import Account, FileSystemTokenBackend
-from O365.drive import Drive, Folder
+try:
+    from O365 import Account, FileSystemTokenBackend
+    from O365.drive import Drive, Folder
+except ImportError:
+    raise ValueError(
+        "o365 package not found, please install it with `pip install o365`"
+    )
+
 from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document

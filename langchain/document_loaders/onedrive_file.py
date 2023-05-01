@@ -1,7 +1,13 @@
 import tempfile
 from typing import List
 
-from O365.drive import File
+try:
+    from O365.drive import File
+except ImportError:
+    raise ValueError(
+        "o365 package not found, please install it with `pip install o365`"
+    )
+
 from pydantic import BaseModel, Field
 
 from langchain.docstore.document import Document

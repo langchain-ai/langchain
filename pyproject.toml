@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.0.152"
+version = "0.0.154"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -75,7 +75,6 @@ lark = {version="^1.1.5", optional=true}
 lancedb = {version = "^0.1", optional = true}
 pexpect = {version = "^4.8.0", optional = true}
 pyvespa = {version = "^0.33.0", optional = true}
-o365 = "^2.0.26"
 
 [tool.poetry.group.docs.dependencies]
 autodoc_pydantic = "^1.8.0"
