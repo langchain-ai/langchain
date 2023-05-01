@@ -589,6 +589,11 @@ class AzureOpenAI(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"engine": self.deployment_name}, **super()._invocation_params}
 
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "azure"
+
 
 class OpenAIChat(BaseLLM):
     """Wrapper around OpenAI Chat large language models.
