@@ -1,8 +1,8 @@
 """Loader that fetches data from Modern Treasury"""
 import json
 import urllib.request
-from typing import Any, List
 from base64 import b64encode
+from typing import Any, List
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -11,7 +11,8 @@ MODERN_TREASURY_ENDPOINTS = {
     "payment_orders": "https://app.moderntreasury.com/api/payment_orders",
     "expected_payments": "https://app.moderntreasury.com/api/expected_payments",
     "returns": "https://app.moderntreasury.com/api/returns",
-    "incoming_payment_details": "https://app.moderntreasury.com/api/incoming_payment_details",
+    "incoming_payment_details": "https://app.moderntreasury.com/api/\
+incoming_payment_details",
     "counterparties": "https://app.moderntreasury.com/api/counterparties",
     "internal_accounts": "https://app.moderntreasury.com/api/internal_accounts",
     "external_accounts": "https://app.moderntreasury.com/api/external_accounts",
@@ -48,8 +49,8 @@ class ModernTreasuryLoader(BaseLoader):
         self.api_key = api_key
         self.resource = resource
 
-        basic_auth_token = b64encode("{self.organization_id}:{self.api_key}")
-        self.headers = {"Authorization": f"Basic {basic_auth_token}"}
+        self.basic_auth_token = b64encode(b"{self.organization_id}:{self.api_key}")
+        self.headers = {"Authorization": "Basic {self.basic_auth_token}"}
 
     def _make_request(self, url: str) -> List[Document]:
         request = urllib.request.Request(url, headers=self.headers)

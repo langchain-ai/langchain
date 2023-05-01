@@ -1,4 +1,4 @@
-from langchain.document_loaders.stripe import ModernTreasuryLoader
+from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 
 organization_id = ""
 api_key = ""
