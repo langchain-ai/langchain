@@ -158,8 +158,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             indices = []
             encoding = tiktoken.model.encoding_for_model(self.model)
             for i, text in enumerate(texts):
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
+                if self.model.endswith("001"):
+                    # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                    # replace newlines, which can negatively affect performance.
+                    text = text.replace("\n", " ")
                 token = encoding.encode(
                     text,
                     allowed_special=self.allowed_special,
@@ -212,8 +214,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if len(text) > self.embedding_ctx_length:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
-            # replace newlines, which can negatively affect performance.
-            text = text.replace("\n", " ")
+            if self.model.endswith("001"):
+                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
             return embed_with_retry(self, input=[text], engine=engine)["data"][0][
                 "embedding"
             ]
