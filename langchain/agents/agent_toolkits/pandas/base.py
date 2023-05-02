@@ -1,5 +1,5 @@
 """Agent for working with pandas objects."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.pandas.prompt import PREFIX, SUFFIX
