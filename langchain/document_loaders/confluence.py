@@ -223,7 +223,7 @@ class ConfluenceLoader(BaseLoader):
             if page_ids:
                 page_ids = list(set(page_ids + ids_by_label))
             else:
-                page_ids = set(ids_by_label)
+                page_ids = list(set(ids_by_label))
 
         if cql:
             pages = self.paginate_request(
