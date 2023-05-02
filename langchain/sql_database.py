@@ -4,7 +4,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Iterable, List, Optional
 
-from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
+from sqlalchemy import MetaData, Table, create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -179,16 +179,13 @@ class SQLDatabase:
         return f"Table Indexes:\n{indexes_formatted}"
 
     def _get_sample_rows(self, table: Table) -> str:
-        # build the select command
-        command = select(table).limit(self._sample_rows_in_table_info)
-
         # save the columns in string format
         columns_str = "\t".join([col.name for col in table.columns])
 
         try:
             # get the sample rows
             with self._engine.connect() as connection:
-                sample_rows = connection.execute(command)
+                sample_rows = connection.query(table).limit(self._sample_rows_in_table_info).all()
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
