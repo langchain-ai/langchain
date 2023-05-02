@@ -110,6 +110,7 @@ class SQLAlchemyCache(BaseCache):
         try:
             for item in items:
                 session.merge(item)
+            session.commit()
         finally:
             session.close()
 
