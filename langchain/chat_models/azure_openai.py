@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from pydantic import root_validator
 
-from langchain.chat_models.openai import ChatOpenAI
+from langchain.chat_models.openai import ChatOpenAI, _convert_dict_to_message
+from langchain.schema import (
+    ChatGeneration,
+    ChatResult
+)
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -114,7 +118,7 @@ class AzureChatOpenAI(ChatOpenAI):
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
-            if "finish_reason" in res and res["finish_reason"] == "content_filter":
+            if res.get("finish_reason", None) == "content_filter":
                 raise ValueError("Azure has not provided the response due to a content"
                                  " filter being triggered")
             message = _convert_dict_to_message(res["message"])
