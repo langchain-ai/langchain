@@ -5,7 +5,6 @@ from pydantic import Field
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.structured_chat.output_parser import (
-    StructuredChatOutputParser,
     StructuredChatOutputParserWithRetries,
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
@@ -23,7 +22,9 @@ from langchain.tools import BaseTool
 
 
 class StructuredChatAgent(Agent):
-    output_parser: AgentOutputParser = Field(default_factory=StructuredChatOutputParser)
+    output_parser: AgentOutputParser = Field(
+        default_factory=StructuredChatOutputParserWithRetries
+    )
 
     @property
     def observation_prefix(self) -> str:
