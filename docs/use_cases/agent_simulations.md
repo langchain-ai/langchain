@@ -1,12 +1,12 @@
 # Agent Simulations
 
-Agent simulations involve interacting one of more agents with eachother.
+Agent simulations involve interacting one of more agents with each other.
 Agent simulations generally involve two main components:
 
 - Long Term Memory
 - Simulation Environment
 
-Specific implementations of agent simulations (or parts of agent simulations) include
+Specific implementations of agent simulations (or parts of agent simulations) include:
 
 ## Simulations with One Agent
 - [Simulated Environment: Gymnasium](agent_simulations/gymnasium.ipynb): an example of how to create a simple agent-environment interaction loop with [Gymnasium](https://gymnasium.farama.org/) (formerly [OpenAI Gym](https://github.com/openai/gym)).
