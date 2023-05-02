@@ -26,6 +26,7 @@ from langchain.tools.requests.tool import (
     RequestsPostTool,
     RequestsPutTool,
 )
+from langchain.tools.scenexplain.tool import SceneXplainTool
 from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
 from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
@@ -232,6 +233,10 @@ def _get_human_tool(**kwargs: Any) -> BaseTool:
     return HumanInputRun(**kwargs)
 
 
+def _get_scenexplain(**kwargs: Any) -> BaseTool:
+    return SceneXplainTool(**kwargs)
+
+
 _EXTRA_LLM_TOOLS: Dict[
     str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
 ] = {
@@ -266,6 +271,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_lambda_api,
         ["awslambda_tool_name", "awslambda_tool_description", "function_name"],
     ),
+    "sceneXplain": (_get_scenexplain, []),
 }
 
 
