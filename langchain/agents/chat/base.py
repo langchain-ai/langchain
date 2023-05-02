@@ -5,6 +5,7 @@ from pydantic import Field
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.utils import validate_tools_single_input
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
@@ -15,7 +16,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction
-from langchain.tools import BaseTool
+from langchain.tools.base import BaseTool
 
 
 class ChatAgent(Agent):
@@ -49,6 +50,11 @@ class ChatAgent(Agent):
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
+
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
+        validate_tools_single_input(class_name=cls.__name__, tools=tools)
 
     @property
     def _stop(self) -> List[str]:

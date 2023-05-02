@@ -49,7 +49,7 @@ def marshal_spec(txt: str) -> dict:
         return yaml.safe_load(txt)
 
 
-class AIPLuginToolSchema(BaseModel):
+class AIPluginToolSchema(BaseModel):
     """AIPLuginToolSchema."""
 
     tool_input: Optional[str] = ""
@@ -58,7 +58,7 @@ class AIPLuginToolSchema(BaseModel):
 class AIPluginTool(BaseTool):
     plugin: AIPlugin
     api_spec: str
-    args_schema: Type[AIPLuginToolSchema] = AIPLuginToolSchema
+    args_schema: Type[AIPluginToolSchema] = AIPluginToolSchema
 
     @classmethod
     def from_plugin_url(cls, url: str) -> AIPluginTool:
