@@ -1,5 +1,4 @@
 """Test huggingface embeddings."""
-import unittest
 
 from langchain.embeddings.huggingface import (
     HuggingFaceEmbeddings,
