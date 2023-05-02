@@ -1,3 +1,5 @@
+"""Loader that loads data from OneDrive"""
+
 import logging
 import os
 import tempfile
@@ -90,12 +92,16 @@ class OneDriveLoader(BaseLoader, BaseModel):
                 **{"raise_http_errors": False},
             )
         else:
+            token_backend = FileSystemTokenBackend(
+                token_path=Path.home() / ".credentials"
+            )
             account = Account(
                 credentials=(
                     self.settings.client_id,
                     self.settings.client_secret.get_secret_value(),
                 ),
                 scopes=SCOPES,
+                token_backend=token_backend,
                 **{"raise_http_errors": False},
             )
             # make the auth
