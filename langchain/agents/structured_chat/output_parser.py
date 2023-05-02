@@ -11,7 +11,6 @@ from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
 from langchain.base_language import BaseLanguageModel
 from langchain.output_parsers import OutputFixingParser
-from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.schema import AgentAction, AgentFinish, OutputParserException
 
 logger = logging.getLogger(__name__)
@@ -43,9 +42,7 @@ class StructuredChatOutputParser(AgentOutputParser):
 
 
 class StructuredChatOutputParserWithRetries(AgentOutputParser):
-    base_parser: PydanticOutputParser = Field(
-        default_factory=StructuredChatOutputParser
-    )
+    base_parser: AgentOutputParser = Field(default_factory=StructuredChatOutputParser)
     output_fixing_parser: Optional[OutputFixingParser] = None
 
     def get_format_instructions(self) -> str:
