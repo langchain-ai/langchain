@@ -27,7 +27,7 @@ def create_openapi_agent(
     early_stopping_method: str = "force",
     verbose: bool = False,
     return_intermediate_steps: bool = False,
-    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Dict[str, Any] = {},
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a json agent from an LLM and tools."""
@@ -55,5 +55,5 @@ def create_openapi_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
-        **(agent_executor_kwargs or {}),
+        **agent_executor_kwargs,
     )
