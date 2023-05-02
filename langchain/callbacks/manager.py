@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import copy
 import functools
 import os
 import warnings
