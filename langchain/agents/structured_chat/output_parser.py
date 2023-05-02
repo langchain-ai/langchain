@@ -77,4 +77,5 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
             return cls(output_fixing_parser=output_fixing_parser)
         elif base_parser is not None:
             return cls(base_parser=base_parser)
-        return cls()
+        else:
+            return cls()
