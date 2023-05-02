@@ -699,8 +699,8 @@ def _configure(
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks_,
-                inheritable_handlers=inheritable_callbacks_,
+                handlers=inheritable_callbacks_.copy(),
+                inheritable_handlers=inheritable_callbacks_.copy(),
             )
         else:
             callback_manager = callback_manager_cls(
@@ -732,7 +732,6 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(StdOutCallbackHandler(), False)
-
         if tracing_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -748,5 +747,4 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
-
     return callback_manager
