@@ -9,6 +9,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
+from langchain.schemas import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
@@ -67,7 +68,11 @@ class VectorstoreIndexCreator(BaseModel):
         docs = []
         for loader in loaders:
             docs.extend(loader.load())
-        sub_docs = self.text_splitter.split_documents(docs)
+        return self.from_documents(docs)
+
+    def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
+        """Create a vectorstore index from documents."""
+        sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = self.vectorstore_cls.from_documents(
             sub_docs, self.embedding, **self.vectorstore_kwargs
         )
