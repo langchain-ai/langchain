@@ -30,6 +30,8 @@ from tenacity import (
     wait_exponential,
 )
 
+from enum import Enum
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -569,6 +571,7 @@ class AzureOpenAIMixin(ABC, BaseModel):
     openai_api_version: str = ""
     openai_api_key: str = ""
     openai_organization: str = ""
+    client_type: str = ""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -614,12 +617,18 @@ class AzureOpenAIMixin(ABC, BaseModel):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
-        except AttributeError:
+            if values["client_type"] == "chat_model":
+                values["client"] = openai.ChatCompletion
+            elif values["client_type"] == "llm":
+                values["client"] = openai.Completion
+            elif values["client_type"] == "embedding":
+                values["client"] = openai.Embedding
+            else:
+                raise ValueError(f"Unknown client type: {values['client_type']}. ")
+        except AttributeError as e:
             raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
+                f"Received attribute error: {e}. "
+                "Try upgrading OpenAI with `pip install --upgrade openai`."
             )
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
@@ -656,12 +665,12 @@ class AzureOpenAI(BaseOpenAI, AzureOpenAIMixin):
     - ``OPENAI_API_BASE``
     - ``OPENAI_API_VERSION``
 
-    For exmaple, if you have `gpt-35-turbo` deployed, with the deployment name
-    `35-turbo-dev`, the constructor should look like:
+    For exmaple, if you have `text-davinci-003` deployed, with the deployment name
+    `davinci-003-dev`, the constructor should look like:
 
     .. code-block:: python
         AzureOpenAI(
-            deployment_name="35-turbo-dev",
+            deployment_name="davinci-003-dev",
             openai_api_version="2023-03-15-preview",
         )
 
@@ -670,6 +679,8 @@ class AzureOpenAI(BaseOpenAI, AzureOpenAIMixin):
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
     """
+
+    client_type: str = "llm"
 
 
 class OpenAIChat(BaseLLM):

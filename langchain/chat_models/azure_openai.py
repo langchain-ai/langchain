@@ -35,3 +35,5 @@ class AzureChatOpenAI(ChatOpenAI, AzureOpenAIMixin):
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
     """
+
+    client_type: str = "chat_model"

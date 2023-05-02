@@ -25,6 +25,7 @@ from tenacity import (
 )
 
 from langchain.embeddings.base import Embeddings
+from langchain.llms.openai import AzureOpenAIMixin
 from langchain.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -75,32 +76,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             from langchain.embeddings import OpenAIEmbeddings
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
-
-    In order to use the library with Microsoft Azure endpoints, you need to set
-    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and optionally and
-    API_VERSION.
-    The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
-    the properties of your endpoint.
-    In addition, the deployment name must be passed as the model parameter.
-
-    Example:
-        .. code-block:: python
-
-            import os
-            os.environ["OPENAI_API_TYPE"] = "azure"
-            os.environ["OPENAI_API_BASE"] = "https://<your-endpoint.openai.azure.com/"
-            os.environ["OPENAI_API_KEY"] = "your AzureOpenAI key"
-
-            from langchain.embeddings.openai import OpenAIEmbeddings
-            embeddings = OpenAIEmbeddings(
-                deployment="your-embeddings-deployment-name",
-                model="your-embeddings-model-name",
-                api_base="https://your-endpoint.openai.azure.com/",
-                api_type="azure",
-            )
-            text = "This is a test query."
-            query_result = embeddings.embed_query(text)
-
     """
 
     client: Any  #: :meta private:
@@ -279,3 +254,33 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         embedding = self._embedding_func(text, engine=self.deployment)
         return embedding
+
+
+class AzureOpenAIEmbeddings(OpenAIEmbeddings, AzureOpenAIMixin):
+    """Wrapper around Azure OpenAI Embeddings API. To use this class you
+    must have a deployed model on Azure OpenAI. Use `deployment_name` in the
+    constructor to refer to the "Model deployment name" in the Azure portal.
+
+    In addition, you should have the ``openai`` python package installed, and the
+    following environment variables set or passed in constructor in lower case:
+    - ``OPENAI_API_TYPE`` (default: ``azure``)
+    - ``OPENAI_API_KEY``
+    - ``OPENAI_API_BASE``
+    - ``OPENAI_API_VERSION``
+
+    For exmaple, if you have `text-embedding-ada-002` deployed, with the deployment name
+    `embedding-ada-002-dev`, the constructor should look like:
+
+    .. code-block:: python
+        AzureOpenAIEmbeddings(
+            deployment_name="embedding-ada-002-dev",
+            openai_api_version="2023-03-15-preview",
+        )
+
+    Be aware the API version may change.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+    """
+
+    client_type = "embedding"
