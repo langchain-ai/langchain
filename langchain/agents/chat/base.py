@@ -16,7 +16,6 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction
-from langchain.tools import BaseTool
 from langchain.tools.base import BaseTool
 
 
