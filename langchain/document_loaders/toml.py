@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Union
 
-import toml
+import tomli
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -37,11 +37,11 @@ class TomlLoader(BaseLoader):
             with file_path.open("r", encoding="utf-8") as file:
                 content = file.read()
                 try:
-                    data = toml.loads(content)
+                    data = tomli.loads(content)
                     doc = Document(
                         page_content=json.dumps(data),
                         metadata={"source": str(file_path)},
                     )
                     yield doc
-                except toml.TomlDecodeError as e:
+                except tomli.TOMLDecodeError as e:
                     print(f"Error parsing TOML file {file_path}: {e}")
