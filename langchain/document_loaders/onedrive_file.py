@@ -5,7 +5,7 @@ try:
     from O365.drive import File
 except ImportError:
     raise ValueError(
-        "o365 package not found, please install it with `pip install o365`"
+        "O365 package not found, please install it with `pip install o365`"
     )
 
 from pydantic import BaseModel, Field

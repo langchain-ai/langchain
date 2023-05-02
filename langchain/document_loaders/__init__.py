@@ -50,6 +50,7 @@ from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
 from langchain.document_loaders.obsidian import ObsidianLoader
+from langchain.document_loaders.onedrive import OneDriveLoader
 from langchain.document_loaders.pdf import (
     MathpixPDFLoader,
     OnlinePDFLoader,
@@ -140,6 +141,7 @@ __all__ = [
     "NotionDBLoader",
     "NotionDirectoryLoader",
     "ObsidianLoader",
+    "OneDriveLoader",
     "OnlinePDFLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",

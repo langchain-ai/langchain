@@ -1,5 +1,4 @@
 """Loader that loads data from OneDrive"""
-
 import logging
 import os
 import tempfile
@@ -7,20 +6,19 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Type, Union
 
-try:
-    from O365 import Account, FileSystemTokenBackend
-    from O365.drive import Drive, Folder
-except ImportError:
-    raise ValueError(
-        "o365 package not found, please install it with `pip install o365`"
-    )
-
 from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 
+try:
+    from O365 import Account, FileSystemTokenBackend
+    from O365.drive import Drive, Folder
+except ImportError:
+    raise ValueError(
+        "O365 package not found, please install it with `pip install o365`"
+    )
 SCOPES = ["offline_access", "Files.Read.All"]
 logger = logging.getLogger(__name__)
 
@@ -56,7 +54,7 @@ class _SupportedFileTypes(BaseModel):
             elif file_type.value == "docx":
                 mime_types_mapping[
                     file_type.value
-                ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
             elif file_type.value == "pdf":
                 mime_types_mapping[file_type.value] = "application/pdf"
         return mime_types_mapping
@@ -71,7 +69,8 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def _auth(self) -> Type[Account]:
         """
-        Authenticates the OneDrive API client using the specified authentication method and returns the Account object.
+        Authenticates the OneDrive API client using the specified
+        authentication method and returns the Account object.
 
         Returns:
             Type[Account]: The authenticated Account object.
@@ -110,13 +109,15 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def _get_folder_from_path(self, drive: Type[Drive]) -> Union[Folder, Drive]:
         """
-        Returns the folder or drive object located at the specified path relative to the given drive.
+        Returns the folder or drive object located at the
+        specified path relative to the given drive.
 
         Args:
             drive (Type[Drive]): The root drive from which the folder path is relative.
 
         Returns:
-            Union[Folder, Drive]: The folder or drive object located at the specified path.
+            Union[Folder, Drive]: The folder or drive object
+            located at the specified path.
 
         Raises:
             FileNotFoundError: If the path does not exist.
@@ -135,19 +136,21 @@ class OneDriveLoader(BaseLoader, BaseModel):
             try:
                 subfolder_drive = list(filter(lambda x: subfolder in x.name, items))[0]
                 items = subfolder_drive.get_items()
-            except:
+            except (IndexError, AttributeError):
                 raise FileNotFoundError("Path {} not exist.".format(self.folder_path))
         return subfolder_drive
 
     def _load_from_folder(self, folder: Type[Folder]) -> List[Document]:
         """
-        Loads all supported document files from the specified folder and returns a list of Document objects.
+        Loads all supported document files from the specified folder
+        and returns a list of Document objects.
 
         Args:
             folder (Type[Folder]): The folder object to load the documents from.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded documents.
+            List[Document]: A list of Document objects representing
+            the loaded documents.
 
         """
         docs = []
@@ -166,14 +169,17 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def _load_from_object_ids(self, drive: Type[Drive]) -> List[Document]:
         """
-        Loads all supported document files from the specified OneDrive drive based on their object IDs and returns a list
+        Loads all supported document files from the specified OneDrive
+        drive based on their object IDs and returns a list
         of Document objects.
 
         Args:
-            drive (Type[Drive]): The OneDrive drive object to load the documents from.
+            drive (Type[Drive]): The OneDrive drive object
+            to load the documents from.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded documents.
+            List[Document]: A list of Document objects representing
+            the loaded documents.
         """
         docs = []
         file_types = _SupportedFileTypes(file_types=["doc", "docx", "pdf"])
@@ -186,7 +192,8 @@ class OneDriveLoader(BaseLoader, BaseModel):
                 file = drive.get_item(object_id)
                 if not file:
                     logging.warning(
-                        f"There isn't a file with object_id {object_id} in drive {drive}."
+                        "There isn't a file with"
+                        f"object_id {object_id} in drive {drive}."
                     )
                     continue
                 if file.is_file:
@@ -197,13 +204,16 @@ class OneDriveLoader(BaseLoader, BaseModel):
 
     def load(self) -> List[Document]:
         """
-        Loads all supported document files from the specified OneDrive drive and returns a list of Document objects.
+        Loads all supported document files from the specified OneDrive drive a
+        nd returns a list of Document objects.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded documents.
+            List[Document]: A list of Document objects
+            representing the loaded documents.
 
         Raises:
-            ValueError: If the specified drive ID does not correspond to a drive in the OneDrive storage.
+            ValueError: If the specified drive ID
+            does not correspond to a drive in the OneDrive storage.
         """
         account = self._auth()
         storage = account.storage()
