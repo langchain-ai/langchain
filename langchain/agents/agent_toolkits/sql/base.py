@@ -1,5 +1,5 @@
 """SQL agent."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_SUFFIX
@@ -24,7 +24,8 @@ def create_sql_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     verbose: bool = False,
-    **kwargs: Any,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a sql agent from an LLM and tools."""
     tools = toolkit.get_tools()
@@ -46,8 +47,10 @@ def create_sql_agent(
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
+        callback_manager=callback_manager,
         verbose=verbose,
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        **(agent_executor_kwargs or {}),
     )
