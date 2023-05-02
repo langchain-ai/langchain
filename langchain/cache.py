@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
 
-from sqlalchemy import Column, Integer, String, create_engine, select
+from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
