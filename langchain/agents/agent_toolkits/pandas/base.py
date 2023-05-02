@@ -26,10 +26,16 @@ def create_pandas_dataframe_agent(
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pandas agent from an LLM and dataframe."""
-    import pandas as pd
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ValueError(
+            "pandas package not found, please install with `pip install pandas`"
+        )
 
     if not isinstance(df, pd.DataFrame):
         raise ValueError(f"Expected pandas object, got {type(df)}")
+
     if input_variables is None:
         input_variables = ["df", "input", "agent_scratchpad"]
     tools = [PythonAstREPLTool(locals={"df": df})]
