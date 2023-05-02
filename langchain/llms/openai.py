@@ -30,8 +30,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from enum import Enum
-
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
