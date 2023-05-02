@@ -716,7 +716,7 @@ def _configure(
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(copy.deepcopy(handler), False)
+            callback_manager.add_handler(handler, False)
 
     tracer = tracing_callback_var.get()
     open_ai = openai_callback_var.get()
