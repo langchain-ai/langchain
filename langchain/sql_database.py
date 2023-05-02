@@ -217,7 +217,7 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             if self._schema is not None:
-                connection.exec_driver_sql(f"SET search_path TO {self._schema}")
+                connection.execute(f"SET search_path TO {self._schema}")
             cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 if fetch == "all":
