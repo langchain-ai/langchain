@@ -108,9 +108,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
     openai_api_version: str = "2022-12-01"
     # to support Azure OpenAI Service custom endpoints
-    openai_api_base: Optional[str] = None  
+    openai_api_base: Optional[str] = None
     # to support Azure OpenAI Service custom endpoints
-    openai_api_type: Optional[str] = None  
+    openai_api_type: Optional[str] = None
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
