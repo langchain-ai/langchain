@@ -7,6 +7,7 @@ from typing import Any, Iterable, List, Optional
 from sqlalchemy import MetaData, Table, create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
+from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateTable
 
 
@@ -184,12 +185,15 @@ class SQLDatabase:
 
         try:
             # get the sample rows
-            with self._engine.connect() as connection:
-                sample_rows = connection.query(table).limit(self._sample_rows_in_table_info).all()
+            session = Session(self._engine)
+            try:
+                sample_rows = session.query(table).limit(self._sample_rows_in_table_info).all()
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows)
                 )
+            finally:
+                session.close()
 
             # save the sample rows in string format
             sample_rows_str = "\n".join(["\t".join(row) for row in sample_rows])
