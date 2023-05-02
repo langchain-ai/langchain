@@ -10,6 +10,7 @@ from langchain.llms.cerebriumai import CerebriumAI
 from langchain.llms.cohere import Cohere
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.forefrontai import ForefrontAI
+from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
 from langchain.llms.gpt4all import GPT4All
 from langchain.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -39,6 +40,7 @@ __all__ = [
     "Cohere",
     "DeepInfra",
     "ForefrontAI",
+    "GooglePalm",
     "GooseAI",
     "GPT4All",
     "LlamaCpp",
@@ -74,6 +76,7 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "cohere": Cohere,
     "deepinfra": DeepInfra,
     "forefrontai": ForefrontAI,
+    "google_palm": GooglePalm,
     "gooseai": GooseAI,
     "gpt4all": GPT4All,
     "huggingface_hub": HuggingFaceHub,

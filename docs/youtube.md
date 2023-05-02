@@ -6,10 +6,15 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
 - [Building the Future with LLMs, `LangChain`, & `Pinecone`](https://youtu.be/nMniwlGyX-c) by [Pinecone](https://www.youtube.com/@pinecone-io)
 - [LangChain and Weaviate with Harrison Chase and Bob van Luijt - Weaviate Podcast #36](https://youtu.be/lhby7Ql7hbk) by [Weaviate • Vector Database](https://www.youtube.com/@Weaviate)
 - [LangChain Demo + Q&A with Harrison Chase](https://youtu.be/zaYTXQFR0_s?t=788) by [Full Stack Deep Learning](https://www.youtube.com/@FullStackDeepLearning)
+- [LangChain Agents: Build Personal Assistants For Your Data (Q&A with Harrison Chase and Mayo Oshin)](https://youtu.be/gVkF8cwfBLI) by [Chat with data](https://www.youtube.com/@chatwithdata)
 
 ## Tutorials
 
+- [LangChain Crash Course: Build an AutoGPT app in 25 minutes!](https://youtu.be/MlK6SIjcjE8) by [Nicholas Renotte](https://www.youtube.com/@NicholasRenotte)
+
 - [LangChain Crash Course - Build apps with language models](https://youtu.be/LbT1yp6quS8) by [Patrick Loeber](https://www.youtube.com/@patloeber)
+
+- [LangChain Explained in 13 Minutes | QuickStart Tutorial for Beginners](https://youtu.be/aywZrzNaKjs) by [Rabbitmetrics](https://www.youtube.com/@rabbitmetrics)
 
 - [LangChain for Gen AI and LLMs](https://www.youtube.com/playlist?list=PLIUOU7oqGTLieV9uTIFMm6_4PXg-hlN6F) by [James Briggs](https://www.youtube.com/@jamesbriggs):
   - #1 [Getting Started with `GPT-3` vs. Open Source LLMs](https://youtu.be/nE2skSRWTTs)
@@ -18,7 +23,7 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
   - #4 [Chatbot Memory for `Chat-GPT`, `Davinci` + other LLMs](https://youtu.be/X05uK0TZozM)
   - #5 [Chat with OpenAI in LangChain](https://youtu.be/CnAgB3A5OlU)
   - #6 [LangChain Agents Deep Dive with `GPT 3.5`](https://youtu.be/jSP-gSEyVeI)
-  - [Prompt Engineering with OpenAI's GPT-3 and other LLMs](https://youtu.be/BP9fi_0XTlw)
+  - [Prompt Engineering with OpenAI's `GPT-3` and other LLMs](https://youtu.be/BP9fi_0XTlw)
 
 - [LangChain 101](https://www.youtube.com/playlist?list=PLqZXAkvF1bPNQER9mLmDbntNfSpzdDIU5) by [Data Independent](https://www.youtube.com/@DataIndependent):
   - [What Is LangChain? - LangChain + `ChatGPT` Overview](https://youtu.be/_v_fgW2SkkQ)
@@ -57,7 +62,7 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
   - [Improve your `BabyAGI` with LangChain](https://youtu.be/DRgPyOXZ-oE)
 
 - [LangChain](https://www.youtube.com/playlist?list=PLVEEucA9MYhOu89CX8H3MBZqayTbcCTMr) by [Prompt Engineering](https://www.youtube.com/@engineerprompt):
-  - [LangChain Crash Course - All You Need to Know to Build Powerful Apps with LLMs](https://youtu.be/5-fc4Tlgmro)
+  - [LangChain Crash Course — All You Need to Know to Build Powerful Apps with LLMs](https://youtu.be/5-fc4Tlgmro)
   - [Working with MULTIPLE `PDF` Files in LangChain: `ChatGPT` for your Data](https://youtu.be/s5LhRdh5fu4)
   - [`ChatGPT` for YOUR OWN `PDF` files with LangChain](https://youtu.be/TLf90ipMzfE)
   - [Talk to YOUR DATA without OpenAI APIs: LangChain](https://youtu.be/wrD-fZvT6UI)
@@ -66,6 +71,13 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
   - [LangChain Beginner's Tutorial for `Typescript`/`Javascript`](https://youtu.be/bH722QgRlhQ)
   - [`GPT-4` Tutorial: How to Chat With Multiple `PDF` Files (~1000 pages of Tesla's 10-K Annual Reports)](https://youtu.be/Ix9WIZpArm0)
   - [`GPT-4` & LangChain Tutorial: How to Chat With A 56-Page `PDF` Document (w/`Pinecone`)](https://youtu.be/ih9PBGVVOO4)
+
+- [Get SH\*T Done with Prompt Engineering and LangChain](https://www.youtube.com/watch?v=muXbPpG_ys4&list=PLEJK-H61Xlwzm5FYLDdKt_6yibO33zoMW) by [Venelin Valkov](https://www.youtube.com/@venelin_valkov)
+  - [Getting Started with LangChain: Load Custom Data, Run OpenAI Models, Embeddings and `ChatGPT`](https://www.youtube.com/watch?v=muXbPpG_ys4)
+  - [Loaders, Indexes & Vectorstores in LangChain: Question Answering on `PDF` files with `ChatGPT`](https://www.youtube.com/watch?v=FQnvfR8Dmr0)
+  - [LangChain Models: `ChatGPT`, `Flan Alpaca`, `OpenAI Embeddings`, Prompt Templates & Streaming](https://www.youtube.com/watch?v=zy6LiK5F5-s)
+  - [LangChain Chains: Use `ChatGPT` to Build Conversational Agents, Summaries and Q&A on Text With LLMs](https://www.youtube.com/watch?v=h1tJZQPcimM)
+  - [Analyze Custom CSV Data with `GPT-4` using Langchain](https://www.youtube.com/watch?v=Ew3sGdX8at4)
 
 ## Videos (sorted by views)
 
@@ -83,10 +95,12 @@ This is a collection of `LangChain` tutorials and videos on `YouTube`.
 - [The easiest way to work with large language models | Learn LangChain in 10min](https://youtu.be/kmbS6FDQh7c) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [4 Autonomous AI Agents: “Westworld” simulation `BabyAGI`, `AutoGPT`, `Camel`, `LangChain`](https://youtu.be/yWbnH6inT_U) by [Sophia Yang](https://www.youtube.com/@SophiaYangDS)
 - [AI CAN SEARCH THE INTERNET? Langchain Agents + OpenAI ChatGPT](https://youtu.be/J-GL0htqda8) by [tylerwhatsgood](https://www.youtube.com/@tylerwhatsgood)
+- [Query Your Data with GPT-4 | Embeddings, Vector Databases | Langchain JS Knowledgebase](https://youtu.be/jRnUPUTkZmU) by [StarMorph AI](https://www.youtube.com/@starmorph)
 - [`Weaviate` + LangChain for LLM apps presented by Erika Cardenas](https://youtu.be/7AGj4Td5Lgw) by [`Weaviate` • Vector Database](https://www.youtube.com/@Weaviate)
-- [Analyze Custom `CSV` Data with `GPT-4` using Langchain](https://youtu.be/Ew3sGdX8at4) by [Venelin Valkov](https://www.youtube.com/@venelin_valkov) 
+- [Langchain Overview — How to Use Langchain & `ChatGPT`](https://youtu.be/oYVYIq0lOtI) by [Python In Office](https://www.youtube.com/@pythoninoffice6568)
 - [Langchain Overview - How to Use Langchain & `ChatGPT`](https://youtu.be/oYVYIq0lOtI) by [Python In Office](https://www.youtube.com/@pythoninoffice6568)
 - [Custom langchain Agent & Tools with memory. Turn any `Python function` into langchain tool with Gpt 3](https://youtu.be/NIG8lXk0ULg) by [echohive](https://www.youtube.com/@echohive)
+- [LangChain: Run Language Models Locally - `Hugging Face Models`](https://youtu.be/Xxxuw4_iCzw) by [Prompt Engineering](https://www.youtube.com/@engineerprompt)
 - [`ChatGPT` with any `YouTube` video using langchain and `chromadb`](https://youtu.be/TQZfB2bzVwU) by [echohive](https://www.youtube.com/@echohive)
 - [How to Talk to a `PDF` using LangChain and `ChatGPT`](https://youtu.be/v2i1YDtrIwk) by [Automata Learning Lab](https://www.youtube.com/@automatalearninglab)
 - [Langchain Document Loaders Part 1: Unstructured Files](https://youtu.be/O5C0wfsen98) by [Merk](https://www.youtube.com/@merksworld) 

@@ -17,7 +17,7 @@ class PydanticOutputParser(BaseOutputParser[T]):
         try:
             # Greedy search for 1st json candidate.
             match = re.search(
-                "\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
+                r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
             )
             json_str = ""
             if match:

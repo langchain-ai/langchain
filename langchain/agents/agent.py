@@ -7,7 +7,7 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, root_validator
@@ -17,7 +17,9 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
+    AsyncCallbackManagerForToolRun,
     CallbackManagerForChainRun,
+    CallbackManagerForToolRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
@@ -46,8 +48,8 @@ class BaseSingleActionAgent(BaseModel):
         """Return values of the agent."""
         return ["output"]
 
-    def get_allowed_tools(self) -> Optional[List[str]]:
-        return None
+    def get_allowed_tools(self) -> Set[str]:
+        return set()
 
     @abstractmethod
     def plan(
@@ -178,8 +180,8 @@ class BaseMultiActionAgent(BaseModel):
         """Return values of the agent."""
         return ["output"]
 
-    def get_allowed_tools(self) -> Optional[List[str]]:
-        return None
+    def get_allowed_tools(self) -> Set[str]:
+        return set()
 
     @abstractmethod
     def plan(
@@ -372,9 +374,9 @@ class Agent(BaseSingleActionAgent):
 
     llm_chain: LLMChain
     output_parser: AgentOutputParser
-    allowed_tools: Optional[List[str]] = None
+    allowed_tools: Set[str] = set()
 
-    def get_allowed_tools(self) -> Optional[List[str]]:
+    def get_allowed_tools(self) -> Set[str]:
         return self.allowed_tools
 
     @property
@@ -497,11 +499,7 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
         """Validate that appropriate tools are passed in."""
-        for tool in tools:
-            if not tool.is_single_input:
-                raise ValueError(
-                    f"{cls.__name__} does not support multi-input tool {tool.name}."
-                )
+        pass
 
     @classmethod
     @abstractmethod
@@ -582,6 +580,25 @@ class Agent(BaseSingleActionAgent):
         }
 
 
+class ExceptionTool(BaseTool):
+    name = "_Exception"
+    description = "Exception tool"
+
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        return query
+
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        return query
+
+
 class AgentExecutor(Chain):
     """Consists of an agent using tools."""
 
@@ -591,6 +608,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
     early_stopping_method: str = "force"
+    handle_parsing_errors: bool = False
 
     @classmethod
     def from_agent_and_tools(
@@ -611,12 +629,11 @@ class AgentExecutor(Chain):
         agent = values["agent"]
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
-        if allowed_tools is not None:
-            if set(allowed_tools) != set([tool.name for tool in tools]):
-                raise ValueError(
-                    f"Allowed tools ({allowed_tools}) different than "
-                    f"provided tools ({[tool.name for tool in tools]})"
-                )
+        if allowed_tools != set([tool.name for tool in tools]):
+            raise ValueError(
+                f"Allowed tools ({allowed_tools}) different than "
+                f"provided tools ({[tool.name for tool in tools]})"
+            )
         return values
 
     @root_validator()
@@ -719,12 +736,28 @@ class AgentExecutor(Chain):
 
         Override this to take control of how the agent makes and acts on choices.
         """
-        # Call the LLM to see what to do.
-        output = self.agent.plan(
-            intermediate_steps,
-            callbacks=run_manager.get_child() if run_manager else None,
-            **inputs,
-        )
+        try:
+            # Call the LLM to see what to do.
+            output = self.agent.plan(
+                intermediate_steps,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **inputs,
+            )
+        except Exception as e:
+            if not self.handle_parsing_errors:
+                raise e
+            text = str(e).split("`")[1]
+            observation = "Invalid or incomplete response"
+            output = AgentAction("_Exception", observation, text)
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = ExceptionTool().run(
+                output.tool,
+                verbose=self.verbose,
+                color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+            return [(output, observation)]
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
@@ -777,12 +810,28 @@ class AgentExecutor(Chain):
 
         Override this to take control of how the agent makes and acts on choices.
         """
-        # Call the LLM to see what to do.
-        output = await self.agent.aplan(
-            intermediate_steps,
-            callbacks=run_manager.get_child() if run_manager else None,
-            **inputs,
-        )
+        try:
+            # Call the LLM to see what to do.
+            output = await self.agent.aplan(
+                intermediate_steps,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **inputs,
+            )
+        except Exception as e:
+            if not self.handle_parsing_errors:
+                raise e
+            text = str(e).split("`")[1]
+            observation = "Invalid or incomplete response"
+            output = AgentAction("_Exception", observation, text)
+            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            observation = await ExceptionTool().arun(
+                output.tool,
+                verbose=self.verbose,
+                color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **tool_run_kwargs,
+            )
+            return [(output, observation)]
         # If the tool chosen is the finishing tool, then we end and return.
         if isinstance(output, AgentFinish):
             return output
