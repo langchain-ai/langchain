@@ -161,10 +161,13 @@ class PGVector(VectorStore):
 
     def create_vector_extension(self) -> None:
         try:
-            with Session(self._conn) as session:
+            session = Session()
+            try:
                 statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
                 session.execute(statement)
                 session.commit()
+            finally:
+                session.close()
         except Exception as e:
             self.logger.exception(e)
 
@@ -179,20 +182,26 @@ class PGVector(VectorStore):
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        with Session(self._conn) as session:
+        session = Session()
+        try:
             CollectionStore.get_or_create(
                 session, self.collection_name, cmetadata=self.collection_metadata
             )
+        finally:
+            session.close()
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with Session(self._conn) as session:
+        session = Session()
+        try:
             collection = self.get_collection(session)
             if not collection:
                 self.logger.error("Collection not found")
                 return
             session.delete(collection)
             session.commit()
+        finally:
+            session.close()
 
     def get_collection(self, session: Session) -> Optional["CollectionStore"]:
         return CollectionStore.get_by_name(session, self.collection_name)
@@ -222,7 +231,8 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        with Session(self._conn) as session:
+        session = Session()
+        try:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -236,6 +246,8 @@ class PGVector(VectorStore):
                 collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
             session.commit()
+        finally:
+            session.close()
 
         return ids
 
@@ -291,10 +303,13 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        with Session(self._conn) as session:
+        session = Session()
+        try:
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
+        finally:
+            session.close()
 
         filter_by = EmbeddingStore.collection_id == collection.uuid
 

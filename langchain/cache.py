@@ -91,10 +91,13 @@ class SQLAlchemyCache(BaseCache):
             .where(self.cache_schema.llm == llm_string)
             .order_by(self.cache_schema.idx)
         )
-        with Session(self.engine) as session:
+        session = Session()
+        try:
             rows = session.execute(stmt).fetchall()
             if rows:
                 return [Generation(text=row[0]) for row in rows]
+        finally:
+            session.close()
         return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
@@ -103,14 +106,20 @@ class SQLAlchemyCache(BaseCache):
             self.cache_schema(prompt=prompt, llm=llm_string, response=gen.text, idx=i)
             for i, gen in enumerate(return_val)
         ]
-        with Session(self.engine) as session, session.begin():
+        session = Session()
+        try:
             for item in items:
                 session.merge(item)
+        finally:
+            session.close()
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
-        with Session(self.engine) as session:
+        session = Session()
+        try:
             session.execute(self.cache_schema.delete())
+        finally:
+            session.close()
 
 
 class SQLiteCache(SQLAlchemyCache):

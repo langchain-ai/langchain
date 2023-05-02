@@ -57,13 +57,16 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve all messages from db"""
-        with self.Session() as session:
+        session = self.Session()
+        try:
             result = session.query(self.Message).where(
                 self.Message.session_id == self.session_id
             )
             items = [json.loads(record.message) for record in result]
             messages = messages_from_dict(items)
             return messages
+        finally:
+            session.close()
 
     def add_user_message(self, message: str) -> None:
         self.append(HumanMessage(content=message))
@@ -73,16 +76,21 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     def append(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
-        with self.Session() as session:
+        session = self.Session()
+        try:
             jsonstr = json.dumps(_message_to_dict(message))
             session.add(self.Message(session_id=self.session_id, message=jsonstr))
             session.commit()
+        finally:
+            session.close()
 
     def clear(self) -> None:
         """Clear session memory from db"""
-
-        with self.Session() as session:
+        session = self.Session()
+        try:
             session.query(self.Message).filter(
                 self.Message.session_id == self.session_id
             ).delete()
             session.commit()
+        finally:
+            session.close()
