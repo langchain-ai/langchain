@@ -119,6 +119,7 @@ class ChatOpenAI(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
     openai_organization: Optional[str] = None
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
@@ -156,6 +157,12 @@ class ChatOpenAI(BaseChatModel):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -166,6 +173,8 @@ class ChatOpenAI(BaseChatModel):
             import openai
 
             openai.api_key = openai_api_key
+            if openai_api_base:
+                openai.api_base = openai_api_base
             if openai_organization:
                 openai.organization = openai_organization
         except ImportError:
