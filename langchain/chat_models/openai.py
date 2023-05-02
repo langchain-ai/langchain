@@ -120,7 +120,7 @@ class ChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    request_timeout: int = 60
+    request_timeout: int = 120
     """Timeout in seconds for the OpenAPI request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""

@@ -1,6 +1,6 @@
 """Core toolkit implementations."""
 
-from langchain.tools.base import BaseTool
+from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
 from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
 from langchain.tools.file_management.copy import CopyFileTool
@@ -41,6 +41,7 @@ __all__ = [
     "APIOperation",
     "BaseTool",
     "BaseTool",
+    "BaseTool",
     "BingSearchResults",
     "BingSearchRun",
     "ClickTool",
@@ -48,7 +49,6 @@ __all__ = [
     "CurrentWebPageTool",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
-    "DuckDuckGoSearchRun",
     "DuckDuckGoSearchRun",
     "ExtractHyperlinksTool",
     "ExtractTextTool",
@@ -65,14 +65,16 @@ __all__ = [
     "NavigateTool",
     "OpenAPISpec",
     "ReadFileTool",
-    "ShellTool",
-    "WriteFileTool",
-    "BaseTool",
     "SceneXplainTool",
-    "VectorStoreQAWithSourcesTool",
+    "ShellTool",
+    "StructuredTool",
+    "Tool",
     "VectorStoreQATool",
+    "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
     "WolframAlphaQueryRun",
-    "ZapierNLARunAction",
+    "WriteFileTool",
     "ZapierNLAListActions",
+    "ZapierNLARunAction",
+    "tool",
 ]

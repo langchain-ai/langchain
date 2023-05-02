@@ -8,12 +8,12 @@ You can obtain a key by following the steps below.
 from typing import Dict
 
 import requests
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, BaseSettings, Field, root_validator
 
 from langchain.utils import get_from_dict_or_env
 
 
-class SceneXplainAPIWrapper(BaseModel):
+class SceneXplainAPIWrapper(BaseSettings, BaseModel):
     """Wrapper for SceneXplain API.
 
     In order to set this up, you need API key for the SceneXplain API.
@@ -23,7 +23,7 @@ class SceneXplainAPIWrapper(BaseModel):
       and create a new API key.
     """
 
-    scenex_api_key: str
+    scenex_api_key: str = Field(..., env="SCENEX_API_KEY")
     scenex_api_url: str = (
         "https://us-central1-causal-diffusion.cloudfunctions.net/describe"
     )
