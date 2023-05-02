@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Iterable, List, Union
 
@@ -37,7 +38,8 @@ class TomlLoader(BaseLoader):
                 content = file.read()
                 try:
                     data = toml.loads(content)
-                    doc = Document(data=data, metadata={"path": str(file_path)})
+                    doc = Document(page_content=json.dumps(data),
+                                   metadata={"source": str(file_path)})
                     yield doc
                 except toml.TomlDecodeError as e:
                     print(f"Error parsing TOML file {file_path}: {e}")
