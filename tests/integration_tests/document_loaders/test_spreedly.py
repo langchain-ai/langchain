@@ -1,10 +1,10 @@
-import StripeLoader
+from langchain.document_loaders.spreedly import SpreedlyLoader
 
-access_token = ""
-resource = "gateways_options"
 
 def test_spreedly_loader() -> None:
-    """Test Spreedly oader."""
+    """Test Spreedly Loader."""
+    access_token = ""
+    resource = "gateways_options"
     spreedly_loader = SpreedlyLoader(access_token, resource)
     documents = spreedly_loader.load()
 
