@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from pydantic import validator
 
@@ -15,17 +15,14 @@ class CombinedMemory(BaseMemory):
     def check_repeated_memory_variable(
         cls, value: List[BaseMemory]
     ) -> List[BaseMemory]:
-        for i, cur in enumerate(value):
-            for other in value[i + 1 :]:
-                repeated_vars = set(cur.memory_variables).intersection(
-                    set(other.memory_variables)
+        all_variables: Set[str] = set()
+        for val in enumerate(value):
+            overlap = all_variables.intersection(val)
+            if overlap:
+                raise ValueError(
+                    f"The same variables {overlap} are found in multiple"
+                    "memory object, which is not allowed by CombinedMemory."
                 )
-                if repeated_vars:
-                    raise ValueError(
-                        f"{cur} and {other} contain "
-                        f"common memory variable {repeated_vars}, "
-                        "which is not allowed by CombinedMemory."
-                    )
 
         return value
 
