@@ -1,11 +1,16 @@
 import shutil
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
-    BaseFileTool,
+    BaseFileToolMixin,
     FileValidationError,
 )
 
@@ -17,12 +22,17 @@ class FileMoveInput(BaseModel):
     destination_path: str = Field(..., description="New path for the moved file")
 
 
-class MoveFileTool(BaseFileTool):
+class MoveFileTool(BaseFileToolMixin, BaseTool):
     name: str = "move_file"
     args_schema: Type[BaseModel] = FileMoveInput
     description: str = "Move or rename a file from one location to another"
 
-    def _run(self, source_path: str, destination_path: str) -> str:
+    def _run(
+        self,
+        source_path: str,
+        destination_path: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         try:
             source_path_ = self.get_relative_path(source_path)
         except FileValidationError:
@@ -44,6 +54,11 @@ class MoveFileTool(BaseFileTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, source_path: str, destination_path: str) -> str:
+    async def _arun(
+        self,
+        source_path: str,
+        destination_path: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

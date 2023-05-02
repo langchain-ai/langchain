@@ -1,10 +1,15 @@
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool
 from langchain.tools.file_management.utils import (
     INVALID_PATH_TEMPLATE,
-    BaseFileTool,
+    BaseFileToolMixin,
     FileValidationError,
 )
 
@@ -19,12 +24,18 @@ class WriteFileInput(BaseModel):
     )
 
 
-class WriteFileTool(BaseFileTool):
+class WriteFileTool(BaseFileToolMixin, BaseTool):
     name: str = "write_file"
     args_schema: Type[BaseModel] = WriteFileInput
     description: str = "Write file to disk"
 
-    def _run(self, file_path: str, text: str, append: bool = False) -> str:
+    def _run(
+        self,
+        file_path: str,
+        text: str,
+        append: bool = False,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         try:
             write_path = self.get_relative_path(file_path)
         except FileValidationError:
@@ -38,6 +49,12 @@ class WriteFileTool(BaseFileTool):
         except Exception as e:
             return "Error: " + str(e)
 
-    async def _arun(self, file_path: str, text: str, append: bool = False) -> str:
+    async def _arun(
+        self,
+        file_path: str,
+        text: str,
+        append: bool = False,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         # TODO: Add aiofiles method
         raise NotImplementedError

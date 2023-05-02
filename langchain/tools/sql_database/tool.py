@@ -1,12 +1,17 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from pydantic import BaseModel, Extra, Field, validator, root_validator
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+from pydantic import BaseModel, Extra, Field, root_validator
+
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
-from langchain.schema import BaseLanguageModel
 from langchain.tools.base import BaseTool
 from langchain.tools.sql_database.prompt import QUERY_CHECKER
 
@@ -35,11 +40,19 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     If an error is returned, rewrite the query, check the query, and try again.
     """
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         raise NotImplementedError("QuerySqlDbTool does not support async")
 
 
@@ -54,11 +67,19 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     Example Input: "table1, table2, table3"
     """
 
-    def _run(self, table_names: str) -> str:
+    def _run(
+        self,
+        table_names: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Get the schema for tables in a comma-separated list."""
         return self.db.get_table_info_no_throw(table_names.split(", "))
 
-    async def _arun(self, table_name: str) -> str:
+    async def _arun(
+        self,
+        table_name: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         raise NotImplementedError("SchemaSqlDbTool does not support async")
 
 
@@ -68,11 +89,19 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     name = "list_tables_sql_db"
     description = "Input is an empty string, output is a comma separated list of tables in the database."
 
-    def _run(self, tool_input: str = "") -> str:
+    def _run(
+        self,
+        tool_input: str = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Get the schema for a specific table."""
         return ", ".join(self.db.get_usable_table_names())
 
-    async def _arun(self, tool_input: str = "") -> str:
+    async def _arun(
+        self,
+        tool_input: str = "",
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         raise NotImplementedError("ListTablesSqlDbTool does not support async")
 
 
@@ -106,9 +135,17 @@ class QueryCheckerTool(BaseSQLDatabaseTool, BaseTool):
 
         return values
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the LLM to check the query."""
         return self.llm_chain.predict(query=query, dialect=self.db.dialect)
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return await self.llm_chain.apredict(query=query, dialect=self.db.dialect)

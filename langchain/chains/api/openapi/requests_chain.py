@@ -2,6 +2,7 @@
 
 import json
 import re
+from typing import Any
 
 from langchain.chains.api.openapi.prompts import REQUEST_TEMPLATE
 from langchain.chains.llm import LLMChain
@@ -36,7 +37,11 @@ class APIRequesterChain(LLMChain):
 
     @classmethod
     def from_llm_and_typescript(
-        cls, llm: BaseLLM, typescript_definition: str, verbose: bool = True
+        cls,
+        llm: BaseLLM,
+        typescript_definition: str,
+        verbose: bool = True,
+        **kwargs: Any,
     ) -> LLMChain:
         """Get the request parser."""
         output_parser = APIRequesterOutputParser()
@@ -46,4 +51,4 @@ class APIRequesterChain(LLMChain):
             partial_variables={"schema": typescript_definition},
             input_variables=["instructions"],
         )
-        return cls(prompt=prompt, llm=llm, verbose=verbose)
+        return cls(prompt=prompt, llm=llm, verbose=verbose, **kwargs)
