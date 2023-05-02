@@ -9,7 +9,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
-from langchain.schemas import Document
+from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
