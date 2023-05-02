@@ -81,6 +81,10 @@ def _redis_prefix(index_name: str) -> str:
     return f"doc:{index_name}"
 
 
+def _default_relevance_score(val: float) -> float:
+    return 1 - val
+
+
 class Redis(VectorStore):
     """Wrapper around Redis vector database.
 
@@ -108,6 +112,9 @@ class Redis(VectorStore):
         content_key: str = "content",
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_relevance_score,
         **kwargs: Any,
     ):
         """Initialize with necessary components."""
@@ -133,6 +140,7 @@ class Redis(VectorStore):
         self.content_key = content_key
         self.metadata_key = metadata_key
         self.vector_key = vector_key
+        self.relevance_score_fn = relevance_score_fn
 
     def _create_index(self, dim: int = 1536) -> None:
         try:
@@ -327,6 +335,24 @@ class Redis(VectorStore):
         ]
 
         return docs
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        if self.relevance_score_fn is None:
+            raise ValueError(
+                "relevance_score_fn must be provided to"
+                " Weaviate constructor to normalize scores"
+            )
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [(doc, self.relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     @classmethod
     def from_texts(
