@@ -14,6 +14,7 @@ from langchain.utilities.python import PythonREPL
 from langchain.utilities.searx_search import SearxSearchWrapper
 from langchain.utilities.serpapi import SerpAPIWrapper
 from langchain.utilities.wikipedia import WikipediaAPIWrapper
+from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "ArxivAPIWrapper",
     "BashProcess",
     "TextRequestsWrapper",
+    "DuckDuckGoSearchAPIWrapper",
     "GoogleSearchAPIWrapper",
     "GoogleSerperAPIWrapper",
     "GooglePlacesAPIWrapper",
