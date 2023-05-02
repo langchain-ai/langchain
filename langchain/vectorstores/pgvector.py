@@ -165,9 +165,11 @@ class PGVector(VectorStore):
 
     def create_tables_if_not_exists(self) -> None:
         Base.metadata.create_all(self._conn)
+        self._conn.commit()
 
     def drop_tables(self) -> None:
         Base.metadata.drop_all(self._conn)
+        self._conn.commit()
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
