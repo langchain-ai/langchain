@@ -85,7 +85,7 @@ class SQLAlchemyCache(BaseCache):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        session = Session()
+        session = Session(self.engine)
         try:
             rows = session.query(self.cache_schema.response).filter(self.cache_schema.prompt == prompt).filter(self.cache_schema.llm == llm_string).order_by(self.cache_schema.idx).all()
             if rows:
@@ -100,7 +100,7 @@ class SQLAlchemyCache(BaseCache):
             self.cache_schema(prompt=prompt, llm=llm_string, response=gen.text, idx=i)
             for i, gen in enumerate(return_val)
         ]
-        session = Session()
+        session = Session(self.engine)
         try:
             for item in items:
                 session.merge(item)
@@ -109,7 +109,7 @@ class SQLAlchemyCache(BaseCache):
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
-        session = Session()
+        session = Session(self.engine)
         try:
             session.execute(self.cache_schema.delete())
         finally:

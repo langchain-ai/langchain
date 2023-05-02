@@ -168,7 +168,7 @@ class AnalyticDB(VectorStore):
     def create_collection(self) -> None:
         if self.pre_delete_collection:
             self.delete_collection()
-        session = Session()
+        session = Session(self._conn)
         try:
             CollectionStore.get_or_create(
                 session, self.collection_name, cmetadata=self.collection_metadata
@@ -178,7 +178,7 @@ class AnalyticDB(VectorStore):
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        session = Session()
+        session = Session(self._conn)
         try:
             collection = self.get_collection(session)
             if not collection:
@@ -217,7 +217,7 @@ class AnalyticDB(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        session = Session()
+        session = Session(self._conn)
         try:
             collection = self.get_collection(session)
             if not collection:
@@ -289,7 +289,7 @@ class AnalyticDB(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        session = Session()
+        session = Session(self._conn)
         try:
             collection = self.get_collection(session)
             if not collection:
