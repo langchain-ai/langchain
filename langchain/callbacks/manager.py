@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import copy
 import functools
 import os
 import warnings
@@ -709,14 +708,13 @@ def _configure(
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers,
                 parent_run_id=inheritable_callbacks.parent_run_id,
             )
-        callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
             if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(copy.deepcopy(handler), False)
+            callback_manager.add_handler(handler, False)
 
     tracer = tracing_callback_var.get()
     open_ai = openai_callback_var.get()
