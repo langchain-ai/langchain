@@ -27,6 +27,7 @@ from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.react.base import ReActChain, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
+from langchain.agents.structured_chat.base import StructuredChatAgent
 from langchain.agents.tools import Tool, tool
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     "ReActChain",
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",
+    "StructuredChatAgent",
     "Tool",
     "ZeroShotAgent",
     "create_csv_agent",
