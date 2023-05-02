@@ -709,7 +709,6 @@ def _configure(
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers,
                 parent_run_id=inheritable_callbacks.parent_run_id,
             )
-        callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
             if isinstance(local_callbacks, list)
