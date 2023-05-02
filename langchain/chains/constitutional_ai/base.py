@@ -94,6 +94,7 @@ class ConstitutionalChain(Chain):
     ) -> Dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(**inputs)
+        initial_output = response
         input_prompt = self.chain.prompt.format(**inputs)
 
         _run_manager.on_text(
@@ -114,6 +115,16 @@ class ConstitutionalChain(Chain):
             critique = self._parse_critique(
                 output_string=raw_critique,
             ).strip()
+
+            ## if the critique contains "No critique needed", then we're done
+            ## in this case, initial_output is the same as output,
+            ## but we'll keep it for consistency
+            if "no critique needed" in critique.lower():
+                return {
+                    "output": response,
+                    "inital_output": initial_output,
+                    "critique": critique,
+                }
 
             # Do revision
 
@@ -145,7 +156,11 @@ class ConstitutionalChain(Chain):
                 color="yellow",
             )
 
-        return {"output": response}
+        return {
+            "output": response,
+            "inital_output": initial_output,
+            "critique": critique,
+        }
 
     @staticmethod
     def _parse_critique(output_string: str) -> str:
