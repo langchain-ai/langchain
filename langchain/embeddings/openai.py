@@ -162,7 +162,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        encoding = tiktoken.model.encoding_for_model(self.model)
+        encoding = tiktoken.encoding_for_model(self.model)
         for i, text in enumerate(texts):
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
