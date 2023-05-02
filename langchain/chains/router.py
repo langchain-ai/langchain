@@ -50,6 +50,8 @@ class RouterChain(Chain):
         destination = router_output["destination"]
         next_inputs = router_output["next_inputs"]
         if destination in self.destination_chains:
-            return self.destination_chains[destination](next_inputs, callbacks=callbacks)
+            return self.destination_chains[destination](
+                next_inputs, callbacks=callbacks
+            )
         else:
-            return self.default_chain(next_inputs ,callbacks=callbacks)
+            return self.default_chain(next_inputs, callbacks=callbacks)
