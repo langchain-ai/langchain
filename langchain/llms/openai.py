@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import sys
 import warnings
-from abc import ABC
 from typing import (
     AbstractSet,
     Any,
@@ -560,7 +559,7 @@ class OpenAI(BaseOpenAI):
         return {**{"model": self.model_name}, **super()._invocation_params}
 
 
-class AzureOpenAIMixin(ABC, BaseModel):
+class AzureOpenAIMixin(BaseModel):
     """Azure OpenAI mixin."""
 
     deployment_name: str = ""
