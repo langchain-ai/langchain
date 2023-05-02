@@ -311,7 +311,7 @@ class Chroma(VectorStore):
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
-    
+
     def get(self) -> Chroma:
         """Gets the collection"""
         return self._collection.get()
