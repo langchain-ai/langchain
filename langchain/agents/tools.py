@@ -1,9 +1,14 @@
 """Interface for tools."""
 from functools import partial
+from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel, validator
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.base import BaseTool, StructuredTool
 
 
@@ -44,14 +49,44 @@ class Tool(BaseTool):
             )
         return tuple(all_args), {}
 
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(
+        self,
+        *args: Any,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
         """Use the tool."""
-        return self.func(*args, **kwargs)
+        new_argument_supported = signature(self.func).parameters.get("callbacks")
+        return (
+            self.func(
+                *args,
+                callbacks=run_manager.get_child() if run_manager else None,
+                **kwargs,
+            )
+            if new_argument_supported
+            else self.func(*args, **kwargs)
+        )
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(
+        self,
+        *args: Any,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: Any,
+    ) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await self.coroutine(*args, **kwargs)
+            new_argument_supported = signature(self.coroutine).parameters.get(
+                "callbacks"
+            )
+            return (
+                await self.coroutine(
+                    *args,
+                    callbacks=run_manager.get_child() if run_manager else None,
+                    **kwargs,
+                )
+                if new_argument_supported
+                else await self.coroutine(*args, **kwargs)
+            )
         raise NotImplementedError("Tool does not support async")
 
     # TODO: this is for backwards compatibility, remove in future
@@ -70,11 +105,17 @@ class InvalidTool(BaseTool):
     name = "invalid_tool"
     description = "Called when tool name is invalid."
 
-    def _run(self, tool_name: str) -> str:
+    def _run(
+        self, tool_name: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """Use the tool."""
         return f"{tool_name} is not a valid tool, try another one."
 
-    async def _arun(self, tool_name: str) -> str:
+    async def _arun(
+        self,
+        tool_name: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool asynchronously."""
         return f"{tool_name} is not a valid tool, try another one."
 

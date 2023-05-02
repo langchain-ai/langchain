@@ -1,6 +1,7 @@
 """A chain for evaluating ReAct style agents."""
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chat_models import ChatOpenAI
@@ -94,7 +95,11 @@ Tool output: {output}"""
             return ["score", "reasoning"]
         return ["score"]
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         raw_output = self.eval_chain.run(
             {"tool_descriptions": self._tools_description, **inputs}
         )
