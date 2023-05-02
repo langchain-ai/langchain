@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-MODEL_COST_MAPPING = {
+MODEL_COST_PER_1K_TOKENS = {
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
     "gpt-4-completion": 0.06,
@@ -32,12 +32,12 @@ def get_openai_token_cost_for_model(
 ) -> float:
     suffix = "-completion" if is_completion and model_name.startswith("gpt-4") else ""
     model = model_name.lower() + suffix
-    if model not in MODEL_COST_MAPPING:
+    if model not in MODEL_COST_PER_1K_TOKENS:
         raise ValueError(
             f"Unknown model: {model_name}. Please provide a valid OpenAI model name."
-            "Known models are: " + ", ".join(MODEL_COST_MAPPING.keys())
+            "Known models are: " + ", ".join(MODEL_COST_PER_1K_TOKENS.keys())
         )
-    return MODEL_COST_MAPPING[model] * num_tokens / 1000
+    return MODEL_COST_PER_1K_TOKENS[model] * num_tokens / 1000
 
 
 class OpenAICallbackHandler(BaseCallbackHandler):
@@ -84,7 +84,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         model_name = response.llm_output.get("model_name")
-        if model_name and model_name in MODEL_COST_MAPPING:
+        if model_name and model_name in MODEL_COST_PER_1K_TOKENS:
             completion_cost = get_openai_token_cost_for_model(
                 model_name, completion_tokens, is_completion=True
             )
