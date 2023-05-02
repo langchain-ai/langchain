@@ -1,0 +1,38 @@
+from langchain.agents import __all__ as agents_all
+
+_EXPECTED = [
+    "Agent",
+    "AgentExecutor",
+    "AgentOutputParser",
+    "AgentType",
+    "BaseMultiActionAgent",
+    "BaseSingleActionAgent",
+    "ConversationalAgent",
+    "ConversationalChatAgent",
+    "LLMSingleActionAgent",
+    "MRKLChain",
+    "ReActChain",
+    "ReActTextWorldAgent",
+    "SelfAskWithSearchChain",
+    "Tool",
+    "ZeroShotAgent",
+    "create_csv_agent",
+    "create_json_agent",
+    "create_openapi_agent",
+    "create_pandas_dataframe_agent",
+    "create_pbi_agent",
+    "create_pbi_chat_agent",
+    "create_sql_agent",
+    "create_vectorstore_agent",
+    "create_vectorstore_router_agent",
+    "get_all_tool_names",
+    "initialize_agent",
+    "load_agent",
+    "load_tools",
+    "tool",
+]
+
+
+def test_public_api() -> None:
+    """Test for regressions or changes in the agents public API."""
+    assert agents_all == sorted(_EXPECTED)

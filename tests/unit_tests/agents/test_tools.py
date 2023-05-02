@@ -400,8 +400,8 @@ async def test_create_async_tool() -> None:
 @pytest.mark.parametrize(
     "agent_cls",
     [
-        ChatAgent,
         ZeroShotAgent,
+        ChatAgent,
         ConversationalChatAgent,
         ConversationalAgent,
         ReActDocstoreAgent,
