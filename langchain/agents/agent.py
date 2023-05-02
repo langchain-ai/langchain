@@ -17,7 +17,9 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
+    AsyncCallbackManagerForToolRun,
     CallbackManagerForChainRun,
+    CallbackManagerForToolRun,
     Callbacks,
 )
 from langchain.chains.base import Chain
@@ -582,10 +584,18 @@ class ExceptionTool(BaseTool):
     name = "_Exception"
     description = "Exception tool"
 
-    def _run(self, query: str) -> str:
+    def _run(
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         return query
 
-    async def _arun(self, query: str) -> str:
+    async def _arun(
+        self,
+        query: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         return query
 
 
@@ -744,6 +754,7 @@ class AgentExecutor(Chain):
                 output.tool,
                 verbose=self.verbose,
                 color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
             return [(output, observation)]
@@ -817,6 +828,7 @@ class AgentExecutor(Chain):
                 output.tool,
                 verbose=self.verbose,
                 color=None,
+                callbacks=run_manager.get_child() if run_manager else None,
                 **tool_run_kwargs,
             )
             return [(output, observation)]
