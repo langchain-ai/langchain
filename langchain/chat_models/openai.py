@@ -162,7 +162,7 @@ class ChatOpenAI(BaseChatModel):
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
-            default="",
+            default=None,
         )
         openai_organization = get_from_dict_or_env(
             values,
