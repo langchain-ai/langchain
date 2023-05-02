@@ -29,6 +29,22 @@ def test_qdrant(content_payload_key: str, metadata_payload_key: str) -> None:
     assert output == [Document(page_content="foo")]
 
 
+def test_qdrant_add_documents() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch: Qdrant = Qdrant.from_texts(texts, FakeEmbeddings(), location=":memory:")
+
+    new_texts = ["foobar", "foobaz"]
+    docsearch.add_documents([Document(page_content=content) for content in new_texts])
+    output = docsearch.similarity_search("foobar", k=1)
+    # FakeEmbeddings return the same query embedding as the first documents embedding computed
+    # in embedding.embed_documents
+    # since embed_documents is called twice, "foo" embedding is the same as "foobar" embedding
+    assert output == [Document(page_content="foobar")] or output == [
+        Document(page_content="foo")
+    ]
+
+
 @pytest.mark.parametrize(
     ["content_payload_key", "metadata_payload_key"],
     [
