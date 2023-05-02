@@ -14,6 +14,7 @@ _EXPECTED = [
     "ReActChain",
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",
+    "StructuredChatAgent",
     "Tool",
     "ZeroShotAgent",
     "create_csv_agent",
