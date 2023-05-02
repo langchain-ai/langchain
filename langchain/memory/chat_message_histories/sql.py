@@ -59,7 +59,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         """Retrieve all messages from db"""
         session = self.Session()
         try:
-            result = session.query(self.Message).where(
+            result = session.query(self.Message).filter(
                 self.Message.session_id == self.session_id
             )
             items = [json.loads(record.message) for record in result]
