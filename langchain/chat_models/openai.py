@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from pydantic import Extra, Field, root_validator
 from tenacity import (
@@ -120,8 +120,8 @@ class ChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    request_timeout: int = 120
-    """Timeout in seconds for the OpenAPI request."""
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
