@@ -1,7 +1,10 @@
 """Test Qdrant functionality."""
+from typing import Callable, Optional
+
 import pytest
 
 from langchain.docstore.document import Document
+from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
@@ -114,3 +117,51 @@ def test_qdrant_max_marginal_relevance_search(
         Document(page_content="foo", metadata={"page": 0}),
         Document(page_content="bar", metadata={"page": 1}),
     ]
+
+
+@pytest.mark.parametrize(
+    ["embeddings", "embedding_function"],
+    [
+        (FakeEmbeddings(), None),
+        (FakeEmbeddings().embed_query, None),
+        (None, FakeEmbeddings().embed_query),
+    ],
+)
+def test_qdrant_embedding_inteface(
+    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+) -> None:
+    from qdrant_client import QdrantClient
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+
+    docsearch = Qdrant(
+        client,
+        collection_name,
+        embeddings=embeddings,
+        embedding_function=embedding_function,
+    )
+
+
+@pytest.mark.parametrize(
+    ["embeddings", "embedding_function"],
+    [
+        (FakeEmbeddings(), FakeEmbeddings().embed_query),
+        (None, None),
+    ],
+)
+def test_qdrant_embedding_inteface_raises(
+    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+) -> None:
+    from qdrant_client import QdrantClient
+
+    client = QdrantClient(":memory:")
+    collection_name = "test"
+
+    with pytest.raises(ValueError):
+        docsearch = Qdrant(
+            client,
+            collection_name,
+            embeddings=embeddings,
+            embedding_function=embedding_function,
+        )
