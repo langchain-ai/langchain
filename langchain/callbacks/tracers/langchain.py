@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -11,6 +11,7 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
+    Run,
     ToolRun,
     TracerSession,
     TracerSessionCreate,
@@ -87,3 +88,68 @@ class LangChainTracer(BaseTracer):
     def load_default_session(self) -> TracerSession:
         """Load the default tracing session and set it as the Tracer's session."""
         return self._load_session("default")
+
+
+class LangChainTracerV2(LangChainTracer):
+    """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+
+    @staticmethod
+    def _convert_run(run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
+        """Convert a run to a Run."""
+
+        inputs: Dict[str, Any] = {}
+        outputs: Optional[Dict[str, Any]] = None
+        child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = []
+        if isinstance(run, LLMRun):
+            run_type = "llm"
+            inputs = {"prompts": run.prompts}
+            outputs = run.response.dict() if run.response else {}
+            child_runs = []
+        elif isinstance(run, ChainRun):
+            run_type = "chain"
+            inputs = run.inputs
+            outputs = run.outputs
+            child_runs = [
+                *run.child_llm_runs,
+                *run.child_chain_runs,
+                *run.child_tool_runs,
+            ]
+        else:
+            run_type = "tool"
+            inputs = {"input": run.tool_input}
+            outputs = {"output": run.output} if run.output else {}
+            child_runs = [
+                *run.child_llm_runs,
+                *run.child_chain_runs,
+                *run.child_tool_runs,
+            ]
+
+        return Run(
+            id=run.uuid,
+            name=run.serialized.get("name"),
+            start_time=run.start_time,
+            end_time=run.end_time,
+            extra=run.extra,
+            error=run.error,
+            execution_order=run.execution_order,
+            serialized=run.serialized,
+            inputs=inputs,
+            outputs=outputs,
+            session_id=run.session_id,
+            run_type=run_type,
+            parent_run_id=run.parent_uuid,
+            child_runs=[LangChainTracerV2._convert_run(child) for child in child_runs],
+        )
+
+    def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:
+        """Persist a run."""
+        run_create = self._convert_run(run)
+
+        try:
+            requests.post(
+                f"{self._endpoint}/runs",
+                data=run_create.json(),
+                headers=self._headers,
+            )
+        except Exception as e:
+            logging.warning(f"Failed to persist run: {e}")
