@@ -3,8 +3,12 @@ import logging
 from typing import List
 
 from sqlalchemy import Column, Integer, Text, create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 
 from langchain.schema import (
     AIMessage,
