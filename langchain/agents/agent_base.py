@@ -5,7 +5,7 @@ import json
 import logging
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import yaml
 from pydantic import BaseModel, validator
