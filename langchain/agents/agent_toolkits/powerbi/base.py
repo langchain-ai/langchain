@@ -27,7 +27,7 @@ def create_pbi_agent(
     input_variables: Optional[List[str]] = None,
     top_k: int = 10,
     verbose: bool = False,
-    agent_kwargs: Optional[Dict[str, Any]] = None,
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
     """Construct a pbi agent from an LLM and tools."""
@@ -51,12 +51,12 @@ def create_pbi_agent(
             verbose=verbose,
         ),
         allowed_tools=[tool.name for tool in tools],
-        **(agent_kwargs or {}),
+        **kwargs,
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,
         tools=tools,
         callback_manager=callback_manager,
         verbose=verbose,
-        **kwargs,
+        **(agent_executor_kwargs or {}),
     )
