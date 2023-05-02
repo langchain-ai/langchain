@@ -1,11 +1,10 @@
 # flake8: noqa
 PREFIX = """Respond to the human as helpfully and accurately as possible. You have access to the following tools:"""
-FORMAT_INSTRUCTIONS = """The way you use the tools is by specifying a json blob.
-Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
+FORMAT_INSTRUCTIONS = """Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
 
-The only values that should be in the "action" field "Final Answer" or: {tool_names}
+Valid "action" values: "Final Answer" or {tool_names}
 
-The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
+Provide only ONE action per $JSON_BLOB, as shown:
 
 ```
 {{{{
@@ -14,17 +13,17 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
 }}}}
 ```
 
-ALWAYS use the following format:
+Follow this format:
 
-Question: the input question you must answer
-Thought: you should always think about what to do
+Question: input question to answer
+Thought: consider previous and subsequent steps
 Action:
 ```
 $JSON_BLOB
 ```
-Observation: the result of the action
-... (this Thought/Action/Observation can repeat N times)
-Thought: I now know the final answer
+Observation: action result
+... (repeat Thought/Action/Observation N times)
+Thought: I know what to respond
 Action:
 ```
 {{{{
