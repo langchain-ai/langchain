@@ -48,6 +48,7 @@ class ConstitutionalChain(Chain):
     constitutional_principles: List[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
+    return_intermediate_steps: bool = False
 
     @classmethod
     def get_principles(
@@ -85,16 +86,18 @@ class ConstitutionalChain(Chain):
     @property
     def output_keys(self) -> List[str]:
         """Defines the output keys."""
+        if self.return_intermediate_steps:
+            return ["output", "critiques_and_revisions", "initial_output"]
         return ["output"]
 
     def _call(
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(**inputs)
-        initial_output = response
+        initial_response = response
         input_prompt = self.chain.prompt.format(**inputs)
 
         _run_manager.on_text(
@@ -102,7 +105,7 @@ class ConstitutionalChain(Chain):
             verbose=self.verbose,
             color="yellow",
         )
-
+        critiques_and_revisions = []
         for constitutional_principle in self.constitutional_principles:
             # Do critique
 
@@ -116,15 +119,12 @@ class ConstitutionalChain(Chain):
                 output_string=raw_critique,
             ).strip()
 
-            ## if the critique contains "No critique needed", then we're done
-            ## in this case, initial_output is the same as output,
-            ## but we'll keep it for consistency
+            # if the critique contains "No critique needed", then we're done
+            # in this case, initial_output is the same as output,
+            # but we'll keep it for consistency
             if "no critique needed" in critique.lower():
-                return {
-                    "output": response,
-                    "inital_output": initial_output,
-                    "critique": critique,
-                }
+                critiques_and_revisions.append((critique, ""))
+                continue
 
             # Do revision
 
@@ -137,6 +137,7 @@ class ConstitutionalChain(Chain):
                 callbacks=_run_manager.get_child(),
             ).strip()
             response = revision
+            critiques_and_revisions.append((critique, revision))
 
             _run_manager.on_text(
                 text=f"Applying {constitutional_principle.name}..." + "\n\n",
@@ -156,11 +157,11 @@ class ConstitutionalChain(Chain):
                 color="yellow",
             )
 
-        return {
-            "output": response,
-            "inital_output": initial_output,
-            "critique": critique,
-        }
+        final_output: Dict[str, Any] = {"output": response}
+        if self.return_intermediate_steps:
+            final_output["initial_output"] = initial_response
+            final_output["critiques_and_revisions"] = critiques_and_revisions
+        return final_output
 
     @staticmethod
     def _parse_critique(output_string: str) -> str:
