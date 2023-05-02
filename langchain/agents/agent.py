@@ -6,7 +6,7 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import root_validator
 
@@ -119,9 +119,9 @@ class Agent(BaseSingleActionAgent):
 
     llm_chain: LLMChain
     output_parser: AgentOutputParser
-    allowed_tools: Optional[List[str]] = None
+    allowed_tools: Set[str] = set()
 
-    def get_allowed_tools(self) -> Optional[List[str]]:
+    def get_allowed_tools(self) -> Set[str]:
         return self.allowed_tools
 
     @property
@@ -354,12 +354,11 @@ class AgentExecutor(Chain):
         agent = values["agent"]
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
-        if allowed_tools is not None:
-            if set(allowed_tools) != set([tool.name for tool in tools]):
-                raise ValueError(
-                    f"Allowed tools ({allowed_tools}) different than "
-                    f"provided tools ({[tool.name for tool in tools]})"
-                )
+        if allowed_tools != set([tool.name for tool in tools]):
+            raise ValueError(
+                f"Allowed tools ({allowed_tools}) different than "
+                f"provided tools ({[tool.name for tool in tools]})"
+            )
         return values
 
     @root_validator()

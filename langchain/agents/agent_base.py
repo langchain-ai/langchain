@@ -38,8 +38,8 @@ class BaseActionAgent(BaseModel):
         """Return values of the agent."""
         return ["output"]
 
-    def get_allowed_tools(self) -> Optional[List[str]]:
-        return None
+    def get_allowed_tools(self) -> Set[str]:
+        return set()
 
     @abstractmethod
     def plan(
