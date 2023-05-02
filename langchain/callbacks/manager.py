@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import copy
 import functools
 import os
 import warnings
@@ -700,8 +699,8 @@ def _configure(
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
-                handlers=inheritable_callbacks_,
-                inheritable_handlers=inheritable_callbacks_,
+                handlers=inheritable_callbacks_.copy(),
+                inheritable_handlers=inheritable_callbacks_.copy(),
             )
         else:
             callback_manager = callback_manager_cls(
@@ -709,14 +708,13 @@ def _configure(
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers,
                 parent_run_id=inheritable_callbacks.parent_run_id,
             )
-        callback_manager = copy.deepcopy(callback_manager)
         local_handlers_ = (
             local_callbacks
             if isinstance(local_callbacks, list)
             else (local_callbacks.handlers if local_callbacks else [])
         )
         for handler in local_handlers_:
-            callback_manager.add_handler(copy.deepcopy(handler), False)
+            callback_manager.add_handler(handler, False)
 
     tracer = tracing_callback_var.get()
     open_ai = openai_callback_var.get()
@@ -734,7 +732,6 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(StdOutCallbackHandler(), False)
-
         if tracing_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -750,5 +747,4 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(open_ai, True)
-
     return callback_manager
