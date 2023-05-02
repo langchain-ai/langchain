@@ -148,16 +148,6 @@ class OpenAICallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         pass
 
-    def on_text(
-        self,
-        text: str,
-        color: Optional[str] = None,
-        end: str = "",
-        **kwargs: Optional[str],
-    ) -> None:
-        """Run when agent ends."""
-        pass
-
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run on agent action."""
         pass
@@ -167,3 +157,11 @@ class OpenAICallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run on agent end."""
         pass
+
+    def __copy__(self) -> "OpenAICallbackHandler":
+        """Return a copy of the callback handler."""
+        return self
+
+    def __deepcopy__(self, memo: Any) -> "OpenAICallbackHandler":
+        """Return a deep copy of the callback handler."""
+        return self

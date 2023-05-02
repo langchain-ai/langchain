@@ -3,10 +3,10 @@ from typing import Callable, List, Tuple
 
 from pydantic import BaseModel, Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseLanguageModel
 
 
 class BasePromptSelector(BaseModel, ABC):

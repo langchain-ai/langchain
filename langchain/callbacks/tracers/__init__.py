@@ -1,12 +1,5 @@
 """Tracers that record execution of LangChain runs."""
 
-from langchain.callbacks.tracers.base import SharedTracer, Tracer
-from langchain.callbacks.tracers.langchain import BaseLangChainTracer
+from langchain.callbacks.tracers.langchain import LangChainTracer
 
-
-class SharedLangChainTracer(SharedTracer, BaseLangChainTracer):
-    """Shared tracer that records LangChain execution to LangChain endpoint."""
-
-
-class LangChainTracer(Tracer, BaseLangChainTracer):
-    """Tracer that records LangChain execution to LangChain endpoint."""
+__all__ = ["LangChainTracer"]

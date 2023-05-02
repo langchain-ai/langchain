@@ -9,6 +9,7 @@ from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.tools import Tool
+from langchain.agents.utils import validate_tools_single_input
 from langchain.docstore.base import Docstore
 from langchain.docstore.document import Document
 from langchain.llms.base import BaseLLM
@@ -37,6 +38,7 @@ class ReActDocstoreAgent(Agent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 2:
             raise ValueError(f"Exactly two tools must be specified, but got {tools}")
@@ -120,6 +122,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        validate_tools_single_input(cls.__name__, tools)
         super()._validate_tools(tools)
         if len(tools) != 1:
             raise ValueError(f"Exactly one tool must be specified, but got {tools}")
