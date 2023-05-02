@@ -29,13 +29,8 @@ def retry(ExceptionToCheck, tries=5, delay=4, backoff=2, logger=None):
                 try:
                     return f(*args, **kwargs)
                 except ExceptionToCheck:
-                    msg = "%s, Retrying in %d seconds..." % (
-                        str(ExceptionToCheck), mdelay)
-                    if logger:
-                        # logger.exception(msg) # would print stack trace
-                        logger.warning(msg)
-                    else:
-                        print(msg)
+                    msg = "%s, Retrying in %d seconds..." % (str(ExceptionToCheck), mdelay)
+                    print(msg)
                     time.sleep(mdelay)
                     mtries -= 1
                     mdelay *= backoff
