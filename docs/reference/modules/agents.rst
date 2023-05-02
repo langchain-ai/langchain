@@ -1,4 +1,4 @@
-:mod:`langchain.agents`
+Agents
 ===============================
 
 .. automodule:: langchain.agents

@@ -17,7 +17,7 @@ class Wikipedia(Docstore):
         except ImportError:
             raise ValueError(
                 "Could not import wikipedia python package. "
-                "Please it install it with `pip install wikipedia`."
+                "Please install it with `pip install wikipedia`."
             )
 
     def search(self, search: str) -> Union[str, Document]:
@@ -30,7 +30,10 @@ class Wikipedia(Docstore):
 
         try:
             page_content = wikipedia.page(search).content
-            result: Union[str, Document] = Document(page_content=page_content)
+            url = wikipedia.page(search).url
+            result: Union[str, Document] = Document(
+                page_content=page_content, metadata={"page": url}
+            )
         except wikipedia.PageError:
             result = f"Could not find [{search}]. Similar: {wikipedia.search(search)}"
         except wikipedia.DisambiguationError:

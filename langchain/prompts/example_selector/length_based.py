@@ -8,6 +8,10 @@ from langchain.prompts.example_selector.base import BaseExampleSelector
 from langchain.prompts.prompt import PromptTemplate
 
 
+def _get_length_based(text: str) -> int:
+    return len(re.split("\n| ", text))
+
+
 class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     """Select examples based on length."""
 
@@ -17,7 +21,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     example_prompt: PromptTemplate
     """Prompt template used to format the examples."""
 
-    get_text_length: Callable[[str], int] = lambda x: len(re.split("\n| ", x))
+    get_text_length: Callable[[str], int] = _get_length_based
     """Function to measure prompt length. Defaults to word count."""
 
     max_length: int = 2048
@@ -51,7 +55,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         examples = []
         while remaining_length > 0 and i < len(self.examples):
             new_length = remaining_length - self.example_text_lengths[i]
-            if i < 0:
+            if new_length < 0:
                 break
             else:
                 examples.append(self.examples[i])

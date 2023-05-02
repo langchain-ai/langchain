@@ -1,4 +1,4 @@
-:mod:`langchain.serpapi`
+SerpAPI
 =============================
 
 .. automodule:: langchain.serpapi

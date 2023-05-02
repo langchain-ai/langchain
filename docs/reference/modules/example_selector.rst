@@ -1,4 +1,4 @@
-:mod:`langchain.prompts.example_selector`
+Example Selector
 =========================================
 
 .. automodule:: langchain.prompts.example_selector

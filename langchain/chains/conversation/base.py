@@ -1,16 +1,16 @@
 """Chain that carries on a conversation and calls an LLM."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
-from langchain.chains.base import Memory
-from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
+from langchain.memory.buffer import ConversationBufferMemory
 from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseMemory
 
 
-class ConversationChain(LLMChain, BaseModel):
+class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
 
     Example:
@@ -20,14 +20,13 @@ class ConversationChain(LLMChain, BaseModel):
             conversation = ConversationChain(llm=OpenAI())
     """
 
-    memory: Memory = Field(default_factory=ConversationBufferMemory)
+    memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
     """Default memory store."""
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
 
     input_key: str = "input"  #: :meta private:
     output_key: str = "response"  #: :meta private:
-    buffer: str = ""  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""

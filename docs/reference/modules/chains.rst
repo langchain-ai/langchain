@@ -1,4 +1,4 @@
-:mod:`langchain.chains`
+Chains
 =======================
 
 .. automodule:: langchain.chains

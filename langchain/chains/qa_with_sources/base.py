@@ -2,40 +2,48 @@
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
+from langchain.chains.qa_with_sources.loading import load_qa_with_sources_chain
 from langchain.chains.qa_with_sources.map_reduce_prompt import (
     COMBINE_PROMPT,
     EXAMPLE_PROMPT,
     QUESTION_PROMPT,
 )
 from langchain.docstore.document import Document
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
-class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
+class BaseQAWithSourcesChain(Chain, ABC):
     """Question answering with sources over documents."""
 
-    combine_document_chain: BaseCombineDocumentsChain
+    combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
     question_key: str = "question"  #: :meta private:
     input_docs_key: str = "docs"  #: :meta private:
     answer_key: str = "answer"  #: :meta private:
     sources_answer_key: str = "sources"  #: :meta private:
+    return_source_documents: bool = False
+    """Return the source documents."""
 
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         document_prompt: BasePromptTemplate = EXAMPLE_PROMPT,
         question_prompt: BasePromptTemplate = QUESTION_PROMPT,
         combine_prompt: BasePromptTemplate = COMBINE_PROMPT,
@@ -55,9 +63,24 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
             document_variable_name="context",
         )
         return cls(
-            combine_document_chain=combine_document_chain,
+            combine_documents_chain=combine_document_chain,
             **kwargs,
         )
+
+    @classmethod
+    def from_chain_type(
+        cls,
+        llm: BaseLanguageModel,
+        chain_type: str = "stuff",
+        chain_type_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> BaseQAWithSourcesChain:
+        """Load chain from chain type."""
+        _chain_kwargs = chain_type_kwargs or {}
+        combine_document_chain = load_qa_with_sources_chain(
+            llm, chain_type=chain_type, **_chain_kwargs
+        )
+        return cls(combine_documents_chain=combine_document_chain, **kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -79,42 +102,72 @@ class BaseQAWithSourcesChain(Chain, BaseModel, ABC):
 
         :meta private:
         """
-        return [self.answer_key, self.sources_answer_key]
+        _output_keys = [self.answer_key, self.sources_answer_key]
+        if self.return_source_documents:
+            _output_keys = _output_keys + ["source_documents"]
+        return _output_keys
 
     @root_validator(pre=True)
-    def validate_question_chain(cls, values: Dict) -> Dict:
-        """Validate question chain."""
-        llm_question_chain = values["combine_document_chain"].llm_chain
-        if len(llm_question_chain.input_keys) != 2:
-            raise ValueError(
-                f"The llm_question_chain should have two inputs: a content key "
-                f"(the first one) and a question key (the second one). Got "
-                f"{llm_question_chain.input_keys}."
-            )
-        return values
-
-    @root_validator()
-    def validate_combine_chain_can_be_constructed(cls, values: Dict) -> Dict:
-        """Validate that the combine chain can be constructed."""
-        # Try to construct the combine documents chains.
-
+    def validate_naming(cls, values: Dict) -> Dict:
+        """Fix backwards compatability in naming."""
+        if "combine_document_chain" in values:
+            values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
 
     @abstractmethod
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         """Get docs to run questioning over."""
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         docs = self._get_docs(inputs)
-        answer = self.combine_document_chain.combine_docs(docs, **inputs)
-        if "\nSOURCES: " in answer:
-            answer, sources = answer.split("\nSOURCES: ")
+        answer = self.combine_documents_chain.run(
+            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+        )
+        if re.search(r"SOURCES:\s", answer):
+            answer, sources = re.split(r"SOURCES:\s", answer)
         else:
             sources = ""
-        return {self.answer_key: answer, self.sources_answer_key: sources}
+        result: Dict[str, Any] = {
+            self.answer_key: answer,
+            self.sources_answer_key: sources,
+        }
+        if self.return_source_documents:
+            result["source_documents"] = docs
+        return result
+
+    @abstractmethod
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        """Get docs to run questioning over."""
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        docs = await self._aget_docs(inputs)
+        answer = await self.combine_documents_chain.arun(
+            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+        )
+        if re.search(r"SOURCES:\s", answer):
+            answer, sources = re.split(r"SOURCES:\s", answer)
+        else:
+            sources = ""
+        result: Dict[str, Any] = {
+            self.answer_key: answer,
+            self.sources_answer_key: sources,
+        }
+        if self.return_source_documents:
+            result["source_documents"] = docs
+        return result
 
 
-class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
+class QAWithSourcesChain(BaseQAWithSourcesChain):
     """Question answering with sources over documents."""
 
     input_docs_key: str = "docs"  #: :meta private:
@@ -129,3 +182,10 @@ class QAWithSourcesChain(BaseQAWithSourcesChain, BaseModel):
 
     def _get_docs(self, inputs: Dict[str, Any]) -> List[Document]:
         return inputs.pop(self.input_docs_key)
+
+    async def _aget_docs(self, inputs: Dict[str, Any]) -> List[Document]:
+        return inputs.pop(self.input_docs_key)
+
+    @property
+    def _chain_type(self) -> str:
+        return "qa_with_sources_chain"

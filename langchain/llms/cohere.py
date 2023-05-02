@@ -1,14 +1,18 @@
 """Wrapper around Cohere APIs."""
-from typing import Any, Dict, List, Mapping, Optional
+import logging
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import Extra, root_validator
 
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain.llms.utils import enforce_stop_tokens
 from langchain.utils import get_from_dict_or_env
 
+logger = logging.getLogger(__name__)
 
-class Cohere(LLM, BaseModel):
+
+class Cohere(LLM):
     """Wrapper around Cohere large language models.
 
     To use, you should have the ``cohere`` python package installed, and the
@@ -18,7 +22,7 @@ class Cohere(LLM, BaseModel):
     Example:
         .. code-block:: python
 
-            from langchain import Cohere
+            from langchain.llms import Cohere
             cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
     """
 
@@ -38,13 +42,19 @@ class Cohere(LLM, BaseModel):
     p: int = 1
     """Total probability mass of tokens to consider at each step."""
 
-    frequency_penalty: int = 0
-    """Penalizes repeated tokens according to frequency."""
+    frequency_penalty: float = 0.0
+    """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
-    presence_penalty: int = 0
-    """Penalizes repeated tokens."""
+    presence_penalty: float = 0.0
+    """Penalizes repeated tokens. Between 0 and 1."""
+
+    truncate: Optional[str] = None
+    """Specify how the client handles inputs longer than the maximum token
+    length: Truncate from START, END or NONE"""
 
     cohere_api_key: Optional[str] = None
+
+    stop: Optional[List[str]] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,12 +74,12 @@ class Cohere(LLM, BaseModel):
         except ImportError:
             raise ValueError(
                 "Could not import cohere python package. "
-                "Please it install it with `pip install cohere`."
+                "Please install it with `pip install cohere`."
             )
         return values
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
         return {
             "max_tokens": self.max_tokens,
@@ -78,10 +88,11 @@ class Cohere(LLM, BaseModel):
             "p": self.p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
+            "truncate": self.truncate,
         }
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{"model": self.model}, **self._default_params}
 
@@ -90,7 +101,12 @@ class Cohere(LLM, BaseModel):
         """Return type of llm."""
         return "cohere"
 
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> str:
         """Call out to Cohere's generate endpoint.
 
         Args:
@@ -105,12 +121,18 @@ class Cohere(LLM, BaseModel):
 
                 response = cohere("Tell me a joke.")
         """
-        response = self.client.generate(
-            model=self.model, prompt=prompt, stop_sequences=stop, **self._default_params
-        )
+        params = self._default_params
+        if self.stop is not None and stop is not None:
+            raise ValueError("`stop` found in both the input and default params.")
+        elif self.stop is not None:
+            params["stop_sequences"] = self.stop
+        else:
+            params["stop_sequences"] = stop
+
+        response = self.client.generate(model=self.model, prompt=prompt, **params)
         text = response.generations[0].text
         # If stop tokens are provided, Cohere's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None:
-            text = enforce_stop_tokens(text, stop)
+        if stop is not None or self.stop is not None:
+            text = enforce_stop_tokens(text, params["stop_sequences"])
         return text
