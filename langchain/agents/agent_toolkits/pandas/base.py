@@ -16,7 +16,6 @@ def create_pandas_dataframe_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
     suffix: str = SUFFIX,
-    input_variables: Optional[List[str]] = None,
     verbose: bool = False,
     return_intermediate_steps: bool = False,
     max_iterations: Optional[int] = 15,
@@ -30,8 +29,7 @@ def create_pandas_dataframe_agent(
 
     if not isinstance(df, pd.DataFrame):
         raise ValueError(f"Expected pandas object, got {type(df)}")
-    if input_variables is None:
-        input_variables = ["df", "input", "agent_scratchpad"]
+    input_variables = ["df", "input", "agent_scratchpad"]
     tools = [PythonAstREPLTool(locals={"df": df})]
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix, input_variables=input_variables
