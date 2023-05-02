@@ -44,9 +44,7 @@ def test_sitemap_block_blocknum_default() -> None:
 def test_sitemap_block_size_to_small() -> None:
     """Test sitemap loader."""
     with pytest.raises(ValueError, match="Sitemap blocksize should be at least 1"):
-        SitemapLoader(
-            "https://langchain.readthedocs.io/sitemap.xml", blocksize=0
-        )
+        SitemapLoader("https://langchain.readthedocs.io/sitemap.xml", blocksize=0)
 
 
 def test_sitemap_block_num_to_small() -> None:
