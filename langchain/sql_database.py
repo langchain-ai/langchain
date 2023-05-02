@@ -187,7 +187,9 @@ class SQLDatabase:
             # get the sample rows
             session = Session(self._engine)
             try:
-                sample_rows = session.query(table).limit(self._sample_rows_in_table_info).all()
+                sample_rows = (
+                    session.query(table).limit(self._sample_rows_in_table_info).all()
+                )
                 # shorten values in the sample rows
                 sample_rows = list(
                     map(lambda ls: [str(i)[:100] for i in ls], sample_rows)

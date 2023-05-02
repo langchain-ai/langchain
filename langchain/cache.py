@@ -87,7 +87,13 @@ class SQLAlchemyCache(BaseCache):
         """Look up based on prompt and llm_string."""
         session = Session(self.engine)
         try:
-            rows = session.query(self.cache_schema.response).filter(self.cache_schema.prompt == prompt).filter(self.cache_schema.llm == llm_string).order_by(self.cache_schema.idx).all()
+            rows = (
+                session.query(self.cache_schema.response)
+                .filter(self.cache_schema.prompt == prompt)
+                .filter(self.cache_schema.llm == llm_string)
+                .order_by(self.cache_schema.idx)
+                .all()
+            )
             if rows:
                 return [Generation(text=row[0]) for row in rows]
         finally:
