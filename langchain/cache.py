@@ -85,15 +85,9 @@ class SQLAlchemyCache(BaseCache):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        stmt = (
-            select(self.cache_schema.response)
-            .filter(self.cache_schema.prompt == prompt)
-            .filter(self.cache_schema.llm == llm_string)
-            .order_by(self.cache_schema.idx)
-        )
         session = Session()
         try:
-            rows = session.execute(stmt).fetchall()
+            rows = session.query(self.cache_schema.response).filter(self.cache_schema.prompt == prompt).filter(self.cache_schema.llm == llm_string).order_by(self.cache_schema.idx).all()
             if rows:
                 return [Generation(text=row[0]) for row in rows]
         finally:
