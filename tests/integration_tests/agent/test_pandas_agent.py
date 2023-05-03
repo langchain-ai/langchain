@@ -1,12 +1,14 @@
-from pydantic import BaseModel
-from langchain.agents import create_pandas_dataframe_agent
-from langchain.agents.agent import AgentExecutor
+import re
 
-from langchain.llms import OpenAI
-from pandas import DataFrame
 import numpy as np
 import pytest
-import re
+from pandas import DataFrame
+from pydantic import BaseModel
+
+from langchain.agents import create_pandas_dataframe_agent
+from langchain.agents.agent import AgentExecutor
+from langchain.llms import OpenAI
+
 
 class TestData(BaseModel):
     df: DataFrame
@@ -22,15 +24,16 @@ def data() -> TestData:
     return TestData(df=df, dim=4)
 
 class TestPandasAgent():
-    def test_pandas_agent_creation(self, data):
+    def test_pandas_agent_creation(self, data: TestData) -> None:
         agent = create_pandas_dataframe_agent(OpenAI(temperature=0), data.df)
         assert isinstance(agent, AgentExecutor)
 
-    def test_data_reading(self, data):
-        agent = create_pandas_dataframe_agent(OpenAI(), data.df)
+    def test_data_reading(self, data: TestData) -> None:
+        agent = create_pandas_dataframe_agent(OpenAI(temperature=0), data.df)
         assert isinstance(agent, AgentExecutor)
         response = agent.run("how many rows in df? Give me a number.")
         result = re.search(rf".*({data.dim}).*", response)
+        assert result is not None
         assert result.group(1) is not None
 
 
