@@ -34,7 +34,7 @@ def _collect_user_input(
 
 class HumanLLM(LLM):
     """
-    A fake LLM wrapper for testing purposes that simulates a human response.
+    A LLM wrapper which returns user input as the response.
     """
 
     input_func: Callable = Field(default_factory=lambda: _collect_user_input)
