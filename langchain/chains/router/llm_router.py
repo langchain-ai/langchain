@@ -69,10 +69,11 @@ class LLMRouterChain(RouterChain):
 class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
     """Parser for output of router chain int he multi-prompt chain."""
 
+    default_destination: str = "DEFAULT"
     next_inputs_type: Type = str
     next_inputs_inner_key: str = "input"
 
-    def parse(self, text: str) -> Dict[str, str]:
+    def parse(self, text: str) -> Dict[str, Any]:
         try:
             expected_keys = ["destination", "next_inputs"]
             parsed = parse_json_markdown(text, expected_keys)
@@ -83,6 +84,13 @@ class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
                     f"Expected 'next_inputs' to be {self.next_inputs_type}."
                 )
             parsed["next_inputs"] = {self.next_inputs_inner_key: parsed["next_inputs"]}
+            if (
+                parsed["destination"].strip().lower()
+                == self.default_destination.lower()
+            ):
+                parsed["destination"] = None
+            else:
+                parsed["destination"] = parsed["destination"].strip()
             return parsed
         except Exception as e:
             raise OutputParserException(

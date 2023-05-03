@@ -46,7 +46,10 @@ class MultiRetrievalQAChain(MultiRouteChain):
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         if default_prompt and not default_retriever:
-            raise ValueError
+            raise ValueError(
+                "`default_retriever` must be specified if `default_prompt` is "
+                "provided. Received only `default_prompt`."
+            )
         destinations = [
             f"{name}: {description}"
             for name, description in zip(retriever_names, retriever_descriptions)
