@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Type, Union
 
@@ -14,7 +13,6 @@ from pydantic import (
     create_model,
     root_validator,
     validate_arguments,
-    validator,
 )
 from pydantic.main import ModelMetaclass
 
@@ -308,13 +306,6 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
-
-    @validator("func", pre=True, always=True)
-    def validate_func_not_partial(cls, func: Callable) -> Callable:
-        """Check that the function is not a partial."""
-        if isinstance(func, partial):
-            raise ValueError("Partial functions not yet supported in tools.")
-        return func
 
     @property
     def args(self) -> dict:
