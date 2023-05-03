@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 from typing import List, Union
 
-from langchain.document_loaders.base import BaseLoader
 from langchain.docstore.document import Document
+from langchain.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
