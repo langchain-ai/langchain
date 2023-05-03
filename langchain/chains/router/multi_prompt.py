@@ -53,10 +53,10 @@ class MultiPromptChain(MultiRouteChain):
             )
             for name, prompt in zip(prompt_names, prompt_templates)
         }
-        default_chain = default_chain or ConversationChain(llm=OpenAI())
+        _default_chain = default_chain or ConversationChain(llm=OpenAI())
         return cls(
             router_chain=router_chain,
             destination_chains=destination_chains,
-            default_chain=default_chain,
+            default_chain=_default_chain,
             **kwargs,
         )
