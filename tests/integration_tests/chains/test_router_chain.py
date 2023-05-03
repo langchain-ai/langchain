@@ -3,7 +3,7 @@ import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 import pytest
 import yaml
-from langchain.chains.llm_router_chain.base import RouterChain
+from langchain.chains.llm_router_chain.base import ConditionalRouterChain
 from langchain import LLMChain, PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -78,25 +78,25 @@ class RouterConfig:
 
 
 @pytest.fixture()
-def router_config() -> RouterChain:
+def router_config() -> ConditionalRouterChain:
     config = RouterConfig(llm=LLM)
 
     def vector_lookup(query):
         x = config.get_embedding().query(query_texts=query, n_results=3)
         return x['metadatas'][0][0].get('classification'), x['distances'][0][0]
 
-    return RouterChain(chains=config.get_chains(),
-                       vector_lookup_fn=vector_lookup)
+    return ConditionalRouterChain(chains=config.get_chains(),
+                                  vector_lookup_fn=vector_lookup)
 
 
-def test_vector_selection_and_routing(router_config: RouterChain) -> None:
+def test_vector_selection_and_routing(router_config: ConditionalRouterChain) -> None:
     """Test that the vector search has a hit and is able to pick a destination chain."""
     output = router_config.run("How far is the moon from the earth?")
     assert output['chain'] == 'space'
     assert output['output'] == 'foo'
 
 
-def test_vector_memory_state(router_config: RouterChain) -> None:
+def test_vector_memory_state(router_config: ConditionalRouterChain) -> None:
     """Test that the conversational router chain is able to maintain historical context"""
     output1 = router_config.run("How far is the moon from th earth?")
     output2 = router_config.run("Tell me more!")
@@ -106,7 +106,7 @@ def test_vector_memory_state(router_config: RouterChain) -> None:
     assert output2['output'] == 'foo'
 
 
-def test_memory_context_switch_across_chains(router_config: RouterChain) -> None:
+def test_memory_context_switch_across_chains(router_config: ConditionalRouterChain) -> None:
     """Test that the history is maintained even if the conversation spans across chains"""
     output1 = router_config.run(input="How far is the moon from th earth?")
     output2 = router_config.run(input="How do you scale databases for large scale software development?")

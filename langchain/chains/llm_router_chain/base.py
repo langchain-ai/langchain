@@ -12,7 +12,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema import BaseMemory
 
 
-class RouterChain(Chain):
+class ConditionalRouterChain(Chain):
     """
     Router chain that picks the most relevant model to call based on a lookup function the caller would pass in.
     The function for example could be a vector query to do the determination of the destination
@@ -62,7 +62,7 @@ class RouterChain(Chain):
 
     @property
     def _chain_type(self) -> str:
-        return "vector_based_router_chain"
+        return "conditional_router_chain"
 
     def extract_dict_for_output_keys(self, val):
         if not val:
