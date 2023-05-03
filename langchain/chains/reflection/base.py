@@ -125,7 +125,7 @@ class SelfReflectionChain(Chain):
         # Create final chain
         _final_chain = SequentialChain(
             chains=[_agent_hypothetical, _agent_reflection, _agent_actual],
-            input_variables=["question"],
+            input_variables=self.input_variables,
             output_variables=[
                 "agent_hypothetical_response",
                 "agent_reflection_response",
