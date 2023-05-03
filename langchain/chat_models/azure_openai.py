@@ -110,3 +110,25 @@ class AzureChatOpenAI(ChatOpenAI):
             **super()._default_params,
             "engine": self.deployment_name,
         }
+
+class AzureGPT35Turbo(AzureOpenAI):
+    """Azure OpenAI Chat API."""
+
+    @property
+    @override
+    def _default_params(self):
+        """
+        Get the default parameters for calling OpenAI API.
+        gpt-35-turbo does not support best_of, logprobs, or echo.
+        """
+        normal_params = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "n": self.n,
+            "request_timeout": self.request_timeout,
+            "logit_bias": self.logit_bias,
+        }
+        return {**normal_params, **self.model_kwargs}
