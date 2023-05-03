@@ -95,10 +95,9 @@ def test_get_all() -> None:
     end_time = time.time()
 
     print(
-    f"Tokens returned for {contract_address} "
-    f"contract: {len(result)} in {end_time - start_time} seconds"
-)
-
+        f"Tokens returned for {contract_address} "
+        f"contract: {len(result)} in {end_time - start_time} seconds"
+    )
 
     assert len(result) > 0, "No NFTs returned"
 
