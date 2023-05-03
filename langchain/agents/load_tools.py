@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
 from langchain.agents.tools import Tool
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
 from langchain.chains.pal.base import PALChain
-from langchain.llms.base import BaseLLM
 from langchain.requests import TextRequestsWrapper
 from langchain.tools.arxiv.tool import ArxivQueryRun
 from langchain.tools.base import BaseTool
@@ -32,8 +32,6 @@ from langchain.tools.shell.tool import ShellTool
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import ArxivAPIWrapper
-from langchain.utilities.apify import ApifyWrapper
-from langchain.utilities.bash import BashProcess
 from langchain.utilities.bing_search import BingSearchAPIWrapper
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
 from langchain.utilities.google_search import GoogleSearchAPIWrapper
@@ -85,7 +83,7 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
 }
 
 
-def _get_pal_math(llm: BaseLLM) -> BaseTool:
+def _get_pal_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="PAL-MATH",
         description="A language model that is really good at solving complex word math problems. Input should be a fully worded hard word math problem.",
@@ -93,7 +91,7 @@ def _get_pal_math(llm: BaseLLM) -> BaseTool:
     )
 
 
-def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
+def _get_pal_colored_objects(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="PAL-COLOR-OBJ",
         description="A language model that is really good at reasoning about position and the color attributes of objects. Input should be a fully worded hard reasoning problem. Make sure to include all information about the objects AND the final question you want to answer.",
@@ -101,7 +99,7 @@ def _get_pal_colored_objects(llm: BaseLLM) -> BaseTool:
     )
 
 
-def _get_llm_math(llm: BaseLLM) -> BaseTool:
+def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
     return Tool(
         name="Calculator",
         description="Useful for when you need to answer questions about math.",
@@ -110,7 +108,7 @@ def _get_llm_math(llm: BaseLLM) -> BaseTool:
     )
 
 
-def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
+def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     chain = APIChain.from_llm_and_api_docs(llm, open_meteo_docs.OPEN_METEO_DOCS)
     return Tool(
         name="Open Meteo API",
@@ -119,7 +117,7 @@ def _get_open_meteo_api(llm: BaseLLM) -> BaseTool:
     )
 
 
-_LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
+_LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
     "pal-math": _get_pal_math,
     "pal-colored-objects": _get_pal_colored_objects,
     "llm-math": _get_llm_math,
@@ -127,7 +125,7 @@ _LLM_TOOLS: Dict[str, Callable[[BaseLLM], BaseTool]] = {
 }
 
 
-def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm, news_docs.NEWS_DOCS, headers={"X-Api-Key": news_api_key}
@@ -139,7 +137,7 @@ def _get_news_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
-def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -153,7 +151,7 @@ def _get_tmdb_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
     )
 
 
-def _get_podcast_api(llm: BaseLLM, **kwargs: Any) -> BaseTool:
+def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     listen_api_key = kwargs["listen_api_key"]
     chain = APIChain.from_llm_and_api_docs(
         llm,
@@ -238,7 +236,8 @@ def _get_scenexplain(**kwargs: Any) -> BaseTool:
 
 
 _EXTRA_LLM_TOOLS: Dict[
-    str, Tuple[Callable[[Arg(BaseLLM, "llm"), KwArg(Any)], BaseTool], List[str]]
+    str,
+    Tuple[Callable[[Arg(BaseLanguageModel, "llm"), KwArg(Any)], BaseTool], List[str]],
 ] = {
     "news-api": (_get_news_api, ["news_api_key"]),
     "tmdb-api": (_get_tmdb_api, ["tmdb_bearer_token"]),
@@ -277,7 +276,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
 
 def load_tools(
     tool_names: List[str],
-    llm: Optional[BaseLLM] = None,
+    llm: Optional[BaseLanguageModel] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     **kwargs: Any,
 ) -> List[BaseTool]:

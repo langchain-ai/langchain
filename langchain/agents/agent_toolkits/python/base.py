@@ -5,14 +5,14 @@ from typing import Any, Dict, Optional
 from langchain.agents.agent import AgentExecutor
 from langchain.agents.agent_toolkits.python.prompt import PREFIX
 from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.tools.python.tool import PythonREPLTool
 
 
 def create_python_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     tool: PythonREPLTool,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = False,
