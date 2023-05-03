@@ -632,9 +632,7 @@ class AgentExecutor(Chain):
         if allowed_tools is None and len(tools) == 0:
             return values
         if allowed_tools is None and len(tools) != 0:
-            raise ValueError(
-                "Tools provided but no tool defined in Agent."
-            )
+            raise ValueError("Tools provided but no tool defined in Agent.")
         if set(allowed_tools) != set([tool.name for tool in tools]):
             raise ValueError(
                 f"Allowed tools ({allowed_tools}) different than "
