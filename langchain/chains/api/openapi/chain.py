@@ -7,12 +7,12 @@ from typing import Any, Dict, List, NamedTuple, Optional, cast
 from pydantic import BaseModel, Field
 from requests import Response
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 from langchain.requests import Requests
 from langchain.tools.openapi.utils.api_models import APIOperation
 
@@ -168,7 +168,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         spec_url: str,
         path: str,
         method: str,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         requests: Optional[Requests] = None,
         return_intermediate_steps: bool = False,
         **kwargs: Any
@@ -188,7 +188,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     def from_api_operation(
         cls,
         operation: APIOperation,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         requests: Optional[Requests] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
