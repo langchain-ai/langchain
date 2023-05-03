@@ -21,6 +21,10 @@ class MultiPromptChain(MultiRouteChain):
     default_chain: LLMChain
     """Default chain to use when router doesn't map input to one of the destinations."""
 
+    @property
+    def output_keys(self) -> List[str]:
+        return ["text"]
+
     @classmethod
     def from_prompts(
         cls,
@@ -53,7 +57,9 @@ class MultiPromptChain(MultiRouteChain):
             )
             for name, prompt in zip(prompt_names, prompt_templates)
         }
-        _default_chain = default_chain or ConversationChain(llm=OpenAI())
+        _default_chain = default_chain or ConversationChain(
+            llm=OpenAI(), output_key="text"
+        )
         return cls(
             router_chain=router_chain,
             destination_chains=destination_chains,

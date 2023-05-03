@@ -60,7 +60,9 @@ class MultiRouteChain(Chain):
         router_output = self.router_chain(inputs, callbacks=callbacks)
         destination = router_output["destination"]
         next_inputs = router_output["next_inputs"]
-        _run_manager.on_text(destination + ": " + next_inputs, verbose=self.verbose)
+        _run_manager.on_text(
+            destination + ": " + str(next_inputs), verbose=self.verbose
+        )
         if destination in self.destination_chains:
             return self.destination_chains[destination](
                 next_inputs, callbacks=callbacks

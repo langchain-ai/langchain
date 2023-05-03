@@ -27,6 +27,10 @@ class MultiRetrievalQAChain(MultiRouteChain):
     default_chain: Chain
     """Default chain to use when router doesn't map input to one of the destinations."""
 
+    @property
+    def output_keys(self) -> List[str]:
+        return ["result"]
+
     @classmethod
     def from_retrievers(
         cls,
@@ -69,7 +73,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
                 llm, prompt=default_prompt, retriever=default_retriever
             )
         else:
-            _default_chain = ConversationChain(llm=ChatOpenAI())
+            _default_chain = ConversationChain(llm=ChatOpenAI(), output_key="result")
         return cls(
             router_chain=router_chain,
             destination_chains=destination_chains,
