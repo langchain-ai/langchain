@@ -27,7 +27,7 @@ def create_spark_dataframe_agent(
 ) -> AgentExecutor:
     """Construct a spark agent from an LLM and dataframe."""
     try:
-        from pyspark.sql import SparkSession, dataframe
+        from pyspark.sql import dataframe
     except ImportError:
         raise ValueError(
             "spark package not found, please install with `pip install pyspark`"
