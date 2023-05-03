@@ -1,3 +1,4 @@
+"""Base classes for chain routing."""
 from __future__ import annotations
 
 from abc import ABC
@@ -10,6 +11,8 @@ from langchain.chains.base import Chain
 
 
 class RouterChain(Chain, ABC):
+    """Chain that outputs the name of a destination chain and the inputs to it."""
+
     @property
     def output_keys(self) -> List[str]:
         return ["destination", "next_inputs"]
@@ -33,7 +36,7 @@ class MultiRouteChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Will be whatever keys the prompt expects.
+        """Will be whatever keys the router chain prompt expects.
 
         :meta private:
         """
@@ -57,7 +60,7 @@ class MultiRouteChain(Chain):
         router_output = self.router_chain(inputs, callbacks=callbacks)
         destination = router_output["destination"]
         next_inputs = router_output["next_inputs"]
-        _run_manager.on_text(destination + " " + next_inputs, verbose=self.verbose)
+        _run_manager.on_text(destination + ": " + next_inputs, verbose=self.verbose)
         if destination in self.destination_chains:
             return self.destination_chains[destination](
                 next_inputs, callbacks=callbacks

@@ -1,49 +1,21 @@
 """Use a single chain to route an input to one of multiple candidate chains."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping
-
-from pydantic import Field
+from typing import Any, Dict, List, Mapping, Optional
 
 from langchain import ConversationChain, OpenAI, PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.chains.router.base import MultiRouteChain
-from langchain.chains.router.llm import LLMRouterChain
+from langchain.chains.router.llm_router import LLMRouterChain
+from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
 from langchain.output_parsers.structured import parse_json_markdown
 from langchain.schema import BaseOutputParser, OutputParserException
 
-ROUTER_PROMPT_TEMPLATE = """\
-Given a raw text input to a language model select the model prompt best suited for \
-the input. You will be given the names of the available prompts and a description of \
-what the prompt is best suited for. You may also revise the original input if you \
-think that revising it will ultimately lead to a better response from the language \
-model.
-
-<< FORMATTING >>
-Return a markdown code snippet with a JSON object formatted to look like:
-```json
-{{{{
-    "destination": string \\ name of the prompt to use
-    "next_inputs": string \\ a potentially modified version of the original input
-}}}}
-```
-
-REMEMBER: "destination" MUST be one of the candidate prompt names specified below.
-REMEMBER: "next_inputs" can just be the original input if you don't think any \
-modifications are needed.
-
-<< CANDIDATE PROMPTS >>
-{destinations}
-
-<< INPUT >>
-{{input}}
-
-<< OUTPUT >>
-"""
-
 
 class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
+    """Parser for output of router chain int he multi-prompt chain."""
+
     def parse(self, text: str) -> Dict[str, str]:
         try:
             expected_keys = ["destination", "next_inputs"]
@@ -60,11 +32,14 @@ class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
 
 
 class MultiPromptChain(MultiRouteChain):
+    """A multi-route chain that uses an LLM router chain to choose amongst prompts."""
+
     router_chain: LLMRouterChain
+    """Chain for deciding a destination chain and the input to it."""
     destination_chains: Mapping[str, LLMChain]
-    default_chain: LLMChain = Field(
-        default_factory=lambda: ConversationChain(llm=OpenAI())
-    )
+    """Name to chain map for candidate chains to route inputs to."""
+    default_chain: LLMChain
+    """Default chain to use when router doesn't map input to one of the destinations."""
 
     @classmethod
     def from_prompts(
@@ -73,15 +48,19 @@ class MultiPromptChain(MultiRouteChain):
         prompt_names: List[str],
         prompt_descriptions: List[str],
         prompt_templates: List[str],
+        default_chain: Optional[LLMChain] = None,
         **kwargs: Any,
     ) -> MultiPromptChain:
+        """Convenience constructor for instantiating from destination prompts."""
         destinations_str = "\n".join(
             [
                 f"{name}: {description}"
                 for name, description in zip(prompt_names, prompt_descriptions)
             ]
         )
-        router_template = ROUTER_PROMPT_TEMPLATE.format(destinations=destinations_str)
+        router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format(
+            destinations=destinations_str
+        )
         router_prompt = PromptTemplate(
             template=router_template,
             input_variables=["input"],
@@ -95,6 +74,10 @@ class MultiPromptChain(MultiRouteChain):
             )
             for name, prompt in zip(prompt_names, prompt_templates)
         }
+        default_chain = default_chain or ConversationChain(llm=OpenAI())
         return cls(
-            router_chain=router_chain, destination_chains=destination_chains, **kwargs
+            router_chain=router_chain,
+            destination_chains=destination_chains,
+            default_chain=default_chain,
+            **kwargs,
         )

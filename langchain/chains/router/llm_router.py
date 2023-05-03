@@ -1,3 +1,4 @@
+"""Base classes for LLM-powered router chains."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -11,7 +12,10 @@ from langchain.chains.router.base import RouterChain
 
 
 class LLMRouterChain(RouterChain):
+    """A router chain that uses an LLM chain to perform routing."""
+
     llm_chain: LLMChain
+    """LLM chain used to perform routing"""
 
     @root_validator()
     def validate_prompt(cls, values: dict) -> dict:
@@ -27,6 +31,10 @@ class LLMRouterChain(RouterChain):
 
     @property
     def input_keys(self) -> List[str]:
+        """Will be whatever keys the LLM chain prompt expects.
+
+        :meta private:
+        """
         return self.llm_chain.input_keys
 
     def _validate_outputs(self, outputs: Dict[str, str]) -> None:
@@ -47,6 +55,7 @@ class LLMRouterChain(RouterChain):
     @classmethod
     def from_llm(
         cls, llm: BaseLanguageModel, prompt: BasePromptTemplate, **kwargs: Any
-    ):
+    ) -> LLMRouterChain:
+        """Convenience constructor."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)
