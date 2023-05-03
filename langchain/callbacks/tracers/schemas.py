@@ -51,6 +51,7 @@ class BaseRun(BaseModel):
     serialized: Dict[str, Any]
     session_id: int
     error: Optional[str] = None
+    example_id: Optional[str] = None
 
 
 class LLMRun(BaseRun):

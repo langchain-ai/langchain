@@ -210,6 +210,7 @@ class LangChainTracerV2(BaseTracer):
             session_id=run.session_id,
             run_type=run_type,
             parent_run_id=run.parent_uuid,
+            example_id=run.example_id,
             child_runs=[LangChainTracerV2._convert_run(child) for child in child_runs],
         )
 

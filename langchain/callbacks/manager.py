@@ -44,11 +44,13 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default", example_id: Optional[str] = None
 ) -> Generator[TracerSession, None, None]:
     """Get Tracer in a context manager."""
     cb = LangChainTracer()
     session = cb.load_session(session_name)
+    if example_id:
+        cb.example_id
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
