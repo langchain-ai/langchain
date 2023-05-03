@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import Any, List
 
 from langchain import PromptTemplate
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
-from langchain.llms.base import BaseLLM
 
 
 class QAEvalChain(LLMChain):
@@ -14,12 +14,12 @@ class QAEvalChain(LLMChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLLM, prompt: PromptTemplate = PROMPT, **kwargs: Any
+        cls, llm: BaseLanguageModel, prompt: PromptTemplate = PROMPT, **kwargs: Any
     ) -> QAEvalChain:
         """Load QA Eval Chain from LLM.
 
         Args:
-            llm (BaseLLM): the base language model to use.
+            llm (BaseLanguageModel): the base language model to use.
 
             prompt (PromptTemplate): A prompt template containing the input_variables:
             'input', 'answer' and 'result' that will be used as the prompt
@@ -74,12 +74,15 @@ class ContextQAEvalChain(LLMChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLLM, prompt: PromptTemplate = CONTEXT_PROMPT, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: PromptTemplate = CONTEXT_PROMPT,
+        **kwargs: Any,
     ) -> ContextQAEvalChain:
         """Load QA Eval Chain from LLM.
 
         Args:
-            llm (BaseLLM): the base language model to use.
+            llm (BaseLanguageModel): the base language model to use.
 
             prompt (PromptTemplate): A prompt template containing the input_variables:
             'query', 'context' and 'result' that will be used as the prompt
@@ -120,7 +123,7 @@ class CotQAEvalChain(ContextQAEvalChain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLLM, prompt: PromptTemplate = COT_PROMPT, **kwargs: Any
+        cls, llm: BaseLanguageModel, prompt: PromptTemplate = COT_PROMPT, **kwargs: Any
     ) -> CotQAEvalChain:
         cls._validate_input_vars(prompt)
         return cls(llm=llm, prompt=prompt, **kwargs)

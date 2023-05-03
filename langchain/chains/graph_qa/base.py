@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import ENTITY_EXTRACTION_PROMPT, PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.graphs.networkx_graph import NetworkxEntityGraph, get_entities
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 
 
@@ -43,7 +43,7 @@ class GraphQAChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         qa_prompt: BasePromptTemplate = PROMPT,
         entity_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT,
         **kwargs: Any,
