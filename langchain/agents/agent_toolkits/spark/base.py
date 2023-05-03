@@ -12,7 +12,7 @@ from langchain.tools.python.tool import PythonAstREPLTool
 
 def create_spark_dataframe_agent(
     llm: BaseLLM,
-    spdf: Any,
+    df: Any,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
     suffix: str = SUFFIX,
@@ -33,16 +33,16 @@ def create_spark_dataframe_agent(
             "spark package not found, please install with `pip install pyspark`"
         )
 
-    if not isinstance(spdf, dataframe.DataFrame):
-        raise ValueError(f"Expected Spark Data Frame object, got {type(spdf)}")
+    if not isinstance(df, dataframe.DataFrame):
+        raise ValueError(f"Expected Spark Data Frame object, got {type(df)}")
 
     if input_variables is None:
-        input_variables = ["spdf", "input", "agent_scratchpad"]
-    tools = [PythonAstREPLTool(locals={"spdf": spdf})]
+        input_variables = ["df", "input", "agent_scratchpad"]
+    tools = [PythonAstREPLTool(locals={"df": df})]
     prompt = ZeroShotAgent.create_prompt(
         tools, prefix=prefix, suffix=suffix, input_variables=input_variables
     )
-    partial_prompt = prompt.partial(spdf=str(spdf.first()))
+    partial_prompt = prompt.partial(df=str(df.first()))
     llm_chain = LLMChain(
         llm=llm,
         prompt=partial_prompt,
