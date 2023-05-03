@@ -8,6 +8,7 @@ from langchain.memory.chat_message_histories.dynamodb import DynamoDBChatMessage
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.chat_message_histories.postgres import PostgresChatMessageHistory
 from langchain.memory.chat_message_histories.redis import RedisChatMessageHistory
+from langchain.memory.chat_message_histories.file import FileChatMessageHistory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
@@ -42,4 +43,5 @@ __all__ = [
     "PostgresChatMessageHistory",
     "VectorStoreRetrieverMemory",
     "CosmosDBChatMessageHistory",
+    "FileChatMessageHistory",
 ]
