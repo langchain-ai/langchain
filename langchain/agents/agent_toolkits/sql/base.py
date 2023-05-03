@@ -6,13 +6,13 @@ from langchain.agents.agent_toolkits.sql.prompt import SQL_PREFIX, SQL_SUFFIX
 from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 
 
 def create_sql_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: SQLDatabaseToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = SQL_PREFIX,

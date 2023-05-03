@@ -8,11 +8,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts.prompt import PromptTemplate
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
@@ -32,7 +32,7 @@ ARE_ALL_TRUE_PROMPT = PromptTemplate.from_file(
 
 
 def _load_sequential_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     create_assertions_prompt: PromptTemplate,
     check_assertions_prompt: PromptTemplate,
     revised_summary_prompt: PromptTemplate,
@@ -85,7 +85,7 @@ class LLMSummarizationCheckerChain(Chain):
     """
 
     sequential_chain: SequentialChain
-    llm: Optional[BaseLLM] = None
+    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
 
     create_assertions_prompt: PromptTemplate = CREATE_ASSERTIONS_PROMPT
@@ -180,7 +180,7 @@ class LLMSummarizationCheckerChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         create_assertions_prompt: PromptTemplate = CREATE_ASSERTIONS_PROMPT,
         check_assertions_prompt: PromptTemplate = CHECK_ASSERTIONS_PROMPT,
         revised_summary_prompt: PromptTemplate = REVISED_SUMMARY_PROMPT,
