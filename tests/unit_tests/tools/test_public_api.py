@@ -25,6 +25,7 @@ _EXPECTED = [
     "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
+    "MetaphorSearchResults",
     "MoveFileTool",
     "NavigateBackTool",
     "NavigateTool",
