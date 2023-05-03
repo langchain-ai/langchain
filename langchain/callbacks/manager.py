@@ -50,7 +50,7 @@ def tracing_enabled(
     cb = LangChainTracer()
     session = cb.load_session(session_name)
     if example_id:
-        cb.example_id
+        cb.example_id = example_id
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
@@ -59,6 +59,7 @@ def tracing_enabled(
 @contextmanager
 def tracing_v2_enabled(
     session_name: str = "default",
+    example_id: Optional[str] = None,
 ) -> Generator[TracerSession, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
@@ -68,6 +69,8 @@ def tracing_v2_enabled(
     )
     cb = LangChainTracerV2()
     session = cb.load_session(session_name)
+    if example_id:
+        cb.example_id = example_id
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
