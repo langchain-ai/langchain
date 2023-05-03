@@ -24,6 +24,7 @@ from langchain.chains.qa_generation.base import QAGenerationChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain.chains.reflection.base import SelfReflectionChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
 from langchain.chains.sql_database.base import (
@@ -63,4 +64,5 @@ __all__ = [
     "RetrievalQAWithSourcesChain",
     "ConversationalRetrievalChain",
     "OpenAPIEndpointChain",
+    "SelfReflectionChain",
 ]

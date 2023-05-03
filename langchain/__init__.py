@@ -13,6 +13,7 @@ from langchain.chains import (
     LLMMathChain,
     PALChain,
     QAWithSourcesChain,
+    SelfReflectionChain,
     SQLDatabaseChain,
     VectorDBQA,
     VectorDBQAWithSourcesChain,
@@ -114,4 +115,5 @@ __all__ = [
     "QAWithSourcesChain",
     "PALChain",
     "LlamaCpp",
+    "SelfReflectionChain",
 ]
