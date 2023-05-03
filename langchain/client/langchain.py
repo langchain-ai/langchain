@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import socket
 from io import BytesIO
 from typing import (
     TYPE_CHECKING,
@@ -14,6 +15,7 @@ from typing import (
     Tuple,
     Union,
 )
+from urllib.parse import urlsplit
 
 import aiohttp
 import requests
@@ -40,15 +42,28 @@ def _raise_rich_error(response: Response) -> None:
         raise ValueError(response.text) from e
 
 
+def _is_localhost(url: str) -> bool:
+    """Check if the URL is localhost."""
+    try:
+        netloc = urlsplit(url).netloc.split(":")[0]
+        ip = socket.gethostbyname(netloc)
+        return ip == "127.0.0.1" or ip.startswith("0.0.0.0") or ip.startswith("::")
+    except socket.gaierror:
+        return False
+
+
 class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
-    api_key: str = Field(default=None, env="LANGCHAIN_API_KEY")
+    api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
     api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
 
     @root_validator
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values["api_url"] != "http://localhost:8000" and not values["api_key"]:
+        """Verify API key is provided if url not localhost."""
+        api_url: str = values["api_url"]
+        api_key: Optional[str] = values.get("api_key")
+        if not _is_localhost(api_url) and not api_key:
             raise ValueError(
                 "API key must be provided when using hosted LangChain+ API"
             )
@@ -65,7 +80,7 @@ class LangChainPlusClient(BaseSettings):
     @staticmethod
     async def _arun_chain(
         example: Example, langchain_tracer: LangChainTracer, chain: Chain
-    ) -> dict:
+    ) -> Union[dict, str]:
         """Run the chain asynchronously"""
         previous_example_id = langchain_tracer.example_id
         langchain_tracer.example_id = example.id
@@ -83,7 +98,7 @@ class LangChainPlusClient(BaseSettings):
     @staticmethod
     async def _arun_chain_over_buffer(
         buffer: Sequence[Example], tracers: Sequence[LangChainTracer], chain: Chain
-    ) -> List[Any]:
+    ) -> List[Union[str, dict]]:
         """Run the chain asynchronously over a buffer of examples."""
         batch_results = [
             LangChainPlusClient._arun_chain(example, tracer, chain)
@@ -91,9 +106,9 @@ class LangChainPlusClient(BaseSettings):
         ]
         return await asyncio.gather(*batch_results)
 
-    @xor_args(["session_name", "session_id"])
+    @xor_args(("session_name", "session_id"))
     def get_session(
-        self, *, session_name: str = None, session_id: int = None
+        self, *, session_name: Optional[str] = None, session_id: Optional[int] = None
     ) -> TracerSession:
         """Get a session by name."""
         url = f"{self.api_url}/sessions"
@@ -144,6 +159,7 @@ class LangChainPlusClient(BaseSettings):
         input_keys: List[str],
         output_keys: List[str],
     ) -> Dataset:
+        """Upload a dataframe as a CSV to the LangChain+ API."""
         if not name.endswith(".csv"):
             raise ValueError("Name must end with .csv")
         if not all([key in df.columns for key in input_keys]):
@@ -230,12 +246,12 @@ class LangChainPlusClient(BaseSettings):
                 results = await response.json()
                 return [Example(**dataset) for dataset in results]
 
-    @xor_args(["dataset_name", "dataset_id"])
+    @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
     ) -> Dataset:
         url = f"{self.api_url}/datasets"
-        params = {"limit": 1}
+        params: Dict[str, Any] = {"limit": 1}
         if dataset_id is not None:
             url += f"/{dataset_id}"
         elif dataset_name is not None:
@@ -255,12 +271,13 @@ class LangChainPlusClient(BaseSettings):
             return Dataset(**result[0])
         return Dataset(**result)
 
-    @xor_args(["dataset_name", "dataset_id"])
+    @xor_args(("dataset_name", "dataset_id"))
     async def aread_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
     ) -> Dataset:
+        """Read a dataset from the LangChain+ API."""
         url = f"{self.api_url}/datasets"
-        params = {"limit": 1}
+        params: Dict[str, Any] = {"limit": 1}
         if dataset_id is not None:
             url += f"/{dataset_id}"
         elif dataset_name is not None:
