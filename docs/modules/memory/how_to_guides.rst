@@ -4,7 +4,7 @@ How-To Guides
 Tutorials
 -----
 
-These notebooks focus more on the fundamental concepts of LangChain memory. Use for beginners.
+These notebooks focus more on the fundamental concepts of LangChain memory. Useful for beginners.
 
 .. toctree::
    :maxdepth: 1
@@ -46,8 +46,7 @@ Decorator Memory
 Storage
 -------
 
-Chat Message Memory requires the user to specify how chat messages will be persisted. 
-Below are the data persistence option available in LangChain.
+Below are the data persistence options available in LangChain.
 
 .. toctree::
    :maxdepth: 1
