@@ -629,12 +629,17 @@ class AgentExecutor(Chain):
         agent = values["agent"]
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
-        if allowed_tools is not None:
-            if set(allowed_tools) != set([tool.name for tool in tools]):
-                raise ValueError(
-                    f"Allowed tools ({allowed_tools}) different than "
-                    f"provided tools ({[tool.name for tool in tools]})"
-                )
+        if allowed_tools is None and len(tools) == 0:
+            return values
+        if allowed_tools is None and len(tools) != 0:
+            raise ValueError(
+                "Tools provided but no tool defined in Agent."
+            )
+        if set(allowed_tools) != set([tool.name for tool in tools]):
+            raise ValueError(
+                f"Allowed tools ({allowed_tools}) different than "
+                f"provided tools ({[tool.name for tool in tools]})"
+            )
         return values
 
     @root_validator()
