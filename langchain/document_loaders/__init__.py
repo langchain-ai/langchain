@@ -46,8 +46,8 @@ from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
-from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.mediawikidump import MWDumpLoader
+from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
 from langchain.document_loaders.notiondb import NotionDBLoader
