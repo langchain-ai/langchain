@@ -1,6 +1,6 @@
 """Schema definition for parsers."""
 import abc
-from typing import Iterable, List
+from typing import Iterator, List
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.schema import Document
@@ -17,11 +17,10 @@ class BaseBlobParser(abc.ABC):
     """
 
     @abc.abstractmethod
-    def lazy_parse(self, blob: Blob) -> Iterable[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazy parsing interface.
 
         Subclasses are required to implement this method.
-
 
         Args:
             blob: Blob instance
