@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain.tools.playwright.base import BaseBrowserTool
 from langchain.tools.playwright.utils import (
     aget_current_page,
@@ -22,7 +26,11 @@ class NavigateTool(BaseBrowserTool):
     description: str = "Navigate a browser to the specified URL"
     args_schema: Type[BaseModel] = NavigateToolInput
 
-    def _run(self, url: str) -> str:
+    def _run(
+        self,
+        url: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         if self.sync_browser is None:
             raise ValueError(f"Synchronous browser not provided to {self.name}")
@@ -31,7 +39,11 @@ class NavigateTool(BaseBrowserTool):
         status = response.status if response else "unknown"
         return f"Navigating to {url} returned status code {status}"
 
-    async def _arun(self, url: str) -> str:
+    async def _arun(
+        self,
+        url: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Use the tool."""
         if self.async_browser is None:
             raise ValueError(f"Asynchronous browser not provided to {self.name}")

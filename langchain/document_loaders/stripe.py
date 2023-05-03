@@ -1,10 +1,11 @@
 """Loader that fetches data from Stripe"""
 import json
 import urllib.request
-from typing import Any, List
+from typing import List, Optional
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+from langchain.utils import get_from_env, stringify_dict
 
 STRIPE_ENDPOINTS = {
     "balance_transactions": "https://api.stripe.com/v1/balance_transactions",
@@ -16,36 +17,20 @@ STRIPE_ENDPOINTS = {
 }
 
 
-def _stringify_value(val: Any) -> str:
-    if isinstance(val, str):
-        return val
-    elif isinstance(val, dict):
-        return "\n" + _stringify_dict(val)
-    elif isinstance(val, list):
-        return "\n".join(_stringify_value(v) for v in val)
-    else:
-        return str(val)
-
-
-def _stringify_dict(data: dict) -> str:
-    text = ""
-    for key, value in data.items():
-        text += key + ": " + _stringify_value(value) + "\n"
-    return text
-
-
 class StripeLoader(BaseLoader):
-    def __init__(self, access_token: str, resource: str) -> None:
-        self.access_token = access_token
+    def __init__(self, resource: str, access_token: Optional[str] = None) -> None:
         self.resource = resource
-        self.headers = {"Authorization": f"Bearer {self.access_token}"}
+        access_token = access_token or get_from_env(
+            "access_token", "STRIPE_ACCESS_TOKEN"
+        )
+        self.headers = {"Authorization": f"Bearer {access_token}"}
 
     def _make_request(self, url: str) -> List[Document]:
         request = urllib.request.Request(url, headers=self.headers)
 
         with urllib.request.urlopen(request) as response:
             json_data = json.loads(response.read().decode())
-            text = _stringify_dict(json_data)
+            text = stringify_dict(json_data)
             metadata = {"source": url}
             return [Document(page_content=text, metadata=metadata)]
 

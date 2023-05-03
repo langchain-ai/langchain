@@ -1,10 +1,8 @@
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel
-
-from langchain.tools.base import BaseTool
 
 
 def is_relative_to(path: Path, root: Path) -> bool:
@@ -29,8 +27,8 @@ class FileValidationError(ValueError):
     """Error for paths outside the root directory."""
 
 
-class BaseFileTool(BaseTool, BaseModel):
-    """Input for ReadFileTool."""
+class BaseFileToolMixin(BaseModel):
+    """Mixin for file system tools."""
 
     root_dir: Optional[str] = None
     """The final path will be chosen relative to root_dir if specified."""
@@ -40,12 +38,6 @@ class BaseFileTool(BaseTool, BaseModel):
         if self.root_dir is None:
             return Path(file_path)
         return get_validated_relative_path(Path(self.root_dir), file_path)
-
-    def _run(self, *args: Any, **kwargs: Any) -> str:
-        raise NotImplementedError
-
-    async def _arun(self, *args: Any, **kwargs: Any) -> str:
-        raise NotImplementedError
 
 
 def get_validated_relative_path(root: Path, user_path: str) -> Path:

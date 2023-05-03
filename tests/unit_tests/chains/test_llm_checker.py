@@ -33,7 +33,7 @@ def fake_llm_checker_chain() -> LLMCheckerChain:
         ): "I still don't know.",
     }
     fake_llm = FakeLLM(queries=queries)
-    return LLMCheckerChain(llm=fake_llm, input_key="q", output_key="a")
+    return LLMCheckerChain.from_llm(fake_llm, input_key="q", output_key="a")
 
 
 def test_simple_question(fake_llm_checker_chain: LLMCheckerChain) -> None:

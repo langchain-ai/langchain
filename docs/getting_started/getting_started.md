@@ -349,7 +349,7 @@ result.llm_output['token_usage']
 ## Chat Prompt Templates
 Similar to LLMs, you can make use of templating by using a `MessagePromptTemplate`. You can build a `ChatPromptTemplate` from one or more `MessagePromptTemplate`s. You can use `ChatPromptTemplate`'s `format_prompt` -- this returns a `PromptValue`, which you can convert to a string or `Message` object, depending on whether you want to use the formatted value as input to an llm or chat model.
 
-For convience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
+For convenience, there is a `from_template` method exposed on the template. If you were to use this template, this is what it would look like:
 
 ```python
 from langchain.chat_models import ChatOpenAI

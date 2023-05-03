@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 import sqlalchemy
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSON, UUID
-from sqlalchemy.orm import Mapped, Session, declarative_base, relationship
+from sqlalchemy.orm import Session, declarative_base, relationship
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -70,7 +70,7 @@ class CollectionStore(BaseModel):
 class EmbeddingStore(BaseModel):
     __tablename__ = "langchain_pg_embedding"
 
-    collection_id: Mapped[UUID] = sqlalchemy.Column(
+    collection_id = sqlalchemy.Column(
         UUID(as_uuid=True),
         sqlalchemy.ForeignKey(
             f"{CollectionStore.__tablename__}.uuid",
@@ -165,9 +165,11 @@ class PGVector(VectorStore):
 
     def create_tables_if_not_exists(self) -> None:
         Base.metadata.create_all(self._conn)
+        self._conn.commit()
 
     def drop_tables(self) -> None:
         Base.metadata.drop_all(self._conn)
+        self._conn.commit()
 
     def create_collection(self) -> None:
         if self.pre_delete_collection:
