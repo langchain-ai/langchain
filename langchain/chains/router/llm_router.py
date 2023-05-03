@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import root_validator
 
-from langchain import BasePromptTemplate, LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.structured import parse_json_markdown
+from langchain.prompts import BasePromptTemplate
 from langchain.schema import BaseOutputParser, OutputParserException
 
 
