@@ -1,7 +1,7 @@
 """Base classes for LLM-powered router chains."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import root_validator
 
@@ -9,6 +9,8 @@ from langchain import BasePromptTemplate, LLMChain
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.router.base import RouterChain
+from langchain.output_parsers.structured import parse_json_markdown
+from langchain.schema import BaseOutputParser, OutputParserException
 
 
 class LLMRouterChain(RouterChain):
@@ -62,3 +64,26 @@ class LLMRouterChain(RouterChain):
         """Convenience constructor."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)
+
+
+class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
+    """Parser for output of router chain int he multi-prompt chain."""
+
+    next_inputs_type: Type = str
+
+    def parse(self, text: str) -> Dict[str, str]:
+        try:
+            expected_keys = ["destination", "next_inputs"]
+            parsed = parse_json_markdown(text, expected_keys)
+            if not isinstance(parsed["destination"], str):
+                raise ValueError("Expected 'destination' to be a string.")
+            if not isinstance(parsed["next_inputs"], self.next_inputs_type):
+                raise ValueError(
+                    f"Expected 'next_inputs' to be {self.next_inputs_type}."
+                )
+            parsed["next_inputs"] = {"input": parsed["next_inputs"]}
+            return parsed
+        except Exception as e:
+            raise OutputParserException(
+                f"Parsing text\n{text}\n raised following error:\n{e}"
+            )
