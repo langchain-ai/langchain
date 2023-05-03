@@ -32,11 +32,15 @@ class SelfReflectionChain(Chain):
     """Output key to use."""
     template: str = "{question}"
     """Base question template."""
-    _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE: str = _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE
+    _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE: str = (
+        _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE
+    )
     """Template to use for agent hypothetical response."""
     _ASSISTANT_AGENT_REFLECTION_TEMPLATE: str = _ASSISTANT_AGENT_REFLECTION_TEMPLATE
     """Template to use for agent reflection."""
-    _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE: str = _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE
+    _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE: str = (
+        _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE
+    )
     return_intermediate_steps: bool = False
     """Return the results of the refine steps in the output."""
 
@@ -81,14 +85,20 @@ class SelfReflectionChain(Chain):
         self.input_variables = list(inputs.keys())
 
         # Replace <_USER_PROMPT_> with the user template
-        _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE = self._ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE.replace(
-            "<_USER_PROMPT_>", self.template
+        _ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE = (
+            self._ASSISTANT_HYPOTHETICAL_RESPONSE_TEMPLATE.replace(
+                "<_USER_PROMPT_>", self.template
+            )
         )
-        _ASSISTANT_AGENT_REFLECTION_TEMPLATE = self._ASSISTANT_AGENT_REFLECTION_TEMPLATE.replace(
-            "<_USER_PROMPT_>", self.template
+        _ASSISTANT_AGENT_REFLECTION_TEMPLATE = (
+            self._ASSISTANT_AGENT_REFLECTION_TEMPLATE.replace(
+                "<_USER_PROMPT_>", self.template
+            )
         )
-        _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE = self._ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE.replace(
-            "<_USER_PROMPT_>", self.template
+        _ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE = (
+            self._ASSISTANT_AGENT_ACTUAL_RESPONSE_TEMPLATE.replace(
+                "<_USER_PROMPT_>", self.template
+            )
         )
 
         # Create prompt templates
@@ -134,7 +144,9 @@ class SelfReflectionChain(Chain):
         )
 
         # Run final chain
-        response = _final_chain(inputs=inputs, callbacks=_run_manager.get_child(), **kwargs)
+        response = _final_chain(
+            inputs=inputs, callbacks=_run_manager.get_child(), **kwargs
+        )
         output = {"text": response["agent_actual_response"]}
 
         if self.return_intermediate_steps:
