@@ -1,7 +1,7 @@
 import asyncio
 import platform
 import warnings
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -16,7 +16,7 @@ from langchain.utilities.bash import BashProcess
 class ShellInput(BaseModel):
     """Commands for the Bash Shell tool."""
 
-    commands: List[str] = Field(
+    commands: Union[str, List[str]] = Field(
         ...,
         description="List of shell commands to run. Deserialized using json.loads",
     )
@@ -66,7 +66,7 @@ class ShellTool(BaseTool):
 
     def _run(
         self,
-        commands: List[str],
+        commands: Union[str, List[str]],
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Run commands and return final output."""
@@ -74,10 +74,8 @@ class ShellTool(BaseTool):
 
     async def _arun(
         self,
-        commands: List[str],
+        commands: Union[str, List[str]],
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Run commands asynchronously and return final output."""
-        return await asyncio.get_event_loop().run_in_executor(
-            None, self.process.run, commands
-        )
+        raise NotImplementedError("Async not implemented for shell tool.")
