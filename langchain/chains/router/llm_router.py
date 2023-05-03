@@ -1,7 +1,7 @@
 """Base classes for LLM-powered router chains."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from pydantic import root_validator
 
@@ -37,7 +37,7 @@ class LLMRouterChain(RouterChain):
         """
         return self.llm_chain.input_keys
 
-    def _validate_outputs(self, outputs: Dict[str, str]) -> None:
+    def _validate_outputs(self, outputs: Dict[str, Any]) -> None:
         super()._validate_outputs(outputs)
         if not isinstance(outputs["next_inputs"], dict):
             raise ValueError
@@ -49,7 +49,10 @@ class LLMRouterChain(RouterChain):
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
-        output = self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs)
+        output = cast(
+            Dict[str, Any],
+            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+        )
         return output
 
     @classmethod
