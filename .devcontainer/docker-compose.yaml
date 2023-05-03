@@ -1,0 +1,22 @@
+version: '3'
+services:
+  langchain:
+    build:
+      dockerfile: .devcontainer/Dockerfile
+      context: ../ 
+    volumes:
+      - ../:/workspaces/langchain
+    # depends_on:
+    #   - vectordb-milvus
+    # environment:
+    #     MILVUS_HOST: 
+    #     MILVUS_PORT: <>
+    # vectordb-milvus:
+    #   image: milvusdb/milvus:latest
+    #   ports:
+    #     - "19530:19530"
+    #     - "19121:19121"
+    #   volumes:
+    #     - ./data:/var/lib/milvus/db
+    
+    
