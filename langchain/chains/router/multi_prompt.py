@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from typing import Any, List, Mapping, Optional
 
-from langchain import ConversationChain, OpenAI, PromptTemplate
 from langchain.base_language import BaseLanguageModel
+from langchain.chains import ConversationChain
 from langchain.chains.llm import LLMChain
 from langchain.chains.router.base import MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate
 
 
 class MultiPromptChain(MultiRouteChain):
@@ -58,7 +60,7 @@ class MultiPromptChain(MultiRouteChain):
             for name, prompt in zip(prompt_names, prompt_templates)
         }
         _default_chain = default_chain or ConversationChain(
-            llm=OpenAI(), output_key="text"
+            llm=ChatOpenAI(), output_key="text"
         )
         return cls(
             router_chain=router_chain,

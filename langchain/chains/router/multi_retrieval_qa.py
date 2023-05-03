@@ -6,6 +6,7 @@ from typing import Any, List, Mapping, Optional
 from langchain import ConversationChain, PromptTemplate
 from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
+from langchain.chains.conversation.prompt import DEFAULT_TEMPLATE
 from langchain.chains.retrieval_qa.base import BaseRetrievalQA, RetrievalQA
 from langchain.chains.router.base import MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
@@ -57,7 +58,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
         router_prompt = PromptTemplate(
             template=router_template,
             input_variables=["input"],
-            output_parser=RouterOutputParser(),
+            output_parser=RouterOutputParser(next_inputs_inner_key="query"),
         )
         router_chain = LLMRouterChain.from_llm(llm, router_prompt)
         destination_chains = {}
@@ -73,7 +74,13 @@ class MultiRetrievalQAChain(MultiRouteChain):
                 llm, prompt=default_prompt, retriever=default_retriever
             )
         else:
-            _default_chain = ConversationChain(llm=ChatOpenAI(), output_key="result")
+            prompt_template = DEFAULT_TEMPLATE.replace("input", "query")
+            prompt = PromptTemplate(
+                template=prompt_template, input_variables=["history", "query"]
+            )
+            _default_chain = ConversationChain(
+                llm=ChatOpenAI(), prompt=prompt, input_key="query", output_key="result"
+            )
         return cls(
             router_chain=router_chain,
             destination_chains=destination_chains,

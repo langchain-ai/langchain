@@ -70,6 +70,7 @@ class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
     """Parser for output of router chain int he multi-prompt chain."""
 
     next_inputs_type: Type = str
+    next_inputs_inner_key: str = "input"
 
     def parse(self, text: str) -> Dict[str, str]:
         try:
@@ -81,7 +82,7 @@ class RouterOutputParser(BaseOutputParser[Dict[str, str]]):
                 raise ValueError(
                     f"Expected 'next_inputs' to be {self.next_inputs_type}."
                 )
-            parsed["next_inputs"] = {"input": parsed["next_inputs"]}
+            parsed["next_inputs"] = {self.next_inputs_inner_key: parsed["next_inputs"]}
             return parsed
         except Exception as e:
             raise OutputParserException(
