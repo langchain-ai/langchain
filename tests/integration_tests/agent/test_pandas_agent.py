@@ -13,17 +13,20 @@ from langchain.llms import OpenAI
 class TestData(BaseModel):
     df: DataFrame
     dim: int
+
     class Config:
         arbitrary_types_allowed = True
+
 
 @pytest.fixture(scope="function")
 def data() -> TestData:
     dim = 4
     random_data = np.random.rand(dim, dim)
-    df = DataFrame(random_data, columns=['name', 'age', 'food', 'sport'])
+    df = DataFrame(random_data, columns=["name", "age", "food", "sport"])
     return TestData(df=df, dim=4)
 
-class TestPandasAgent():
+
+class TestPandasAgent:
     def test_pandas_agent_creation(self, data: TestData) -> None:
         agent = create_pandas_dataframe_agent(OpenAI(temperature=0), data.df)
         assert isinstance(agent, AgentExecutor)
@@ -35,5 +38,3 @@ class TestPandasAgent():
         result = re.search(rf".*({data.dim}).*", response)
         assert result is not None
         assert result.group(1) is not None
-
-
