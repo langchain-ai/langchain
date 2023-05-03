@@ -85,32 +85,35 @@ def router_config() -> RouterChain:
         x = config.get_embedding().query(query_texts=query, n_results=3)
         return x['metadatas'][0][0].get('classification'), x['distances'][0][0]
 
-    return RouterChain(llm=LLM,
-                       chains=config.get_chains(),
+    return RouterChain(chains=config.get_chains(),
                        vector_lookup_fn=vector_lookup)
 
 
 def test_vector_selection_and_routing(router_config: RouterChain) -> None:
     """Test that the vector search has a hit and is able to pick a destination chain."""
-    output = router_config.predict(input="How far is the moon from the earth?")
-    assert output == 'Responding Chain - space:foo'
+    output = router_config.run("How far is the moon from the earth?")
+    assert output['chain'] == 'space'
+    assert output['output'] == 'foo'
 
 
 def test_vector_memory_state(router_config: RouterChain) -> None:
     """Test that the conversational router chain is able to maintain historical context"""
-    output1 = router_config.predict(input="How far is the moon from th earth?")
-    output2 = router_config.predict(input="Tell me more!")
-    assert output1 == 'Responding Chain - space:foo'
-    assert output2.startswith('Responding Chain - space')
+    output1 = router_config.run("How far is the moon from th earth?")
+    output2 = router_config.run("Tell me more!")
+    assert output1['chain'] == 'space'
+    assert output1['output'] == 'foo'
+    assert output2['chain'] == 'space'
+    assert output2['output'] == 'foo'
 
 
 def test_memory_context_switch_across_chains(router_config: RouterChain) -> None:
     """Test that the history is maintained even if the conversation spans across chains"""
-    output1 = router_config.predict(input="How far is the moon from th earth?")
-    output2 = router_config.predict(input="How do you scale databases for large scale software development?")
-    output3 = router_config.predict(input="How do you solve genetic problems through AI/ML?")
-    output4 = router_config.predict(input="Tell me more about it!")
-    assert output1 == 'Responding Chain - space:foo'
-    assert output2.startswith('Responding Chain - architecture')
-    assert output3.startswith('Responding Chain - biotechnology')
-    assert output4.startswith('Responding Chain - biotechnology')
+    output1 = router_config.run(input="How far is the moon from th earth?")
+    output2 = router_config.run(input="How do you scale databases for large scale software development?")
+    output3 = router_config.run(input="How do you solve genetic problems through AI/ML?")
+    output4 = router_config.run(input="Tell me more about it!")
+    assert output1['chain'] == 'space'
+    assert output1['output'] == 'foo'
+    assert output2['chain'] == 'architecture'
+    assert output3['chain'] == 'biotechnology'
+    assert output4['chain'] == 'biotechnology'
