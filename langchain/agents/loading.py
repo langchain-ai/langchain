@@ -8,15 +8,15 @@ import yaml
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.tools import Tool
 from langchain.agents.types import AGENT_TO_CLASS
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.loading import load_chain, load_chain_from_config
-from langchain.llms.base import BaseLLM
 from langchain.utilities.loading import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
 
 def _load_agent_from_tools(
-    config: dict, llm: BaseLLM, tools: List[Tool], **kwargs: Any
+    config: dict, llm: BaseLanguageModel, tools: List[Tool], **kwargs: Any
 ) -> BaseSingleActionAgent:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
@@ -29,7 +29,7 @@ def _load_agent_from_tools(
 
 def load_agent_from_config(
     config: dict,
-    llm: Optional[BaseLLM] = None,
+    llm: Optional[BaseLanguageModel] = None,
     tools: Optional[List[Tool]] = None,
     **kwargs: Any,
 ) -> BaseSingleActionAgent:
