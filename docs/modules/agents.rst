@@ -15,7 +15,7 @@ High level pseudocode of agents looks something like:
 - Some user input is received
 - The `agent` decides which `tool` - if any - to use, and what the input to that tool should be
 - That `tool` is then called with that `tool input`, and an `observation` is recorded (this is just the output of calling that tool with that tool input.
-- That history of `tool`, `tool input`, and `observation` is passed backed into the `agent`, and it decides what steps to take next
+- That history of `tool`, `tool input`, and `observation` is passed back into the `agent`, and it decides what steps to take next
 - This is repeated until the `agent` decides it no longer needs to use a `tool`, and then it responds directly to the user.
 
 The different abstractions involved in agents are as follows:
