@@ -30,7 +30,7 @@ TestModel.__test__ = False  # type: ignore[attr-defined]
 DEF_RESULT = """{
     "action": "Update",
     "action_input": "The PydanticOutputParser class is powerful",
-    "additional_fields": null
+    "additional_fields": "not_escape_newline:\n escape_newline: \\n"
 }"""
 
 # action 'update' with a lowercase 'u' to test schema validation failure.
@@ -43,7 +43,7 @@ DEF_RESULT_FAIL = """{
 DEF_EXPECTED_RESULT = TestModel(
     action=Actions.UPDATE,
     action_input="The PydanticOutputParser class is powerful",
-    additional_fields=None,
+    additional_fields="not_escape_newline:\n escape_newline: \n",
 )
 
 
