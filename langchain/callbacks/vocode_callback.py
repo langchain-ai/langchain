@@ -20,7 +20,7 @@ class VocodeCallbackHandler(BaseCallbackHandler):
         self.synthesizer = synthesizer
 
     def speak_in_thread(self, text: str) -> None:
-        thread = threading.Thread(target=lambda: self._speak(text))
+        thread = threading.Thread(target=lambda: self.speak(text))
         thread.start()
 
     def speak(self, text: str) -> None:
