@@ -2,10 +2,10 @@
 from typing import Dict, Optional
 
 import aiohttp
-import requests
 from pydantic.class_validators import root_validator
 from pydantic.main import BaseModel
 
+import requests
 from langchain.utils import get_from_dict_or_env
 
 
@@ -50,27 +50,53 @@ class GoogleSerperAPIWrapper(BaseModel):
 
     def results(self, query: str, **kwargs) -> Dict:
         """Run query through GoogleSearch."""
-        return self._google_serper_search_results(query, gl=self.gl, hl=self.hl, num=self.k, tbs=self.tbs,
-                                                  search_type=self.type, **kwargs)
+        return self._google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            tbs=self.tbs,
+            search_type=self.type,
+            **kwargs,
+        )
 
     def run(self, query: str, **kwargs) -> str:
         """Run query through GoogleSearch and parse result."""
-        results = self._google_serper_search_results(query, gl=self.gl, hl=self.hl, num=self.k, tbs=self.tbs,
-                                                     search_type=self.type, **kwargs)
+        results = self._google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            tbs=self.tbs,
+            search_type=self.type,
+            **kwargs,
+        )
 
         return self._parse_results(results)
 
     async def aresults(self, query: str, **kwargs) -> Dict:
         """Run query through GoogleSearch."""
         results = await self._async_google_serper_search_results(
-            query, gl=self.gl, hl=self.hl, num=self.k, search_type=self.type, tbs=self.tbs, **kwargs
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            search_type=self.type,
+            tbs=self.tbs,
+            **kwargs,
         )
         return results
 
     async def arun(self, query: str, **kwargs) -> str:
         """Run query through GoogleSearch and parse result async."""
         results = await self._async_google_serper_search_results(
-            query, gl=self.gl, hl=self.hl, num=self.k, search_type=self.type, tbs=self.tbs, **kwargs
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            search_type=self.type,
+            tbs=self.tbs,
+            **kwargs,
         )
 
         return self._parse_results(results)
@@ -110,12 +136,17 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return " ".join(snippets)
 
-    def _google_serper_search_results(self, search_term: str, search_type: str = 'search', **kwargs) -> dict:
+    def _google_serper_search_results(
+        self, search_term: str, search_type: str = "search", **kwargs
+    ) -> dict:
         headers = {
             "X-API-KEY": self.serper_api_key or "",
             "Content-Type": "application/json",
         }
-        params = {"q": search_term, **{key: value for key, value in kwargs.items() if value is not None}}
+        params = {
+            "q": search_term,
+            **{key: value for key, value in kwargs.items() if value is not None},
+        }
         response = requests.post(
             f"https://google.serper.dev/{search_type}", headers=headers, params=params
         )
@@ -124,14 +155,17 @@ class GoogleSerperAPIWrapper(BaseModel):
         return search_results
 
     async def _async_google_serper_search_results(
-        self, search_term: str, search_type: str = 'search', **kwargs
+        self, search_term: str, search_type: str = "search", **kwargs
     ) -> dict:
         headers = {
             "X-API-KEY": self.serper_api_key or "",
             "Content-Type": "application/json",
         }
         url = f"https://google.serper.dev/{search_type}"
-        params = {"q": search_term, **{key: value for key, value in kwargs.items() if value is not None}}
+        params = {
+            "q": search_term,
+            **{key: value for key, value in kwargs.items() if value is not None},
+        }
 
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:

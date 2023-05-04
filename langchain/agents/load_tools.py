@@ -193,8 +193,10 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
 def _get_google_serper(**kwargs: Any) -> BaseTool:
     return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
+
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))

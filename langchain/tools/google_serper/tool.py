@@ -4,10 +4,8 @@ from typing import Optional
 
 from pydantic.fields import Field
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
+from langchain.callbacks.manager import (AsyncCallbackManagerForToolRun,
+                                         CallbackManagerForToolRun)
 from langchain.tools.base import BaseTool
 from langchain.utilities.google_serper import GoogleSerperAPIWrapper
 
@@ -41,7 +39,7 @@ class GoogleSerperRun(BaseTool):
 
 
 class GoogleSerperResults(BaseTool):
-    """Tool that has capability to query the Google Search API and get back json."""
+    """Tool that has capability to query the Serper.dev Google Search API and get back json."""
 
     name = "Google Serrper Results JSON"
     description = (
