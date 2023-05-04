@@ -77,6 +77,7 @@ from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
 from langchain.document_loaders.text import TextLoader
+from langchain.document_loaders.toml import TomlLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
     UnstructuredAPIFileIOLoader,
@@ -167,6 +168,7 @@ __all__ = [
     "SlackDirectoryLoader",
     "TelegramChatLoader",
     "TextLoader",
+    "TomlLoader",
     "TwitterTweetLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
