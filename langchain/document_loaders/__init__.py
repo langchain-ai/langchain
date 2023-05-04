@@ -46,6 +46,7 @@ from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.document_loaders.image_captions import ImageCaptionLoader
 from langchain.document_loaders.imsdb import IMSDbLoader
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.mediawikidump import MWDumpLoader
 from langchain.document_loaders.modern_treasury import ModernTreasuryLoader
 from langchain.document_loaders.notebook import NotebookLoader
 from langchain.document_loaders.notion import NotionDirectoryLoader
@@ -71,6 +72,7 @@ from langchain.document_loaders.s3_directory import S3DirectoryLoader
 from langchain.document_loaders.s3_file import S3FileLoader
 from langchain.document_loaders.sitemap import SitemapLoader
 from langchain.document_loaders.slack_directory import SlackDirectoryLoader
+from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
 from langchain.document_loaders.telegram import TelegramChatLoader
@@ -106,6 +108,7 @@ __all__ = [
     "ApifyDatasetLoader",
     "ArxivLoader",
     "StripeLoader",
+    "SpreedlyLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -140,6 +143,7 @@ __all__ = [
     "IMSDbLoader",
     "ImageCaptionLoader",
     "ModernTreasuryLoader",
+    "MWDumpLoader",
     "NotebookLoader",
     "NotionDBLoader",
     "NotionDirectoryLoader",

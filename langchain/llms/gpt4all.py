@@ -12,7 +12,7 @@ from langchain.llms.utils import enforce_stop_tokens
 class GPT4All(LLM):
     r"""Wrapper around GPT4All language models.
 
-    To use, you should have the ``pyllamacpp`` python package installed, the
+    To use, you should have the ``pygpt4all`` python package installed, the
     pre-trained model file, and the model's config information.
 
     Example:
@@ -126,19 +126,19 @@ class GPT4All(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from pyllamacpp.model import Model as GPT4AllModel
+            from pygpt4all.models.gpt4all import GPT4All as GPT4AllModel
 
             llama_keys = cls._llama_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
             values["client"] = GPT4AllModel(
-                ggml_model=values["model"],
+                model_path=values["model"],
                 **model_kwargs,
             )
 
         except ImportError:
             raise ValueError(
-                "Could not import pyllamacpp python package. "
-                "Please install it with `pip install pyllamacpp`."
+                "Could not import pygpt4all python package. "
+                "Please install it with `pip install pygpt4all`."
             )
         return values
 

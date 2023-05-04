@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -16,12 +17,11 @@ from langchain.chains.llm_checker.prompt import (
     REVISED_ANSWER_PROMPT,
 )
 from langchain.chains.sequential import SequentialChain
-from langchain.llms.base import BaseLLM
 from langchain.prompts import PromptTemplate
 
 
 def _load_question_to_checked_assertions_chain(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     create_draft_answer_prompt: PromptTemplate,
     list_assertions_prompt: PromptTemplate,
     check_assertions_prompt: PromptTemplate,
@@ -75,7 +75,7 @@ class LLMCheckerChain(Chain):
 
     question_to_checked_assertions_chain: SequentialChain
 
-    llm: Optional[BaseLLM] = None
+    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     create_draft_answer_prompt: PromptTemplate = CREATE_DRAFT_ANSWER_PROMPT
     """[Deprecated]"""
@@ -158,7 +158,7 @@ class LLMCheckerChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         create_draft_answer_prompt: PromptTemplate = CREATE_DRAFT_ANSWER_PROMPT,
         list_assertions_prompt: PromptTemplate = LIST_ASSERTIONS_PROMPT,
         check_assertions_prompt: PromptTemplate = CHECK_ASSERTIONS_PROMPT,
