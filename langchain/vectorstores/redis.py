@@ -365,7 +365,7 @@ class Redis(VectorStore):
         metadata_key: str = "metadata",
         vector_key: str = "content_vector",
         **kwargs: Any,
-    ) -> Redis:
+    ) -> Tuple[Redis, List[str]]:
         """Create a Redis vectorstore from raw documents.
         This is a user-friendly interface that:
             1. Embeds documents.
@@ -410,8 +410,8 @@ class Redis(VectorStore):
         instance._create_index(dim=len(embeddings[0]))
 
         # Add data to Redis
-        instance.add_texts(texts, metadatas, embeddings)
-        return instance
+        keys = instance.add_texts(texts, metadatas, embeddings)
+        return instance, keys
 
     @staticmethod
     def drop_index(

@@ -265,7 +265,7 @@ class VectorStore(ABC):
         documents: List[Document],
         embedding: Embeddings,
         **kwargs: Any,
-    ) -> VST:
+    ) -> VST | Tuple[VST, List[str]]:
         """Return VectorStore initialized from documents and embeddings."""
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -291,7 +291,7 @@ class VectorStore(ABC):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> Tuple[VST, List[str]]:
         """Return VectorStore initialized from texts and embeddings."""
 
     @classmethod
