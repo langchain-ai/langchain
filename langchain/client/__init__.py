@@ -1,6 +1,6 @@
 """LangChain+ Client."""
 
 
-from langchain.client.langchain import LangChainPlusClient
+from langchain.client.langchain import LangChainClient
 
-__all__ = ["LangChainPlusClient"]
+__all__ = ["LangChainClient"]

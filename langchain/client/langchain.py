@@ -52,7 +52,7 @@ def _is_localhost(url: str) -> bool:
         return False
 
 
-class LangChainPlusClient(BaseSettings):
+class LangChainClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
@@ -101,7 +101,7 @@ class LangChainPlusClient(BaseSettings):
     ) -> List[Union[str, dict]]:
         """Run the chain asynchronously over a buffer of examples."""
         batch_results = [
-            LangChainPlusClient._arun_chain(example, tracer, chain)
+            LangChainClient._arun_chain(example, tracer, chain)
             for example, tracer in zip(buffer, tracers)
         ]
         return await asyncio.gather(*batch_results)
