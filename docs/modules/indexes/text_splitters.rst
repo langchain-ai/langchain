@@ -2,7 +2,7 @@ Text Splitters
 ==========================
 
 .. note::
-   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing/text-splitter>`_
+   `Conceptual Guide <https://docs.langchain.com/docs/components/indexing/text-splitters>`_
 
 
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks.

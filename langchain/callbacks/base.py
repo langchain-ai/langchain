@@ -1,7 +1,6 @@
 """Base callback handler that can be used to handle callbacks in langchain."""
 from __future__ import annotations
 
-import copy
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
@@ -367,15 +366,3 @@ class BaseCallbackManager(CallbackManagerMixin):
     def set_handler(self, handler: BaseCallbackHandler, inherit: bool = True) -> None:
         """Set handler as the only handler on the callback manager."""
         self.set_handlers([handler], inherit=inherit)
-
-    def __copy__(self) -> "BaseCallbackManager":
-        return self.__class__(
-            self.handlers.copy(), self.inheritable_handlers.copy(), self.parent_run_id
-        )
-
-    def __deepcopy__(self, memo: dict) -> "BaseCallbackManager":
-        return self.__class__(
-            [copy.deepcopy(handler, memo) for handler in self.handlers],
-            [copy.deepcopy(handler, memo) for handler in self.inheritable_handlers],
-            self.parent_run_id,
-        )

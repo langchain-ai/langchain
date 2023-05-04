@@ -8,13 +8,13 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.mrkl.base import ZeroShotAgent
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.llms.base import BaseLLM
 
 
 def create_vectorstore_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: VectorStoreToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = PREFIX,
@@ -42,7 +42,7 @@ def create_vectorstore_agent(
 
 
 def create_vectorstore_router_agent(
-    llm: BaseLLM,
+    llm: BaseLanguageModel,
     toolkit: VectorStoreRouterToolkit,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: str = ROUTER_PREFIX,

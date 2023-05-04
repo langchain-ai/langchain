@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, root_validator
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
-from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
 
 
@@ -27,7 +27,7 @@ class NatBotChain(Chain):
     llm_chain: LLMChain
     objective: str
     """Objective that NatBot is tasked with completing."""
-    llm: Optional[BaseLLM] = None
+    llm: Optional[BaseLanguageModel] = None
     """[Deprecated] LLM wrapper to use."""
     input_url_key: str = "url"  #: :meta private:
     input_browser_content_key: str = "browser_content"  #: :meta private:
@@ -59,7 +59,9 @@ class NatBotChain(Chain):
         return cls.from_llm(llm, objective, **kwargs)
 
     @classmethod
-    def from_llm(cls, llm: BaseLLM, objective: str, **kwargs: Any) -> NatBotChain:
+    def from_llm(
+        cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
+    ) -> NatBotChain:
         """Load from LLM."""
         llm_chain = LLMChain(llm=llm, prompt=PROMPT)
         return cls(llm_chain=llm_chain, objective=objective, **kwargs)

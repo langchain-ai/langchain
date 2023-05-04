@@ -9,12 +9,12 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from pydantic import Extra
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
 from langchain.chains.llm import LLMChain
 from langchain.embeddings.base import Embeddings
-from langchain.llms.base import BaseLLM
 
 
 class HypotheticalDocumentEmbedder(Chain, Embeddings):
@@ -70,7 +70,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         base_embeddings: Embeddings,
         prompt_key: str,
         **kwargs: Any,

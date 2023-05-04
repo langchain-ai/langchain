@@ -162,17 +162,25 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_ORGANIZATION",
             default="",
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
         try:
             import openai
 
-            openai.api_key = openai_api_key
-            if openai_organization:
-                openai.organization = openai_organization
         except ImportError:
             raise ValueError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+        openai.api_key = openai_api_key
+        if openai_organization:
+            openai.organization = openai_organization
+        if openai_api_base:
+            openai.api_base = openai_api_base
         try:
             values["client"] = openai.ChatCompletion
         except AttributeError:

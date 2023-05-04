@@ -194,6 +194,7 @@ class TelegramChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
+
         if self.file_path is None and self.chat_url is not None:
             try:
                 import nest_asyncio
@@ -220,5 +221,6 @@ class TelegramChatLoader(BaseLoader):
 
         message_threads = self.get_message_threads(df)
         combined_texts = self.combine_message_texts(message_threads, df)
+
 
         return text_to_docs(combined_texts)

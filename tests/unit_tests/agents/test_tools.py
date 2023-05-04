@@ -4,7 +4,6 @@ from functools import partial
 from typing import Any, Optional, Type, Union
 from unittest.mock import MagicMock
 
-import pydantic
 import pytest
 from pydantic import BaseModel
 
@@ -252,14 +251,12 @@ def test_tool_partial_function_args_schema() -> None:
     def func(tool_input: str, other_arg: str) -> str:
         return tool_input + other_arg
 
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
-        # We don't yet support args_schema inference for partial functions
-        # so want to make sure we proactively raise an error
-        Tool(
-            name="tool",
-            description="A tool",
-            func=partial(func, other_arg="foo"),
-        )
+    tool = Tool(
+        name="tool",
+        description="A tool",
+        func=partial(func, other_arg="foo"),
+    )
+    assert tool.run("bar") == "barfoo"
 
 
 def test_empty_args_decorator() -> None:
