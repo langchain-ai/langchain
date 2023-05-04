@@ -9,9 +9,9 @@ class Example(BaseModel):
 
     id: str  # TODO: UUID
     created_at: datetime
-    inputs: Dict[str, Any]
-    outputs: Dict[str, Any]
     dataset_id: str  # TODO: UUID
+    inputs: Dict[str, Any]
+    outputs: Optional[Dict[str, Any]] = Field(default=None)
     modified_at: Optional[datetime] = Field(default=None)
     llm_runs: List[Dict] = Field(default_factory=list)  # TODO: Type
     chain_runs: List[Dict] = Field(default_factory=list)  # TODO: Type

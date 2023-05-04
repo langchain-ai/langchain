@@ -1,12 +1,14 @@
 """Test the LangChain+ client."""
 from datetime import datetime
 from io import BytesIO
+from typing import Any, Dict, List
 from unittest import mock
 
 import pytest
 
+from langchain.chains.base import Chain
 from langchain.client.langchain import LangChainClient, _get_link_stem, _is_localhost
-from langchain.client.models import Example
+from langchain.client.models import Dataset, Example
 
 _CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
 
@@ -109,3 +111,84 @@ def test_upload_csv(mock_post: mock.Mock) -> None:
     assert dataset.name == "test.csv"
     assert dataset.description == "Test dataset"
     assert dataset.examples == [example_1, example_2]
+
+
+@pytest.mark.asyncio
+async def test_arun_chain_on_dataset() -> None:
+    dataset = Dataset(
+        id="1",
+        name="test",
+        description="Test dataset",
+        owner_id="owner",
+        created_at=_CREATED_AT,
+    )
+    examples = [
+        Example(
+            id="1",
+            created_at=_CREATED_AT,
+            inputs={"input": "1"},
+            outputs={"output": "2"},
+            dataset_id="1",
+        ),
+        Example(
+            id="2",
+            created_at=_CREATED_AT,
+            inputs={"input": "3"},
+            outputs={"output": "4"},
+            dataset_id="1",
+        ),
+        Example(
+            id="3",
+            created_at=_CREATED_AT,
+            inputs={"input": "5"},
+            outputs={"output": "6"},
+            dataset_id="1",
+        ),
+        Example(
+            id="4",
+            created_at=_CREATED_AT,
+            inputs={"input": "7"},
+            outputs={"output": "8"},
+            dataset_id="1",
+        ),
+        Example(
+            id="5",
+            created_at=_CREATED_AT,
+            inputs={"input": "9"},
+            outputs={"output": "10"},
+            dataset_id="1",
+        ),
+    ]
+
+    async def mock_aread_dataset(*args: Any, **kwargs: Any) -> Dataset:
+        return dataset
+
+    async def mock_alist_examples(*args: Any, **kwargs: Any) -> List[Example]:
+        return examples
+
+    async def mock_arun_chain(
+        example: Example, tracer: Any, chain: Chain
+    ) -> Dict[str, Any]:
+        return {"result": f"Result for example {example.id}"}
+
+    with mock.patch.object(
+        LangChainClient, "aread_dataset", new=mock_aread_dataset
+    ), mock.patch.object(
+        LangChainClient, "alist_examples", new=mock_alist_examples
+    ), mock.patch.object(
+        LangChainClient, "_arun_chain", new=mock_arun_chain
+    ):
+        client = LangChainClient(api_url="http://localhost:8000", api_key="123")
+        chain = mock.MagicMock()
+
+        results = await client.arun_chain_on_dataset(
+            dataset_name="test", chain=chain, num_workers=2, session_name="test_session"
+        )
+
+        assert results == {
+            "1": {"result": "Result for example 1"},
+            "2": {"result": "Result for example 2"},
+            "3": {"result": "Result for example 3"},
+            "4": {"result": "Result for example 4"},
+            "5": {"result": "Result for example 5"},
+        }

@@ -360,7 +360,7 @@ class LangChainClient(BaseSettings):
         self,
         dataset_name: str,
         chain: Chain,
-        batch_size: int = 5,
+        num_workers: int = 5,
         session_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Run the chain on a dataset and store traces to the specified session name.
@@ -368,7 +368,7 @@ class LangChainClient(BaseSettings):
         Args:
             dataset_name: Name of the dataset to run the chain on.
             chain: Chain to run on the dataset.
-            batch_size: Number of async workers to run in parallel.
+            num_workers: Number of async workers to run in parallel.
             session_name: Name of the session to store the traces in.
 
         Returns:
@@ -380,7 +380,7 @@ class LangChainClient(BaseSettings):
         dataset = await self.aread_dataset(dataset_name=dataset_name)
 
         tracers = []
-        for _ in range(batch_size):
+        for _ in range(num_workers):
             tracer = LangChainTracer()
             tracer.load_session(session_name or "default")
             tracers.append(tracer)
@@ -388,10 +388,10 @@ class LangChainClient(BaseSettings):
         results: Dict[str, Any] = {}
         examples = await self.alist_examples(dataset_id=dataset.id)
 
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
         workers = [
             asyncio.create_task(LangChainClient._worker(queue, tracers, chain, results))
-            for _ in range(batch_size)
+            for _ in range(num_workers)
         ]
 
         for example in examples:
