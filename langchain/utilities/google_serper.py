@@ -1,11 +1,11 @@
 """Util that calls Google Search using the Serper.dev API."""
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 import aiohttp
+import requests
 from pydantic.class_validators import root_validator
 from pydantic.main import BaseModel
 
-import requests
 from langchain.utils import get_from_dict_or_env
 
 

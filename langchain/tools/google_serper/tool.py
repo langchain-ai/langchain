@@ -41,7 +41,8 @@ class GoogleSerperRun(BaseTool):
 
 
 class GoogleSerperResults(BaseTool):
-    """Tool that has capability to query the Serper.dev Google Search API and get back json."""
+    """Tool that has capability to query the Serper.dev Google Search API
+    and get back json."""
 
     name = "Google Serrper Results JSON"
     description = (
