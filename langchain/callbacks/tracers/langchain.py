@@ -124,6 +124,7 @@ class LangChainTracerV2(BaseTracer):
         self._endpoint = _get_endpoint()
         self._headers = _get_headers()
         self.tenant_id = _get_tenant_id()
+        self.example_id: Optional[str] = None
 
     def _persist_session(self, session_create: TracerSessionBase) -> TracerSessionV2:
         """Persist a session."""
@@ -166,8 +167,7 @@ class LangChainTracerV2(BaseTracer):
         """Load the default tracing session and set it as the Tracer's session."""
         return self.load_session("default")
 
-    @staticmethod
-    def _convert_run(run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
+    def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
         """Convert a run to a Run."""
         inputs: Dict[str, Any] = {}
         outputs: Optional[Dict[str, Any]] = None
@@ -210,8 +210,8 @@ class LangChainTracerV2(BaseTracer):
             session_id=run.session_id,
             run_type=run_type,
             parent_run_id=run.parent_uuid,
-            reference_example_id=run.example_id,
-            child_runs=[LangChainTracerV2._convert_run(child) for child in child_runs],
+            reference_example_id=self.example_id,
+            child_runs=[self._convert_run(child) for child in child_runs],
         )
 
     def _persist_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> None:

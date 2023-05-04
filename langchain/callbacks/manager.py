@@ -21,6 +21,7 @@ from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain.callbacks.stdout import StdOutCallbackHandler
 from langchain.callbacks.tracers.base import TracerSession
 from langchain.callbacks.tracers.langchain import LangChainTracer, LangChainTracerV2
+from langchain.callbacks.tracers.schemas import TracerSessionV2
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
 Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
@@ -44,13 +45,11 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default", example_id: Optional[str] = None
+    session_name: str = "default"
 ) -> Generator[TracerSession, None, None]:
     """Get Tracer in a context manager."""
     cb = LangChainTracer()
     session = cb.load_session(session_name)
-    if example_id:
-        cb.example_id = example_id
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)
@@ -60,7 +59,7 @@ def tracing_enabled(
 def tracing_v2_enabled(
     session_name: str = "default",
     example_id: Optional[str] = None,
-) -> Generator[TracerSession, None, None]:
+) -> Generator[TracerSessionV2, None, None]:
     """Get the experimental tracer handler in a context manager."""
     # Issue a warning that this is experimental
     warnings.warn(
@@ -68,9 +67,9 @@ def tracing_v2_enabled(
         "This is not yet stable and may change in the future."
     )
     cb = LangChainTracerV2()
-    session = cb.load_session(session_name)
     if example_id:
         cb.example_id = example_id
+    session = cb.load_session(session_name)
     tracing_callback_var.set(cb)
     yield session
     tracing_callback_var.set(None)

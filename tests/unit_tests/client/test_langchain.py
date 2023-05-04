@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 from langchain.chains.base import Chain
-from langchain.client.langchain import LangChainClient, _get_link_stem, _is_localhost
+from langchain.client.langchain import LangChainPlusClient, _get_link_stem, _is_localhost
 from langchain.client.models import Dataset, Example
 
 _CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
@@ -39,18 +39,18 @@ def test_is_localhost() -> None:
 
 def test_validate_api_key_if_hosted() -> None:
     with pytest.raises(ValueError, match="API key must be provided"):
-        LangChainClient(api_url="http://www.example.com")
+        LangChainPlusClient(api_url="http://www.example.com")
 
-    client = LangChainClient(api_url="http://localhost:8000")
+    client = LangChainPlusClient(api_url="http://localhost:8000")
     assert client.api_url == "http://localhost:8000"
     assert client.api_key is None
 
 
 def test_headers() -> None:
-    client = LangChainClient(api_url="http://localhost:8000", api_key="123")
+    client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
     assert client._headers == {"authorization": "Bearer 123"}
 
-    client_no_key = LangChainClient(api_url="http://localhost:8000")
+    client_no_key = LangChainPlusClient(api_url="http://localhost:8000")
     assert client_no_key._headers == {}
 
 
@@ -60,7 +60,7 @@ def test_create_session(mock_post: mock.Mock) -> None:
     mock_response.json.return_value = {"id": 1}
     mock_post.return_value = mock_response
 
-    client = LangChainClient(api_url="http://localhost:8000", api_key="123")
+    client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
     session = client.create_session("test_session")
 
     assert session.id == 1
@@ -100,7 +100,7 @@ def test_upload_csv(mock_post: mock.Mock) -> None:
     }
     mock_post.return_value = mock_response
 
-    client = LangChainClient(api_url="http://localhost:8000", api_key="123")
+    client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
     csv_file = ("test.csv", BytesIO(b"input,output\n1,2\n3,4\n"))
 
     dataset = client.upload_csv(
@@ -114,7 +114,7 @@ def test_upload_csv(mock_post: mock.Mock) -> None:
 
 
 @pytest.mark.asyncio
-async def test_arun_chain_on_dataset() -> None:
+async def test_arun_on_dataset() -> None:
     dataset = Dataset(
         id="1",
         name="test",
@@ -172,16 +172,16 @@ async def test_arun_chain_on_dataset() -> None:
         return {"result": f"Result for example {example.id}"}
 
     with mock.patch.object(
-        LangChainClient, "aread_dataset", new=mock_aread_dataset
+        LangChainPlusClient, "aread_dataset", new=mock_aread_dataset
     ), mock.patch.object(
-        LangChainClient, "alist_examples", new=mock_alist_examples
+        LangChainPlusClient, "alist_examples", new=mock_alist_examples
     ), mock.patch.object(
-        LangChainClient, "_arun_chain", new=mock_arun_chain
+        LangChainPlusClient, "_arun_chain", new=mock_arun_chain
     ):
-        client = LangChainClient(api_url="http://localhost:8000", api_key="123")
+        client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
         chain = mock.MagicMock()
 
-        results = await client.arun_chain_on_dataset(
+        results = await client.arun_on_dataset(
             dataset_name="test", chain=chain, num_workers=2, session_name="test_session"
         )
 

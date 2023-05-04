@@ -4,17 +4,8 @@ import asyncio
 import logging
 import socket
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
+                    Sequence, Tuple, Union)
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -22,10 +13,15 @@ import requests
 from pydantic import BaseSettings, Field, root_validator
 from requests import HTTPError, Response
 
-from langchain.callbacks.tracers.langchain import LangChainTracer
-from langchain.callbacks.tracers.schemas import TracerSession, TracerSessionCreate
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.tracers.langchain import LangChainTracerV2
+from langchain.callbacks.tracers.schemas import (TracerSession,
+                                                 TracerSessionCreate)
 from langchain.chains.base import Chain
+from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, Example
+from langchain.client.utils import parse_chat_messages
+from langchain.llms.base import BaseLLM
 from langchain.utils import xor_args
 
 if TYPE_CHECKING:
@@ -58,22 +54,40 @@ def _is_localhost(url: str) -> bool:
         return False
 
 
-class LangChainClient(BaseSettings):
+class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
     api_key: Optional[str] = Field(default=None, env="LANGCHAIN_API_KEY")
-    api_url: str = Field(default="http://localhost:8000", env="LANGCHAIN_ENDPOINT")
+    api_url: str = Field(..., env="LANGCHAIN_ENDPOINT")
+    tenant_id: str = Field(..., env="LANGCHAIN_TENANT_ID")
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_api_key_if_hosted(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Verify API key is provided if url not localhost."""
-        api_url: str = values["api_url"]
+        api_url: str = values.get("api_url", "http://localhost:8000")
         api_key: Optional[str] = values.get("api_key")
-        if not _is_localhost(api_url) and not api_key:
-            raise ValueError(
-                "API key must be provided when using hosted LangChain+ API"
-            )
+        if not _is_localhost(api_url):
+            if not api_key:
+                raise ValueError(
+                    "API key must be provided when using hosted LangChain+ API"
+                )
+        else:
+            tenant_id = values.get("tenant_id")
+            if not tenant_id:
+                values["tenant_id"] = cls._get_seeded_tenant_id(api_url, api_key)     
         return values
+    
+    @staticmethod
+    def _get_seeded_tenant_id(api_url: str, api_key: Optional[str]) -> str:
+        """Get the tenant ID from the seeded tenant."""
+        url = f"{api_url}/tenants"
+        headers = {"authorization": f"Bearer {api_key}"} if api_key else {}
+        response = requests.get(url, headers=headers)
+        _raise_rich_error(response)
+        results: List[dict] = response.json()
+        if len(results) == 0:
+            raise ValueError("No seeded tenant found")
+        return results[0]["id"]
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
@@ -82,7 +96,7 @@ class LangChainClient(BaseSettings):
 
     def __repr__(self) -> str:
         """Return a string representation of the instance with a link to the URL."""
-        return f"LangChainClient (API URL: {self.api_url})"
+        return f"LangChainPlusClient (API URL: {self.api_url})"
 
     @property
     def _headers(self) -> Dict[str, str]:
@@ -307,29 +321,48 @@ class LangChainClient(BaseSettings):
                 response.raise_for_status()
                 results = await response.json()
                 return [Example(**dataset) for dataset in results]
+            
+    @staticmethod
+    async def _arun_llm(llm: BaseLanguageModel, inputs: Dict[str, Any], langchain_tracer: LangChainTracerV2,)-> Union[Dict, str]:
+        if isinstance(llm, BaseLLM):
+            llm_prompts: List[str] = inputs['prompts']
+            chain_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
+        elif isinstance(llm, BaseChatModel):
+            chat_prompts: List[str] = inputs['prompts']
+            messages = [parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts]
+            chain_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
+        else:
+            raise ValueError(f"Unsupported LLM type {type(llm)}")
+        return chain_output
 
     @staticmethod
-    async def _arun_chain(
-        example: Example, langchain_tracer: LangChainTracer, chain: Chain
-    ) -> Union[dict, str]:
+    async def _arun_llm_or_chain(
+        example: Example, langchain_tracer: LangChainTracerV2, llm_or_chain: Union[Chain, BaseLanguageModel], n_times: int
+    ) -> List[Union[dict, str]]:
         """Run the chain asynchronously."""
         previous_example_id = langchain_tracer.example_id
         langchain_tracer.example_id = example.id
-        try:
-            chain_output = await chain.arun(
-                example.inputs, callbacks=[langchain_tracer]
-            )
-        except Exception as e:
-            logger.warning(f"Chain failed for example {example.id}. Error: {e}")
-            return {"Error": str(e)}
-        finally:
-            langchain_tracer.example_id = previous_example_id
-        return chain_output
+        outputs = []
+        for  _ in range(n_times):
+            try:
+                if isinstance(llm_or_chain, BaseLanguageModel):
+                    chain_output = await LangChainPlusClient._arun_llm(llm_or_chain, example.inputs)
+                else:
+                    chain_output = await llm_or_chain.arun(
+                        example.inputs, callbacks=[langchain_tracer]
+                    )
+                outputs.append(chain_output)
+            except Exception as e:
+                logger.warning(f"Chain failed for example {example.id}. Error: {e}")
+                outputs.append({"Error": str(e)})
+            finally:
+                langchain_tracer.example_id = previous_example_id
+        return outputs 
 
     @staticmethod
     async def _worker(
         queue: asyncio.Queue,
-        tracers: List[LangChainTracer],
+        tracers: List[LangChainTracerV2],
         chain: Chain,
         results: Dict[str, Any],
     ) -> None:
@@ -340,48 +373,53 @@ class LangChainClient(BaseSettings):
                 break
 
             tracer = tracers.pop()
-            result = await LangChainClient._arun_chain(example, tracer, chain)
+            result = await LangChainPlusClient._arun_llm_or_chain(example, tracer, chain)
             results[example.id] = result
             tracers.append(tracer)
             queue.task_done()
 
     @staticmethod
-    async def _arun_chain_over_buffer(
-        buffer: Sequence[Example], tracers: Sequence[LangChainTracer], chain: Chain
+    async def _arun_llm_or_chain_over_buffer(
+        buffer: Sequence[Example], tracers: Sequence[LangChainTracerV2], llm_or_chain: Union[Chain, BaseLanguageModel],
     ) -> List[Union[str, dict]]:
         """Run the chain asynchronously over a buffer of examples."""
         batch_results = [
-            LangChainClient._arun_chain(example, tracer, chain)
+            LangChainPlusClient._arun_llm_or_chain(example, tracer, llm_or_chain)
             for example, tracer in zip(buffer, tracers)
         ]
         return await asyncio.gather(*batch_results)
 
-    async def arun_chain_on_dataset(
+    async def arun_on_dataset(
         self,
         dataset_name: str,
-        chain: Chain,
+        llm_or_chain: Union[Chain, BaseLanguageModel],
         num_workers: int = 5,
+        num_repetitions: int = 1,
         session_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Run the chain on a dataset and store traces to the specified session name.
 
         Args:
             dataset_name: Name of the dataset to run the chain on.
-            chain: Chain to run on the dataset.
+            llm_or_chain: Chain or language model to run over the dataset.
             num_workers: Number of async workers to run in parallel.
+            num_repetitions: Number of times to run the chain on each example.
             session_name: Name of the session to store the traces in.
 
         Returns:
             A dictionary mapping example ids to the chain outputs.
         """
-        if session_name is not None:
-            self.create_session(session_name)
+        if isinstance(llm_or_chain, BaseLanguageModel):
+            raise NotImplementedError
+        if session_name is None:
+            session_name = f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
+        self.create_session(session_name)
 
         dataset = await self.aread_dataset(dataset_name=dataset_name)
 
         tracers = []
         for _ in range(num_workers):
-            tracer = LangChainTracer()
+            tracer = LangChainTracerV2()
             tracer.load_session(session_name or "default")
             tracers.append(tracer)
 
@@ -390,7 +428,7 @@ class LangChainClient(BaseSettings):
 
         queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
         workers = [
-            asyncio.create_task(LangChainClient._worker(queue, tracers, chain, results))
+            asyncio.create_task(LangChainPlusClient._worker(queue, tracers, llm_or_chain, results))
             for _ in range(num_workers)
         ]
 
