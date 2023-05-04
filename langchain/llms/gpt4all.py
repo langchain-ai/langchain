@@ -97,10 +97,8 @@ class GPT4All(LLM):
     def _default_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            "seed": self.seed,
             "n_predict": self.n_predict,
             "n_threads": self.n_threads,
-            "n_batch": self.n_batch,
             "repeat_last_n": self.repeat_last_n,
             "repeat_penalty": self.repeat_penalty,
             "top_k": self.top_k,
@@ -126,7 +124,7 @@ class GPT4All(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
-            from pygpt4all.models.gpt4all import GPT4All as GPT4AllModel
+            from pygpt4all import GPT4All as GPT4AllModel
 
             llama_keys = cls._llama_param_names()
             model_kwargs = {k: v for k, v in values.items() if k in llama_keys}
@@ -183,11 +181,8 @@ class GPT4All(LLM):
         """
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
-            text = self.client.generate(
-                prompt,
-                new_text_callback=text_callback,
-                **self._default_params,
-            )
+            for token in self.client.generate(prompt, **self._default_params):
+                text_callback(token)
         else:
             text = self.client.generate(prompt, **self._default_params)
         if stop is not None:
