@@ -316,7 +316,7 @@ You can also pass in multiple messages for OpenAI's gpt-3.5-turbo and gpt-4 mode
 ```python
 messages = [
     SystemMessage(content="You are a helpful assistant that translates English to French."),
-    HumanMessage(content="Translate this sentence from English to French. I love programming.")
+    HumanMessage(content="I love programming.")
 ]
 chat(messages)
 # -> AIMessage(content="J'aime programmer.", additional_kwargs={})
@@ -327,22 +327,22 @@ You can go one step further and generate completions for multiple sets of messag
 batch_messages = [
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love programming.")
+        HumanMessage(content="I love programming.")
     ],
     [
         SystemMessage(content="You are a helpful assistant that translates English to French."),
-        HumanMessage(content="Translate this sentence from English to French. I love artificial intelligence.")
+        HumanMessage(content="I love artificial intelligence.")
     ],
 ]
 result = chat.generate(batch_messages)
 result
-# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}})
+# -> LLMResult(generations=[[ChatGeneration(text="J'aime programmer.", generation_info=None, message=AIMessage(content="J'aime programmer.", additional_kwargs={}))], [ChatGeneration(text="J'aime l'intelligence artificielle.", generation_info=None, message=AIMessage(content="J'aime l'intelligence artificielle.", additional_kwargs={}))]], llm_output={'token_usage': {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}})
 ```
 
 You can recover things like token usage from this LLMResult:
 ```
 result.llm_output['token_usage']
-# -> {'prompt_tokens': 71, 'completion_tokens': 18, 'total_tokens': 89}
+# -> {'prompt_tokens': 57, 'completion_tokens': 20, 'total_tokens': 77}
 ```
 
 
