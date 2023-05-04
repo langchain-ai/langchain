@@ -1,10 +1,11 @@
 """Integration test for Wikipedia API Wrapper."""
 from typing import List
 
+import pytest
+
 from langchain.schema import Document
 from langchain.utilities import WikipediaAPIWrapper
 
-import pytest
 
 @pytest.fixture
 def api_client() -> WikipediaAPIWrapper:
@@ -25,7 +26,8 @@ def test_run_no_result(api_client: WikipediaAPIWrapper) -> None:
     )
     assert "No good Wikipedia Search Result was found" == output
 
-def assert_docs(docs: List[Document], all_meta=False) -> None:
+
+def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
     for doc in docs:
         assert doc.page_content
         assert doc.metadata
@@ -35,7 +37,6 @@ def assert_docs(docs: List[Document], all_meta=False) -> None:
             assert len(set(doc.metadata)) > len(main_meta)
         else:
             assert len(set(doc.metadata)) == len(main_meta)
-
 
 
 def test_load_success(api_client: WikipediaAPIWrapper) -> None:
@@ -57,5 +58,7 @@ def test_load_success_all_meta(api_client: WikipediaAPIWrapper) -> None:
 def test_load_no_result(api_client: WikipediaAPIWrapper) -> None:
     """Test that returns one document"""
 
-    docs = api_client.load("NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL")
+    docs = api_client.load(
+        "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
+    )
     assert not docs

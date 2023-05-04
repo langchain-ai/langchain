@@ -1,6 +1,6 @@
 """Util that calls Wikipedia."""
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, root_validator
 
@@ -49,7 +49,7 @@ class WikipediaAPIWrapper(BaseModel):
         """Run Wikipedia search and get page summaries."""
         page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
         summaries = []
-        for page_title in page_titles[:self.top_k_results]:
+        for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):
                 if summary := self._formatted_page_summary(page_title, wiki_page):
                     summaries.append(summary)
@@ -58,10 +58,10 @@ class WikipediaAPIWrapper(BaseModel):
         return "\n\n".join(summaries)
 
     @staticmethod
-    def _formatted_page_summary(page_title: str, wiki_page: str) -> Optional[str]:
+    def _formatted_page_summary(page_title: str, wiki_page: Any) -> Optional[str]:
         return f"Page: {page_title}\nSummary: {wiki_page.summary}"
 
-    def _page_to_document(self, page_title: str, wiki_page: str) -> Document:
+    def _page_to_document(self, page_title: str, wiki_page: Any) -> Document:
         main_meta = {
             "title": page_title,
             "summary": wiki_page.summary,
@@ -83,7 +83,10 @@ class WikipediaAPIWrapper(BaseModel):
         )
         doc = Document(
             page_content=wiki_page.content,
-            metadata={                    **main_meta,                    **add_meta,                }
+            metadata={
+                **main_meta,
+                **add_meta,
+            },
         )
         return doc
 
@@ -106,7 +109,7 @@ class WikipediaAPIWrapper(BaseModel):
         """
         page_titles = self.wiki_client.search(query[:WIKIPEDIA_MAX_QUERY_LENGTH])
         docs = []
-        for page_title in page_titles[:self.top_k_results]:
+        for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):
                 if doc := self._page_to_document(page_title, wiki_page):
                     docs.append(doc)
