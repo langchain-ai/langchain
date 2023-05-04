@@ -31,11 +31,16 @@ class TracerSession(TracerSessionBase):
     id: int
 
 
-class TracerSessionV2(TracerSessionBase):
+class TracerSessionV2Base(TracerSessionBase):
+    """A creation class for TracerSessionV2."""
+
+    tenant_id: UUID
+
+
+class TracerSessionV2(TracerSessionV2Base):
     """TracerSession schema for the V2 API."""
 
     id: UUID
-    tenant_id: UUID
 
 
 class BaseRun(BaseModel):

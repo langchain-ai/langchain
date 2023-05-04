@@ -29,7 +29,9 @@ Callbacks = Optional[Union[List[BaseCallbackHandler], BaseCallbackManager]]
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-tracing_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
+tracing_callback_var: ContextVar[
+    Optional[Union[LangChainTracer, LangChainTracerV2]]
+] = ContextVar(  # noqa: E501
     "tracing_callback", default=None
 )
 
@@ -45,7 +47,7 @@ def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default"
+    session_name: str = "default",
 ) -> Generator[TracerSession, None, None]:
     """Get Tracer in a context manager."""
     cb = LangChainTracer()

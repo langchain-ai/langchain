@@ -16,6 +16,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
     TracerSessionBase,
     TracerSessionV2,
+    TracerSessionV2Base,
 )
 
 
@@ -126,6 +127,11 @@ class LangChainTracerV2(BaseTracer):
         self.tenant_id = _get_tenant_id()
         self.example_id: Optional[str] = None
 
+    def _get_session_create(
+        self, name: Optional[str] = None, **kwargs: Any
+    ) -> TracerSessionBase:
+        return TracerSessionV2Base(name=name, extra=kwargs, tenant_id=self.tenant_id)
+
     def _persist_session(self, session_create: TracerSessionBase) -> TracerSessionV2:
         """Persist a session."""
         try:
@@ -169,6 +175,7 @@ class LangChainTracerV2(BaseTracer):
 
     def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
         """Convert a run to a Run."""
+        session = self.session or self.load_default_session()
         inputs: Dict[str, Any] = {}
         outputs: Optional[Dict[str, Any]] = None
         child_runs: List[Union[LLMRun, ChainRun, ToolRun]] = []
@@ -198,16 +205,16 @@ class LangChainTracerV2(BaseTracer):
 
         return Run(
             id=run.uuid,
-            name=run.serialized.get("name"),
+            name=run.serialized.get("name", f"{run_type}-{run.uuid}"),
             start_time=run.start_time,
             end_time=run.end_time,
-            extra=run.extra,
+            extra=run.extra or {},
             error=run.error,
             execution_order=run.execution_order,
             serialized=run.serialized,
             inputs=inputs,
             outputs=outputs,
-            session_id=run.session_id,
+            session_id=session.id,
             run_type=run_type,
             parent_run_id=run.parent_uuid,
             reference_example_id=self.example_id,
