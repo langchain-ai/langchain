@@ -12,8 +12,10 @@ def test_python_repl_tool_single_input() -> None:
     assert tool.is_single_input
     assert int(tool.run("print(1 + 1)").strip()) == 2
 
-@pytest.mark.skipif(sys.version_info < (3, 9)
-                     , reason="Requires python version >= 3.9 to run.")
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
+)
 def test_python_ast_repl_tool_single_input() -> None:
     """Test that the python REPL tool works with a single input."""
     tool = PythonAstREPLTool()

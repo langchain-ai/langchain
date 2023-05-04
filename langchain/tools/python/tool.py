@@ -19,7 +19,6 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
-
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 

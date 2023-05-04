@@ -7,10 +7,11 @@ import pytest
 from pydantic import BaseModel
 
 from langchain.agents.tools import Tool, tool
-from langchain.callbacks.manager import (AsyncCallbackManagerForToolRun,
-                                         CallbackManagerForToolRun)
-from langchain.tools.base import (BaseTool, SchemaAnnotationError,
-                                  StructuredTool)
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools.base import BaseTool, SchemaAnnotationError, StructuredTool
 
 
 def test_unnamed_decorator() -> None:
@@ -161,18 +162,27 @@ def test_decorated_function_schema_equivalent() -> None:
         == structured_tool_input.args
     )
 
+
 def test_args_kwargs_filtered() -> None:
     class _SingleArgToolWithKwargs(BaseTool):
         name = "single_arg_tool"
         description = "A  single arged tool with kwargs"
 
-        def _run(self, some_arg: str, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: Any) -> str:
+        def _run(
+            self,
+            some_arg: str,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+            **kwargs: Any,
+        ) -> str:
             return "foo"
 
         async def _arun(
-            self, some_arg: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None, **kwargs: Any) -> str:
+            self,
+            some_arg: str,
+            run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+            **kwargs: Any,
+        ) -> str:
             raise NotImplementedError
-        
 
     tool = _SingleArgToolWithKwargs()
     assert tool.is_single_input
@@ -181,18 +191,24 @@ def test_args_kwargs_filtered() -> None:
         name = "single_arg_tool"
         description = "A single arged tool with kwargs"
 
-        def _run(self, *args: Any, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: Any) -> str:
+        def _run(
+            self,
+            *args: Any,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+            **kwargs: Any,
+        ) -> str:
             return "foo"
 
         async def _arun(
-            self, *args: Any, run_manager: Optional[AsyncCallbackManagerForToolRun] = None, **kwargs: Any) -> str:
+            self,
+            *args: Any,
+            run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+            **kwargs: Any,
+        ) -> str:
             raise NotImplementedError
-        
 
     tool2 = _VarArgToolWithKwargs()
     assert tool2.is_single_input
-
-
 
 
 def test_structured_args_decorator_no_infer_schema() -> None:
