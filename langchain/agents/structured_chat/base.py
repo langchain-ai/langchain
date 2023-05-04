@@ -15,6 +15,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction
@@ -82,12 +83,13 @@ class StructuredChatAgent(Agent):
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
+        if input_variables is None:
+            input_variables = ["input", "chat_history", "agent_scratchpad"]
         messages = [
             SystemMessagePromptTemplate.from_template(template),
+            MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{input}\n\n{agent_scratchpad}"),
         ]
-        if input_variables is None:
-            input_variables = ["input", "agent_scratchpad"]
         return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
