@@ -100,7 +100,7 @@ class SequentialChain(Chain):
         for i, chain in enumerate(self.chains):
             callbacks = _run_manager.get_child()
             outputs = chain(known_values, return_only_outputs=True, callbacks=callbacks)
-            known_values.update(outputs)
+            known_values = outputs.copy()
         return {k: known_values[k] for k in self.output_variables}
 
     async def _acall(
@@ -115,7 +115,7 @@ class SequentialChain(Chain):
             outputs = await chain.acall(
                 known_values, return_only_outputs=True, callbacks=callbacks
             )
-            known_values.update(outputs)
+            known_values = outputs.copy()
         return {k: known_values[k] for k in self.output_variables}
 
 
