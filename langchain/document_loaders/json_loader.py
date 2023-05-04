@@ -1,7 +1,7 @@
 """Loader that loads data from JSON."""
 import json
 from pathlib import Path
-from typing import List, Union, Callable
+from typing import Callable, List, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -17,7 +17,13 @@ class JSONLoader(BaseLoader):
         ["", "", ""] -> schema = .[]
     """
 
-    def __init__(self, file_path: Union[str, Path], jq_schema: str, content_key: str = None, metadata_func: Callable = None):
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        jq_schema: str,
+        content_key: str = None,
+        metadata_func: Callable = None,
+    ):
         """Initialize the JSONLoader.
 
         Args:
