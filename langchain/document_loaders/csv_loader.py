@@ -31,12 +31,12 @@ class CSVLoader(BaseLoader):
         file_path: str,
         source_column: Optional[str] = None,
         csv_args: Optional[Dict] = None,
-        encoding: Optional[str] = None
+        encoding: Optional[str] = None,
     ):
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
-        if (csv_args is None):
+        if csv_args is None:
             self.csv_args = {
                 "dialect": csv.excel,
             }

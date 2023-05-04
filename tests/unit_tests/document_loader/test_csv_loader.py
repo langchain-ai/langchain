@@ -1,8 +1,9 @@
+from io import StringIO
+
 from pytest_mock import MockerFixture
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.csv_loader import CSVLoader
-from io import StringIO
 
 
 class TestCSVLoader:
@@ -22,7 +23,9 @@ class TestCSVLoader:
         ]
 
         mock_csv_reader = mocker.patch("builtins.open")
-        mock_csv_reader.return_value = StringIO("column1,column2,column3\nvalue1,value2,value3\nvalue4,value5,value6")
+        mock_csv_reader.return_value = StringIO(
+            "column1,column2,column3\nvalue1,value2,value3\nvalue4,value5,value6"
+        )
 
         # Exercise
         loader = CSVLoader(file_path=file_path)
