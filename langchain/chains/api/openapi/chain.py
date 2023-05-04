@@ -61,7 +61,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         """Construct the path from the deserialized input."""
         path = self.api_operation.base_url + self.api_operation.path
         for param in self.param_mapping.path_params:
-            path = path.replace(f"{{{param}}}", args.pop(param, ""))
+            path = path.replace(f"{{{param}}}", str(args.pop(param, "")))
         return path
 
     def _extract_query_params(self, args: Dict[str, str]) -> Dict[str, str]:

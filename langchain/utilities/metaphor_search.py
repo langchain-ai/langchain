@@ -3,8 +3,13 @@
 In order to set this up, follow instructions at:
 """
 from typing import Dict, List
+import http
+import json
+import aiohttp
 
 import requests
+import asyncio
+import http.client
 from pydantic import BaseModel, Extra, root_validator
 
 from langchain.utils import get_from_dict_or_env
@@ -31,7 +36,8 @@ class MetaphorSearchAPIWrapper(BaseModel):
             "query": query
         }
         response = requests.post(
-            f"{METAPHOR_API_URL}/search", headers=headers, json=params  # type: ignore
+            # type: ignore
+            f"{METAPHOR_API_URL}/search", headers=headers, json=params
         )
 
         response.raise_for_status()
@@ -65,6 +71,34 @@ class MetaphorSearchAPIWrapper(BaseModel):
         """
         raw_search_results = self._metaphor_search_results(
             query, num_results=num_results)
+        return self._clean_results(raw_search_results)
+
+    async def results_async(self, query: str, num_results: int) -> List[Dict]:
+        """Get results from the Metaphor Search API asynchronously."""
+        # Function to perform the API call
+        async def fetch() -> str:
+            headers = {"X-Api-Key": self.metaphor_api_key}
+            params = {
+                "numResults": num_results,
+                "query": query
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{METAPHOR_API_URL}/search",
+                    json=params,
+                    headers=headers
+                ) as res:
+                    if res.status == 200:
+                        data = await res.text()
+                        return data
+                    else:
+                        raise Exception(f"Error {res.status}: {res.reason}")
+
+        results_json_str = await fetch()
+        results_json = json.loads(results_json_str)
+        return self._clean_results(results_json["results"])
+
+    def _clean_results(self, raw_search_results: List[Dict]) -> List[Dict]:
         cleaned_results = []
         for result in raw_search_results:
             cleaned_results.append(
@@ -75,5 +109,4 @@ class MetaphorSearchAPIWrapper(BaseModel):
                     "date_created": result["dateCreated"],
                 }
             )
-
         return cleaned_results

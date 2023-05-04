@@ -16,7 +16,7 @@ from langchain.tools.powerbi.prompt import SCHEMA_ERROR_RESPONSE, UNAUTHORIZED_R
 
 _LOGGER = logging.getLogger(__name__)
 
-BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg/datasets/")
+BASE_URL = os.getenv("POWERBI_BASE_URL", "https://api.powerbi.com/v1.0/myorg")
 
 if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
@@ -57,8 +57,8 @@ class PowerBIDataset(BaseModel):
     def request_url(self) -> str:
         """Get the request url."""
         if self.group_id:
-            return f"{BASE_URL}/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
-        return f"{BASE_URL}/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+            return f"{BASE_URL}/groups/{self.group_id}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
+        return f"{BASE_URL}/datasets/{self.dataset_id}/executeQueries"  # noqa: E501 # pylint: disable=C0301
 
     @property
     def headers(self) -> Dict[str, str]:

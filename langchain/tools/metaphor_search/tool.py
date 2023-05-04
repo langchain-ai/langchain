@@ -1,6 +1,6 @@
 """Tool for the Metaphor search API."""
 
-from typing import Optional
+from typing import Optional, List, Dict
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -8,6 +8,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.tools.base import BaseTool
 from langchain.utilities.metaphor_search import MetaphorSearchAPIWrapper
+
 
 class MetaphorSearchResults(BaseTool):
     """Tool that has capability to query the Metaphor Search API and get back json."""
@@ -24,15 +25,18 @@ class MetaphorSearchResults(BaseTool):
         query: str,
         num_results: int,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> List[Dict]:
         """Use the tool."""
-        return str(self.api_wrapper.results(query, num_results))
+        return self.api_wrapper.results(query, num_results)
 
     async def _arun(
         self,
         query: str,
         num_results: int,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> List[Dict]:
         """Use the tool asynchronously."""
-        raise NotImplementedError("MetaphorSearchResults does not support async")
+        try:
+            return await self.api_wrapper.results_async(query, num_results)
+        except Exception as e:
+            return repr(e)
