@@ -87,7 +87,7 @@ class Qdrant(VectorStore):
         if not isinstance(embeddings, Embeddings):
             warnings.warn(
                 "`embeddings` should be an instance of `Embeddings`."
-                "Will try to use passed `embeddings` as `embedding_function` which is deprecated."
+                "Using `embeddings` as `embedding_function` which is deprecated"
             )
             self._embeddings_function = embeddings
             self.embeddings = None

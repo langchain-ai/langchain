@@ -40,9 +40,9 @@ def test_qdrant_add_documents() -> None:
     new_texts = ["foobar", "foobaz"]
     docsearch.add_documents([Document(page_content=content) for content in new_texts])
     output = docsearch.similarity_search("foobar", k=1)
-    # FakeEmbeddings return the same query embedding as the first documents embedding computed
-    # in embedding.embed_documents
-    # since embed_documents is called twice, "foo" embedding is the same as "foobar" embedding
+    # FakeEmbeddings return the same query embedding as the first document embedding
+    # computed in `embedding.embed_documents`. Since embed_documents is called twice,
+    # "foo" embedding is the same as "foobar" embedding
     assert output == [Document(page_content="foobar")] or output == [
         Document(page_content="foo")
     ]
@@ -127,7 +127,7 @@ def test_qdrant_max_marginal_relevance_search(
         (None, FakeEmbeddings().embed_query),
     ],
 )
-def test_qdrant_embedding_inteface(
+def test_qdrant_embedding_interface(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
     from qdrant_client import QdrantClient
@@ -135,7 +135,7 @@ def test_qdrant_embedding_inteface(
     client = QdrantClient(":memory:")
     collection_name = "test"
 
-    docsearch = Qdrant(
+    Qdrant(
         client,
         collection_name,
         embeddings=embeddings,
@@ -150,7 +150,7 @@ def test_qdrant_embedding_inteface(
         (None, None),
     ],
 )
-def test_qdrant_embedding_inteface_raises(
+def test_qdrant_embedding_interface_raises(
     embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
 ) -> None:
     from qdrant_client import QdrantClient
@@ -159,7 +159,7 @@ def test_qdrant_embedding_inteface_raises(
     collection_name = "test"
 
     with pytest.raises(ValueError):
-        docsearch = Qdrant(
+        Qdrant(
             client,
             collection_name,
             embeddings=embeddings,
