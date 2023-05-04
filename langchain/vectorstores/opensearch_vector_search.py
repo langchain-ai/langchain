@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
@@ -410,6 +410,27 @@ class OpenSearchVectorSearch(VectorStore):
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
         """
+        docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
+        return [doc[0] for doc in docs_with_scores]
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and it's scores most similar to query.
+
+        By default supports Approximate Search.
+        Also supports Script Scoring and Painless Scripting.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents along with its scores most similar to the query.
+
+        Optional Args:
+            same as `similarity_search`
+        """
         embedding = self.embedding_function.embed_query(query)
         search_type = _get_kwargs_value(kwargs, "search_type", "approximate_search")
         text_field = _get_kwargs_value(kwargs, "text_field", "text")
@@ -454,17 +475,20 @@ class OpenSearchVectorSearch(VectorStore):
             raise ValueError("Invalid `search_type` provided as an argument")
 
         response = self.client.search(index=self.index_name, body=search_query)
-        hits = [hit["_source"] for hit in response["hits"]["hits"][:k]]
-        documents = [
-            Document(
-                page_content=hit[text_field],
-                metadata=hit
-                if metadata_field == "*" or metadata_field not in hit
-                else hit[metadata_field],
+        hits = [hit for hit in response["hits"]["hits"][:k]]
+        documents_with_scores = [
+            (
+                Document(
+                    page_content=hit["_source"][text_field],
+                    metadata=hit["_source"]
+                    if metadata_field == "*" or metadata_field not in hit["_source"]
+                    else hit["_source"][metadata_field],
+                ),
+                hit["_score"],
             )
             for hit in hits
         ]
-        return documents
+        return documents_with_scores
 
     @classmethod
     def from_texts(
