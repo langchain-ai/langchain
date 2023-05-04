@@ -1,18 +1,14 @@
 import tempfile
-from typing import List
-
-try:
-    from O365.drive import File
-except ImportError:
-    raise ValueError(
-        "O365 package not found, please install it with `pip install o365`"
-    )
+from typing import TYPE_CHECKING, List
 
 from pydantic import BaseModel, Field
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
+
+if TYPE_CHECKING:
+    from O365.drive import File
 
 CHUNK_SIZE = 1024 * 1024 * 5
 

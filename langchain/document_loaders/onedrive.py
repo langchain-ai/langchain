@@ -4,7 +4,7 @@ import os
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, BaseSettings, Field, FilePath, SecretStr
 
@@ -12,13 +12,10 @@ from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.onedrive_file import OneDriveFileLoader
 
-try:
-    from O365 import Account, FileSystemTokenBackend
+if TYPE_CHECKING:
+    from O365 import Account
     from O365.drive import Drive, Folder
-except ImportError:
-    raise ValueError(
-        "O365 package not found, please install it with `pip install o365`"
-    )
+
 SCOPES = ["offline_access", "Files.Read.All"]
 logger = logging.getLogger(__name__)
 
@@ -75,6 +72,12 @@ class OneDriveLoader(BaseLoader, BaseModel):
         Returns:
             Type[Account]: The authenticated Account object.
         """
+        try:
+            from O365 import FileSystemTokenBackend
+        except ImportError:
+            raise ValueError(
+                "O365 package not found, please install it with `pip install o365`"
+            )
         if self.auth_with_token:
             token_storage = _OneDriveTokenStorage()
             token_path = token_storage.token_path
