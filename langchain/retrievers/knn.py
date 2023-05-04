@@ -52,7 +52,7 @@ class KNNRetriever(BaseRetriever, BaseModel):
         normalized_similarities = (similarities - np.min(similarities)) / denominator
 
         top_k_results = []
-        for row in sorted_ix[0:self.k]:
+        for row in sorted_ix[0 : self.k]:
             if (
                 self.relevancy_threshold is None
                 or normalized_similarities[row] >= self.relevancy_threshold
