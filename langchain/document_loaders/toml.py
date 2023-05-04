@@ -2,8 +2,6 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Union
 
-import tomli
-
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
@@ -26,6 +24,8 @@ class TomlLoader(BaseLoader):
 
     def lazy_load(self) -> Iterable[Document]:
         """Lazily load the TOML documents from the source file or directory."""
+        import tomli
+
         if self.source.is_file() and self.source.suffix == ".toml":
             files = [self.source]
         elif self.source.is_dir():
