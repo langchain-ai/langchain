@@ -179,12 +179,15 @@ class GPT4All(LLM):
                 prompt = "Once upon a time, "
                 response = model(prompt, n_predict=55)
         """
+        generator = self.client.generate(prompt, **self._default_params)
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
-            for token in self.client.generate(prompt, **self._default_params):
+            for token in generator:
                 text_callback(token)
         else:
-            text = self.client.generate(prompt, **self._default_params)
+            text = ""
+            for token in generator:
+                text += token
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text
