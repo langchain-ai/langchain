@@ -69,6 +69,17 @@ class LangChainClient(BaseSettings):
             )
         return values
 
+    def _repr_html_(self) -> str:
+        """Return an HTML representation of the instance with a link to the URL."""
+        scheme = urlsplit(self.api_url).scheme
+        netloc_prefix = urlsplit(self.api_url).netloc.split(":")[0]
+        link = f"{scheme}://{netloc_prefix}"
+        return f'<a href="{link}", target="_blank" rel="noopener">LangChain+ Client</a>'
+
+    def __repr__(self) -> str:
+        """Return a string representation of the instance with a link to the URL."""
+        return f"LangChainClient (API URL: {self.api_url})"
+
     @property
     def _headers(self) -> Dict[str, str]:
         """Get the headers for the API request."""
