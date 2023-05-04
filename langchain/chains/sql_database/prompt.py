@@ -11,10 +11,10 @@ Pay attention to use only the column names that you can see in the schema descri
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the tables listed below.
 
@@ -47,10 +47,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -69,10 +69,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -92,10 +92,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -114,10 +114,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -137,10 +137,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -160,10 +160,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -183,10 +183,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
@@ -205,10 +205,10 @@ Pay attention to use only the column names you can see in the tables below. Be c
 
 Use the following format:
 
-Question: "Question here"
-SQLQuery: "SQL Query to run"
-SQLResult: "Result of the SQLQuery"
-Answer: "Final answer here"
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
 
 Only use the following tables:
 {table_info}
