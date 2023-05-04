@@ -26,6 +26,16 @@ class ClickTool(BaseBrowserTool):
     description: str = "Click on an element with the given CSS selector"
     args_schema: Type[BaseModel] = ClickToolInput
 
+    visible_only: bool = True
+    """Whether to consider only visible elements."""
+    strict_mode: bool = False
+    """Whether to employ Playright's strict mode when clicking on elements."""
+
+    def _selector_effective(self, selector: str) -> str:
+        if not self.visible_only:
+            return selector
+        return f"{selector} >> visible=1"
+
     def _run(
         self,
         selector: str,
@@ -36,8 +46,9 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Synchronous browser not provided to {self.name}")
         page = get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
-        page.click(selector)
-        return f"Clicked element '{selector}'"
+        selector_effective = self._selector_effective(selector=selector)
+        page.click(selector_effective, strict=self.strict_mode)
+        return f"Clicked element '{selector_effective}'"
 
     async def _arun(
         self,
@@ -49,5 +60,6 @@ class ClickTool(BaseBrowserTool):
             raise ValueError(f"Asynchronous browser not provided to {self.name}")
         page = await aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
-        await page.click(selector)
-        return f"Clicked element '{selector}'"
+        selector_effective = self._selector_effective(selector=selector)
+        await page.click(selector_effective, strict=self.strict_mode)
+        return f"Clicked element '{selector_effective}'"
