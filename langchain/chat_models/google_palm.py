@@ -1,9 +1,17 @@
 """Wrapper around Google's PaLM Chat API."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, root_validator
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -23,6 +31,8 @@ from langchain.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
     import google.generativeai as genai
+
+logger = logging.getLogger(__name__)
 
 
 class ChatGooglePalmError(Exception):
@@ -156,6 +166,28 @@ def _messages_to_prompt_dict(
     )
 
 
+def _create_retry_decorator() -> Callable[[Any], Any]:
+    """Returns a tenacity retry decorator, preconfigured to handle PaLM exceptions"""
+    import google.api_core.exceptions
+
+    multiplier = 2
+    min_seconds = 1
+    max_seconds = 60
+    max_retries = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=multiplier, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
+            | retry_if_exception_type(google.api_core.exceptions.ServiceUnavailable)
+            | retry_if_exception_type(google.api_core.exceptions.GoogleAPIError)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
 class ChatGooglePalm(BaseChatModel, BaseModel):
     """Wrapper around Google's PaLM Chat API.
 
@@ -190,6 +222,8 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
+    _retry = _create_retry_decorator()
+    """Internal class attribute that holds a tenacity retry decorator"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -219,6 +253,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
 
         return values
 
+    @_retry
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -238,6 +273,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
 
         return _response_to_result(response, stop)
 
+    @_retry
     async def _agenerate(
         self,
         messages: List[BaseMessage],
