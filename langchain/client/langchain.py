@@ -42,6 +42,12 @@ def _raise_rich_error(response: Response) -> None:
         raise ValueError(response.text) from e
 
 
+def _get_link_stem(url: str) -> str:
+    scheme = urlsplit(url).scheme
+    netloc_prefix = urlsplit(url).netloc.split(":")[0]
+    return f"{scheme}://{netloc_prefix}"
+
+
 def _is_localhost(url: str) -> bool:
     """Check if the URL is localhost."""
     try:
@@ -71,9 +77,7 @@ class LangChainClient(BaseSettings):
 
     def _repr_html_(self) -> str:
         """Return an HTML representation of the instance with a link to the URL."""
-        scheme = urlsplit(self.api_url).scheme
-        netloc_prefix = urlsplit(self.api_url).netloc.split(":")[0]
-        link = f"{scheme}://{netloc_prefix}"
+        link = _get_link_stem(self.api_url)
         return f'<a href="{link}", target="_blank" rel="noopener">LangChain+ Client</a>'
 
     def __repr__(self) -> str:
