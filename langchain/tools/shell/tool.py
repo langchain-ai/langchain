@@ -1,3 +1,4 @@
+import asyncio
 import platform
 import warnings
 from typing import List, Optional, Type, Union
@@ -77,4 +78,6 @@ class ShellTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Run commands asynchronously and return final output."""
-        raise NotImplementedError("Async not implemented for shell tool.")
+        return await asyncio.get_event_loop().run_in_executor(
+            None, self.process.run, commands
+        )
