@@ -72,7 +72,7 @@ def _convert_dict_to_message(_dict: dict) -> BaseMessage:
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        return AIMessage(content=_dict["content"])
+        return AIMessage(content=(_dict["content"] if "content" in _dict else ""))
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     else:
