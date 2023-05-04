@@ -141,7 +141,7 @@ class SQLDatabaseChain(Chain):
     ) -> SQLDatabaseChain:
         prompt = prompt or SQL_PROMPTS.get(db.dialect, PROMPT)
         llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, database=db, **kwargs)
+        return cls(llm_chain=llm_chain,prompt=llm_chain.prompt, database=db, **kwargs)
 
 
 class SQLDatabaseSequentialChain(Chain):
