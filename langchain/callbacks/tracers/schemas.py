@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -28,7 +28,14 @@ class TracerSessionCreate(TracerSessionBase):
 class TracerSession(TracerSessionBase):
     """TracerSession schema."""
 
-    id: int
+    id: Union[UUID, int]
+
+class TracerSessionV2(TracerSession):
+    """TracerSession schema."""
+
+    tenant_id: UUID
+
+
 
 
 class BaseRun(BaseModel):
@@ -42,7 +49,7 @@ class BaseRun(BaseModel):
     execution_order: int
     child_execution_order: int
     serialized: Dict[str, Any]
-    session_id: int
+    session_id: Union[UUID, int]
     error: Optional[str] = None
 
 
@@ -93,7 +100,7 @@ class Run(BaseModel):
     serialized: dict
     inputs: dict
     outputs: Optional[dict]
-    session_id: int
+    session_id: Union[UUID, int]
     parent_run_id: Optional[UUID]
     example_id: Optional[UUID]
     run_type: RunTypeEnum
