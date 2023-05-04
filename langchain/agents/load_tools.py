@@ -17,6 +17,7 @@ from langchain.tools.base import BaseTool
 from langchain.tools.bing_search.tool import BingSearchRun
 from langchain.tools.ddg_search.tool import DuckDuckGoSearchRun
 from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
+from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.python.tool import PythonREPLTool
 from langchain.tools.requests.tool import (
@@ -190,11 +191,11 @@ def _get_arxiv(**kwargs: Any) -> BaseTool:
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Serper Search",
-        func=GoogleSerperAPIWrapper(**kwargs).run,
-        description="A low-cost Google Search API. Useful for when you need to answer questions about current events. Input should be a search query.",
-    )
+    return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+
+
+def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
+    return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
 
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
@@ -257,7 +258,11 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "ddg-search": (_get_ddg_search, []),
-    "google-serper": (_get_google_serper, ["serper_api_key"]),
+    "google-serper": (_get_google_serper, ["serper_api_key", "aiosession"]),
+    "google-serper-results-json": (
+        _get_google_serper_results_json,
+        ["serper_api_key", "aiosession"],
+    ),
     "serpapi": (_get_serpapi, ["serpapi_api_key", "aiosession"]),
     "searx-search": (_get_searx_search, ["searx_host", "engines", "aiosession"]),
     "wikipedia": (_get_wikipedia, ["top_k_results", "lang"]),

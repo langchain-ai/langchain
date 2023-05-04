@@ -22,6 +22,8 @@ _EXPECTED = [
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
+    "GoogleSerperResults",
+    "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
     "ListDirectoryTool",
