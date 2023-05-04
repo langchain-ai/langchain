@@ -1,7 +1,7 @@
 """Loader that loads data from JSON."""
 import json
 from pathlib import Path
-from typing import Callable, List, Union
+from typing import Callable, Dict, List, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -22,7 +22,7 @@ class JSONLoader(BaseLoader):
         file_path: Union[str, Path],
         jq_schema: str,
         content_key: str = None,
-        metadata_func: Callable = None,
+        metadata_func: Callable[Dict, Dict] = None,
     ):
         """Initialize the JSONLoader.
 
@@ -30,7 +30,7 @@ class JSONLoader(BaseLoader):
             file_path (Union[str, Path]): The path to the JSON file.
             jq_schema (str): The jq schema to use to extract the data or text from the JSON.
             content_key (str): The key to use to extract the content from the JSON if the jq_schema results to a list of objects (dict).
-            metadata_func (Callable): A function that takes in the JSON object extracted by the jq_schema and returns a dict of metadata.
+            metadata_func (Callable[Dict, Dict]): A function that takes in the JSON object extracted by the jq_schema and the default metadata and returns a dict of the updated metadata.
         """
         try:
             import jq  # noqa:F401
@@ -50,31 +50,36 @@ class JSONLoader(BaseLoader):
         data = self._jq_schema.input(json.loads(self.file_path.read_text()))
 
         # Perform some validation
+        # This is not a perfect validation, but it should catch most cases
+        # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             sample = data.first()
             assert isinstance(sample, dict)
             assert sample.get(self._content_key) is not None
 
             if self._metadata_func is not None:
-                assert isinstance(self._metadata_func(sample), dict)
+                assert isinstance(self._metadata_func(sample, {}), dict)
 
         docs = []
 
         for i, sample in enumerate(data, 1):
-            if self._content_key is not None:
-                text = sample[self._content_key]
-                if self._metadata_func is not None:
-                    metadata = self._metadata_func(sample)
-            else:
-                text = sample
-                metadata = {}
-
-            # NOTE: This will override any metadata extracted by the metadata_func
-            # if the metadata_func returns a dict with the same keys as below.
-            metadata.update(
+            metadata = dict(
                 source=str(self.file_path),
                 seq_num=i,
             )
+
+            if self._content_key is not None:
+                text = sample.get(self._content_key)
+                if self._metadata_func is not None:
+                    # We pass in the metadata dict to the metadata_func
+                    # so that the user can customize the default metadata
+                    # based on the content of the JSON object.
+                    metadata = self._metadata_func(sample, metadata)
+            else:
+                text = sample
+
+            # In case the text is None, set it to an empty string
+            text = text or ""
 
             docs.append(Document(page_content=text, metadata=metadata))
 
