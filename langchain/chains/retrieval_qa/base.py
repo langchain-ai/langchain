@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field, root_validator
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -14,7 +19,7 @@ from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 from langchain.prompts import PromptTemplate
-from langchain.schema import BaseLanguageModel, BaseRetriever, Document
+from langchain.schema import BaseRetriever, Document
 from langchain.vectorstores.base import VectorStore
 
 
@@ -92,7 +97,11 @@ class BaseRetrievalQA(Chain):
     def _get_docs(self, question: str) -> List[Document]:
         """Get documents to do question answering over."""
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -104,11 +113,12 @@ class BaseRetrievalQA(Chain):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
         docs = self._get_docs(question)
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
         if self.return_source_documents:
@@ -120,7 +130,11 @@ class BaseRetrievalQA(Chain):
     async def _aget_docs(self, question: str) -> List[Document]:
         """Get documents to do question answering over."""
 
-    async def _acall(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -132,11 +146,12 @@ class BaseRetrievalQA(Chain):
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
         """
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
         docs = await self._aget_docs(question)
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question
+            input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
         if self.return_source_documents:

@@ -1,7 +1,8 @@
 """Wrapper around weaviate vector database."""
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Type
+import datetime
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 from uuid import uuid4
 
 import numpy as np
@@ -58,6 +59,10 @@ def _create_weaviate_client(**kwargs: Any) -> Any:
     return client
 
 
+def _default_score_normalizer(val: float) -> float:
+    return 1 - 1 / (1 + np.exp(val))
+
+
 class Weaviate(VectorStore):
     """Wrapper around Weaviate vector database.
 
@@ -80,6 +85,9 @@ class Weaviate(VectorStore):
         text_key: str,
         embedding: Optional[Embeddings] = None,
         attributes: Optional[List[str]] = None,
+        relevance_score_fn: Optional[
+            Callable[[float], float]
+        ] = _default_score_normalizer,
     ):
         """Initialize with Weaviate client."""
         try:
@@ -98,6 +106,7 @@ class Weaviate(VectorStore):
         self._embedding = embedding
         self._text_key = text_key
         self._query_attrs = [self._text_key]
+        self._relevance_score_fn = relevance_score_fn
         if attributes is not None:
             self._query_attrs.extend(attributes)
 
@@ -110,6 +119,11 @@ class Weaviate(VectorStore):
         """Upload texts with metadata (properties) to Weaviate."""
         from weaviate.util import get_valid_uuid
 
+        def json_serializable(value: Any) -> Any:
+            if isinstance(value, datetime.datetime):
+                return value.isoformat()
+            return value
+
         with self._client.batch as batch:
             ids = []
             for i, doc in enumerate(texts):
@@ -118,7 +132,7 @@ class Weaviate(VectorStore):
                 }
                 if metadatas is not None:
                     for key in metadatas[i].keys():
-                        data_properties[key] = metadatas[i][key]
+                        data_properties[key] = json_serializable(metadatas[i][key])
 
                 _id = get_valid_uuid(uuid4())
 
@@ -267,8 +281,56 @@ class Weaviate(VectorStore):
             payload[idx].pop("_additional")
             meta = payload[idx]
             docs.append(Document(page_content=text, metadata=meta))
-
         return docs
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        content: Dict[str, Any] = {"concepts": [query]}
+        if kwargs.get("search_distance"):
+            content["certainty"] = kwargs.get("search_distance")
+        query_obj = self._client.query.get(self._index_name, self._query_attrs)
+        result = (
+            query_obj.with_near_text(content)
+            .with_limit(k)
+            .with_additional("vector")
+            .do()
+        )
+        if "errors" in result:
+            raise ValueError(f"Error during query: {result['errors']}")
+
+        docs_and_scores = []
+        if self._embedding is None:
+            raise ValueError(
+                "_embedding cannot be None for similarity_search_with_score"
+            )
+        for res in result["data"]["Get"][self._index_name]:
+            text = res.pop(self._text_key)
+            score = np.dot(
+                res["_additional"]["vector"], self._embedding.embed_query(query)
+            )
+            docs_and_scores.append((Document(page_content=text, metadata=res), score))
+        return docs_and_scores
+
+    def _similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores, normalized on a scale from 0 to 1.
+
+        0 is dissimilar, 1 is most similar.
+        """
+        if self._relevance_score_fn is None:
+            raise ValueError(
+                "relevance_score_fn must be provided to"
+                " Weaviate constructor to normalize scores"
+            )
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [
+            (doc, self._relevance_score_fn(score)) for doc, score in docs_and_scores
+        ]
 
     @classmethod
     def from_texts(

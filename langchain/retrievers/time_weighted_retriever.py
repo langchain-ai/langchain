@@ -74,9 +74,10 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         )
         results = {}
         for fetched_doc, relevance in docs_and_scores:
-            buffer_idx = fetched_doc.metadata["buffer_idx"]
-            doc = self.memory_stream[buffer_idx]
-            results[buffer_idx] = (doc, relevance)
+            if "buffer_idx" in fetched_doc.metadata:
+                buffer_idx = fetched_doc.metadata["buffer_idx"]
+                doc = self.memory_stream[buffer_idx]
+                results[buffer_idx] = (doc, relevance)
         return results
 
     def get_relevant_documents(self, query: str) -> List[Document]:

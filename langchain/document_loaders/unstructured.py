@@ -98,6 +98,42 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         return {"source": self.file_path}
 
 
+class UnstructuredAPIFileLoader(UnstructuredFileLoader):
+    """Loader that uses the unstructured web API to load files."""
+
+    def __init__(
+        self,
+        file_path: str,
+        mode: str = "single",
+        url: str = "https://api.unstructured.io/general/v0/general",
+        api_key: str = "",
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize with file path."""
+
+        min_unstructured_version = "0.6.2"
+        if not satisfies_min_unstructured_version(min_unstructured_version):
+            raise ValueError(
+                "Partitioning via API is only supported in "
+                f"unstructured>={min_unstructured_version}."
+            )
+
+        self.url = url
+        self.api_key = api_key
+
+        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+
+    def _get_elements(self) -> List:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=self.file_path,
+            api_key=self.api_key,
+            api_url=self.url,
+            **self.unstructured_kwargs,
+        )
+
+
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Loader that uses unstructured to load file IO objects."""
 
@@ -113,3 +149,38 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {}
+
+
+class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
+    """Loader that uses the unstructured web API to load file IO objects."""
+
+    def __init__(
+        self,
+        file: IO,
+        mode: str = "single",
+        url: str = "https://api.unstructured.io/general/v0/general",
+        api_key: str = "",
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize with file path."""
+
+        min_unstructured_version = "0.6.2"
+        if not satisfies_min_unstructured_version(min_unstructured_version):
+            raise ValueError(
+                "Partitioning via API is only supported in "
+                f"unstructured>={min_unstructured_version}."
+            )
+
+        self.url = url
+        self.api_key = api_key
+        super().__init__(file=file, mode=mode, **unstructured_kwargs)
+
+    def _get_elements(self) -> List:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            file=self.file,
+            api_key=self.api_key,
+            api_url=self.url,
+            **self.unstructured_kwargs,
+        )
