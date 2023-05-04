@@ -19,6 +19,7 @@ def _get_default_python_repl() -> PythonREPL:
     return PythonREPL(_globals=globals(), _locals=None)
 
 
+
 class PythonREPLTool(BaseTool):
     """A tool for running python code in a REPL."""
 
@@ -36,7 +37,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool."""
         if self.sanitize_input:
@@ -47,7 +47,6 @@ class PythonREPLTool(BaseTool):
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously."""
         raise NotImplementedError("PythonReplTool does not support async")
