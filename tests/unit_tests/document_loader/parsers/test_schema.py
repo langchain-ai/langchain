@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterator
 
 from langchain.document_loaders.blob_loaders import Blob
 from langchain.document_loaders.parsers import BaseBlobParser
@@ -11,7 +11,7 @@ def test_base_blob_parser() -> None:
     class MyParser(BaseBlobParser):
         """A simple parser that returns a single document."""
 
-        def lazy_parse(self, blob: Blob) -> Iterable[Document]:
+        def lazy_parse(self, blob: Blob) -> Iterator[Document]:
             """Lazy parsing interface."""
             yield Document(
                 page_content="foo",
@@ -19,7 +19,7 @@ def test_base_blob_parser() -> None:
 
     parser = MyParser()
 
-    assert isinstance(parser.lazy_parse(Blob(data="who?")), Iterable)
+    assert isinstance(parser.lazy_parse(Blob(data="who?")), Iterator)
 
     # We're verifying that the eager method is hooked up to the lazy method by default.
     docs = parser.parse(Blob(data="who?"))
