@@ -40,9 +40,9 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     buffer: str = ""
     memory_key: str = "history"  #: :meta private:
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        # Prepare buffer if there is existing messages stored
+        # Prepare buffer if there are existing messages stored
         if self.chat_memory.messages != []:
             self.buffer = self.predict_new_summary(
                 self.chat_memory.messages[-2:], self.buffer
