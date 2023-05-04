@@ -2,9 +2,35 @@ from pytest_mock import MockerFixture
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.csv_loader import CSVLoader
+from io import StringIO
 
 
 class TestCSVLoader:
+    # Tests that a CSV file with valid data is loaded successfully.
+    def test_csv_loader_load_from_string(self, mocker: MockerFixture) -> None:
+        # Setup
+        file_path = "test.csv"
+        expected_docs = [
+            Document(
+                page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
+                metadata={"source": file_path, "row": 0},
+            ),
+            Document(
+                page_content="column1: value4\ncolumn2: value5\ncolumn3: value6",
+                metadata={"source": file_path, "row": 1},
+            ),
+        ]
+
+        mock_csv_reader = mocker.patch("builtins.open")
+        mock_csv_reader.return_value = StringIO("column1,column2,column3\nvalue1,value2,value3\nvalue4,value5,value6")
+
+        # Exercise
+        loader = CSVLoader(file_path=file_path)
+        result = loader.load()
+
+        # Assert
+        assert result == expected_docs
+
     # Tests that a CSV file with valid data is loaded successfully.
     def test_csv_loader_load_valid_data(self, mocker: MockerFixture) -> None:
         # Setup
