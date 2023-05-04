@@ -1,5 +1,5 @@
 """Util that calls Google Search using the Serper.dev API."""
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 import aiohttp
 from pydantic.class_validators import root_validator
@@ -48,7 +48,7 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return values
 
-    def results(self, query: str, **kwargs) -> Dict:
+    def results(self, query: str, **kwargs: Any) -> Dict:
         """Run query through GoogleSearch."""
         return self._google_serper_search_results(
             query,
@@ -60,7 +60,7 @@ class GoogleSerperAPIWrapper(BaseModel):
             **kwargs,
         )
 
-    def run(self, query: str, **kwargs) -> str:
+    def run(self, query: str, **kwargs: Any) -> str:
         """Run query through GoogleSearch and parse result."""
         results = self._google_serper_search_results(
             query,
@@ -74,7 +74,7 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return self._parse_results(results)
 
-    async def aresults(self, query: str, **kwargs) -> Dict:
+    async def aresults(self, query: str, **kwargs: Any) -> Dict:
         """Run query through GoogleSearch."""
         results = await self._async_google_serper_search_results(
             query,
@@ -87,7 +87,7 @@ class GoogleSerperAPIWrapper(BaseModel):
         )
         return results
 
-    async def arun(self, query: str, **kwargs) -> str:
+    async def arun(self, query: str, **kwargs: Any) -> str:
         """Run query through GoogleSearch and parse result async."""
         results = await self._async_google_serper_search_results(
             query,
@@ -137,7 +137,7 @@ class GoogleSerperAPIWrapper(BaseModel):
         return " ".join(snippets)
 
     def _google_serper_search_results(
-        self, search_term: str, search_type: str = "search", **kwargs
+        self, search_term: str, search_type: str = "search", **kwargs: Any
     ) -> dict:
         headers = {
             "X-API-KEY": self.serper_api_key or "",
@@ -155,7 +155,7 @@ class GoogleSerperAPIWrapper(BaseModel):
         return search_results
 
     async def _async_google_serper_search_results(
-        self, search_term: str, search_type: str = "search", **kwargs
+        self, search_term: str, search_type: str = "search", **kwargs: Any
     ) -> dict:
         headers = {
             "X-API-KEY": self.serper_api_key or "",
