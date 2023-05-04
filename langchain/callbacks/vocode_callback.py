@@ -19,9 +19,9 @@ class VocodeCallbackHandler(BaseCallbackHandler):
         self.output_device = output_device or SpeakerOutput.from_default_device()
         self.synthesizer = synthesizer
 
-    def _speak_in_thread(self, text: str) -> None:
+    def speak_in_thread(self, text: str) -> None:
         thread = threading.Thread(target=lambda: self._speak(text))
         thread.start()
 
-    def _speak(self, text: str) -> None:
+    def speak(self, text: str) -> None:
         self.output_device.send_audio(self.synthesizer.synthesize(text))
