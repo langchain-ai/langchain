@@ -66,7 +66,8 @@ class HumanLLM(LLM):
 
         Args:
             prompt (str): The prompt to be displayed to the user.
-            stop (Optional[List[str]]): A list of stop strings. Currently not used.
+            stop (Optional[List[str]]): A list of stop strings.
+            run_manager (Optional[CallbackManagerForLLMRun]): Currently not used.
 
         Returns:
             str: The user's input as a response.
