@@ -97,7 +97,6 @@ class GPT4All(LLM):
     def _default_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            "seed": self.seed,
             "n_predict": self.n_predict,
             "n_threads": self.n_threads,
             "n_batch": self.n_batch,
@@ -183,13 +182,13 @@ class GPT4All(LLM):
         """
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
-            text = self.client.generate(
+            text = self.client.cpp_generate(
                 prompt,
                 new_text_callback=text_callback,
                 **self._default_params,
             )
         else:
-            text = self.client.generate(prompt, **self._default_params)
+            text = self.client.cpp_generate(prompt, **self._default_params)
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         return text

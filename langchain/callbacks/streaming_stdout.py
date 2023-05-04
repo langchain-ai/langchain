@@ -16,7 +16,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-        sys.stdout.write(token)
+        sys.stdout.write(str(token, "UTF-8"))
         sys.stdout.flush()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
