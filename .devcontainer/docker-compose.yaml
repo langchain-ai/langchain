@@ -6,17 +6,26 @@ services:
       context: ../ 
     volumes:
       - ../:/workspaces/langchain
-    # depends_on:
-    #   - vectordb-milvus
-    # environment:
-    #     MILVUS_HOST: 
-    #     MILVUS_PORT: <>
-    # vectordb-milvus:
-    #   image: milvusdb/milvus:latest
-    #   ports:
-    #     - "19530:19530"
-    #     - "19121:19121"
-    #   volumes:
-    #     - ./data:/var/lib/milvus/db
+    networks:
+      - langchain-network 
+  #   environment:
+  #     MONGO_ROOT_USERNAME: root
+  #     MONGO_ROOT_PASSWORD: example123
+  #   depends_on:
+  #     - mongo   
+  # mongo:
+  #   image: mongo
+  #   restart: unless-stopped
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: example123
+  #   ports:
+  #     - "27017:27017"
+  #   networks:
+  #     - langchain-network
+
+networks:
+  langchain-network:
+    driver: bridge
     
     
