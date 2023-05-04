@@ -1,4 +1,6 @@
 """Loader that loads data from OneDrive"""
+from __future__ import annotations
+
 import logging
 import os
 import tempfile
@@ -58,7 +60,7 @@ class _SupportedFileTypes(BaseModel):
 
 
 class OneDriveLoader(BaseLoader, BaseModel):
-    settings = _OneDriveSettings()
+    settings: _OneDriveSettings = Field(default_factory=_OneDriveSettings)
     drive_id: str = Field(...)
     folder_path: Optional[str] = None
     object_ids: Optional[List[str]] = None
