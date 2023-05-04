@@ -81,7 +81,7 @@ class LangChainPlusClient(BaseSettings):
     async def _arun_chain(
         example: Example, langchain_tracer: LangChainTracer, chain: Chain
     ) -> Union[dict, str]:
-        """Run the chain asynchronously"""
+        """Run the chain asynchronously."""
         previous_example_id = langchain_tracer.example_id
         langchain_tracer.example_id = example.id
         try:
@@ -107,7 +107,7 @@ class LangChainPlusClient(BaseSettings):
         return await asyncio.gather(*batch_results)
 
     @xor_args(("session_name", "session_id"))
-    def get_session(
+    def read_session(
         self, *, session_name: Optional[str] = None, session_id: Optional[int] = None
     ) -> TracerSession:
         """Get a session by name."""
@@ -141,7 +141,7 @@ class LangChainPlusClient(BaseSettings):
             if "id" in result:
                 session = TracerSession(id=result["id"], **session_create.dict())
             elif "detail" in result and "already exists" in result["detail"]:
-                return self.get_session(session_name=session_name)
+                return self.read_session(session_name=session_name)
             else:
                 raise ValueError(f"Failed to create session: {result}")
         except Exception as e:
@@ -203,48 +203,21 @@ class LangChainPlusClient(BaseSettings):
             raise ValueError(f"Dataset {file_name} already exists")
         return Dataset(**result)
 
-    def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
-        """List the datasets on the LangChain+ API."""
-        response = requests.get(
-            self.api_url + "/datasets", headers=self._headers, params={"limit": limit}
+    @xor_args(("dataset_id", "dataset_name"))
+    def delete_dataset(
+        self, *, dataset_id: Optional[str] = None, dataset_name: Optional[str] = None
+    ) -> Dataset:
+        """Delete a dataset by ID or name."""
+        if dataset_name is not None:
+            dataset_id = self.read_dataset(dataset_name=dataset_name).id
+        if dataset_id is None:
+            raise ValueError("Must provide either dataset name or ID")
+        response = requests.delete(
+            f"{self.api_url}/datasets/{dataset_id}",
+            headers=self._headers,
         )
         _raise_rich_error(response)
-        return [Dataset(**dataset) for dataset in response.json()]
-
-    async def alist_datasets(self, limit: int = 100) -> Iterable[Dataset]:
-        """List the datasets on the LangChain+ API."""
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                "get",
-                self.api_url + "/datasets",
-                headers=self._headers,
-                params={"limit": limit},
-            ) as response:
-                response.raise_for_status()
-                results = await response.json()
-                return [Dataset(**dataset) for dataset in results]
-
-    def list_examples(self, dataset_id: Optional[str] = None) -> Iterable[Example]:
-        """List the datasets on the LangChain+ API."""
-        params = {} if dataset_id is None else {"dataset": dataset_id}
-        response = requests.get(
-            self.api_url + "/examples", headers=self._headers, params=params
-        )
-        _raise_rich_error(response)
-        return [Example(**dataset) for dataset in response.json()]
-
-    async def alist_examples(
-        self, dataset_id: Optional[str] = None
-    ) -> Iterable[Example]:
-        """List the datasets on the LangChain+ API."""
-        params = {} if dataset_id is None else {"dataset": dataset_id}
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                "get", self.api_url + "/examples", headers=self._headers, params=params
-            ) as response:
-                response.raise_for_status()
-                results = await response.json()
-                return [Example(**dataset) for dataset in results]
+        return response.json()
 
     @xor_args(("dataset_name", "dataset_id"))
     def read_dataset(
@@ -295,6 +268,50 @@ class LangChainPlusClient(BaseSettings):
                         raise ValueError(f"Dataset {dataset_name} not found")
                     return Dataset(**result[0])
                 return Dataset(**result)
+
+    def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
+        """List the datasets on the LangChain+ API."""
+        response = requests.get(
+            self.api_url + "/datasets", headers=self._headers, params={"limit": limit}
+        )
+        _raise_rich_error(response)
+        return [Dataset(**dataset) for dataset in response.json()]
+
+    async def alist_datasets(self, limit: int = 100) -> Iterable[Dataset]:
+        """List the datasets on the LangChain+ API."""
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                "get",
+                self.api_url + "/datasets",
+                headers=self._headers,
+                params={"limit": limit},
+            ) as response:
+                response.raise_for_status()
+                results = await response.json()
+                return [Dataset(**dataset) for dataset in results]
+
+    # Examples APIs.
+    def list_examples(self, dataset_id: Optional[str] = None) -> Iterable[Example]:
+        """List the datasets on the LangChain+ API."""
+        params = {} if dataset_id is None else {"dataset": dataset_id}
+        response = requests.get(
+            self.api_url + "/examples", headers=self._headers, params=params
+        )
+        _raise_rich_error(response)
+        return [Example(**dataset) for dataset in response.json()]
+
+    async def alist_examples(
+        self, dataset_id: Optional[str] = None
+    ) -> Iterable[Example]:
+        """List the datasets on the LangChain+ API."""
+        params = {} if dataset_id is None else {"dataset": dataset_id}
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                "get", self.api_url + "/examples", headers=self._headers, params=params
+            ) as response:
+                response.raise_for_status()
+                results = await response.json()
+                return [Example(**dataset) for dataset in results]
 
     async def arun_chain_on_dataset(
         self,
