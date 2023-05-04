@@ -42,7 +42,7 @@ class CollectionStore(BaseModel):
 
     @classmethod
     def get_by_name(cls, session: Session, name: str) -> Optional["CollectionStore"]:
-        return session.query(cls).filter(cls.name == name).first()
+        return session.query(cls).filter(cls.name == name).first()  # type: ignore
 
     @classmethod
     def get_or_create(

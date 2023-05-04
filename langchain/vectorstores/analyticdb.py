@@ -42,7 +42,7 @@ class CollectionStore(BaseModel):
 
     @classmethod
     def get_by_name(cls, session: Session, name: str) -> Optional["CollectionStore"]:
-        return session.query(cls).filter(cls.name == name).first()
+        return session.query(cls).filter(cls.name == name).first()  # type: ignore
 
     @classmethod
     def get_or_create(
@@ -79,7 +79,7 @@ class EmbeddingStore(BaseModel):
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
 
-    embedding = sqlalchemy.Column(ARRAY(REAL))
+    embedding: sqlalchemy.Column = sqlalchemy.Column(ARRAY(REAL))
     document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     cmetadata = sqlalchemy.Column(JSON, nullable=True)
 

@@ -25,7 +25,7 @@ def _get_num_tokens_default_method(text: str) -> int:
     # create a GPT-2 tokenizer instance
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
-    # tokenize the text using the GPT-3 tokenizer
+    # tokenize the text using the GPT-2 tokenizer
     tokenized_text = tokenizer.tokenize(text)
 
     # calculate the number of tokens in the tokenized text

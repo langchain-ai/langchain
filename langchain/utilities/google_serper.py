@@ -1,6 +1,7 @@
 """Util that calls Google Search using the Serper.dev API."""
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
+import aiohttp
 import requests
 from pydantic.class_validators import root_validator
 from pydantic.main import BaseModel
@@ -27,7 +28,15 @@ class GoogleSerperAPIWrapper(BaseModel):
     k: int = 10
     gl: str = "us"
     hl: str = "en"
+    type: str = "search"  # search, images, places, news
+    tbs: Optional[str] = None
     serper_api_key: Optional[str] = None
+    aiosession: Optional[aiohttp.ClientSession] = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -39,9 +48,56 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return values
 
-    def run(self, query: str) -> str:
+    def results(self, query: str, **kwargs: Any) -> Dict:
+        """Run query through GoogleSearch."""
+        return self._google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            tbs=self.tbs,
+            search_type=self.type,
+            **kwargs,
+        )
+
+    def run(self, query: str, **kwargs: Any) -> str:
         """Run query through GoogleSearch and parse result."""
-        results = self._google_serper_search_results(query, gl=self.gl, hl=self.hl)
+        results = self._google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            tbs=self.tbs,
+            search_type=self.type,
+            **kwargs,
+        )
+
+        return self._parse_results(results)
+
+    async def aresults(self, query: str, **kwargs: Any) -> Dict:
+        """Run query through GoogleSearch."""
+        results = await self._async_google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            search_type=self.type,
+            tbs=self.tbs,
+            **kwargs,
+        )
+        return results
+
+    async def arun(self, query: str, **kwargs: Any) -> str:
+        """Run query through GoogleSearch and parse result async."""
+        results = await self._async_google_serper_search_results(
+            query,
+            gl=self.gl,
+            hl=self.hl,
+            num=self.k,
+            search_type=self.type,
+            tbs=self.tbs,
+            **kwargs,
+        )
 
         return self._parse_results(results)
 
@@ -80,15 +136,47 @@ class GoogleSerperAPIWrapper(BaseModel):
 
         return " ".join(snippets)
 
-    def _google_serper_search_results(self, search_term: str, gl: str, hl: str) -> dict:
+    def _google_serper_search_results(
+        self, search_term: str, search_type: str = "search", **kwargs: Any
+    ) -> dict:
         headers = {
             "X-API-KEY": self.serper_api_key or "",
             "Content-Type": "application/json",
         }
-        params = {"q": search_term, "gl": gl, "hl": hl}
+        params = {
+            "q": search_term,
+            **{key: value for key, value in kwargs.items() if value is not None},
+        }
         response = requests.post(
-            "https://google.serper.dev/search", headers=headers, params=params
+            f"https://google.serper.dev/{search_type}", headers=headers, params=params
         )
         response.raise_for_status()
         search_results = response.json()
+        return search_results
+
+    async def _async_google_serper_search_results(
+        self, search_term: str, search_type: str = "search", **kwargs: Any
+    ) -> dict:
+        headers = {
+            "X-API-KEY": self.serper_api_key or "",
+            "Content-Type": "application/json",
+        }
+        url = f"https://google.serper.dev/{search_type}"
+        params = {
+            "q": search_term,
+            **{key: value for key, value in kwargs.items() if value is not None},
+        }
+
+        if not self.aiosession:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, params=params, headers=headers, raise_for_status=False
+                ) as response:
+                    search_results = await response.json()
+        else:
+            async with self.aiosession.post(
+                url, params=params, headers=headers, raise_for_status=True
+            ) as response:
+                search_results = await response.json()
+
         return search_results
