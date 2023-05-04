@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Tuple, Union
+from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,7 +20,6 @@ from langchain.callbacks.tracers.base import (
 from langchain.callbacks.tracers.langchain import LangChainTracerV2
 from langchain.callbacks.tracers.schemas import Run, TracerSessionBase, TracerSessionV2
 from langchain.schema import LLMResult
-from unittest.mock import MagicMock, Mock, patch
 
 TEST_SESSION_ID = 2023
 
