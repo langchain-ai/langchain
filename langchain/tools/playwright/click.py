@@ -49,10 +49,14 @@ class ClickTool(BaseBrowserTool):
         page = get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
-        page.click(
-            selector_effective, strict=self.strict_mode, timeout=self.timeout,
-        )
-        return f"Clicked element '{selector_effective}'"
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        try:
+            page.click(
+                selector_effective, strict=self.strict_mode, timeout=self.timeout,
+            )
+        except PlaywrightTimeoutError:
+            return f"Unable to click on element '{selector}'"
+        return f"Clicked element '{selector}'"
 
     async def _arun(
         self,
@@ -65,7 +69,11 @@ class ClickTool(BaseBrowserTool):
         page = await aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
-        await page.click(
-            selector_effective, strict=self.strict_mode, timeout=self.timeout,
-        )
-        return f"Clicked element '{selector_effective}'"
+        from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+        try:
+            await page.click(
+                selector_effective, strict=self.strict_mode, timeout=self.timeout,
+            )
+        except PlaywrightTimeoutError:
+            return f"Unable to click on element '{selector}'"
+        return f"Clicked element '{selector}'"
