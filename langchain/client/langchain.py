@@ -92,35 +92,6 @@ class LangChainClient(BaseSettings):
             headers["authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    @staticmethod
-    async def _arun_chain(
-        example: Example, langchain_tracer: LangChainTracer, chain: Chain
-    ) -> Union[dict, str]:
-        """Run the chain asynchronously."""
-        previous_example_id = langchain_tracer.example_id
-        langchain_tracer.example_id = example.id
-        try:
-            chain_output = await chain.arun(
-                example.inputs, callbacks=[langchain_tracer]
-            )
-        except Exception as e:
-            logger.warning(f"Chain failed for example {example.id}. Error: {e}")
-            return {"Error": str(e)}
-        finally:
-            langchain_tracer.example_id = previous_example_id
-        return chain_output
-
-    @staticmethod
-    async def _arun_chain_over_buffer(
-        buffer: Sequence[Example], tracers: Sequence[LangChainTracer], chain: Chain
-    ) -> List[Union[str, dict]]:
-        """Run the chain asynchronously over a buffer of examples."""
-        batch_results = [
-            LangChainClient._arun_chain(example, tracer, chain)
-            for example, tracer in zip(buffer, tracers)
-        ]
-        return await asyncio.gather(*batch_results)
-
     @xor_args(("session_name", "session_id"))
     def read_session(
         self, *, session_name: Optional[str] = None, session_id: Optional[int] = None
@@ -306,6 +277,15 @@ class LangChainClient(BaseSettings):
                 return [Dataset(**dataset) for dataset in results]
 
     # Examples APIs.
+
+    def read_example(self, example_id: str) -> Example:
+        """Read an example from the LangChain+ API."""
+        response = requests.get(
+            self.api_url + f"/examples/{example_id}", headers=self._headers
+        )
+        _raise_rich_error(response)
+        return Example(**response.json())
+
     def list_examples(self, dataset_id: Optional[str] = None) -> Iterable[Example]:
         """List the datasets on the LangChain+ API."""
         params = {} if dataset_id is None else {"dataset": dataset_id}
@@ -328,32 +308,100 @@ class LangChainClient(BaseSettings):
                 results = await response.json()
                 return [Example(**dataset) for dataset in results]
 
+    @staticmethod
+    async def _arun_chain(
+        example: Example, langchain_tracer: LangChainTracer, chain: Chain
+    ) -> Union[dict, str]:
+        """Run the chain asynchronously."""
+        previous_example_id = langchain_tracer.example_id
+        langchain_tracer.example_id = example.id
+        try:
+            chain_output = await chain.arun(
+                example.inputs, callbacks=[langchain_tracer]
+            )
+        except Exception as e:
+            logger.warning(f"Chain failed for example {example.id}. Error: {e}")
+            return {"Error": str(e)}
+        finally:
+            langchain_tracer.example_id = previous_example_id
+        return chain_output
+
+    @staticmethod
+    async def _worker(
+        queue: asyncio.Queue,
+        tracers: List[LangChainTracer],
+        chain: Chain,
+        results: Dict[str, Any],
+    ) -> None:
+        """Worker for running the chain on examples."""
+        while True:
+            example: Optional[Example] = await queue.get()
+            if example is None:
+                break
+
+            tracer = tracers.pop()
+            result = await LangChainClient._arun_chain(example, tracer, chain)
+            results[example.id] = result
+            tracers.append(tracer)
+            queue.task_done()
+
+    @staticmethod
+    async def _arun_chain_over_buffer(
+        buffer: Sequence[Example], tracers: Sequence[LangChainTracer], chain: Chain
+    ) -> List[Union[str, dict]]:
+        """Run the chain asynchronously over a buffer of examples."""
+        batch_results = [
+            LangChainClient._arun_chain(example, tracer, chain)
+            for example, tracer in zip(buffer, tracers)
+        ]
+        return await asyncio.gather(*batch_results)
+
     async def arun_chain_on_dataset(
         self,
         dataset_name: str,
         chain: Chain,
         batch_size: int = 5,
         session_name: Optional[str] = None,
-    ) -> List[Any]:
-        """Run the chain on the specified dataset"""
+    ) -> Dict[str, Any]:
+        """Run the chain on a dataset and store traces to the specified session name.
+
+        Args:
+            dataset_name: Name of the dataset to run the chain on.
+            chain: Chain to run on the dataset.
+            batch_size: Number of async workers to run in parallel.
+            session_name: Name of the session to store the traces in.
+
+        Returns:
+            A dictionary mapping example ids to the chain outputs.
+        """
         if session_name is not None:
             self.create_session(session_name)
+
         dataset = await self.aread_dataset(dataset_name=dataset_name)
-        tracers = [LangChainTracer() for _ in range(batch_size)]
-        for tracer in tracers:
+
+        tracers = []
+        for _ in range(batch_size):
+            tracer = LangChainTracer()
             tracer.load_session(session_name or "default")
-        graded_outputs = []
+            tracers.append(tracer)
+
+        results: Dict[str, Any] = {}
         examples = await self.alist_examples(dataset_id=dataset.id)
-        buffer = []
+
+        queue = asyncio.Queue()
+        workers = [
+            asyncio.create_task(LangChainClient._worker(queue, tracers, chain, results))
+            for _ in range(batch_size)
+        ]
+
         for example in examples:
-            buffer.append(example)
-            if len(buffer) == batch_size:
-                batch_results = await self._arun_chain_over_buffer(
-                    buffer, tracers, chain
-                )
-                graded_outputs.extend(batch_results)
-                buffer = []
-        if buffer:
-            batch_results = await self._arun_chain_over_buffer(buffer, tracers, chain)
-            graded_outputs.extend(batch_results)
-        return graded_outputs
+            await queue.put(example)
+
+        await queue.join()  # Wait for all tasks to complete
+
+        for _ in workers:
+            await queue.put(None)  # Signal the workers to exit
+
+        await asyncio.gather(*workers)
+
+        return results
