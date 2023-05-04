@@ -1,11 +1,11 @@
 """Interface for vector stores."""
 from __future__ import annotations
 
-import warnings
 import asyncio
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+import warnings
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -121,7 +121,8 @@ class VectorStore(ABC):
         Args:
             query: input text
             k: Number of Documents to return. Defaults to 4.
-            score_threshold: Optional, a floating point value between 0 to 1 to filter the resulting set of retrieved docs
+            score_threshold: Optional, a floating point value between 0 to 1 to
+                            filter the resulting set of retrieved docs
 
         Returns:
             List of Tuples of (doc, similarity_score)
@@ -147,7 +148,8 @@ class VectorStore(ABC):
             ]
             if len(docs_and_similarities) == 0:
                 warnings.warn(
-                    f"No relevant docs were retrieved using the relevance score threshold {score_threshold}"
+                    f"No relevant docs were retrieved using the relevance score\
+                          threshold {score_threshold}"
                 )
         return docs_and_similarities
 
@@ -353,7 +355,8 @@ class VectorStoreRetriever(BaseRetriever, BaseModel):
                     not isinstance(score_threshold, float)
                 ):
                     raise ValueError(
-                        "`score_threshold` is not specified with a float value(0~1) in `search_kwargs`."
+                        "`score_threshold` is not specified with a float value(0~1)\
+                              in `search_kwargs`."
                     )
         return values
 
