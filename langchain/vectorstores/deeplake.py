@@ -100,11 +100,13 @@ class DeepLake(VectorStore):
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
         num_workers: int = 0,
+        verbose: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
         self.num_workers = num_workers
+        self.verbose = verbose
 
         try:
             import deeplake
@@ -123,19 +125,29 @@ class DeepLake(VectorStore):
             and "overwrite" not in kwargs
         ):
             self.ds = deeplake.load(
-                dataset_path, token=token, read_only=read_only, **kwargs
+                dataset_path,
+                token=token,
+                read_only=read_only,
+                verbose=self.verbose,
+                **kwargs,
             )
-            logger.warning(
-                f"Deep Lake Dataset in {dataset_path} already exists, "
-                f"loading from the storage"
-            )
-            self.ds.summary()
+            logger.info(f"Loading deeplake {dataset_path} from storage.")
+            if self.verbose:
+                print(
+                    f"Deep Lake Dataset in {dataset_path} already exists, "
+                    f"loading from the storage"
+                )
+                self.ds.summary()
         else:
             if "overwrite" in kwargs:
                 del kwargs["overwrite"]
 
             self.ds = deeplake.empty(
-                dataset_path, token=token, overwrite=True, **kwargs
+                dataset_path,
+                token=token,
+                overwrite=True,
+                verbose=self.verbose,
+                **kwargs,
             )
 
             with self.ds:
@@ -240,7 +252,8 @@ class DeepLake(VectorStore):
             **kwargs,
         )
         self.ds.commit(allow_empty=True)
-        self.ds.summary()
+        if self.verbose:
+            self.ds.summary()
         return ids
 
     def _search_helper(
