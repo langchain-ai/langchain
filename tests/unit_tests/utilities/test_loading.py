@@ -86,7 +86,9 @@ def test_failed_request(mocked_responses: responses.RequestsMock) -> None:
     path = "chains/path/chain.json"
     loader = Mock()
 
-    mocked_responses.get(urljoin(URL_BASE.format(ref=DEFAULT_REF), path), status=500)  # type: ignore
+    mocked_responses.get(  # type: ignore
+        urljoin(URL_BASE.format(ref=DEFAULT_REF), path), status=500
+    )
 
     with pytest.raises(ValueError, match=re.compile("Could not find file at .*")):
         try_load_from_hub(f"lc://{path}", loader, "chains", {"json"})
