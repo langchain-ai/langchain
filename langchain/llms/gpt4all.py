@@ -138,7 +138,6 @@ class GPT4All(LLM):
 
     @staticmethod
     def _get_param_names(backend: str) -> Set[str]:
-    def _get_param_names(backend: str) -> Set[str]:
         if backend == "llama":
             return GPT4All._llama_param_names()
         else:
