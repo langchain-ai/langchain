@@ -219,9 +219,11 @@ class ConfluenceLoader(BaseLoader):
                 max_pages=max_pages,
                 expand="body.storage.value",
             )
-            docs += self.process_pages(
-                pages, include_restricted_content, include_attachments, include_comments
-            )
+            ids_by_label = [page["id"] for page in pages]
+            if page_ids:
+                page_ids = list(set(page_ids + ids_by_label))
+            else:
+                page_ids = list(set(ids_by_label))
 
         if cql:
             pages = self.paginate_request(
