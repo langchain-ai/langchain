@@ -620,7 +620,7 @@ def test_persist_session(
     lang_chain_tracer_v2: LangChainTracerV2,
     sample_tracer_session_v2: TracerSessionV2,
 ) -> None:
-    """Test that the persist_session method returns a TracerSessionV2 with the updated ID."""
+    """Test persist_session returns a TracerSessionV2 with the updated ID."""
     session_create = TracerSessionV2Create(**sample_tracer_session_v2.dict())
     new_id = str(uuid4())
     mock_requests_post.return_value.json.return_value = {"id": new_id}
@@ -637,7 +637,7 @@ def test_load_default_session(
     lang_chain_tracer_v2: LangChainTracerV2,
     sample_tracer_session_v2: TracerSessionV2,
 ) -> None:
-    """Test that the load_default_session ethod attempts to load with the default name."""
+    """Test load_default_session attempts to load with the default name."""
     mock_load_session.return_value = sample_tracer_session_v2
     result = lang_chain_tracer_v2.load_default_session()
     assert result == sample_tracer_session_v2
