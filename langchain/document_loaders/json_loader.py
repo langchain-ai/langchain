@@ -1,7 +1,7 @@
 """Loader that loads data from JSON."""
 import json
 from pathlib import Path
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
@@ -21,22 +21,26 @@ class JSONLoader(BaseLoader):
         self,
         file_path: Union[str, Path],
         jq_schema: str,
-        content_key: str = None,
-        metadata_func: Callable[Dict, Dict] = None,
+        content_key: Optional[str] = None,
+        metadata_func: Optional[Callable[[Dict, Dict], Dict]] = None,
     ):
         """Initialize the JSONLoader.
 
         Args:
             file_path (Union[str, Path]): The path to the JSON file.
-            jq_schema (str): The jq schema to use to extract the data or text from the JSON.
-            content_key (str): The key to use to extract the content from the JSON if the jq_schema results to a list of objects (dict).
-            metadata_func (Callable[Dict, Dict]): A function that takes in the JSON object extracted by the jq_schema and the default metadata and returns a dict of the updated metadata.
+            jq_schema (str): The jq schema to use to extract the data or text from
+                the JSON.
+            content_key (str): The key to use to extract the content from the JSON if
+                the jq_schema results to a list of objects (dict).
+            metadata_func (Callable[Dict, Dict]): A function that takes in the JSON
+                object extracted by the jq_schema and the default metadata and returns
+                a dict of the updated metadata.
         """
         try:
             import jq  # noqa:F401
         except ImportError:
             raise ValueError(
-                "jq package not found, please install it with " "`pipenv install jq`"
+                "jq package not found, please install it with `pip install jq`"
             )
 
         self.file_path = Path(file_path).resolve()
@@ -56,19 +60,22 @@ class JSONLoader(BaseLoader):
             sample = data.first()
             if not isinstance(sample, dict):
                 raise ValueError(
-                    f"Expected the jq schema to result in a list of objects (dict), so sample must be a dict but got `{type(sample)}`"
+                    f"Expected the jq schema to result in a list of objects (dict), \
+                        so sample must be a dict but got `{type(sample)}`"
                 )
 
             if sample.get(self._content_key) is None:
                 raise ValueError(
-                    f"Expected the jq schema to result in a list of objects (dict) with the key `{self._content_key}`"
+                    f"Expected the jq schema to result in a list of objects (dict) \
+                        with the key `{self._content_key}`"
                 )
 
             if self._metadata_func is not None:
                 sample_metadata = self._metadata_func(sample, {})
                 if not isinstance(sample_metadata, dict):
                     raise ValueError(
-                        f"Expected the metadata_func to return a dict but got `{type(sample_metadata)}`"
+                        f"Expected the metadata_func to return a dict but got \
+                            `{type(sample_metadata)}`"
                     )
 
         docs = []
