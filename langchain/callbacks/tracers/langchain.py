@@ -16,7 +16,7 @@ from langchain.callbacks.tracers.schemas import (
     TracerSession,
     TracerSessionBase,
     TracerSessionV2,
-    TracerSessionV2Base,
+    TracerSessionV2Create,
 )
 
 
@@ -131,7 +131,7 @@ class LangChainTracerV2(LangChainTracer):
     def _get_session_create(
         self, name: Optional[str] = None, **kwargs: Any
     ) -> TracerSessionBase:
-        return TracerSessionV2Base(name=name, extra=kwargs, tenant_id=self.tenant_id)
+        return TracerSessionV2Create(name=name, extra=kwargs, tenant_id=self.tenant_id)
 
     def _persist_session(self, session_create: TracerSessionBase) -> TracerSessionV2:
         """Persist a session."""
