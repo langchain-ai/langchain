@@ -137,13 +137,13 @@ class GPT4All(LLM):
         return set()
 
     @staticmethod
-    def _get_param_names(backend: str) -> Set[str]:
+    def _model_param_names(backend: str) -> Set[str]:
         if backend == "llama":
             return GPT4All._llama_param_names()
         else:
             return GPT4All._gptj_param_names()
 
-    def _get_default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         if self.backend == "llama":
             return self._llama_default_params()
         else:
@@ -164,7 +164,7 @@ class GPT4All(LLM):
             model_kwargs = {
                 k: v
                 for k, v in values.items()
-                if k in GPT4All._get_param_names(backend)
+                if k in GPT4All._model_param_names(backend)
             }
             values["client"] = GPT4AllModel(
                 model_path=values["model"],
@@ -183,11 +183,11 @@ class GPT4All(LLM):
         """Get the identifying parameters."""
         return {
             "model": self.model,
-            **self._get_default_params(),
+            **self._default_params(),
             **{
                 k: v
                 for k, v in self.__dict__.items()
-                if k in self._get_param_names(self.backend)
+                if k in self._model_param_names(self.backend)
             },
         }
 
@@ -221,7 +221,7 @@ class GPT4All(LLM):
         if run_manager:
             text_callback = partial(run_manager.on_llm_new_token, verbose=self.verbose)
         text = ""
-        for token in self.client.generate(prompt, **self._get_default_params()):
+        for token in self.client.generate(prompt, **self._default_params()):
             if text_callback:
                 text_callback(token)
             text += token
