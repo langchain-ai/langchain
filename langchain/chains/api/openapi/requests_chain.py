@@ -35,6 +35,7 @@ class APIRequesterOutputParser(BaseOutputParser):
     def _type(self) -> str:
         return "api_requester"
 
+
 class APIRequesterChain(LLMChain):
     """Get the request parser."""
 

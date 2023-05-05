@@ -56,6 +56,7 @@ class BashOutputParser(BaseOutputParser):
     def _type(self) -> str:
         return "bash"
 
+
 PROMPT = PromptTemplate(
     input_variables=["question"],
     template=_PROMPT_TEMPLATE,
