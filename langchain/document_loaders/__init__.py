@@ -74,7 +74,7 @@ from langchain.document_loaders.slack_directory import SlackDirectoryLoader
 from langchain.document_loaders.spreedly import SpreedlyLoader
 from langchain.document_loaders.srt import SRTLoader
 from langchain.document_loaders.stripe import StripeLoader
-from langchain.document_loaders.telegram import TelegramChatLoader
+from langchain.document_loaders.telegram import TelegramChatFileLoader, TelegramChatApiLoader
 from langchain.document_loaders.text import TextLoader
 from langchain.document_loaders.twitter import TwitterTweetLoader
 from langchain.document_loaders.unstructured import (
@@ -163,7 +163,8 @@ __all__ = [
     "SeleniumURLLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
-    "TelegramChatLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatApiLoader",
     "TextLoader",
     "TwitterTweetLoader",
     "UnstructuredEPubLoader",

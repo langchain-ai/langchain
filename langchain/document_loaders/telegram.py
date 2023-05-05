@@ -1,12 +1,46 @@
+"""Loader that loads Telegram chat json dump."""
 import asyncio
 import datetime
 import json
 from os import PathLike
 from pathlib import Path
-from typing import List, Optional, Union, Dict
+from typing import Dict, List, Optional, Union
+
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+
+def concatenate_rows(row: dict) -> str:
+    """Combine message information in a readable format ready to be used."""
+    date = row["date"]
+    sender = row["from"]
+    text = row["text"]
+    return f"{sender} on {date}: {text}\n\n"
+
+
+class TelegramChatFileLoader(BaseLoader):
+    """Loader that loads Telegram chat json directory dump."""
+
+    def __init__(self, path: str):
+        """Initialize with path."""
+        self.file_path = path
+
+    def load(self) -> List[Document]:
+        """Load documents."""
+        p = Path(self.file_path)
+
+        with open(p, encoding="utf8") as f:
+            d = json.load(f)
+
+        text = "".join(
+            concatenate_rows(message)
+            for message in d["messages"]
+            if message["type"] == "message" and isinstance(message["text"], str)
+        )
+        metadata = {"source": str(p)}
+
+        return [Document(page_content=text, metadata=metadata)]
 
 
 try:
@@ -18,13 +52,6 @@ except ImportError:
         "pandas is needed for Telegram loader, "
         "please install with `pip install pandas`"
     )
-
-def concatenate_rows(row: dict) -> str:
-    """Combine message information in a readable format ready to be used."""
-    date = row["date"]
-    sender = row["from"]
-    text = row["text"]
-    return f"{sender} on {date}: {text}\n\n"
 
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
@@ -58,25 +85,21 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     return doc_chunks
 
 
-class TelegramChatLoader(BaseLoader):
+class TelegramChatApiLoader(BaseLoader):
     """Loader that loads Telegram chat json directory dump."""
 
     def __init__(
         self,
-        file_path: Union[str, PathLike[str]] = "",
         chat_url: Optional[str] = None,
         api_id: Optional[int] = None,
         api_hash: Optional[str] = None,
         username: Optional[str] = None,
     ):
-        """Initialize with path or API parameters."""
-        self.file_path = file_path
+        """Initialize with API parameters."""
         self.chat_url = chat_url
         self.api_id = api_id
         self.api_hash = api_hash
         self.username = username
-
-    
 
     async def fetch_data_from_telegram(self) -> None:
         """Fetch data from Telegram API and save it as a JSON file."""
@@ -95,14 +118,13 @@ class TelegramChatLoader(BaseLoader):
                         "reply_to_id": reply_to_id,
                     }
                 )
-                
 
         with open("telegram_data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
         self.file_path = "telegram_data.json"
 
-    def get_message_threads(self, data: pd.DataFrame) -> dict:
+    def _get_message_threads(self, data: pd.DataFrame) -> dict:
         """Create a dictionary of message threads from the given data.
 
         Args:
@@ -158,7 +180,9 @@ class TelegramChatLoader(BaseLoader):
 
         return message_threads
 
-    def combine_message_texts(self, message_threads: Dict[int, List[int]], data: pd.DataFrame) -> str:
+    def _combine_message_texts(
+        self, message_threads: Dict[int, List[int]], data: pd.DataFrame
+    ) -> str:
         """
         Combine the message texts for each parent message ID based on the list of message threads.
 
@@ -194,7 +218,7 @@ class TelegramChatLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        if self.file_path is None and self.chat_url is not None:
+        if self.chat_url is not None:
             try:
                 import nest_asyncio
                 import pandas as pd
@@ -207,9 +231,6 @@ class TelegramChatLoader(BaseLoader):
                                  `pip install nest_asyncio` "
                 )
 
-        if self.file_path is None and self.chat_url is None:
-            raise ValueError("No file path or API parameters provided.")
-
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
@@ -218,7 +239,7 @@ class TelegramChatLoader(BaseLoader):
         normalized_messages = pd.json_normalize(d)
         df = pd.DataFrame(normalized_messages)
 
-        message_threads = self.get_message_threads(df)
-        combined_texts = self.combine_message_texts(message_threads, df)
+        message_threads = self._get_message_threads(df)
+        combined_texts = self._combine_message_texts(message_threads, df)
 
         return text_to_docs(combined_texts)
