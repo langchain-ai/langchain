@@ -90,7 +90,7 @@ class SitemapLoader(WebBaseLoader):
             els.extend(self.parse_sitemap(soup_child))
         return els
 
-    def is_url(url):
+    def is_url(self, url):
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])

@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 
 from langchain.document_loaders import SitemapLoader
@@ -77,4 +78,13 @@ def test_filter_sitemap() -> None:
     )
     documents = loader.load()
     assert len(documents) == 1
+    assert "🦜🔗" in documents[0].page_content
+
+
+def test_local_sitemap() -> None:
+    """Test sitemap loader."""
+    file_path = Path(__file__).parent.parent / "examples/sitemap.xml"
+    loader = SitemapLoader(str(file_path))
+    documents = loader.load()
+    assert len(documents) > 1
     assert "🦜🔗" in documents[0].page_content
