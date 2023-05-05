@@ -36,6 +36,82 @@ def create_spark_dataframe_agent(
     if not isinstance(df, DataFrame):
         raise ValueError(f"Expected Spark Data Frame object, got {type(df)}")
 
+    return _create_spark_df_agent_without_validation(
+        llm,
+        df,
+        callback_manager,
+        prefix,
+        suffix,
+        input_variables,
+        verbose,
+        return_intermediate_steps,
+        max_iterations,
+        max_execution_time,
+        early_stopping_method,
+        agent_executor_kwargs,
+        **(kwargs or {}),
+    )
+
+
+def create_spark_connect_dataframe_agent(
+    llm: BaseLLM,
+    df: Any,
+    callback_manager: Optional[BaseCallbackManager] = None,
+    prefix: str = PREFIX,
+    suffix: str = SUFFIX,
+    input_variables: Optional[List[str]] = None,
+    verbose: bool = False,
+    return_intermediate_steps: bool = False,
+    max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
+    early_stopping_method: str = "force",
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
+) -> AgentExecutor:
+    """Construct a spark agent from an LLM and dataframe."""
+    try:
+        from pyspark.sql.connect.dataframe import DataFrame
+    except ImportError:
+        raise ValueError(
+            "spark package not found, please install with `pip install pyspark`"
+        )
+
+    if not isinstance(df, DataFrame):
+        raise ValueError(f"Expected Spark Data Frame object, got {type(df)}")
+
+    return _create_spark_df_agent_without_validation(
+        llm,
+        df,
+        callback_manager,
+        prefix,
+        suffix,
+        input_variables,
+        verbose,
+        return_intermediate_steps,
+        max_iterations,
+        max_execution_time,
+        early_stopping_method,
+        agent_executor_kwargs,
+        **(kwargs or {}),
+    )
+
+
+def _create_spark_df_agent_without_validation(
+    llm: BaseLLM,
+    df: Any,
+    callback_manager: Optional[BaseCallbackManager] = None,
+    prefix: str = PREFIX,
+    suffix: str = SUFFIX,
+    input_variables: Optional[List[str]] = None,
+    verbose: bool = False,
+    return_intermediate_steps: bool = False,
+    max_iterations: Optional[int] = 15,
+    max_execution_time: Optional[float] = None,
+    early_stopping_method: str = "force",
+    agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs: Dict[str, Any],
+) -> AgentExecutor:
+    """Construct a spark agent from an LLM and dataframe."""
     if input_variables is None:
         input_variables = ["df", "input", "agent_scratchpad"]
     tools = [PythonAstREPLTool(locals={"df": df})]
