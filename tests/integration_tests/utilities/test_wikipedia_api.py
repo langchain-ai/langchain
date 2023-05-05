@@ -13,14 +13,11 @@ def api_client() -> WikipediaAPIWrapper:
 
 
 def test_run_success(api_client: WikipediaAPIWrapper) -> None:
-    """Test that WikipediaAPIWrapper returns the correct answer"""
-
     output = api_client.run("HUNTER X HUNTER")
     assert "Yoshihiro Togashi" in output
 
 
 def test_run_no_result(api_client: WikipediaAPIWrapper) -> None:
-    """Test that call gives no result."""
     output = api_client.run(
         "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
     )
@@ -40,15 +37,12 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
 
 
 def test_load_success(api_client: WikipediaAPIWrapper) -> None:
-    """Test that returns one document"""
-
     docs = api_client.load("HUNTER X HUNTER")
     assert len(docs) > 1
     assert_docs(docs, all_meta=False)
 
 
 def test_load_success_all_meta(api_client: WikipediaAPIWrapper) -> None:
-    """Test that returns one document"""
     api_client.load_all_available_meta = True
     docs = api_client.load("HUNTER X HUNTER")
     assert len(docs) > 1
@@ -56,8 +50,6 @@ def test_load_success_all_meta(api_client: WikipediaAPIWrapper) -> None:
 
 
 def test_load_no_result(api_client: WikipediaAPIWrapper) -> None:
-    """Test that returns one document"""
-
     docs = api_client.load(
         "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
     )
