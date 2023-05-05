@@ -58,14 +58,14 @@ class GenerativeAgent(BaseModel):
 
     def _get_entity_from_observation(self, observation: str) -> str:
         prompt = PromptTemplate.from_template(
-            "What is the observed entity in the following observation? ```{observation}```"
+            "What is the observed entity in the following observation? {observation}"
             + "\nEntity="
         )
         return self.chain(prompt).run(observation=observation).strip()
 
     def _get_entity_action(self, observation: str, entity_name: str) -> str:
         prompt = PromptTemplate.from_template(
-            "What is the {entity} doing in the following observation? ```{observation}```"
+            "What is the {entity} doing in the following observation? {observation}"
             + "\nThe {entity} is"
         )
         return (
@@ -96,8 +96,8 @@ Relevant context:
             + "\n{agent_name}'s status: {agent_status}"
             + "\nSummary of relevant context from {agent_name}'s memory:"
             + "\n{relevant_memories}"
-            + "\nMost recent observations: \n{most_recent_memories}\n"
-            + "\nObservation: \n{observation}\n"
+            + "\nMost recent observations: {most_recent_memories}"
+            + "\nObservation: {observation}"
             + "\n\n"
             + suffix
         )
