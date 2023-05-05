@@ -80,9 +80,9 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
                 results[buffer_idx] = (doc, relevance)
         return results
 
-    def get_relevant_documents(self, query: str) -> List[Document]:
+    def get_relevant_documents(self, query: str, now: Optional[datetime] = None) -> List[Document]:
         """Return documents that are relevant to the query."""
-        current_time = datetime.now()
+        current_time = datetime.now() if now is None else now
         docs_and_scores = {
             doc.metadata["buffer_idx"]: (doc, self.default_salience)
             for doc in self.memory_stream[-self.k :]
@@ -96,7 +96,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
         rescored_docs.sort(key=lambda x: x[1], reverse=True)
         result = []
         # Ensure frequently accessed memories aren't forgotten
-        current_time = datetime.now()
         for doc, _ in rescored_docs[: self.k]:
             # TODO: Update vector store doc once `update` method is exposed.
             buffered_doc = self.memory_stream[doc.metadata["buffer_idx"]]
