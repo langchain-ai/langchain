@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra
 
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -16,7 +17,6 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from langchain.docstore.document import Document
-from langchain.llms.base import BaseLLM
 from langchain.prompts.base import BasePromptTemplate
 from langchain.text_splitter import TextSplitter
 
@@ -34,7 +34,7 @@ class MapReduceChain(Chain):
     @classmethod
     def from_params(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,

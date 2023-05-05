@@ -231,7 +231,7 @@ class LLMChain(Chain):
 
     def predict_and_parse(
         self, callbacks: Callbacks = None, **kwargs: Any
-    ) -> Union[str, List[str], Dict[str, str]]:
+    ) -> Union[str, List[str], Dict[str, Any]]:
         """Call predict and then parse the results."""
         result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
