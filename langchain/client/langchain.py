@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 import logging
 import socket
+from datetime import datetime
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import urlsplit
@@ -131,7 +131,7 @@ class LangChainPlusClient(BaseSettings):
         """Create a dataset example in the LangChain+ API."""
         if dataset_id is None:
             dataset_id = self.read_dataset(dataset_name).id
-        url = f"/examples"
+
         data = {
             "inputs": inputs,
             "outputs": outputs,
@@ -141,7 +141,7 @@ class LangChainPlusClient(BaseSettings):
             data["created_at"] = created_at.isoformat()
         example = ExampleCreate(**data)
         response = requests.post(
-            f"{self.api_url}{url}", headers=self._headers, data=example.json()
+            f"{self.api_url}/examples", headers=self._headers, data=example.json()
         )
         raise_for_status_with_text(response)
         result = response.json()
@@ -515,7 +515,5 @@ class LangChainPlusClient(BaseSettings):
                 )
                 if verbose:
                     print(f"{i+1} processed", flush=True, end="\r")
-                if i > 5:
-                    break
             results[str(example.id)] = result
         return results
