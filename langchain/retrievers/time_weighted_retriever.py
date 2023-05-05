@@ -110,6 +110,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time", datetime.now())
+        current_time = datetime.now() if current_time is None else current_time
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
@@ -126,6 +127,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever, BaseModel):
     ) -> List[str]:
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time", datetime.now())
+        current_time = datetime.now() if current_time is None else current_time
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
