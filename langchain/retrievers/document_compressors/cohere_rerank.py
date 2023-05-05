@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Sequence
+from typing import TYPE_CHECKING, Dict, Sequence,Any
 
 from pydantic import root_validator
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class CohereRerank(BaseDocumentCompressor):
-    client: Client
+    client: Any
     top_n: int = 3
     model: str = "rerank-english-v2.0"
 
