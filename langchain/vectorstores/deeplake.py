@@ -450,6 +450,7 @@ class DeepLake(VectorStore):
             fetch_k=fetch_k,
             use_maximal_marginal_relevance=True,
             lambda_mult=lambda_mult,
+            **kwargs,
         )
 
     def max_marginal_relevance_search(
@@ -484,6 +485,7 @@ class DeepLake(VectorStore):
             fetch_k=fetch_k,
             use_maximal_marginal_relevance=True,
             lambda_mult=lambda_mult,
+            **kwargs,
         )
 
     @classmethod
