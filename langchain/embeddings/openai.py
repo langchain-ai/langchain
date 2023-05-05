@@ -94,7 +94,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings.openai import OpenAIEmbeddings
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
-                model="your-embeddings-model-name"
+                model="your-embeddings-model-name",
+                api_base="https://your-endpoint.openai.azure.com/",
+                api_type="azure",
             )
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
@@ -104,6 +106,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model  # to support Azure OpenAI Service custom deployment names
+    openai_api_version: str = "2022-12-01"
+    # to support Azure OpenAI Service custom endpoints
+    openai_api_base: Optional[str] = None
+    # to support Azure OpenAI Service custom endpoints
+    openai_api_type: Optional[str] = None
     embedding_ctx_length: int = 8191
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
@@ -125,6 +132,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
+        openai_api_base = get_from_dict_or_env(
+            values,
+            "openai_api_base",
+            "OPENAI_API_BASE",
+            default="",
+        )
+        openai_api_type = get_from_dict_or_env(
+            values,
+            "openai_api_type",
+            "OPENAI_API_TYPE",
+            default="",
+        )
+        openai_api_version = get_from_dict_or_env(
+            values,
+            "openai_api_version",
+            "OPENAI_API_VERSION",
+        )
         openai_organization = get_from_dict_or_env(
             values,
             "openai_organization",
@@ -137,6 +161,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
+            if openai_api_base:
+                openai.api_base = openai_api_base
+                openai.api_version = openai_api_version
+            if openai_api_type:
+                openai.api_type = openai_api_type
             values["client"] = openai.Embedding
         except ImportError:
             raise ValueError(
@@ -150,7 +179,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _get_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
-        embeddings: List[List[float]] = [[] for i in range(len(texts))]
+        embeddings: List[List[float]] = [[] for _ in range(len(texts))]
         try:
             import tiktoken
 
@@ -158,8 +187,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             indices = []
             encoding = tiktoken.model.encoding_for_model(self.model)
             for i, text in enumerate(texts):
-                # replace newlines, which can negatively affect performance.
-                text = text.replace("\n", " ")
+                if self.model.endswith("001"):
+                    # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                    # replace newlines, which can negatively affect performance.
+                    text = text.replace("\n", " ")
                 token = encoding.encode(
                     text,
                     allowed_special=self.allowed_special,
@@ -179,14 +210,22 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 )
                 batched_embeddings += [r["embedding"] for r in response["data"]]
 
-            results: List[List[List[float]]] = [[] for i in range(len(texts))]
-            lens: List[List[int]] = [[] for i in range(len(texts))]
+            results: List[List[List[float]]] = [[] for _ in range(len(texts))]
+            num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
             for i in range(len(indices)):
                 results[indices[i]].append(batched_embeddings[i])
-                lens[indices[i]].append(len(batched_embeddings[i]))
+                num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
             for i in range(len(texts)):
-                average = np.average(results[i], axis=0, weights=lens[i])
+                _result = results[i]
+                if len(_result) == 0:
+                    average = embed_with_retry(self, input="", engine=self.deployment)[
+                        "data"
+                    ][0]["embedding"]
+                else:
+                    average = np.average(
+                        _result, axis=0, weights=num_tokens_in_batch[i]
+                    )
                 embeddings[i] = (average / np.linalg.norm(average)).tolist()
 
             return embeddings
@@ -201,11 +240,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint."""
         # handle large input text
-        if self.embedding_ctx_length > 0:
+        if len(text) > self.embedding_ctx_length:
             return self._get_len_safe_embeddings([text], engine=engine)[0]
         else:
-            # replace newlines, which can negatively affect performance.
-            text = text.replace("\n", " ")
+            if self.model.endswith("001"):
+                # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
+                # replace newlines, which can negatively affect performance.
+                text = text.replace("\n", " ")
             return embed_with_retry(self, input=[text], engine=engine)["data"][0][
                 "embedding"
             ]
@@ -223,20 +264,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        # handle batches of large input text
-        if self.embedding_ctx_length > 0:
-            return self._get_len_safe_embeddings(texts, engine=self.deployment)
-        else:
-            results = []
-            _chunk_size = chunk_size or self.chunk_size
-            for i in range(0, len(texts), _chunk_size):
-                response = embed_with_retry(
-                    self,
-                    input=texts[i : i + _chunk_size],
-                    engine=self.deployment,
-                )
-                results += [r["embedding"] for r in response["data"]]
-            return results
+        # NOTE: to keep things simple, we assume the list may contain texts longer
+        #       than the maximum context and use length-safe embedding function.
+        return self._get_len_safe_embeddings(texts, engine=self.deployment)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.

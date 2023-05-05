@@ -8,7 +8,7 @@ from langchain.schema import BaseDocumentTransformer, Document
 
 
 class BaseDocumentCompressor(BaseModel, ABC):
-    """"""
+    """Base abstraction interface for document compression."""
 
     @abstractmethod
     def compress_documents(

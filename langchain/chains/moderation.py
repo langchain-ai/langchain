@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import root_validator
 
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.utils import get_from_dict_or_env
 
@@ -84,7 +85,11 @@ class OpenAIModerationChain(Chain):
                 return error_str
         return text
 
-    def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+    def _call(
+        self,
+        inputs: Dict[str, str],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, str]:
         text = inputs[self.input_key]
         results = self.client.create(text)
         output = self._moderate(text, results["results"][0])

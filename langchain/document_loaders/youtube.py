@@ -1,6 +1,7 @@
 """Loader that loads YouTube transcript."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -10,7 +11,9 @@ from pydantic.dataclasses import dataclass
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
 
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+logger = logging.getLogger(__name__)
+
+SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 
 @dataclass
@@ -98,12 +101,17 @@ class YoutubeLoader(BaseLoader):
     """Loader that loads Youtube transcripts."""
 
     def __init__(
-        self, video_id: str, add_video_info: bool = False, language: str = "en"
+        self,
+        video_id: str,
+        add_video_info: bool = False,
+        language: str = "en",
+        continue_on_failure: bool = False,
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
         self.add_video_info = add_video_info
         self.language = language
+        self.continue_on_failure = continue_on_failure
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
@@ -217,6 +225,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
     video_ids: Optional[List[str]] = None
     add_video_info: bool = True
     captions_language: str = "en"
+    continue_on_failure: bool = False
 
     def __post_init__(self) -> None:
         self.youtube_client = self._build_youtube_client(self.google_api_client.creds)
@@ -249,12 +258,13 @@ class GoogleApiYoutubeLoader(BaseLoader):
     def _get_transcripe_for_video_id(self, video_id: str) -> str:
         from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
 
-        transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_ids)
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         try:
             transcript = transcript_list.find_transcript([self.captions_language])
         except NoTranscriptFound:
-            en_transcript = transcript_list.find_transcript(["en"])
-            transcript = en_transcript.translate(self.captions_language)
+            for available_transcript in transcript_list:
+                transcript = available_transcript.translate(self.captions_language)
+                continue
 
         transcript_pieces = transcript.fetch()
         return " ".join([t["text"].strip(" ") for t in transcript_pieces])
@@ -286,6 +296,19 @@ class GoogleApiYoutubeLoader(BaseLoader):
         return channel_id
 
     def _get_document_for_channel(self, channel: str, **kwargs: Any) -> List[Document]:
+        try:
+            from youtube_transcript_api import (
+                NoTranscriptFound,
+                TranscriptsDisabled,
+            )
+        except ImportError:
+            raise ImportError(
+                "You must run"
+                "`pip install --upgrade "
+                "youtube-transcript-api`"
+                "to use the youtube loader"
+            )
+
         channel_id = self._get_channel_id(channel)
         request = self.youtube_client.search().list(
             part="id,snippet",
@@ -304,14 +327,25 @@ class GoogleApiYoutubeLoader(BaseLoader):
                 if self.add_video_info:
                     item["snippet"].pop("thumbnails")
                     meta_data.update(item["snippet"])
-                video_ids.append(
-                    Document(
-                        page_content=self._get_transcripe_for_video_id(
-                            item["id"]["videoId"]
-                        ),
-                        metadata=meta_data,
+                try:
+                    page_content = self._get_transcripe_for_video_id(
+                        item["id"]["videoId"]
                     )
-                )
+                    video_ids.append(
+                        Document(
+                            page_content=page_content,
+                            metadata=meta_data,
+                        )
+                    )
+                except (TranscriptsDisabled, NoTranscriptFound) as e:
+                    if self.continue_on_failure:
+                        logger.error(
+                            "Error fetching transscript "
+                            + f" {item['id']['videoId']}, exception: {e}"
+                        )
+                    else:
+                        raise e
+                    pass
             request = self.youtube_client.search().list_next(request, response)
 
         return video_ids

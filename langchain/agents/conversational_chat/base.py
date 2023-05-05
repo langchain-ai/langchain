@@ -14,6 +14,8 @@ from langchain.agents.conversational_chat.prompt import (
     SUFFIX,
     TEMPLATE_TOOL_RESPONSE,
 )
+from langchain.agents.utils import validate_tools_single_input
+from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
 from langchain.prompts.base import BasePromptTemplate
@@ -26,7 +28,6 @@ from langchain.prompts.chat import (
 from langchain.schema import (
     AgentAction,
     AIMessage,
-    BaseLanguageModel,
     BaseMessage,
     BaseOutputParser,
     HumanMessage,
@@ -59,6 +60,11 @@ class ConversationalChatAgent(Agent):
 
     def _fix_text(self, text: str) -> BaseMessage:
         return HumanMessage(content=FIX_RESPONSE)
+
+    @classmethod
+    def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
+        super()._validate_tools(tools)
+        validate_tools_single_input(cls.__name__, tools)
 
     @classmethod
     def create_prompt(

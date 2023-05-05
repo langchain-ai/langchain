@@ -4,8 +4,8 @@
 from typing import Any, Optional
 
 from langchain.agents.tools import Tool
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
-from langchain.llms.base import BaseLLM
 from langchain.requests import Requests
 from langchain.tools.openapi.utils.api_models import APIOperation
 from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
@@ -32,7 +32,7 @@ class NLATool(Tool):
     @classmethod
     def from_llm_and_method(
         cls,
-        llm: BaseLLM,
+        llm: BaseLanguageModel,
         path: str,
         method: str,
         spec: OpenAPISpec,
