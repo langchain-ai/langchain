@@ -13,7 +13,7 @@ langchain-server = "langchain.server:main"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = "^1"
-SQLAlchemy = ">=1.3,<3"
+SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.4.1"
 numpy = "^1"
