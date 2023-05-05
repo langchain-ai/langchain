@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import logging
 import socket
 from io import BytesIO
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -15,14 +24,19 @@ from requests import HTTPError, Response
 
 from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.tracers.langchain import LangChainTracerV2
-from langchain.callbacks.tracers.schemas import (TracerSession,
-                                                 TracerSessionCreate)
+from langchain.callbacks.tracers.schemas import (
+    TracerSession,
+    TracerSessionV2,
+    TracerSessionV2Base,
+)
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
 from langchain.client.models import Dataset, Example
 from langchain.client.utils import parse_chat_messages
 from langchain.llms.base import BaseLLM
+from langchain.schema import ChatResult, LLMResult
 from langchain.utils import xor_args
+from langchain.callbacks.manager import tracing_callback_var, tracing_v2_enabled
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -54,6 +68,22 @@ def _is_localhost(url: str) -> bool:
         return False
 
 
+@dataclass
+class _JobState:
+    num_processed: int
+    num_total: int
+
+    def increment(self) -> None:
+        """Increment the number of processed examples."""
+        self.num_processed += 1
+
+    def print_status(self) -> None:
+        """Print the status of the job."""
+        print(
+            f"Processed {self.num_processed}/{self.num_total} examples", flush=True
+        )  # , end="\r")
+
+
 class LangChainPlusClient(BaseSettings):
     """Client for interacting with the LangChain+ API."""
 
@@ -74,9 +104,9 @@ class LangChainPlusClient(BaseSettings):
         else:
             tenant_id = values.get("tenant_id")
             if not tenant_id:
-                values["tenant_id"] = cls._get_seeded_tenant_id(api_url, api_key)     
+                values["tenant_id"] = cls._get_seeded_tenant_id(api_url, api_key)
         return values
-    
+
     @staticmethod
     def _get_seeded_tenant_id(api_url: str, api_key: Optional[str]) -> str:
         """Get the tenant ID from the seeded tenant."""
@@ -106,20 +136,35 @@ class LangChainPlusClient(BaseSettings):
             headers["authorization"] = f"Bearer {self.api_key}"
         return headers
 
+    @property
+    def query_params(self) -> Dict[str, str]:
+        """Get the headers for the API request."""
+        return {"tenant_id": self.tenant_id}
+
+    def _get(self, path: str, params: Optional[Dict[str, str]] = None) -> Response:
+        """Make a GET request."""
+        query_params = self.query_params
+        if params:
+            query_params.update(params)
+        print("GETTING", f"{self.api_url}{path}", query_params)
+        return requests.get(
+            f"{self.api_url}{path}", headers=self._headers, params=query_params
+        )
+
     @xor_args(("session_name", "session_id"))
     def read_session(
         self, *, session_name: Optional[str] = None, session_id: Optional[int] = None
     ) -> TracerSession:
         """Get a session by name."""
-        url = f"{self.api_url}/sessions"
-        params = {}
+        path = "/sessions"
+        params = self.query_params
         if session_id is not None:
-            url = f"{url}/{session_id}"
+            path += f"/{session_id}"
         elif session_name is not None:
             params["name"] = session_name
         else:
             raise ValueError("Must provide either session name or ID")
-        response = requests.get(url, headers=self._headers, params=params)
+        response = self._get(path, params=params)
         _raise_rich_error(response)
         results = response.json()
         if isinstance(results, list):
@@ -128,9 +173,11 @@ class LangChainPlusClient(BaseSettings):
             return TracerSession(**results[0])
         return TracerSession(**results)
 
-    def create_session(self, session_name: str) -> TracerSession:
+    def create_session(self, session_name: str) -> TracerSessionV2:
         """Persist a session."""
-        session_create = TracerSessionCreate(name=session_name)
+        session_create = TracerSessionV2Base(
+            name=session_name, tenant_id=self.tenant_id
+        )
         try:
             response = requests.post(
                 f"{self.api_url}/sessions",
@@ -139,7 +186,7 @@ class LangChainPlusClient(BaseSettings):
             )
             result = response.json()
             if "id" in result:
-                session = TracerSession(id=result["id"], **session_create.dict())
+                session = TracerSessionV2(id=result["id"], **session_create.dict())
             elif "detail" in result and "already exists" in result["detail"]:
                 return self.read_session(session_name=session_name)
             else:
@@ -148,7 +195,7 @@ class LangChainPlusClient(BaseSettings):
             logging.warning(
                 f"Failed to create session '{session_name}', using default session: {e}"
             )
-            session = TracerSession(id=1, **session_create.dict())
+            session = self.ses
         return session
 
     def upload_dataframe(
@@ -187,6 +234,7 @@ class LangChainPlusClient(BaseSettings):
             "input_keys": ",".join(input_keys),
             "output_keys": ",".join(output_keys),
             "description": description,
+            # "tenant_id": self.tenant_id,
         }
         response = requests.post(
             self.api_url + "/datasets/upload",
@@ -223,18 +271,17 @@ class LangChainPlusClient(BaseSettings):
     def read_dataset(
         self, *, dataset_name: Optional[str] = None, dataset_id: Optional[str] = None
     ) -> Dataset:
-        url = f"{self.api_url}/datasets"
-        params: Dict[str, Any] = {"limit": 1}
+        path = "/datasets"
+        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
         if dataset_id is not None:
-            url += f"/{dataset_id}"
+            path += f"/{dataset_id}"
         elif dataset_name is not None:
             params["name"] = dataset_name
         else:
             raise ValueError("Must provide dataset_name or dataset_id")
-        response = requests.get(
-            url,
+        response = self._get(
+            path,
             params=params,
-            headers=self._headers,
         )
         _raise_rich_error(response)
         result = response.json()
@@ -250,7 +297,7 @@ class LangChainPlusClient(BaseSettings):
     ) -> Dataset:
         """Read a dataset from the LangChain+ API."""
         url = f"{self.api_url}/datasets"
-        params: Dict[str, Any] = {"limit": 1}
+        params: Dict[str, Any] = {"limit": 1, "tenant_id": self.tenant_id}
         if dataset_id is not None:
             url += f"/{dataset_id}"
         elif dataset_name is not None:
@@ -271,9 +318,7 @@ class LangChainPlusClient(BaseSettings):
 
     def list_datasets(self, limit: int = 100) -> Iterable[Dataset]:
         """List the datasets on the LangChain+ API."""
-        response = requests.get(
-            self.api_url + "/datasets", headers=self._headers, params={"limit": limit}
-        )
+        response = self._get("/datasets", params={"limit": limit})
         _raise_rich_error(response)
         return [Dataset(**dataset) for dataset in response.json()]
 
@@ -294,18 +339,15 @@ class LangChainPlusClient(BaseSettings):
 
     def read_example(self, example_id: str) -> Example:
         """Read an example from the LangChain+ API."""
-        response = requests.get(
-            self.api_url + f"/examples/{example_id}", headers=self._headers
-        )
+        response = self._get(f"/examples/{example_id}")
+
         _raise_rich_error(response)
         return Example(**response.json())
 
     def list_examples(self, dataset_id: Optional[str] = None) -> Iterable[Example]:
         """List the datasets on the LangChain+ API."""
-        params = {} if dataset_id is None else {"dataset": dataset_id}
-        response = requests.get(
-            self.api_url + "/examples", headers=self._headers, params=params
-        )
+        params = {"dataset": dataset_id} if dataset_id is not None else {}
+        response = self._get("/examples", params=params)
         _raise_rich_error(response)
         return [Example(**dataset) for dataset in response.json()]
 
@@ -313,7 +355,9 @@ class LangChainPlusClient(BaseSettings):
         self, dataset_id: Optional[str] = None
     ) -> Iterable[Example]:
         """List the datasets on the LangChain+ API."""
-        params = {} if dataset_id is None else {"dataset": dataset_id}
+        params = self.query_params
+        if dataset_id is not None:
+            params["dataset"] = dataset_id
         async with aiohttp.ClientSession() as session:
             async with session.request(
                 "get", self.api_url + "/examples", headers=self._headers, params=params
@@ -321,50 +365,64 @@ class LangChainPlusClient(BaseSettings):
                 response.raise_for_status()
                 results = await response.json()
                 return [Example(**dataset) for dataset in results]
-            
+
     @staticmethod
-    async def _arun_llm(llm: BaseLanguageModel, inputs: Dict[str, Any], langchain_tracer: LangChainTracerV2,)-> Union[Dict, str]:
+    async def _arun_llm(
+        llm: BaseLanguageModel,
+        inputs: Dict[str, Any],
+        langchain_tracer: LangChainTracerV2,
+    ) -> Union[LLMResult, ChatResult]:
         if isinstance(llm, BaseLLM):
-            llm_prompts: List[str] = inputs['prompts']
-            chain_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
+            llm_prompts: List[str] = inputs["prompts"]
+            llm_output = await llm.agenerate(llm_prompts, callbacks=[langchain_tracer])
         elif isinstance(llm, BaseChatModel):
-            chat_prompts: List[str] = inputs['prompts']
-            messages = [parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts]
-            chain_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
+            chat_prompts: List[str] = inputs["prompts"]
+            messages = [
+                parse_chat_messages(chat_prompt) for chat_prompt in chat_prompts
+            ]
+            llm_output = await llm.agenerate(messages, callbacks=[langchain_tracer])
         else:
             raise ValueError(f"Unsupported LLM type {type(llm)}")
-        return chain_output
+        return llm_output
 
     @staticmethod
     async def _arun_llm_or_chain(
-        example: Example, langchain_tracer: LangChainTracerV2, llm_or_chain: Union[Chain, BaseLanguageModel], n_times: int
-    ) -> List[Union[dict, str]]:
+        example: Example,
+        langchain_tracer: LangChainTracerV2,
+        llm_or_chain: Union[Chain, BaseLanguageModel],
+        n_repetitions: int,
+    ) -> Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
         """Run the chain asynchronously."""
         previous_example_id = langchain_tracer.example_id
         langchain_tracer.example_id = example.id
         outputs = []
-        for  _ in range(n_times):
+        for _ in range(n_repetitions):
             try:
                 if isinstance(llm_or_chain, BaseLanguageModel):
-                    chain_output = await LangChainPlusClient._arun_llm(llm_or_chain, example.inputs)
+                    output: Any = await LangChainPlusClient._arun_llm(
+                        llm_or_chain, example.inputs, langchain_tracer
+                    )
                 else:
-                    chain_output = await llm_or_chain.arun(
+                    output = await llm_or_chain.arun(
                         example.inputs, callbacks=[langchain_tracer]
                     )
-                outputs.append(chain_output)
+                outputs.append(output)
             except Exception as e:
                 logger.warning(f"Chain failed for example {example.id}. Error: {e}")
                 outputs.append({"Error": str(e)})
             finally:
                 langchain_tracer.example_id = previous_example_id
-        return outputs 
+        return outputs
 
     @staticmethod
     async def _worker(
         queue: asyncio.Queue,
         tracers: List[LangChainTracerV2],
         chain: Chain,
+        n_repetitions: int,
         results: Dict[str, Any],
+        job_state: _JobState,
+        verbose: bool,
     ) -> None:
         """Worker for running the chain on examples."""
         while True:
@@ -373,21 +431,18 @@ class LangChainPlusClient(BaseSettings):
                 break
 
             tracer = tracers.pop()
-            result = await LangChainPlusClient._arun_llm_or_chain(example, tracer, chain)
-            results[example.id] = result
+            result = await LangChainPlusClient._arun_llm_or_chain(
+                example,
+                tracer,
+                chain,
+                n_repetitions,
+            )
+            results[str(example.id)] = result
             tracers.append(tracer)
             queue.task_done()
-
-    @staticmethod
-    async def _arun_llm_or_chain_over_buffer(
-        buffer: Sequence[Example], tracers: Sequence[LangChainTracerV2], llm_or_chain: Union[Chain, BaseLanguageModel],
-    ) -> List[Union[str, dict]]:
-        """Run the chain asynchronously over a buffer of examples."""
-        batch_results = [
-            LangChainPlusClient._arun_llm_or_chain(example, tracer, llm_or_chain)
-            for example, tracer in zip(buffer, tracers)
-        ]
-        return await asyncio.gather(*batch_results)
+            job_state.increment()
+            if verbose:
+                job_state.print_status()
 
     async def arun_on_dataset(
         self,
@@ -396,6 +451,7 @@ class LangChainPlusClient(BaseSettings):
         num_workers: int = 5,
         num_repetitions: int = 1,
         session_name: Optional[str] = None,
+        verbose: bool = False,
     ) -> Dict[str, Any]:
         """Run the chain on a dataset and store traces to the specified session name.
 
@@ -405,6 +461,7 @@ class LangChainPlusClient(BaseSettings):
             num_workers: Number of async workers to run in parallel.
             num_repetitions: Number of times to run the chain on each example.
             session_name: Name of the session to store the traces in.
+            verbose: Whether to print progress.
 
         Returns:
             A dictionary mapping example ids to the chain outputs.
@@ -412,34 +469,44 @@ class LangChainPlusClient(BaseSettings):
         if isinstance(llm_or_chain, BaseLanguageModel):
             raise NotImplementedError
         if session_name is None:
-            session_name = f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
-        self.create_session(session_name)
+            session_name = (
+                f"{dataset_name}_{llm_or_chain.__class__.__name__}-{num_repetitions}"
+            )
+        dataset = self.read_dataset(dataset_name=dataset_name)
+        with tracing_v2_enabled(session_name=session_name) as session:
+            tracers = []
+            for _ in range(num_workers):
+                tracer = LangChainTracerV2()
+                tracer.session = session
+                tracers.append(tracer)
+            results: Dict[str, Any] = {}
+            examples = self.list_examples(dataset_id=str(dataset.id))
+            # return examples
+            queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
+            job_state = {"num_processed": 0, "num_total": len(examples)}
+            workers = [
+                asyncio.create_task(
+                    LangChainPlusClient._worker(
+                        queue,
+                        tracers,
+                        llm_or_chain,
+                        num_repetitions,
+                        results,
+                        job_state,
+                        verbose,
+                    )
+                )
+                for _ in range(num_workers)
+            ]
 
-        dataset = await self.aread_dataset(dataset_name=dataset_name)
+            for example in examples:
+                await queue.put(example)
 
-        tracers = []
-        for _ in range(num_workers):
-            tracer = LangChainTracerV2()
-            tracer.load_session(session_name or "default")
-            tracers.append(tracer)
+            await queue.join()  # Wait for all tasks to complete
 
-        results: Dict[str, Any] = {}
-        examples = await self.alist_examples(dataset_id=dataset.id)
+            for _ in workers:
+                await queue.put(None)  # Signal the workers to exit
 
-        queue: asyncio.Queue[Optional[Example]] = asyncio.Queue()
-        workers = [
-            asyncio.create_task(LangChainPlusClient._worker(queue, tracers, llm_or_chain, results))
-            for _ in range(num_workers)
-        ]
+            await asyncio.gather(*workers)
 
-        for example in examples:
-            await queue.put(example)
-
-        await queue.join()  # Wait for all tasks to complete
-
-        for _ in workers:
-            await queue.put(None)  # Signal the workers to exit
-
-        await asyncio.gather(*workers)
-
-        return results
+            return results

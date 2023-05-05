@@ -107,7 +107,7 @@ class Run(BaseModel):
     outputs: Optional[dict]
     session_id: UUID
     parent_run_id: Optional[UUID]
-    example_id: Optional[UUID]
+    reference_example_id: Optional[UUID]
     run_type: RunTypeEnum
     child_runs: List[Run] = Field(default_factory=list)
 

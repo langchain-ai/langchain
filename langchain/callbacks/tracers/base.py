@@ -164,6 +164,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         run_id_ = str(run_id)
         llm_run = self.run_map.get(run_id_)
         if llm_run is None or not isinstance(llm_run, LLMRun):
+            print("RUN LLM", llm_run, self.run_map.keys(), run_id)
             raise TracerException("No LLMRun found to be traced")
 
         llm_run.response = response

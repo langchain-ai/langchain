@@ -1,40 +1,30 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
+
+from langchain.callbacks.tracers.schemas import Run
 
 
 class Example(BaseModel):
     """Example model."""
 
-    id: str  # TODO: UUID
+    id: UUID
     created_at: datetime
-    dataset_id: str  # TODO: UUID
+    dataset_id: UUID
     inputs: Dict[str, Any]
     outputs: Optional[Dict[str, Any]] = Field(default=None)
     modified_at: Optional[datetime] = Field(default=None)
-    llm_runs: List[Dict] = Field(default_factory=list)  # TODO: Type
-    chain_runs: List[Dict] = Field(default_factory=list)  # TODO: Type
-    runs: List[Dict] = Field(default_factory=list)  # TODO: Type
-
-    @root_validator(pre=True)
-    def validate_id(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate the ID."""
-        # TODO: remove this once we're using UUIDs.
-        # We're updating to UUIDs.
-        id_ = values.get("id")
-        if isinstance(id_, int):
-            values["id"] = str(id_)
-        return values
+    runs: List[Run] = Field(default_factory=list)
 
 
 class Dataset(BaseModel):
     """Dataset ORM model."""
 
-    id: str
+    id: UUID
     name: str
     description: str
     created_at: datetime
     modified_at: Optional[datetime] = Field(default=None)
-    owner_id: Union[int, str]  # TODO: UUID
     examples: List[Example] = Field(default_factory=list)

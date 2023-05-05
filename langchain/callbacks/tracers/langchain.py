@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import logging
 import os
+import traceback
 from typing import Any, Dict, List, Optional, Union
+from uuid import UUID, uuid4
 
 import requests
+from requests import Response
+from requests import HTTPError
 
 from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
@@ -84,6 +88,7 @@ class LangChainTracer(BaseTracer):
             tracer_session = TracerSession(**r.json()[0])
         except Exception as e:
             session_type = "default" if not session_name else session_name
+            print("WHY IS THIS BEING CALLED")
             logging.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
             )
@@ -125,7 +130,7 @@ class LangChainTracerV2(BaseTracer):
         self._endpoint = _get_endpoint()
         self._headers = _get_headers()
         self.tenant_id = _get_tenant_id()
-        self.example_id: Optional[str] = None
+        self.example_id: Optional[UUID] = None
 
     def _get_session_create(
         self, name: Optional[str] = None, **kwargs: Any
@@ -142,8 +147,18 @@ class LangChainTracerV2(BaseTracer):
             )
             session = TracerSessionV2(id=r.json()["id"], **session_create.dict())
         except Exception as e:
-            logging.warning(f"Failed to create session, using default session: {e}")
-            session = self.load_session("default")
+            name = session_create.name or "default"
+            logging.warning(
+                f"Failed to create session; Attempting to load session {name};"
+                f" Error:  {e}"
+            )
+            try:
+                session = self.load_session(name)
+            except Exception as e:
+                logging.warning(
+                    f"Failed to load session {name}, using default session: {e}"
+                )
+                session = self.load_session("default")
         return session
 
     def _get_default_query_params(self) -> Dict[str, Any]:
@@ -158,13 +173,17 @@ class LangChainTracerV2(BaseTracer):
             if session_name:
                 params["name"] = session_name
             r = requests.get(url, headers=self._headers, params=params)
+            r.raise_for_status()
             tracer_session = TracerSessionV2(**r.json()[0])
         except Exception as e:
+            # Print the stacktrace and th esession name
+            logging.error(str(traceback.format_exc()))
+            logging.error(f"Session name: {session_name}")
             session_type = "default" if not session_name else session_name
             logging.warning(
                 f"Failed to load {session_type} session, using empty session: {e}"
             )
-            tracer_session = TracerSessionV2(id=1, tenant_id=self.tenant_id)
+            tracer_session = TracerSessionV2(id=uuid4(), tenant_id=self.tenant_id)
 
         self.session = tracer_session
         return tracer_session

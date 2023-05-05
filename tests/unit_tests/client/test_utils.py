@@ -1,7 +1,15 @@
 """Test LangChain+ Client Utils."""
 
+from typing import List
+
 from langchain.client.utils import parse_chat_messages
-from langchain.schema import ChatMessage
+from langchain.schema import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+)
 
 
 def test_parse_chat_messages() -> None:
@@ -10,9 +18,9 @@ def test_parse_chat_messages() -> None:
         "Human: I am human roar\nAI: I am AI beep boop\nSystem: I am a system message"
     )
     expected = [
-        ChatMessage(role="Human", content="I am human roar"),
-        ChatMessage(role="AI", content="I am AI beep boop"),
-        ChatMessage(role="System", content="I am a system message"),
+        HumanMessage(content="I am human roar"),
+        AIMessage(content="I am AI beep boop"),
+        SystemMessage(content="I am a system message"),
     ]
     assert parse_chat_messages(input_text) == expected
 
@@ -20,7 +28,7 @@ def test_parse_chat_messages() -> None:
 def test_parse_chat_messages_empty_input() -> None:
     """Test that an empty input string returns an empty list."""
     input_text = ""
-    expected = []
+    expected: List[BaseMessage] = []
     assert parse_chat_messages(input_text) == expected
 
 
@@ -31,9 +39,9 @@ def test_parse_chat_messages_multiline_messages() -> None:
         " beep boop\nSystem: I am a system\nand a message"
     )
     expected = [
-        ChatMessage(role="Human", content="I am a human\nand I roar"),
-        ChatMessage(role="AI", content="I am an AI\nand I beep boop"),
-        ChatMessage(role="System", content="I am a system\nand a message"),
+        HumanMessage(content="I am a human\nand I roar"),
+        AIMessage(content="I am an AI\nand I beep boop"),
+        SystemMessage(content="I am a system\nand a message"),
     ]
     assert parse_chat_messages(input_text) == expected
 
@@ -53,7 +61,7 @@ def test_parse_chat_messages_embedded_roles() -> None:
     """Test that messages with embedded role references are parsed correctly."""
     input_text = "Human: Oh ai what if you said AI: foo bar?\nAI: Well, that would be interesting!"
     expected = [
-        ChatMessage(role="Human", content="Oh ai what if you said AI: foo bar?"),
-        ChatMessage(role="AI", content="Well, that would be interesting!"),
+        HumanMessage(content="Oh ai what if you said AI: foo bar?"),
+        AIMessage(content="Well, that would be interesting!"),
     ]
     assert parse_chat_messages(input_text) == expected

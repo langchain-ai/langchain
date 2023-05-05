@@ -1,16 +1,25 @@
 """Test the LangChain+ client."""
+import uuid
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from unittest import mock
 
 import pytest
 
+from langchain.base_language import BaseLanguageModel
+from langchain.callbacks.tracers.langchain import LangChainTracerV2
+from langchain.callbacks.tracers.schemas import TracerSessionV2
 from langchain.chains.base import Chain
-from langchain.client.langchain import LangChainPlusClient, _get_link_stem, _is_localhost
+from langchain.client.langchain import (
+    LangChainPlusClient,
+    _get_link_stem,
+    _is_localhost,
+)
 from langchain.client.models import Dataset, Example
 
 _CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
+_TENANT_ID = "7a3d2b56-cd5b-44e5-846f-7eb6e8144ce4"
 
 
 @pytest.mark.parametrize(
@@ -75,19 +84,20 @@ def test_create_session(mock_post: mock.Mock) -> None:
 @mock.patch("langchain.client.langchain.requests.post")
 def test_upload_csv(mock_post: mock.Mock) -> None:
     mock_response = mock.Mock()
+    dataset_id = str(uuid.uuid4())
     example_1 = Example(
-        id="1",
+        id=str(uuid.uuid4()),
         created_at=_CREATED_AT,
         inputs={"input": "1"},
         outputs={"output": "2"},
-        dataset_id="1",
+        dataset_id=dataset_id,
     )
     example_2 = Example(
-        id="2",
+        id=str(uuid.uuid4()),
         created_at=_CREATED_AT,
         inputs={"input": "3"},
         outputs={"output": "4"},
-        dataset_id="1",
+        dataset_id=dataset_id,
     )
 
     mock_response.json.return_value = {
@@ -122,41 +132,48 @@ async def test_arun_on_dataset() -> None:
         owner_id="owner",
         created_at=_CREATED_AT,
     )
+    uuids = [
+        "0c193153-2309-4704-9a47-17aee4fb25c8",
+        "0d11b5fd-8e66-4485-b696-4b55155c0c05",
+        "90d696f0-f10d-4fd0-b88b-bfee6df08b84",
+        "4ce2c6d8-5124-4c0c-8292-db7bdebcf167",
+        "7b5a524c-80fa-4960-888e-7d380f9a11ee",
+    ]
     examples = [
         Example(
-            id="1",
+            id=uuids[0],
             created_at=_CREATED_AT,
             inputs={"input": "1"},
             outputs={"output": "2"},
-            dataset_id="1",
+            dataset_id=str(uuid.uuid4()),
         ),
         Example(
-            id="2",
+            id=uuids[1],
             created_at=_CREATED_AT,
             inputs={"input": "3"},
             outputs={"output": "4"},
-            dataset_id="1",
+            dataset_id=str(uuid.uuid4()),
         ),
         Example(
-            id="3",
+            id=uuids[2],
             created_at=_CREATED_AT,
             inputs={"input": "5"},
             outputs={"output": "6"},
-            dataset_id="1",
+            dataset_id=str(uuid.uuid4()),
         ),
         Example(
-            id="4",
+            id=uuids[3],
             created_at=_CREATED_AT,
             inputs={"input": "7"},
             outputs={"output": "8"},
-            dataset_id="1",
+            dataset_id=str(uuid.uuid4()),
         ),
         Example(
-            id="5",
+            id=uuids[4],
             created_at=_CREATED_AT,
             inputs={"input": "9"},
             outputs={"output": "10"},
-            dataset_id="1",
+            dataset_id=str(uuid.uuid4()),
         ),
     ]
 
@@ -167,28 +184,46 @@ async def test_arun_on_dataset() -> None:
         return examples
 
     async def mock_arun_chain(
-        example: Example, tracer: Any, chain: Chain
-    ) -> Dict[str, Any]:
-        return {"result": f"Result for example {example.id}"}
+        example: Example,
+        tracer: Any,
+        llm_or_chain: Union[BaseLanguageModel, Chain],
+        n_repetitions: int,
+    ) -> List[Dict[str, Any]]:
+        return [
+            {"result": f"Result for example {example.id}"} for _ in range(n_repetitions)
+        ]
+
+    def mock_load_session(
+        self: Any, name: str, *args: Any, **kwargs: Any
+    ) -> TracerSessionV2:
+        return TracerSessionV2(name=name, tenant_id=_TENANT_ID, id=uuid.uuid4())
 
     with mock.patch.object(
         LangChainPlusClient, "aread_dataset", new=mock_aread_dataset
     ), mock.patch.object(
         LangChainPlusClient, "alist_examples", new=mock_alist_examples
     ), mock.patch.object(
-        LangChainPlusClient, "_arun_chain", new=mock_arun_chain
+        LangChainPlusClient, "_arun_llm_or_chain", new=mock_arun_chain
+    ), mock.patch.object(
+        LangChainTracerV2, "load_session", new=mock_load_session
     ):
-        client = LangChainPlusClient(api_url="http://localhost:8000", api_key="123")
+        client = LangChainPlusClient(
+            api_url="http://localhost:8000", api_key="123", tenant_id=_TENANT_ID
+        )
         chain = mock.MagicMock()
 
         results = await client.arun_on_dataset(
-            dataset_name="test", chain=chain, num_workers=2, session_name="test_session"
+            dataset_name="test",
+            llm_or_chain=chain,
+            num_workers=2,
+            session_name="test_session",
+            num_repetitions=3,
         )
 
-        assert results == {
-            "1": {"result": "Result for example 1"},
-            "2": {"result": "Result for example 2"},
-            "3": {"result": "Result for example 3"},
-            "4": {"result": "Result for example 4"},
-            "5": {"result": "Result for example 5"},
+        expected = {
+            uuid.UUID(uuid_): [
+                {"result": f"Result for example {uuid.UUID(uuid_)}"} for _ in range(3)
+            ]
+            for uuid_ in uuids
         }
+        assert results == expected
