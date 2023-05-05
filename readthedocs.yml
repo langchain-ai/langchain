@@ -4,7 +4,7 @@ sphinx:
 formats:
   - htmlzip
 python:
-  version: 3.8
+  version: 3.11
   install:
     - requirements: docs/requirements.txt
     - method: pip
