@@ -12,7 +12,7 @@ from langchain.callbacks.tracers.base import BaseTracer
 from langchain.callbacks.tracers.schemas import (
     ChainRun,
     LLMRun,
-    Run,
+    RunCreate,
     ToolRun,
     TracerSession,
     TracerSessionBase,
@@ -190,7 +190,7 @@ class LangChainTracerV2(LangChainTracer):
         """Load the default tracing session and set it as the Tracer's session."""
         return self.load_session("default")
 
-    def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> Run:
+    def _convert_run(self, run: Union[LLMRun, ChainRun, ToolRun]) -> RunCreate:
         """Convert a run to a Run."""
         session = self.session or self.load_default_session()
         inputs: Dict[str, Any] = {}
@@ -220,9 +220,9 @@ class LangChainTracerV2(LangChainTracer):
                 *run.child_tool_runs,
             ]
 
-        return Run(
+        return RunCreate(
             id=run.uuid,
-            name=run.serialized.get("name", f"{run_type}-{run.uuid}"),
+            name=run.serialized.get("name"),
             start_time=run.start_time,
             end_time=run.end_time,
             extra=run.extra or {},
@@ -233,7 +233,6 @@ class LangChainTracerV2(LangChainTracer):
             outputs=outputs,
             session_id=session.id,
             run_type=run_type,
-            parent_run_id=run.parent_uuid,
             reference_example_id=self.example_id,
             child_runs=[self._convert_run(child) for child in child_runs],
         )
