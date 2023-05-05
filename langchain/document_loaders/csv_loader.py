@@ -36,7 +36,7 @@ class CSVLoader(BaseLoader):
         self.file_path = file_path
         self.source_column = source_column
         self.encoding = encoding
-        self.csv_args = csv_args
+        self.csv_args = csv_args or {}
 
     def load(self) -> List[Document]:
         """Load data into document objects."""
