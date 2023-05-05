@@ -13,7 +13,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import Engine, CursorResult
+from sqlalchemy.engine import CursorResult, Engine
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 
