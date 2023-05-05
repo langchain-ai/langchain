@@ -2,14 +2,14 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel, Extra, Field
 
+from langchain.base_language import BaseLanguageModel
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.document_loaders.base import BaseLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms.base import BaseLLM
 from langchain.llms.openai import OpenAI
-from langchain.schemas import Document
+from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.vectorstores.base import VectorStore
 from langchain.vectorstores.chroma import Chroma
@@ -30,7 +30,9 @@ class VectorStoreIndexWrapper(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    def query(self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
+    def query(
+        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+    ) -> str:
         """Query the vectorstore."""
         llm = llm or OpenAI(temperature=0)
         chain = RetrievalQA.from_chain_type(
@@ -39,7 +41,7 @@ class VectorStoreIndexWrapper(BaseModel):
         return chain.run(question)
 
     def query_with_sources(
-        self, question: str, llm: Optional[BaseLLM] = None, **kwargs: Any
+        self, question: str, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
     ) -> dict:
         """Query the vectorstore and get back sources."""
         llm = llm or OpenAI(temperature=0)
