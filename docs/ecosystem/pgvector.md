@@ -25,8 +25,8 @@ from langchain.vectorstores.pgvector import PGVector
 ```
 
 PGVector embedding size is not autodetected. If you are using ChatGPT or any other embedding with 1536 dimensions
-default is fine. If you are going to use for example HuggingFaceEmbeddings you need to set the environment variable named `PGVECTOR_ADA_TOKEN_COUNT`
-to the needed value, In case of HuggingFaceEmbeddings is would be: `PGVECTOR_ADA_TOKEN_COUNT=768`
+default is fine. If you are going to use for example HuggingFaceEmbeddings you need to set the environment variable named `PGVECTOR_VECTOR_SIZE`
+to the needed value, In case of HuggingFaceEmbeddings is would be: `PGVECTOR_VECTOR_SIZE=768`
 
 ### Usage
 
