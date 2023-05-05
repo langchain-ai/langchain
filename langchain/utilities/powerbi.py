@@ -114,13 +114,15 @@ class PowerBIDataset(BaseModel):
                 return table_names
             if isinstance(table_names, str) and table_names != "":
                 return [table_names]
-        return deepcopy(self.table_names)
+        return self.table_names
 
     def _get_tables_todo(self, tables_todo: List[str]) -> List[str]:
-        for table in tables_todo:
+        """Get the tables that still need to be queried."""
+        todo = deepcopy(tables_todo)
+        for table in todo:
             if table in self.schemas:
-                tables_todo.remove(table)
-        return tables_todo
+                todo.remove(table)
+        return todo
 
     def _get_schema_for_tables(self, table_names: List[str]) -> str:
         """Create a string of the table schemas for the supplied tables."""
