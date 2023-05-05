@@ -222,9 +222,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             for i in range(len(texts)):
                 _result = results[i]
                 if len(_result) == 0:
-                    average = embed_with_retry(self, input="", engine=self.deployment, request_timeout=self.request_timeout)[
-                        "data"
-                    ][0]["embedding"]
+                    average = embed_with_retry(
+                        self,
+                        input="",
+                        engine=self.deployment,
+                        request_timeout=self.request_timeout,
+                    )["data"][0]["embedding"]
                 else:
                     average = np.average(
                         _result, axis=0, weights=num_tokens_in_batch[i]
@@ -250,9 +253,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
                 # replace newlines, which can negatively affect performance.
                 text = text.replace("\n", " ")
-            return embed_with_retry(self, input=[text], engine=engine, request_timeout=self.request_timeout)["data"][0][
-                "embedding"
-            ]
+            return embed_with_retry(
+                self, input=[text], engine=engine, request_timeout=self.request_timeout
+            )["data"][0]["embedding"]
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
